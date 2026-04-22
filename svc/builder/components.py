@@ -1,0 +1,249 @@
+"""
+Component classes for the email builder.
+
+Each component represents a reusable content block (KPI strip, data table,
+chart, text block, etc.). Components are constructed with their data and
+render themselves via their Jinja2 template.
+
+Usage:
+    engine = TemplateEngine()
+    kpi = KpiStrip(items=[KpiItem("S&P 500", "5,234", "#4A7C59", "+1.42%")])
+    html = kpi.render(engine)
+"""
+
+from __future__ import annotations
+
+from typing import Any, Dict, List, Optional
+
+from .engine import TemplateEngine
+from .models import KpiItem, TableRow, NumberedItem
+from .exceptions import ValidationError
+
+
+class Component:
+    """
+    Abstract base for all email components.
+
+    Subclasses must set ``template_path`` and implement ``context()``.
+    """
+
+    template_path: str = ""   # e.g. "analysis/kpi-strip.html"
+
+    def context(self) -> Dict[str, Any]:
+        """Return the template context dict for this component."""
+        raise NotImplementedError
+
+    def render(self, engine: TemplateEngine) -> str:
+        """
+        Render the component to an HTML string.
+
+        Args:
+            engine: Initialised TemplateEngine.
+
+        Returns:
+            Rendered HTML fragment.
+        """
+        if not self.template_path:
+            raise ValidationError(
+                f"{self.__class__.__name__} has no template_path set."
+            )
+        return engine.render(self.template_path, self.context())
+
+
+# ──────────────────────────────────────────────────────────────────────
+# Analysis components  (templates/analysis/)
+# ──────────────────────────────────────────────────────────────────────
+
+class KpiStrip(Component):
+    """
+    Row of key performance indicators.
+
+    Accepts 2–4 KpiItem objects.  The template auto-adjusts column
+    widths based on the number of items.
+
+    Args:
+        items: List of KpiItem instances (2–4 items).
+    """
+
+    template_path = "analysis/kpi-strip.html"
+
+    def __init__(self, items: List[KpiItem]):
+        if not 2 <= len(items) <= 4:
+            raise ValidationError("KpiStrip requires 2–4 items.")
+        for item in items:
+            item.validate()
+        self.items = items
+
+    def context(self) -> Dict[str, Any]:
+        return {
+            "kpis": [
+                {
+                    "label": k.label,
+                    "value": k.value,
+                    "color": k.color,
+                    "sublabel": k.sublabel,
+                }
+                for k in self.items
+            ],
+        }
+
+
+class DataTable(Component):
+    """
+    Financial data table with headers, alternating row colours, and
+    colour-coded numeric cells.
+
+    Args:
+        headers:  List of column header strings.
+        rows:     List of TableRow instances.
+        source:   Attribution string (e.g. "Source: Bloomberg").
+        as_of:    Date string (e.g. "March 28, 2026").
+    """
+
+    template_path = "analysis/data-table.html"
+
+    def __init__(
+        self,
+        headers: List[str],
+        rows: List[TableRow],
+        source: str = "",
+        as_of: str = "",
+    ):
+        if not headers:
+            raise ValidationError("DataTable requires at least one header.")
+        if not rows:
+            raise ValidationError("DataTable requires at least one row.")
+        for row in rows:
+            row.validate()
+        self.headers = headers
+        self.rows = rows
+        self.source = source
+        self.as_of = as_of
+
+    def context(self) -> Dict[str, Any]:
+        return {
+            "headers": self.headers,
+            "rows": [
+                {
+                    "cells": r.cells,
+                    "colors": r.colors,
+                    "alt": i % 2 == 1,  # alternating row background
+                }
+                for i, r in enumerate(self.rows)
+            ],
+            "source": self.source,
+            "as_of": self.as_of,
+        }
+
+
+class ChartBlock(Component):
+    """
+    Image / chart placeholder with source attribution.
+
+    Args:
+        image_url:  Full URL to the chart image.
+        alt_text:   Accessibility alt text.
+        source:     Attribution string.
+    """
+
+    template_path = "analysis/chart-block.html"
+
+    def __init__(
+        self,
+        image_url: str,
+        alt_text: str = "Chart",
+        source: str = "",
+    ):
+        if not image_url:
+            raise ValidationError("ChartBlock requires an image_url.")
+        self.image_url = image_url
+        self.alt_text = alt_text
+        self.source = source
+
+    def context(self) -> Dict[str, Any]:
+        return {
+            "chart_image_url": self.image_url,
+            "chart_alt_text": self.alt_text,
+            "chart_source": self.source,
+        }
+
+
+# ──────────────────────────────────────────────────────────────────────
+# Text components  (templates/text/)
+# ──────────────────────────────────────────────────────────────────────
+
+class TextBlock(Component):
+    """
+    Simple narrative prose block.
+
+    Args:
+        content: HTML or plain-text paragraph content.  May contain
+                 multiple ``<p>`` tags for multi-paragraph blocks.
+    """
+
+    template_path = "text/text-block.html"
+
+    def __init__(self, content: str):
+        if not content:
+            raise ValidationError("TextBlock requires content.")
+        self.content = content
+
+    def context(self) -> Dict[str, Any]:
+        return {"text_content": self.content}
+
+
+class NumberedList(Component):
+    """
+    Numbered theme / item list (e.g. "Key Themes" section).
+
+    Args:
+        items: List of NumberedItem instances.
+    """
+
+    template_path = "text/numbered-list.html"
+
+    def __init__(self, items: List[NumberedItem]):
+        if not items:
+            raise ValidationError("NumberedList requires at least one item.")
+        for item in items:
+            item.validate()
+        self.items = items
+
+    def context(self) -> Dict[str, Any]:
+        return {
+            "items": [
+                {
+                    "number": it.number,
+                    "title": it.title,
+                    "body": it.body,
+                }
+                for it in self.items
+            ],
+        }
+
+
+class AuthorBlock(Component):
+    """
+    Author attribution byline.
+
+    Args:
+        name:   Full name.
+        title:  Job title or role.
+        email:  Contact email address.
+    """
+
+    template_path = "text/author-block.html"
+
+    def __init__(self, name: str, title: str = "", email: str = ""):
+        if not name:
+            raise ValidationError("AuthorBlock requires a name.")
+        self.name = name
+        self.title = title
+        self.email = email
+
+    def context(self) -> Dict[str, Any]:
+        return {
+            "author_name": self.name,
+            "author_title": self.title,
+            "author_email": self.email,
+        }

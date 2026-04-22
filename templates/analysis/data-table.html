@@ -1,0 +1,28 @@
+{#
+  DATA TABLE — Financial table with headers, alternating rows, colour-coded values.
+
+  Context:
+    headers — List of column header strings
+    rows    — List of dicts with keys: cells (list), colors (list), alt (bool)
+    source  — Attribution string (optional)
+    as_of   — Date string (optional)
+#}
+<table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
+  {# Header row #}
+  <tr style="border-top: 1px solid #D6D2CB; border-bottom: 2px solid #2C3E50;">
+{% for header in headers %}
+    <th style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; text-align: {% if loop.first %}left{% else %}right{% endif %}; padding: 12px; letter-spacing: 0.5px;">{{ header }}</th>
+{% endfor %}
+  </tr>
+  {# Data rows #}
+{% for row in rows %}
+  <tr style="border-bottom: 1px solid {% if loop.last %}#D6D2CB{% else %}#EAE8E4{% endif %};">
+{% for cell in row.cells %}
+    <td style="font-family: {% if loop.first %}Arial, Helvetica, sans-serif{% else %}'Courier New', Courier, monospace{% endif %}; font-size: 13px;{% if not loop.first %} font-weight: bold;{% endif %} color: {% if loop.first %}#3B3B3B{% elif row.colors[loop.index0] %}{{ row.colors[loop.index0] }}{% else %}#5A5A5A{% endif %}; text-align: {% if loop.first %}left{% else %}right{% endif %}; padding: 12px; background-color: {% if row.alt %}#F8F7F5{% else %}#FFFFFF{% endif %};">{{ cell }}</td>
+{% endfor %}
+  </tr>
+{% endfor %}
+</table>
+{% if source %}
+<p style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #A09E97; font-style: italic; margin: 8px 0 0 0;">{{ source }}{% if as_of %} as of {{ as_of }}{% endif %}</p>
+{% endif %}
