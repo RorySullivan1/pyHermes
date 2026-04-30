@@ -2,11 +2,15 @@
   DATA TABLE — Financial table with headers, alternating rows, colour-coded values.
 
   Context:
-    headers — List of column header strings
-    rows    — List of dicts with keys: cells (list), colors (list), alt (bool)
-    source  — Attribution string (optional)
-    as_of   — Date string (optional)
+    subtitle — Optional sub-heading rendered above the table
+    headers  — List of column header strings
+    rows     — List of dicts with keys: cells (list), colors (list), alt (bool)
+    source   — Attribution string (optional)
+    as_of    — Date string (optional)
 #}
+{% if subtitle %}
+<p style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; font-style: italic; color: #7A7A72; margin: 0 0 12px 0; line-height: 1.4;">{{ subtitle }}</p>
+{% endif %}
 <table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
   {# Header row #}
   <tr style="border-top: 1px solid #D6D2CB; border-bottom: 2px solid #2C3E50;">

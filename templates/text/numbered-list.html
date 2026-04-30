@@ -2,8 +2,12 @@
   NUMBERED LIST — Theme / item list with accent-coloured ordinals.
 
   Context:
-    items — List of dicts with keys: number, title, body
+    subtitle — Optional sub-heading rendered above the list
+    items    — List of dicts with keys: number, title, body
 #}
+{% if subtitle %}
+<p style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; font-style: italic; color: #7A7A72; margin: 0 0 12px 0; line-height: 1.4;">{{ subtitle }}</p>
+{% endif %}
 {% for item in items %}
 <table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;{% if not loop.last %} margin-bottom: 16px;{% endif %}">
   <tr>

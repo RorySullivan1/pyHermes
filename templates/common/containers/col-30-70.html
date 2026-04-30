@@ -1,11 +1,11 @@
 {#
   TWO-COLUMN 30-70 CONTAINER
 
-  155px sidebar (left) + 365px main (right) with 16px gutter.
+  180px left + 420px right with 16px gutter.
 
   Context variables:
-    sidebar          — Pre-rendered component HTML for narrow left column
-    main             — Pre-rendered component HTML for wide right column
+    left             — Pre-rendered component HTML for narrow left column
+    right            — Pre-rendered component HTML for wide right column
     section_title    — Optional heading spanning both columns
     background_color — Optional hex override (default: #FFFFFF)
 #}
@@ -23,25 +23,25 @@
     </table>
 {% endif %}
     <!--[if mso]>
-    <table width="536" border="0" cellpadding="0" cellspacing="0" style="width:536px;">
+    <table width="616" border="0" cellpadding="0" cellspacing="0" style="width:616px;">
       <tr>
-        <td width="155" valign="top" style="width:155px; padding:0;">
+        <td width="180" valign="top" style="width:180px; padding:0;">
     <![endif]-->
-    <table width="155" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:155px; margin-right:16px; background-color:{{ background_color | default('#FFFFFF') }};">
+    <table width="180" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:180px; margin-right:16px; background-color:{{ background_color | default('#FFFFFF') }};">
       <tr>
         <td class="mobile-pad" style="padding:2px 16px 26px 16px; font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#3B3B3B; line-height:1.72;">
-          {{ sidebar }}
+          {{ left }}
         </td>
       </tr>
     </table>
     <!--[if mso]>
         </td>
-        <td width="365" valign="top" style="width:365px; padding:0;">
+        <td width="420" valign="top" style="width:420px; padding:0;">
     <![endif]-->
-    <table width="365" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:365px; background-color:{{ background_color | default('#FFFFFF') }};">
+    <table width="420" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:420px; background-color:{{ background_color | default('#FFFFFF') }};">
       <tr>
         <td class="mobile-pad" style="padding:2px 20px 26px 20px; font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#3B3B3B; line-height:1.72;">
-          {{ main }}
+          {{ right }}
         </td>
       </tr>
     </table>

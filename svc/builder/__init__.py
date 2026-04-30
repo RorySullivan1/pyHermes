@@ -36,6 +36,9 @@ Quick start::
 # Engine
 from .engine import TemplateEngine
 
+# Email builder
+from .email import Email, EmailBuilder
+
 # Models
 from .models import (
     EmailMetadata,
@@ -63,9 +66,6 @@ from .containers import (
     Highlight,
     TwoColumn,
 )
-
-# Email builder
-from .email import Email, EmailBuilder
 
 # Exceptions
 from .exceptions import (

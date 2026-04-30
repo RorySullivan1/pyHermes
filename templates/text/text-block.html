@@ -2,6 +2,10 @@
   TEXT BLOCK — Simple narrative prose.
 
   Context:
+    subtitle     — Optional sub-heading rendered above the prose
     text_content — Paragraph HTML or plain text
 #}
+{% if subtitle %}
+<p style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; font-style: italic; color: #7A7A72; margin: 0 0 12px 0; line-height: 1.4;">{{ subtitle }}</p>
+{% endif %}
 <p class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: #3B3B3B; line-height: 1.72; margin: 0 0 16px 0;">{{ text_content }}</p>

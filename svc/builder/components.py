@@ -62,17 +62,19 @@ class KpiStrip(Component):
     widths based on the number of items.
 
     Args:
-        items: List of KpiItem instances (2–4 items).
+        items:    List of KpiItem instances (2–4 items).
+        subtitle: Optional sub-heading rendered above the strip.
     """
 
     template_path = "analysis/kpi-strip.html"
 
-    def __init__(self, items: List[KpiItem]):
+    def __init__(self, items: List[KpiItem], subtitle: Optional[str] = None):
         if not 2 <= len(items) <= 4:
             raise ValidationError("KpiStrip requires 2–4 items.")
         for item in items:
             item.validate()
         self.items = items
+        self.subtitle = subtitle
 
     def context(self) -> Dict[str, Any]:
         return {
@@ -85,6 +87,7 @@ class KpiStrip(Component):
                 }
                 for k in self.items
             ],
+            "subtitle": self.subtitle,
         }
 
 
@@ -98,6 +101,7 @@ class DataTable(Component):
         rows:     List of TableRow instances.
         source:   Attribution string (e.g. "Source: Bloomberg").
         as_of:    Date string (e.g. "March 28, 2026").
+        subtitle: Optional sub-heading rendered above the table.
     """
 
     template_path = "analysis/data-table.html"
@@ -108,6 +112,7 @@ class DataTable(Component):
         rows: List[TableRow],
         source: str = "",
         as_of: str = "",
+        subtitle: Optional[str] = None,
     ):
         if not headers:
             raise ValidationError("DataTable requires at least one header.")
@@ -119,6 +124,7 @@ class DataTable(Component):
         self.rows = rows
         self.source = source
         self.as_of = as_of
+        self.subtitle = subtitle
 
     def context(self) -> Dict[str, Any]:
         return {
@@ -133,6 +139,7 @@ class DataTable(Component):
             ],
             "source": self.source,
             "as_of": self.as_of,
+            "subtitle": self.subtitle,
         }
 
 
@@ -141,9 +148,10 @@ class ChartBlock(Component):
     Image / chart placeholder with source attribution.
 
     Args:
-        image_url:  Full URL to the chart image.
-        alt_text:   Accessibility alt text.
-        source:     Attribution string.
+        image_url: Full URL to the chart image.
+        alt_text:  Accessibility alt text.
+        source:    Attribution string.
+        subtitle:  Optional sub-heading rendered above the chart.
     """
 
     template_path = "analysis/chart-block.html"
@@ -153,18 +161,21 @@ class ChartBlock(Component):
         image_url: str,
         alt_text: str = "Chart",
         source: str = "",
+        subtitle: Optional[str] = None,
     ):
         if not image_url:
             raise ValidationError("ChartBlock requires an image_url.")
         self.image_url = image_url
         self.alt_text = alt_text
         self.source = source
+        self.subtitle = subtitle
 
     def context(self) -> Dict[str, Any]:
         return {
             "chart_image_url": self.image_url,
             "chart_alt_text": self.alt_text,
             "chart_source": self.source,
+            "subtitle": self.subtitle,
         }
 
 
@@ -177,19 +188,24 @@ class TextBlock(Component):
     Simple narrative prose block.
 
     Args:
-        content: HTML or plain-text paragraph content.  May contain
-                 multiple ``<p>`` tags for multi-paragraph blocks.
+        content:  HTML or plain-text paragraph content.  May contain
+                  multiple ``<p>`` tags for multi-paragraph blocks.
+        subtitle: Optional sub-heading rendered above the prose.
     """
 
     template_path = "text/text-block.html"
 
-    def __init__(self, content: str):
+    def __init__(self, content: str, subtitle: Optional[str] = None):
         if not content:
             raise ValidationError("TextBlock requires content.")
         self.content = content
+        self.subtitle = subtitle
 
     def context(self) -> Dict[str, Any]:
-        return {"text_content": self.content}
+        return {
+            "text_content": self.content,
+            "subtitle": self.subtitle,
+        }
 
 
 class NumberedList(Component):
@@ -197,17 +213,19 @@ class NumberedList(Component):
     Numbered theme / item list (e.g. "Key Themes" section).
 
     Args:
-        items: List of NumberedItem instances.
+        items:    List of NumberedItem instances.
+        subtitle: Optional sub-heading rendered above the list.
     """
 
     template_path = "text/numbered-list.html"
 
-    def __init__(self, items: List[NumberedItem]):
+    def __init__(self, items: List[NumberedItem], subtitle: Optional[str] = None):
         if not items:
             raise ValidationError("NumberedList requires at least one item.")
         for item in items:
             item.validate()
         self.items = items
+        self.subtitle = subtitle
 
     def context(self) -> Dict[str, Any]:
         return {
@@ -219,6 +237,7 @@ class NumberedList(Component):
                 }
                 for it in self.items
             ],
+            "subtitle": self.subtitle,
         }
 
 
@@ -227,23 +246,32 @@ class AuthorBlock(Component):
     Author attribution byline.
 
     Args:
-        name:   Full name.
-        title:  Job title or role.
-        email:  Contact email address.
+        name:      Full name.
+        job_title: Job title or role (e.g. "Chief Market Strategist").
+        email:     Contact email address.
+        subtitle:  Optional sub-heading rendered above the byline.
     """
 
     template_path = "text/author-block.html"
 
-    def __init__(self, name: str, title: str = "", email: str = ""):
+    def __init__(
+        self,
+        name: str,
+        job_title: str = "",
+        email: str = "",
+        subtitle: Optional[str] = None,
+    ):
         if not name:
             raise ValidationError("AuthorBlock requires a name.")
         self.name = name
-        self.title = title
+        self.job_title = job_title
         self.email = email
+        self.subtitle = subtitle
 
     def context(self) -> Dict[str, Any]:
         return {
             "author_name": self.name,
-            "author_title": self.title,
+            "author_job_title": self.job_title,
             "author_email": self.email,
+            "subtitle": self.subtitle,
         }

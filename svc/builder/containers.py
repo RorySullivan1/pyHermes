@@ -4,7 +4,7 @@ Container classes for the email builder.
 A container defines the layout geometry for a section of the email —
 single column, two-column split, highlight band, etc.  Each container
 wraps one or more rendered component HTML fragments and produces a
-``<tr>`` block that drops into the main 600 px email body table.
+``<tr>`` block that drops into the main 680 px email body table.
 
 Usage:
     engine  = TemplateEngine()
@@ -55,7 +55,7 @@ class Container:
 
 class FullWidth(Container):
     """
-    Single-column, full 536 px content-width container.
+    Single-column, full 616 px content-width container.
 
     Args:
         content:          A Component instance to render inside the container.
@@ -114,19 +114,19 @@ class TwoColumn(Container):
     """
     Two-column container with configurable split ratio.
 
-    Supported ratios:
-        ``"50-50"``  — equal 260 px columns
-        ``"30-70"``  — 155 px sidebar + 365 px main
-        ``"70-30"``  — 365 px main + 155 px sidebar
+    Slots are positional: ``left`` is always the visually-left column,
+    ``right`` is always the visually-right column. The ``ratio`` string
+    determines the column widths.
 
-    For ``50-50``, pass ``left`` and ``right``.
-    For ``30-70``, pass ``sidebar`` (narrow) and ``main`` (wide).
-    For ``70-30``, pass ``main`` (wide) and ``sidebar`` (narrow).
+    Supported ratios:
+        ``"50-50"``  — equal 300 px columns
+        ``"30-70"``  — 180 px left + 420 px right
+        ``"70-30"``  — 420 px left + 180 px right
 
     Args:
         ratio:            Column ratio string.
-        left / right:     Components for 50-50 layout.
-        main / sidebar:   Components for 30-70 or 70-30 layout.
+        left:             Component rendered in the left column.
+        right:            Component rendered in the right column.
         title:            Optional section heading.
         background_color: Optional hex background override.
     """
@@ -142,8 +142,6 @@ class TwoColumn(Container):
         ratio: str = "50-50",
         left: Optional[Component] = None,
         right: Optional[Component] = None,
-        main: Optional[Component] = None,
-        sidebar: Optional[Component] = None,
         title: Optional[str] = None,
         background_color: Optional[str] = None,
     ):
@@ -154,21 +152,11 @@ class TwoColumn(Container):
         self.template_path = self._ratio_map[ratio]
         self.left = left
         self.right = right
-        self.main = main
-        self.sidebar = sidebar
 
     def render(self, engine: TemplateEngine) -> str:
         ctx = self._base_context(engine)
-
-        if self.ratio == "50-50":
-            if self.left:
-                ctx["left"] = self.left.render(engine)
-            if self.right:
-                ctx["right"] = self.right.render(engine)
-        else:
-            if self.main:
-                ctx["main"] = self.main.render(engine)
-            if self.sidebar:
-                ctx["sidebar"] = self.sidebar.render(engine)
-
+        if self.left:
+            ctx["left"] = self.left.render(engine)
+        if self.right:
+            ctx["right"] = self.right.render(engine)
         return engine.render(self.template_path, ctx)
