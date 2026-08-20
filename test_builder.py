@@ -4,20 +4,20 @@ Test script: Recreate the weekly market wrap using the OO email builder.
 """
 
 from pathlib import Path
-from svc.builder import (
-    EmailBuilder,
-    KpiStrip,
-    DataTable,
-    ChartBlock,
-    TextBlock,
-    NumberedList,
-    AuthorBlock,
-    FullWidth,
-    TwoColumn,
-    Highlight,
-)
-from svc.builder.models import KpiItem, TableRow, NumberedItem
 
+from svc.builder import (
+    AuthorBlock,
+    ChartBlock,
+    DataTable,
+    EmailBuilder,
+    FullWidth,
+    Highlight,
+    KpiStrip,
+    NumberedList,
+    TextBlock,
+    TwoColumn,
+)
+from svc.builder.models import KpiItem, NumberedItem, TableRow
 
 output = (
     EmailBuilder()
