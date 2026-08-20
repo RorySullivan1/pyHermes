@@ -3,10 +3,10 @@ pyHermes Service Layer
 ======================
 
 svc/
-├── builder/     — OO email assembly (Jinja2)
-├── gmail/       — Gmail delivery
-├── outlook/     — Outlook delivery
-└── assembler.py — Legacy flat assembler
+└── builder/     — OO email assembly (Jinja2).  The entire current product.
+
+Delivery (``gmail/``, ``outlook/``) is **planned, not built** — those
+subpackages do not exist yet.  Don't import them.
 
 Usage::
 

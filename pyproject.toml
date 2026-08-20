@@ -62,10 +62,3 @@ no_implicit_optional = true
 warn_redundant_casts = true
 warn_unused_ignores = true
 warn_unused_configs = true
-
-[[tool.mypy.overrides]]
-# svc/assembler.py is the legacy flat assembler, untyped and slated for
-# removal in #14.  Held to the baseline rather than the builder's standard.
-module = "svc.assembler"
-disallow_untyped_defs = false
-disallow_incomplete_defs = false

@@ -6,14 +6,18 @@ Object-oriented email assembly using Jinja2 templates.
 
 Quick start::
 
-    from svc import EmailBuilder, KpiStrip, TextBlock, FullWidth, Highlight
-    from svc.models import KpiItem
+    from pathlib import Path
 
+    from svc.builder import EmailBuilder, FullWidth, Highlight, KpiStrip, TextBlock
+    from svc.builder.models import KpiItem
+
+    # email_subject, firm_name and campaign_name are required; the rest of
+    # EmailMetadata is optional.  metadata() must be called before section().
     email = (EmailBuilder()
         .metadata({
             "email_subject": "Weekly Market Wrap",
             "firm_name": "Research & Strategy",
-            ...
+            "campaign_name": "weekly-wrap",
         })
         .section(Highlight(
             content=KpiStrip([
