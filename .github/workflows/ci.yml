@@ -33,6 +33,14 @@ jobs:
         # tree, which a wheel install does not carry (see #10).
         run: pip install -e ".[dev]"
 
+      - name: Tool versions
+        # Pinned in pyproject; echoed so a version drift is visible in the log
+        # rather than showing up as an unexplained failure.
+        run: |
+          ruff --version
+          mypy --version
+          pytest --version
+
       - name: Lint (ruff)
         run: ruff check .
 
