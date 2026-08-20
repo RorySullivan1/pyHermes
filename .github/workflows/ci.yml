@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A newer push to the same branch supersedes an in-flight run.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Floor from requires-python, plus the current release.
+        python-version: ["3.11", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install
+        # Editable: the engine resolves templates/ relative to the source
+        # tree, which a wheel install does not carry (see #10).
+        run: pip install -e ".[dev]"
+
+      - name: Lint (ruff)
+        run: ruff check .
+
+      - name: Format (ruff)
+        run: ruff format --check .
+
+      - name: Type-check (mypy)
+        run: mypy
+
+      - name: Unit tests (pytest)
+        run: pytest
+
+      - name: End-to-end build
+        # test_builder.py is excluded from pytest collection (it writes
+        # weekly_market_wrap_v2.html), so it runs as its own step.
+        run: python test_builder.py
+
+      - name: Fail if the build mutated tracked files
+        # The e2e run regenerates weekly_market_wrap_v2.html. If the committed
+        # copy is stale, the diff shows up here instead of drifting silently.
+        run: git diff --exit-code
