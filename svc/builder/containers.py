@@ -15,8 +15,6 @@ Usage:
 
 from __future__ import annotations
 
-from typing import Optional
-
 from .components import Component
 from .engine import TemplateEngine
 from .exceptions import ValidationError
@@ -39,8 +37,8 @@ class Container:
 
     def __init__(
         self,
-        title: Optional[str] = None,
-        background_color: Optional[str] = None,
+        title: str | None = None,
+        background_color: str | None = None,
     ):
         if background_color:
             _validate_color(background_color, "container.background_color")
@@ -83,8 +81,8 @@ class FullWidth(Container):
     def __init__(
         self,
         content: Component,
-        title: Optional[str] = None,
-        background_color: Optional[str] = None,
+        title: str | None = None,
+        background_color: str | None = None,
     ):
         super().__init__(title, background_color)
         self.content = content
@@ -113,8 +111,8 @@ class Highlight(Container):
     def __init__(
         self,
         content: Component,
-        title: Optional[str] = None,
-        background_color: Optional[str] = None,
+        title: str | None = None,
+        background_color: str | None = None,
     ):
         super().__init__(title, background_color)
         self.content = content
@@ -162,10 +160,10 @@ class TwoColumn(Container):
     def __init__(
         self,
         ratio: str = "50-50",
-        left: Optional[Component] = None,
-        right: Optional[Component] = None,
-        title: Optional[str] = None,
-        background_color: Optional[str] = None,
+        left: Component | None = None,
+        right: Component | None = None,
+        title: str | None = None,
+        background_color: str | None = None,
     ):
         super().__init__(title, background_color)
         if ratio not in self._ratio_map:

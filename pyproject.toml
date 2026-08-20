@@ -46,12 +46,10 @@ target-version = "py311"
 extend-exclude = [".claude", "*.md"]
 
 [tool.ruff.lint]
-# Ruff's defaults (E4/E7/E9 + F) plus import sorting and bugbear.
-# Deliberately NOT enabling UP (pyupgrade): it flags ~55 typing-modernization
-# rewrites (Optional[X] -> X | None, List -> list) across every module. That is
-# a worthwhile pass but its own change — bundling it here would bury the CI
-# setup in an unrelated refactor.
-select = ["E4", "E7", "E9", "F", "I", "B"]
+# Ruff's defaults (E4/E7/E9 + F) plus import sorting, bugbear, pyupgrade and
+# line length. UP is safe to enforce because requires-python is >=3.11, so the
+# PEP 604 (X | None) and PEP 585 (list[str]) forms are available everywhere.
+select = ["E4", "E7", "E9", "E501", "F", "I", "B", "UP"]
 
 [tool.mypy]
 python_version = "3.11"

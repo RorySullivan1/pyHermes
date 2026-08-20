@@ -7,7 +7,7 @@ filter registration. All template rendering flows through this class.
 
 from importlib import resources
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 import jinja2
 
@@ -45,7 +45,7 @@ class TemplateEngine:
                       inside ``svc.builder``.
     """
 
-    def __init__(self, template_dir: Optional[Path] = None):
+    def __init__(self, template_dir: Path | None = None):
         if template_dir is None:
             template_dir = _packaged_template_dir()
         self._template_dir = Path(template_dir).resolve()
@@ -98,7 +98,7 @@ class TemplateEngine:
         except jinja2.TemplateNotFound as exc:
             raise TemplateError(f"Template not found: {name}") from exc
 
-    def render(self, template_name: str, context: Dict[str, Any]) -> str:
+    def render(self, template_name: str, context: dict[str, Any]) -> str:
         """
         Load a template and render it with the given context.
 
@@ -118,7 +118,7 @@ class TemplateEngine:
         except jinja2.TemplateError as exc:
             raise TemplateError(f"Error rendering {template_name}: {exc}") from exc
 
-    def render_string(self, source: str, context: Dict[str, Any]) -> str:
+    def render_string(self, source: str, context: dict[str, Any]) -> str:
         """
         Render a raw Jinja2 string (not from a file).
 

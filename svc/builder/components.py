@@ -13,11 +13,11 @@ Usage:
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .engine import TemplateEngine
 from .exceptions import ValidationError
-from .models import KpiItem, NumberedItem, TableRow
+from .models import KpiItem, NumberedItem, TableRow, _validate_url
 
 
 class Component:
@@ -29,7 +29,7 @@ class Component:
 
     template_path: str = ""  # e.g. "analysis/kpi-strip.html"
 
-    def context(self) -> Dict[str, Any]:
+    def context(self) -> dict[str, Any]:
         """Return the template context dict for this component."""
         raise NotImplementedError
 
@@ -67,7 +67,7 @@ class KpiStrip(Component):
 
     template_path = "analysis/kpi-strip.html"
 
-    def __init__(self, items: List[KpiItem], subtitle: Optional[str] = None):
+    def __init__(self, items: list[KpiItem], subtitle: str | None = None):
         if not 2 <= len(items) <= 4:
             raise ValidationError("KpiStrip requires 2–4 items.")
         for item in items:
@@ -75,7 +75,7 @@ class KpiStrip(Component):
         self.items = items
         self.subtitle = subtitle
 
-    def context(self) -> Dict[str, Any]:
+    def context(self) -> dict[str, Any]:
         return {
             "kpis": [
                 {
@@ -107,11 +107,11 @@ class DataTable(Component):
 
     def __init__(
         self,
-        headers: List[str],
-        rows: List[TableRow],
+        headers: list[str],
+        rows: list[TableRow],
         source: str = "",
         as_of: str = "",
-        subtitle: Optional[str] = None,
+        subtitle: str | None = None,
     ):
         if not headers:
             raise ValidationError("DataTable requires at least one header.")
@@ -130,7 +130,7 @@ class DataTable(Component):
         self.as_of = as_of
         self.subtitle = subtitle
 
-    def context(self) -> Dict[str, Any]:
+    def context(self) -> dict[str, Any]:
         return {
             "headers": self.headers,
             "rows": [
@@ -165,16 +165,17 @@ class ChartBlock(Component):
         image_url: str,
         alt_text: str = "Chart",
         source: str = "",
-        subtitle: Optional[str] = None,
+        subtitle: str | None = None,
     ):
         if not image_url:
             raise ValidationError("ChartBlock requires an image_url.")
+        _validate_url(image_url, "chart.image_url")
         self.image_url = image_url
         self.alt_text = alt_text
         self.source = source
         self.subtitle = subtitle
 
-    def context(self) -> Dict[str, Any]:
+    def context(self) -> dict[str, Any]:
         return {
             "chart_image_url": self.image_url,
             "chart_alt_text": self.alt_text,
@@ -200,13 +201,13 @@ class TextBlock(Component):
 
     template_path = "text/text-block.html"
 
-    def __init__(self, content: str, subtitle: Optional[str] = None):
+    def __init__(self, content: str, subtitle: str | None = None):
         if not content:
             raise ValidationError("TextBlock requires content.")
         self.content = content
         self.subtitle = subtitle
 
-    def context(self) -> Dict[str, Any]:
+    def context(self) -> dict[str, Any]:
         return {
             "text_content": self.content,
             "subtitle": self.subtitle,
@@ -224,7 +225,7 @@ class NumberedList(Component):
 
     template_path = "text/numbered-list.html"
 
-    def __init__(self, items: List[NumberedItem], subtitle: Optional[str] = None):
+    def __init__(self, items: list[NumberedItem], subtitle: str | None = None):
         if not items:
             raise ValidationError("NumberedList requires at least one item.")
         for item in items:
@@ -232,7 +233,7 @@ class NumberedList(Component):
         self.items = items
         self.subtitle = subtitle
 
-    def context(self) -> Dict[str, Any]:
+    def context(self) -> dict[str, Any]:
         return {
             "items": [
                 {
@@ -264,7 +265,7 @@ class AuthorBlock(Component):
         name: str,
         job_title: str = "",
         email: str = "",
-        subtitle: Optional[str] = None,
+        subtitle: str | None = None,
     ):
         if not name:
             raise ValidationError("AuthorBlock requires a name.")
@@ -273,7 +274,7 @@ class AuthorBlock(Component):
         self.email = email
         self.subtitle = subtitle
 
-    def context(self) -> Dict[str, Any]:
+    def context(self) -> dict[str, Any]:
         return {
             "author_name": self.name,
             "author_job_title": self.job_title,

@@ -121,9 +121,12 @@ non-fluent `Email` class works identically.
   - **Attributes** (`src`, `href`, `alt`, `<title>`) are always escaped, quotes included,
     so a value cannot break out of the attribute it sits in.
 
-  Caveat: `escape_html` is HTML escaping, not URL validation. A URL interpolated into a
-  CSS `url(...)` inside a `style` attribute (the header background image) is safe from
-  attribute breakout, but validating URL *schemes* is a separate concern and is not done.
+- **URL schemes are validated** (#24) — escaping keeps a URL inside its attribute; it says
+  nothing about what the URL does when followed. `models._validate_url()` allows `http`,
+  `https`, `mailto`, `cid` and relative URLs, and rejects everything else (`javascript:`,
+  `data:`, `vbscript:`, `file:`) with `ValidationError` at construction. Applies to the five
+  `EmailMetadata` URL fields and `ChartBlock.image_url`. Scheme only — whether a URL
+  resolves, and its host/path, are not checked.
 - **Hex-color enforcement** — colors use `#RRGGBB` everywhere. Validated by
   [models._validate_color()](svc/builder/models.py) at construction time and by the
   `validate_hex_color` filter ([svc/builder/filters.py](svc/builder/filters.py)) in templates.

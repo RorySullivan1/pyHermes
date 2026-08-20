@@ -20,7 +20,7 @@ Provides two usage patterns:
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 from .containers import Container
 from .engine import TemplateEngine
@@ -48,8 +48,8 @@ class Email:
 
     def __init__(
         self,
-        metadata: Union[Dict[str, Any], EmailMetadata],
-        template_dir: Optional[Path] = None,
+        metadata: dict[str, Any] | EmailMetadata,
+        template_dir: Path | None = None,
     ):
         self._engine = TemplateEngine(template_dir)
 
@@ -63,13 +63,13 @@ class Email:
         # confusing render-time symptom.
         self._metadata.validate()
 
-        self._sections: List[Container] = []
+        self._sections: list[Container] = []
 
     # ------------------------------------------------------------------
     # Building
     # ------------------------------------------------------------------
 
-    def add_section(self, container: Container) -> "Email":
+    def add_section(self, container: Container) -> Email:
         """
         Append a section (container + component) to the email.
 
@@ -159,16 +159,16 @@ class EmailBuilder:
         email.save(Path("output.html"))
     """
 
-    def __init__(self, template_dir: Optional[Path] = None):
+    def __init__(self, template_dir: Path | None = None):
         self._template_dir = template_dir
-        self._email: Optional[Email] = None
+        self._email: Email | None = None
 
-    def metadata(self, data: Union[Dict[str, Any], EmailMetadata]) -> "EmailBuilder":
+    def metadata(self, data: dict[str, Any] | EmailMetadata) -> EmailBuilder:
         """Set email metadata and initialise the Email instance."""
         self._email = Email(metadata=data, template_dir=self._template_dir)
         return self
 
-    def section(self, container: Container) -> "EmailBuilder":
+    def section(self, container: Container) -> EmailBuilder:
         """Append a section."""
         if self._email is None:
             raise RuntimeError("Call .metadata() before adding sections.")

@@ -23,8 +23,12 @@ output = (
     EmailBuilder()
     .metadata(
         {
-            "preheader_text": "Weekly perspective: equity markets, rates, and positioning for the week ahead.",
-            "header_disclaimer": "For informational purposes only. Does not constitute investment advice.",
+            "preheader_text": (
+                "Weekly perspective: equity markets, rates, and positioning for the week ahead."
+            ),
+            "header_disclaimer": (
+                "For informational purposes only. Does not constitute investment advice."
+            ),
             "header_bg_image_url": "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=680&q=80&auto=format",
             "logo_url": "https://via.placeholder.com/90x36/FFFFFF/2C3E50?text=LOGO",
             "firm_name": "Weekly QIS Wrap",
@@ -32,9 +36,17 @@ output = (
             "email_subject": "[Weekly Market Perspective] — March 28th 2026 - Barclays QIS ",
             "date_range": "March 28th 2026",
             "issue_label": "Vol. 1 · No. 10",
-            "contact_description": "Our research and strategy team is available to discuss the themes covered in this report or answer questions about your portfolio.",
+            "contact_description": (
+                "Our research and strategy team is available to discuss the themes "
+                "covered in this report or answer questions about your portfolio."
+            ),
             "contact_url": "https://example.com/contact",
-            "footer_disclaimer": "This material is provided for informational purposes only and does not constitute investment advice, an offer, or a solicitation. Past performance is not indicative of future results. For institutional and professional investor use only. Not for redistribution.",
+            "footer_disclaimer": (
+                "This material is provided for informational purposes only and does "
+                "not constitute investment advice, an offer, or a solicitation. Past "
+                "performance is not indicative of future results. For institutional "
+                "and professional investor use only. Not for redistribution."
+            ),
             "current_year": "2026",
             "unsubscribe_url": "https://example.com/unsubscribe",
             "view_in_browser_url": "https://example.com/view-in-browser",

@@ -8,7 +8,7 @@ metadata for the email skeleton, typed data for each component, etc.
 
 import re
 from dataclasses import asdict, dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .exceptions import ValidationError
 
@@ -27,6 +27,34 @@ def _validate_color(value: str, name: str) -> None:
     """Raise if value is not a valid hex color."""
     if not re.match(r"^#[0-9A-Fa-f]{6}$", value):
         raise ValidationError(f"'{name}' must be a hex color (e.g. #4A7C59), got: {value}")
+
+
+# Schemes safe to emit into an href/src in an HTML email.  `cid` covers
+# images embedded as MIME parts.
+_ALLOWED_URL_SCHEMES = frozenset({"http", "https", "mailto", "cid"})
+
+
+def _validate_url(value: str, name: str) -> None:
+    """
+    Raise if value carries a scheme that is unsafe in an href/src.
+
+    Escaping (#12) stops a URL breaking *out* of its attribute; it does
+    nothing about what the URL then does when followed, which is what this
+    checks.  Empty is allowed — every URL field in the builder is optional.
+
+    Scheme-only: whether the URL resolves, and what its host or path are,
+    is not this function's business.
+    """
+    if not value:
+        return
+    scheme, separator, _ = value.partition(":")
+    if not separator:
+        return  # relative URL — no scheme to object to
+    if scheme.lower().strip() not in _ALLOWED_URL_SCHEMES:
+        allowed = ", ".join(sorted(_ALLOWED_URL_SCHEMES))
+        raise ValidationError(
+            f"'{name}' uses unsupported URL scheme '{scheme}'; allowed: {allowed}. Got: {value!r}"
+        )
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -59,11 +87,19 @@ class EmailMetadata:
     view_in_browser_url: str = ""
 
     def validate(self) -> None:
-        """Validate required fields."""
+        """Validate required fields and URL schemes."""
         for fname in ("email_subject", "firm_name", "campaign_name"):
             _require(getattr(self, fname), fname)
+        for fname in (
+            "logo_url",
+            "header_bg_image_url",
+            "contact_url",
+            "unsubscribe_url",
+            "view_in_browser_url",
+        ):
+            _validate_url(getattr(self, fname), f"metadata.{fname}")
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
 
@@ -91,8 +127,8 @@ class KpiItem:
 class TableRow:
     """A single row in a data table."""
 
-    cells: List[str] = field(default_factory=list)
-    colors: List[str] = field(default_factory=list)
+    cells: list[str] = field(default_factory=list)
+    colors: list[str] = field(default_factory=list)
 
     def validate(self) -> None:
         # colors is index-aligned with cells; the template indexes it directly
@@ -142,9 +178,9 @@ class SectionConfig:
 
     container: str
     component: str
-    data: Dict[str, Any] = field(default_factory=dict)
-    title: Optional[str] = None
-    background_color: Optional[str] = None
+    data: dict[str, Any] = field(default_factory=dict)
+    title: str | None = None
+    background_color: str | None = None
 
     def validate(self) -> None:
         _require(self.container, "section.container")
