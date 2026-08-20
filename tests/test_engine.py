@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 
 from svc.builder.engine import TemplateEngine
-from svc.builder.exceptions import EmailBuilderError, TemplateError
+from svc.builder.exceptions import EmailBuilderError, TemplateError, ValidationError
 
 
 class TestConstruction:
@@ -106,29 +106,36 @@ class TestFilters:
         assert engine.render_string("{{ c | validate_hex_color }}", {"c": "#4A7C59"}) == "#4A7C59"
 
     def test_validate_hex_color_rejects_invalid(self, engine):
-        # Documents CURRENT behavior: the filter raises a bare ValueError,
-        # which is not a jinja2.TemplateError, so the engine's except clause
-        # does not wrap it.  See the xfail below for the contract this breaks.
-        with pytest.raises(ValueError, match="Invalid hex color"):
+        # Regression: #18 — this used to be a bare ValueError.
+        with pytest.raises(ValidationError, match="invalid hex color"):
             engine.render_string("{{ c | validate_hex_color }}", {"c": "red"})
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason=(
-            "Known defect, not yet filed: filters.py raises bare ValueError, so a "
-            "bad color in a template escapes the documented 'catch EmailBuilderError "
-            "for anything the builder rejected' contract. Same defect class as #8, "
-            "which fixed it for TwoColumn's ratio. Remove this marker when fixed."
-        ),
-    )
-    def test_filter_errors_should_be_catchable_as_the_base_class(self, engine):
+    def test_validate_hex_color_rejects_non_strings(self, engine):
+        with pytest.raises(ValidationError, match="must be a string"):
+            engine.render_string("{{ c | validate_hex_color }}", {"c": 123})
+
+    def test_filter_errors_are_catchable_as_the_base_class(self, engine):
+        # The contract CLAUDE.md states: catch EmailBuilderError for anything
+        # the builder rejected. A bare ValueError escaped it (#18).
         with pytest.raises(EmailBuilderError):
             engine.render_string("{{ c | validate_hex_color }}", {"c": "red"})
 
-    @pytest.mark.xfail(strict=True, reason="Same bare-ValueError defect as above.")
-    def test_default_color_errors_should_be_catchable_as_the_base_class(self, engine):
+    def test_default_color_errors_are_catchable_as_the_base_class(self, engine):
         with pytest.raises(EmailBuilderError):
             engine.render_string("{{ c | default_color }}", {"c": "not-a-color"})
+
+    def test_default_color_validates_its_fallback(self, engine):
+        with pytest.raises(ValidationError):
+            engine.render_string("{{ c | default_color('nope') }}", {"c": ""})
+
+    def test_filter_errors_propagate_as_validation_not_template_errors(self, engine):
+        # A deliberate choice (#18): a bad colour is a *data* failure, so it
+        # surfaces as ValidationError rather than being re-wrapped as
+        # TemplateError by engine.render. Both satisfy the base-class
+        # contract; this pins which one callers actually see.
+        with pytest.raises(ValidationError):
+            engine.render_string("{{ c | validate_hex_color }}", {"c": "red"})
+        assert not issubclass(ValidationError, TemplateError)
 
     def test_default_color_falls_back(self, engine):
         assert engine.render_string("{{ c | default_color }}", {"c": ""}) == "#5A5A5A"

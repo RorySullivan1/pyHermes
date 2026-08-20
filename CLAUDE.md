@@ -140,7 +140,15 @@ Validation runs at **construction time**, not render time. Models (`KpiItem`, `T
 
 All errors inherit from [EmailBuilderError](svc/builder/exceptions.py): `TemplateError`
 (Jinja load/render), `ValidationError` (data shape), `SizeError` (102 KB limit). Catch the
-base class for "anything the builder rejected."
+base class for "anything the builder rejected" — that now holds without exception, including
+inside a template render: the `validate_hex_color` / `default_color` filters raise
+`ValidationError`, not a bare `ValueError` (#18). A filter's `ValidationError` propagates
+out of the render as-is rather than being re-wrapped as `TemplateError`: it is a data
+failure, not a template one.
+
+The one deliberate exception is `EmailBuilder`'s `RuntimeError` for calling `section()` or
+`build()` before `metadata()` — a programming error in the call sequence, not rejected
+data.
 
 ## Gotchas
 
@@ -188,7 +196,6 @@ Reach for these rather than improvising:
 
 ## Open work
 
-- Tracked in [GitHub issues](https://github.com/RorySullivan1/pyHermes/issues). Open as of
-  this writing: #12 (HTML-escaping helper),
-  #18 (`filters.py` raises bare `ValueError`).
+- Tracked in [GitHub issues](https://github.com/RorySullivan1/pyHermes/issues). None open as
+  of this writing.
 - Current project state and decisions: [.claude/memory/INDEX.md](.claude/memory/INDEX.md).
