@@ -5,6 +5,8 @@ Everything Jinja2 raises should surface as TemplateError so callers can
 catch EmailBuilderError for anything the builder rejected.
 """
 
+from pathlib import Path
+
 import pytest
 
 from svc.builder.engine import TemplateEngine
@@ -12,9 +14,38 @@ from svc.builder.exceptions import EmailBuilderError, TemplateError
 
 
 class TestConstruction:
-    def test_defaults_to_the_repo_templates_dir(self, engine):
+    def test_defaults_to_the_packaged_templates_dir(self, engine):
         assert engine.template_dir.is_dir()
         assert (engine.template_dir / "base.html").is_file()
+
+    def test_templates_live_inside_the_package(self, engine):
+        # Regression: #10 — templates used to sit at the repo root and were
+        # resolved by walking up three parents, so they were absent from a
+        # wheel install. They must resolve *inside* svc/builder for the
+        # package to be installable without a source tree.
+        import svc.builder
+
+        package_dir = Path(svc.builder.__file__).resolve().parent
+        assert engine.template_dir.is_relative_to(package_dir)
+
+    def test_all_templates_are_packaged(self, engine):
+        # Every template the components reference must ship with the package.
+        expected = {
+            "base.html",
+            "analysis/kpi-strip.html",
+            "analysis/data-table.html",
+            "analysis/chart-block.html",
+            "text/text-block.html",
+            "text/numbered-list.html",
+            "text/author-block.html",
+            "common/containers/full-width.html",
+            "common/containers/highlight.html",
+            "common/containers/col-50-50.html",
+            "common/containers/col-30-70.html",
+            "common/containers/col-70-30.html",
+        }
+        missing = {t for t in expected if not (engine.template_dir / t).is_file()}
+        assert not missing, f"templates missing from the package: {sorted(missing)}"
 
     def test_missing_template_dir_raises(self, tmp_path):
         with pytest.raises(TemplateError, match="Template directory not found"):

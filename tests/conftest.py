@@ -15,7 +15,7 @@ from svc.builder.models import KpiItem, NumberedItem, TableRow
 
 @pytest.fixture(scope="session")
 def engine() -> TemplateEngine:
-    """A TemplateEngine pointed at the repo's real templates/ directory.
+    """A TemplateEngine pointed at the templates/ packaged in svc.builder.
 
     Session-scoped: the engine is stateless for our purposes and Jinja2
     caches compiled templates, so sharing it keeps the suite fast.
