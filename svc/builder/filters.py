@@ -1,7 +1,25 @@
 """
 Custom Jinja2 filters and tests for the email builder.
+
+**Escaping contract.** Jinja2 ``autoescape`` is OFF — HTML emails need raw
+output, and rich fields are meant to carry markup.  Escaping is therefore
+explicit, and split by field kind:
+
+* **Plain-text fields** (section titles, subtitles, KPI labels/values, table
+  headers and cells, chart alt text and sources, author details, and the
+  plain metadata fields) are escaped **by the builder**, in the templates,
+  via the ``escape_html`` filter.  Pass these as raw text — do *not*
+  pre-escape them, or they will be double-escaped.
+* **HTML fields** (``TextBlock.content``, ``NumberedItem.body``, and the
+  metadata disclaimers) are emitted raw, because callers deliberately pass
+  markup.  **The caller is responsible for escaping anything untrusted in
+  them** — use :func:`escape_html` for that.
+* **Attributes** (``src``, ``href``, ``alt``, ``<title>``) are always escaped
+  by the builder, including quotes, so a value can never break out of the
+  attribute it sits in.
 """
 
+import html
 import re
 from typing import Any
 
@@ -21,6 +39,33 @@ def validate_hex_color(value: str) -> str:
     if not re.match(r"^#[0-9A-Fa-f]{6}$", value):
         raise ValueError(f"Invalid hex color: {value}")
     return value
+
+
+def escape_html(value: Any) -> str:
+    """
+    Escape text for safe interpolation into HTML, attributes included.
+
+    Escapes ``&``, ``<``, ``>``, ``"`` and ``'``, so the result is safe both
+    in element content and inside a quoted attribute value.
+
+    Use this on any untrusted text destined for an HTML field
+    (``TextBlock.content``, ``NumberedItem.body``): those are emitted raw by
+    design, so escaping them is the caller's job.  Plain-text fields are
+    already escaped by the templates — escaping them again double-escapes.
+
+    Usage in templates::
+
+        {{ section_title | escape_html }}
+
+    Usage from Python::
+
+        from svc.builder.filters import escape_html
+
+        TextBlock(f"<p>{escape_html(untrusted_headline)}</p>")
+    """
+    if value is None:
+        return ""
+    return html.escape(str(value), quote=True)
 
 
 def size_kb(value: str) -> float:
@@ -52,6 +97,7 @@ def register_all(env: jinja2.Environment) -> None:
     Args:
         env: jinja2.Environment instance
     """
+    env.filters["escape_html"] = escape_html
     env.filters["validate_hex_color"] = validate_hex_color
     env.filters["size_kb"] = size_kb
     env.filters["default_color"] = default_color

@@ -53,7 +53,13 @@ output = (
             title="Market Snapshot",
         )
     )
-    # 2. Narrative text block
+    # 2. Narrative text block.
+    #    TextBlock content and NumberedItem body are HTML fields: they are
+    #    emitted raw so callers can pass markup, which means escaping is the
+    #    caller's job -- hence the literal &amp; below. Plain-text fields
+    #    (titles, KPI labels, table cells) are escaped by the builder, so they
+    #    take raw text. See svc/builder/filters.py for the full contract, and
+    #    escape_html() for escaping untrusted text destined for an HTML field.
     .section(
         FullWidth(
             content=TextBlock(
@@ -153,7 +159,7 @@ output = (
                     NumberedItem(
                         "2",
                         "Market Breadth Improving",
-                        "The percentage of S&P 500 constituents trading above their "
+                        "The percentage of S&amp;P 500 constituents trading above their "
                         "200-day moving average rose to 68%, up from 54% at the February "
                         "low. Small-cap participation also improved, with the Russell 2000 "
                         "outperforming large caps by 82 bps on the week.",

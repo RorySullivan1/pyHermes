@@ -107,8 +107,23 @@ non-fluent `Email` class works identically.
 - **Jinja2 `StrictUndefined`** — [TemplateEngine](svc/builder/engine.py) fails fast on a
   missing template variable. New template vars need a matching key in the component's
   `context()` dict, or the render raises.
-- **Autoescape is OFF** — HTML emails need raw output. Any user-supplied text in component
-  data must be **pre-escaped by the caller** (see `&amp;` in [test_builder.py](test_builder.py)).
+- **Autoescape is OFF, and escaping is split by field kind** (#12). HTML emails need raw
+  output, so escaping is explicit rather than automatic:
+  - **Plain-text fields are escaped by the builder**, in the templates, via the
+    `escape_html` filter — section titles, subtitles, KPI labels/values/sublabels, table
+    headers/cells/source/as-of, chart alt text and source, author name/title/email,
+    numbered-item number and title, and the plain metadata fields. **Pass these as raw
+    text**; pre-escaping them now double-escapes (`&` would render as `&amp;`).
+  - **HTML fields are emitted raw**, because callers deliberately pass markup:
+    `TextBlock.content`, `NumberedItem.body`, and the metadata disclaimers. **Escaping
+    untrusted text in these is the caller's job** — use
+    [escape_html()](svc/builder/filters.py) (`from svc.builder.filters import escape_html`).
+  - **Attributes** (`src`, `href`, `alt`, `<title>`) are always escaped, quotes included,
+    so a value cannot break out of the attribute it sits in.
+
+  Caveat: `escape_html` is HTML escaping, not URL validation. A URL interpolated into a
+  CSS `url(...)` inside a `style` attribute (the header background image) is safe from
+  attribute breakout, but validating URL *schemes* is a separate concern and is not done.
 - **Hex-color enforcement** — colors use `#RRGGBB` everywhere. Validated by
   [models._validate_color()](svc/builder/models.py) at construction time and by the
   `validate_hex_color` filter ([svc/builder/filters.py](svc/builder/filters.py)) in templates.
