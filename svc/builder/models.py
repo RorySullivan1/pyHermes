@@ -8,7 +8,7 @@ metadata for the email skeleton, typed data for each component, etc.
 
 import re
 from dataclasses import asdict, dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .exceptions import ValidationError
 
@@ -99,7 +99,7 @@ class EmailMetadata:
         ):
             _validate_url(getattr(self, fname), f"metadata.{fname}")
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
 
@@ -127,8 +127,8 @@ class KpiItem:
 class TableRow:
     """A single row in a data table."""
 
-    cells: List[str] = field(default_factory=list)
-    colors: List[str] = field(default_factory=list)
+    cells: list[str] = field(default_factory=list)
+    colors: list[str] = field(default_factory=list)
 
     def validate(self) -> None:
         # colors is index-aligned with cells; the template indexes it directly
@@ -178,9 +178,9 @@ class SectionConfig:
 
     container: str
     component: str
-    data: Dict[str, Any] = field(default_factory=dict)
-    title: Optional[str] = None
-    background_color: Optional[str] = None
+    data: dict[str, Any] = field(default_factory=dict)
+    title: str | None = None
+    background_color: str | None = None
 
     def validate(self) -> None:
         _require(self.container, "section.container")
