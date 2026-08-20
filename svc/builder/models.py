@@ -90,6 +90,14 @@ class TableRow:
     colors: List[str] = field(default_factory=list)
 
     def validate(self) -> None:
+        # colors is index-aligned with cells; the template indexes it directly
+        # (row.colors[loop.index0]), so a short list raises under StrictUndefined.
+        # Empty means "no colors" and is allowed.
+        if self.colors and len(self.colors) != len(self.cells):
+            raise ValidationError(
+                f"'table_row.colors' must be empty or the same length as 'cells' "
+                f"({len(self.cells)}), got {len(self.colors)}."
+            )
         for c in self.colors:
             if c:
                 _validate_color(c, "table_row.color")

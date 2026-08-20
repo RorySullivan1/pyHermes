@@ -19,6 +19,8 @@ from typing import Optional
 
 from .engine import TemplateEngine
 from .components import Component
+from .exceptions import ValidationError
+from .models import _validate_color
 
 
 class Container:
@@ -28,6 +30,9 @@ class Container:
     Subclasses set ``template_path`` and implement ``context()``.
     Every container may optionally have a section title and
     background-color override.
+
+    Raises:
+        ValidationError: If ``background_color`` is not a ``#RRGGBB`` hex color.
     """
 
     template_path: str = ""
@@ -37,14 +42,24 @@ class Container:
         title: Optional[str] = None,
         background_color: Optional[str] = None,
     ):
+        if background_color:
+            _validate_color(background_color, "container.background_color")
         self.title = title
         self.background_color = background_color
 
     def _base_context(self, engine: TemplateEngine) -> dict:
-        """Shared context keys injected into every container template."""
-        ctx = {}
-        if self.title:
-            ctx["section_title"] = self.title
+        """
+        Shared context keys injected into every container template.
+
+        ``section_title`` is always injected — the templates gate on it with
+        ``{% if section_title %}``, and under ``StrictUndefined`` an *undefined*
+        name raises rather than testing falsey.  Empty string = no title.
+
+        ``background_color`` is injected only when set: the templates supply
+        their own tint via ``| default(...)``, which only substitutes for an
+        undefined value, not an empty one.
+        """
+        ctx = {"section_title": self.title or ""}
         if self.background_color:
             ctx["background_color"] = self.background_color
         return ctx
@@ -123,12 +138,19 @@ class TwoColumn(Container):
         ``"30-70"``  — 180 px left + 420 px right
         ``"70-30"``  — 420 px left + 180 px right
 
+    At least one of ``left`` / ``right`` must be supplied; an omitted column
+    renders as an empty cell.
+
     Args:
         ratio:            Column ratio string.
         left:             Component rendered in the left column.
         right:            Component rendered in the right column.
         title:            Optional section heading.
-        background_color: Optional hex background override.
+        background_color: Optional hex background override (``#RRGGBB``).
+
+    Raises:
+        ValidationError: On an unsupported ratio, a non-hex background color,
+            or when both columns are omitted.
     """
 
     _ratio_map = {
@@ -147,16 +169,23 @@ class TwoColumn(Container):
     ):
         super().__init__(title, background_color)
         if ratio not in self._ratio_map:
-            raise ValueError(f"Unsupported ratio '{ratio}'. Use: {list(self._ratio_map)}")
+            raise ValidationError(
+                f"Unsupported ratio '{ratio}'. Use: {list(self._ratio_map)}"
+            )
+        if left is None and right is None:
+            raise ValidationError(
+                "TwoColumn requires at least one of 'left' or 'right'."
+            )
         self.ratio = ratio
         self.template_path = self._ratio_map[ratio]
         self.left = left
         self.right = right
 
     def render(self, engine: TemplateEngine) -> str:
+        # Both keys are always injected: the column templates emit {{ left }}
+        # and {{ right }} unconditionally, so a missing key would raise under
+        # StrictUndefined.  An omitted column renders as an empty cell.
         ctx = self._base_context(engine)
-        if self.left:
-            ctx["left"] = self.left.render(engine)
-        if self.right:
-            ctx["right"] = self.right.render(engine)
+        ctx["left"] = self.left.render(engine) if self.left else ""
+        ctx["right"] = self.right.render(engine) if self.right else ""
         return engine.render(self.template_path, ctx)

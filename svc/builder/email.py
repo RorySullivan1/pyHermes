@@ -41,6 +41,10 @@ class Email:
         metadata:     Dict or EmailMetadata with skeleton-level variables.
         template_dir: Path to the ``templates/`` directory.  Defaults to
                       ``<project_root>/templates/``.
+
+    Raises:
+        ValidationError: If required metadata (``email_subject``, ``firm_name``,
+            ``campaign_name``) is missing or empty.
     """
 
     def __init__(
@@ -54,6 +58,11 @@ class Email:
             self._metadata = EmailMetadata(**metadata)
         else:
             self._metadata = metadata
+
+        # Validation happens at construction time, not render time, so a
+        # missing required field names itself instead of surfacing later as a
+        # confusing render-time symptom.
+        self._metadata.validate()
 
         self._sections: List[Container] = []
 

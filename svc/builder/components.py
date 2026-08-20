@@ -118,8 +118,13 @@ class DataTable(Component):
             raise ValidationError("DataTable requires at least one header.")
         if not rows:
             raise ValidationError("DataTable requires at least one row.")
-        for row in rows:
+        for i, row in enumerate(rows):
             row.validate()
+            if len(row.cells) != len(headers):
+                raise ValidationError(
+                    f"DataTable row {i} has {len(row.cells)} cells but there are "
+                    f"{len(headers)} headers; the table would render misaligned."
+                )
         self.headers = headers
         self.rows = rows
         self.source = source
