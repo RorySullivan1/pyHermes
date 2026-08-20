@@ -16,15 +16,21 @@ subpackages, but they do not exist — treat them as planned, not present. Don't
 ## Commands
 
 ```bash
-pip install -e .              # editable install — makes `svc` importable everywhere (see Gotchas)
-python test_builder.py        # the de facto integration test — see below
+pip install -e ".[dev]"       # editable install + pytest/ruff/mypy (see Gotchas)
+pytest                        # unit suite — validation, error paths, size limits
+ruff check . && ruff format --check .
+mypy                          # config in pyproject: files = ["svc"]
+python test_builder.py        # end-to-end smoke test — see below
 ```
 
-There is **no test framework** (no pytest/ruff/mypy). `test_builder.py` is the de facto
-integration test: it rebuilds `weekly_market_wrap_v2.html` end-to-end through the full
-pipeline (metadata → containers → components → skeleton → size check), prints the rendered
-size, and warns above 90 KB. Run it after any change to `svc/builder/` or `templates/`,
-then open the output in a browser to verify visually.
+CI runs all five on every PR ([.github/workflows/ci.yml](.github/workflows/ci.yml)).
+
+`test_builder.py` is the end-to-end smoke test: it rebuilds `weekly_market_wrap_v2.html`
+through the full pipeline (metadata → containers → components → skeleton → size check),
+prints the rendered size, and warns above 90 KB. It is deliberately **excluded from pytest
+collection** (`testpaths = ["tests"]`) because it writes that file as a side effect — run it
+separately after any change to `svc/builder/` or `templates/`, then open the output in a
+browser to verify visually. CI fails if the run leaves the committed copy stale.
 
 Slash commands (from the `.claude/` library): `/version-set`, `/version-ship`, `/reindex`.
 
@@ -41,25 +47,24 @@ svc/
 │   ├── models.py       — EmailMetadata, KpiItem, TableRow, NumberedItem, SectionConfig
 │   ├── filters.py      — Jinja filters (e.g. validate_hex_color)
 │   └── exceptions.py   — EmailBuilderError hierarchy
-└── assembler.py        ← legacy flat string-replace assembler (reference only — do NOT extend)
 templates/
 ├── base.html                    — the rendered skeleton (one hole: {{ sections_html }})
 ├── common/containers/*.html     — layout geometry (full-width, highlight, col-50-50/30-70/70-30)
 ├── analysis/*.html              — data components (kpi-strip, data-table, chart-block)
 └── text/*.html                  — text components (text-block, numbered-list, author-block)
-test_builder.py         — integration test; regenerates weekly_market_wrap_v2.html
-dev/TODO.md             — active fixes
+test_builder.py         — end-to-end smoke test; regenerates weekly_market_wrap_v2.html
+tests/                  — pytest unit suite (validation, error paths, size limits)
+.github/workflows/      — CI: ruff, mypy, pytest, end-to-end build
 .claude/                — curated tooling library (skills, agents, commands, hooks, memory)
 ```
 
 ## Architecture — `svc/builder`
 
-There are **two parallel implementations** and they are not interchangeable:
+`svc/builder/` is the only implementation. Its public surface is re-exported from
+[svc/builder/__init__.py](svc/builder/__init__.py).
 
-- **`svc/builder/`** — the current object-oriented API. Use this for all new work. Public
-  surface re-exported from [svc/builder/__init__.py](svc/builder/__init__.py).
-- **`svc/assembler.py`** — a legacy flat string-replace assembler kept for reference.
-  Do not extend it; port to the OO builder instead.
+(A legacy flat string-replace assembler, `svc/assembler.py`, was removed in #14. It is
+recoverable from git history if ever needed for reference.)
 
 ### The three-layer composition model
 
@@ -128,8 +133,7 @@ base class for "anything the builder rejected."
   via `Path(__file__).resolve().parent.parent.parent / "templates"`, which works for editable
   installs (source tree) but breaks for a wheel install. Stick with `pip install -e .`.
 - **Import path.** Use `from svc.builder import …` / `from svc.builder.models import …`.
-  The docstring in `svc/builder/__init__.py` showing `from svc import …` / `from svc.models
-  import …` is **stale and wrong** — follow `test_builder.py`, not that docstring.
+  `svc/__init__.py` re-exports nothing, and there is no `svc.models`.
 - **The rendered skeleton is `templates/base.html`.** `templates/common/skeletons/base.html`
   exists but is NOT rendered — the engine's `FileSystemLoader` root is `templates/` and it
   loads `"base.html"`.
@@ -168,7 +172,7 @@ Reach for these rather than improvising:
 
 ## Open work
 
-- [dev/TODO.md](dev/TODO.md) — active fixes. Currently a section-title/content padding bug in
-  `full-width.html` and `highlight.html` (only partially applied) plus an invalid comma-form
-  `padding` in `highlight.html`.
+- Tracked in [GitHub issues](https://github.com/RorySullivan1/pyHermes/issues). Open as of
+  this writing: #10 (package `templates/` with the wheel), #12 (HTML-escaping helper),
+  #18 (`filters.py` raises bare `ValueError`).
 - Current project state and decisions: [.claude/memory/INDEX.md](.claude/memory/INDEX.md).
