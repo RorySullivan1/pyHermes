@@ -21,5 +21,10 @@
 - `SessionStart` hooks fire on the NEXT session (startup/resume/clear/compact); `Pre/PostToolUse` are already live.
 
 ## Open threads
-- Offered to commit the `.claude/` library as its own commit on a new branch (user on `main`) — awaiting decision; not yet committed.
-- **Unrelated pre-existing work still pending** (from start of session): the `dev/TODO.md` container-padding fix is only half-applied (title rows partly done, both content `<td>`s still have `2px` top padding; `highlight.html:14` has invalid comma-shorthand `padding:1px, 1px, 1px, 1px`), and `test_builder.py` has an uncommitted import-reorder.
+- (resolved) `.claude/` library + CLAUDE.md committed & pushed to `main` — user explicitly authorized committing to main.
+- (resolved) `dev/TODO.md` container-padding work migrated to GitHub issues #1 (title padding), #2 (content padding), #3 (invalid comma-shorthand); `dev/` deleted.
+- Padding fixes themselves are still UNIMPLEMENTED — now tracked in the issue tracker, not here.
+
+## Addendum (same session, later)
+- Committed to `main` (3 commits) + pushed: (1) `.claude/` library + CLAUDE.md rewrite + `.gitignore`, (2) `test_builder.py` import sort, (3) `dev/` removal. Added `.gitignore` (repo had none) and dropped previously-tracked `svc/**/__pycache__` bytecode from version control.
+- Filed issues #1–#3 on `RorySullivan1/pyHermes` from the TODO, then removed `dev/`. Current padding state for whoever picks up the issues: `full-width.html:16` title `14px` top (should be ~22px), `highlight.html:19` title already `22px`; content `<td>`s `full-width.html:26` + `highlight.html:29` both still `2px` top (should be ~16px); `highlight.html:14` has invalid `padding:1px, 1px, 1px, 1px`.
