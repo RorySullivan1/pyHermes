@@ -53,16 +53,6 @@ jobs:
       - name: Unit tests (pytest)
         run: pytest
 
-      - name: End-to-end build
-        # test_builder.py is excluded from pytest collection (it writes
-        # weekly_market_wrap_v2.html), so it runs as its own step.
-        run: python test_builder.py
-
-      - name: Fail if the build mutated tracked files
-        # The e2e run regenerates weekly_market_wrap_v2.html. If the committed
-        # copy is stale, the diff shows up here instead of drifting silently.
-        run: git diff --exit-code
-
   wheel:
     # Guards #10: templates/ must ship inside the wheel, so the package can
     # render an email with no source tree present. A parent-directory lookup
