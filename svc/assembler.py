@@ -35,10 +35,9 @@ Example usage:
     build_email(config, Path("../"), output)
 """
 
-import json
 import re
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 
 
 def strip_doc_comments(html: str) -> str:
@@ -63,11 +62,7 @@ def strip_doc_comments(html: str) -> str:
     # over embedded <!-- SLOT: xxx --> references that have inner -->.
     stripped = re.sub(r"^\s*<!--[\s\S]*?-->\s*(?=<[^!])", "", html, count=1)
     # Strip any "COMMENTED OUT:" variant blocks
-    stripped = re.sub(
-        r"\n*<!-- COMMENTED OUT:[\s\S]*?-->",
-        "",
-        stripped
-    )
+    stripped = re.sub(r"\n*<!-- COMMENTED OUT:[\s\S]*?-->", "", stripped)
     return stripped
 
 
@@ -173,17 +168,11 @@ def apply_background_color(container_html: str, color: str) -> str:
     """
     # Update inline style background-color
     container_html = re.sub(
-        r'background-color:#[0-9A-Fa-f]{6}',
-        f'background-color:{color}',
-        container_html
+        r"background-color:#[0-9A-Fa-f]{6}", f"background-color:{color}", container_html
     )
 
     # Update bgcolor attribute
-    container_html = re.sub(
-        r'bgcolor="#[0-9A-Fa-f]{6}"',
-        f'bgcolor="{color}"',
-        container_html
-    )
+    container_html = re.sub(r'bgcolor="#[0-9A-Fa-f]{6}"', f'bgcolor="{color}"', container_html)
 
     return container_html
 
@@ -204,9 +193,7 @@ def strip_unused_titles(html: str) -> str:
 
 
 def build_email(
-    config: Dict[str, Any],
-    base_dir: Optional[Path] = None,
-    output_path: Path = Path("output.html")
+    config: Dict[str, Any], base_dir: Optional[Path] = None, output_path: Path = Path("output.html")
 ) -> None:
     """
     Assemble a complete email from configuration.
@@ -409,7 +396,7 @@ def main():
                 "title": "Market Snapshot",
                 "components": {
                     "content": "analysis/kpi-strip",
-                }
+                },
             },
             # 2. Narrative — full-width text block
             {
@@ -417,7 +404,7 @@ def main():
                 "title": "Week in Review",
                 "components": {
                     "content": "text/text-block",
-                }
+                },
             },
             # 3. Data Table — full-width
             {
@@ -425,7 +412,7 @@ def main():
                 "title": "Asset Class Returns",
                 "components": {
                     "content": "analysis/data-table",
-                }
+                },
             },
             # 4. Chart — full-width
             {
@@ -433,7 +420,7 @@ def main():
                 "title": "Exhibit 1 — Factor Returns",
                 "components": {
                     "content": "analysis/chart-block",
-                }
+                },
             },
             # 5. Key Themes — full-width numbered list
             {
@@ -441,7 +428,7 @@ def main():
                 "title": "Key Themes",
                 "components": {
                     "content": "text/numbered-list",
-                }
+                },
             },
             # 6. Closing + Author — full-width
             {
@@ -449,9 +436,9 @@ def main():
                 "title": "Closing Remarks",
                 "components": {
                     "content": "text/author-block",
-                }
+                },
             },
-        ]
+        ],
     }
 
     # Build the email

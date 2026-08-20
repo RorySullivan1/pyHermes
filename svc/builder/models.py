@@ -6,16 +6,16 @@ These models define the shape of data flowing through the builder —
 metadata for the email skeleton, typed data for each component, etc.
 """
 
-from dataclasses import dataclass, field, asdict
-from typing import Any, Dict, List, Optional
 import re
+from dataclasses import asdict, dataclass, field
+from typing import Any, Dict, List, Optional
 
 from .exceptions import ValidationError
-
 
 # ──────────────────────────────────────────────────────────────────────
 # Helpers
 # ──────────────────────────────────────────────────────────────────────
+
 
 def _require(value: Any, name: str) -> None:
     """Raise if value is None or empty string."""
@@ -33,6 +33,7 @@ def _validate_color(value: str, name: str) -> None:
 # Email-level metadata
 # ──────────────────────────────────────────────────────────────────────
 
+
 @dataclass
 class EmailMetadata:
     """
@@ -40,6 +41,7 @@ class EmailMetadata:
 
     Every field maps to a variable in ``templates/base.html``.
     """
+
     email_subject: str = ""
     preheader_text: str = ""
     header_disclaimer: str = ""
@@ -69,9 +71,11 @@ class EmailMetadata:
 # Component data models
 # ──────────────────────────────────────────────────────────────────────
 
+
 @dataclass
 class KpiItem:
     """A single KPI stat (label, value, color, sublabel)."""
+
     label: str
     value: str
     color: str = "#5A5A5A"
@@ -86,6 +90,7 @@ class KpiItem:
 @dataclass
 class TableRow:
     """A single row in a data table."""
+
     cells: List[str] = field(default_factory=list)
     colors: List[str] = field(default_factory=list)
 
@@ -106,6 +111,7 @@ class TableRow:
 @dataclass
 class NumberedItem:
     """A single item in a numbered list."""
+
     number: str
     title: str
     body: str
@@ -118,6 +124,7 @@ class NumberedItem:
 # ──────────────────────────────────────────────────────────────────────
 # Section configuration
 # ──────────────────────────────────────────────────────────────────────
+
 
 @dataclass
 class SectionConfig:
@@ -132,6 +139,7 @@ class SectionConfig:
         title:       Optional section heading.
         background_color: Optional background color override.
     """
+
     container: str
     component: str
     data: Dict[str, Any] = field(default_factory=dict)

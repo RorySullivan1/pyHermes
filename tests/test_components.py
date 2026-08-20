@@ -78,9 +78,7 @@ class TestDataTable:
     def test_renders_without_colors(self, engine):
         # Regression: #6 — the documented "empty = no colors" case also
         # crashed, because the template indexed colors before checking it.
-        html = DataTable(
-            headers=["A", "B"], rows=[TableRow(cells=["1", "2"])]
-        ).render(engine)
+        html = DataTable(headers=["A", "B"], rows=[TableRow(cells=["1", "2"])]).render(engine)
         assert "#5A5A5A" in html  # the template's fallback cell color
 
     def test_applies_per_cell_colors(self, engine):

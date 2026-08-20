@@ -10,8 +10,8 @@ from typing import Any, Dict, Optional
 
 import jinja2
 
-from .filters import register_all
 from .exceptions import TemplateError
+from .filters import register_all
 
 
 class TemplateEngine:
@@ -37,9 +37,9 @@ class TemplateEngine:
 
         self._env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(str(self._template_dir)),
-            autoescape=False,          # HTML emails need raw output
-            trim_blocks=True,          # Strip newline after block tags
-            lstrip_blocks=True,        # Strip leading whitespace before block tags
+            autoescape=False,  # HTML emails need raw output
+            trim_blocks=True,  # Strip newline after block tags
+            lstrip_blocks=True,  # Strip leading whitespace before block tags
             keep_trailing_newline=True,
             undefined=jinja2.StrictUndefined,  # Fail on missing vars
         )
@@ -98,9 +98,7 @@ class TemplateEngine:
             tpl = self.get_template(template_name)
             return tpl.render(**context)
         except jinja2.TemplateError as exc:
-            raise TemplateError(
-                f"Error rendering {template_name}: {exc}"
-            ) from exc
+            raise TemplateError(f"Error rendering {template_name}: {exc}") from exc
 
     def render_string(self, source: str, context: Dict[str, Any]) -> str:
         """

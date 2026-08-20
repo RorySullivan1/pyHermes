@@ -33,30 +33,15 @@ Quick start::
     email.save(Path("output.html"))
 """
 
-# Engine
-from .engine import TemplateEngine
-
-# Email builder
-from .email import Email, EmailBuilder
-
-# Models
-from .models import (
-    EmailMetadata,
-    KpiItem,
-    TableRow,
-    NumberedItem,
-    SectionConfig,
-)
-
 # Components
 from .components import (
-    Component,
-    KpiStrip,
-    DataTable,
-    ChartBlock,
-    TextBlock,
-    NumberedList,
     AuthorBlock,
+    ChartBlock,
+    Component,
+    DataTable,
+    KpiStrip,
+    NumberedList,
+    TextBlock,
 )
 
 # Containers
@@ -67,12 +52,25 @@ from .containers import (
     TwoColumn,
 )
 
+# Email builder + engine
+from .email import Email, EmailBuilder
+from .engine import TemplateEngine
+
 # Exceptions
 from .exceptions import (
     EmailBuilderError,
+    SizeError,
     TemplateError,
     ValidationError,
-    SizeError,
+)
+
+# Models
+from .models import (
+    EmailMetadata,
+    KpiItem,
+    NumberedItem,
+    SectionConfig,
+    TableRow,
 )
 
 __all__ = [

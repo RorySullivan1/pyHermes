@@ -22,11 +22,10 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
-from .engine import TemplateEngine
 from .containers import Container
-from .models import EmailMetadata
+from .engine import TemplateEngine
 from .exceptions import SizeError
-
+from .models import EmailMetadata
 
 # Gmail clips emails above this threshold (bytes).
 _SIZE_LIMIT_KB = 102
@@ -98,9 +97,7 @@ class Email:
             SizeError: If the HTML exceeds 102 KB.
         """
         # Render sections
-        sections_html = "\n".join(
-            section.render(self._engine) for section in self._sections
-        )
+        sections_html = "\n".join(section.render(self._engine) for section in self._sections)
 
         # Build skeleton context
         ctx = self._metadata.to_dict()

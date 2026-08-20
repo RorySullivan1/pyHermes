@@ -17,8 +17,8 @@ from __future__ import annotations
 
 from typing import Optional
 
-from .engine import TemplateEngine
 from .components import Component
+from .engine import TemplateEngine
 from .exceptions import ValidationError
 from .models import _validate_color
 
@@ -169,13 +169,9 @@ class TwoColumn(Container):
     ):
         super().__init__(title, background_color)
         if ratio not in self._ratio_map:
-            raise ValidationError(
-                f"Unsupported ratio '{ratio}'. Use: {list(self._ratio_map)}"
-            )
+            raise ValidationError(f"Unsupported ratio '{ratio}'. Use: {list(self._ratio_map)}")
         if left is None and right is None:
-            raise ValidationError(
-                "TwoColumn requires at least one of 'left' or 'right'."
-            )
+            raise ValidationError("TwoColumn requires at least one of 'left' or 'right'.")
         self.ratio = ratio
         self.template_path = self._ratio_map[ratio]
         self.left = left

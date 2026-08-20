@@ -16,8 +16,8 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional
 
 from .engine import TemplateEngine
-from .models import KpiItem, TableRow, NumberedItem
 from .exceptions import ValidationError
+from .models import KpiItem, NumberedItem, TableRow
 
 
 class Component:
@@ -27,7 +27,7 @@ class Component:
     Subclasses must set ``template_path`` and implement ``context()``.
     """
 
-    template_path: str = ""   # e.g. "analysis/kpi-strip.html"
+    template_path: str = ""  # e.g. "analysis/kpi-strip.html"
 
     def context(self) -> Dict[str, Any]:
         """Return the template context dict for this component."""
@@ -44,15 +44,14 @@ class Component:
             Rendered HTML fragment.
         """
         if not self.template_path:
-            raise ValidationError(
-                f"{self.__class__.__name__} has no template_path set."
-            )
+            raise ValidationError(f"{self.__class__.__name__} has no template_path set.")
         return engine.render(self.template_path, self.context())
 
 
 # ──────────────────────────────────────────────────────────────────────
 # Analysis components  (templates/analysis/)
 # ──────────────────────────────────────────────────────────────────────
+
 
 class KpiStrip(Component):
     """
@@ -187,6 +186,7 @@ class ChartBlock(Component):
 # ──────────────────────────────────────────────────────────────────────
 # Text components  (templates/text/)
 # ──────────────────────────────────────────────────────────────────────
+
 
 class TextBlock(Component):
     """
