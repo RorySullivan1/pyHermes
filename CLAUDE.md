@@ -29,7 +29,7 @@ CI runs all five on every PR ([.github/workflows/ci.yml](.github/workflows/ci.ym
 through the full pipeline (metadata → containers → components → skeleton → size check),
 prints the rendered size, and warns above 90 KB. It is deliberately **excluded from pytest
 collection** (`testpaths = ["tests"]`) because it writes that file as a side effect — run it
-separately after any change to `svc/builder/` or `templates/`, then open the output in a
+separately after any change to `svc/builder/` (including its `templates/`), then open the output in a
 browser to verify visually. CI fails if the run leaves the committed copy stale.
 
 Slash commands (from the `.claude/` library): `/version-set`, `/version-ship`, `/reindex`.
@@ -46,12 +46,12 @@ svc/
 │   ├── components.py   — Component, KpiStrip, DataTable, ChartBlock, TextBlock, NumberedList, AuthorBlock
 │   ├── models.py       — EmailMetadata, KpiItem, TableRow, NumberedItem, SectionConfig
 │   ├── filters.py      — Jinja filters (e.g. validate_hex_color)
-│   └── exceptions.py   — EmailBuilderError hierarchy
-templates/
-├── base.html                    — the rendered skeleton (one hole: {{ sections_html }})
-├── common/containers/*.html     — layout geometry (full-width, highlight, col-50-50/30-70/70-30)
-├── analysis/*.html              — data components (kpi-strip, data-table, chart-block)
-└── text/*.html                  — text components (text-block, numbered-list, author-block)
+│   ├── exceptions.py   — EmailBuilderError hierarchy
+│   └── templates/      ← packaged with the wheel (moved here in #10)
+│       ├── base.html                — the rendered skeleton (one hole: {{ sections_html }})
+│       ├── common/containers/*.html — layout geometry (full-width, highlight, col-50-50/30-70/70-30)
+│       ├── analysis/*.html          — data components (kpi-strip, data-table, chart-block)
+│       └── text/*.html              — text components (text-block, numbered-list, author-block)
 test_builder.py         — end-to-end smoke test; regenerates weekly_market_wrap_v2.html
 tests/                  — pytest unit suite (validation, error paths, size limits)
 .github/workflows/      — CI: ruff, mypy, pytest, end-to-end build
@@ -70,14 +70,15 @@ recoverable from git history if ever needed for reference.)
 
 Every email is `skeleton ← containers ← components`:
 
-1. **Skeleton** — [templates/base.html](templates/base.html). The full HTML page (head,
+1. **Skeleton** — [svc/builder/templates/base.html](svc/builder/templates/base.html). The full HTML page (head,
    header, footer, palette comment) with one variable hole: `{{ sections_html }}`. Rendered
    last by [Email.render()](svc/builder/email.py).
-2. **Containers** — layout geometry only. In [templates/common/containers/](templates/common/containers/).
+2. **Containers** — layout geometry only. In [svc/builder/templates/common/containers/](svc/builder/templates/common/containers/).
    Each produces a `<tr>` block sized to the 680px outer email table. Python wrappers in
    [svc/builder/containers.py](svc/builder/containers.py).
-3. **Components** — content blocks. Templates in [templates/analysis/](templates/analysis/)
-   and [templates/text/](templates/text/); Python wrappers in
+3. **Components** — content blocks. Templates in
+   [svc/builder/templates/analysis/](svc/builder/templates/analysis/) and
+   [svc/builder/templates/text/](svc/builder/templates/text/); Python wrappers in
    [svc/builder/components.py](svc/builder/components.py).
 
 A `Container` holds one or more `Component`s, calls `component.render(engine)`, and embeds
@@ -128,15 +129,15 @@ base class for "anything the builder rejected."
 
 ## Gotchas
 
-- **Editable install only.** `[build-system]` uses `hatchling`; the wheel target is
-  `packages = ["svc"]`, but `templates/` is **not** packaged. The engine resolves templates
-  via `Path(__file__).resolve().parent.parent.parent / "templates"`, which works for editable
-  installs (source tree) but breaks for a wheel install. Stick with `pip install -e .`.
+- **Wheel installs work** (since #10). `templates/` lives inside the package at
+  `svc/builder/templates/` and ships with the wheel; the engine resolves it via
+  `importlib.resources`, which gives the same answer for an editable install and a
+  site-packages install. A CI job builds the wheel and renders an email from a clean
+  venv to keep it that way. Use `pip install -e ".[dev]"` for development regardless.
 - **Import path.** Use `from svc.builder import …` / `from svc.builder.models import …`.
   `svc/__init__.py` re-exports nothing, and there is no `svc.models`.
-- **The rendered skeleton is `templates/base.html`.** `templates/common/skeletons/base.html`
-  exists but is NOT rendered — the engine's `FileSystemLoader` root is `templates/` and it
-  loads `"base.html"`.
+- **The rendered skeleton is `svc/builder/templates/base.html`.** The engine's
+  `FileSystemLoader` root is that directory and it loads `"base.html"`.
 
 ## Working in this repo — the `.claude/` tooling
 
@@ -173,6 +174,6 @@ Reach for these rather than improvising:
 ## Open work
 
 - Tracked in [GitHub issues](https://github.com/RorySullivan1/pyHermes/issues). Open as of
-  this writing: #10 (package `templates/` with the wheel), #12 (HTML-escaping helper),
+  this writing: #12 (HTML-escaping helper),
   #18 (`filters.py` raises bare `ValueError`).
 - Current project state and decisions: [.claude/memory/INDEX.md](.claude/memory/INDEX.md).

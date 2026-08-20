@@ -5,6 +5,7 @@ Manages the Jinja2 environment, template loading, caching, and custom
 filter registration. All template rendering flows through this class.
 """
 
+from importlib import resources
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -12,6 +13,22 @@ import jinja2
 
 from .exceptions import TemplateError
 from .filters import register_all
+
+
+def _packaged_template_dir() -> Path:
+    """
+    Locate the ``templates/`` directory shipped inside this package.
+
+    Resolved via ``importlib.resources`` rather than by walking parent
+    directories, so it works identically for an editable install (where it
+    resolves into the source tree) and a real wheel install (where it
+    resolves into site-packages).  The old ``parent.parent.parent`` walk
+    only ever worked from a source checkout.
+
+    Assumes an unpacked install — which is also what Jinja2's
+    ``FileSystemLoader`` requires, since it needs a real filesystem path.
+    """
+    return Path(str(resources.files(__package__) / "templates"))
 
 
 class TemplateEngine:
@@ -24,12 +41,13 @@ class TemplateEngine:
 
     Args:
         template_dir: Root directory containing all templates.
-                      Defaults to ``<project_root>/templates/``.
+                      Defaults to the ``templates/`` directory packaged
+                      inside ``svc.builder``.
     """
 
     def __init__(self, template_dir: Optional[Path] = None):
         if template_dir is None:
-            template_dir = Path(__file__).resolve().parent.parent.parent / "templates"
+            template_dir = _packaged_template_dir()
         self._template_dir = Path(template_dir).resolve()
 
         if not self._template_dir.is_dir():

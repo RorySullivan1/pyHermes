@@ -39,7 +39,7 @@ class Email:
     Args:
         metadata:     Dict or EmailMetadata with skeleton-level variables.
         template_dir: Path to the ``templates/`` directory.  Defaults to
-                      ``<project_root>/templates/``.
+                      the copy packaged inside ``svc.builder``.
 
     Raises:
         ValidationError: If required metadata (``email_subject``, ``firm_name``,
