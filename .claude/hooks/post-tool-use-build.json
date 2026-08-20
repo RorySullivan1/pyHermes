@@ -1,0 +1,15 @@
+{
+  "PostToolUse": [
+    {
+      "matcher": "Edit|Write|MultiEdit",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "python",
+          "args": ["${CLAUDE_PROJECT_DIR}/.claude/hooks/build-hooks.py", "--on-edit"],
+          "timeout": 10
+        }
+      ]
+    }
+  ]
+}

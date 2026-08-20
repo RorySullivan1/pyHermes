@@ -1,0 +1,196 @@
+{
+  "permissions": {
+    "allow": [],
+    "deny": []
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python",
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/.claude/skills/knowledge-router/scripts/context.py",
+              "index"
+            ],
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python",
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/.claude/hooks/catalog.py",
+              "--warn-if-stale"
+            ],
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python",
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/.claude/hooks/build-hooks.py",
+              "--warn-if-stale"
+            ],
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python",
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/.claude/skills/session-memory/scripts/memory.py",
+              "index"
+            ],
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python",
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/.claude/hooks/post_bash_filter.py"
+            ],
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python",
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/.claude/hooks/build-hooks.py",
+              "--on-edit"
+            ],
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python",
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/.claude/hooks/catalog.py",
+              "--on-edit"
+            ],
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "ExitPlanMode",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python",
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/.claude/skills/skill-distiller/scripts/plan_nudge.py"
+            ],
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "auto|manual",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python",
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/.claude/skills/session-memory/scripts/memory.py",
+              "precompact-hook"
+            ],
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python",
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/.claude/hooks/git_guards.py"
+            ],
+            "timeout": 15
+          }
+        ]
+      },
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python",
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/.claude/hooks/pre_read_guard.py"
+            ],
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python",
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/.claude/skills/session-memory/scripts/memory.py",
+              "stop-hook"
+            ],
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python",
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/.claude/skills/session-memory/scripts/memory.py",
+              "prompt-hook"
+            ],
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

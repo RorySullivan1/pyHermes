@@ -1,0 +1,15 @@
+{
+  "SessionStart": [
+    {
+      "matcher": "startup|resume|clear|compact",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "python",
+          "args": ["${CLAUDE_PROJECT_DIR}/.claude/hooks/build-hooks.py", "--warn-if-stale"],
+          "timeout": 10
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "PostToolUse": [
+    {
+      "matcher": "ExitPlanMode",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "python",
+          "args": ["${CLAUDE_PROJECT_DIR}/.claude/skills/skill-distiller/scripts/plan_nudge.py"],
+          "timeout": 10
+        }
+      ]
+    }
+  ]
+}

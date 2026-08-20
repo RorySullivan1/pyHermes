@@ -1,0 +1,15 @@
+{
+  "PreCompact": [
+    {
+      "matcher": "auto|manual",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "python",
+          "args": ["${CLAUDE_PROJECT_DIR}/.claude/skills/session-memory/scripts/memory.py", "precompact-hook"],
+          "timeout": 10
+        }
+      ]
+    }
+  ]
+}

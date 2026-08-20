@@ -1,0 +1,15 @@
+{
+  "PreToolUse": [
+    {
+      "matcher": "Read",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "python",
+          "args": ["${CLAUDE_PROJECT_DIR}/.claude/hooks/pre_read_guard.py"],
+          "timeout": 10
+        }
+      ]
+    }
+  ]
+}

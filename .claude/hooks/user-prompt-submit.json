@@ -1,0 +1,14 @@
+{
+  "UserPromptSubmit": [
+    {
+      "hooks": [
+        {
+          "type": "command",
+          "command": "python",
+          "args": ["${CLAUDE_PROJECT_DIR}/.claude/skills/session-memory/scripts/memory.py", "prompt-hook"],
+          "timeout": 10
+        }
+      ]
+    }
+  ]
+}

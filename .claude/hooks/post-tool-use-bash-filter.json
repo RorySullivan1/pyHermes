@@ -1,0 +1,15 @@
+{
+  "PostToolUse": [
+    {
+      "matcher": "Bash",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "python",
+          "args": ["${CLAUDE_PROJECT_DIR}/.claude/hooks/post_bash_filter.py"],
+          "timeout": 10
+        }
+      ]
+    }
+  ]
+}

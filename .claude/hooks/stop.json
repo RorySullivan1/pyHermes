@@ -1,0 +1,14 @@
+{
+  "Stop": [
+    {
+      "hooks": [
+        {
+          "type": "command",
+          "command": "python",
+          "args": ["${CLAUDE_PROJECT_DIR}/.claude/skills/session-memory/scripts/memory.py", "stop-hook"],
+          "timeout": 10
+        }
+      ]
+    }
+  ]
+}
