@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Optional
 
 from .engine import TemplateEngine
 from .exceptions import ValidationError
-from .models import KpiItem, NumberedItem, TableRow
+from .models import KpiItem, NumberedItem, TableRow, _validate_url
 
 
 class Component:
@@ -169,6 +169,7 @@ class ChartBlock(Component):
     ):
         if not image_url:
             raise ValidationError("ChartBlock requires an image_url.")
+        _validate_url(image_url, "chart.image_url")
         self.image_url = image_url
         self.alt_text = alt_text
         self.source = source

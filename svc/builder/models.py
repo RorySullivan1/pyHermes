@@ -29,6 +29,34 @@ def _validate_color(value: str, name: str) -> None:
         raise ValidationError(f"'{name}' must be a hex color (e.g. #4A7C59), got: {value}")
 
 
+# Schemes safe to emit into an href/src in an HTML email.  `cid` covers
+# images embedded as MIME parts.
+_ALLOWED_URL_SCHEMES = frozenset({"http", "https", "mailto", "cid"})
+
+
+def _validate_url(value: str, name: str) -> None:
+    """
+    Raise if value carries a scheme that is unsafe in an href/src.
+
+    Escaping (#12) stops a URL breaking *out* of its attribute; it does
+    nothing about what the URL then does when followed, which is what this
+    checks.  Empty is allowed — every URL field in the builder is optional.
+
+    Scheme-only: whether the URL resolves, and what its host or path are,
+    is not this function's business.
+    """
+    if not value:
+        return
+    scheme, separator, _ = value.partition(":")
+    if not separator:
+        return  # relative URL — no scheme to object to
+    if scheme.lower().strip() not in _ALLOWED_URL_SCHEMES:
+        allowed = ", ".join(sorted(_ALLOWED_URL_SCHEMES))
+        raise ValidationError(
+            f"'{name}' uses unsupported URL scheme '{scheme}'; allowed: {allowed}. Got: {value!r}"
+        )
+
+
 # ──────────────────────────────────────────────────────────────────────
 # Email-level metadata
 # ──────────────────────────────────────────────────────────────────────
@@ -59,9 +87,17 @@ class EmailMetadata:
     view_in_browser_url: str = ""
 
     def validate(self) -> None:
-        """Validate required fields."""
+        """Validate required fields and URL schemes."""
         for fname in ("email_subject", "firm_name", "campaign_name"):
             _require(getattr(self, fname), fname)
+        for fname in (
+            "logo_url",
+            "header_bg_image_url",
+            "contact_url",
+            "unsubscribe_url",
+            "view_in_browser_url",
+        ):
+            _validate_url(getattr(self, fname), f"metadata.{fname}")
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
