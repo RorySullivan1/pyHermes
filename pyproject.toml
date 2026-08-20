@@ -10,9 +10,20 @@ dependencies = [
     "jinja2>=3.1,<4",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["svc"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# test_builder.py stays the end-to-end smoke test and is run separately;
+# it writes weekly_market_wrap_v2.html as a side effect.
+addopts = "-q"
