@@ -97,9 +97,7 @@ class Email:
             SizeError: If the HTML exceeds 102 KB.
         """
         # Render sections
-        sections_html = "\n".join(
-            section.render(self._engine) for section in self._sections
-        )
+        sections_html = "\n".join(section.render(self._engine) for section in self._sections)
 
         # Build skeleton context
         ctx = self._metadata.to_dict()
