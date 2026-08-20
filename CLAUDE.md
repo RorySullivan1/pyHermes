@@ -42,15 +42,15 @@ svc/
 │   ├── __init__.py     — public API surface (re-exports everything below)
 │   ├── engine.py       — TemplateEngine (Jinja2, StrictUndefined, autoescape OFF)
 │   ├── email.py        — Email + EmailBuilder (fluent), _validate_size()
-│   ├── containers.py   — Container, FullWidth, Highlight, TwoColumn
-│   ├── components.py   — Component, KpiStrip, DataTable, ChartBlock, TextBlock, NumberedList, AuthorBlock
-│   ├── models.py       — EmailMetadata, KpiItem, TableRow, NumberedItem, SectionConfig
+│   ├── containers.py   — Container, FullWidth, TwoColumn (+ `highlight=` property)
+│   ├── components.py   — Component, CardGroup, DataTable, ChartBlock, TextBlock, NumberedList, AuthorBlock
+│   ├── models.py       — EmailMetadata, Card, KpiItem, TableRow, NumberedItem, SectionConfig
 │   ├── filters.py      — Jinja filters (e.g. validate_hex_color)
 │   ├── exceptions.py   — EmailBuilderError hierarchy
 │   └── templates/      ← packaged with the wheel (moved here in #10)
 │       ├── base.html                — the rendered skeleton (one hole: {{ sections_html }})
-│       ├── common/containers/*.html — layout geometry (full-width, highlight, col-50-50/30-70/70-30)
-│       ├── analysis/*.html          — data components (kpi-strip, data-table, chart-block)
+│       ├── common/containers/*.html — layout geometry (full-width, col-50-50/30-70/70-30)
+│       ├── analysis/*.html          — data components (card-group, data-table, chart-block)
 │       └── text/*.html              — text components (text-block, numbered-list, author-block)
 test_builder.py         — end-to-end smoke test; regenerates weekly_market_wrap_v2.html
 tests/                  — pytest unit suite (validation, error paths, size limits)
@@ -89,10 +89,31 @@ that sets `template_path` and implements `context()`.
 ### Public API (import from `svc.builder`)
 
 ```python
-from svc.builder import EmailBuilder, Email, FullWidth, Highlight, TwoColumn, \
-    KpiStrip, DataTable, ChartBlock, TextBlock, NumberedList, AuthorBlock
-from svc.builder.models import KpiItem, TableRow, NumberedItem, EmailMetadata, SectionConfig
+from svc.builder import EmailBuilder, Email, FullWidth, TwoColumn, \
+    CardGroup, DataTable, ChartBlock, TextBlock, NumberedList, AuthorBlock
+from svc.builder.models import Card, KpiItem, TableRow, NumberedItem, EmailMetadata, SectionConfig
 ```
+
+### Cards and the highlight property
+
+Two deliberate shapes here, both chosen over adding more types:
+
+- **`highlight` is a property of any container, not a container.** `Highlight` used to be a
+  `Container` subclass, but its template was `full-width.html` plus a tint and hairline
+  rules — presentation, not geometry. It was **removed**; use
+  `FullWidth(..., highlight=True)`, which also works on `TwoColumn`. An explicit
+  `background_color` still wins over the highlight tint.
+- **`CardGroup` takes an `orientation`, rather than there being two components.**
+  `horizontal` is the KPI strip (2–4 cards across); `vertical` stacks the same cards one
+  per row — which is also what the horizontal strip collapses to on mobile, via the
+  `.kpi-cell` rule in `base.html`. `KpiStrip` survives as a **deprecated alias** for the
+  horizontal case and warns.
+
+[Card](svc/builder/models.py) is the unit: `label` (required), `value`, `color`,
+`sublabel`, and an optional `body` for prose. Either `value` or `body` must be present.
+`KpiItem` is a `Card` subclass that adds no fields but keeps the stricter rule — a KPI
+always has a value. **`Card.body` is an HTML field**, so escaping untrusted text in it is
+the caller's job, same as `TextBlock.content`.
 
 [EmailBuilder](svc/builder/email.py) is a thin fluent wrapper: `metadata()` initializes the
 underlying `Email`, `section()` appends a container, `build()`/`render()`/`save()` are

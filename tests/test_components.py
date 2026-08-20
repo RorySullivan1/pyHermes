@@ -10,9 +10,9 @@ import pytest
 
 from svc.builder import (
     AuthorBlock,
+    CardGroup,
     ChartBlock,
     DataTable,
-    KpiStrip,
     NumberedList,
     TextBlock,
 )
@@ -21,24 +21,27 @@ from svc.builder.exceptions import ValidationError
 from svc.builder.models import KpiItem, TableRow
 
 
-class TestKpiStrip:
+class TestCardGroup:
+    """Construction rules. Orientation, cards and the KpiStrip deprecation
+    live in test_cards.py; this covers the component's place among the rest."""
+
     @pytest.mark.parametrize("count", [2, 3, 4])
     def test_accepts_two_to_four_items(self, count):
         items = [KpiItem(label=f"L{i}", value=f"{i}") for i in range(count)]
-        KpiStrip(items=items)
+        CardGroup(items)
 
     @pytest.mark.parametrize("count", [0, 1, 5])
     def test_rejects_out_of_range_item_counts(self, count):
         items = [KpiItem(label=f"L{i}", value=f"{i}") for i in range(count)]
         with pytest.raises(ValidationError, match="2–4 items"):
-            KpiStrip(items=items)
+            CardGroup(items)
 
     def test_propagates_item_validation(self):
         with pytest.raises(ValidationError, match="kpi.label"):
-            KpiStrip(items=[KpiItem(label="", value="1"), KpiItem(label="B", value="2")])
+            CardGroup([KpiItem(label="", value="1"), KpiItem(label="B", value="2")])
 
     def test_renders(self, engine, kpi_items):
-        html = KpiStrip(items=kpi_items).render(engine)
+        html = CardGroup(kpi_items).render(engine)
         assert "5,234" in html
         assert "#4A7C59" in html
 

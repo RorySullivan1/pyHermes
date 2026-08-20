@@ -9,7 +9,7 @@ an undefined name raises even when it is only tested for truthiness.
 
 import pytest
 
-from svc.builder import FullWidth, Highlight, TwoColumn
+from svc.builder import FullWidth, TwoColumn
 from svc.builder.containers import Container
 from svc.builder.exceptions import EmailBuilderError, ValidationError
 
@@ -32,14 +32,38 @@ class TestFullWidth:
         assert "#ABCDEF" in html
 
 
-class TestHighlight:
-    def test_renders_with_title(self, engine, text_block):
-        html = Highlight(content=text_block, title="Key Themes").render(engine)
-        assert "Key Themes" in html
+class TestHighlightProperty:
+    """`highlight` is a property of any container, not a container type (#Card rework)."""
 
-    def test_renders_without_title(self, engine, text_block):
-        # Regression: #15
-        assert "Narrative prose." in Highlight(content=text_block).render(engine)
+    def test_off_by_default(self, engine, text_block):
+        html = FullWidth(content=text_block, title="T").render(engine)
+        assert "border-top:1px solid #D6D2CB" not in html
+        assert "#F8F7F5" not in html
+
+    def test_on_adds_tint_and_hairline_rules(self, engine, text_block):
+        html = FullWidth(content=text_block, title="T", highlight=True).render(engine)
+        assert "border-top:1px solid #D6D2CB" in html
+        assert "border-bottom:1px solid #D6D2CB" in html
+        assert "#F8F7F5" in html
+
+    def test_explicit_background_beats_the_highlight_tint(self, engine, text_block):
+        html = FullWidth(content=text_block, highlight=True, background_color="#EEF5FF").render(
+            engine
+        )
+        assert "#EEF5FF" in html
+        assert "#F8F7F5" not in html
+
+    @pytest.mark.parametrize("ratio", RATIOS)
+    def test_available_on_two_column_too(self, engine, text_block, ratio):
+        # It lives on the base Container, so every container gets it.
+        html = TwoColumn(ratio=ratio, left=text_block, right=text_block, highlight=True).render(
+            engine
+        )
+        assert "border-top:1px solid #D6D2CB" in html
+
+    def test_injected_into_context_even_when_false(self, engine):
+        # StrictUndefined: the templates gate on it, so it must always be present.
+        assert Container()._base_context(engine)["highlight"] is False
 
 
 class TestTwoColumn:

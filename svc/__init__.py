@@ -10,6 +10,6 @@ subpackages do not exist yet.  Don't import them.
 
 Usage::
 
-    from svc.builder import EmailBuilder, KpiStrip, FullWidth, Highlight
-    from svc.builder.models import KpiItem
+    from svc.builder import CardGroup, EmailBuilder, FullWidth
+    from svc.builder.models import Card, KpiItem
 """

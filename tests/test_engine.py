@@ -32,14 +32,13 @@ class TestConstruction:
         # Every template the components reference must ship with the package.
         expected = {
             "base.html",
-            "analysis/kpi-strip.html",
+            "analysis/card-group.html",
             "analysis/data-table.html",
             "analysis/chart-block.html",
             "text/text-block.html",
             "text/numbered-list.html",
             "text/author-block.html",
             "common/containers/full-width.html",
-            "common/containers/highlight.html",
             "common/containers/col-50-50.html",
             "common/containers/col-30-70.html",
             "common/containers/col-70-30.html",

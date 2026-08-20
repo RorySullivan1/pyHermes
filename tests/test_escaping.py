@@ -17,12 +17,11 @@ import pytest
 
 from svc.builder import (
     AuthorBlock,
+    CardGroup,
     ChartBlock,
     DataTable,
     Email,
     FullWidth,
-    Highlight,
-    KpiStrip,
     NumberedList,
     TextBlock,
     TwoColumn,
@@ -94,15 +93,15 @@ class TestPlainTextFieldsAreEscaped:
     def test_container_title_on_every_container(self, engine, text_block):
         for container in (
             FullWidth(content=text_block, title=NASTY),
-            Highlight(content=text_block, title=NASTY),
+            FullWidth(content=text_block, title=NASTY, highlight=True),
             TwoColumn(left=text_block, title=NASTY),
         ):
             html = container.render(engine)
             assert "<script>" not in html, type(container).__name__
 
-    def test_kpi_label_value_and_sublabel(self, engine):
-        html = KpiStrip(
-            items=[
+    def test_card_label_value_and_sublabel(self, engine):
+        html = CardGroup(
+            [
                 KpiItem(label="S&P 500", value="5,234 & rising", sublabel="+1% & up"),
                 KpiItem(label="VIX", value="14"),
             ]

@@ -109,13 +109,51 @@ class EmailMetadata:
 
 
 @dataclass
-class KpiItem:
-    """A single KPI stat (label, value, color, sublabel)."""
+class Card:
+    """
+    A callout: a value, a piece of wording, or both.
+
+    The shared unit behind every card group — a KPI cell in a horizontal
+    strip and a stacked row in a vertical one are the same data, laid out
+    differently.
+
+    Attributes:
+        label:    Short eyebrow above the value (e.g. "S&P 500"). Required.
+        value:    The headline figure or phrase, set large.
+        color:    Hex colour for the value. Defaults to neutral grey.
+        sublabel: Small caption under the value (e.g. "+1.42% WoW").
+        body:     Optional prose beneath the card. **HTML field** — emitted
+                  raw so callers can pass markup, so escaping untrusted text
+                  in it is the caller's job (see filters.escape_html).
+
+    Either ``value`` or ``body`` must be present: a card with only a label
+    has nothing to say.
+    """
 
     label: str
-    value: str
+    value: str = ""
     color: str = "#5A5A5A"
     sublabel: str = ""
+    body: str = ""
+
+    def validate(self) -> None:
+        _require(self.label, "card.label")
+        _validate_color(self.color, "card.color")
+        if not self.value and not self.body:
+            raise ValidationError(
+                "'card' requires a 'value' or a 'body'; a label alone says nothing."
+            )
+
+
+@dataclass
+class KpiItem(Card):
+    """
+    A :class:`Card` used as a KPI stat.
+
+    Adds no fields — it exists so KPI code reads as KPI code, and so the
+    stricter rule holds: a KPI always has a value, where a general card may
+    carry prose instead.
+    """
 
     def validate(self) -> None:
         _require(self.label, "kpi.label")
