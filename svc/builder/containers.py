@@ -17,8 +17,8 @@ from __future__ import annotations
 
 from typing import Optional
 
-from .engine import TemplateEngine
 from .components import Component
+from .engine import TemplateEngine
 from .exceptions import ValidationError
 from .models import _validate_color
 

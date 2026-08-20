@@ -16,8 +16,8 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional
 
 from .engine import TemplateEngine
-from .models import KpiItem, TableRow, NumberedItem
 from .exceptions import ValidationError
+from .models import KpiItem, NumberedItem, TableRow
 
 
 class Component:

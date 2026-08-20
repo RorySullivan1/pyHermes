@@ -35,10 +35,9 @@ Example usage:
     build_email(config, Path("../"), output)
 """
 
-import json
 import re
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 
 
 def strip_doc_comments(html: str) -> str:

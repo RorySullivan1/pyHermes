@@ -5,6 +5,8 @@ Custom Jinja2 filters and tests for the email builder.
 import re
 from typing import Any
 
+import jinja2
+
 
 def validate_hex_color(value: str) -> str:
     """
@@ -43,7 +45,7 @@ def default_color(value: Any, fallback: str = "#5A5A5A") -> str:
     return validate_hex_color(result)
 
 
-def register_all(env) -> None:
+def register_all(env: jinja2.Environment) -> None:
     """
     Register all custom filters and tests on a Jinja2 Environment.
 

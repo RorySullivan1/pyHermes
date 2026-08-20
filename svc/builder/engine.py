@@ -10,8 +10,8 @@ from typing import Any, Dict, Optional
 
 import jinja2
 
-from .filters import register_all
 from .exceptions import TemplateError
+from .filters import register_all
 
 
 class TemplateEngine:

@@ -6,12 +6,11 @@ These models define the shape of data flowing through the builder —
 metadata for the email skeleton, typed data for each component, etc.
 """
 
-from dataclasses import dataclass, field, asdict
-from typing import Any, Dict, List, Optional
 import re
+from dataclasses import asdict, dataclass, field
+from typing import Any, Dict, List, Optional
 
 from .exceptions import ValidationError
-
 
 # ──────────────────────────────────────────────────────────────────────
 # Helpers
