@@ -9,7 +9,7 @@
   <meta name="x-apple-disable-message-reformatting">
   <meta name="color-scheme" content="light only">
   <meta name="supported-color-schemes" content="light only">
-  <title>{{email_subject}}</title>
+  <title>{{ email_subject | escape_html }}</title>
   <!--[if mso]>
   <noscript>
     <xml><o:OfficeDocumentSettings>
@@ -70,7 +70,7 @@
 
   <!-- Preheader -->
   <div style="display:none;max-height:0;overflow:hidden;font-size:1px;color:#F2F1EE;">
-    {{preheader_text}}&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;
+    {{ preheader_text | escape_html }}&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;
   </div>
 
   <!-- Outer wrapper -->
@@ -105,10 +105,10 @@
               <!--[if mso]>
               <v:rect xmlns:v="urn:schemas-microsoft-com:vml" fill="true" stroke="false"
                       style="width:680px;height:180px;">
-                <v:fill type="frame" src="{{header_bg_image_url}}" color="#141E2C" opacity="65%"/>
+                <v:fill type="frame" src="{{ header_bg_image_url | escape_html }}" color="#141E2C" opacity="65%"/>
                 <v:textbox inset="32px,0,32px,0" style="mso-fit-shape-to-text:false;">
               <![endif]-->
-              <div style="background-image:url('{{header_bg_image_url}}');
+              <div style="background-image:url('{{ header_bg_image_url | escape_html }}');
                           background-color:#2C3E50; background-size:cover;
                           background-position:center center; background-repeat:no-repeat;">
                 <!-- Dark overlay for text legibility -->
@@ -118,10 +118,10 @@
                   <tr>
                     <td style="padding:18px 32px 0;" align="right">
                       <!--[if mso]>
-                      <img src="{{logo_url}}" width="90" alt="{{firm_name}}" style="display:block;">
+                      <img src="{{ logo_url | escape_html }}" width="90" alt="{{ firm_name | escape_html }}" style="display:block;">
                       <![endif]-->
                       <!--[if !mso]><!-->
-                      <img src="{{logo_url}}" width="90" alt="{{firm_name}}"
+                      <img src="{{ logo_url | escape_html }}" width="90" alt="{{ firm_name | escape_html }}"
                            style="display:block; max-width:90px; height:auto;">
                       <!--<![endif]-->
                     </td>
@@ -135,7 +135,7 @@
                                 font-weight:bold; color:#FFFFFF; line-height:1.2; letter-spacing:0.3px;
                                 text-shadow:0 1px 3px rgba(0,0,0,0.4);"
                          class="mobile-title">
-                        {{firm_name}}
+                        {{ firm_name | escape_html }}
                       </p>
                     </td>
                   </tr>
@@ -144,7 +144,7 @@
                       <p style="margin:0; font-family:Arial,Helvetica,sans-serif; font-size:13px;
                                 font-weight:400; color:#CFD8DC; line-height:1.3;
                                 text-shadow:0 1px 2px rgba(0,0,0,0.3);">
-                        {{campaign_name}}
+                        {{ campaign_name | escape_html }}
                       </p>
                     </td>
                   </tr>
@@ -169,11 +169,11 @@
                         <tr>
                           <td style="font-family:Arial,Helvetica,sans-serif; font-size:11px;
                                      color:#90A4AE; letter-spacing:0.6px; text-transform:uppercase;">
-                            {{date_range}}
+                            {{ date_range | escape_html }}
                           </td>
                           <td align="right" style="font-family:Arial,Helvetica,sans-serif; font-size:11px;
                                                     color:#90A4AE; letter-spacing:0.6px; text-transform:uppercase;">
-                            {{issue_label}}
+                            {{ issue_label | escape_html }}
                           </td>
                         </tr>
                       </table>
@@ -210,11 +210,11 @@
                     </p>
                     <p style="margin:6px 0 16px; font-family:Arial,Helvetica,sans-serif; font-size:13px;
                               color:#7A7A72; line-height:1.55;">
-                      {{contact_description}}
+                      {{ contact_description | escape_html }}
                     </p>
                     <!-- CTA Button — VML for Outlook, CSS for others -->
                     <!--[if mso]>
-                    <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="{{contact_url}}"
+                    <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="{{ contact_url | escape_html }}"
                       style="height:38px;v-text-anchor:middle;width:150px;" arcsize="8%"
                       strokecolor="#5B8A9A" fillcolor="#5B8A9A">
                       <w:anchorlock/>
@@ -225,7 +225,7 @@
                     </v:roundrect>
                     <![endif]-->
                     <!--[if !mso]><!-->
-                    <a href="{{contact_url}}"
+                    <a href="{{ contact_url | escape_html }}"
                        style="background-color:#5B8A9A; border-radius:3px; color:#FFFFFF;
                               display:inline-block; font-family:Arial,Helvetica,sans-serif;
                               font-size:13px; font-weight:bold; line-height:38px;
@@ -260,10 +260,10 @@
             <td style="padding:6px 32px 24px; background-color:#F2F1EE;" bgcolor="#F2F1EE">
               <p style="margin:0; font-family:Arial,Helvetica,sans-serif; font-size:9.5px;
                         color:#A09E97; text-align:center;">
-                &copy; {{current_year}} {{firm_name}} &nbsp;&middot;&nbsp;
-                <a href="{{unsubscribe_url}}" style="color:#5B8A9A; text-decoration:underline;">Unsubscribe</a>
+                &copy; {{ current_year | escape_html }} {{ firm_name | escape_html }} &nbsp;&middot;&nbsp;
+                <a href="{{ unsubscribe_url | escape_html }}" style="color:#5B8A9A; text-decoration:underline;">Unsubscribe</a>
                 &nbsp;&middot;&nbsp;
-                <a href="{{view_in_browser_url}}" style="color:#5B8A9A; text-decoration:underline;">View in browser</a>
+                <a href="{{ view_in_browser_url | escape_html }}" style="color:#5B8A9A; text-decoration:underline;">View in browser</a>
               </p>
             </td>
           </tr>
