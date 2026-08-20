@@ -25,19 +25,29 @@ from typing import Any
 
 import jinja2
 
+from .exceptions import ValidationError
+
 
 def validate_hex_color(value: str) -> str:
     """
     Validate that a string is a valid hex color code.
-    Returns the value if valid, raises ValueError otherwise.
+
+    Returns the value if valid.
+
+    Raises:
+        ValidationError: If the value is not a ``#RRGGBB`` string.  This is a
+            data-validation failure, not a template failure, so it propagates
+            out of a render as-is rather than being wrapped in
+            ``TemplateError`` — either way it stays catchable as
+            ``EmailBuilderError``, which everything the builder rejects must be.
 
     Usage in templates:
         {{ color | validate_hex_color }}
     """
     if not isinstance(value, str):
-        raise ValueError(f"Expected string for hex color, got {type(value).__name__}")
+        raise ValidationError(f"hex color must be a string, got {type(value).__name__}: {value!r}")
     if not re.match(r"^#[0-9A-Fa-f]{6}$", value):
-        raise ValueError(f"Invalid hex color: {value}")
+        raise ValidationError(f"invalid hex color (expected #RRGGBB), got: {value!r}")
     return value
 
 
@@ -82,6 +92,9 @@ def default_color(value: Any, fallback: str = "#5A5A5A") -> str:
     """
     Return the value if truthy, otherwise return the fallback color.
     Validates the result is a hex color.
+
+    Raises:
+        ValidationError: If the resolved color is not a ``#RRGGBB`` string.
 
     Usage in templates:
         {{ row_color | default_color('#4A7C59') }}
