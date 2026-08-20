@@ -7,12 +7,11 @@ from pathlib import Path
 
 from svc.builder import (
     AuthorBlock,
+    CardGroup,
     ChartBlock,
     DataTable,
     EmailBuilder,
     FullWidth,
-    Highlight,
-    KpiStrip,
     NumberedList,
     TextBlock,
     TwoColumn,
@@ -52,10 +51,10 @@ output = (
             "view_in_browser_url": "https://example.com/view-in-browser",
         }
     )
-    # 1. KPI Strip in highlight container
+    # 1. KPI cards, in a highlighted band
     .section(
-        Highlight(
-            content=KpiStrip(
+        FullWidth(
+            content=CardGroup(
                 [
                     KpiItem("S&P 500", "5,234.18", "#4A7C59", "+1.42% WoW"),
                     KpiItem("UST 10Y", "4.28%", "#B85450", "+6 bps"),
@@ -63,6 +62,7 @@ output = (
                 ]
             ),
             title="Market Snapshot",
+            highlight=True,
         )
     )
     # 2. Narrative text block.

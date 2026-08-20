@@ -152,7 +152,7 @@ class EmailBuilder:
 
         email = (EmailBuilder()
             .metadata({...})
-            .section(Highlight(content=KpiStrip([...]), title="KPIs"))
+            .section(FullWidth(content=CardGroup([...]), title="KPIs", highlight=True))
             .section(FullWidth(content=TextBlock("..."), title="Narrative"))
             .build())
 

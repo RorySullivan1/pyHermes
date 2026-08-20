@@ -13,11 +13,12 @@ Usage:
 
 from __future__ import annotations
 
+import warnings
 from typing import Any
 
 from .engine import TemplateEngine
 from .exceptions import ValidationError
-from .models import KpiItem, NumberedItem, TableRow, _validate_url
+from .models import Card, NumberedItem, TableRow, _validate_url
 
 
 class Component:
@@ -53,41 +54,87 @@ class Component:
 # ──────────────────────────────────────────────────────────────────────
 
 
-class KpiStrip(Component):
+class CardGroup(Component):
     """
-    Row of key performance indicators.
+    A set of callout cards, laid out horizontally or vertically.
 
-    Accepts 2–4 KpiItem objects.  The template auto-adjusts column
-    widths based on the number of items.
+    ``horizontal`` is the classic KPI strip — 2–4 cells across, sized to
+    share the width.  ``vertical`` stacks the same cards one per row, which
+    is also what the horizontal strip collapses to on a phone.
 
     Args:
-        items:    List of KpiItem instances (2–4 items).
-        subtitle: Optional sub-heading rendered above the strip.
+        cards:       List of Card (or KpiItem) instances.
+        orientation: ``"horizontal"`` (default) or ``"vertical"``.
+        subtitle:    Optional sub-heading rendered above the group.
+
+    Raises:
+        ValidationError: On an unsupported orientation, a card count outside
+            the orientation's limits, or an invalid card.
     """
 
-    template_path = "analysis/kpi-strip.html"
+    template_path = "analysis/card-group.html"
 
-    def __init__(self, items: list[KpiItem], subtitle: str | None = None):
-        if not 2 <= len(items) <= 4:
-            raise ValidationError("KpiStrip requires 2–4 items.")
-        for item in items:
-            item.validate()
-        self.items = items
+    ORIENTATIONS = ("horizontal", "vertical")
+
+    def __init__(
+        self,
+        cards: list[Card],
+        orientation: str = "horizontal",
+        subtitle: str | None = None,
+    ):
+        if orientation not in self.ORIENTATIONS:
+            raise ValidationError(
+                f"Unsupported orientation '{orientation}'. Use: {list(self.ORIENTATIONS)}"
+            )
+        # Horizontal cells share the row width, so the count is bounded;
+        # a vertical stack has no such constraint.
+        if orientation == "horizontal" and not 2 <= len(cards) <= 4:
+            raise ValidationError("A horizontal CardGroup requires 2–4 items.")
+        if orientation == "vertical" and not cards:
+            raise ValidationError("A vertical CardGroup requires at least one item.")
+        for card in cards:
+            card.validate()
+        self.cards = cards
+        self.orientation = orientation
         self.subtitle = subtitle
 
     def context(self) -> dict[str, Any]:
         return {
-            "kpis": [
+            "cards": [
                 {
-                    "label": k.label,
-                    "value": k.value,
-                    "color": k.color,
-                    "sublabel": k.sublabel,
+                    "label": c.label,
+                    "value": c.value,
+                    "color": c.color,
+                    "sublabel": c.sublabel,
+                    "body": c.body,
                 }
-                for k in self.items
+                for c in self.cards
             ],
+            "orientation": self.orientation,
             "subtitle": self.subtitle,
         }
+
+
+class KpiStrip(CardGroup):
+    """
+    Deprecated alias for a horizontal :class:`CardGroup`.
+
+    .. deprecated::
+        Use ``CardGroup(cards, orientation="horizontal")``.
+    """
+
+    def __init__(self, items: list[Card], subtitle: str | None = None):
+        warnings.warn(
+            "KpiStrip is deprecated; use CardGroup(cards, orientation='horizontal').",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(items, orientation="horizontal", subtitle=subtitle)
+
+    @property
+    def items(self) -> list[Card]:
+        """The group's cards, under the old attribute name."""
+        return self.cards
 
 
 class DataTable(Component):

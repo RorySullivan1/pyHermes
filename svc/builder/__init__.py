@@ -8,7 +8,7 @@ Quick start::
 
     from pathlib import Path
 
-    from svc.builder import EmailBuilder, FullWidth, Highlight, KpiStrip, TextBlock
+    from svc.builder import CardGroup, EmailBuilder, FullWidth, TextBlock
     from svc.builder.models import KpiItem
 
     # email_subject, firm_name and campaign_name are required; the rest of
@@ -19,13 +19,14 @@ Quick start::
             "firm_name": "Research & Strategy",
             "campaign_name": "weekly-wrap",
         })
-        .section(Highlight(
-            content=KpiStrip([
+        .section(FullWidth(
+            content=CardGroup([
                 KpiItem("S&P 500", "5,234", "#4A7C59", "+1.42%"),
                 KpiItem("UST 10Y", "4.28%", "#B85450", "+6 bps"),
                 KpiItem("VIX", "14.32", "#4A7C59", "-2.18 pts"),
             ]),
             title="Market Snapshot",
+            highlight=True,
         ))
         .section(FullWidth(
             content=TextBlock("Equity markets advanced..."),
@@ -40,6 +41,7 @@ Quick start::
 # Components
 from .components import (
     AuthorBlock,
+    CardGroup,
     ChartBlock,
     Component,
     DataTable,
@@ -52,7 +54,6 @@ from .components import (
 from .containers import (
     Container,
     FullWidth,
-    Highlight,
     TwoColumn,
 )
 
@@ -70,6 +71,7 @@ from .exceptions import (
 
 # Models
 from .models import (
+    Card,
     EmailMetadata,
     KpiItem,
     NumberedItem,
@@ -82,12 +84,14 @@ __all__ = [
     "TemplateEngine",
     # Models
     "EmailMetadata",
+    "Card",
     "KpiItem",
     "TableRow",
     "NumberedItem",
     "SectionConfig",
     # Components
     "Component",
+    "CardGroup",
     "KpiStrip",
     "DataTable",
     "ChartBlock",
@@ -97,7 +101,6 @@ __all__ = [
     # Containers
     "Container",
     "FullWidth",
-    "Highlight",
     "TwoColumn",
     # Email
     "Email",

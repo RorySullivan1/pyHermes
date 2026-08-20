@@ -39,11 +39,13 @@ class Container:
         self,
         title: str | None = None,
         background_color: str | None = None,
+        highlight: bool = False,
     ):
         if background_color:
             _validate_color(background_color, "container.background_color")
         self.title = title
         self.background_color = background_color
+        self.highlight = highlight
 
     def _base_context(self, engine: TemplateEngine) -> dict:
         """
@@ -55,9 +57,10 @@ class Container:
 
         ``background_color`` is injected only when set: the templates supply
         their own tint via ``| default(...)``, which only substitutes for an
-        undefined value, not an empty one.
+        undefined value, not an empty one — and that default now depends on
+        ``highlight``, so the flag is always injected too.
         """
-        ctx = {"section_title": self.title or ""}
+        ctx: dict = {"section_title": self.title or "", "highlight": self.highlight}
         if self.background_color:
             ctx["background_color"] = self.background_color
         return ctx
@@ -83,38 +86,9 @@ class FullWidth(Container):
         content: Component,
         title: str | None = None,
         background_color: str | None = None,
+        highlight: bool = False,
     ):
-        super().__init__(title, background_color)
-        self.content = content
-
-    def render(self, engine: TemplateEngine) -> str:
-        ctx = self._base_context(engine)
-        ctx["content"] = self.content.render(engine)
-        return engine.render(self.template_path, ctx)
-
-
-class Highlight(Container):
-    """
-    Full-width container with a tinted background for visual separation.
-
-    Default tint is ``#F8F7F5`` (warm stone).  Override with
-    ``background_color``.
-
-    Args:
-        content:          A Component instance.
-        title:            Optional section heading.
-        background_color: Hex colour for the tinted band.
-    """
-
-    template_path = "common/containers/highlight.html"
-
-    def __init__(
-        self,
-        content: Component,
-        title: str | None = None,
-        background_color: str | None = None,
-    ):
-        super().__init__(title, background_color)
+        super().__init__(title, background_color, highlight)
         self.content = content
 
     def render(self, engine: TemplateEngine) -> str:
@@ -164,8 +138,9 @@ class TwoColumn(Container):
         right: Component | None = None,
         title: str | None = None,
         background_color: str | None = None,
+        highlight: bool = False,
     ):
-        super().__init__(title, background_color)
+        super().__init__(title, background_color, highlight)
         if ratio not in self._ratio_map:
             raise ValidationError(f"Unsupported ratio '{ratio}'. Use: {list(self._ratio_map)}")
         if left is None and right is None:
