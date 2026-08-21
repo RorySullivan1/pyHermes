@@ -20,17 +20,14 @@ pip install -e ".[dev]"       # editable install + pytest/ruff/mypy (see Gotchas
 pytest                        # unit suite — validation, error paths, size limits
 ruff check . && ruff format --check .
 mypy                          # config in pyproject: files = ["svc"]
-python test_builder.py        # end-to-end smoke test — see below
 ```
 
-CI runs all five on every PR ([.github/workflows/ci.yml](.github/workflows/ci.yml)).
+CI runs all four on every PR ([.github/workflows/ci.yml](.github/workflows/ci.yml)).
 
-`test_builder.py` is the end-to-end smoke test: it rebuilds `weekly_market_wrap_v2.html`
-through the full pipeline (metadata → containers → components → skeleton → size check),
-prints the rendered size, and warns above 90 KB. It is deliberately **excluded from pytest
-collection** (`testpaths = ["tests"]`) because it writes that file as a side effect — run it
-separately after any change to `svc/builder/` (including its `templates/`), then open the output in a
-browser to verify visually. CI fails if the run leaves the committed copy stale.
+The `tests/` pytest suite is the automated safety net (validation, error paths, size
+limits). There is no in-repo end-to-end smoke test — to eyeball a full render after a change
+to `svc/builder/` (including its `templates/`), build an email and `.save()` it into `output/`
+(gitignored, not committed), then open it in a browser.
 
 Slash commands (from the `.claude/` library): `/version-set`, `/version-ship`, `/reindex`.
 
@@ -52,9 +49,9 @@ svc/
 │       ├── common/containers/*.html — layout geometry (full-width, col-50-50/30-70/70-30)
 │       ├── analysis/*.html          — data components (card-group, data-table, chart-block)
 │       └── text/*.html              — text components (text-block, numbered-list, author-block)
-test_builder.py         — end-to-end smoke test; regenerates weekly_market_wrap_v2.html
+output/                 — generated email HTML (gitignored; not committed)
 tests/                  — pytest unit suite (validation, error paths, size limits)
-.github/workflows/      — CI: ruff, mypy, pytest, end-to-end build
+.github/workflows/      — CI: ruff, mypy, pytest
 .claude/                — curated tooling library (skills, agents, commands, hooks, memory)
 ```
 
@@ -195,7 +192,7 @@ Reach for these rather than improvising:
 - **Python work** → the `python-development` / `-review` / `-maintenance` / `-deployment`
   skills + `coding-standards` auto-load. For isolated, summary-returning implementation,
   delegate to the **`python-developer`** agent (already scoped to `svc/` and this repo's
-  `python test_builder.py` verification).
+  `pytest` verification).
 - **GitHub** (PRs, issues, releases, review comments) → the `github-*` skills, or the
   **`github-operator`** agent. Note: that agent expects a GitHub **MCP server**; with only the
   `gh` CLI it is degraded — the skills work regardless.

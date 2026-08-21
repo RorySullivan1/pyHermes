@@ -30,8 +30,6 @@ packages = ["svc"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-# test_builder.py stays the end-to-end smoke test and is run separately;
-# it writes weekly_market_wrap_v2.html as a side effect.
 addopts = "-q"
 
 [tool.ruff]

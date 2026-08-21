@@ -14,3 +14,7 @@ env/
 # OS / editor cruft
 .DS_Store
 Thumbs.db
+
+# Generated email output (keep the dir, ignore its contents)
+output/*
+!output/.gitkeep
