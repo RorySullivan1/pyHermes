@@ -17,6 +17,7 @@ import warnings
 from typing import Any
 
 from .engine import TemplateEngine
+from .enums import CardOrientation
 from .exceptions import ValidationError
 from .models import Card, NumberedItem, TableRow, _validate_url
 
@@ -74,23 +75,26 @@ class CardGroup(Component):
 
     template_path = "analysis/card-group.html"
 
-    ORIENTATIONS = ("horizontal", "vertical")
+    # Members equal and hash as their string value, so membership tests and
+    # equality checks below accept both a CardOrientation and a bare string.
+    ORIENTATIONS = tuple(CardOrientation)
 
     def __init__(
         self,
         cards: list[Card],
-        orientation: str = "horizontal",
+        orientation: str | CardOrientation = CardOrientation.HORIZONTAL,
         subtitle: str | None = None,
     ):
         if orientation not in self.ORIENTATIONS:
             raise ValidationError(
-                f"Unsupported orientation '{orientation}'. Use: {list(self.ORIENTATIONS)}"
+                f"Unsupported orientation '{orientation}'. "
+                f"Use: {[o.value for o in self.ORIENTATIONS]}"
             )
         # Horizontal cells share the row width, so the count is bounded;
         # a vertical stack has no such constraint.
-        if orientation == "horizontal" and not 2 <= len(cards) <= 4:
+        if orientation == CardOrientation.HORIZONTAL and not 2 <= len(cards) <= 4:
             raise ValidationError("A horizontal CardGroup requires 2–4 items.")
-        if orientation == "vertical" and not cards:
+        if orientation == CardOrientation.VERTICAL and not cards:
             raise ValidationError("A vertical CardGroup requires at least one item.")
         for card in cards:
             card.validate()
