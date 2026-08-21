@@ -1,12 +1,11 @@
 # MEMORY INDEX  ·  keep ≤ ~80 lines
 
 ## State            (rewrite in place — current truth only, ≤ ~10 lines)
-- pyHermes carries a curated `.claude/` asset library from the `claudeBrain` factory: 22 skills, 6 agents, 3 commands, 2 workflows, 13 activated hooks. Generators (`build-hooks.py`, `catalog.py`) in sync. Python 3.13. **Committed & pushed to `main`.**
-- Repo has a `.gitignore` (Python artifacts); `settings.local.json` remains tracked (pre-existing, left alone).
-- **Padding issues #1/#2/#3 are CLOSED** — fixed in f8f0d7e, merged as PR #4. `dev/` was deleted.
-- Issues #5–#14 opened 2026-08-20, all verified by repro. **The correctness cluster #5/#6/#7/#8 + #15 is FIXED** on `claude/review-open-issues-rr8quq` (commit 3625965) — PR open, closes on merge. #9–#14 (tooling/docs/packaging) remain.
-- **#15** = every container crashed when `title` was omitted (`section_title` undefined under `StrictUndefined`); filed and fixed in the same pass.
-- `python test_builder.py` passes (35.9 KB) and still only covers the happy path — **#9 (pytest) is the next step**, and the repro suite from the cluster work drops straight into it.
+- pyHermes = the **email builder** only. Delivery (`svc/gmail`, `svc/outlook`) still does not exist.
+- `main` @ `44899cb` has absorbed everything through PR #30: `enums.py` (StrEnum vocab), `ThreeColumn`, the `CardGroup`/`highlight` rework, escaping (#12), URL-scheme validation (#24), wheel-packaged templates (#10), pytest suite (#9), CI (#11).
+- **`test_builder.py` and the committed `weekly_market_wrap_v2.html` are GONE.** CI is now ruff → format → mypy → pytest, plus a separate wheel job that renders from a clean venv. Output goes to gitignored `output/`.
+- **Image handling landed this session** on `claude/review-open-issues-rr8quq` @ `6169dcf` (pushed, **no PR**): `svc/builder/images.py`, `ImageBlock`, `templates/media/`, and `Email.assets()` — the manifest a delivery layer will consume.
+- 349 tests pass; ruff/format/mypy clean; wheel verified to ship `templates/media/`.
 - Excluded by design: asset-authoring meta-toolkit, `.meta/roadmap` system, all VBA/VSTO/PowerApps assets.
 - Two caveats: `github-operator` needs a GitHub MCP server (available in remote sessions); `finance-quantitative-developer` + quant skills are speculative (no quant code in repo yet).
 
@@ -23,12 +22,23 @@
 - [2026-08-20] Under `StrictUndefined`, ALWAYS inject a context key with a falsey default rather than `if self.x: ctx["x"] = ...` — an undefined name raises even inside `{% if %}`. This one pattern caused #5 and #15; the same hazard via direct indexing (`row.colors[i]`) caused #6 — sessions/2026-08-20-1205-review-open-issues.md
 - [2026-08-20] Prove a no-behavior-change refactor by diffing the rendered `weekly_market_wrap_v2.html` — byte-identical output is the repo's cheapest regression proof absent a test suite — sessions/2026-08-20-1205-review-open-issues.md
 
+- [2026-08-21] **The builder declares CID embeds; it never performs one.** Attaching a MIME part is a transport act, so `Email.render()` gives HTML and `Email.assets()` gives the parts to attach — for every `src="cid:X"`, one `ImageAsset` for X. This is the seam `svc/gmail`/`svc/outlook` implement — sessions/2026-08-21-1549-image-embedding-foundation.md
+- [2026-08-21] Three embed strategies, all three needed: REMOTE (free, Outlook blocks it), CID (renders everywhere, costs *message* not HTML size so it dodges the 102 KB limit), DATA_URI (Gmail strips it, Outlook won't render it, +33% into the budget — supported but guarded and never a default) — sessions/2026-08-21-1549-image-embedding-foundation.md
+- [2026-08-21] Image format is sniffed from **magic bytes, not the extension** — PNG/JPEG/GIF only; WebP and SVG are detected specifically so the rejection names the reason — sessions/2026-08-21-1549-image-embedding-foundation.md
+- [2026-08-21] Content-IDs are content-addressed (`sha256(bytes)[:16]`): same image used twice is attached once, and the same input always yields the same output — sessions/2026-08-21-1549-image-embedding-foundation.md
+- [2026-08-21] **Re-fetch `main` and read the tree before trusting CLAUDE.md's description of it.** CLAUDE.md lagged reality by several merged PRs this session and cost time — sessions/2026-08-21-1549-image-embedding-foundation.md
+- [2026-08-21] **Read the tests before refactoring a private helper.** `Email._validate_size` is a `@staticmethod` on purpose (tests drive the size edges directly) and error messages are asserted on by field name — both broke when I changed them for unrelated reasons — sessions/2026-08-21-1549-image-embedding-foundation.md
+- [2026-08-21] `models` ↔ `images` must stay a *lazy* cycle: function-local imports plus `TYPE_CHECKING` + quoted annotations. Module-level imports either direction deadlock — sessions/2026-08-21-1549-image-embedding-foundation.md
+
 ## Threads          (open items; remove when closed)
-- **Tackle order** (step 1 DONE): ~~(1) correctness cluster #5+#6+#7+#8+#15~~ shipped; next **(2) #9 pytest** — lift the cluster's repro suite into `tests/`; then (3) #11 CI → #10 wheel → #12 escaping → #13 docstring → #14 retire assembler.
-- PR for the cluster is open and unmerged — issues #5/#6/#7/#8/#15 close on merge, not before.
-- #12 (escaping helper) is low priority only while content is hand-curated — it becomes top priority the moment content comes from an external source.
+- **`claude/review-open-issues-rr8quq` @ `6169dcf` is pushed with no PR** — open one when ready. Branch was restarted from `main` because its old work was already merged.
+- **Next natural step: `svc/gmail` / `svc/outlook`.** `Email.assets()` is the contract they implement. `ImageAsset.content_id` is bare — the `cid:` prefix (HTML) and `<>` (MIME header) are added by each consumer.
+- Known wart left alone deliberately: `base.html` renders the logo with `alt="{{ firm_name }}"`, so an `EmailImage`'s own `alt` is ignored for the logo. Fixing it changes every existing email's output, so it wants its own decision.
+- `claude/card-component-and-highlight-property` is pushed, has no PR, and looks superseded by what landed on `main` — probably deletable.
+- `INLINE_LIMIT_KB = 48` is a judgment call (~half the 102 KB budget), not a spec number.
 
 ## Log              (append-only pointers)
 - [2026-08-19 22:44] adopt-claudebrain-assets — curated + installed + activated `.claude/`; later committed to `main`, filed issues #1–3, removed `dev/` — sessions/2026-08-19-2244-adopt-claudebrain-assets.md
 - [2026-08-20 12:05] review-open-issues — verified all 10 open issues by repro, found unfiled container-title crash, delivered tackle order; no code changed — sessions/2026-08-20-1205-review-open-issues.md
 - [2026-08-20 13:20] review-open-issues (cont.) — filed #15, fixed cluster #5/#6/#7/#8/#15 in commit 3625965, opened PR — sessions/2026-08-20-1205-review-open-issues.md
+- [2026-08-21 15:49] image-embedding-foundation — designed + shipped the EmailImage/EmbedStrategy/ImageAsset foundation and the Email.assets() manifest seam; ImageBlock + widened ChartBlock; 68 new tests — sessions/2026-08-21-1549-image-embedding-foundation.md
