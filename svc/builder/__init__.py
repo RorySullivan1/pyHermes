@@ -45,6 +45,7 @@ from .components import (
     ChartBlock,
     Component,
     DataTable,
+    ImageBlock,
     KpiStrip,
     NumberedList,
     TextBlock,
@@ -65,6 +66,8 @@ from .engine import TemplateEngine
 # Enums
 from .enums import (
     CardOrientation,
+    EmbedStrategy,
+    ImageAlign,
     ThreeColumnRatio,
     TwoColumnRatio,
 )
@@ -75,6 +78,12 @@ from .exceptions import (
     SizeError,
     TemplateError,
     ValidationError,
+)
+
+# Images
+from .images import (
+    EmailImage,
+    ImageAsset,
 )
 
 # Models
@@ -103,6 +112,7 @@ __all__ = [
     "KpiStrip",
     "DataTable",
     "ChartBlock",
+    "ImageBlock",
     "TextBlock",
     "NumberedList",
     "AuthorBlock",
@@ -115,6 +125,11 @@ __all__ = [
     "TwoColumnRatio",
     "ThreeColumnRatio",
     "CardOrientation",
+    "EmbedStrategy",
+    "ImageAlign",
+    # Images
+    "EmailImage",
+    "ImageAsset",
     # Email
     "Email",
     "EmailBuilder",

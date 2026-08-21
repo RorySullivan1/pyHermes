@@ -1,0 +1,476 @@
+"""
+Image sources and embed strategies for HTML email.
+
+An image in an email carries two independent facts: **where the bytes live**
+(a hosted URL, a file on disk, bytes in memory) and **how they reach the
+reader**.  This module owns both, and is the generic foundation the
+per-service delivery layers build on.
+
+The builder can decide the strategy and emit the correct ``src``, but it
+cannot *perform* a CID embed — attaching a MIME part is a transport act
+belonging to a delivery service (``svc/gmail``, ``svc/outlook``).  So the
+builder emits two things instead of one: the HTML, and an **asset
+manifest** of the :class:`ImageAsset` parts the delivery layer must attach.
+Reach the manifest via :meth:`Email.assets <svc.builder.email.Email.assets>`.
+
+The three strategies, and why all three exist:
+
+==============  ===========================  =====================  ==========================
+Strategy        Size cost                    Gmail                  Outlook desktop
+==============  ===========================  =====================  ==========================
+``REMOTE``      none                         proxied and cached     blocked until "download
+                                                                    images"
+``CID``         *message* size, not HTML     renders; may show a    renders immediately, no
+                size — does not count        paperclip              prompt
+                against the 102 KB limit
+``DATA_URI``    +33% base64, straight into   **stripped entirely**  Word engine will not
+                the 102 KB budget                                   render it
+==============  ===========================  =====================  ==========================
+
+``REMOTE`` is the default because it is the only one that is universally
+*safe*, and ``CID`` is the one that actually renders everywhere — pick it
+when the reader must see the image without clicking anything.  ``DATA_URI``
+looks the most like "embedding" and works the least; it is supported for
+browser preview and non-Gmail channels, guarded by a hard size check, and
+is never a default.
+
+Usage::
+
+    from svc.builder.images import EmailImage
+
+    hosted   = EmailImage.hosted("https://cdn.example.com/chart.png", alt="Factor returns")
+    attached = EmailImage.attached("charts/factor.png", alt="Factor returns", width=616)
+    inline   = EmailImage.inline(png_bytes, alt="Sparkline", width=120)
+
+Format support is deliberately narrow: PNG, JPEG and GIF are the three
+raster formats every mail client renders.  WebP and SVG are recognised only
+so the rejection can say why.
+"""
+
+from __future__ import annotations
+
+import base64
+import hashlib
+import re
+from dataclasses import dataclass, field
+from pathlib import Path
+
+from .enums import EmbedStrategy
+from .exceptions import SizeError, ValidationError
+
+# ──────────────────────────────────────────────────────────────────────
+# Format detection
+# ──────────────────────────────────────────────────────────────────────
+
+# Magic-byte signatures, checked instead of trusting a file extension: the
+# extension is a claim by the caller, the bytes are the fact.
+_SIGNATURES: tuple[tuple[bytes, str, str], ...] = (
+    (b"\x89PNG\r\n\x1a\n", "image/png", ".png"),
+    (b"\xff\xd8\xff", "image/jpeg", ".jpg"),
+    (b"GIF87a", "image/gif", ".gif"),
+    (b"GIF89a", "image/gif", ".gif"),
+)
+
+#: Formats mail clients render reliably. Keyed by MIME type -> extension.
+SUPPORTED_IMAGE_TYPES: dict[str, str] = {
+    "image/png": ".png",
+    "image/jpeg": ".jpg",
+    "image/gif": ".gif",
+}
+
+# A single inlined image may not exceed this, so that one image cannot eat
+# the whole email.  The Gmail clipping limit is 102 KB for the *entire*
+# rendered document (see Email._validate_size); base64 costs +33% on top of
+# the raw bytes, so this cap keeps a single data URI under roughly half the
+# budget and leaves room for the skeleton and the rest of the content.
+INLINE_LIMIT_KB = 48
+
+# Safe as both a `cid:` URL and a MIME Content-ID token.
+_CONTENT_ID_RE = re.compile(r"^[A-Za-z0-9._+-]{1,128}$")
+
+
+def sniff_image_type(data: bytes) -> tuple[str, str]:
+    """
+    Identify image bytes by their magic-byte signature.
+
+    Args:
+        data: The raw image bytes.
+
+    Returns:
+        A ``(mime_type, extension)`` pair, e.g. ``("image/png", ".png")``.
+
+    Raises:
+        ValidationError: If the bytes are empty, or are not a PNG, JPEG or
+            GIF.  WebP and SVG are detected specifically so the message can
+            explain that no mail client renders them dependably (and that
+            SVG can additionally carry script).
+    """
+    if not data:
+        raise ValidationError("image data is empty; nothing to embed.")
+
+    for signature, mime_type, extension in _SIGNATURES:
+        if data.startswith(signature):
+            return mime_type, extension
+
+    # Recognised-but-unsupported, so the error can name the actual problem
+    # rather than a generic "unknown format".
+    if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        raise ValidationError(
+            "WebP images are not supported: Outlook's Word rendering engine "
+            "cannot display them. Convert to PNG or JPEG."
+        )
+    if data[:5].lower() == b"<?xml" or data[:4].lower() == b"<svg":
+        raise ValidationError(
+            "SVG images are not supported: mail clients do not render them "
+            "dependably, and SVG can carry script. Rasterise to PNG."
+        )
+
+    raise ValidationError(
+        f"Unrecognised image format (first bytes: {data[:8]!r}). "
+        f"Supported: {', '.join(sorted(SUPPORTED_IMAGE_TYPES))}."
+    )
+
+
+def _read_source(source: str | Path | bytes) -> tuple[bytes, str]:
+    """
+    Resolve an image source to ``(data, original_filename)``.
+
+    ``bytes`` are taken as-is with no filename; a ``str``/``Path`` is read
+    from disk.
+
+    Raises:
+        ValidationError: If the path does not exist or cannot be read.
+    """
+    if isinstance(source, bytes):
+        return source, ""
+
+    path = Path(source)
+    try:
+        return path.read_bytes(), path.name
+    except OSError as exc:
+        raise ValidationError(f"cannot read image file '{path}': {exc}") from exc
+
+
+def _validate_content_id(value: str) -> None:
+    """Raise if a Content-ID could not sit safely in a ``cid:`` URL."""
+    if not _CONTENT_ID_RE.match(value):
+        raise ValidationError(
+            f"'content_id' must be 1-128 characters of [A-Za-z0-9._+-], got: {value!r}. "
+            "Angle brackets, whitespace and '@' are added by the delivery layer, not here."
+        )
+
+
+# ──────────────────────────────────────────────────────────────────────
+# The manifest entry
+# ──────────────────────────────────────────────────────────────────────
+
+
+@dataclass(frozen=True)
+class ImageAsset:
+    """
+    One image the delivery layer must attach to the outgoing message.
+
+    This is the builder's half of a CID embed: the HTML says
+    ``src="cid:<content_id>"``, and this says what to attach under that ID.
+    A delivery service turns it into a MIME part with
+    ``Content-ID: <{content_id}>`` and ``Content-Disposition: inline``.
+
+    Attributes:
+        content_id: Bare Content-ID, *without* the angle brackets a MIME
+            header needs and without the ``cid:`` prefix the HTML needs —
+            each consumer adds its own.
+        data:       The raw image bytes.
+        mime_type:  Sniffed from the bytes, e.g. ``"image/png"``.
+        filename:   Suggested attachment filename.
+    """
+
+    content_id: str
+    data: bytes
+    mime_type: str
+    filename: str
+
+    @property
+    def size_kb(self) -> float:
+        """Size of the attached bytes in kilobytes."""
+        return len(self.data) / 1024
+
+
+# ──────────────────────────────────────────────────────────────────────
+# The image reference
+# ──────────────────────────────────────────────────────────────────────
+
+
+@dataclass(frozen=True)
+class EmailImage:
+    """
+    An image plus the strategy for getting it in front of the reader.
+
+    Build one with :meth:`hosted`, :meth:`attached` or :meth:`inline` rather
+    than calling the constructor directly — the factories do the file
+    reading, format sniffing and Content-ID derivation, and they make the
+    valid field combinations unmissable.
+
+    Validation runs at construction, per the builder's convention: by the
+    time a component holds an ``EmailImage``, the bytes have been read, the
+    format is known good, and the size is within budget.
+
+    Attributes:
+        strategy:  How the bytes reach the reader.
+        alt:       Alt text. Required — it is what the reader sees whenever
+            images are blocked, which for Outlook desktop is the default.
+        url:       The hosted URL. ``REMOTE`` only.
+        data:      The raw bytes. ``CID`` and ``DATA_URI`` only.
+        mime_type: Sniffed from ``data``. ``CID`` and ``DATA_URI`` only.
+        content_id: Bare Content-ID. ``CID`` only.
+        filename:  Suggested attachment filename. ``CID`` only.
+        width:     Display width in px, emitted as the ``width`` attribute
+            because Outlook's Word engine ignores CSS ``max-width``. For a
+            retina asset pass the *display* width, not the pixel width of
+            the file. ``None`` renders full-width.
+    """
+
+    strategy: EmbedStrategy
+    alt: str
+    url: str = ""
+    data: bytes = b""
+    mime_type: str = ""
+    content_id: str = ""
+    filename: str = ""
+    width: int | None = field(default=None)
+
+    # ------------------------------------------------------------------
+    # Factories
+    # ------------------------------------------------------------------
+
+    @classmethod
+    def hosted(cls, url: str, alt: str, width: int | None = None) -> EmailImage:
+        """
+        Reference a publicly hosted image by URL.
+
+        The default strategy, and the only one that costs nothing. The
+        caller owns the host: this validates the URL's *scheme* only, not
+        that it resolves.
+
+        Args:
+            url:   Absolute or relative image URL.
+            alt:   Alt text; shown wherever images are blocked.
+            width: Display width in px. ``None`` renders full-width.
+
+        Raises:
+            ValidationError: On an empty/unsafe URL or empty alt text.
+        """
+        from .models import _validate_url  # local: models imports nothing from here
+
+        if not url:
+            raise ValidationError("EmailImage.hosted() requires a url.")
+        _validate_url(url, "image.url")
+        return cls(strategy=EmbedStrategy.REMOTE, alt=alt, url=url, width=_check_width(width))
+
+    @classmethod
+    def attached(
+        cls,
+        source: str | Path | bytes,
+        alt: str,
+        width: int | None = None,
+        content_id: str = "",
+        filename: str = "",
+    ) -> EmailImage:
+        """
+        Embed by attaching the bytes as a MIME part, referenced by ``cid:``.
+
+        The strategy that renders without the reader clicking anything. The
+        bytes are read and sniffed now; the resulting :class:`ImageAsset`
+        surfaces in the email's manifest for the delivery layer to attach.
+        Costs message size but *not* HTML size, so it does not push the
+        email toward Gmail's 102 KB clipping limit.
+
+        Args:
+            source:     Path to an image file, or raw image bytes.
+            alt:        Alt text; shown until the image loads.
+            width:      Display width in px. ``None`` renders full-width.
+            content_id: Bare Content-ID. Defaults to a hash of the bytes,
+                so the same image used twice is attached once.
+            filename:   Attachment filename. Defaults to the source file's
+                name, or ``<content_id><ext>`` for raw bytes.
+
+        Raises:
+            ValidationError: On unreadable files, unsupported formats, an
+                unsafe ``content_id``, or empty alt text.
+        """
+        data, original_name = _read_source(source)
+        mime_type, extension = sniff_image_type(data)
+
+        # Content-addressed by default: identical bytes collapse to one
+        # attachment, and the same input always yields the same output.
+        resolved_id = content_id or hashlib.sha256(data).hexdigest()[:16]
+        _validate_content_id(resolved_id)
+
+        return cls(
+            strategy=EmbedStrategy.CID,
+            alt=alt,
+            data=data,
+            mime_type=mime_type,
+            content_id=resolved_id,
+            filename=filename or original_name or f"{resolved_id}{extension}",
+            width=_check_width(width),
+        )
+
+    @classmethod
+    def inline(cls, source: str | Path | bytes, alt: str, width: int | None = None) -> EmailImage:
+        """
+        Inline the bytes as a base64 ``data:`` URI.
+
+        **Gmail strips data URIs and Outlook's Word engine will not render
+        them.** Use this for browser preview or a known non-Gmail,
+        non-Outlook-desktop channel — never as a general default.
+
+        Args:
+            source: Path to an image file, or raw image bytes.
+            alt:    Alt text; shown wherever the URI is stripped.
+            width:  Display width in px. ``None`` renders full-width.
+
+        Raises:
+            ValidationError: On unreadable files or unsupported formats.
+            SizeError: If the base64 payload would exceed
+                :data:`INLINE_LIMIT_KB`, which would leave too little of
+                the 102 KB Gmail budget for the rest of the email.
+        """
+        data, _ = _read_source(source)
+        mime_type, _ = sniff_image_type(data)
+
+        # base64 encodes 3 bytes as 4 characters, rounded up to a 4-char
+        # block — checked here so the failure names the image, rather than
+        # surfacing later as a whole-email SizeError that doesn't.
+        encoded_kb = (-(-len(data) // 3) * 4) / 1024
+        if encoded_kb > INLINE_LIMIT_KB:
+            raise SizeError(
+                f"Inlined image is {encoded_kb:.1f} KB once base64-encoded, over the "
+                f"{INLINE_LIMIT_KB} KB per-image cap (the whole email must stay under "
+                f"102 KB). Attach it instead with EmailImage.attached(), or host it."
+            )
+
+        return cls(
+            strategy=EmbedStrategy.DATA_URI,
+            alt=alt,
+            data=data,
+            mime_type=mime_type,
+            width=_check_width(width),
+        )
+
+    # ------------------------------------------------------------------
+    # Validation
+    # ------------------------------------------------------------------
+
+    def __post_init__(self) -> None:
+        if not self.alt or not self.alt.strip():
+            raise ValidationError(
+                "'image.alt' is required and cannot be empty: it is what the reader "
+                "sees whenever images are blocked, which is Outlook's default."
+            )
+        if self.strategy == EmbedStrategy.REMOTE:
+            if not self.url:
+                raise ValidationError("a REMOTE image requires a 'url'.")
+        elif not self.data:
+            raise ValidationError(f"a {self.strategy.upper()} image requires 'data'.")
+
+        if self.strategy == EmbedStrategy.CID and not self.content_id:
+            raise ValidationError("a CID image requires a 'content_id'.")
+
+    # ------------------------------------------------------------------
+    # Rendering / manifest
+    # ------------------------------------------------------------------
+
+    @property
+    def src(self) -> str:
+        """
+        The value for the ``src`` attribute, per this image's strategy.
+
+        Templates escape it on the way out, as they do every attribute.
+        """
+        if self.strategy == EmbedStrategy.REMOTE:
+            return self.url
+        if self.strategy == EmbedStrategy.CID:
+            return f"cid:{self.content_id}"
+        encoded = base64.b64encode(self.data).decode("ascii")
+        return f"data:{self.mime_type};base64,{encoded}"
+
+    @property
+    def asset(self) -> ImageAsset | None:
+        """
+        The manifest entry for this image, or ``None`` if it needs none.
+
+        Only ``CID`` images produce one: a remote image has no bytes to
+        attach, and a data URI carries its own inside the HTML.
+        """
+        if self.strategy != EmbedStrategy.CID:
+            return None
+        return ImageAsset(
+            content_id=self.content_id,
+            data=self.data,
+            mime_type=self.mime_type,
+            filename=self.filename,
+        )
+
+
+def _check_width(width: int | None) -> int | None:
+    """Raise if a display width is not a positive integer."""
+    if width is None:
+        return None
+    if not isinstance(width, int) or isinstance(width, bool) or width <= 0:
+        raise ValidationError(f"'image.width' must be a positive integer of pixels, got: {width!r}")
+    return width
+
+
+def coerce_image(
+    value: str | EmailImage,
+    alt: str,
+    field_name: str,
+    width: int | None = None,
+) -> EmailImage:
+    """
+    Accept either an :class:`EmailImage` or a bare URL string.
+
+    Lets every image-taking API keep working with the plain URLs it took
+    before this module existed, while accepting a full ``EmailImage``.
+
+    Args:
+        value:      An ``EmailImage``, or a URL string to wrap as ``REMOTE``.
+        alt:        Alt text. Used only when wrapping a bare string — an
+            ``EmailImage`` carries its own.
+        field_name: Name used in the error message.
+        width:      Display width in px. Used only when wrapping a bare
+            string, for the same reason.
+
+    Raises:
+        ValidationError: If ``value`` is empty or of an unsupported type.
+    """
+    if isinstance(value, EmailImage):
+        return value
+    if isinstance(value, str):
+        if not value:
+            raise ValidationError(f"'{field_name}' is required and cannot be empty.")
+        # Validated here as well as inside hosted(), so the message names the
+        # field the caller actually passed rather than the generic 'image.url'.
+        from .models import _validate_url
+
+        _validate_url(value, field_name)
+        return EmailImage.hosted(value, alt=alt, width=width)
+    raise ValidationError(
+        f"'{field_name}' must be a URL string or an EmailImage, got {type(value).__name__}."
+    )
+
+
+def dedupe_assets(assets: list[ImageAsset]) -> list[ImageAsset]:
+    """
+    Drop repeat Content-IDs, keeping first-seen order.
+
+    The same image used in two sections should be attached once. Order is
+    preserved so a rendered email and its manifest stay diffable.
+    """
+    seen: set[str] = set()
+    unique: list[ImageAsset] = []
+    for asset in assets:
+        if asset.content_id not in seen:
+            seen.add(asset.content_id)
+            unique.append(asset)
+    return unique

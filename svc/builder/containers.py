@@ -19,6 +19,7 @@ from .components import Component
 from .engine import TemplateEngine
 from .enums import ThreeColumnRatio, TwoColumnRatio
 from .exceptions import ValidationError
+from .images import ImageAsset
 from .models import _validate_color
 
 
@@ -66,6 +67,20 @@ class Container:
             ctx["background_color"] = self.background_color
         return ctx
 
+    def components(self) -> list[Component]:
+        """
+        Return the components occupying this container's slots.
+
+        Subclasses list their own slots — one for a single column, the
+        filled columns for a split. Used to walk the section tree without
+        rendering it, which is how the email collects its asset manifest.
+        """
+        raise NotImplementedError
+
+    def assets(self) -> list[ImageAsset]:
+        """Return the attachment manifest entries from every component here."""
+        return [asset for component in self.components() for asset in component.assets()]
+
     def render(self, engine: TemplateEngine) -> str:
         raise NotImplementedError
 
@@ -91,6 +106,9 @@ class FullWidth(Container):
     ):
         super().__init__(title, background_color, highlight)
         self.content = content
+
+    def components(self) -> list[Component]:
+        return [self.content]
 
     def render(self, engine: TemplateEngine) -> str:
         ctx = self._base_context(engine)
@@ -154,6 +172,9 @@ class TwoColumn(Container):
         self.template_path = self._ratio_map[TwoColumnRatio(ratio)]
         self.left = left
         self.right = right
+
+    def components(self) -> list[Component]:
+        return [c for c in (self.left, self.right) if c is not None]
 
     def render(self, engine: TemplateEngine) -> str:
         # Both keys are always injected: the column templates emit {{ left }}
@@ -228,6 +249,9 @@ class ThreeColumn(Container):
         self.left = left
         self.center = center
         self.right = right
+
+    def components(self) -> list[Component]:
+        return [c for c in (self.left, self.center, self.right) if c is not None]
 
     def render(self, engine: TemplateEngine) -> str:
         # All three keys are always injected: the column templates emit

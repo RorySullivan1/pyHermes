@@ -1,0 +1,41 @@
+{#
+  IMAGE BLOCK — A single image, optionally linked and captioned.
+
+  Email-client notes baked into the markup below:
+    * The `width` ATTRIBUTE is what Outlook's Word engine honours; it
+      ignores CSS `max-width`.  `max-width:100%` + `height:auto` then let
+      every other client scale the image down on a narrow screen.
+    * `display:block` kills the descender gap under an inline image, and
+      `border:0` kills the blue border Outlook draws around a linked one.
+    * The caption sits outside the <a>, so tapping it does not navigate.
+
+  Context:
+    subtitle       — Optional sub-heading rendered above the image
+    image_src      — Resolved src (hosted URL, cid: reference, or data: URI)
+    image_alt      — Alt text; what the reader sees while images are blocked
+    image_width    — Display width in px, or "" for full width
+    image_align    — "left" | "center" | "right"
+    link_url       — Optional href wrapping the image ("" for none)
+    caption        — Optional caption rendered beneath the image
+#}
+{% if subtitle %}
+<p style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; font-style: italic; color: #7A7A72; margin: 0 0 12px 0; line-height: 1.4;">{{ subtitle | escape_html }}</p>
+{% endif %}
+<table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
+  <tr>
+    <td align="{{ image_align | escape_html }}" style="padding: 0;">
+      {% if link_url %}
+      <a href="{{ link_url | escape_html }}" style="text-decoration: none; border: 0;">
+      {% endif %}
+      <img src="{{ image_src | escape_html }}" alt="{{ image_alt | escape_html }}"
+           {% if image_width %}width="{{ image_width }}"{% else %}width="100%"{% endif %}
+           style="display: block; border: 0; outline: none; text-decoration: none; max-width: 100%; height: auto;">
+      {% if link_url %}
+      </a>
+      {% endif %}
+      {% if caption %}
+      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #A09E97; font-style: italic; margin: 8px 0 0 0;">{{ caption | escape_html }}</p>
+      {% endif %}
+    </td>
+  </tr>
+</table>

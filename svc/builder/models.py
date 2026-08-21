@@ -7,10 +7,13 @@ metadata for the email skeleton, typed data for each component, etc.
 """
 
 import re
-from dataclasses import asdict, dataclass, field
-from typing import Any
+from dataclasses import dataclass, field, fields
+from typing import TYPE_CHECKING, Any
 
 from .exceptions import ValidationError
+
+if TYPE_CHECKING:  # pragma: no cover - import cycle: images imports _validate_url
+    from .images import EmailImage, ImageAsset
 
 # ──────────────────────────────────────────────────────────────────────
 # Helpers
@@ -73,8 +76,8 @@ class EmailMetadata:
     email_subject: str = ""
     preheader_text: str = ""
     header_disclaimer: str = ""
-    header_bg_image_url: str = ""
-    logo_url: str = ""
+    header_bg_image_url: "str | EmailImage" = ""
+    logo_url: "str | EmailImage" = ""
     firm_name: str = ""
     campaign_name: str = ""
     date_range: str = ""
@@ -85,6 +88,9 @@ class EmailMetadata:
     current_year: str = ""
     unsubscribe_url: str = ""
     view_in_browser_url: str = ""
+
+    #: Metadata fields that may hold an EmailImage instead of a bare URL.
+    IMAGE_FIELDS = ("logo_url", "header_bg_image_url")
 
     def validate(self) -> None:
         """Validate required fields and URL schemes."""
@@ -97,10 +103,40 @@ class EmailMetadata:
             "unsubscribe_url",
             "view_in_browser_url",
         ):
-            _validate_url(getattr(self, fname), f"metadata.{fname}")
+            value = getattr(self, fname)
+            # An EmailImage validated its own URL (or its own bytes) at
+            # construction; only a bare string still needs checking here.
+            if isinstance(value, str):
+                _validate_url(value, f"metadata.{fname}")
+
+    def images(self) -> "list[EmailImage]":
+        """Return the EmailImages held in the metadata's image fields."""
+        from .images import EmailImage
+
+        return [
+            value
+            for fname in self.IMAGE_FIELDS
+            if isinstance(value := getattr(self, fname), EmailImage)
+        ]
+
+    def assets(self) -> "list[ImageAsset]":
+        """Return the attachment manifest entries for the metadata images."""
+        return [image.asset for image in self.images() if image.asset is not None]
 
     def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
+        """
+        Flatten to the template context for ``base.html``.
+
+        Image fields collapse to their resolved ``src`` — the skeleton wants
+        a string to drop into an attribute, and the bytes behind a ``cid:``
+        reference travel through the asset manifest instead.
+        """
+        from .images import EmailImage
+
+        return {
+            f.name: value.src if isinstance(value := getattr(self, f.name), EmailImage) else value
+            for f in fields(self)
+        }
 
 
 # ──────────────────────────────────────────────────────────────────────

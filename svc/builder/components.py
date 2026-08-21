@@ -17,8 +17,9 @@ import warnings
 from typing import Any
 
 from .engine import TemplateEngine
-from .enums import CardOrientation
+from .enums import CardOrientation, ImageAlign
 from .exceptions import ValidationError
+from .images import EmailImage, ImageAsset, coerce_image
 from .models import Card, NumberedItem, TableRow, _validate_url
 
 
@@ -27,6 +28,7 @@ class Component:
     Abstract base for all email components.
 
     Subclasses must set ``template_path`` and implement ``context()``.
+    A component that renders an image also overrides ``images()``.
     """
 
     template_path: str = ""  # e.g. "analysis/kpi-strip.html"
@@ -34,6 +36,25 @@ class Component:
     def context(self) -> dict[str, Any]:
         """Return the template context dict for this component."""
         raise NotImplementedError
+
+    def images(self) -> list[EmailImage]:
+        """
+        Return every :class:`EmailImage` this component renders.
+
+        Empty for the text and data components, which carry none. Override
+        it in any component that emits an ``<img>``, so the email can
+        collect the manifest of parts a delivery layer must attach.
+        """
+        return []
+
+    def assets(self) -> list[ImageAsset]:
+        """
+        Return the attachment manifest entries for this component.
+
+        Derived from :meth:`images` — only ``CID`` images produce one, so a
+        component whose images are all hosted returns an empty list.
+        """
+        return [image.asset for image in self.images() if image.asset is not None]
 
     def render(self, engine: TemplateEngine) -> str:
         """
@@ -200,37 +221,130 @@ class DataTable(Component):
 
 class ChartBlock(Component):
     """
-    Image / chart placeholder with source attribution.
+    A chart image, bordered, with source attribution.
+
+    The charting specialisation of :class:`ImageBlock` — same image
+    handling, plus the hairline border and the attribution line a data
+    exhibit needs.
 
     Args:
-        image_url: Full URL to the chart image.
-        alt_text:  Accessibility alt text.
+        image_url: An :class:`~svc.builder.images.EmailImage`, or a plain
+            URL string, which is wrapped as a hosted image using
+            ``alt_text``.  Pass an ``EmailImage`` to embed the chart by
+            ``cid:`` so it renders in Outlook without a download prompt.
+        alt_text:  Accessibility alt text.  Ignored when ``image_url`` is
+            an ``EmailImage``, which carries its own.
         source:    Attribution string.
         subtitle:  Optional sub-heading rendered above the chart.
+        width:     Display width in px.  Ignored when ``image_url`` is an
+            ``EmailImage``, which carries its own.  ``None`` renders full
+            width, as before.
     """
 
     template_path = "analysis/chart-block.html"
 
     def __init__(
         self,
-        image_url: str,
+        image_url: str | EmailImage,
         alt_text: str = "Chart",
         source: str = "",
         subtitle: str | None = None,
+        width: int | None = None,
     ):
         if not image_url:
             raise ValidationError("ChartBlock requires an image_url.")
-        _validate_url(image_url, "chart.image_url")
-        self.image_url = image_url
-        self.alt_text = alt_text
+        self.image = coerce_image(
+            image_url, alt=alt_text, field_name="chart.image_url", width=width
+        )
         self.source = source
         self.subtitle = subtitle
 
+    @property
+    def image_url(self) -> str:
+        """The resolved ``src`` for the chart image."""
+        return self.image.src
+
+    @property
+    def alt_text(self) -> str:
+        """The chart's alt text."""
+        return self.image.alt
+
+    def images(self) -> list[EmailImage]:
+        return [self.image]
+
     def context(self) -> dict[str, Any]:
         return {
-            "chart_image_url": self.image_url,
-            "chart_alt_text": self.alt_text,
+            "chart_image_url": self.image.src,
+            "chart_alt_text": self.image.alt,
+            "chart_image_width": self.image.width or "",
             "chart_source": self.source,
+            "subtitle": self.subtitle,
+        }
+
+
+class ImageBlock(Component):
+    """
+    A single image — optionally linked, captioned and aligned.
+
+    The generic image component: any picture that is not a data exhibit.
+    Charts keep their own component (:class:`ChartBlock`) for the border
+    and attribution line.
+
+    Args:
+        image:    An :class:`~svc.builder.images.EmailImage`, or a plain URL
+            string wrapped as a hosted image using ``alt_text``.
+        alt_text: Alt text, used only when ``image`` is a bare URL string.
+        caption:  Optional caption rendered beneath the image.
+        link_url: Optional URL the image links to.
+        align:    ``"center"`` (default), ``"left"`` or ``"right"``.
+        subtitle: Optional sub-heading rendered above the image.
+        width:    Display width in px, used only when ``image`` is a bare
+            URL string.  ``None`` renders full width.
+
+    Raises:
+        ValidationError: On a missing image, an unsupported alignment, or
+            an unsafe ``link_url`` scheme.
+    """
+
+    template_path = "media/image-block.html"
+
+    ALIGNMENTS = tuple(ImageAlign)
+
+    def __init__(
+        self,
+        image: str | EmailImage,
+        alt_text: str = "",
+        caption: str = "",
+        link_url: str = "",
+        align: str | ImageAlign = ImageAlign.CENTER,
+        subtitle: str | None = None,
+        width: int | None = None,
+    ):
+        if not image:
+            raise ValidationError("ImageBlock requires an image.")
+        if align not in self.ALIGNMENTS:
+            raise ValidationError(
+                f"Unsupported alignment '{align}'. Use: {[a.value for a in self.ALIGNMENTS]}"
+            )
+        _validate_url(link_url, "image.link_url")
+
+        self.image = coerce_image(image, alt=alt_text, field_name="image", width=width)
+        self.caption = caption
+        self.link_url = link_url
+        self.align = align
+        self.subtitle = subtitle
+
+    def images(self) -> list[EmailImage]:
+        return [self.image]
+
+    def context(self) -> dict[str, Any]:
+        return {
+            "image_src": self.image.src,
+            "image_alt": self.image.alt,
+            "image_width": self.image.width or "",
+            "image_align": self.align,
+            "link_url": self.link_url,
+            "caption": self.caption,
             "subtitle": self.subtitle,
         }
 

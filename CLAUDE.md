@@ -40,15 +40,17 @@ svc/
 │   ├── engine.py       — TemplateEngine (Jinja2, StrictUndefined, autoescape OFF)
 │   ├── email.py        — Email + EmailBuilder (fluent), _validate_size()
 │   ├── containers.py   — Container, FullWidth, TwoColumn, ThreeColumn (+ `highlight=` property)
-│   ├── components.py   — Component, CardGroup, DataTable, ChartBlock, TextBlock, NumberedList, AuthorBlock
+│   ├── components.py   — Component, CardGroup, DataTable, ChartBlock, ImageBlock, TextBlock, NumberedList, AuthorBlock
 │   ├── models.py       — EmailMetadata, Card, KpiItem, TableRow, NumberedItem, SectionConfig
-│   ├── enums.py        — StrEnum vocab: TwoColumnRatio, ThreeColumnRatio, CardOrientation
+│   ├── images.py       — EmailImage (hosted/attached/inline), ImageAsset manifest, format sniffing
+│   ├── enums.py        — StrEnum vocab: TwoColumnRatio, ThreeColumnRatio, CardOrientation, EmbedStrategy, ImageAlign
 │   ├── filters.py      — Jinja filters (e.g. validate_hex_color)
 │   ├── exceptions.py   — EmailBuilderError hierarchy
 │   └── templates/      ← packaged with the wheel (moved here in #10)
 │       ├── base.html                — the rendered skeleton (one hole: {{ sections_html }})
 │       ├── common/containers/*.html — layout geometry (full-width, col-50-50/30-70/70-30, col-33-33-33/50-25-25/25-50-25/25-25-50)
 │       ├── analysis/*.html          — data components (card-group, data-table, chart-block)
+│       ├── media/*.html             — image components (image-block)
 │       └── text/*.html              — text components (text-block, numbered-list, author-block)
 output/                 — generated email HTML (gitignored; not committed)
 tests/                  — pytest unit suite (validation, error paths, size limits)
@@ -88,9 +90,10 @@ that sets `template_path` and implements `context()`.
 
 ```python
 from svc.builder import EmailBuilder, Email, FullWidth, TwoColumn, ThreeColumn, \
-    CardGroup, DataTable, ChartBlock, TextBlock, NumberedList, AuthorBlock
+    CardGroup, DataTable, ChartBlock, ImageBlock, TextBlock, NumberedList, AuthorBlock
 from svc.builder.models import Card, KpiItem, TableRow, NumberedItem, EmailMetadata, SectionConfig
-from svc.builder.enums import TwoColumnRatio, ThreeColumnRatio, CardOrientation
+from svc.builder.enums import TwoColumnRatio, ThreeColumnRatio, CardOrientation, EmbedStrategy, ImageAlign
+from svc.builder.images import EmailImage, ImageAsset
 ```
 
 Column ratios and card orientation are `StrEnum`s in [svc/builder/enums.py](svc/builder/enums.py):
@@ -152,12 +155,79 @@ non-fluent `Email` class works identically.
   nothing about what the URL does when followed. `models._validate_url()` allows `http`,
   `https`, `mailto`, `cid` and relative URLs, and rejects everything else (`javascript:`,
   `data:`, `vbscript:`, `file:`) with `ValidationError` at construction. Applies to the five
-  `EmailMetadata` URL fields and `ChartBlock.image_url`. Scheme only — whether a URL
-  resolves, and its host/path, are not checked.
+  `EmailMetadata` URL fields, `ChartBlock.image_url`, `ImageBlock.link_url`, and every
+  `EmailImage.hosted()` URL. Scheme only — whether a URL resolves, and its host/path, are
+  not checked. A builder-generated `data:` URI from `EmailImage.inline()` bypasses this by
+  construction — it is validated by magic-byte sniffing instead, never by scheme.
 - **Hex-color enforcement** — colors use `#RRGGBB` everywhere. Validated by
   [models._validate_color()](svc/builder/models.py) at construction time and by the
   `validate_hex_color` filter ([svc/builder/filters.py](svc/builder/filters.py)) in templates.
   `DataTable` cell colors come from the `TableRow.colors` list — index-aligned with `cells`.
+
+### Images and the asset manifest
+
+An image carries two independent facts: **where the bytes live** (a hosted URL, a file on
+disk, bytes in memory) and **how they reach the reader**. `EmailImage`
+([svc/builder/images.py](svc/builder/images.py)) owns both, via three factories:
+
+```python
+from svc.builder.images import EmailImage
+
+EmailImage.hosted("https://cdn.example.com/chart.png", alt="Factor returns")  # REMOTE
+EmailImage.attached("charts/factor.png", alt="Factor returns", width=616)     # CID
+EmailImage.inline(png_bytes, alt="Sparkline", width=120)                      # DATA_URI
+```
+
+| Strategy | Size cost | Gmail | Outlook desktop |
+|---|---|---|---|
+| `REMOTE` | none | proxied and cached | blocked until "download images" |
+| `CID` | *message* size, **not** HTML size — does not count toward the 102 KB limit | renders; may show a paperclip | renders immediately, no prompt |
+| `DATA_URI` | +33% base64, straight into the 102 KB budget | **stripped entirely** | Word engine will not render it |
+
+**The builder declares CID embeds; it never performs one.** Attaching a MIME part is a
+transport act belonging to a delivery service (`svc/gmail`, `svc/outlook`), so the builder
+emits two things instead of one — the HTML, and an **asset manifest**:
+
+```python
+html = email.render()
+for asset in email.assets():        # list[ImageAsset]
+    message.attach(asset.data, asset.mime_type,
+                   cid=asset.content_id, filename=asset.filename)
+```
+
+This is the seam the per-service layers plug into: **for every `src="cid:X"` in the HTML,
+`assets()` has the entry describing what to attach as `X`.** Only `CID` images appear —
+hosted images have no bytes and data URIs carry their own. `ImageAsset.content_id` is
+**bare**: the `cid:` prefix (HTML) and the `<>` (MIME header) are each added by whichever
+consumer needs them.
+
+Aggregation walks the section tree without rendering it: `Component.images()` →
+`Container.components()` → `Email.assets()`, plus the `EmailMetadata` image fields
+(`logo_url`, `header_bg_image_url`), which accept an `EmailImage` as well as a bare URL
+string. **A new image-bearing component must override `images()`** or its bytes never reach
+the manifest, and its `cid:` reference will render as a broken image.
+
+Rules the module enforces at construction, per the validation philosophy below:
+
+- **Format is sniffed from magic bytes, not the file extension** — PNG, JPEG and GIF only.
+  WebP and SVG are detected specifically so the rejection can say why (Outlook's Word engine
+  renders neither, and SVG can carry script).
+- **`alt` is required.** It is what the reader sees whenever images are blocked, which for
+  Outlook desktop is the default state.
+- **Content-IDs are content-addressed** — `sha256(bytes)[:16]` by default, so the same image
+  used in two sections is attached once, and the same input always yields the same output.
+  An explicit `content_id` is checked against `[A-Za-z0-9._+-]{1,128}`.
+- **Inline images are capped** at `INLINE_LIMIT_KB` (48 KB of base64) so one image cannot eat
+  the 102 KB budget; over that raises `SizeError` naming `EmailImage.attached()` as the fix.
+  A whole-email `SizeError` additionally reports how much base64 the inlined images
+  contributed.
+- **`width` is emitted as the HTML attribute**, not just CSS, because Outlook's Word engine
+  ignores `max-width`. For a retina asset pass the *display* width, not the file's.
+
+`ImageBlock` is the generic image component (optional caption, link, alignment);
+`ChartBlock` is the charting specialisation that adds the border and attribution line. Both
+accept an `EmailImage` **or** a bare URL string, so every pre-existing call site keeps
+working unchanged.
 
 ### Validation philosophy
 
