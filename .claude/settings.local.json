@@ -1,7 +1,6 @@
 {
   "permissions": {
     "allow": [
-      "Bash(python test_builder.py)",
       "Bash(python -m pip install jinja2)",
       "Bash(python -m pip install -e .)"
     ]
