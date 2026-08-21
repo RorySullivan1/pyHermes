@@ -11,6 +11,7 @@ import warnings
 import pytest
 
 from svc.builder import CardGroup, FullWidth, KpiStrip
+from svc.builder.enums import CardOrientation
 from svc.builder.exceptions import EmailBuilderError, ValidationError
 from svc.builder.models import Card, KpiItem
 
@@ -88,6 +89,10 @@ class TestCardGroupOrientation:
     def test_rejects_an_unknown_orientation(self):
         with pytest.raises(ValidationError, match="Unsupported orientation"):
             CardGroup(cards(2), orientation="diagonal")
+
+    def test_accepts_an_orientation_enum_member(self, engine):
+        html = CardGroup(cards(2), orientation=CardOrientation.VERTICAL).render(engine)
+        assert html.count("<tr>") == 2  # vertical: one row per card
 
     def test_horizontal_lays_cards_across_one_row(self, engine):
         html = CardGroup(cards(2), orientation="horizontal").render(engine)

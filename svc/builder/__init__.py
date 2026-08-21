@@ -54,12 +54,20 @@ from .components import (
 from .containers import (
     Container,
     FullWidth,
+    ThreeColumn,
     TwoColumn,
 )
 
 # Email builder + engine
 from .email import Email, EmailBuilder
 from .engine import TemplateEngine
+
+# Enums
+from .enums import (
+    CardOrientation,
+    ThreeColumnRatio,
+    TwoColumnRatio,
+)
 
 # Exceptions
 from .exceptions import (
@@ -102,6 +110,11 @@ __all__ = [
     "Container",
     "FullWidth",
     "TwoColumn",
+    "ThreeColumn",
+    # Enums
+    "TwoColumnRatio",
+    "ThreeColumnRatio",
+    "CardOrientation",
     # Email
     "Email",
     "EmailBuilder",

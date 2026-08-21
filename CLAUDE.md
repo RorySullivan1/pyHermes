@@ -39,14 +39,15 @@ svc/
 │   ├── __init__.py     — public API surface (re-exports everything below)
 │   ├── engine.py       — TemplateEngine (Jinja2, StrictUndefined, autoescape OFF)
 │   ├── email.py        — Email + EmailBuilder (fluent), _validate_size()
-│   ├── containers.py   — Container, FullWidth, TwoColumn (+ `highlight=` property)
+│   ├── containers.py   — Container, FullWidth, TwoColumn, ThreeColumn (+ `highlight=` property)
 │   ├── components.py   — Component, CardGroup, DataTable, ChartBlock, TextBlock, NumberedList, AuthorBlock
 │   ├── models.py       — EmailMetadata, Card, KpiItem, TableRow, NumberedItem, SectionConfig
+│   ├── enums.py        — StrEnum vocab: TwoColumnRatio, ThreeColumnRatio, CardOrientation
 │   ├── filters.py      — Jinja filters (e.g. validate_hex_color)
 │   ├── exceptions.py   — EmailBuilderError hierarchy
 │   └── templates/      ← packaged with the wheel (moved here in #10)
 │       ├── base.html                — the rendered skeleton (one hole: {{ sections_html }})
-│       ├── common/containers/*.html — layout geometry (full-width, col-50-50/30-70/70-30)
+│       ├── common/containers/*.html — layout geometry (full-width, col-50-50/30-70/70-30, col-33-33-33/50-25-25/25-50-25/25-25-50)
 │       ├── analysis/*.html          — data components (card-group, data-table, chart-block)
 │       └── text/*.html              — text components (text-block, numbered-list, author-block)
 output/                 — generated email HTML (gitignored; not committed)
@@ -86,10 +87,18 @@ that sets `template_path` and implements `context()`.
 ### Public API (import from `svc.builder`)
 
 ```python
-from svc.builder import EmailBuilder, Email, FullWidth, TwoColumn, \
+from svc.builder import EmailBuilder, Email, FullWidth, TwoColumn, ThreeColumn, \
     CardGroup, DataTable, ChartBlock, TextBlock, NumberedList, AuthorBlock
 from svc.builder.models import Card, KpiItem, TableRow, NumberedItem, EmailMetadata, SectionConfig
+from svc.builder.enums import TwoColumnRatio, ThreeColumnRatio, CardOrientation
 ```
+
+Column ratios and card orientation are `StrEnum`s in [svc/builder/enums.py](svc/builder/enums.py):
+`TwoColumn`/`ThreeColumn` take a `ratio` and `CardGroup` takes an `orientation` as
+**either the enum member or its bare string** (`ratio=ThreeColumnRatio.WIDE_LEFT` ==
+`ratio="50-25-25"`), so the enums are an additive convenience — existing string calls are
+unchanged. `enums.py` holds only the allowed values; the ratio→template mapping stays in
+`containers.py`.
 
 ### Cards and the highlight property
 
