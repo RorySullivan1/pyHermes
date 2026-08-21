@@ -57,12 +57,11 @@ consult the one that fits the task rather than reinventing it:
    (autoescape is OFF); colors use `#RRGGBB`. Uphold these at the boundary.
 
 ## Verify (do not finish until these pass)
-6. This repo has **no** pytest/ruff/mypy configured. The de facto integration test is
-   `python test_builder.py`, which regenerates `weekly_market_wrap_v2.html` end-to-end
-   through the full pipeline and prints the rendered size (warns above 90 KB, and
-   `_validate_size()` raises `SizeError` above 102 KB). Run it and confirm a clean
-   render. If the repo later adds ruff/pytest, run those too with the exact commands
-   it defines.
+6. Run the repo's checks: `pytest` (unit suite under `tests/`), plus `ruff check .`,
+   `ruff format --check .`, and `mypy` — the same four CI runs on every PR. There is no
+   in-repo end-to-end smoke test; when your change affects the rendered output, also build
+   an email end-to-end and `.save()` it into `output/` (gitignored) to confirm a clean
+   render and a size under the 102 KB limit (`_validate_size()` warns above 90 KB).
 7. If anything fails, fix it or report it honestly with the real command output —
    never claim a clean run you did not see.
 
@@ -82,6 +81,6 @@ consult the one that fits the task rather than reinventing it:
 Return a concise report, not a transcript:
 - What changed and why.
 - Files touched.
-- Verification result (`python test_builder.py` — clean render + reported size, or the
-  real failure output).
+- Verification result (`pytest`/`ruff`/`mypy`, plus a manual render to `output/` when the
+  output changed — clean pass + reported size, or the real failure output).
 - Anything deferred or needing a decision from the caller.

@@ -52,11 +52,10 @@ rather than reinventing it:
    normal book), assert against it; otherwise pin known inputs to known outputs.
 
 ## Verify (do not finish until these pass)
-6. This repo has no pytest/ruff/mypy configured today. Run whatever tests you add
-   directly (`python -m pytest <file>` if you introduce pytest, or a plain
-   `python <module>` check), plus `python test_builder.py` if your change touches
-   anything the email pipeline consumes. If the repo later standardizes on
-   ruff/mypy/pytest, use the exact commands it defines.
+6. Run the repo's checks — `pytest` (the `tests/` suite), `ruff check .`,
+   `ruff format --check .`, and `mypy` — plus any tests you add for the new behavior. If
+   your change touches anything the email pipeline consumes, also build an email
+   end-to-end and `.save()` it into `output/` (gitignored) to confirm a clean render.
 7. If anything fails, fix it or report it honestly with the real command output —
    never claim a clean run you did not see.
 
