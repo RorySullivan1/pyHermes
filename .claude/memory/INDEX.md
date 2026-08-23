@@ -5,7 +5,7 @@
 - `main` @ `07d5609` holds everything through **PR #31 (merged)**: image embedding (`images.py`, `ImageBlock`, `templates/media/`, `Email.assets()`), the parameter pass, plus PR #27's rework (**`Highlight` is gone** → `highlight=True` on any container; **`KpiItem` subclasses `Card`**; stacking is `CardGroup(orientation="vertical")`).
 - Parameters with defaults: `logo_alt` / `logo_width` resolve **explicit metadata → the `EmailImage`'s own value → `firm_name` / 90**, and the four skeleton-copy strings (`contact_heading`, `contact_cta_label`, `unsubscribe_label`, `view_in_browser_label`) default to what `base.html` used to hardcode.
 - 379 tests pass; ruff / `ruff format --check` / mypy clean; wheel job renders from a clean venv.
-- **Eight open epics.** Active, with filed sub-issues: #38 header region (#32–#37), #45 size themes (#39–#44), #46 color themes (#47–#51). Parents-only, sub-issues deliberately deferred: #52 delivery layer, #53 plain-text alternative, #54 preview/QA harness (pull forward with #32), #55 footer region (blocked on #38), #56 typography themes (blocked on #45+#46). Golden test #32 gates all template migration; everything touching `base.html`/`EmailMetadata` sequences, never interleaves.
+- **Eight open epics.** Active, with filed sub-issues: #38 header region (#32–#37), #45 size themes (#39–#44), #46 color themes (#47–#51), #54 QA harness (#57–#62 — pull forward; #58 shares ONE snapshot harness with #32). Parents-only, deferred: #52 delivery layer, #53 plain-text alternative, #55 footer region (blocked on #38), #56 typography themes (blocked on #45+#46). Golden test #32 gates all template migration; everything touching `base.html`/`EmailMetadata` sequences, never interleaves.
 - Excluded by design: asset-authoring meta-toolkit, `.meta/roadmap` system, all VBA/VSTO/PowerApps assets.
 - Two caveats: `github-operator` needs a GitHub MCP server (available in remote sessions); `finance-quantitative-developer` + quant skills are speculative (no quant code in repo yet).
 
@@ -43,7 +43,7 @@
 - **Epics #38/#45/#46 all start at golden test #32**; the render-context injection mechanism is built once — first of #40 (size) / #48 (theme) to land sets the pattern.
 - **Deferred epics #55 (footer) / #56 (typography) file their sub-issues only after their blockers merge** — review the landed mechanism against its plan first.
 - **Delivery epic #52 is the seam's first consumer**: `Email.assets()` is the contract; `ImageAsset.content_id` is bare — `cid:` (HTML) and `<>` (MIME header) are added by each consumer. Plain-text (#53) integrates via #52's `multipart/alternative` slot.
-- **QA harness #54 wants pulling forward**: its fixture gallery overlaps #32, and #43/#50 need its screenshots for their eyeball artifacts.
+- **QA harness #54 is built out (#57–#62) and wants starting first**: #57 gallery → #58 goldens (#58 and #32 must resolve to ONE snapshot harness, whichever moves first) ∥ #59 screenshots ∥ #60 lint → #61 CLI → #62 docs. #43/#50 need #59's screenshots for their eyeball artifacts.
 - `claude/card-component-and-highlight-property` merged as PR #27; the remote branch is safe to delete.
 - `INLINE_LIMIT_KB = 48` is a judgment call (~half the 102 KB budget), not a spec number.
 
@@ -55,3 +55,4 @@
 - [2026-08-23 17:31] component-rework-and-parameters — removed `Highlight` into a container property, made `KpiItem` a `Card`, added `CardGroup` orientations; then made logo alt/width and skeleton copy parameters. PR #31 open and green — sessions/2026-08-23-1731-component-rework-and-parameters.md
 - [2026-08-23 19:15] open-color-theme-epic — audited all color/shadow usage (18 hexes, ~235 occurrences, 20 files) and filed epic #46 + sub-issues #47–#51 (Theme object: vocabulary → plumbing → migration → custom seam → docs); no code changed — sessions/2026-08-23-1915-open-color-theme-epic.md
 - [2026-08-23 19:54] open-roadmap-epics — filed parent epics #52 delivery / #53 plain-text / #54 QA harness / #55 footer / #56 typography from the roadmap discussion (parents only, breakdowns planned in-body); rebased the branch's memory commit onto post-#31 main; no code changed — sessions/2026-08-23-1954-open-roadmap-epics.md
+- [2026-08-23 20:15] build-out-qa-harness-epic — filed + linked #54's sub-issues #57–#62 (gallery → goldens/screenshots/lint → CLI → docs) and updated the epic body to the filed list; no code changed — sessions/2026-08-23-2015-build-out-qa-harness-epic.md
