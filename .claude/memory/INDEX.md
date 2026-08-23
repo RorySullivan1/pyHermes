@@ -6,7 +6,7 @@
 - **`claude/review-open-issues-rr8quq` @ `dad1c71` is PR #31, open and CI-green — awaiting the user's merge decision.** It carries image embedding (`images.py`, `ImageBlock`, `templates/media/`, `Email.assets()`) plus the parameter pass.
 - Parameters with defaults: `logo_alt` / `logo_width` resolve **explicit metadata → the `EmailImage`'s own value → `firm_name` / 90**, and the four skeleton-copy strings (`contact_heading`, `contact_cta_label`, `unsubscribe_label`, `view_in_browser_label`) default to what `base.html` used to hardcode.
 - 379 tests pass; ruff / `ruff format --check` / mypy clean; wheel job renders from a clean venv.
-- **The GitHub issue backlog is empty** — all 10 original issues plus follow-ups #24/#25 are closed.
+- **Three open epics on GitHub**: #38 header region (#32–#37), #45 size themes (#39–#44), #46 color themes (#47–#51). Shared prerequisite for all template migration: golden test #32. All three touch `base.html` + `EmailMetadata` — sequence, don't interleave.
 - Excluded by design: asset-authoring meta-toolkit, `.meta/roadmap` system, all VBA/VSTO/PowerApps assets.
 - Two caveats: `github-operator` needs a GitHub MCP server (available in remote sessions); `finance-quantitative-developer` + quant skills are speculative (no quant code in repo yet).
 
@@ -35,9 +35,13 @@
 - [2026-08-23] **Non-formatting values are parameters with defaults that reproduce today's output.** Old hardcoded behaviour becomes the last link in a resolution chain, so nothing existing re-renders differently. Fonts/colours/padding/680px geometry stay fixed — that is the design system — sessions/2026-08-23-1731-component-rework-and-parameters.md
 - [2026-08-23] **Audit templates by parsing text nodes, not by grepping.** `grep` matched `Contact Us` inside an HTML section-marker comment and produced a false "not fixed" reading; parsing found exactly the four real strings — sessions/2026-08-23-1731-component-rework-and-parameters.md
 - [2026-08-23] **The contact CTA is emitted twice** (VML for Outlook, `<a>` for everyone else). Any change to it must touch both paths, and a test asserts the label appears twice — sessions/2026-08-23-1731-component-rework-and-parameters.md
+- [2026-08-23] **Color-theme epic #46: the Theme is the unit of customization, never a single color at a call site.** Unlike size themes (#45, closed presets), users may construct/pass whole `Theme` objects via `EmailMetadata.theme` — coherence held by frozen-complete-validated construction, no per-component color knobs; `KpiItem.color`/`TableRow.colors` stay caller *data* — sessions/2026-08-23-1915-open-color-theme-epic.md
+- [2026-08-23] Shadows are stored as **base hex + alpha float, composed to rgba() at render** — never raw rgba strings; the scrim `rgba(20,30,44,0.65)` is `#141E2C` @ 0.65 — sessions/2026-08-23-1915-open-color-theme-epic.md
+- [2026-08-23] The dark-mode-forcing block and mobile `@media` block carry their **own hardcoded copies** of palette colors with `!important` — any color/size migration must feed them the same tokens as the inline styles (#41/#49 own this) — sessions/2026-08-23-1915-open-color-theme-epic.md
 
 ## Threads          (open items; remove when closed)
 - **PR #31 is open and green — the user decides whether to merge.** Do not merge unasked.
+- **Epics #38/#45/#46 all start at golden test #32**; the render-context injection mechanism is built once — first of #40 (size) / #48 (theme) to land sets the pattern.
 - **Next natural step: `svc/gmail` / `svc/outlook`.** `Email.assets()` is the contract they implement. `ImageAsset.content_id` is bare — the `cid:` prefix (HTML) and `<>` (MIME header) are added by each consumer.
 - `claude/card-component-and-highlight-property` merged as PR #27; the remote branch is safe to delete.
 - `INLINE_LIMIT_KB = 48` is a judgment call (~half the 102 KB budget), not a spec number.
@@ -48,3 +52,4 @@
 - [2026-08-20 13:20] review-open-issues (cont.) — filed #15, fixed cluster #5/#6/#7/#8/#15 in commit 3625965, opened PR — sessions/2026-08-20-1205-review-open-issues.md
 - [2026-08-21 15:49] image-embedding-foundation — designed + shipped the EmailImage/EmbedStrategy/ImageAsset foundation and the Email.assets() manifest seam; ImageBlock + widened ChartBlock; 68 new tests — sessions/2026-08-21-1549-image-embedding-foundation.md
 - [2026-08-23 17:31] component-rework-and-parameters — removed `Highlight` into a container property, made `KpiItem` a `Card`, added `CardGroup` orientations; then made logo alt/width and skeleton copy parameters. PR #31 open and green — sessions/2026-08-23-1731-component-rework-and-parameters.md
+- [2026-08-23 19:15] open-color-theme-epic — audited all color/shadow usage (18 hexes, ~235 occurrences, 20 files) and filed epic #46 + sub-issues #47–#51 (Theme object: vocabulary → plumbing → migration → custom seam → docs); no code changed — sessions/2026-08-23-1915-open-color-theme-epic.md
