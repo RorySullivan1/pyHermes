@@ -2,11 +2,10 @@
 
 ## State            (rewrite in place — current truth only, ≤ ~10 lines)
 - pyHermes = the **email builder** only. Delivery (`svc/gmail`, `svc/outlook`) still does not exist.
-- `main` @ `44899cb` holds everything through PR #30, incl. PR #27's rework: **`Highlight` is gone** (it is now `highlight=True` on any container) and **`KpiItem` subclasses `Card`**; stacking is `CardGroup(orientation="vertical")`, not a second component.
-- **`claude/review-open-issues-rr8quq` @ `dad1c71` is PR #31, open and CI-green — awaiting the user's merge decision.** It carries image embedding (`images.py`, `ImageBlock`, `templates/media/`, `Email.assets()`) plus the parameter pass.
+- `main` @ `07d5609` holds everything through **PR #31 (merged)**: image embedding (`images.py`, `ImageBlock`, `templates/media/`, `Email.assets()`), the parameter pass, plus PR #27's rework (**`Highlight` is gone** → `highlight=True` on any container; **`KpiItem` subclasses `Card`**; stacking is `CardGroup(orientation="vertical")`).
 - Parameters with defaults: `logo_alt` / `logo_width` resolve **explicit metadata → the `EmailImage`'s own value → `firm_name` / 90**, and the four skeleton-copy strings (`contact_heading`, `contact_cta_label`, `unsubscribe_label`, `view_in_browser_label`) default to what `base.html` used to hardcode.
 - 379 tests pass; ruff / `ruff format --check` / mypy clean; wheel job renders from a clean venv.
-- **Three open epics on GitHub**: #38 header region (#32–#37), #45 size themes (#39–#44), #46 color themes (#47–#51). Shared prerequisite for all template migration: golden test #32. All three touch `base.html` + `EmailMetadata` — sequence, don't interleave.
+- **Eight open epics.** Active, with filed sub-issues: #38 header region (#32–#37), #45 size themes (#39–#44), #46 color themes (#47–#51). Parents-only, sub-issues deliberately deferred: #52 delivery layer, #53 plain-text alternative, #54 preview/QA harness (pull forward with #32), #55 footer region (blocked on #38), #56 typography themes (blocked on #45+#46). Golden test #32 gates all template migration; everything touching `base.html`/`EmailMetadata` sequences, never interleaves.
 - Excluded by design: asset-authoring meta-toolkit, `.meta/roadmap` system, all VBA/VSTO/PowerApps assets.
 - Two caveats: `github-operator` needs a GitHub MCP server (available in remote sessions); `finance-quantitative-developer` + quant skills are speculative (no quant code in repo yet).
 
@@ -38,11 +37,13 @@
 - [2026-08-23] **Color-theme epic #46: the Theme is the unit of customization, never a single color at a call site.** Unlike size themes (#45, closed presets), users may construct/pass whole `Theme` objects via `EmailMetadata.theme` — coherence held by frozen-complete-validated construction, no per-component color knobs; `KpiItem.color`/`TableRow.colors` stay caller *data* — sessions/2026-08-23-1915-open-color-theme-epic.md
 - [2026-08-23] Shadows are stored as **base hex + alpha float, composed to rgba() at render** — never raw rgba strings; the scrim `rgba(20,30,44,0.65)` is `#141E2C` @ 0.65 — sessions/2026-08-23-1915-open-color-theme-epic.md
 - [2026-08-23] The dark-mode-forcing block and mobile `@media` block carry their **own hardcoded copies** of palette colors with `!important` — any color/size migration must feed them the same tokens as the inline styles (#41/#49 own this) — sessions/2026-08-23-1915-open-color-theme-epic.md
+- [2026-08-23] **Epics are filed at two depths.** An epic whose design is grounded in current code gets sub-issues immediately (#38/#45/#46); an epic that depends on an unmerged mechanism gets a parent with a *planned breakdown* only (#55 waits on #38, #56 waits on #45+#46) — filing its sub-issues early would encode proposals as commitments — sessions/2026-08-23-1954-open-roadmap-epics.md
 
 ## Threads          (open items; remove when closed)
-- **PR #31 is open and green — the user decides whether to merge.** Do not merge unasked.
 - **Epics #38/#45/#46 all start at golden test #32**; the render-context injection mechanism is built once — first of #40 (size) / #48 (theme) to land sets the pattern.
-- **Next natural step: `svc/gmail` / `svc/outlook`.** `Email.assets()` is the contract they implement. `ImageAsset.content_id` is bare — the `cid:` prefix (HTML) and `<>` (MIME header) are added by each consumer.
+- **Deferred epics #55 (footer) / #56 (typography) file their sub-issues only after their blockers merge** — review the landed mechanism against its plan first.
+- **Delivery epic #52 is the seam's first consumer**: `Email.assets()` is the contract; `ImageAsset.content_id` is bare — `cid:` (HTML) and `<>` (MIME header) are added by each consumer. Plain-text (#53) integrates via #52's `multipart/alternative` slot.
+- **QA harness #54 wants pulling forward**: its fixture gallery overlaps #32, and #43/#50 need its screenshots for their eyeball artifacts.
 - `claude/card-component-and-highlight-property` merged as PR #27; the remote branch is safe to delete.
 - `INLINE_LIMIT_KB = 48` is a judgment call (~half the 102 KB budget), not a spec number.
 
@@ -53,3 +54,4 @@
 - [2026-08-21 15:49] image-embedding-foundation — designed + shipped the EmailImage/EmbedStrategy/ImageAsset foundation and the Email.assets() manifest seam; ImageBlock + widened ChartBlock; 68 new tests — sessions/2026-08-21-1549-image-embedding-foundation.md
 - [2026-08-23 17:31] component-rework-and-parameters — removed `Highlight` into a container property, made `KpiItem` a `Card`, added `CardGroup` orientations; then made logo alt/width and skeleton copy parameters. PR #31 open and green — sessions/2026-08-23-1731-component-rework-and-parameters.md
 - [2026-08-23 19:15] open-color-theme-epic — audited all color/shadow usage (18 hexes, ~235 occurrences, 20 files) and filed epic #46 + sub-issues #47–#51 (Theme object: vocabulary → plumbing → migration → custom seam → docs); no code changed — sessions/2026-08-23-1915-open-color-theme-epic.md
+- [2026-08-23 19:54] open-roadmap-epics — filed parent epics #52 delivery / #53 plain-text / #54 QA harness / #55 footer / #56 typography from the roadmap discussion (parents only, breakdowns planned in-body); rebased the branch's memory commit onto post-#31 main; no code changed — sessions/2026-08-23-1954-open-roadmap-epics.md
