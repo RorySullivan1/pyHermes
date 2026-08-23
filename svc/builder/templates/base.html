@@ -118,11 +118,11 @@
                   <tr>
                     <td style="padding:18px 32px 0;" align="right">
                       <!--[if mso]>
-                      <img src="{{ logo_url | escape_html }}" width="90" alt="{{ firm_name | escape_html }}" style="display:block;">
+                      <img src="{{ logo_url | escape_html }}" width="{{ logo_width }}" alt="{{ logo_alt | escape_html }}" style="display:block;">
                       <![endif]-->
                       <!--[if !mso]><!-->
-                      <img src="{{ logo_url | escape_html }}" width="90" alt="{{ firm_name | escape_html }}"
-                           style="display:block; max-width:90px; height:auto;">
+                      <img src="{{ logo_url | escape_html }}" width="{{ logo_width }}" alt="{{ logo_alt | escape_html }}"
+                           style="display:block; max-width:{{ logo_width }}px; height:auto;">
                       <!--<![endif]-->
                     </td>
                   </tr>
@@ -206,7 +206,7 @@
                   <td style="padding:22px 24px;">
                     <p style="margin:0; font-family:Georgia,'Times New Roman',serif; font-size:16px;
                               font-weight:bold; color:#2C3E50; letter-spacing:0.2px;">
-                      Questions or feedback?
+                      {{ contact_heading | escape_html }}
                     </p>
                     <p style="margin:6px 0 16px; font-family:Arial,Helvetica,sans-serif; font-size:13px;
                               color:#7A7A72; line-height:1.55;">
@@ -220,7 +220,7 @@
                       <w:anchorlock/>
                       <center style="color:#FFFFFF;font-family:Arial,Helvetica,sans-serif;
                                      font-size:13px;font-weight:bold;">
-                        Contact Us
+                        {{ contact_cta_label | escape_html }}
                       </center>
                     </v:roundrect>
                     <![endif]-->
@@ -231,7 +231,7 @@
                               font-size:13px; font-weight:bold; line-height:38px;
                               text-align:center; text-decoration:none; width:150px;
                               -webkit-text-size-adjust:none;">
-                      Contact Us
+                      {{ contact_cta_label | escape_html }}
                     </a>
                     <!--<![endif]-->
                   </td>
@@ -261,9 +261,9 @@
               <p style="margin:0; font-family:Arial,Helvetica,sans-serif; font-size:9.5px;
                         color:#A09E97; text-align:center;">
                 &copy; {{ current_year | escape_html }} {{ firm_name | escape_html }} &nbsp;&middot;&nbsp;
-                <a href="{{ unsubscribe_url | escape_html }}" style="color:#5B8A9A; text-decoration:underline;">Unsubscribe</a>
+                <a href="{{ unsubscribe_url | escape_html }}" style="color:#5B8A9A; text-decoration:underline;">{{ unsubscribe_label | escape_html }}</a>
                 &nbsp;&middot;&nbsp;
-                <a href="{{ view_in_browser_url | escape_html }}" style="color:#5B8A9A; text-decoration:underline;">View in browser</a>
+                <a href="{{ view_in_browser_url | escape_html }}" style="color:#5B8A9A; text-decoration:underline;">{{ view_in_browser_label | escape_html }}</a>
               </p>
             </td>
           </tr>

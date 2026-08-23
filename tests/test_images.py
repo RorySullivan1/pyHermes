@@ -1,0 +1,388 @@
+"""
+Tests for image sources, embed strategies, and the attachment manifest.
+
+The through-line: the builder decides each image's ``src`` and *declares*
+what a delivery layer must attach, but never attaches anything itself. So
+these tests care about two things — that the ``src`` is right for the
+strategy, and that the manifest matches the ``cid:`` references in the HTML.
+"""
+
+import base64
+
+import pytest
+
+from svc.builder import (
+    ChartBlock,
+    EmailBuilder,
+    EmailImage,
+    FullWidth,
+    ImageBlock,
+    TextBlock,
+    TwoColumn,
+)
+from svc.builder.enums import EmbedStrategy
+from svc.builder.exceptions import SizeError, ValidationError
+from svc.builder.images import INLINE_LIMIT_KB, dedupe_assets, sniff_image_type
+from svc.builder.models import EmailMetadata
+
+
+class TestSniffing:
+    def test_detects_png(self, png_bytes):
+        assert sniff_image_type(png_bytes) == ("image/png", ".png")
+
+    def test_detects_jpeg(self, jpeg_bytes):
+        assert sniff_image_type(jpeg_bytes) == ("image/jpeg", ".jpg")
+
+    def test_detects_gif(self, gif_bytes):
+        assert sniff_image_type(gif_bytes) == ("image/gif", ".gif")
+
+    def test_reads_bytes_not_the_extension(self, tmp_path, png_bytes):
+        # A PNG misnamed .jpg is still a PNG; the extension is a claim.
+        lying = tmp_path / "actually-a-png.jpg"
+        lying.write_bytes(png_bytes)
+        assert EmailImage.attached(lying, alt="x").mime_type == "image/png"
+
+    def test_rejects_empty(self):
+        with pytest.raises(ValidationError, match="empty"):
+            sniff_image_type(b"")
+
+    def test_webp_rejection_names_outlook(self):
+        webp = b"RIFF" + b"\x00\x00\x00\x00" + b"WEBP" + b"\x00" * 16
+        with pytest.raises(ValidationError, match="WebP"):
+            sniff_image_type(webp)
+
+    def test_svg_rejection_names_svg(self):
+        with pytest.raises(ValidationError, match="SVG"):
+            sniff_image_type(b'<svg xmlns="http://www.w3.org/2000/svg"></svg>')
+
+    def test_rejects_an_unknown_format(self):
+        with pytest.raises(ValidationError, match="Unrecognised"):
+            sniff_image_type(b"NOT-AN-IMAGE" + b"\x00" * 16)
+
+
+class TestHosted:
+    def test_src_is_the_url(self):
+        image = EmailImage.hosted("https://cdn.test/c.png", alt="Chart")
+        assert image.src == "https://cdn.test/c.png"
+        assert image.strategy == EmbedStrategy.REMOTE
+
+    def test_has_no_asset_to_attach(self):
+        # Nothing to attach: the bytes live on someone else's server.
+        assert EmailImage.hosted("https://cdn.test/c.png", alt="Chart").asset is None
+
+    def test_rejects_an_empty_url(self):
+        with pytest.raises(ValidationError, match="requires a url"):
+            EmailImage.hosted("", alt="Chart")
+
+    @pytest.mark.parametrize(
+        "url", ["javascript:alert(1)", "vbscript:msgbox(1)", "file:///etc/passwd"]
+    )
+    def test_rejects_unsafe_schemes(self, url):
+        with pytest.raises(ValidationError, match="scheme"):
+            EmailImage.hosted(url, alt="Chart")
+
+    def test_accepts_a_relative_url(self):
+        assert EmailImage.hosted("images/c.png", alt="Chart").src == "images/c.png"
+
+
+class TestAttached:
+    def test_src_is_a_cid_reference(self, png_bytes):
+        image = EmailImage.attached(png_bytes, alt="Chart")
+        assert image.src == f"cid:{image.content_id}"
+
+    def test_reads_from_a_path(self, png_file):
+        image = EmailImage.attached(png_file, alt="Chart")
+        assert image.mime_type == "image/png"
+        assert image.filename == "chart.png"
+
+    def test_unreadable_path_raises(self, tmp_path):
+        with pytest.raises(ValidationError, match="cannot read image file"):
+            EmailImage.attached(tmp_path / "nope.png", alt="Chart")
+
+    def test_content_id_is_derived_from_the_bytes(self, png_bytes):
+        # Content-addressed, so the same input always gives the same output.
+        first = EmailImage.attached(png_bytes, alt="a")
+        second = EmailImage.attached(png_bytes, alt="b")
+        assert first.content_id == second.content_id
+
+    def test_different_bytes_get_different_ids(self, png_bytes, other_png_bytes):
+        assert (
+            EmailImage.attached(png_bytes, alt="a").content_id
+            != EmailImage.attached(other_png_bytes, alt="b").content_id
+        )
+
+    def test_accepts_an_explicit_content_id(self, png_bytes):
+        image = EmailImage.attached(png_bytes, alt="Chart", content_id="factor-chart")
+        assert image.src == "cid:factor-chart"
+
+    # "" is absent deliberately: an empty content_id means "derive one from
+    # the bytes", covered by test_content_id_is_derived_from_the_bytes.
+    @pytest.mark.parametrize("bad", ["has space", "<angled>", "with@at", "a" * 129])
+    def test_rejects_an_unsafe_content_id(self, png_bytes, bad):
+        with pytest.raises(ValidationError, match="content_id"):
+            EmailImage.attached(png_bytes, alt="Chart", content_id=bad)
+
+    def test_asset_carries_what_the_delivery_layer_needs(self, png_bytes):
+        asset = EmailImage.attached(png_bytes, alt="Chart").asset
+        assert asset is not None
+        assert asset.data == png_bytes
+        assert asset.mime_type == "image/png"
+        assert asset.filename.endswith(".png")
+        # Bare: the cid: prefix and the <> of a MIME header are each added by
+        # the consumer that needs them.
+        assert "<" not in asset.content_id and not asset.content_id.startswith("cid:")
+
+    def test_default_filename_falls_back_to_the_content_id(self, png_bytes):
+        image = EmailImage.attached(png_bytes, alt="Chart")
+        assert image.filename == f"{image.content_id}.png"
+
+
+class TestInline:
+    def test_src_is_a_data_uri(self, png_bytes):
+        image = EmailImage.inline(png_bytes, alt="Chart")
+        assert image.src == f"data:image/png;base64,{base64.b64encode(png_bytes).decode()}"
+
+    def test_carries_no_asset(self, png_bytes):
+        # The bytes are already in the HTML; there is nothing left to attach.
+        assert EmailImage.inline(png_bytes, alt="Chart").asset is None
+
+    def test_rejects_an_image_over_the_inline_cap(self, png_bytes):
+        # Padding a real PNG keeps the signature valid while blowing the cap.
+        oversized = png_bytes + b"\x00" * (INLINE_LIMIT_KB * 1024)
+        with pytest.raises(SizeError, match="per-image cap"):
+            EmailImage.inline(oversized, alt="Chart")
+
+    def test_the_cap_error_points_at_the_alternative(self, png_bytes):
+        oversized = png_bytes + b"\x00" * (INLINE_LIMIT_KB * 1024)
+        with pytest.raises(SizeError, match="EmailImage.attached"):
+            EmailImage.inline(oversized, alt="Chart")
+
+
+class TestSharedValidation:
+    @pytest.mark.parametrize("alt", ["", "   "])
+    def test_alt_text_is_required(self, png_bytes, alt):
+        # Alt text is what the reader sees while images are blocked, which
+        # for Outlook desktop is the default state.
+        with pytest.raises(ValidationError, match="image.alt"):
+            EmailImage.attached(png_bytes, alt=alt)
+
+    @pytest.mark.parametrize("width", [0, -10, 1.5, "300", True])
+    def test_width_must_be_positive_pixels(self, width):
+        with pytest.raises(ValidationError, match="image.width"):
+            EmailImage.hosted("https://cdn.test/c.png", alt="Chart", width=width)
+
+    def test_width_may_be_omitted(self):
+        assert EmailImage.hosted("https://cdn.test/c.png", alt="Chart").width is None
+
+
+class TestImageBlock:
+    def test_renders_the_src_and_alt(self, engine, png_bytes):
+        html = ImageBlock(EmailImage.attached(png_bytes, alt="Factor returns")).render(engine)
+        assert 'alt="Factor returns"' in html
+        assert "cid:" in html
+
+    def test_emits_the_width_attribute_for_outlook(self, engine):
+        # Outlook's Word engine honours the attribute and ignores max-width.
+        html = ImageBlock("https://cdn.test/c.png", alt_text="Chart", width=300).render(engine)
+        assert 'width="300"' in html
+
+    def test_defaults_to_full_width(self, engine):
+        html = ImageBlock("https://cdn.test/c.png", alt_text="Chart").render(engine)
+        assert 'width="100%"' in html
+
+    def test_accepts_a_bare_url(self, engine):
+        html = ImageBlock("https://cdn.test/c.png", alt_text="Chart").render(engine)
+        assert "https://cdn.test/c.png" in html
+
+    def test_a_bare_url_still_needs_alt_text(self):
+        with pytest.raises(ValidationError, match="image.alt"):
+            ImageBlock("https://cdn.test/c.png")
+
+    def test_renders_a_caption(self, engine):
+        html = ImageBlock("https://cdn.test/c.png", alt_text="C", caption="Source: X").render(
+            engine
+        )
+        assert "Source: X" in html
+
+    def test_wraps_in_a_link(self, engine):
+        html = ImageBlock(
+            "https://cdn.test/c.png", alt_text="C", link_url="https://x.test/report"
+        ).render(engine)
+        assert 'href="https://x.test/report"' in html
+
+    def test_rejects_an_unsafe_link_url(self):
+        with pytest.raises(ValidationError, match="link_url"):
+            ImageBlock("https://cdn.test/c.png", alt_text="C", link_url="javascript:alert(1)")
+
+    @pytest.mark.parametrize("align", ["left", "center", "right"])
+    def test_alignment(self, engine, align):
+        html = ImageBlock("https://cdn.test/c.png", alt_text="C", align=align).render(engine)
+        assert f'align="{align}"' in html
+
+    def test_rejects_an_unknown_alignment(self):
+        with pytest.raises(ValidationError, match="alignment"):
+            ImageBlock("https://cdn.test/c.png", alt_text="C", align="justified")
+
+    def test_requires_an_image(self):
+        with pytest.raises(ValidationError, match="requires an image"):
+            ImageBlock("")
+
+    def test_escapes_the_src_so_it_cannot_break_out_of_the_attribute(self, engine):
+        html = ImageBlock('https://cdn.test/c.png?a="b', alt_text="Chart").render(engine)
+        assert 'src="https://cdn.test/c.png?a=&quot;b"' in html
+
+    def test_escapes_the_alt_text(self, engine):
+        html = ImageBlock("https://cdn.test/c.png", alt_text='S&P "YTD"').render(engine)
+        assert 'alt="S&amp;P &quot;YTD&quot;"' in html
+
+    def test_reports_its_image_and_asset(self, png_bytes):
+        image = EmailImage.attached(png_bytes, alt="Chart")
+        block = ImageBlock(image)
+        assert block.images() == [image]
+        assert [a.content_id for a in block.assets()] == [image.content_id]
+
+    def test_a_hosted_image_contributes_no_asset(self):
+        assert ImageBlock("https://cdn.test/c.png", alt_text="C").assets() == []
+
+
+class TestChartBlockImages:
+    def test_still_accepts_a_bare_url(self, engine):
+        html = ChartBlock(image_url="https://x.test/c.png", alt_text="Chart").render(engine)
+        assert "https://x.test/c.png" in html
+
+    def test_accepts_an_email_image(self, engine, png_bytes):
+        image = EmailImage.attached(png_bytes, alt="Factor returns", width=616)
+        html = ChartBlock(image, source="Source: Bloomberg").render(engine)
+        assert f'src="cid:{image.content_id}"' in html
+        assert 'width="616"' in html
+        assert 'alt="Factor returns"' in html
+
+    def test_an_email_image_surfaces_in_the_manifest(self, png_bytes):
+        image = EmailImage.attached(png_bytes, alt="Chart")
+        assert [a.content_id for a in ChartBlock(image).assets()] == [image.content_id]
+
+    def test_width_applies_to_a_bare_url(self, engine):
+        html = ChartBlock("https://x.test/c.png", alt_text="C", width=400).render(engine)
+        assert 'width="400"' in html
+
+    def test_legacy_attributes_still_read(self, png_bytes):
+        image = EmailImage.attached(png_bytes, alt="Chart")
+        assert ChartBlock(image).image_url == image.src
+        assert ChartBlock(image).alt_text == "Chart"
+
+
+class TestMetadataImages:
+    def test_logo_accepts_an_email_image(self, valid_metadata, png_bytes):
+        image = EmailImage.attached(png_bytes, alt="Firm logo")
+        metadata = EmailMetadata(**valid_metadata, logo_url=image)
+        metadata.validate()
+        assert metadata.to_dict()["logo_url"] == image.src
+
+    def test_a_plain_url_is_untouched(self, valid_metadata):
+        metadata = EmailMetadata(**valid_metadata, logo_url="https://cdn.test/l.png")
+        assert metadata.to_dict()["logo_url"] == "https://cdn.test/l.png"
+
+    def test_metadata_images_reach_the_manifest(self, valid_metadata, png_bytes):
+        image = EmailImage.attached(png_bytes, alt="Firm logo")
+        metadata = EmailMetadata(**valid_metadata, header_bg_image_url=image)
+        assert [a.content_id for a in metadata.assets()] == [image.content_id]
+
+    def test_a_plain_url_still_has_its_scheme_checked(self, valid_metadata):
+        metadata = EmailMetadata(**valid_metadata, logo_url="javascript:alert(1)")
+        with pytest.raises(ValidationError, match="metadata.logo_url"):
+            metadata.validate()
+
+    def test_to_dict_still_covers_every_field(self, valid_metadata):
+        metadata = EmailMetadata(**valid_metadata)
+        assert set(metadata.to_dict()) == {
+            f.name for f in EmailMetadata.__dataclass_fields__.values()
+        }
+
+
+class TestEmailManifest:
+    def _email(self, valid_metadata, *sections):
+        builder = EmailBuilder().metadata(valid_metadata)
+        for section in sections:
+            builder.section(section)
+        return builder.build()
+
+    def test_no_images_means_an_empty_manifest(self, valid_metadata, text_block):
+        assert self._email(valid_metadata, FullWidth(content=text_block)).assets() == []
+
+    def test_collects_across_sections(self, valid_metadata, png_bytes, other_png_bytes):
+        one = EmailImage.attached(png_bytes, alt="One")
+        two = EmailImage.attached(other_png_bytes, alt="Two")
+        email = self._email(
+            valid_metadata,
+            FullWidth(content=ImageBlock(one)),
+            FullWidth(content=ChartBlock(two)),
+        )
+        assert [a.content_id for a in email.assets()] == [one.content_id, two.content_id]
+
+    def test_collects_from_both_columns(self, valid_metadata, png_bytes, other_png_bytes):
+        one = EmailImage.attached(png_bytes, alt="One")
+        two = EmailImage.attached(other_png_bytes, alt="Two")
+        email = self._email(valid_metadata, TwoColumn(left=ImageBlock(one), right=ImageBlock(two)))
+        assert len(email.assets()) == 2
+
+    def test_metadata_images_come_first(self, valid_metadata, png_bytes, other_png_bytes):
+        logo = EmailImage.attached(png_bytes, alt="Logo")
+        chart = EmailImage.attached(other_png_bytes, alt="Chart")
+        email = self._email(
+            {**valid_metadata, "logo_url": logo}, FullWidth(content=ImageBlock(chart))
+        )
+        assert [a.content_id for a in email.assets()] == [logo.content_id, chart.content_id]
+
+    def test_the_same_image_is_attached_once(self, valid_metadata, png_bytes):
+        image = EmailImage.attached(png_bytes, alt="Chart")
+        email = self._email(
+            valid_metadata,
+            FullWidth(content=ImageBlock(image)),
+            FullWidth(content=ChartBlock(image)),
+        )
+        assert len(email.assets()) == 1
+
+    def test_hosted_and_inline_images_are_absent(self, valid_metadata, png_bytes):
+        email = self._email(
+            valid_metadata,
+            FullWidth(content=ImageBlock("https://cdn.test/c.png", alt_text="Hosted")),
+            FullWidth(content=ImageBlock(EmailImage.inline(png_bytes, alt="Inline"))),
+        )
+        assert email.assets() == []
+        # ...but both are still images the email knows about.
+        assert len(email.images()) == 2
+
+    def test_every_cid_in_the_html_has_a_manifest_entry(self, valid_metadata, png_bytes):
+        import re
+
+        image = EmailImage.attached(png_bytes, alt="Chart")
+        email = self._email(valid_metadata, FullWidth(content=ImageBlock(image)))
+        html = email.render()
+        referenced = set(re.findall(r'src="cid:([^"]+)"', html))
+        assert referenced == {a.content_id for a in email.assets()}
+
+    def test_builder_exposes_the_manifest(self, valid_metadata, png_bytes):
+        image = EmailImage.attached(png_bytes, alt="Chart")
+        builder = (
+            EmailBuilder().metadata(valid_metadata).section(FullWidth(content=ImageBlock(image)))
+        )
+        assert [a.content_id for a in builder.assets()] == [image.content_id]
+
+    def test_a_data_uri_grows_the_html(self, valid_metadata, png_bytes):
+        # The point of the strategy trade-off: inlining moves bytes into the
+        # document, where they count against the 102 KB Gmail limit.
+        plain = self._email(valid_metadata, FullWidth(content=TextBlock("<p>x</p>"))).render()
+        inlined = self._email(
+            valid_metadata, FullWidth(content=ImageBlock(EmailImage.inline(png_bytes, alt="I")))
+        ).render()
+        assert len(inlined) > len(plain) + len(base64.b64encode(png_bytes))
+
+
+class TestDedupeAssets:
+    def test_keeps_first_seen_order(self, png_bytes, other_png_bytes):
+        a = EmailImage.attached(png_bytes, alt="a").asset
+        b = EmailImage.attached(other_png_bytes, alt="b").asset
+        assert dedupe_assets([a, b, a]) == [a, b]
+
+    def test_empty(self):
+        assert dedupe_assets([]) == []

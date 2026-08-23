@@ -2,10 +2,13 @@
   CHART BLOCK — Image/chart with source attribution.
 
   Context:
-    subtitle        — Optional sub-heading rendered above the chart
-    chart_image_url — Full URL to the chart image
-    chart_alt_text  — Alt text for accessibility
-    chart_source    — Attribution string (optional)
+    subtitle          — Optional sub-heading rendered above the chart
+    chart_image_url   — Resolved src (hosted URL, cid: reference, or data: URI)
+    chart_alt_text    — Alt text for accessibility
+    chart_image_width — Display width in px, or "" for full width.  The
+                        ATTRIBUTE is what Outlook's Word engine honours; it
+                        ignores CSS max-width.
+    chart_source      — Attribution string (optional)
 #}
 {% if subtitle %}
 <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; font-style: italic; color: #7A7A72; margin: 0 0 12px 0; line-height: 1.4;">{{ subtitle | escape_html }}</p>
@@ -13,7 +16,9 @@
 <table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
   <tr>
     <td style="padding: 0;">
-      <img src="{{ chart_image_url | escape_html }}" alt="{{ chart_alt_text | escape_html }}" width="100%" style="display: block; max-width: 100%; border: 1px solid #D6D2CB; margin: 0;">
+      <img src="{{ chart_image_url | escape_html }}" alt="{{ chart_alt_text | escape_html }}"
+           {% if chart_image_width %}width="{{ chart_image_width }}"{% else %}width="100%"{% endif %}
+           style="display: block; max-width: 100%; height: auto; border: 1px solid #D6D2CB; margin: 0;">
     </td>
   </tr>
 </table>

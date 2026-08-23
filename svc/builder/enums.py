@@ -49,3 +49,34 @@ class CardOrientation(StrEnum):
 
     HORIZONTAL = "horizontal"
     VERTICAL = "vertical"
+
+
+class EmbedStrategy(StrEnum):
+    """
+    How an image's bytes reach the reader.
+
+    The three options are not interchangeable — each trades hosting,
+    message size, and client support differently. See
+    :mod:`svc.builder.images` for the full comparison.
+    """
+
+    #: Reference a publicly hosted URL. No size cost; Outlook desktop
+    #: blocks it until the reader clicks "download images".
+    REMOTE = "remote"
+    #: Attach the bytes as a MIME part and point at it with ``cid:``.
+    #: Renders without a prompt in Outlook; costs *message* size, not HTML
+    #: size, so it does not count against the 102 KB Gmail clipping limit.
+    #: Requires the delivery layer to attach the parts the builder lists.
+    CID = "cid"
+    #: Inline the bytes as a base64 ``data:`` URI. Needs no host and no
+    #: attachment, but Gmail strips it and Outlook's Word engine will not
+    #: render it — and base64 costs +33% straight out of the 102 KB budget.
+    DATA_URI = "data_uri"
+
+
+class ImageAlign(StrEnum):
+    """Horizontal placement for a :class:`~svc.builder.components.ImageBlock`."""
+
+    LEFT = "left"
+    CENTER = "center"
+    RIGHT = "right"

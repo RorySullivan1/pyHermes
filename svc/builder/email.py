@@ -24,7 +24,9 @@ from typing import Any
 
 from .containers import Container
 from .engine import TemplateEngine
+from .enums import EmbedStrategy
 from .exceptions import SizeError
+from .images import EmailImage, ImageAsset, dedupe_assets
 from .models import EmailMetadata
 
 # Gmail clips emails above this threshold (bytes).
@@ -79,6 +81,52 @@ class Email:
         return self
 
     # ------------------------------------------------------------------
+    # Image manifest
+    # ------------------------------------------------------------------
+
+    def images(self) -> list[EmailImage]:
+        """
+        Every image this email references, metadata first, then sections
+        in order.
+        """
+        images = list(self._metadata.images())
+        for section in self._sections:
+            for component in section.components():
+                images.extend(component.images())
+        return images
+
+    def assets(self) -> list[ImageAsset]:
+        """
+        The attachment manifest: the image parts a delivery layer must
+        attach for this email to render.
+
+        The builder composes the HTML and picks each image's ``src``, but it
+        cannot attach a MIME part — that belongs to a delivery service
+        (``svc/gmail``, ``svc/outlook``). This is the contract between them:
+        for every ``src="cid:X"`` in the HTML, the entry describing what to
+        attach as ``X``.
+
+        Only ``CID`` images appear. Hosted images have no bytes to attach
+        and data URIs carry their own, so both are absent by design. Repeat
+        Content-IDs collapse to one entry, first-seen order preserved, so
+        an image used in two sections is attached once.
+
+        Returns:
+            A list of :class:`~svc.builder.images.ImageAsset`, possibly empty.
+
+        Example::
+
+            html = email.render()
+            for asset in email.assets():
+                message.attach(asset.data, asset.mime_type,
+                               cid=asset.content_id, filename=asset.filename)
+        """
+        assets = list(self._metadata.assets())
+        for section in self._sections:
+            assets.extend(section.assets())
+        return dedupe_assets(assets)
+
+    # ------------------------------------------------------------------
     # Rendering
     # ------------------------------------------------------------------
 
@@ -106,7 +154,7 @@ class Email:
         html = self._engine.render("base.html", ctx)
 
         # Size check
-        self._validate_size(html)
+        self._validate_size(html, self._inline_image_hint())
 
         return html
 
@@ -131,17 +179,42 @@ class Email:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _validate_size(html: str) -> None:
+    def _validate_size(html: str, hint: str = "") -> None:
+        """
+        Check the rendered size against the Gmail clipping limit.
+
+        Static and pure so the size edges can be driven directly in tests.
+        ``hint`` appends caller-supplied context to the failure message —
+        ``render()`` uses it to name inlined images.
+        """
         size_kb = len(html.encode("utf-8")) / 1024
         if size_kb > _SIZE_LIMIT_KB:
             raise SizeError(
                 f"Rendered email is {size_kb:.1f} KB, "
-                f"exceeds {_SIZE_LIMIT_KB} KB Gmail clipping limit."
+                f"exceeds {_SIZE_LIMIT_KB} KB Gmail clipping limit.{hint}"
             )
         if size_kb > _SIZE_WARN_KB:
             print(f"WARNING: Email size {size_kb:.1f} KB (target < {_SIZE_WARN_KB} KB)")
         else:
             print(f"Email size: {size_kb:.1f} KB (OK)")
+
+    def _inline_image_hint(self) -> str:
+        """
+        Name inlined images in a size failure when the email has any.
+
+        A base64 data URI costs +33% on top of the raw bytes and lands
+        entirely inside the HTML, so it is the usual reason an email that
+        was comfortably under the limit suddenly is not.
+        """
+        inlined = [i for i in self.images() if i.strategy == EmbedStrategy.DATA_URI]
+        if not inlined:
+            return ""
+        inline_kb = sum(len(i.data) for i in inlined) / 1024
+        return (
+            f" {len(inlined)} inlined image(s) contribute roughly "
+            f"{inline_kb * 4 / 3:.1f} KB of base64 to that total; switching them to "
+            f"EmailImage.attached() moves the bytes out of the HTML entirely."
+        )
 
 
 class EmailBuilder:
@@ -180,6 +253,10 @@ class EmailBuilder:
         if self._email is None:
             raise RuntimeError("Call .metadata() before .build().")
         return self._email
+
+    def assets(self) -> list[ImageAsset]:
+        """Shortcut: the built email's attachment manifest."""
+        return self.build().assets()
 
     def render(self) -> str:
         """Shortcut: build and render in one step."""

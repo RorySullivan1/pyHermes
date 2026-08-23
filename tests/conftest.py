@@ -6,6 +6,8 @@ smallest object that passes construction, so a test that fails is failing
 on the thing it names rather than on incidental fixture data.
 """
 
+from pathlib import Path
+
 import pytest
 
 from svc.builder import TextBlock
@@ -61,3 +63,59 @@ def numbered_items() -> list:
 def text_block() -> TextBlock:
     """A trivially valid Component, for tests about containers rather than content."""
     return TextBlock("<p>Narrative prose.</p>")
+
+
+# ──────────────────────────────────────────────────────────────────────
+# Image fixtures
+# ──────────────────────────────────────────────────────────────────────
+#
+# Real magic bytes, because sniff_image_type() reads the bytes rather than
+# trusting an extension — a fixture of fake bytes would test nothing. The
+# PNG is a genuine 1x1 file; the JPEG and GIF carry real signatures with
+# filler bodies, which is all the builder ever inspects.
+
+
+def _one_pixel_png() -> bytes:
+    """A valid 1x1 red PNG, built rather than checked in as a binary blob."""
+    import struct
+    import zlib
+
+    def chunk(kind: bytes, payload: bytes) -> bytes:
+        body = kind + payload
+        return struct.pack(">I", len(payload)) + body + struct.pack(">I", zlib.crc32(body))
+
+    return (
+        b"\x89PNG\r\n\x1a\n"
+        + chunk(b"IHDR", struct.pack(">IIBBBBB", 1, 1, 8, 2, 0, 0, 0))
+        + chunk(b"IDAT", zlib.compress(b"\x00\xff\x00\x00"))
+        + chunk(b"IEND", b"")
+    )
+
+
+@pytest.fixture(scope="session")
+def png_bytes() -> bytes:
+    return _one_pixel_png()
+
+
+@pytest.fixture(scope="session")
+def other_png_bytes() -> bytes:
+    """A second, distinct PNG — so Content-ID dedupe has something to tell apart."""
+    return _one_pixel_png() + b"\x00trailing"
+
+
+@pytest.fixture(scope="session")
+def jpeg_bytes() -> bytes:
+    return b"\xff\xd8\xff\xe0" + b"\x00" * 32
+
+
+@pytest.fixture(scope="session")
+def gif_bytes() -> bytes:
+    return b"GIF89a" + b"\x00" * 32
+
+
+@pytest.fixture
+def png_file(tmp_path, png_bytes) -> Path:
+    """The PNG written to disk, for the path-reading code path."""
+    path = tmp_path / "chart.png"
+    path.write_bytes(png_bytes)
+    return path
