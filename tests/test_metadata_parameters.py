@@ -1,0 +1,130 @@
+"""
+Skeleton parameters: the logo's alt/width, and the fixed copy in base.html.
+
+Everything here follows one rule — anything that isn't core formatting
+should be passable, and every default reproduces what base.html hardcoded
+before, so an existing email renders unchanged unless it opts in.
+
+Fonts, colours, padding and table geometry are deliberately NOT parameters:
+they are the design system, not content.
+"""
+
+import pytest
+
+from svc.builder import EmailBuilder, FullWidth
+from svc.builder.images import EmailImage
+from svc.builder.models import EmailMetadata
+
+LABEL_DEFAULTS = {
+    "contact_heading": "Questions or feedback?",
+    "contact_cta_label": "Contact Us",
+    "unsubscribe_label": "Unsubscribe",
+    "view_in_browser_label": "View in browser",
+}
+
+
+def render(valid_metadata, text_block, **extra) -> str:
+    return (
+        EmailBuilder()
+        .metadata({**valid_metadata, "contact_url": "https://x.test/c", **extra})
+        .section(FullWidth(content=text_block))
+        .render()
+    )
+
+
+class TestLogoAlt:
+    def test_defaults_to_the_firm_name(self, valid_metadata, text_block):
+        # What base.html hardcoded before this was configurable.
+        html = render(valid_metadata, text_block, logo_url="https://x.test/l.png")
+        assert f'alt="{valid_metadata["firm_name"]}"' in html
+
+    def test_explicit_alt_wins(self, valid_metadata, text_block):
+        html = render(
+            valid_metadata, text_block, logo_url="https://x.test/l.png", logo_alt="Acme logo"
+        )
+        assert 'alt="Acme logo"' in html
+
+    def test_an_email_image_supplies_its_own_alt(self, valid_metadata, text_block):
+        # Regression: the logo slot used to ignore an EmailImage's alt entirely.
+        image = EmailImage.hosted("https://x.test/l.png", alt="Acme wordmark")
+        html = render(valid_metadata, text_block, logo_url=image)
+        assert 'alt="Acme wordmark"' in html
+
+    def test_metadata_beats_the_image(self, valid_metadata, text_block):
+        image = EmailImage.hosted("https://x.test/l.png", alt="from image")
+        html = render(valid_metadata, text_block, logo_url=image, logo_alt="from metadata")
+        assert 'alt="from metadata"' in html
+        assert "from image" not in html
+
+    def test_alt_is_escaped(self, valid_metadata, text_block):
+        html = render(
+            valid_metadata, text_block, logo_url="https://x.test/l.png", logo_alt='R&D "team"'
+        )
+        assert 'alt="R&amp;D &quot;team&quot;"' in html
+
+    def test_resolution_order_without_rendering(self, valid_metadata):
+        meta = EmailMetadata(**valid_metadata)
+        assert meta.resolved_logo_alt() == valid_metadata["firm_name"]
+        meta.logo_url = EmailImage.hosted("https://x.test/l.png", alt="img")
+        assert meta.resolved_logo_alt() == "img"
+        meta.logo_alt = "explicit"
+        assert meta.resolved_logo_alt() == "explicit"
+
+
+class TestLogoWidth:
+    def test_defaults_to_ninety(self, valid_metadata, text_block):
+        html = render(valid_metadata, text_block, logo_url="https://x.test/l.png")
+        assert 'width="90"' in html
+        assert "max-width:90px" in html
+
+    def test_explicit_width_wins(self, valid_metadata, text_block):
+        html = render(valid_metadata, text_block, logo_url="https://x.test/l.png", logo_width=120)
+        assert 'width="120"' in html
+        assert "max-width:120px" in html
+
+    def test_an_email_image_supplies_its_own_width(self, valid_metadata, text_block):
+        image = EmailImage.hosted("https://x.test/l.png", alt="logo", width=64)
+        html = render(valid_metadata, text_block, logo_url=image)
+        assert 'width="64"' in html
+
+    def test_resolution_order(self, valid_metadata):
+        meta = EmailMetadata(**valid_metadata)
+        assert meta.resolved_logo_width() == EmailMetadata.DEFAULT_LOGO_WIDTH
+        meta.logo_url = EmailImage.hosted("https://x.test/l.png", alt="a", width=64)
+        assert meta.resolved_logo_width() == 64
+        meta.logo_width = 200
+        assert meta.resolved_logo_width() == 200
+
+
+class TestSkeletonCopy:
+    @pytest.mark.parametrize(("field", "default"), sorted(LABEL_DEFAULTS.items()))
+    def test_defaults_match_what_was_hardcoded(self, valid_metadata, text_block, field, default):
+        assert getattr(EmailMetadata(**valid_metadata), field) == default
+        assert default in render(valid_metadata, text_block)
+
+    @pytest.mark.parametrize("field", sorted(LABEL_DEFAULTS))
+    def test_each_label_is_overridable(self, valid_metadata, text_block, field):
+        html = render(valid_metadata, text_block, **{field: "CUSTOM-LABEL"})
+        assert "CUSTOM-LABEL" in html
+
+    def test_a_non_english_newsletter(self, valid_metadata, text_block):
+        html = render(
+            valid_metadata,
+            text_block,
+            contact_heading="Des questions ?",
+            contact_cta_label="Nous contacter",
+            unsubscribe_label="Se désabonner",
+            view_in_browser_label="Voir en ligne",
+        )
+        for text in ("Des questions ?", "Nous contacter", "Se désabonner", "Voir en ligne"):
+            assert text in html
+
+    def test_the_cta_label_reaches_both_outlook_and_html_paths(self, valid_metadata, text_block):
+        # base.html emits the button twice: VML for Outlook, an anchor for
+        # everyone else. Both must carry the label, or Outlook shows the old one.
+        html = render(valid_metadata, text_block, contact_cta_label="Reach out")
+        assert html.count("Reach out") == 2
+
+    def test_labels_are_escaped(self, valid_metadata, text_block):
+        html = render(valid_metadata, text_block, contact_cta_label="R&D")
+        assert "R&amp;D" in html

@@ -229,6 +229,25 @@ Rules the module enforces at construction, per the validation philosophy below:
 accept an `EmailImage` **or** a bare URL string, so every pre-existing call site keeps
 working unchanged.
 
+### Parameters and defaults
+
+Anything that is not **core controlled formatting** should be passable, with a default that
+reproduces today's output — so an existing email renders unchanged unless it opts in.
+
+- **Alt text is always a parameter.** `ImageBlock`/`ChartBlock` take `alt`; the skeleton
+  logo takes `logo_alt`, which resolves **explicit metadata → the `EmailImage`'s own `alt`
+  → `firm_name`**. `logo_width` resolves the same way, ending at
+  `EmailMetadata.DEFAULT_LOGO_WIDTH` (90). `header_bg_image_url` is a CSS background, and
+  a CSS background cannot carry alt text — it is decorative by construction.
+- **Skeleton copy is parameterised**: `contact_heading`, `contact_cta_label`,
+  `unsubscribe_label`, `view_in_browser_label`. Defaults are the strings `base.html` used
+  to hardcode, so a newsletter in another language no longer needs a template fork. The CTA
+  is emitted twice (VML for Outlook, an anchor for everyone else) — both read the same
+  parameter, and a test asserts the label appears in both.
+- **Not parameters, deliberately**: fonts, colours, padding, and the 680px table geometry.
+  That is the design system, and letting callers vary it per email is how a template stops
+  surviving Outlook.
+
 ### Validation philosophy
 
 Validation runs at **construction time**, not render time. Models (`KpiItem`, `TableRow`,

@@ -78,6 +78,12 @@ class EmailMetadata:
     header_disclaimer: str = ""
     header_bg_image_url: "str | EmailImage" = ""
     logo_url: "str | EmailImage" = ""
+    #: Logo alt text. Falls back to the EmailImage's own ``alt`` when the
+    #: logo is one, then to ``firm_name`` — the logo is never left unlabelled.
+    logo_alt: str = ""
+    #: Logo display width in px. Falls back to the EmailImage's own ``width``,
+    #: then to ``DEFAULT_LOGO_WIDTH``.
+    logo_width: int | None = None
     firm_name: str = ""
     campaign_name: str = ""
     date_range: str = ""
@@ -89,8 +95,19 @@ class EmailMetadata:
     unsubscribe_url: str = ""
     view_in_browser_url: str = ""
 
+    # Skeleton copy. Defaults reproduce what base.html used to hardcode, so
+    # existing emails are unchanged; override for different wording or a
+    # newsletter that isn't in English.
+    contact_heading: str = "Questions or feedback?"
+    contact_cta_label: str = "Contact Us"
+    unsubscribe_label: str = "Unsubscribe"
+    view_in_browser_label: str = "View in browser"
+
     #: Metadata fields that may hold an EmailImage instead of a bare URL.
     IMAGE_FIELDS = ("logo_url", "header_bg_image_url")
+
+    #: Logo width used when neither the metadata nor the EmailImage sets one.
+    DEFAULT_LOGO_WIDTH = 90
 
     def validate(self) -> None:
         """Validate required fields and URL schemes."""
@@ -133,10 +150,39 @@ class EmailMetadata:
         """
         from .images import EmailImage
 
-        return {
+        context = {
             f.name: value.src if isinstance(value := getattr(self, f.name), EmailImage) else value
             for f in fields(self)
         }
+        context["logo_alt"] = self.resolved_logo_alt()
+        context["logo_width"] = self.resolved_logo_width()
+        return context
+
+    def resolved_logo_alt(self) -> str:
+        """
+        The alt text the logo actually renders with.
+
+        Explicit ``logo_alt`` wins; otherwise an ``EmailImage`` logo supplies
+        its own ``alt``; otherwise the firm name, which is what the skeleton
+        hardcoded before this was configurable.
+        """
+        from .images import EmailImage
+
+        if self.logo_alt:
+            return self.logo_alt
+        if isinstance(self.logo_url, EmailImage) and self.logo_url.alt:
+            return self.logo_url.alt
+        return self.firm_name
+
+    def resolved_logo_width(self) -> int:
+        """The logo width actually rendered: metadata, then image, then default."""
+        from .images import EmailImage
+
+        if self.logo_width is not None:
+            return self.logo_width
+        if isinstance(self.logo_url, EmailImage) and self.logo_url.width is not None:
+            return self.logo_url.width
+        return self.DEFAULT_LOGO_WIDTH
 
 
 # ──────────────────────────────────────────────────────────────────────
