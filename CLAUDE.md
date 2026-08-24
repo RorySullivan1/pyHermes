@@ -9,9 +9,10 @@ Jinja2 templates into a single, inline-CSS HTML document engineered to survive e
 clients (Gmail, Outlook) — the hard part is staying under Gmail's clipping limit while
 keeping the layout table-based and portable.
 
-**Scope today = the *builder*.** Composing the HTML is the entire current product.
-**Delivery is not built yet:** `svc/__init__.py` advertises `gmail/` and `outlook/`
-subpackages, but they do not exist — treat them as planned, not present. Don't import them.
+**Scope today = the *builder* plus MIME assembly.** Composing the HTML is still the bulk
+of the product; `svc/delivery/` now turns a built email into a sendable
+`EmailMessage` (see *Delivery* below). **Per-service send adapters are not built yet:**
+`gmail/` and `outlook/` are planned, not present — don't import them.
 
 ## Commands
 
@@ -52,6 +53,10 @@ svc/
 │       ├── analysis/*.html          — data components (card-group, data-table, chart-block)
 │       ├── media/*.html             — image components (image-block)
 │       └── text/*.html              — text components (text-block, numbered-list, author-block)
+├── delivery/           ← transport-neutral MIME assembly (consumes the builder)
+│   ├── __init__.py     — public API: build_message, save_eml, collect_cid_references
+│   ├── message.py      — build_message() → multipart/related; save_eml() dry run
+│   └── exceptions.py   — DeliveryError / MessageError (siblings of EmailBuilderError)
 output/                 — generated email HTML (gitignored; not committed)
 tests/                  — pytest unit suite (validation, error paths, size limits)
 .github/workflows/      — CI: ruff, mypy, pytest
@@ -269,6 +274,38 @@ The one deliberate exception is `EmailBuilder`'s `RuntimeError` for calling `sec
 `build()` before `metadata()` — a programming error in the call sequence, not rejected
 data.
 
+## Architecture — `svc/delivery`
+
+The builder **declares** a CID embed; delivery **performs** it. `Email.render()` gives the
+HTML and `Email.assets()` gives the manifest; [build_message()](svc/delivery/message.py)
+turns that pair into a sendable `EmailMessage`.
+
+```python
+from svc.delivery import build_message, save_eml
+
+message = build_message(email, subject="Weekly Market Wrap",
+                        sender="research@example.com", to=["reader@example.com"])
+save_eml(message, "output/preview.eml")     # dry run — no transport, no credentials
+```
+
+- **Structure**: `text/html` when the email has no CID images; `multipart/related` when it
+  does, one inline part per asset. When plain-text lands (#53) the HTML part becomes half of
+  a `multipart/alternative` and this nests inside unchanged.
+- **The consumer adds the decorations.** `ImageAsset.content_id` is bare, so assembly emits
+  `Content-ID: <id>` — Python's `add_related()` stores whatever it is given, and a bare id is
+  an RFC-invalid header. It also passes `disposition="inline"` explicitly, because supplying
+  a `filename` alone yields `attachment` and shows inline art as a paperclip.
+- **The seam is now checked, not just documented.** Assembly cross-checks the HTML's `cid:`
+  references (attributes *and* `url(cid:…)` in CSS) against the manifest and raises
+  `MessageError` on a mismatch either way — a referenced-but-unattached id, or an attached
+  image the HTML never asked for.
+- **Assembly is pure**: no credentials, no network, no clock, so it is byte-deterministic and
+  testable. It stamps no `Date`/`Message-ID` and accepts no `Bcc` (that header travels with
+  the message and leaks the blind-copy list) — both are transport concerns for the adapters.
+- **Errors are a separate hierarchy.** `DeliveryError` is a **sibling** of `EmailBuilderError`,
+  not a child: a send failure is not a build failure. `MessageError` covers assembly.
+
+
 ## Gotchas
 
 - **Wheel installs work** (since #10). `templates/` lives inside the package at
@@ -315,6 +352,10 @@ Reach for these rather than improvising:
 
 ## Open work
 
-- Tracked in [GitHub issues](https://github.com/RorySullivan1/pyHermes/issues). None open as
-  of this writing.
+- Tracked in [GitHub issues](https://github.com/RorySullivan1/pyHermes/issues), organised as
+  epics with sub-issues: #38 header region, #45 size themes, #46 color themes, #52 delivery,
+  #54 QA harness, #55 footer region, plus #53 plain-text and #56 typography as parents.
+- **The golden characterization test (#32/#58) gates all template migration**, and everything
+  touching `base.html` or `EmailMetadata` sequences rather than interleaving — several epics
+  contend on those two surfaces.
 - Current project state and decisions: [.claude/memory/INDEX.md](.claude/memory/INDEX.md).
