@@ -37,6 +37,7 @@ Slash commands (from the `.claude/` library): `/version-set`, `/version-ship`, `
 
 ```
 svc/
+├── config.py           ← the tunable numbers, in one frozen dataclass
 ├── builder/            ← current OO email builder (use this for new work)
 │   ├── __init__.py     — public API surface (re-exports everything below)
 │   ├── engine.py       — TemplateEngine (Jinja2, StrictUndefined, autoescape OFF)
@@ -69,6 +70,59 @@ tests/                  — pytest unit suite (validation, error paths, size lim
 .github/workflows/      — CI: ruff, mypy, pytest
 .claude/                — curated tooling library (skills, agents, commands, hooks, memory)
 ```
+
+## Configuration — `svc/config`
+
+Every judgment-call number in the package is a field on one frozen
+[Config](svc/config.py) dataclass, so a caller can retune it without editing the library.
+
+```python
+from svc.config import Config, get_config, set_config, config_override
+
+get_config().inline_image_limit_kb              # what is actually in force
+set_config(Config(inline_image_limit_kb=64))    # install process-wide
+set_config(Config.from_env())                   # or read PYHERMES_*
+with config_override(retry_max_attempts=1):     # scoped, restores on exit (tests)
+    ...
+```
+
+**The line the module draws — and the reason it exists — is between a judgment call and a
+fact about the world.** The inline-image cap, the retry ladder, the request timeout and the
+error-excerpt length were all *picked by someone*; a picked number that cannot be revisited
+without editing the library is a bad default wearing a constant's clothes. Graph's
+`ACCEPTED = 202`, the transient status families, and the Content-ID character set describe
+what a provider *does* — changing them does not tune behaviour, it makes the code wrong
+about its environment, so they stay literals in the modules that own them.
+
+`size_limit_kb` sits across that line deliberately: 102 KB is a real Gmail limit, not taste,
+but an email bound for a non-Gmail channel is legitimately not subject to it. It is
+configurable *and* documented as a fact, so raising it stays a conscious act.
+
+Rules the module holds to, each for a specific reason:
+
+- **Nothing reads the environment on import.** `from_env()` is explicit, because a library
+  whose behaviour changes with ambient state is one you cannot reason about locally — and
+  `svc/delivery`'s purity, which the byte-for-byte dry run depends on, would be the first
+  casualty.
+- **Consumers call `get_config()` at use time, never at import time.** An override installed
+  after import must still be seen. Where a module keeps a public constant
+  (`INLINE_LIMIT_KB`, `DEFAULT_TIMEOUT_SECONDS`, `_SIZE_LIMIT_KB`) it is the *shipped
+  default*, mirrored from `Config()`; the enforced value comes from the active config.
+- **An explicit argument always beats the config.** `retry_with_backoff()`'s numeric
+  parameters default to `None`, meaning "ask the config" — passing one still wins, which is
+  what the adapters and their tests rely on.
+- **Validated at construction, like every model here** — including the cross-field rules
+  (`size_warn_kb <= size_limit_kb`, `inline_image_limit_kb <= size_limit_kb`, a backoff
+  factor of at least 1). These raise plain `ValueError`, **not** `EmailBuilderError` or
+  `DeliveryError`: a bad limit is a programming error in setup, not rejected email data.
+- **`None` means no timeout**, so it cannot double as "unspecified" —
+  `GraphApiTransport(timeout=...)` uses a private sentinel for the latter.
+
+**Adding a tunable**: add the field (with today's literal as its default, so nothing
+re-renders or re-retries differently), validate it in `__post_init__`, read it via
+`get_config()` at the use site, and add a case to `TestTheWiringIsLive` in
+[tests/test_config.py](tests/test_config.py) — that class exists to prove each knob is
+actually *reached*, because a config nobody reads is decoration.
 
 ## Architecture — `svc/builder`
 
@@ -145,7 +199,9 @@ non-fluent `Email` class works identically.
 
 - **102 KB Gmail clipping limit** — [Email._validate_size()](svc/builder/email.py) raises
   `SizeError` above 102 KB and warns above 90 KB. The single most important runtime check;
-  never disable it without confirming a non-Gmail channel.
+  never disable it without confirming a non-Gmail channel. Both thresholds come from
+  [Config](svc/config.py) at check time, so a non-Gmail channel can raise them deliberately
+  rather than by commenting the check out.
 - **Jinja2 `StrictUndefined`** — [TemplateEngine](svc/builder/engine.py) fails fast on a
   missing template variable. New template vars need a matching key in the component's
   `context()` dict, or the render raises.
@@ -229,7 +285,8 @@ Rules the module enforces at construction, per the validation philosophy below:
 - **Content-IDs are content-addressed** — `sha256(bytes)[:16]` by default, so the same image
   used in two sections is attached once, and the same input always yields the same output.
   An explicit `content_id` is checked against `[A-Za-z0-9._+-]{1,128}`.
-- **Inline images are capped** at `INLINE_LIMIT_KB` (48 KB of base64) so one image cannot eat
+- **Inline images are capped** at `Config.inline_image_limit_kb` (48 KB of base64;
+  `INLINE_LIMIT_KB` is the mirrored default) so one image cannot eat
   the 102 KB budget; over that raises `SizeError` naming `EmailImage.attached()` as the fix.
   A whole-email `SizeError` additionally reports how much base64 the inlined images
   contributed.
@@ -342,7 +399,9 @@ it never rebuilds.** Concretely:
 3. **Reuse [retry_with_backoff()](svc/delivery/retry.py); supply your own `is_transient`.**
    The policy is shared because it is transport-neutral; the classification is not, because
    only you know what your provider's rate-limit error looks like. If your provider sends a
-   `Retry-After`, pass a `delay_hint` too.
+   `Retry-After`, pass a `delay_hint` too. Leave the numeric arguments alone unless your
+   provider genuinely needs a different ladder — omitted, they come from
+   [Config](svc/config.py), so a deployment can retune every adapter at once.
 4. **Never retry an unrecognised failure.** On a send path an unknown error may already have
    delivered, and a blind retry risks a duplicate. Retry only what you positively identify.
 5. **Map every failure to `TransportError`, chaining the provider's exception** with

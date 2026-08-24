@@ -73,6 +73,7 @@ from email.message import EmailMessage
 from typing import Any, Protocol
 from urllib.parse import quote
 
+from svc.config import Config, get_config
 from svc.delivery.exceptions import TransportError
 from svc.delivery.message import to_wire_bytes
 from svc.delivery.retry import retry_with_backoff
@@ -101,7 +102,18 @@ ACCEPTED = 202
 #: apply a timeout per socket operation (connect, then each read), not to
 #: the whole request, so this bounds a stalled attachment upload without
 #: penalising one that is merely large and still making progress.
-DEFAULT_TIMEOUT_SECONDS = 30.0
+DEFAULT_TIMEOUT_SECONDS = Config().request_timeout_seconds
+
+
+class _UseConfigured:
+    """Sentinel for "take this from the active config".
+
+    Needed because ``None`` is already a meaningful timeout -- it means *no*
+    timeout -- so it cannot double as "unspecified".
+    """
+
+
+_USE_CONFIGURED = _UseConfigured()
 
 #: Worth a second attempt: throttling and the 5xx family. Everything else --
 #: 400 malformed MIME, 401 unauthenticated, 403 missing Mail.Send, 404 unknown
@@ -153,11 +165,13 @@ class GraphApiTransport:
         session: Any,
         *,
         base_url: str = GRAPH_BASE_URL,
-        timeout: float | None = DEFAULT_TIMEOUT_SECONDS,
+        timeout: float | None | _UseConfigured = _USE_CONFIGURED,
     ) -> None:
         self._session = session
         self._base_url = base_url.rstrip("/")
-        self._timeout = timeout
+        self._timeout: float | None = (
+            get_config().request_timeout_seconds if isinstance(timeout, _UseConfigured) else timeout
+        )
 
     def _endpoint(self, user_id: str) -> str:
         # "me" is our own sentinel, never caller data, so it needs no
@@ -196,7 +210,7 @@ def _body_of(response: Any) -> str:
     text = getattr(response, "text", None)
     if not isinstance(text, str):
         return "<no body>"
-    return text[:500]
+    return text[: get_config().error_body_excerpt_chars]
 
 
 def _retry_after_of(response: Any) -> float | None:

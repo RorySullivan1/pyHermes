@@ -23,6 +23,8 @@ import time
 from collections.abc import Callable
 from typing import TypeVar
 
+from svc.config import get_config
+
 __all__ = ["retry_with_backoff"]
 
 T = TypeVar("T")
@@ -32,12 +34,12 @@ def retry_with_backoff(
     operation: Callable[[], T],
     *,
     is_transient: Callable[[BaseException], bool],
-    max_attempts: int = 3,
-    initial_delay: float = 1.0,
-    backoff_factor: float = 2.0,
-    max_delay: float = 30.0,
+    max_attempts: int | None = None,
+    initial_delay: float | None = None,
+    backoff_factor: float | None = None,
+    max_delay: float | None = None,
     delay_hint: Callable[[BaseException], float | None] | None = None,
-    max_hint_delay: float = 300.0,
+    max_hint_delay: float | None = None,
     sleep: Callable[[float], None] = time.sleep,
 ) -> T:
     """
@@ -48,7 +50,10 @@ def retry_with_backoff(
         is_transient:   Predicate deciding whether a raised exception is
             worth retrying. Anything it rejects propagates immediately.
         max_attempts:   Total attempts including the first. ``1`` disables
-            retrying without needing a separate code path.
+            retrying without needing a separate code path. ``None`` --
+            like every numeric argument here -- takes the value from
+            :func:`svc.config.get_config`, so the ladder is tunable
+            without editing this module.
         initial_delay:  Seconds to wait after the first failure.
         backoff_factor: Multiplier applied to the delay after each failure.
         max_delay:      Ceiling on a *computed* wait — the client's own
@@ -85,6 +90,22 @@ def retry_with_backoff(
             transient. Wrapping it is the adapter's job, which has the
             context to say what it means.
     """
+    # Every numeric knob defaults to the active configuration rather than a
+    # literal, so a deployment can retune the ladder without editing the
+    # library -- while an explicit argument still wins, which is what the
+    # adapters and their tests rely on.
+    config = get_config()
+    if max_attempts is None:
+        max_attempts = config.retry_max_attempts
+    if initial_delay is None:
+        initial_delay = config.retry_initial_delay
+    if backoff_factor is None:
+        backoff_factor = config.retry_backoff_factor
+    if max_delay is None:
+        max_delay = config.retry_max_delay
+    if max_hint_delay is None:
+        max_hint_delay = config.retry_max_hint_delay
+
     if max_attempts < 1:
         raise ValueError(f"max_attempts must be at least 1, got {max_attempts}")
 
