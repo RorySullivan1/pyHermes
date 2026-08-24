@@ -84,6 +84,56 @@ class TestBackoff:
         assert max(waits) <= 25.0
 
 
+class TestDelayHint:
+    def test_a_hint_above_max_delay_is_honoured_in_full(self):
+        # This is the case test_delay_is_capped_by_max_delay cannot catch: a
+        # server-supplied hint (Microsoft Graph commonly asks for 60s or
+        # more) must not be clamped by the client's own backoff ceiling.
+        waits: list[float] = []
+        with pytest.raises(TRANSIENT):
+            retry_with_backoff(
+                _Flaky(99),
+                is_transient=_always_transient,
+                max_attempts=3,
+                max_delay=30.0,
+                delay_hint=lambda exc: 60.0,
+                sleep=waits.append,
+            )
+        assert waits == [60.0, 60.0]
+
+    def test_a_hint_above_max_hint_delay_is_still_bounded(self):
+        # A hint is data the caller does not control -- a malformed or
+        # hostile value (a day, say) must not hang the caller indefinitely.
+        waits: list[float] = []
+        with pytest.raises(TRANSIENT):
+            retry_with_backoff(
+                _Flaky(99),
+                is_transient=_always_transient,
+                max_attempts=3,
+                delay_hint=lambda exc: 86400.0,
+                max_hint_delay=300.0,
+                sleep=waits.append,
+            )
+        assert waits == [300.0, 300.0]
+
+    def test_the_computed_ladder_still_advances_while_a_hint_is_used(self):
+        # A provider that hints once and then goes quiet should resume from
+        # the right rung, not restart at initial_delay.
+        waits: list[float] = []
+        hints = iter([60.0, None])
+        with pytest.raises(TRANSIENT):
+            retry_with_backoff(
+                _Flaky(99),
+                is_transient=_always_transient,
+                max_attempts=3,
+                initial_delay=1.0,
+                backoff_factor=2.0,
+                delay_hint=lambda exc: next(hints),
+                sleep=waits.append,
+            )
+        assert waits == [60.0, 2.0]
+
+
 class TestGivingUp:
     def test_exhausting_attempts_reraises_the_original_error(self):
         operation = _Flaky(99)
