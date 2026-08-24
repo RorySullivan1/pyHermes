@@ -201,6 +201,28 @@ class TestStructure:
             assert content_id.startswith("<") and content_id.endswith(">")
             assert part.get_content_disposition() == "inline"
 
+    def test_multipart_related_names_the_root_part_type(self, cid_email):
+        # RFC 2387: multipart/related needs a 'type' param naming the root
+        # part's media type, or a strict client has no defined way to pick
+        # text/html out of the image/* parts sitting alongside it.
+        message = build_message(cid_email, **ENVELOPE)
+        assert message.get_param("type") == "text/html"
+
+    def test_content_id_header_matches_the_html_cid_reference_exactly(self, cid_email):
+        # Deliberately bare, not "<id@domain>": the HTML the builder already
+        # rendered says src="cid:<bare-id>", and RFC 2392 defines a cid: URL
+        # as the Content-ID with only the brackets removed. Qualifying the
+        # header with a domain here, without also rewriting the HTML, would
+        # make the two sides disagree and break every embedded image.
+        html = cid_email.render()
+        referenced = set(collect_cid_references(html))
+        message = build_message(cid_email, **ENVELOPE)
+        images = [p for p in message.walk() if p.get_content_maintype() == "image"]
+        for part in images:
+            bare = part["Content-ID"].strip("<>")
+            assert "@" not in bare
+            assert bare in referenced
+
     def test_repeated_image_is_attached_once(self, valid_metadata, png_bytes):
         # Content-IDs are content-addressed, so the same bytes in two
         # sections dedupe to one asset -- and therefore one MIME part.
@@ -258,6 +280,15 @@ class TestDryRun:
         written = save_eml(build_message(plain_email, **ENVELOPE), target)
         assert written == target
         assert target.read_bytes().startswith(b"Subject:")
+
+    def test_saved_message_uses_crlf_line_endings(self, cid_email, tmp_path):
+        # RFC 5322 mandates CRLF; the default policy generates bare LF, which
+        # a strict client is entitled to reject even though Python's own
+        # parser tolerates it.
+        path = save_eml(build_message(cid_email, **ENVELOPE), tmp_path / "crlf.eml")
+        raw = path.read_bytes()
+        assert b"\r\n" in raw
+        assert raw.replace(b"\r\n", b"").count(b"\n") == 0
 
     def test_saved_message_reparses(self, cid_email, tmp_path):
         path = save_eml(build_message(cid_email, **ENVELOPE), tmp_path / "m.eml")

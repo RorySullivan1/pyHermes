@@ -250,6 +250,14 @@ def build_message(
         # Promote the html part to multipart/related, then hang each image
         # off it. Only reached when there is something to relate to.
         message.make_related()
+        # RFC 2387 requires 'type' to name the root part's media type, so a
+        # strict client knows text/html is the thing to render and the
+        # image/* parts are its resources. make_related() does not set this
+        # on its own -- without it, a client with no other way to pick a
+        # root part can fall back to listing every part as an attachment,
+        # which is the exact paperclip failure disposition="inline" below
+        # exists to avoid.
+        message.set_param("type", "text/html")
         for asset in assets:
             maintype, _, subtype = asset.mime_type.partition("/")
             if not maintype or not subtype:
@@ -264,6 +272,19 @@ def build_message(
                 # Brackets are this consumer's job: ImageAsset.content_id is
                 # bare, and add_related() stores whatever it is given, so a
                 # bare id would emit an RFC-invalid Content-ID header.
+                #
+                # Deliberately NOT qualified with "@domain": RFC 2392 defines
+                # a cid: URL as the Content-ID with the brackets stripped,
+                # and the builder has already written src="cid:<bare-id>"
+                # into the HTML by the time this module sees it (and that
+                # cid: reference is what the seam-check above and every test
+                # compare against). Qualifying only the header here would
+                # leave the HTML pointing at an id the header no longer
+                # matches -- breaking every embedded image, which is worse
+                # than the RFC 5322 msg-id syntax gap a bare id leaves open.
+                # (svc/builder/images.py's docstring claims delivery adds the
+                # "@"; given this constraint that claim is wrong and belongs
+                # to a builder-side fix, not a workaround here.)
                 cid=f"<{asset.content_id}>",
                 filename=asset.filename,
                 # Without this, supplying a filename yields
@@ -292,5 +313,10 @@ def save_eml(message: EmailMessage, output_path: str | Path) -> Path:
     """
     path = Path(output_path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_bytes(message.as_bytes())
+    # RFC 5322 mandates CRLF line endings; the default policy generates bare
+    # LF, which a strict client is entitled to reject even though the bytes
+    # round-trip fine through Python's own parser. Cloning the policy with
+    # linesep="\r\n" is what makes the generator normalise both headers and
+    # body content to CRLF -- .as_bytes() otherwise leaves it as written.
+    path.write_bytes(message.as_bytes(policy=message.policy.clone(linesep="\r\n")))
     return path
