@@ -204,7 +204,7 @@ argument always beats the config.
 ## Development
 
 ```bash
-pytest                                    # 594 tests: validation, error paths, size limits
+pytest                                    # 617 tests: validation, error paths, size limits
 ruff check . && ruff format --check .
 python -m mypy                            # config in pyproject: files = ["svc"]
 ```
@@ -214,9 +214,19 @@ CI runs all four on every pull request (and on pushes to `main`), across Python 
 source tree — templates ship inside the package, and that job is what keeps non-editable
 installs working.
 
-There is no in-repo end-to-end smoke test yet. To eyeball a full render, build an email and
-`.save()` it into `output/` (gitignored), then open it in a browser. A fixture gallery,
-screenshot runner and email-client lint pass are tracked as epic
+`qa/fixtures/` is the gallery — `minimal`, `kitchen_sink` and `image_matrix`, each a
+deterministic email built in code. The suite renders all three and checks that every
+`cid:` reference has a manifest entry, and that a second build is byte-identical. To
+eyeball one:
+
+```python
+from qa.fixtures import all_fixtures
+
+all_fixtures()["kitchen_sink"]().save("output/kitchen-sink.html")
+```
+
+`qa/` is not shipped in the wheel. A screenshot runner, an email-client lint pass and a
+`preview` CLI are the rest of epic
 [#54](https://github.com/RorySullivan1/pyHermes/issues/54).
 
 ## Scope

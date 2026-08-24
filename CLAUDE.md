@@ -65,11 +65,46 @@ svc/
 │   └── sender.py       — GmailTransport protocol, GoogleApiTransport shim, send_message()
 ├── outlook/            ← Outlook send adapter over Microsoft Graph (same shape as gmail)
 │   └── sender.py       — OutlookTransport protocol, GraphApiTransport shim, send_message()
+qa/                     ← QA harness (epic #54); NOT shipped in the wheel
+└── fixtures/          — the gallery: minimal, kitchen_sink, image_matrix, + all_fixtures()
 output/                 — generated email HTML (gitignored; not committed)
 tests/                  — pytest unit suite (validation, error paths, size limits)
 .github/workflows/      — CI: ruff, mypy, pytest
 .claude/                — curated tooling library (skills, agents, commands, hooks, memory)
 ```
+
+## The fixture gallery — `qa/fixtures`
+
+The shared set of representative emails every later QA tool consumes (#57, the first step of
+epic #54). Three fixtures, each a `build()` returning a built `Email`, enumerated through
+`all_fixtures()` so a consumer never imports them one by one:
+
+| Fixture | What it is for |
+|---|---|
+| `minimal` | The smallest valid email. Its value is negative space — it renders the skeleton with every optional region empty, so it catches a change to `base.html`'s defaults that a richer fixture masks by supplying the value itself |
+| `kitchen_sink` | Every public component in every container ratio, `highlight=True` included. The fixture a golden snapshot is worth the most on |
+| `image_matrix` | All three embed strategies, plus the same attached image referenced twice — the shortest proof that `assets()` reports exactly the `cid:` references the HTML contains |
+
+**Determinism is the rule the gallery rests on**, and it is not a style preference: Content-IDs
+are `sha256(bytes)[:16]`, so a fixture image that varies changes the `cid:` references in the
+HTML and fails every downstream golden for a reason unrelated to the change under review.
+Hence fixed strings, no clock, no `random`, and PNG bytes generated from constants by
+[qa/fixtures/_png.py](qa/fixtures/_png.py) rather than checked in as binaries.
+
+**`qa/` is a top-level package, not `svc/qa` and not `tests/fixtures`** — the decision #57 left
+to its PR. It is out of `svc/` because the wheel ships `packages = ["svc"]` and the gallery is
+test data that would be dead weight for every installing user; it is out of `tests/` because
+`tests/` is not importable from an installed position and the epic's later tools (#59
+screenshots, #60 lint, #61 the `preview` CLI) are not tests. A root
+[conftest.py](conftest.py) puts the repo root on `sys.path` so `import qa` does not depend on
+hatchling's editable-install strategy happening to expose it. `qa/` **is** type-checked —
+`mypy` runs over `["svc", "qa"]`.
+
+**Adding a component means adding it to `kitchen_sink()`.** A completeness test introspects
+every public `Component` subclass exported from `svc.builder` and fails if one never appears —
+the inclusion side is introspected, never hand-listed. Only exemptions are named, in
+`DEPRECATED_COMPONENTS` (today: `KpiStrip`, whose markup duplicates a section already in the
+gallery and which warns on construction).
 
 ## Configuration — `svc/config`
 
