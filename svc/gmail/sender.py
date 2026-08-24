@@ -34,6 +34,7 @@ Usage::
 from __future__ import annotations
 
 import base64
+import json
 import time
 from collections.abc import Callable
 from email.message import EmailMessage
@@ -46,10 +47,26 @@ from svc.delivery.retry import retry_with_backoff
 __all__ = ["GmailTransport", "GoogleApiTransport", "send_message"]
 
 #: Gmail statuses worth a second attempt: rate limiting and the 5xx family.
-#: Everything else — 400 malformed, 401 unauthenticated, 403 forbidden or
-#: over-quota-for-good, 404 unknown user — is a condition that will not fix
-#: itself, and retrying it only delays a clear error.
+#: Everything else — 400 malformed, 401 unauthenticated, 404 unknown user —
+#: is a condition that will not fix itself, and retrying it only delays a
+#: clear error. 403 is deliberately absent from this set: Gmail overloads it
+#: for both rate limiting and outright authorization failures, so it is
+#: classified separately, by ``reason``, in :func:`is_transient`.
 TRANSIENT_STATUSES = frozenset({429, 500, 502, 503, 504})
+
+#: The Gmail-documented ``reason`` values for a 403 that mean "you're
+#: sending too fast", not "you may never do this". Per Gmail's own
+#: error-handling guide[1], both are ``usageLimits`` errors and both are
+#: told to retry with exponential backoff — unlike sibling 403 reasons such
+#: as ``dailyLimitExceeded`` (told to raise its quota, not retry) or a
+#: genuine ``domainPolicy``/authorization failure. This is why a bare 403
+#: is *not* added to ``TRANSIENT_STATUSES``: only these two reasons are.
+#: [1] https://developers.google.com/gmail/api/guides/handle-errors
+#:     (confirmed against the live page while triaging this finding —
+#:     the documented JSON samples for both reasons carry ``"code": 403``
+#:     and the guide's fix is literally "Use exponential backoff to retry
+#:     the request").
+RATE_LIMIT_REASONS = frozenset({"rateLimitExceeded", "userRateLimitExceeded"})
 
 
 class GmailTransport(Protocol):
@@ -87,34 +104,107 @@ def _status_of(exc: BaseException) -> int | None:
     """
     The HTTP status behind a client-library exception, if it carries one.
 
-    Read by duck-typing rather than by catching ``HttpError``, so this module
-    needs no Google import: ``googleapiclient.errors.HttpError`` exposes
-    ``resp.status``, and newer releases also expose ``status_code``. An
-    exception with neither returns ``None`` and is treated as permanent.
+    Read by duck-typing rather than by catching a library's own exception
+    class, so this module needs no provider import. Three shapes are
+    checked, in order: ``exc.resp.status`` (``googleapiclient.errors.
+    HttpError``, the transport Gmail's own docs use), ``exc.status_code``
+    (newer ``googleapiclient`` releases), and ``exc.response.status_code``
+    (``requests``' ``HTTPError``, populated by ``raise_for_status()``).
+    Checking the last of these matters beyond generality: without it, an
+    ``HTTPError`` — which subclasses ``OSError`` — would carry no
+    extractable status, fall through to the network-level check in
+    :func:`is_transient`, and a plain 400 would be misread as a network
+    blip and retried. An exception matching none of the three returns
+    ``None`` and falls to that same network-level check on its own merits.
     """
     response = getattr(exc, "resp", None)
     status = getattr(response, "status", None)
     if status is None:
         status = getattr(exc, "status_code", None)
+    if status is None:
+        status = getattr(getattr(exc, "response", None), "status_code", None)
     try:
         return int(status) if status is not None else None
     except (TypeError, ValueError):
         return None
 
 
+def _reason_of(exc: BaseException) -> str | None:
+    """
+    The Gmail API's machine-readable ``reason`` for a 403, if present.
+
+    ``googleapiclient.errors.HttpError`` carries the raw JSON response body
+    as ``.content`` (bytes); Gmail's documented error shape nests the reason
+    at ``error.errors[0].reason``. Read by duck-typing and best-effort
+    parsing, matching :func:`_status_of`'s approach: any failure to find or
+    parse it returns ``None`` rather than raising, since a malformed or
+    absent body is not itself the failure being classified.
+    """
+    content = getattr(exc, "content", None)
+    if content is None:
+        return None
+    try:
+        errors = json.loads(content)["error"]["errors"]
+        reason = errors[0]["reason"]
+    except (TypeError, ValueError, LookupError):
+        return None
+    return str(reason) if reason is not None else None
+
+
+#: Fully-qualified names of network-level failures that are neither the
+#: builtin ``TimeoutError``/``ConnectionError`` nor an ``OSError`` subclass,
+#: so an isinstance check alone would miss them. Matched by name rather
+#: than imported, to keep this module free of a provider dependency (see
+#: the module docstring). httplib2 -- the HTTP transport googleapiclient
+#: itself is built on -- raises its own hierarchy rooted at
+#: ``HttpLib2Error`` instead of reusing ``OSError``; ``ServerNotFoundError``
+#: (DNS resolution failure) is the one named here because it is the
+#: specific case this finding evidenced and the paradigmatic "network
+#: blip" this list exists for. Deliberately not the whole ``HttpLib2Error``
+#: family: some siblings (e.g. a certificate mismatch) are not transient.
+_NETWORK_ERROR_TYPE_NAMES = frozenset({"httplib2.error.ServerNotFoundError"})
+
+
+def _is_network_error(exc: BaseException) -> bool:
+    """
+    Whether ``exc`` is a transport-level failure rather than a server
+    response — a DNS/socket/TLS blip worth a second attempt.
+
+    Covers the builtin ``TimeoutError``/``ConnectionError`` and every
+    ``OSError`` subclass. The latter matters beyond the builtins:
+    ``requests.exceptions.ConnectionError`` and ``.Timeout`` are both
+    ``OSError`` subclasses but are *not* instances of the builtins of the
+    same name, so an isinstance check against only the builtins misses
+    them — the bug this function exists to fix. It also covers the named
+    non-``OSError`` exceptions above, matched structurally so this stays
+    free of a network-library import.
+    """
+    if isinstance(exc, (TimeoutError, ConnectionError, OSError)):
+        return True
+    exc_type = type(exc)
+    qualified = f"{exc_type.__module__}.{exc_type.__qualname__}"
+    return qualified in _NETWORK_ERROR_TYPE_NAMES
+
+
 def is_transient(exc: BaseException) -> bool:
     """
     Whether a failure is worth retrying.
 
-    Network-level interruptions and the transient status family qualify.
-    Anything unrecognised does **not**: on a send path an unknown failure may
-    have already delivered the message, so the safe default is to surface it
-    rather than risk a duplicate.
+    Classification is status-first: anything carrying a readable HTTP
+    status is judged on that status (403 specially, by ``reason`` — see
+    ``RATE_LIMIT_REASONS`` — everything else against
+    ``TRANSIENT_STATUSES``). Only when no status can be read does a
+    network-level check apply, covering DNS/socket/TLS blips. Anything
+    unrecognised by either path does **not** count as transient: on a send
+    path an unknown failure may have already delivered the message, so the
+    safe default is to surface it rather than risk a duplicate.
     """
-    if isinstance(exc, (TimeoutError, ConnectionError)):
-        return True
     status = _status_of(exc)
-    return status in TRANSIENT_STATUSES if status is not None else False
+    if status is None:
+        return _is_network_error(exc)
+    if status == 403:
+        return _reason_of(exc) in RATE_LIMIT_REASONS
+    return status in TRANSIENT_STATUSES
 
 
 def send_message(
@@ -144,6 +234,10 @@ def send_message(
         The Gmail message id assigned to the sent message.
 
     Raises:
+        ValueError: If ``max_attempts`` is below 1 — a caller-argument bug,
+            not a send failure, so it is raised as itself rather than
+            wrapped into a ``TransportError`` claiming Gmail refused a
+            message that was never transmitted.
         TransportError: On any send failure — authentication refused, the API
             rejecting the request, the network failing, or a transient failure
             that outlived its retries. The provider's own exception is always
@@ -153,6 +247,14 @@ def send_message(
         The bytes sent are exactly what :func:`svc.delivery.save_eml` would
         write, so a dry run is a faithful preview of the real send.
     """
+    # retry_with_backoff raises this same ValueError for the same reason,
+    # but from inside the `except Exception` below it would be caught and
+    # reported as "Gmail refused the message" -- a bad call is not a send
+    # failure, so it is checked here, before any attempt, instead of
+    # relying on that wrapping to let it through unwrapped.
+    if max_attempts < 1:
+        raise ValueError(f"max_attempts must be at least 1, got {max_attempts}")
+
     raw = base64.urlsafe_b64encode(to_wire_bytes(message)).decode("ascii")
 
     try:

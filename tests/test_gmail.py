@@ -8,8 +8,11 @@ authentication, which is the whole point of that boundary.
 """
 
 import base64
+import json
 
+import httplib2
 import pytest
+import requests
 
 from svc.builder import EmailBuilder, FullWidth, ImageBlock
 from svc.builder.images import EmailImage
@@ -34,9 +37,20 @@ class _FakeResponse:
 class _ApiError(Exception):
     """Stands in for googleapiclient.errors.HttpError, duck-typed the same."""
 
-    def __init__(self, status: int, message: str = "api failure"):
+    def __init__(self, status: int, message: str = "api failure", reason: str | None = None):
         super().__init__(message)
         self.resp = _FakeResponse(status)
+        if reason is not None:
+            # Gmail's documented error body shape: {"error": {"errors":
+            # [{"reason": ..., ...}], "code": ..., "message": ...}}.
+            body = {
+                "error": {
+                    "errors": [{"domain": "usageLimits", "reason": reason, "message": message}],
+                    "code": status,
+                    "message": message,
+                }
+            }
+            self.content = json.dumps(body).encode()
 
 
 class _RecordingTransport:
@@ -182,14 +196,147 @@ class TestPermanentFailures:
             send_message(message, transport=_Silent())
 
 
+class TestNetworkFailureClassification:
+    """
+    F1: real network exceptions, not just the builtins.
+
+    A prior version of ``is_transient`` checked only the builtin
+    ``TimeoutError``/``ConnectionError``, which hid this bug because none of
+    the transports this module documents actually raise those builtins.
+    """
+
+    def test_requests_connection_error_is_retried(self, message):
+        # requests.exceptions.ConnectionError is an OSError subclass, but
+        # NOT an instance of the builtin ConnectionError -- the gap F1 found.
+        assert not isinstance(requests.exceptions.ConnectionError(), ConnectionError)
+        transport = _FailingTransport(requests.exceptions.ConnectionError("reset"), failures=1)
+        assert send_message(message, transport=transport, sleep=lambda _: None) == "msg-after-retry"
+        assert transport.calls == 2
+
+    def test_requests_timeout_is_retried(self, message):
+        assert not isinstance(requests.exceptions.Timeout(), TimeoutError)
+        transport = _FailingTransport(requests.exceptions.Timeout("slow"), failures=1)
+        assert send_message(message, transport=transport, sleep=lambda _: None) == "msg-after-retry"
+        assert transport.calls == 2
+
+    def test_requests_http_error_with_a_permanent_status_is_not_retried(self, message):
+        # The trap a naive `isinstance(exc, OSError)` fix falls into:
+        # HTTPError is an OSError too, so without status-first classification
+        # a 400 would be misread as a network blip and retried.
+        response = requests.Response()
+        response.status_code = 400
+        error = requests.exceptions.HTTPError("bad request", response=response)
+        assert isinstance(error, OSError)
+        transport = _FailingTransport(error)
+        with pytest.raises(TransportError, match="400"):
+            send_message(message, transport=transport, sleep=lambda _: None)
+        assert transport.calls == 1
+
+    def test_requests_http_error_with_a_transient_status_is_retried(self, message):
+        response = requests.Response()
+        response.status_code = 503
+        error = requests.exceptions.HTTPError("unavailable", response=response)
+        transport = _FailingTransport(error, failures=1)
+        assert send_message(message, transport=transport, sleep=lambda _: None) == "msg-after-retry"
+        assert transport.calls == 2
+
+    def test_httplib2_server_not_found_is_retried(self, message):
+        # httplib2 -- what googleapiclient itself is built on -- raises its
+        # own hierarchy rooted at HttpLib2Error rather than OSError, so this
+        # would be missed by an isinstance(exc, OSError) check alone too.
+        error = httplib2.ServerNotFoundError("Unable to find the server")
+        assert not isinstance(error, OSError)
+        transport = _FailingTransport(error, failures=1)
+        assert send_message(message, transport=transport, sleep=lambda _: None) == "msg-after-retry"
+        assert transport.calls == 2
+
+    def test_is_transient_agrees_directly(self):
+        assert is_transient(requests.exceptions.ConnectionError())
+        assert is_transient(requests.exceptions.Timeout())
+        assert is_transient(httplib2.ServerNotFoundError())
+        response = requests.Response()
+        response.status_code = 400
+        assert not is_transient(requests.exceptions.HTTPError(response=response))
+
+
+class TestMaxAttemptsIsACallerBug:
+    """F2: a bad max_attempts is a programming error, not a send failure."""
+
+    def test_zero_max_attempts_raises_value_error_not_transport_error(self, message):
+        transport = _RecordingTransport()
+        with pytest.raises(ValueError, match="max_attempts"):
+            send_message(message, transport=transport, max_attempts=0)
+
+    def test_zero_max_attempts_never_calls_the_transport(self, message):
+        # The bug: today this reports "Gmail refused the message" for a
+        # message that was never handed to the transport at all.
+        transport = _RecordingTransport()
+        with pytest.raises(ValueError):
+            send_message(message, transport=transport, max_attempts=0)
+        assert transport.calls == []
+
+    def test_negative_max_attempts_also_raises_value_error(self, message):
+        transport = _RecordingTransport()
+        with pytest.raises(ValueError):
+            send_message(message, transport=transport, max_attempts=-1)
+
+
+class TestForbiddenRateLimiting:
+    """
+    F3: Gmail overloads 403 for both rate limiting and real authorization
+    failures. Confirmed from Gmail's own error-handling guide
+    (https://developers.google.com/gmail/api/guides/handle-errors): the
+    documented JSON bodies for ``reason: rateLimitExceeded`` and
+    ``reason: userRateLimitExceeded`` both carry ``"code": 403`` and the
+    guide's fix for both is "Use exponential backoff to retry the request" --
+    contrasted with sibling 403 reasons (``dailyLimitExceeded``, told to
+    raise its quota; ``domainPolicy``, a real authorization failure) that
+    are not told to retry. So 403 is retried only when the reason names
+    rate limiting, keyed on the payload rather than the bare status.
+    """
+
+    @pytest.mark.parametrize("reason", ["rateLimitExceeded", "userRateLimitExceeded"])
+    def test_403_with_a_rate_limit_reason_is_retried(self, message, reason):
+        transport = _FailingTransport(_ApiError(403, reason=reason), failures=1)
+        assert send_message(message, transport=transport, sleep=lambda _: None) == "msg-after-retry"
+        assert transport.calls == 2
+
+    @pytest.mark.parametrize("reason", ["dailyLimitExceeded", "domainPolicy", "forbidden"])
+    def test_403_with_a_non_rate_limit_reason_is_not_retried(self, message, reason):
+        transport = _FailingTransport(_ApiError(403, reason=reason))
+        with pytest.raises(TransportError, match="403"):
+            send_message(message, transport=transport, sleep=lambda _: None)
+        assert transport.calls == 1
+
+    def test_403_with_no_body_at_all_is_not_retried(self, message):
+        # No content to read a reason from -- stay conservative rather than
+        # guess, per the finding: an unproven claim must not make bare 403
+        # transient.
+        transport = _FailingTransport(_ApiError(403))
+        with pytest.raises(TransportError, match="403"):
+            send_message(message, transport=transport, sleep=lambda _: None)
+        assert transport.calls == 1
+
+    def test_is_transient_reads_the_reason_directly(self):
+        assert is_transient(_ApiError(403, reason="rateLimitExceeded"))
+        assert is_transient(_ApiError(403, reason="userRateLimitExceeded"))
+        assert not is_transient(_ApiError(403, reason="dailyLimitExceeded"))
+        assert not is_transient(_ApiError(403))
+
+
 class TestClassification:
     @pytest.mark.parametrize("status", [429, 500, 502, 503, 504])
     def test_transient_statuses(self, status):
         assert is_transient(_ApiError(status))
 
-    @pytest.mark.parametrize("status", [400, 401, 403, 404, 422])
+    @pytest.mark.parametrize("status", [400, 401, 404, 422])
     def test_permanent_statuses(self, status):
         assert not is_transient(_ApiError(status))
+
+    def test_bare_403_is_permanent(self):
+        # No body to read a reason from -- stays permanent rather than
+        # guessing. See TestForbiddenRateLimiting for the reason-based cases.
+        assert not is_transient(_ApiError(403))
 
     def test_status_code_attribute_is_also_read(self):
         # Newer googleapiclient releases expose status_code instead of resp.
