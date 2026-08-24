@@ -13,6 +13,7 @@ absence of a returned message id.
 import base64
 
 import pytest
+import requests
 
 from svc.builder import EmailBuilder, FullWidth, ImageBlock
 from svc.builder.images import EmailImage
@@ -26,6 +27,7 @@ from svc.outlook import (
     retry_after_seconds,
     send_message,
 )
+from svc.outlook.sender import DEFAULT_TIMEOUT_SECONDS
 
 ENVELOPE = {
     "subject": "Weekly Market Wrap",
@@ -44,15 +46,19 @@ class _Response:
 
 
 class _RecordingSession:
-    """Accepts every post, remembering url, body and headers."""
+    """Accepts every post, remembering url, body, headers and timeout."""
 
     def __init__(self, status_code: int = ACCEPTED, headers: dict | None = None):
         self.status_code = status_code
         self.headers = headers
         self.posts: list[tuple[str, str, dict]] = []
+        self.timeouts: list[float | None] = []
 
-    def post(self, url: str, *, data: str, headers: dict) -> _Response:
+    def post(
+        self, url: str, *, data: str, headers: dict, timeout: float | None = None
+    ) -> _Response:
         self.posts.append((url, data, headers))
+        self.timeouts.append(timeout)
         return _Response(self.status_code, self.headers)
 
 
@@ -141,9 +147,11 @@ class TestGraphApiTransport:
         assert headers["Content-Type"] == "text/plain"
 
     def test_a_named_mailbox_uses_the_users_endpoint(self):
+        # "@" is percent-encoded (F2): see TestEndpointEncoding for why a
+        # caller-supplied mailbox id must not go into a path segment as-is.
         session = _RecordingSession()
         GraphApiTransport(session).send_mime("Zm9v", user_id="ops@example.com")
-        assert session.posts[0][0].endswith("/users/ops@example.com/sendMail")
+        assert session.posts[0][0].endswith("/users/ops%40example.com/sendMail")
 
     def test_base_url_is_overridable_for_sovereign_clouds(self):
         session = _RecordingSession()
@@ -274,3 +282,118 @@ class TestClassification:
 
     def test_an_exception_with_no_status_is_permanent(self):
         assert not is_transient(RuntimeError("no status here"))
+
+
+class TestRealRequestsExceptions:
+    """
+    F1: the builtins `TimeoutError`/`ConnectionError` are not what `requests`
+    raises. `requests.exceptions.ConnectionError`/`Timeout`/`HTTPError` are
+    all `OSError` subclasses instead, and a naive `isinstance(exc, OSError)`
+    check reintroduces a worse bug: `HTTPError` is an `OSError` too, so a
+    plain HTTP 400 would misclassify as a transient network blip. These
+    tests exercise the real hierarchy, not a builtin stand-in, so a
+    regression here cannot hide the way it did before.
+    """
+
+    @pytest.mark.parametrize(
+        "error",
+        [
+            requests.exceptions.ConnectionError("reset"),
+            requests.exceptions.Timeout("slow"),
+            requests.exceptions.ReadTimeout("slow read"),
+            requests.exceptions.ConnectTimeout("slow connect"),
+        ],
+    )
+    def test_bare_requests_network_exceptions_are_transient(self, error):
+        # None of these carry a status -- the request never got a response --
+        # so classification must fall through to the network-level check.
+        assert is_transient(error)
+
+    def test_requests_network_exceptions_are_retried_end_to_end(self, message):
+        transport = _FailingTransport(requests.exceptions.ConnectionError("reset"), failures=1)
+        send_message(message, transport=transport, sleep=lambda _: None)
+        assert transport.calls == 2
+
+    def test_an_http_error_carrying_a_permanent_status_is_not_transient(self):
+        # The trap: HTTPError is-an-OSError, same as ConnectionError/Timeout.
+        # Status must be checked first, or this 400 gets treated as a retry-
+        # worthy network blip instead of the permanent rejection it is.
+        response = _Response(400)
+        error = requests.exceptions.HTTPError(response=response)
+        assert isinstance(error, OSError)  # confirms the trap is real
+        assert not is_transient(error)
+
+    def test_an_http_error_carrying_a_transient_status_is_transient(self):
+        response = _Response(503)
+        error = requests.exceptions.HTTPError(response=response)
+        assert is_transient(error)
+
+    def test_a_permanent_http_error_is_not_retried_end_to_end(self, message):
+        response = _Response(400)
+        error = requests.exceptions.HTTPError(response=response)
+        transport = _FailingTransport(error)
+        with pytest.raises(TransportError):
+            send_message(message, transport=transport, sleep=lambda _: None)
+        assert transport.calls == 1
+
+
+class TestEndpointEncoding:
+    """F2: a caller-supplied mailbox id must survive the trip into a URL."""
+
+    def test_a_guest_upn_containing_hash_is_percent_encoded(self):
+        # Reproduced without the fix: "#EXT#@tenant..." is a URL fragment,
+        # stripped before the request reaches the wire, taking "/sendMail"
+        # with it -- requests.PreparedRequest.path_url confirms the
+        # truncation lands on the actual bytes sent, not just the string.
+        upn = "alice_contoso.com#EXT#@tenant.onmicrosoft.com"
+        session = _RecordingSession()
+        GraphApiTransport(session).send_mime("Zm9v", user_id=upn)
+        url = session.posts[0][0]
+        assert url == (
+            "https://graph.microsoft.com/v1.0/users/"
+            "alice_contoso.com%23EXT%23%40tenant.onmicrosoft.com/sendMail"
+        )
+        prepared = requests.Request("POST", url).prepare()
+        assert prepared.path_url.endswith("/sendMail")
+
+    def test_the_me_sentinel_is_never_encoded(self):
+        session = _RecordingSession()
+        GraphApiTransport(session).send_mime("Zm9v", user_id="me")
+        assert session.posts[0][0] == "https://graph.microsoft.com/v1.0/me/sendMail"
+
+    # An ordinary UPN's "@" round-tripping through the encoder is covered by
+    # TestGraphApiTransport.test_a_named_mailbox_uses_the_users_endpoint.
+
+
+class TestTimeout:
+    """F3: an unbounded `session.post` can hang forever and never reach the
+    retry ladder, because a hang never raises."""
+
+    def test_a_default_timeout_is_always_passed(self):
+        session = _RecordingSession()
+        GraphApiTransport(session).send_mime("Zm9v")
+        assert session.timeouts[0] == DEFAULT_TIMEOUT_SECONDS
+
+    def test_timeout_is_overridable(self):
+        session = _RecordingSession()
+        GraphApiTransport(session, timeout=5.0).send_mime("Zm9v")
+        assert session.timeouts[0] == 5.0
+
+    def test_timeout_can_be_disabled_explicitly(self):
+        # None is requests'/httpx's own spelling for "no timeout"; passing it
+        # through unexamined keeps that meaning rather than silently
+        # re-imposing the default for a caller who opted out on purpose.
+        session = _RecordingSession()
+        GraphApiTransport(session, timeout=None).send_mime("Zm9v")
+        assert session.timeouts[0] is None
+
+
+class TestMaxAttemptsIsAProgrammingError:
+    """F4: `max_attempts < 1` is a bug in the call, not a Graph rejection."""
+
+    def test_propagates_as_value_error_not_transport_error(self, message):
+        transport = _RecordingTransport()
+        with pytest.raises(ValueError, match="max_attempts"):
+            send_message(message, transport=transport, max_attempts=0)
+        # Never attempted: the transport must not have been touched.
+        assert transport.calls == []
