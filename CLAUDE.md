@@ -55,8 +55,12 @@ svc/
 │       └── text/*.html              — text components (text-block, numbered-list, author-block)
 ├── delivery/           ← transport-neutral MIME assembly (consumes the builder)
 │   ├── __init__.py     — public API: build_message, save_eml, collect_cid_references
-│   ├── message.py      — build_message() → multipart/related; save_eml() dry run
-│   └── exceptions.py   — DeliveryError / MessageError (siblings of EmailBuilderError)
+│   ├── message.py      — build_message() → multipart/related; to_wire_bytes(); save_eml()
+│   ├── retry.py        — retry_with_backoff(): shared policy, per-adapter classification
+│   └── exceptions.py   — DeliveryError / MessageError / TransportError (siblings of
+│                          EmailBuilderError)
+├── gmail/              ← Gmail send adapter (consumes delivery; owns no credentials)
+│   └── sender.py       — GmailTransport protocol, GoogleApiTransport shim, send_message()
 output/                 — generated email HTML (gitignored; not committed)
 tests/                  — pytest unit suite (validation, error paths, size limits)
 .github/workflows/      — CI: ruff, mypy, pytest
@@ -310,6 +314,46 @@ save_eml(message, "output/preview.eml")     # dry run — no transport, no crede
   normalize it. `svc/delivery/message.py`'s docstring says exactly what to normalize.
 - **Errors are a separate hierarchy.** `DeliveryError` is a **sibling** of `EmailBuilderError`,
   not a child: a send failure is not a build failure. `MessageError` covers assembly.
+
+
+## Architecture — `svc/gmail`
+
+Delivery assembles bytes; an adapter transmits them. `svc/gmail` owns Gmail's **wire
+contract** — the base64url `raw` encoding, the `users.messages.send` shape, which failures
+are worth retrying — and deliberately does **not** own authentication.
+
+```python
+from googleapiclient.discovery import build      # the caller's dependency, not ours
+from svc.delivery import build_message
+from svc.gmail import GoogleApiTransport, send_message
+
+service = build("gmail", "v1", credentials=creds)          # caller authenticates
+message = build_message(email, subject=..., sender=..., to=[...])
+message_id = send_message(message, transport=GoogleApiTransport(service))
+```
+
+- **The adapter takes an authorized transport, not credentials.** `GmailTransport` is a
+  `Protocol` with one method, so a real `googleapiclient` service, a stub, or anything else
+  with `send_raw` satisfies it. Consequences, all deliberate: pyHermes imports nothing from
+  Google and gains **no dependency** (a test asserts this by parsing the module's AST); no
+  credential ever touches this package; and the whole send path is testable with **no
+  mailbox, no network, and no recorded fixtures to drift**. Token acquisition, refresh and
+  revocation stay with the caller, where an application's secret handling already lives.
+  `GoogleApiTransport` is a duck-typed three-line shim so callers needn't rewrite it.
+- **Retry policy is shared, classification is not.** [retry_with_backoff()](svc/delivery/retry.py)
+  is transport-neutral and lives in `svc/delivery`, so the Outlook adapter (#70) reuses it
+  rather than growing a second copy. Each adapter supplies its own `is_transient`, because
+  only it knows what its provider's rate-limit error looks like. Gmail retries 429 and the
+  5xx family plus network interruptions; **an unrecognised failure is not retried**, because
+  on a send path it may already have delivered and a blind retry risks a duplicate.
+- **`sleep` is injected**, so tests exercise the real backoff ladder without spending it.
+- **The bytes sent are the bytes `save_eml()` writes** — both go through
+  [to_wire_bytes()](svc/delivery/message.py), and a test asserts the equality. That is what
+  makes the dry run a faithful preview rather than an approximation.
+- **`TransportError`** (a `DeliveryError`) covers every send failure, always chaining the
+  provider's own exception. It is distinct from `MessageError` on purpose: an unbuildable
+  message is the caller's data problem, while an unsendable one may be worth retrying later
+  with the exact same bytes.
 
 
 ## Gotchas

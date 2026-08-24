@@ -50,7 +50,13 @@ from svc.builder.images import ImageAsset
 
 from .exceptions import MessageError
 
-__all__ = ["RenderableEmail", "build_message", "collect_cid_references", "save_eml"]
+__all__ = [
+    "RenderableEmail",
+    "build_message",
+    "collect_cid_references",
+    "save_eml",
+    "to_wire_bytes",
+]
 
 CID_SCHEME = "cid:"
 
@@ -388,10 +394,29 @@ def save_eml(message: EmailMessage, output_path: str | Path) -> Path:
     """
     path = Path(output_path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    # RFC 5322 mandates CRLF line endings; the default policy generates bare
-    # LF, which a strict client is entitled to reject even though the bytes
-    # round-trip fine through Python's own parser. Cloning the policy with
-    # linesep="\r\n" is what makes the generator normalise both headers and
-    # body content to CRLF -- .as_bytes() otherwise leaves it as written.
-    path.write_bytes(message.as_bytes(policy=message.policy.clone(linesep="\r\n")))
+    path.write_bytes(to_wire_bytes(message))
     return path
+
+
+def to_wire_bytes(message: EmailMessage) -> bytes:
+    """
+    Serialise a message with RFC 5322 CRLF line endings.
+
+    The default policy generates bare LF, which a strict client is entitled
+    to reject even though the bytes round-trip fine through Python's own
+    parser. Cloning the policy with ``linesep="\r\n"`` is what makes the
+    generator normalise both headers and body content to CRLF --
+    ``.as_bytes()`` otherwise leaves it as written.
+
+    Every consumer that puts a message on the wire or on disk goes through
+    here, so the ``.eml`` written by :func:`save_eml` for inspection is
+    byte-identical to what an adapter transmits. That correspondence is what
+    makes the dry run worth trusting.
+
+    Args:
+        message: An assembled message from :func:`build_message`.
+
+    Returns:
+        The serialised message, CRLF throughout.
+    """
+    return message.as_bytes(policy=message.policy.clone(linesep="\r\n"))

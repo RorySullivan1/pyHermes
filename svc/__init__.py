@@ -4,18 +4,24 @@ pyHermes Service Layer
 
 svc/
 ├── builder/     — OO email assembly (Jinja2): HTML + an asset manifest.
-└── delivery/    — transport-neutral MIME assembly: HTML + manifest → message.
+├── delivery/    — transport-neutral MIME assembly: HTML + manifest → message.
+└── gmail/       — Gmail send adapter: message → the wire.
 
-The seam between them: the builder *declares* CID embeds (for every
-``src="cid:X"`` in the HTML, ``Email.assets()`` has the entry describing what
-to attach as ``X``), and delivery *performs* them.
+The seam between builder and delivery: the builder *declares* CID embeds
+(for every ``src="cid:X"`` in the HTML, ``Email.assets()`` has the entry
+describing what to attach as ``X``), and delivery *performs* them.
 
-Per-service send adapters (``gmail/``, ``outlook/``) are **planned, not
-built** — those subpackages do not exist yet. Don't import them.
+The seam between delivery and an adapter: delivery assembles bytes, an
+adapter transmits them. Adapters own their provider's wire contract and
+error semantics; they never own authentication, so pyHermes has no
+dependency on any provider SDK.
+
+``outlook/`` is **planned, not built** — that subpackage does not exist yet.
 
 Usage::
 
     from svc.builder import CardGroup, EmailBuilder, FullWidth
     from svc.builder.models import Card, KpiItem
     from svc.delivery import build_message, save_eml
+    from svc.gmail import GoogleApiTransport, send_message
 """

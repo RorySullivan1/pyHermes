@@ -27,3 +27,18 @@ class MessageError(DeliveryError):
     Covers a missing envelope field (no subject, sender or recipient) and a
     mismatch between the HTML's ``cid:`` references and the asset manifest.
     """
+
+
+class TransportError(DeliveryError):
+    """Raised when an assembled message could not be handed to a transport.
+
+    Covers everything that goes wrong *after* assembly: authentication
+    refused, the API rejecting the request, the network failing, or a
+    transient failure that outlived its retries. The underlying error is
+    always chained (``raise ... from exc``) so the provider's own detail
+    survives.
+
+    Distinct from :class:`MessageError` on purpose: a message that could not
+    be built is the caller's data problem, while a message that could not be
+    sent may well be worth retrying later with the exact same bytes.
+    """
