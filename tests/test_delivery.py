@@ -120,6 +120,26 @@ class TestCidReferenceCollection:
     def test_ignores_non_cid_urls(self):
         assert collect_cid_references('<img src="https://cdn.example.com/x.png">') == []
 
+    def test_finds_css_url_references_inside_a_style_block(self):
+        # A bare HTMLParser treats <style> text as opaque CDATA and never
+        # looks inside it -- a real gap, since the header background can be
+        # styled this way instead of via a style= attribute.
+        html = "<style>.h{background:url(cid:styled1)}</style>"
+        assert collect_cid_references(html) == ["styled1"]
+
+    def test_finds_references_inside_a_conditional_comment(self):
+        # Outlook's VML fill only renders inside an <!--[if mso]> conditional
+        # comment; a bare HTMLParser treats the whole comment as opaque text.
+        html = '<!--[if mso]><v:fill src="cid:mso1"/><![endif]-->'
+        assert collect_cid_references(html) == ["mso1"]
+
+    def test_finds_references_in_a_srcset_list(self):
+        # srcset is a comma-separated list of "<url> <descriptor>" pairs;
+        # naively treating the whole attribute as one url would swallow the
+        # remainder of the string into a single bogus id.
+        html = '<img srcset="cid:f 1x, cid:g 2x">'
+        assert collect_cid_references(html) == ["f", "g"]
+
 
 class TestEnvelopeValidation:
     @pytest.mark.parametrize("field", ["subject", "sender"])
@@ -284,10 +304,14 @@ class TestManifestVerification:
         with pytest.raises(MessageError, match="missing1"):
             build_message(stub, **ENVELOPE)
 
-    def test_attached_but_unreferenced_asset_is_rejected(self, png_bytes):
+    def test_attached_but_unreferenced_asset_warns_but_still_assembles(self, png_bytes):
+        # Not fatal: the cost is only message weight, and treating it as
+        # fatal would turn any gap in the (necessarily incomplete) HTML
+        # collector into a false rejection of a valid email.
         stub = _StubEmail("<p>no images here</p>", [_asset("orphan1", png_bytes)])
-        with pytest.raises(MessageError, match="orphan1"):
-            build_message(stub, **ENVELOPE)
+        with pytest.warns(UserWarning, match="orphan1"):
+            message = build_message(stub, **ENVELOPE)
+        assert message.get_content_type() == "multipart/related"
 
     def test_matching_manifest_assembles(self, png_bytes):
         stub = _StubEmail('<img src="cid:ok1">', [_asset("ok1", png_bytes)])

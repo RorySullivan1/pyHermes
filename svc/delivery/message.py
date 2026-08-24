@@ -39,6 +39,7 @@ When plain-text generation lands, the HTML part becomes one half of a
 from __future__ import annotations
 
 import re
+import warnings
 from collections.abc import Iterator, Sequence
 from email.message import EmailMessage
 from html.parser import HTMLParser
@@ -84,29 +85,79 @@ class RenderableEmail(Protocol):
 
 
 class _CidReferenceCollector(HTMLParser):
-    """Collects every ``cid:`` reference in any attribute of any tag."""
+    """Collects every ``cid:`` reference in a tag attribute, a ``<style>``
+    block's text, or markup hidden inside a comment.
+
+    A bare ``HTMLParser`` only calls ``handle_starttag`` -- it treats
+    ``<style>`` content as opaque CDATA text and a ``<!--...-->`` comment as
+    opaque too. Both carry real ``cid:`` references in this codebase: the
+    header background can be styled via a ``<style>`` rule, and Outlook's
+    VML fill (``<v:fill src="cid:X"/>``) only renders inside an
+    ``<!--[if mso]>...<![endif]-->`` conditional comment.
+    """
+
+    _CDATA_TAGS = frozenset({"style", "script"})
 
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
         self.content_ids: list[str] = []
+        self._cdata_tag: str | None = None
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         for _name, value in attrs:
             if value:
                 self.content_ids.extend(_cids_in(value))
+        if tag in self._CDATA_TAGS:
+            self._cdata_tag = tag
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag == self._cdata_tag:
+            self._cdata_tag = None
+
+    def handle_data(self, data: str) -> None:
+        # Only <style>/<script> text is CSS/JS rather than prose; scanning
+        # it with the same CSS url() regex used on attribute values is
+        # "parse, don't grep" for structure -- the parser already told us
+        # this span is CDATA, so all that's left is a CSS-value scan.
+        if self._cdata_tag:
+            for match in _CSS_URL_CID.finditer(data):
+                candidate = match.group(1).strip()
+                if candidate:
+                    self.content_ids.append(candidate)
+
+    def handle_comment(self, data: str) -> None:
+        # A conditional comment's interior is real markup a client parses
+        # (e.g. Outlook's VML), not prose -- hand it back through a fresh
+        # instance of this same parser rather than grepping the raw text.
+        nested = _CidReferenceCollector()
+        nested.feed(data)
+        nested.close()
+        self.content_ids.extend(nested.content_ids)
 
 
 def _cids_in(value: str) -> Iterator[str]:
-    """Every Content-ID referenced by one attribute value."""
-    stripped = value.strip()
-    if stripped.lower().startswith(CID_SCHEME):
-        candidate = stripped[len(CID_SCHEME) :].strip().strip("\"'")
-        if candidate:
-            yield candidate
+    """Every Content-ID referenced by one attribute value.
+
+    Handles a plain ``cid:X`` value, ``url(cid:X)`` inside a CSS value, and
+    the ``srcset`` grammar -- a comma-separated list of ``<url>
+    <descriptor>?`` candidates (e.g. ``srcset="cid:a 1x, cid:b 2x"``), where
+    only the leading url token of each candidate is a candidate id. Handling
+    the grammar generically means a plain single-value attribute (no comma)
+    falls out as the one-candidate case, with nothing attribute-name-specific.
+    """
+    for candidate in value.split(","):
+        candidate = candidate.strip()
+        if not candidate:
+            continue
+        url = candidate.split(maxsplit=1)[0]
+        if url.lower().startswith(CID_SCHEME):
+            content_id = url[len(CID_SCHEME) :].strip("\"'")
+            if content_id:
+                yield content_id
     for match in _CSS_URL_CID.finditer(value):
-        candidate = match.group(1).strip()
-        if candidate:
-            yield candidate
+        content_id = match.group(1).strip()
+        if content_id:
+            yield content_id
 
 
 def collect_cid_references(html: str) -> list[str]:
@@ -151,9 +202,13 @@ def _verify_cid_manifest(html: str, assets: Sequence[ImageAsset]) -> None:
     Check the builder's seam actually holds for this email.
 
     The contract is that for every ``src="cid:X"`` in the HTML there is an
-    ``ImageAsset`` for ``X``. Until now that was documented but never
-    verified; a mismatch either way is a bug worth failing on rather than
-    mailing out.
+    ``ImageAsset`` for ``X``. The two directions are not equally severe,
+    though: a reference with nothing to attach is a broken image the
+    reader will actually see, so it stays fatal. An attached-but-unreferenced
+    asset only costs message weight -- and treating it as fatal would turn
+    any gap in the collector above (there will always be markup shapes it
+    doesn't know about yet) into a false rejection of a valid email, so it
+    is a warning rather than a raise.
     """
     referenced = set(collect_cid_references(html))
     attached = {asset.content_id for asset in assets}
@@ -168,10 +223,12 @@ def _verify_cid_manifest(html: str, assets: Sequence[ImageAsset]) -> None:
 
     unreferenced = sorted(attached - referenced)
     if unreferenced:
-        raise MessageError(
+        warnings.warn(
             "the asset manifest carries images the HTML never references: "
-            f"{', '.join(unreferenced)}. Attaching them would add dead weight to the "
-            "message, and it usually means a component reported an image it did not render."
+            f"{', '.join(unreferenced)}. Attaching them adds dead weight to the message, "
+            "and it usually means a component reported an image it did not render.",
+            UserWarning,
+            stacklevel=3,
         )
 
 
