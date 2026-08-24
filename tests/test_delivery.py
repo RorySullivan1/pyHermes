@@ -184,6 +184,43 @@ class TestEnvelopeValidation:
             build_message(plain_email, **envelope)
 
 
+class TestSubjectResolution:
+    """`subject` falls back to the email's own metadata (#72)."""
+
+    def test_defaults_to_the_emails_own_subject(self, plain_email):
+        envelope = {k: v for k, v in ENVELOPE.items() if k != "subject"}
+        message = build_message(plain_email, **envelope)
+        assert message["Subject"] == plain_email.metadata.email_subject
+
+    def test_an_explicit_subject_wins_over_the_metadata(self, plain_email):
+        envelope = {**ENVELOPE, "subject": "Sent under a different subject"}
+        message = build_message(plain_email, **envelope)
+        assert message["Subject"] == "Sent under a different subject"
+        assert message["Subject"] != plain_email.metadata.email_subject
+
+    def test_an_explicitly_blank_subject_is_still_an_error(self, plain_email):
+        # Passing "" is a mistake, not a request to fall back -- a caller who
+        # passed something meant it.
+        with pytest.raises(MessageError, match="subject"):
+            build_message(plain_email, **{**ENVELOPE, "subject": ""})
+
+    def test_an_unbuilt_builder_gets_a_message_naming_the_fix(self, valid_metadata, text_block):
+        # EmailBuilder satisfies render()/assets() but uses `metadata` as a
+        # fluent setter, so there is nothing to read a subject from.
+        builder = EmailBuilder().metadata(valid_metadata).section(FullWidth(content=text_block))
+        envelope = {k: v for k, v in ENVELOPE.items() if k != "subject"}
+        with pytest.raises(MessageError, match=r"build\(\)"):
+            build_message(builder, **envelope)
+
+    def test_that_same_builder_works_once_built_or_given_a_subject(
+        self, valid_metadata, text_block
+    ):
+        builder = EmailBuilder().metadata(valid_metadata).section(FullWidth(content=text_block))
+        envelope = {k: v for k, v in ENVELOPE.items() if k != "subject"}
+        assert build_message(builder.build(), **envelope)["Subject"]
+        assert build_message(builder, **ENVELOPE)["Subject"] == ENVELOPE["subject"]
+
+
 class TestHeaders:
     def test_sets_the_envelope_headers(self, plain_email):
         message = build_message(

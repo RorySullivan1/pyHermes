@@ -290,8 +290,8 @@ turns that pair into a sendable `EmailMessage`.
 ```python
 from svc.delivery import build_message, save_eml
 
-message = build_message(email, subject="Weekly Market Wrap",
-                        sender="research@example.com", to=["reader@example.com"])
+message = build_message(email, sender="research@example.com",
+                        to=["reader@example.com"])   # subject defaults from the email
 save_eml(message, "output/preview.eml")     # dry run — no transport, no credentials
 ```
 
@@ -317,6 +317,12 @@ save_eml(message, "output/preview.eml")     # dry run — no transport, no crede
   normalize it. `svc/delivery/message.py`'s docstring says exactly what to normalize.
 - **Errors are a separate hierarchy.** `DeliveryError` is a **sibling** of `EmailBuilderError`,
   not a child: a send failure is not a build failure. `MessageError` covers assembly.
+- **`subject` is optional and falls back to [Email.metadata](svc/builder/email.py)'s
+  `email_subject`**, which `validate()` already requires. An explicit `subject=` always wins,
+  and an explicitly blank one is still an error rather than a silent fallback — a caller who
+  passed something meant it. `Email.metadata` is read-only and deliberately not a copy: the
+  object was never really private (an `Email` built from an `EmailMetadata` stores the
+  caller's own instance), and a copy would let a mutation silently do nothing.
 
 ### Writing a delivery consumer
 
@@ -351,8 +357,9 @@ it never rebuilds.** Concretely:
    run. A fake is a class with one method.
 
 **If the builder's contract turns out to be insufficient, file it against the builder** — do
-not reach into private state from delivery code. That rule has already produced two findings
-(#72, #73), which is the point of having it.
+not reach into private state from delivery code. That rule produced two findings (#72, #73),
+both since fixed in the builder rather than worked around in delivery: `Email.metadata` is now
+a read-only accessor, and `images.py` no longer claims delivery qualifies a Content-ID.
 
 ### Deliberate non-features
 
@@ -505,7 +512,5 @@ Reach for these rather than improvising:
   touching `base.html` or `EmailMetadata` sequences rather than interleaving — several epics
   contend on those two surfaces. The delivery epic (#52) is complete and contends with none
   of them.
-- Two builder-contract findings await a decision, neither blocking: **#72** (`Email` publishes
-  `render()`/`assets()` but no way to read its own metadata) and **#73** (`images.py` promises
-  delivery adds `@` to a Content-ID, which RFC 2392 and its own regex both rule out).
+- The repo has **no README**, which is a real gap now that it can build *and* send.
 - Current project state and decisions: [.claude/memory/INDEX.md](.claude/memory/INDEX.md).

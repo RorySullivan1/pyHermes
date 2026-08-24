@@ -188,6 +188,20 @@ def _as_list(value: str | Sequence[str] | None) -> list[str]:
     return [item.strip() for item in items if item and item.strip()]
 
 
+def _subject_from(email: RenderableEmail) -> str:
+    """
+    The email's own subject, when it exposes readable metadata.
+
+    Duck-typed rather than declared on :class:`RenderableEmail`, because
+    ``EmailBuilder`` already uses ``metadata`` as a fluent *setter* method —
+    putting it in the protocol would make a perfectly valid input stop
+    satisfying it. An unbuilt builder therefore falls through to "subject is
+    required", which is the honest answer.
+    """
+    subject = getattr(getattr(email, "metadata", None), "email_subject", None)
+    return subject if isinstance(subject, str) else ""
+
+
 def _reject_control_chars(value: str, field: str) -> None:
     """
     Raise MessageError if `value` carries a CR or LF.
@@ -241,7 +255,7 @@ def _verify_cid_manifest(html: str, assets: Sequence[ImageAsset]) -> None:
 def build_message(
     email: RenderableEmail,
     *,
-    subject: str,
+    subject: str | None = None,
     sender: str,
     to: str | Sequence[str],
     cc: str | Sequence[str] | None = None,
@@ -253,9 +267,11 @@ def build_message(
     Args:
         email:    Anything with ``render()`` and ``assets()`` — an ``Email``
             or an ``EmailBuilder``.
-        subject:  Subject header. Required: the builder's ``email_subject``
-            is not reachable from here (see issue #72), and the envelope is
-            arguably the sender's business rather than the content's.
+        subject:  Subject header. Optional: when omitted it falls back to the
+            email's own ``email_subject`` via :attr:`Email.metadata`, which
+            ``validate()`` already requires to be non-empty. Pass it
+            explicitly to send under a subject that differs from the one the
+            email renders into its ``<title>``.
         sender:   ``From`` header.
         to:       One recipient address or a sequence of them.
         cc:       Optional carbon-copy recipients.
@@ -295,15 +311,22 @@ def build_message(
     """
     recipients = _as_list(to)
     cc_recipients = _as_list(cc)
+    # An explicit subject always wins; only its absence consults the email.
+    # `subject=""` is therefore still an error rather than a silent fallback,
+    # because a caller who passed something meant it.
+    resolved_subject = subject if subject is not None else _subject_from(email)
 
-    if not subject.strip():
-        raise MessageError("subject is required: an outgoing message needs a Subject header.")
+    if not resolved_subject.strip():
+        raise MessageError(
+            "subject is required: pass subject=, or build from an Email whose metadata "
+            "carries email_subject (an EmailBuilder must be .build()-ed first)."
+        )
     if not sender.strip():
         raise MessageError("sender is required: an outgoing message needs a From header.")
     if not recipients:
         raise MessageError("at least one recipient is required in `to`.")
 
-    _reject_control_chars(subject, "subject")
+    _reject_control_chars(resolved_subject, "subject")
     _reject_control_chars(sender, "sender")
     for address in recipients:
         _reject_control_chars(address, "to")
@@ -317,7 +340,7 @@ def build_message(
     _verify_cid_manifest(html, assets)
 
     message = EmailMessage()
-    message["Subject"] = subject
+    message["Subject"] = resolved_subject
     message["From"] = sender
     message["To"] = ", ".join(recipients)
     if cc_recipients:

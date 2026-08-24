@@ -156,7 +156,10 @@ def _validate_content_id(value: str) -> None:
     if not _CONTENT_ID_RE.match(value):
         raise ValidationError(
             f"'content_id' must be 1-128 characters of [A-Za-z0-9._+-], got: {value!r}. "
-            "Angle brackets, whitespace and '@' are added by the delivery layer, not here."
+            "The 'cid:' prefix (HTML) and the angle brackets (MIME header) are added by "
+            "whichever consumer needs them. '@' and whitespace are not permitted at all: "
+            "RFC 2392 makes a cid: URL the Content-ID with only its brackets stripped, so "
+            "a qualified id would no longer match the reference the builder emits."
         )
 
 

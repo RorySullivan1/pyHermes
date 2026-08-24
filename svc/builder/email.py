@@ -67,6 +67,27 @@ class Email:
 
         self._sections: list[Container] = []
 
+    @property
+    def metadata(self) -> EmailMetadata:
+        """
+        The email's own metadata — the facts it was built from.
+
+        ``render()`` and ``assets()`` publish what the email *produces*; this
+        publishes what it *knows*, so a consumer can read a fact rather than
+        being told it twice. :func:`svc.delivery.build_message` uses it to
+        default the ``Subject`` header.
+
+        Read-only, and deliberately not a copy. Mutating the returned object
+        after construction is unsupported: :meth:`validate` has already run,
+        so a later edit is neither checked nor re-checked. A copy would be
+        worse — mutating it would silently do nothing, which is a subtler
+        trap than the one it closes. Note the object was never private in
+        practice either: an ``Email`` built from an ``EmailMetadata``
+        instance stores the caller's own object rather than a copy, so the
+        caller already held this reference.
+        """
+        return self._metadata
+
     # ------------------------------------------------------------------
     # Building
     # ------------------------------------------------------------------

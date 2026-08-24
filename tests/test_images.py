@@ -386,3 +386,22 @@ class TestDedupeAssets:
 
     def test_empty(self):
         assert dedupe_assets([]) == []
+
+
+class TestContentIdErrorMessage:
+    """The rejection must describe what really happens to a Content-ID (#73)."""
+
+    def test_does_not_promise_that_delivery_adds_an_at_sign(self, png_bytes):
+        # svc/delivery emits `Content-ID: <bare-id>` and cannot qualify it:
+        # RFC 2392 makes a cid: URL the id minus its brackets, so an "@"
+        # would stop matching the src="cid:..." the builder already wrote --
+        # and _CONTENT_ID_RE forbids "@" anyway.
+        with pytest.raises(ValidationError) as caught:
+            EmailImage.attached(png_bytes, alt="Chart", content_id="bad id!")
+        message = str(caught.value)
+        assert "added by the delivery layer" not in message
+        assert "angle brackets" in message.lower()
+
+    def test_an_at_sign_is_rejected_like_any_other_illegal_character(self, png_bytes):
+        with pytest.raises(ValidationError):
+            EmailImage.attached(png_bytes, alt="Chart", content_id="id@example.com")
