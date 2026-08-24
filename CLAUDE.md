@@ -295,13 +295,19 @@ save_eml(message, "output/preview.eml")     # dry run — no transport, no crede
   `Content-ID: <id>` — Python's `add_related()` stores whatever it is given, and a bare id is
   an RFC-invalid header. It also passes `disposition="inline"` explicitly, because supplying
   a `filename` alone yields `attachment` and shows inline art as a paperclip.
-- **The seam is now checked, not just documented.** Assembly cross-checks the HTML's `cid:`
-  references (attributes *and* `url(cid:…)` in CSS) against the manifest and raises
-  `MessageError` on a mismatch either way — a referenced-but-unattached id, or an attached
-  image the HTML never asked for.
-- **Assembly is pure**: no credentials, no network, no clock, so it is byte-deterministic and
-  testable. It stamps no `Date`/`Message-ID` and accepts no `Bcc` (that header travels with
-  the message and leaks the blind-copy list) — both are transport concerns for the adapters.
+- **The seam is now checked, not just documented** — and the two directions are deliberately
+  asymmetric. Assembly cross-checks the HTML's `cid:` references against the manifest: a
+  referenced-but-unattached id is a broken image the reader sees, so it raises `MessageError`;
+  an attached-but-unreferenced asset only costs message weight, so it warns. Making the second
+  fatal would turn any gap in reference collection into a *rejected valid email*. Collection
+  covers attributes, `url(cid:…)` in CSS (including `<style>` blocks), `srcset` lists, and
+  markup inside `<!--[if mso]>` conditional comments.
+- **Assembly is pure**: no credentials, no network, no clock, so it is testable without either.
+  It stamps no `Date`/`Message-ID` and accepts no `Bcc` (that header travels with the message
+  and leaks the blind-copy list) — both are transport concerns for the adapters. Output is
+  byte-identical for a given input **except** the MIME boundary on a `multipart/related`
+  result: the stdlib draws a fresh random one per call, so a snapshot test (#58) must
+  normalize it. `svc/delivery/message.py`'s docstring says exactly what to normalize.
 - **Errors are a separate hierarchy.** `DeliveryError` is a **sibling** of `EmailBuilderError`,
   not a child: a send failure is not a build failure. `MessageError` covers assembly.
 
