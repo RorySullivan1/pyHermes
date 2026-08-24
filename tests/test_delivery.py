@@ -7,6 +7,7 @@ but never executed. Here it is built, assembled, serialised, parsed back,
 and checked.
 """
 
+import re
 from email import message_from_bytes
 from email.message import EmailMessage
 
@@ -28,6 +29,26 @@ ENVELOPE = {
     "sender": "research@example.com",
     "to": "reader@example.com",
 }
+
+_BOUNDARY_RE = re.compile(rb'boundary="([^"]+)"')
+
+
+def _normalize_boundary(raw: bytes) -> bytes:
+    """Replace a message's random MIME boundary with a fixed token.
+
+    ``EmailMessage.make_related()`` leaves the boundary unset, so the
+    stdlib generator draws a fresh one from ``random.randrange()`` on every
+    ``as_bytes()`` call — see the module docstring on
+    ``svc/delivery/message.py``. That token appears both in the
+    ``Content-Type`` header and in every ``--<token>`` delimiter line, and
+    is the *only* thing that varies between two assemblies of the same
+    input, so replacing every occurrence of it isolates that one axis for
+    a determinism check.
+    """
+    match = _BOUNDARY_RE.search(raw)
+    if match is None:
+        return raw
+    return raw.replace(match.group(1), b"BOUNDARY")
 
 
 @pytest.fixture
@@ -172,9 +193,27 @@ class TestHeaders:
         assert message["Message-ID"] is None
 
     def test_assembly_is_deterministic(self, plain_email):
+        # No CID images, so no multipart/related and no MIME boundary —
+        # this path is byte-identical outright.
         first = build_message(plain_email, **ENVELOPE).as_bytes()
         second = build_message(plain_email, **ENVELOPE).as_bytes()
         assert first == second
+
+    def test_multipart_assembly_is_deterministic_modulo_mime_boundary(self, cid_email):
+        # An email with CID images becomes multipart/related, and
+        # EmailMessage.make_related() never sets a boundary, so the stdlib
+        # generator draws a fresh random one per as_bytes() call — that is
+        # the one axis on which two assemblies of the same input are
+        # allowed to differ (see svc/delivery/message.py's docstring).
+        first = build_message(cid_email, **ENVELOPE).as_bytes()
+        second = build_message(cid_email, **ENVELOPE).as_bytes()
+
+        # The non-determinism is real, not a hypothetical — assert it so
+        # this test cannot pass vacuously if a future stdlib pins the
+        # boundary and the claim below becomes trivially true.
+        assert first != second
+
+        assert _normalize_boundary(first) == _normalize_boundary(second)
 
 
 class TestStructure:

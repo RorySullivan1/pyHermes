@@ -7,8 +7,20 @@ The builder composes and *declares*; this module assembles.
 HTML references as ``cid:`` — this turns that pair into an
 :class:`~email.message.EmailMessage` an adapter can hand to a transport.
 
-Nothing here authenticates, opens a socket, or reads the clock. Assembly is
-pure: testable without credentials, and byte-identical for the same input.
+Nothing here authenticates, opens a socket, or reads the clock, and nothing
+here calls ``random`` directly — but the result is not byte-identical call
+to call for every input. An email with no CID images stays ``text/html``
+and *is* byte-identical for the same input. An email with CID images
+becomes ``multipart/related``, and since nothing in this module calls
+``set_boundary``, the stdlib assigns that part a fresh MIME boundary via
+``random.randrange()`` on every call to ``.as_bytes()``/``.as_string()``.
+Two :func:`build_message` calls on the same email therefore differ only in
+that boundary token and the ``--<token>`` delimiter lines built from it;
+part order and every part's bytes are otherwise identical. A future
+snapshot test (#58) comparing multipart output must normalize the boundary
+— e.g. replace ``boundary="..."`` and each delimiter line with a fixed
+placeholder — before asserting equality.
+
 Everything that varies per send — ``Date``, ``Message-ID``, envelope
 recipients — belongs to the adapter that sends.
 
@@ -199,10 +211,16 @@ def build_message(
             failure is not a delivery failure.
 
     Note:
-        No ``Date`` or ``Message-ID`` is stamped, keeping assembly pure and
-        deterministic; the transport adds them. ``Bcc`` is deliberately not
-        accepted — a ``Bcc`` header travels with the message and leaks the
-        blind-copy list, so blind copy is an envelope concern for adapters.
+        No ``Date`` or ``Message-ID`` is stamped — the transport adds them.
+        ``Bcc`` is deliberately not accepted — a ``Bcc`` header travels with
+        the message and leaks the blind-copy list, so blind copy is an
+        envelope concern for adapters.
+
+        Output is deterministic for a given input **except** the MIME
+        boundary on a ``multipart/related`` result (an email with CID
+        images): the stdlib assigns it a fresh random token per call, since
+        nothing here calls ``set_boundary``. See the module docstring for
+        exactly what that means for a byte comparison.
 
     Example::
 
