@@ -115,6 +115,33 @@ class TestEnvelopeValidation:
         with pytest.raises(MessageError, match="recipient"):
             build_message(plain_email, **{**ENVELOPE, "to": ["", "  "]})
 
+    @pytest.mark.parametrize("control_char", ["\r", "\n"])
+    @pytest.mark.parametrize("field", ["subject", "sender"])
+    def test_control_char_in_scalar_field_raises_message_error(
+        self, plain_email, field, control_char
+    ):
+        # Header injection: a bare newline reaching email.policy raises
+        # ValueError, not MessageError -- callers following the documented
+        # "catch DeliveryError" contract in exceptions.py would miss it.
+        envelope = {**ENVELOPE, field: f"a{control_char}Bcc: x@evil.test"}
+        with pytest.raises(MessageError, match=field):
+            build_message(plain_email, **envelope)
+
+    @pytest.mark.parametrize("control_char", ["\r", "\n"])
+    def test_control_char_in_reply_to_raises_message_error(self, plain_email, control_char):
+        envelope = {**ENVELOPE, "reply_to": f"a{control_char}Bcc: x@evil.test"}
+        with pytest.raises(MessageError, match="reply_to"):
+            build_message(plain_email, **envelope)
+
+    @pytest.mark.parametrize("control_char", ["\r", "\n"])
+    @pytest.mark.parametrize("field", ["to", "cc"])
+    def test_control_char_in_an_address_raises_message_error(
+        self, plain_email, field, control_char
+    ):
+        envelope = {**ENVELOPE, field: [f"a{control_char}Bcc: x@evil.test"]}
+        with pytest.raises(MessageError, match=field):
+            build_message(plain_email, **envelope)
+
 
 class TestHeaders:
     def test_sets_the_envelope_headers(self, plain_email):

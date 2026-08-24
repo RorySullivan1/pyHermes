@@ -49,6 +49,13 @@ CID_SCHEME = "cid:"
 # an attribute has no parser of its own here.
 _CSS_URL_CID = re.compile(r"url\(\s*['\"]?\s*cid:([^)'\"\s]+)", re.IGNORECASE)
 
+# Deliberately narrow: CR/LF is what turns an envelope field into a header
+# injection (a "Subject" containing "\nBcc: ..." forges an extra header).
+# This is not address-format validation -- no RFC 5322 addr-spec parsing, no
+# deliverability checks -- just the characters that let a value break out of
+# the single header line it is meant to occupy.
+_CONTROL_CHARS = re.compile(r"[\r\n]")
+
 
 class RenderableEmail(Protocol):
     """What assembly needs from the builder: the HTML, and the manifest.
@@ -112,6 +119,21 @@ def _as_list(value: str | Sequence[str] | None) -> list[str]:
     return [item.strip() for item in items if item and item.strip()]
 
 
+def _reject_control_chars(value: str, field: str) -> None:
+    """
+    Raise MessageError if `value` carries a CR or LF.
+
+    Without this, a poisoned field (e.g. subject="a\\nBcc: x@evil.test")
+    sails past the blankness check here and only fails later, at header
+    assignment, as a bare ValueError from email.policy -- which a caller
+    following exceptions.py's documented "catch DeliveryError" contract does
+    not catch. Checking here, before any header is set, keeps every envelope
+    rejection inside this module's own exception hierarchy.
+    """
+    if _CONTROL_CHARS.search(value):
+        raise MessageError(f"{field} must not contain a line break: {value!r}")
+
+
 def _verify_cid_manifest(html: str, assets: Sequence[ImageAsset]) -> None:
     """
     Check the builder's seam actually holds for this email.
@@ -169,7 +191,8 @@ def build_message(
         has no CID images, ``multipart/related`` when it does.
 
     Raises:
-        MessageError: On a missing subject, sender or recipient; on an asset
+        MessageError: On a missing subject, sender or recipient; on a
+            control character (CR or LF) in any envelope field; on an asset
             with an unusable MIME type; or when the HTML's ``cid:``
             references and the asset manifest disagree.
         EmailBuilderError: Propagated unchanged from ``render()`` — a build
@@ -198,6 +221,15 @@ def build_message(
         raise MessageError("sender is required: an outgoing message needs a From header.")
     if not recipients:
         raise MessageError("at least one recipient is required in `to`.")
+
+    _reject_control_chars(subject, "subject")
+    _reject_control_chars(sender, "sender")
+    for address in recipients:
+        _reject_control_chars(address, "to")
+    for address in cc_recipients:
+        _reject_control_chars(address, "cc")
+    if reply_to:
+        _reject_control_chars(reply_to, "reply_to")
 
     html = email.render()
     assets = email.assets()
