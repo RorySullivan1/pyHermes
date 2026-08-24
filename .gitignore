@@ -18,3 +18,8 @@ Thumbs.db
 # Generated email output (keep the dir, ignore its contents)
 output/*
 !output/.gitkeep
+
+# Ephemeral git worktrees created by Claude Code's isolated subagents. These
+# are live checkouts of this same repo, auto-removed when an agent finishes —
+# committing them would nest the repo inside itself.
+.claude/worktrees/
