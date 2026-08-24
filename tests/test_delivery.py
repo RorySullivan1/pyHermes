@@ -37,8 +37,10 @@ def _normalize_boundary(raw: bytes) -> bytes:
     """Replace a message's random MIME boundary with a fixed token.
 
     ``EmailMessage.make_related()`` leaves the boundary unset, so the
-    stdlib generator draws a fresh one from ``random.randrange()`` on every
-    ``as_bytes()`` call — see the module docstring on
+    stdlib generator draws a fresh one from ``random.randrange()`` the
+    first time a given message is serialised — one draw per
+    ``build_message()`` call, since each call builds a fresh
+    ``EmailMessage`` — see the module docstring on
     ``svc/delivery/message.py``. That token appears both in the
     ``Content-Type`` header and in every ``--<token>`` delimiter line, and
     is the *only* thing that varies between two assemblies of the same
@@ -139,6 +141,24 @@ class TestCidReferenceCollection:
         # remainder of the string into a single bogus id.
         html = '<img srcset="cid:f 1x, cid:g 2x">'
         assert collect_cid_references(html) == ["f", "g"]
+
+    def test_ignores_a_cid_looking_string_in_prose_attributes(self):
+        # alt/title/aria-label are caller-supplied prose, not fetchable
+        # references -- a "cid:"-looking string there must not be treated
+        # as a manifest requirement, or a stray alt text rejects an
+        # otherwise valid email.
+        html = (
+            '<img src="https://x/y.png" alt="cid:not-an-asset" '
+            'title="cid:also-not-an-asset" aria-label="cid:nope">'
+        )
+        assert collect_cid_references(html) == []
+
+    @pytest.mark.parametrize(
+        "attr", ["src", "href", "xlink:href", "background", "poster", "srcset"]
+    )
+    def test_finds_references_in_every_fetching_attribute(self, attr):
+        html = f'<x {attr}="cid:abc123">'
+        assert collect_cid_references(html) == ["abc123"]
 
 
 class TestEnvelopeValidation:
@@ -259,9 +279,10 @@ class TestHeaders:
     def test_multipart_assembly_is_deterministic_modulo_mime_boundary(self, cid_email):
         # An email with CID images becomes multipart/related, and
         # EmailMessage.make_related() never sets a boundary, so the stdlib
-        # generator draws a fresh random one per as_bytes() call — that is
-        # the one axis on which two assemblies of the same input are
-        # allowed to differ (see svc/delivery/message.py's docstring).
+        # generator draws a fresh random one per build_message() call (each
+        # call constructs a fresh EmailMessage) — that is the one axis on
+        # which two assemblies of the same input are allowed to differ (see
+        # svc/delivery/message.py's docstring).
         first = build_message(cid_email, **ENVELOPE).as_bytes()
         second = build_message(cid_email, **ENVELOPE).as_bytes()
 

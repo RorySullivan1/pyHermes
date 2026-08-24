@@ -12,14 +12,22 @@ here calls ``random`` directly — but the result is not byte-identical call
 to call for every input. An email with no CID images stays ``text/html``
 and *is* byte-identical for the same input. An email with CID images
 becomes ``multipart/related``, and since nothing in this module calls
-``set_boundary``, the stdlib assigns that part a fresh MIME boundary via
-``random.randrange()`` on every call to ``.as_bytes()``/``.as_string()``.
-Two :func:`build_message` calls on the same email therefore differ only in
-that boundary token and the ``--<token>`` delimiter lines built from it;
-part order and every part's bytes are otherwise identical. A future
-snapshot test (#58) comparing multipart output must normalize the boundary
-— e.g. replace ``boundary="..."`` and each delimiter line with a fixed
-placeholder — before asserting equality.
+``set_boundary``, the stdlib draws that part a fresh random MIME boundary
+the first time the message is serialised (inside
+``email.generator.Generator``, via ``Message.set_boundary()``) — and that
+call *persists* the boundary onto the message object, so every subsequent
+``.as_bytes()``/``.as_string()`` on the *same* ``EmailMessage`` returns the
+identical boundary and therefore identical bytes. It is drawn once per
+:func:`build_message` call (each call constructs a fresh ``EmailMessage``),
+not once per serialisation — which is exactly what lets
+:func:`to_wire_bytes` and :func:`save_eml` agree byte-for-byte on one
+message. Two separate :func:`build_message` calls on the same email
+therefore differ only in that boundary token and the ``--<token>``
+delimiter lines built from it; part order and every part's bytes are
+otherwise identical. A future snapshot test (#58) comparing multipart
+output across two such calls must normalize the boundary — e.g. replace
+``boundary="..."`` and each delimiter line with a fixed placeholder —
+before asserting equality.
 
 Everything that varies per send — ``Date``, ``Message-ID``, envelope
 recipients — belongs to the adapter that sends.
@@ -91,8 +99,8 @@ class RenderableEmail(Protocol):
 
 
 class _CidReferenceCollector(HTMLParser):
-    """Collects every ``cid:`` reference in a tag attribute, a ``<style>``
-    block's text, or markup hidden inside a comment.
+    """Collects every ``cid:`` reference in a fetching tag attribute, a
+    ``<style>`` block's text, or markup hidden inside a comment.
 
     A bare ``HTMLParser`` only calls ``handle_starttag`` -- it treats
     ``<style>`` content as opaque CDATA text and a ``<!--...-->`` comment as
@@ -104,14 +112,26 @@ class _CidReferenceCollector(HTMLParser):
 
     _CDATA_TAGS = frozenset({"style", "script"})
 
+    # Positive allowlist of attributes that actually make a client *fetch*
+    # a resource -- the ones a real cid: reference can live in. Everything
+    # else (alt, title, aria-label, ...) is caller-supplied prose that a
+    # denylist would just be a standing promise to keep enumerating; a
+    # "cid:"-looking string there is not a reference, it is text. `style`
+    # is included for its CSS `url(cid:X)` form, `xlink:href` for SVG/VML
+    # <use>-style references, and `background`/`poster` for the legacy HTML
+    # attributes email clients (notably Outlook) still honour.
+    _FETCHING_ATTRS = frozenset(
+        {"src", "href", "xlink:href", "background", "poster", "srcset", "style"}
+    )
+
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
         self.content_ids: list[str] = []
         self._cdata_tag: str | None = None
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
-        for _name, value in attrs:
-            if value:
+        for name, value in attrs:
+            if value and name in self._FETCHING_ATTRS:
                 self.content_ids.extend(_cids_in(value))
         if tag in self._CDATA_TAGS:
             self._cdata_tag = tag
@@ -297,9 +317,11 @@ def build_message(
 
         Output is deterministic for a given input **except** the MIME
         boundary on a ``multipart/related`` result (an email with CID
-        images): the stdlib assigns it a fresh random token per call, since
-        nothing here calls ``set_boundary``. See the module docstring for
-        exactly what that means for a byte comparison.
+        images): the stdlib draws it a fresh random token per
+        :func:`build_message` call (it then persists on that
+        ``EmailMessage``, which is why repeated serialisation of the *same*
+        message is still byte-identical). See the module docstring for
+        exactly what that means for a byte comparison across two calls.
 
     Example::
 
