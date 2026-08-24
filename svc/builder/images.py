@@ -55,6 +55,8 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from svc.config import Config, get_config
+
 from .enums import EmbedStrategy
 from .exceptions import SizeError, ValidationError
 
@@ -83,7 +85,11 @@ SUPPORTED_IMAGE_TYPES: dict[str, str] = {
 # rendered document (see Email._validate_size); base64 costs +33% on top of
 # the raw bytes, so this cap keeps a single data URI under roughly half the
 # budget and leaves room for the skeleton and the rest of the content.
-INLINE_LIMIT_KB = 48
+#: The *default* per-image inline cap, kept as a name because tests build
+#: payloads relative to it. Mirrors :class:`svc.config.Config`'s default;
+#: the value enforced is read from the active config at call time, so an
+#: override installed via ``set_config`` is honoured.
+INLINE_LIMIT_KB = Config().inline_image_limit_kb
 
 # Safe as both a `cid:` URL and a MIME Content-ID token.
 _CONTENT_ID_RE = re.compile(r"^[A-Za-z0-9._+-]{1,128}$")
@@ -156,7 +162,10 @@ def _validate_content_id(value: str) -> None:
     if not _CONTENT_ID_RE.match(value):
         raise ValidationError(
             f"'content_id' must be 1-128 characters of [A-Za-z0-9._+-], got: {value!r}. "
-            "Angle brackets, whitespace and '@' are added by the delivery layer, not here."
+            "The 'cid:' prefix (HTML) and the angle brackets (MIME header) are added by "
+            "whichever consumer needs them. '@' and whitespace are not permitted at all: "
+            "RFC 2392 makes a cid: URL the Content-ID with only its brackets stripped, so "
+            "a qualified id would no longer match the reference the builder emits."
         )
 
 
@@ -342,11 +351,14 @@ class EmailImage:
         # block — checked here so the failure names the image, rather than
         # surfacing later as a whole-email SizeError that doesn't.
         encoded_kb = (-(-len(data) // 3) * 4) / 1024
-        if encoded_kb > INLINE_LIMIT_KB:
+        config = get_config()
+        limit_kb = config.inline_image_limit_kb
+        if encoded_kb > limit_kb:
             raise SizeError(
                 f"Inlined image is {encoded_kb:.1f} KB once base64-encoded, over the "
-                f"{INLINE_LIMIT_KB} KB per-image cap (the whole email must stay under "
-                f"102 KB). Attach it instead with EmailImage.attached(), or host it."
+                f"{limit_kb} KB per-image cap (the whole email must stay under "
+                f"{config.size_limit_kb} KB). Attach it instead with "
+                "EmailImage.attached(), or host it."
             )
 
         return cls(

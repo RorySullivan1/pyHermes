@@ -19,6 +19,17 @@ dev = [
     # a green local run and a red CI run from the same commit.
     "ruff~=0.16.3",
     "mypy~=1.19.1",
+    # The HTTP transports the send adapters *document* -- not ones they use.
+    # svc/gmail and svc/outlook import neither (an AST test in each enforces
+    # that), so these stay out of `dependencies` and pyHermes still installs
+    # with Jinja2 alone. They are here because the adapters' retry
+    # classification turns on real exception hierarchies -- requests'
+    # ConnectionError is an OSError but *not* the builtin ConnectionError,
+    # and httplib2's ServerNotFoundError is neither -- and a bug that shipped
+    # precisely because the tests only ever injected builtins. Synthesising
+    # look-alike classes would rebuild that blind spot.
+    "requests>=2.31",
+    "httplib2>=0.22",
 ]
 
 [build-system]

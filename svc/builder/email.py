@@ -22,6 +22,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from svc.config import Config, get_config
+
 from .containers import Container
 from .engine import TemplateEngine
 from .enums import EmbedStrategy
@@ -29,9 +31,12 @@ from .exceptions import SizeError
 from .images import EmailImage, ImageAsset, dedupe_assets
 from .models import EmailMetadata
 
-# Gmail clips emails above this threshold (bytes).
-_SIZE_LIMIT_KB = 102
-_SIZE_WARN_KB = 90
+# The shipped defaults, kept as module constants because they read as the
+# thresholds themselves at a call site. The live values come from
+# :func:`svc.config.get_config` at check time -- read those, not these, if
+# you need what is actually in force.
+_SIZE_LIMIT_KB = Config().size_limit_kb  # Gmail clips emails above this.
+_SIZE_WARN_KB = Config().size_warn_kb
 
 
 class Email:
@@ -66,6 +71,27 @@ class Email:
         self._metadata.validate()
 
         self._sections: list[Container] = []
+
+    @property
+    def metadata(self) -> EmailMetadata:
+        """
+        The email's own metadata — the facts it was built from.
+
+        ``render()`` and ``assets()`` publish what the email *produces*; this
+        publishes what it *knows*, so a consumer can read a fact rather than
+        being told it twice. :func:`svc.delivery.build_message` uses it to
+        default the ``Subject`` header.
+
+        Read-only, and deliberately not a copy. Mutating the returned object
+        after construction is unsupported: :meth:`validate` has already run,
+        so a later edit is neither checked nor re-checked. A copy would be
+        worse — mutating it would silently do nothing, which is a subtler
+        trap than the one it closes. Note the object was never private in
+        practice either: an ``Email`` built from an ``EmailMetadata``
+        instance stores the caller's own object rather than a copy, so the
+        caller already held this reference.
+        """
+        return self._metadata
 
     # ------------------------------------------------------------------
     # Building
@@ -183,18 +209,22 @@ class Email:
         """
         Check the rendered size against the Gmail clipping limit.
 
-        Static and pure so the size edges can be driven directly in tests.
+        Static, and takes the HTML as its only argument, so the size edges can
+        be driven directly in tests. The thresholds come from the active
+        :class:`~svc.config.Config` at call time, not import time.
+
         ``hint`` appends caller-supplied context to the failure message —
         ``render()`` uses it to name inlined images.
         """
+        config = get_config()
         size_kb = len(html.encode("utf-8")) / 1024
-        if size_kb > _SIZE_LIMIT_KB:
+        if size_kb > config.size_limit_kb:
             raise SizeError(
                 f"Rendered email is {size_kb:.1f} KB, "
-                f"exceeds {_SIZE_LIMIT_KB} KB Gmail clipping limit.{hint}"
+                f"exceeds {config.size_limit_kb} KB Gmail clipping limit.{hint}"
             )
-        if size_kb > _SIZE_WARN_KB:
-            print(f"WARNING: Email size {size_kb:.1f} KB (target < {_SIZE_WARN_KB} KB)")
+        if size_kb > config.size_warn_kb:
+            print(f"WARNING: Email size {size_kb:.1f} KB (target < {config.size_warn_kb} KB)")
         else:
             print(f"Email size: {size_kb:.1f} KB (OK)")
 

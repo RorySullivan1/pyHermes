@@ -9,9 +9,11 @@ Jinja2 templates into a single, inline-CSS HTML document engineered to survive e
 clients (Gmail, Outlook) — the hard part is staying under Gmail's clipping limit while
 keeping the layout table-based and portable.
 
-**Scope today = the *builder*.** Composing the HTML is the entire current product.
-**Delivery is not built yet:** `svc/__init__.py` advertises `gmail/` and `outlook/`
-subpackages, but they do not exist — treat them as planned, not present. Don't import them.
+**Scope today = build *and* send.** Composing the HTML is still the bulk of the product,
+but the chain is complete: `svc/builder/` renders and declares, `svc/delivery/` assembles a
+sendable `EmailMessage`, and `svc/gmail/` + `svc/outlook/` transmit it. Adapters own their
+provider's wire contract and **never** authentication, so pyHermes still depends on nothing
+but Jinja2.
 
 ## Commands
 
@@ -35,6 +37,7 @@ Slash commands (from the `.claude/` library): `/version-set`, `/version-ship`, `
 
 ```
 svc/
+├── config.py           ← the tunable numbers, in one frozen dataclass
 ├── builder/            ← current OO email builder (use this for new work)
 │   ├── __init__.py     — public API surface (re-exports everything below)
 │   ├── engine.py       — TemplateEngine (Jinja2, StrictUndefined, autoescape OFF)
@@ -52,11 +55,74 @@ svc/
 │       ├── analysis/*.html          — data components (card-group, data-table, chart-block)
 │       ├── media/*.html             — image components (image-block)
 │       └── text/*.html              — text components (text-block, numbered-list, author-block)
+├── delivery/           ← transport-neutral MIME assembly (consumes the builder)
+│   ├── __init__.py     — public API: build_message, save_eml, collect_cid_references
+│   ├── message.py      — build_message() → multipart/related; to_wire_bytes(); save_eml()
+│   ├── retry.py        — retry_with_backoff(): shared policy, per-adapter classification
+│   └── exceptions.py   — DeliveryError / MessageError / TransportError (siblings of
+│                          EmailBuilderError)
+├── gmail/              ← Gmail send adapter (consumes delivery; owns no credentials)
+│   └── sender.py       — GmailTransport protocol, GoogleApiTransport shim, send_message()
+├── outlook/            ← Outlook send adapter over Microsoft Graph (same shape as gmail)
+│   └── sender.py       — OutlookTransport protocol, GraphApiTransport shim, send_message()
 output/                 — generated email HTML (gitignored; not committed)
 tests/                  — pytest unit suite (validation, error paths, size limits)
 .github/workflows/      — CI: ruff, mypy, pytest
 .claude/                — curated tooling library (skills, agents, commands, hooks, memory)
 ```
+
+## Configuration — `svc/config`
+
+Every judgment-call number in the package is a field on one frozen
+[Config](svc/config.py) dataclass, so a caller can retune it without editing the library.
+
+```python
+from svc.config import Config, get_config, set_config, config_override
+
+get_config().inline_image_limit_kb              # what is actually in force
+set_config(Config(inline_image_limit_kb=64))    # install process-wide
+set_config(Config.from_env())                   # or read PYHERMES_*
+with config_override(retry_max_attempts=1):     # scoped, restores on exit (tests)
+    ...
+```
+
+**The line the module draws — and the reason it exists — is between a judgment call and a
+fact about the world.** The inline-image cap, the retry ladder, the request timeout and the
+error-excerpt length were all *picked by someone*; a picked number that cannot be revisited
+without editing the library is a bad default wearing a constant's clothes. Graph's
+`ACCEPTED = 202`, the transient status families, and the Content-ID character set describe
+what a provider *does* — changing them does not tune behaviour, it makes the code wrong
+about its environment, so they stay literals in the modules that own them.
+
+`size_limit_kb` sits across that line deliberately: 102 KB is a real Gmail limit, not taste,
+but an email bound for a non-Gmail channel is legitimately not subject to it. It is
+configurable *and* documented as a fact, so raising it stays a conscious act.
+
+Rules the module holds to, each for a specific reason:
+
+- **Nothing reads the environment on import.** `from_env()` is explicit, because a library
+  whose behaviour changes with ambient state is one you cannot reason about locally — and
+  `svc/delivery`'s purity, which the byte-for-byte dry run depends on, would be the first
+  casualty.
+- **Consumers call `get_config()` at use time, never at import time.** An override installed
+  after import must still be seen. Where a module keeps a public constant
+  (`INLINE_LIMIT_KB`, `DEFAULT_TIMEOUT_SECONDS`, `_SIZE_LIMIT_KB`) it is the *shipped
+  default*, mirrored from `Config()`; the enforced value comes from the active config.
+- **An explicit argument always beats the config.** `retry_with_backoff()`'s numeric
+  parameters default to `None`, meaning "ask the config" — passing one still wins, which is
+  what the adapters and their tests rely on.
+- **Validated at construction, like every model here** — including the cross-field rules
+  (`size_warn_kb <= size_limit_kb`, `inline_image_limit_kb <= size_limit_kb`, a backoff
+  factor of at least 1). These raise plain `ValueError`, **not** `EmailBuilderError` or
+  `DeliveryError`: a bad limit is a programming error in setup, not rejected email data.
+- **`None` means no timeout**, so it cannot double as "unspecified" —
+  `GraphApiTransport(timeout=...)` uses a private sentinel for the latter.
+
+**Adding a tunable**: add the field (with today's literal as its default, so nothing
+re-renders or re-retries differently), validate it in `__post_init__`, read it via
+`get_config()` at the use site, and add a case to `TestTheWiringIsLive` in
+[tests/test_config.py](tests/test_config.py) — that class exists to prove each knob is
+actually *reached*, because a config nobody reads is decoration.
 
 ## Architecture — `svc/builder`
 
@@ -133,7 +199,9 @@ non-fluent `Email` class works identically.
 
 - **102 KB Gmail clipping limit** — [Email._validate_size()](svc/builder/email.py) raises
   `SizeError` above 102 KB and warns above 90 KB. The single most important runtime check;
-  never disable it without confirming a non-Gmail channel.
+  never disable it without confirming a non-Gmail channel. Both thresholds come from
+  [Config](svc/config.py) at check time, so a non-Gmail channel can raise them deliberately
+  rather than by commenting the check out.
 - **Jinja2 `StrictUndefined`** — [TemplateEngine](svc/builder/engine.py) fails fast on a
   missing template variable. New template vars need a matching key in the component's
   `context()` dict, or the render raises.
@@ -217,7 +285,8 @@ Rules the module enforces at construction, per the validation philosophy below:
 - **Content-IDs are content-addressed** — `sha256(bytes)[:16]` by default, so the same image
   used in two sections is attached once, and the same input always yields the same output.
   An explicit `content_id` is checked against `[A-Za-z0-9._+-]{1,128}`.
-- **Inline images are capped** at `INLINE_LIMIT_KB` (48 KB of base64) so one image cannot eat
+- **Inline images are capped** at `Config.inline_image_limit_kb` (48 KB of base64;
+  `INLINE_LIMIT_KB` is the mirrored default) so one image cannot eat
   the 102 KB budget; over that raises `SizeError` naming `EmailImage.attached()` as the fix.
   A whole-email `SizeError` additionally reports how much base64 the inlined images
   contributed.
@@ -269,6 +338,186 @@ The one deliberate exception is `EmailBuilder`'s `RuntimeError` for calling `sec
 `build()` before `metadata()` — a programming error in the call sequence, not rejected
 data.
 
+## Architecture — `svc/delivery`
+
+The builder **declares** a CID embed; delivery **performs** it. `Email.render()` gives the
+HTML and `Email.assets()` gives the manifest; [build_message()](svc/delivery/message.py)
+turns that pair into a sendable `EmailMessage`.
+
+```python
+from svc.delivery import build_message, save_eml
+
+message = build_message(email, sender="research@example.com",
+                        to=["reader@example.com"])   # subject defaults from the email
+save_eml(message, "output/preview.eml")     # dry run — no transport, no credentials
+```
+
+- **Structure**: `text/html` when the email has no CID images; `multipart/related` when it
+  does, one inline part per asset. When plain-text lands (#53) the HTML part becomes half of
+  a `multipart/alternative` and this nests inside unchanged.
+- **The consumer adds the decorations.** `ImageAsset.content_id` is bare, so assembly emits
+  `Content-ID: <id>` — Python's `add_related()` stores whatever it is given, and a bare id is
+  an RFC-invalid header. It also passes `disposition="inline"` explicitly, because supplying
+  a `filename` alone yields `attachment` and shows inline art as a paperclip.
+- **The seam is now checked, not just documented** — and the two directions are deliberately
+  asymmetric. Assembly cross-checks the HTML's `cid:` references against the manifest: a
+  referenced-but-unattached id is a broken image the reader sees, so it raises `MessageError`;
+  an attached-but-unreferenced asset only costs message weight, so it warns. Making the second
+  fatal would turn any gap in reference collection into a *rejected valid email*. Collection
+  covers attributes, `url(cid:…)` in CSS (including `<style>` blocks), `srcset` lists, and
+  markup inside `<!--[if mso]>` conditional comments.
+- **Assembly is pure**: no credentials, no network, no clock, so it is testable without either.
+  It stamps no `Date`/`Message-ID` and accepts no `Bcc` (that header travels with the message
+  and leaks the blind-copy list) — both are transport concerns for the adapters. Output is
+  byte-identical for a given input **except** the MIME boundary on a `multipart/related`
+  result: the stdlib draws a fresh random one per call, so a snapshot test (#58) must
+  normalize it. `svc/delivery/message.py`'s docstring says exactly what to normalize.
+- **Errors are a separate hierarchy.** `DeliveryError` is a **sibling** of `EmailBuilderError`,
+  not a child: a send failure is not a build failure. `MessageError` covers assembly.
+- **`subject` is optional and falls back to [Email.metadata](svc/builder/email.py)'s
+  `email_subject`**, which `validate()` already requires. An explicit `subject=` always wins,
+  and an explicitly blank one is still an error rather than a silent fallback — a caller who
+  passed something meant it. `Email.metadata` is read-only and deliberately not a copy: the
+  object was never really private (an `Email` built from an `EmailMetadata` stores the
+  caller's own instance), and a copy would let a mutation silently do nothing.
+
+### Writing a delivery consumer
+
+Two adapters exist, and the rules below are what they have in common — the shape a third one
+(a generic SMTP sender, say) should transplant rather than re-derive. **An adapter transmits;
+it never rebuilds.** Concretely:
+
+1. **Take an authorized transport, not credentials.** Define a one-method `Protocol` and let
+   the caller satisfy it. This is why pyHermes has no provider SDK in its dependency tree —
+   `svc/gmail` and `svc/outlook` import nothing from Google or Microsoft, and a test in each
+   parses the module's **AST** to keep it that way. Token acquisition, refresh and revocation
+   stay with the caller, where an application's secret handling already lives.
+2. **Serialise with [to_wire_bytes()](svc/delivery/message.py)**, never `message.as_bytes()`
+   directly. One path means the bytes you transmit equal the bytes `save_eml()` writes, which
+   is the only reason the dry run is a preview rather than an approximation. Each adapter
+   asserts that equality in its own suite.
+3. **Reuse [retry_with_backoff()](svc/delivery/retry.py); supply your own `is_transient`.**
+   The policy is shared because it is transport-neutral; the classification is not, because
+   only you know what your provider's rate-limit error looks like. If your provider sends a
+   `Retry-After`, pass a `delay_hint` too. Leave the numeric arguments alone unless your
+   provider genuinely needs a different ladder — omitted, they come from
+   [Config](svc/config.py), so a deployment can retune every adapter at once.
+4. **Never retry an unrecognised failure.** On a send path an unknown error may already have
+   delivered, and a blind retry risks a duplicate. Retry only what you positively identify.
+5. **Map every failure to `TransportError`, chaining the provider's exception** with
+   `raise ... from exc`. Callers catch `DeliveryError` for "the email was fine, sending it
+   was not".
+6. **Name where your provider differs, in the module docstring.** The adapters look alike
+   enough that a real difference can be "harmonised" away by mistake — Graph needing standard
+   base64 where Gmail needs URL-safe, and returning no message id, are both pinned by tests
+   for exactly that reason.
+7. **Test against a fake transport.** No adapter test may require a live mailbox, a network,
+   or recorded HTTP fixtures — fixtures drift, and a suite nobody can run locally stops being
+   run. A fake is a class with one method.
+
+**If the builder's contract turns out to be insufficient, file it against the builder** — do
+not reach into private state from delivery code. That rule produced two findings (#72, #73),
+both since fixed in the builder rather than worked around in delivery: `Email.metadata` is now
+a read-only accessor, and `images.py` no longer claims delivery qualifies a Content-ID.
+
+### Deliberate non-features
+
+Recorded as decisions, so they are not re-litigated as oversights:
+
+| Not done | Why |
+|---|---|
+| `Date` / `Message-ID` in assembly | Transport's job; omitting them keeps assembly pure and its output comparable |
+| `Bcc` header | It travels with the message and leaks the blind-copy list — an envelope concern for adapters |
+| Plain-text alternative | Its own epic (#53); the `multipart/alternative` slot is left open for it |
+| Size re-check in assembly | `render()` already applied the 102 KB limit, and CID bytes cost *message* size, not HTML size |
+| OAuth flows in adapters | Deliberately the caller's; see rule 1 above |
+| Campaign management | No scheduling, recipient lists, batching or send-time analytics — this layer delivers one message to addressees the caller supplies |
+| Open tracking / link rewriting | A product decision far beyond transport |
+| `Retry-After` as an HTTP-date | Legal but rare; degrades to the computed backoff instead of crashing |
+
+
+## Architecture — `svc/gmail`
+
+Delivery assembles bytes; an adapter transmits them. `svc/gmail` owns Gmail's **wire
+contract** — the base64url `raw` encoding, the `users.messages.send` shape, which failures
+are worth retrying — and deliberately does **not** own authentication.
+
+```python
+from googleapiclient.discovery import build      # the caller's dependency, not ours
+from svc.delivery import build_message
+from svc.gmail import GoogleApiTransport, send_message
+
+service = build("gmail", "v1", credentials=creds)          # caller authenticates
+message = build_message(email, subject=..., sender=..., to=[...])
+message_id = send_message(message, transport=GoogleApiTransport(service))
+```
+
+- **The adapter takes an authorized transport, not credentials.** `GmailTransport` is a
+  `Protocol` with one method, so a real `googleapiclient` service, a stub, or anything else
+  with `send_raw` satisfies it. Consequences, all deliberate: pyHermes imports nothing from
+  Google and gains **no dependency** (a test asserts this by parsing the module's AST); no
+  credential ever touches this package; and the whole send path is testable with **no
+  mailbox, no network, and no recorded fixtures to drift**. Token acquisition, refresh and
+  revocation stay with the caller, where an application's secret handling already lives.
+  `GoogleApiTransport` is a duck-typed three-line shim so callers needn't rewrite it.
+- **Retry policy is shared, classification is not.** [retry_with_backoff()](svc/delivery/retry.py)
+  is transport-neutral and lives in `svc/delivery`, so the Outlook adapter (#70) reuses it
+  rather than growing a second copy. Each adapter supplies its own `is_transient`, because
+  only it knows what its provider's rate-limit error looks like. Gmail retries 429 and the
+  5xx family plus network interruptions; **an unrecognised failure is not retried**, because
+  on a send path it may already have delivered and a blind retry risks a duplicate.
+- **`sleep` is injected**, so tests exercise the real backoff ladder without spending it.
+- **The bytes sent are the bytes `save_eml()` writes** — both go through
+  [to_wire_bytes()](svc/delivery/message.py), and a test asserts the equality. That is what
+  makes the dry run a faithful preview rather than an approximation.
+- **`TransportError`** (a `DeliveryError`) covers every send failure, always chaining the
+  provider's own exception. It is distinct from `MessageError` on purpose: an unbuildable
+  message is the caller's data problem, while an unsendable one may be worth retrying later
+  with the exact same bytes.
+
+
+## Architecture — `svc/outlook`
+
+The second adapter, and the proof the seam generalises: it transplants
+[svc/gmail](svc/gmail/sender.py)'s shape — injected transport, `TransportError` mapping,
+shared retry — and differs only where Microsoft Graph genuinely differs from Gmail.
+
+```python
+import requests                                # the caller's dependency, not ours
+from svc.delivery import build_message
+from svc.outlook import GraphApiTransport, send_message
+
+session = requests.Session()                   # caller authenticates
+session.headers["Authorization"] = f"Bearer {token}"
+send_message(build_message(email, ...), transport=GraphApiTransport(session))
+```
+
+**Transport chosen: Microsoft Graph**, over the two alternatives. SMTP needs no SDK but is
+not *Outlook* — it is a generic protocol that happens to reach Microsoft 365, and Microsoft
+has been retiring basic auth for it; a generic SMTP adapter would be a fine thing to add
+later and could reuse `retry_with_backoff` unchanged. `win32com` is Windows-only and needs a
+running Outlook install — wrong for a library. Graph won decisively because **`sendMail`
+accepts a whole RFC 822 message as base64**, so the bytes sent stay identical to what
+`save_eml()` writes; decomposing into Graph's JSON `message` schema would put that equality,
+and the dry run's usefulness, at risk.
+
+**Where Graph differs from Gmail** — named in the module docstring rather than quietly
+diverged from, because the adapters otherwise look alike:
+
+| | Gmail | Graph |
+|---|---|---|
+| base64 alphabet | URL-safe | **standard** (URL-safe is rejected) |
+| success response | message id | **`202 Accepted`, empty body** |
+| `send_message` returns | the id | **`None`** — there is nothing to return |
+| meaning of success | message created | **accepted for processing, not delivered** |
+
+**`Retry-After` is honoured, and that is not politeness.** Microsoft's guidance is that
+throttled requests keep accruing against the quota, so a client that guesses a shorter delay
+stays throttled *longer*. `retry_with_backoff()` therefore takes an optional `delay_hint`;
+Outlook supplies one that reads the header, Gmail passes none and keeps the computed ladder.
+An `HTTP-date` form of the header degrades to the ladder rather than crashing.
+
+
 ## Gotchas
 
 - **Wheel installs work** (since #10). `templates/` lives inside the package at
@@ -315,6 +564,12 @@ Reach for these rather than improvising:
 
 ## Open work
 
-- Tracked in [GitHub issues](https://github.com/RorySullivan1/pyHermes/issues). None open as
-  of this writing.
+- Tracked in [GitHub issues](https://github.com/RorySullivan1/pyHermes/issues), organised as
+  epics with sub-issues: #38 header region, #45 size themes, #46 color themes, #52 delivery,
+  #54 QA harness, #55 footer region, plus #53 plain-text and #56 typography as parents.
+- **The golden characterization test (#32/#58) gates all template migration**, and everything
+  touching `base.html` or `EmailMetadata` sequences rather than interleaving — several epics
+  contend on those two surfaces. The delivery epic (#52) is complete and contends with none
+  of them.
+- The repo has **no README**, which is a real gap now that it can build *and* send.
 - Current project state and decisions: [.claude/memory/INDEX.md](.claude/memory/INDEX.md).

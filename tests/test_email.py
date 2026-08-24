@@ -142,3 +142,30 @@ class TestEmailBuilder:
             .save(tmp_path / "out.html")
         )
         assert out.is_file()
+
+
+class TestMetadataAccessor:
+    """`Email.metadata` — the read side of the builder's contract (#72)."""
+
+    def test_exposes_the_facts_the_email_was_built_from(self, valid_metadata, text_block):
+        email = Email(metadata=valid_metadata)
+        email.add_section(FullWidth(content=text_block))
+        assert email.metadata.email_subject == valid_metadata["email_subject"]
+        assert email.metadata.firm_name == valid_metadata["firm_name"]
+
+    def test_is_read_only(self, valid_metadata):
+        # A consumer may read the facts; it may not swap them out from under
+        # an email whose validate() has already run.
+        email = Email(metadata=valid_metadata)
+        with pytest.raises(AttributeError):
+            email.metadata = EmailMetadata(**valid_metadata)  # type: ignore[misc]
+
+    def test_returns_the_callers_own_object_not_a_copy(self, valid_metadata):
+        # Documents reality rather than aspiration: Email stores the instance
+        # it was given, so the caller already held this reference. A copy
+        # would be worse -- mutating it would silently do nothing.
+        supplied = EmailMetadata(**valid_metadata)
+        assert Email(metadata=supplied).metadata is supplied
+
+    def test_a_dict_built_email_still_exposes_metadata(self, valid_metadata):
+        assert isinstance(Email(metadata=valid_metadata).metadata, EmailMetadata)
