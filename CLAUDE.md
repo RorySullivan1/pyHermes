@@ -61,6 +61,8 @@ svc/
 │                          EmailBuilderError)
 ├── gmail/              ← Gmail send adapter (consumes delivery; owns no credentials)
 │   └── sender.py       — GmailTransport protocol, GoogleApiTransport shim, send_message()
+├── outlook/            ← Outlook send adapter over Microsoft Graph (same shape as gmail)
+│   └── sender.py       — OutlookTransport protocol, GraphApiTransport shim, send_message()
 output/                 — generated email HTML (gitignored; not committed)
 tests/                  — pytest unit suite (validation, error paths, size limits)
 .github/workflows/      — CI: ruff, mypy, pytest
@@ -354,6 +356,48 @@ message_id = send_message(message, transport=GoogleApiTransport(service))
   provider's own exception. It is distinct from `MessageError` on purpose: an unbuildable
   message is the caller's data problem, while an unsendable one may be worth retrying later
   with the exact same bytes.
+
+
+## Architecture — `svc/outlook`
+
+The second adapter, and the proof the seam generalises: it transplants
+[svc/gmail](svc/gmail/sender.py)'s shape — injected transport, `TransportError` mapping,
+shared retry — and differs only where Microsoft Graph genuinely differs from Gmail.
+
+```python
+import requests                                # the caller's dependency, not ours
+from svc.delivery import build_message
+from svc.outlook import GraphApiTransport, send_message
+
+session = requests.Session()                   # caller authenticates
+session.headers["Authorization"] = f"Bearer {token}"
+send_message(build_message(email, ...), transport=GraphApiTransport(session))
+```
+
+**Transport chosen: Microsoft Graph**, over the two alternatives. SMTP needs no SDK but is
+not *Outlook* — it is a generic protocol that happens to reach Microsoft 365, and Microsoft
+has been retiring basic auth for it; a generic SMTP adapter would be a fine thing to add
+later and could reuse `retry_with_backoff` unchanged. `win32com` is Windows-only and needs a
+running Outlook install — wrong for a library. Graph won decisively because **`sendMail`
+accepts a whole RFC 822 message as base64**, so the bytes sent stay identical to what
+`save_eml()` writes; decomposing into Graph's JSON `message` schema would put that equality,
+and the dry run's usefulness, at risk.
+
+**Where Graph differs from Gmail** — named in the module docstring rather than quietly
+diverged from, because the adapters otherwise look alike:
+
+| | Gmail | Graph |
+|---|---|---|
+| base64 alphabet | URL-safe | **standard** (URL-safe is rejected) |
+| success response | message id | **`202 Accepted`, empty body** |
+| `send_message` returns | the id | **`None`** — there is nothing to return |
+| meaning of success | message created | **accepted for processing, not delivered** |
+
+**`Retry-After` is honoured, and that is not politeness.** Microsoft's guidance is that
+throttled requests keep accruing against the quota, so a client that guesses a shorter delay
+stays throttled *longer*. `retry_with_backoff()` therefore takes an optional `delay_hint`;
+Outlook supplies one that reads the header, Gmail passes none and keeps the computed ladder.
+An `HTTP-date` form of the header degrades to the ladder rather than crashing.
 
 
 ## Gotchas

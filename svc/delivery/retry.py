@@ -36,6 +36,7 @@ def retry_with_backoff(
     initial_delay: float = 1.0,
     backoff_factor: float = 2.0,
     max_delay: float = 30.0,
+    delay_hint: Callable[[BaseException], float | None] | None = None,
     sleep: Callable[[float], None] = time.sleep,
 ) -> T:
     """
@@ -51,6 +52,13 @@ def retry_with_backoff(
         backoff_factor: Multiplier applied to the delay after each failure.
         max_delay:      Ceiling on any single wait, so a long retry chain
             cannot stall a caller indefinitely.
+        delay_hint:     Optional reader that extracts a server-specified wait
+            from the exception — a ``Retry-After`` header, typically. When it
+            returns a value, that wins over the computed backoff, because a
+            server saying *how long* to wait knows better than a client
+            guessing. Some providers count ignored hints against a quota, so
+            guessing is not merely impolite, it prolongs the throttling. Still
+            clamped by ``max_delay``.
         sleep:          Injected so tests can run the real backoff sequence
             without spending the wall-clock time it describes. Pass a
             recorder to assert the delays.
@@ -78,7 +86,11 @@ def retry_with_backoff(
             # transient or not, there is nothing left to try.
             if attempt == max_attempts or not is_transient(exc):
                 raise
-            sleep(min(delay, max_delay))
+            hinted = delay_hint(exc) if delay_hint is not None else None
+            sleep(min(hinted if hinted is not None else delay, max_delay))
+            # The computed ladder advances either way, so a provider that
+            # hints once and then goes quiet resumes from the right rung
+            # rather than restarting at initial_delay.
             delay *= backoff_factor
 
     # Unreachable: the loop either returns or raises on its final attempt.
