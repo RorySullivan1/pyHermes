@@ -13,6 +13,8 @@ the one that spends the 102 KB budget rather than message weight.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from svc.builder import Email, EmailBuilder, FullWidth, ImageBlock, TextBlock, TwoColumn
 from svc.builder.enums import ImageAlign, TwoColumnRatio
 from svc.builder.images import EmailImage
@@ -32,7 +34,7 @@ _INLINE_PNG = solid_png(120, 60, (184, 84, 80))
 _REPEATED = EmailImage.attached(_ATTACHED_PNG, alt="Attached chart", width=160)
 
 
-def build() -> Email:
+def build(template_dir: Path | None = None) -> Email:
     """Build the image-matrix email. Deterministic: same bytes every call."""
     metadata = EmailMetadata(
         email_subject="Image Matrix — hosted, attached, inline",
@@ -44,7 +46,7 @@ def build() -> Email:
     )
 
     return (
-        EmailBuilder()
+        EmailBuilder(template_dir=template_dir)
         .metadata(metadata)
         .section(
             FullWidth(

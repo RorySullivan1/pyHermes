@@ -14,6 +14,7 @@ rather than assumed by each consumer:
 
 from __future__ import annotations
 
+import dataclasses
 import inspect
 
 import pytest
@@ -23,6 +24,7 @@ from qa.fixtures import DEPRECATED_COMPONENTS, all_fixtures
 from qa.fixtures import kitchen_sink as kitchen_sink_module
 from qa.fixtures._png import solid_png
 from svc.builder.components import Component
+from svc.builder.models import EmailMetadata
 from svc.delivery import collect_cid_references
 
 FIXTURE_NAMES = sorted(all_fixtures())
@@ -109,6 +111,37 @@ class TestKitchenSinkCompleteness:
             if inspect.isclass(obj) and issubclass(obj, Component)
         }
         assert DEPRECATED_COMPONENTS <= exported
+
+    def test_every_metadata_field_is_set(self):
+        """
+        The other half of #32: the golden can only pin a skeleton variable the
+        fixture actually supplies. Introspected from the dataclass, so a field
+        added later fails here instead of going quietly unpinned.
+        """
+        supplied = set(kitchen_sink_module._metadata())
+        declared = {f.name for f in dataclasses.fields(EmailMetadata)}
+        missing = declared - supplied
+        assert not missing, (
+            f"kitchen_sink()'s metadata never sets {sorted(missing)}. A field the "
+            "fixture leaves at its default is a field the golden cannot pin."
+        )
+
+    def test_every_metadata_value_is_distinctive(self):
+        """
+        A field set to its own default is indistinguishable from one left
+        unset — the golden would not move if the default changed underneath
+        it. #32 asked for distinctive values for exactly this reason.
+        """
+        defaults = EmailMetadata()
+        undistinctive = {
+            name
+            for name, value in kitchen_sink_module._metadata().items()
+            if value == getattr(defaults, name)
+        }
+        assert not undistinctive, (
+            f"kitchen_sink() sets {sorted(undistinctive)} to the field default; "
+            "pick a value that differs, or a change to the default goes unnoticed."
+        )
 
     def test_it_exercises_every_container_ratio(self):
         source = inspect.getsource(kitchen_sink_module)

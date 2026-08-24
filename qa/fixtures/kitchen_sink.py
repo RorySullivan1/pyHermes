@@ -1,14 +1,24 @@
 """
-Every public component, in every container geometry.
+Every public component, in every container geometry, with every metadata field set.
 
 The broadest fixture in the gallery, and the one a golden snapshot is worth
-the most on: a change to any component template or container ratio moves this
-render. A completeness test keeps it honest — a new ``Component`` subclass
-that never joins this fixture fails the suite rather than silently going
-unrendered forever.
+the most on: a change to any component template, container ratio or skeleton
+variable moves this render. Two completeness tests keep it honest — a new
+``Component`` subclass or a new ``EmailMetadata`` field that never joins this
+fixture fails the suite rather than silently going unpinned forever.
+
+**This fixture is also #32's characterization referee.** #32 asked for one
+representative email pinning the surfaces the header epic restructures
+(``base.html``, ``EmailMetadata``, ``Email.render()``); #58 said the two must
+resolve to one harness rather than two. So the metadata below is exhaustive on
+purpose: every field carries a distinctive non-default value, which is what
+makes a golden diff point at the field that moved.
 """
 
 from __future__ import annotations
+
+from pathlib import Path
+from typing import Any
 
 from svc.builder import (
     AuthorBlock,
@@ -41,7 +51,31 @@ _CHART_PNG = solid_png(320, 120, (42, 61, 84))
 _THUMB_PNG = solid_png(96, 96, (184, 84, 80))
 
 
-def _metadata() -> dict[str, str]:
+#: A hosted logo, carrying alt text and a width of its own that the explicit
+#: metadata below deliberately overrides. The two differ so the golden records
+#: *which* branch of the resolution chain won — explicit metadata beats the
+#: image's own value, which beats the firm name and the default width.
+_LOGO = EmailImage.hosted(
+    "https://cdn.example.com/hermes-logo.png",
+    alt="Hermes Research logotype",
+    width=110,
+)
+
+
+def _metadata() -> dict[str, Any]:
+    """
+    Every ``EmailMetadata`` field, each with a distinctive non-default value.
+
+    Exhaustive by rule, not by accident: ``TestKitchenSinkCompleteness`` in
+    ``tests/test_fixtures.py`` introspects the dataclass and fails if a field
+    added later never lands here. An unset field is one the golden cannot
+    pin, and pinning the skeleton is half of what #32 asked for.
+
+    The two image fields take different shapes on purpose — ``logo_url`` an
+    ``EmailImage``, ``header_bg_image_url`` a bare URL string — so the golden
+    covers both branches of ``EmailMetadata.to_dict()``'s collapse to a
+    ``src``.
+    """
     return {
         "email_subject": "Kitchen Sink — every component, every geometry",
         "preheader_text": "One fixture exercising the whole component library.",
@@ -50,19 +84,27 @@ def _metadata() -> dict[str, str]:
         "date_range": "Week ending 24 August",
         "issue_label": "Issue 001",
         "header_disclaimer": "For illustrative purposes. Not investment advice.",
+        "header_bg_image_url": "https://cdn.example.com/header-bg.png",
+        "logo_url": _LOGO,
+        "logo_alt": "Hermes Research — weekly research letter",
+        "logo_width": 128,
         "contact_description": "Reach the research desk with questions.",
         "contact_url": "https://example.com/contact",
+        "contact_heading": "Questions about this note?",
+        "contact_cta_label": "Email the desk",
         "footer_disclaimer": "<p>Distributed to registered recipients only.</p>",
         "current_year": _YEAR,
         "unsubscribe_url": "https://example.com/unsubscribe",
+        "unsubscribe_label": "Stop receiving this",
         "view_in_browser_url": "https://example.com/archive/001",
+        "view_in_browser_label": "Read it in a browser",
     }
 
 
-def build() -> Email:
+def build(template_dir: Path | None = None) -> Email:
     """Build the kitchen-sink email. Deterministic: same bytes every call."""
     return (
-        EmailBuilder()
+        EmailBuilder(template_dir=template_dir)
         .metadata(_metadata())
         # FullWidth + horizontal CardGroup + highlight.
         .section(

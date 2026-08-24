@@ -31,6 +31,16 @@ from . import image_matrix, kitchen_sink, minimal
 #: still cannot slip through.
 DEPRECATED_COMPONENTS = frozenset({"KpiStrip"})
 
+#: A fixture builder. Callable with no arguments — that is the contract every
+#: consumer relies on, and what :func:`all_fixtures` promises.
+#:
+#: Each builder also accepts an optional ``template_dir``, threaded to
+#: ``EmailBuilder``, so the whole gallery can be rendered against a candidate
+#: template set rather than the packaged one. That is how a template migration
+#: asks "does this edit move any email?", and how the golden harness's
+#: detection test perturbs a real template rather than only the compared text.
+#: It stays out of the alias deliberately: consumers must not be obliged to
+#: pass it.
 FixtureBuilder = Callable[[], Email]
 
 

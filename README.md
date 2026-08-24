@@ -204,7 +204,7 @@ argument always beats the config.
 ## Development
 
 ```bash
-pytest                                    # 617 tests: validation, error paths, size limits
+pytest                                    # 636 tests: validation, error paths, size limits
 ruff check . && ruff format --check .
 python -m mypy                            # config in pyproject: files = ["svc"]
 ```
@@ -224,6 +224,25 @@ from qa.fixtures import all_fixtures
 
 all_fixtures()["kitchen_sink"]().save("output/kitchen-sink.html")
 ```
+
+### Golden snapshots
+
+Every fixture is pinned byte-for-byte in `qa/fixtures/goldens/` — the rendered HTML, and
+the asset manifest as a short text table (content-id, MIME type, byte length, filename).
+Any change to a template, a component or the skeleton that moves an email fails the suite,
+naming the fixture, the line, the byte offset and both versions of the line that moved.
+
+Regeneration is deliberate and opt-in:
+
+```bash
+pytest --update-goldens      # rewrite the goldens from the current render
+git diff qa/fixtures/goldens # read every line of it before committing
+```
+
+Nothing regenerates automatically, and a missing golden fails rather than being created —
+a golden that writes itself on first run pins whatever happened to be true that day.
+**A golden diff in a pull request is a claim that the visual change is intended**, and it
+is reviewed as one.
 
 `qa/` is not shipped in the wheel. A screenshot runner, an email-client lint pass and a
 `preview` CLI are the rest of epic

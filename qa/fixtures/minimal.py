@@ -9,13 +9,15 @@ mask by supplying the value themselves.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from svc.builder import Email, EmailBuilder, FullWidth, TextBlock
 
 
-def build() -> Email:
+def build(template_dir: Path | None = None) -> Email:
     """Build the minimal email. Deterministic: same bytes every call."""
     return (
-        EmailBuilder()
+        EmailBuilder(template_dir=template_dir)
         .metadata(
             {
                 "email_subject": "Minimal",
