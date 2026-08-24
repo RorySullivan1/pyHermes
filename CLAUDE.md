@@ -571,5 +571,8 @@ Reach for these rather than improvising:
   touching `base.html` or `EmailMetadata` sequences rather than interleaving — several epics
   contend on those two surfaces. The delivery epic (#52) is complete and contends with none
   of them.
-- The repo has **no README**, which is a real gap now that it can build *and* send.
+- [README.md](README.md) is the human-facing entry point (what it is, install, build, send,
+  the constraints it enforces). CLAUDE.md stays the *rationale* document — the README says
+  what the library does, this file says why each constraint exists. Keep the split; do not
+  let the README grow into a second copy of the reasoning below.
 - Current project state and decisions: [.claude/memory/INDEX.md](.claude/memory/INDEX.md).

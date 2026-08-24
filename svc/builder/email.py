@@ -184,12 +184,14 @@ class Email:
 
         return html
 
-    def save(self, output_path: Path) -> Path:
+    def save(self, output_path: str | Path) -> Path:
         """
         Render and write to disk.
 
         Args:
-            output_path: Destination file path.
+            output_path: Destination file path. A ``str`` is accepted -- the
+                body has always coerced one, and :func:`svc.delivery.save_eml`
+                takes the same union.
 
         Returns:
             The resolved output path.
@@ -292,6 +294,6 @@ class EmailBuilder:
         """Shortcut: build and render in one step."""
         return self.build().render()
 
-    def save(self, path: Path) -> Path:
+    def save(self, path: str | Path) -> Path:
         """Shortcut: build, render, and save in one step."""
         return self.build().save(path)
