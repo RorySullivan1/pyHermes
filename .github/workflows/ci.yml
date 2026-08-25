@@ -53,6 +53,56 @@ jobs:
       - name: Unit tests (pytest)
         run: pytest
 
+  screenshots:
+    # #59: renders the fixture gallery through headless Chromium and uploads
+    # the PNGs, so a visual change can be reviewed without checking out the
+    # branch. Its own job because it needs a browser -- the `check` job above
+    # must keep passing with none installed, which is what proves the [qa]
+    # extra is genuinely optional.
+    #
+    # PINNED here: viewport sizes, device scale factor, full-page capture, the
+    # runner image. NOT pinned: the Chromium build, which comes from whatever
+    # the pinned Playwright fetches. That is deliberate -- these images are
+    # checks a human looks at, never diffed or committed, so each run records
+    # the build that produced it in run.json instead. If pixel-diff gating is
+    # ever wanted (an explicit non-goal of epic #54's first cut), that
+    # recording is what says whether two sets are comparable, and pinning then
+    # becomes a decision made on purpose rather than inherited by accident.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install (with the browser extra)
+        run: pip install -e ".[dev,qa]"
+
+      - name: Install Chromium
+        # --with-deps pulls the shared libraries headless Chromium needs on a
+        # bare runner. The build is whatever the pinned Playwright ships.
+        run: playwright install --with-deps chromium
+
+      - name: Screenshot tests
+        # The capture half of tests/test_screenshots.py skips without a
+        # browser, so this job is the only place it actually runs.
+        run: pytest tests/test_screenshots.py
+
+      - name: Render the gallery
+        run: python -m qa.screenshots
+
+      - name: What produced these images
+        run: cat output/screenshots/run.json
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: output/screenshots/
+          if-no-files-found: error
+
   wheel:
     # Guards #10: templates/ must ship inside the wheel, so the package can
     # render an email with no source tree present. A parent-directory lookup

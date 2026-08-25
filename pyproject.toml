@@ -32,6 +32,19 @@ dev = [
     "httplib2>=0.22",
 ]
 
+# Screenshots (#59) are a separate extra, not part of the dev floor: they need
+# a browser, and `pip install -e ".[dev]"` plus `pytest` must stay browser-free
+# so the core suite runs anywhere. tests/test_screenshots.py skips when this is
+# absent rather than failing.
+#
+# The *package* is pinned for API stability, in the same spirit as ruff and
+# mypy above. It deliberately does NOT pin the browser build: these images are
+# checks a human looks at, never diffed or committed, so each run records the
+# Chromium build that produced it instead (see qa/screenshots.py).
+qa = [
+    "playwright~=1.62.0",
+]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

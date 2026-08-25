@@ -21,10 +21,16 @@ but Jinja2.
 pip install -e ".[dev]"       # editable install + pytest/ruff/mypy (see Gotchas)
 pytest                        # unit suite — validation, error paths, size limits
 ruff check . && ruff format --check .
-mypy                          # config in pyproject: files = ["svc"]
+mypy                          # config in pyproject: files = ["svc", "qa"]
+
+pip install -e ".[qa]"        # optional: adds Playwright for screenshots (#59)
+python -m qa.screenshots      # gallery → output/screenshots/ (gitignored)
+pytest --update-goldens       # the ONLY way to regenerate a golden (#58)
 ```
 
-CI runs all four on every PR ([.github/workflows/ci.yml](.github/workflows/ci.yml)).
+CI runs the first four on every PR, plus a `screenshots` job and the `wheel` job
+([.github/workflows/ci.yml](.github/workflows/ci.yml)). `[dev]` alone must stay browser-free:
+the screenshot tests skip rather than fail, and that is what proves `[qa]` is optional.
 
 The `tests/` pytest suite is the automated safety net (validation, error paths, size
 limits). There is no in-repo end-to-end smoke test — to eyeball a full render after a change
@@ -68,6 +74,8 @@ svc/
 qa/                     ← QA harness (epic #54); NOT shipped in the wheel
 ├── goldens.py         — the golden snapshot harness: check_fixture(), write_fixture(),
 │                        render_manifest(), and the diagnosable mismatch report
+├── screenshots.py     — headless-Chromium runner: `python -m qa.screenshots`, cid→data URI
+│                        substitution, run.json recording the browser build
 └── fixtures/          — the gallery: minimal, kitchen_sink, image_matrix, + all_fixtures()
     └── goldens/       — the checked-in snapshots: <name>.html + <name>.assets.txt
 output/                 — generated email HTML (gitignored; not committed)
@@ -154,6 +162,40 @@ test framework.
 #32 had not started, so `kitchen_sink` became the representative email it specified — exhaustive
 over `EmailMetadata`, every container ratio, a hosted logo and an attached image. Do not add a
 second `tests/test_golden_render.py`.
+
+## Screenshots — `qa/screenshots.py`
+
+Renders the gallery through headless Chromium at two viewports (#59), so a visual change is
+reviewable without checking out the branch. `python -m qa.screenshots [fixture ...]` writes
+PNGs plus a `run.json` into `output/screenshots/` (gitignored).
+
+**The decision that shapes everything else: these are *checks*, not artifacts.** Nobody
+diffs them, nothing commits them, and no test compares them to a stored copy. That is why
+the browser build is **recorded rather than pinned** — buying cross-machine reproducibility
+with a pinned container image costs more than the guarantee is worth for an image a human
+glances at. What *is* pinned is what makes two runs on one machine comparable: viewport
+sizes, `device_scale_factor=1`, full-page capture. `run.json` carries the Chromium build,
+the Playwright version, the platform and the resolved executable — so if pixel-diff gating
+is ever wanted (an explicit non-goal of #54's first cut), that recording is what says
+whether two sets are even comparable, and pinning becomes a deliberate act rather than one
+inherited by accident.
+
+- **`cid:` is rewritten to a data URI for the screenshot only.** A browser has no MIME
+  message, so every attached image would otherwise be a broken-image icon and the screenshot
+  could not do its one job. The bytes come from `Email.assets()`, so the substitution is
+  exact. `render()` and the goldens are untouched, and a test asserts that separation.
+  Only `src` attributes are rewritten, never bare text — `image_matrix` titles a section
+  "Attached (cid:)", and substituting on the substring would corrupt copy.
+- **External requests are blocked**, so a run never waits on DNS for `example.com` and the
+  render shows what a reader with images off sees — which is Outlook's default state.
+- **The filenames say `chromium-desktop` / `chromium-mobile`, not `gmail` / `outlook`.**
+  Chromium approximates Gmail in a browser and says nothing about Outlook's Word engine.
+  Client compatibility belongs to the lint pass (#60), not to these images.
+- **Playwright is the optional `[qa]` extra.** `pip install -e ".[dev]"` + `pytest` must
+  stay browser-free — that is what proves the extra is genuinely optional, so the capture
+  tests *skip* rather than fail, and CI's `screenshots` job is the only place they run.
+  `PYHERMES_CHROMIUM` points the runner at a browser the environment supplies instead of one
+  Playwright manages (read at use time, never at import).
 
 ## Configuration — `svc/config`
 
