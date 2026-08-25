@@ -85,3 +85,18 @@ no_implicit_optional = true
 warn_redundant_casts = true
 warn_unused_ignores = true
 warn_unused_configs = true
+
+# Playwright is the optional [qa] extra, so it is deliberately absent from the
+# environment mypy runs in: CI's `check` job installs [dev] only, which is what
+# keeps the core suite browser-free. Without this, mypy is green on a machine
+# that happens to have a browser installed and red in CI from the same commit --
+# the same green-local/red-CI trap the ruff pin above records.
+#
+# This block must stay BELOW every global flag above. A per-module section
+# captures every key that follows it, so placing it mid-section silently moves
+# global strictness flags into the override -- weakening the whole type-check
+# while still reporting success. mypy warns about that; the warning is the only
+# thing that shows it.
+[[tool.mypy.overrides]]
+module = ["playwright.*"]
+ignore_missing_imports = true
