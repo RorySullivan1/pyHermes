@@ -33,10 +33,25 @@ CI runs the first four on every PR, plus a `screenshots` job and the `wheel` job
 ([.github/workflows/ci.yml](.github/workflows/ci.yml)). `[dev]` alone must stay browser-free:
 the screenshot tests skip rather than fail, and that is what proves `[qa]` is optional.
 
-The `tests/` pytest suite is the automated safety net (validation, error paths, size
-limits). There is no in-repo end-to-end smoke test — to eyeball a full render after a change
-to `svc/builder/` (including its `templates/`), build an email and `.save()` it into `output/`
-(gitignored, not committed), then open it in a browser.
+**To eyeball a change, run `preview`** — it is the loop, and it replaced the hand-rolled one
+these docs used to prescribe:
+
+```bash
+python -m qa.preview kitchen_sink --lint --screenshot --open
+python -m qa.preview drafts/weekly.py:build --lint      # your own draft, same command
+```
+
+Four things now stand behind that one command, and they answer different questions:
+
+| | Answers |
+|---|---|
+| **The gallery** (`qa/fixtures/`) | *What do I render?* Three canonical emails, deterministic by rule, so every tool below has stable input |
+| **The goldens** (`qa/fixtures/goldens/`) | *Did anything move?* Byte-identity on HTML **and** the asset manifest, for the whole gallery |
+| **Screenshots** (`qa/screenshots.py`) | *How does it look?* Two viewports through headless Chromium — a review artifact, not a gate |
+| **The lint pass** (`qa/lint.py`) | *Will it survive a real client?* The portability rules, with the size budget attributed to sections |
+
+The `tests/` pytest suite remains the automated safety net, and it now carries the harness:
+the goldens fail on any drift, and every fixture is linted on every run.
 
 Slash commands (from the `.claude/` library): `/version-set`, `/version-ship`, `/reindex`.
 
@@ -372,6 +387,25 @@ the fragment into its own template. `Email` concatenates all section HTML into t
 `sections_html` slot. **Adding a content type = new template file + new `Component` subclass**
 that sets `template_path` and implements `context()`.
 
+### Three standing rules the harness enforces
+
+These are not conventions to remember — each has teeth, and the teeth are named:
+
+1. **A new component joins `kitchen_sink()`.** Not by good intentions: a completeness test
+   introspects every public `Component` subclass exported from `svc.builder` and fails when
+   one never appears in the fixture. The same holds for a new `EmailMetadata` field, which is
+   additionally checked to differ from its own default — a field left at its default is one
+   the golden cannot pin. Exemptions are named in `DEPRECATED_COMPONENTS`, with a reason.
+2. **A golden diff in a PR is a claim that the visual change is intended.** Regeneration is
+   `pytest --update-goldens` and nothing else; a missing golden fails rather than being
+   created. Never regenerate to silence a failure — if the diff is not one you meant to make,
+   the change is wrong, not the golden.
+3. **Screenshots approximate Gmail-in-a-browser; the lint pass owns Outlook.** "The
+   screenshot looks fine" never closes a compatibility question — Chromium renders
+   `display:flex` perfectly and Outlook's Word engine does not. The filenames say `chromium`
+   for exactly this reason. Conversely, a clean lint says nothing about whether the layout
+   *reads* well; that is what the images are for.
+
 ### Public API (import from `svc.builder`)
 
 ```python
@@ -493,7 +527,8 @@ Aggregation walks the section tree without rendering it: `Component.images()` �
 `Container.components()` → `Email.assets()`, plus the `EmailMetadata` image fields
 (`logo_url`, `header_bg_image_url`), which accept an `EmailImage` as well as a bare URL
 string. **A new image-bearing component must override `images()`** or its bytes never reach
-the manifest, and its `cid:` reference will render as a broken image.
+the manifest, and its `cid:` reference will render as a broken image. (It must also join
+`kitchen_sink()` — see the three standing rules above, which a test enforces.)
 
 Rules the module enforces at construction, per the validation philosophy below:
 
@@ -787,12 +822,27 @@ Reach for these rather than improvising:
 - Tracked in [GitHub issues](https://github.com/RorySullivan1/pyHermes/issues), organised as
   epics with sub-issues: #38 header region, #45 size themes, #46 color themes, #52 delivery,
   #54 QA harness, #55 footer region, plus #53 plain-text and #56 typography as parents.
+- **The QA harness (#54) is complete**, and it changes how the visual epics discharge their
+  own acceptance criteria:
+  - **#43 (size themes) and #50 (color presets) get their eyeball artifacts from the
+    screenshot runner**, not from ad-hoc `.save()` calls. `python -m qa.preview <fixture>
+    --screenshot` locally; CI uploads the whole gallery on every PR. Side-by-side theme
+    review is two runs of one command.
+  - **Migration PRs under #38, #45 and #46 cite gallery-wide goldens, not a single email.**
+    "Byte-identical" now means all three fixtures plus their asset manifests — a
+    container-template edit that one email's ratios never exercise no longer slips through.
+  - **A theme lands with a fixture.** Epic #54 anticipated "one per theme as themes land";
+    the completeness tests make that concrete for components and metadata fields already.
 - **The golden characterization test (#32/#58) has landed** — the gate every template
   migration waited on is now in the suite. Everything touching `base.html` or `EmailMetadata`
   still sequences rather than interleaves (several epics contend on those two surfaces), but
   each of them now inherits byte-identity proof for free: change a template, and the gallery
   tells you which email moved and where. The delivery epic (#52) is complete and contends
   with none of them.
+- **Two findings the harness surfaced are open and both wait on `base.html`**: #76 (the
+  mobile `.kpi-cell` collapse overflows its viewport by its own padding) and #78 (three
+  sourced Outlook findings the lint pass defers rather than shipping red). Whoever next
+  touches that file should pick them up — they are cheap while it is already open.
 - [README.md](README.md) is the human-facing entry point (what it is, install, build, send,
   the constraints it enforces). CLAUDE.md stays the *rationale* document — the README says
   what the library does, this file says why each constraint exists. Keep the split; do not

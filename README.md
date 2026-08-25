@@ -206,24 +206,20 @@ argument always beats the config.
 ```bash
 pytest                                    # 714 tests: validation, error paths, size limits
 ruff check . && ruff format --check .
-python -m mypy                            # config in pyproject: files = ["svc"]
+python -m mypy                            # config in pyproject: files = ["svc", "qa"]
 ```
 
 CI runs all four on every pull request (and on pushes to `main`), across Python 3.11 and
-3.13, plus a job that builds the wheel and renders an email from a clean venv outside the
-source tree — templates ship inside the package, and that job is what keeps non-editable
-installs working.
+3.13, plus two more jobs: one builds the wheel and renders an email from a clean venv
+outside the source tree — templates ship inside the package, and that job is what keeps
+non-editable installs working — and one renders the fixture gallery through headless
+Chromium and uploads the PNGs, so a visual change is reviewable from the pull request.
 
 `qa/fixtures/` is the gallery — `minimal`, `kitchen_sink` and `image_matrix`, each a
-deterministic email built in code. The suite renders all three and checks that every
-`cid:` reference has a manifest entry, and that a second build is byte-identical. To
-eyeball one:
-
-```python
-from qa.fixtures import all_fixtures
-
-all_fixtures()["kitchen_sink"]().save("output/kitchen-sink.html")
-```
+deterministic email built in code. The suite renders all three, checks that every `cid:`
+reference has a manifest entry, that a second build is byte-identical, and that each still
+matches its golden. To look at one, use the `preview` command below rather than a scratch
+script.
 
 ### Golden snapshots
 

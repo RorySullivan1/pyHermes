@@ -58,10 +58,16 @@ consult the one that fits the task rather than reinventing it:
 
 ## Verify (do not finish until these pass)
 6. Run the repo's checks: `pytest` (unit suite under `tests/`), plus `ruff check .`,
-   `ruff format --check .`, and `mypy` — the same four CI runs on every PR. There is no
-   in-repo end-to-end smoke test; when your change affects the rendered output, also build
-   an email end-to-end and `.save()` it into `output/` (gitignored) to confirm a clean
-   render and a size under the 102 KB limit (`_validate_size()` warns above 90 KB).
+   `ruff format --check .`, and `mypy` — the same four CI runs on every PR. The suite
+   includes the QA harness: golden snapshots fail on any drift in the rendered HTML or the
+   asset manifest, and every gallery fixture is linted. When your change affects the
+   rendered output, also eyeball it with `python -m qa.preview kitchen_sink --lint`
+   (add `--screenshot` if the `[qa]` extra is installed) — that writes the HTML into
+   `output/` (gitignored) and reports portability findings and the size budget, which
+   `_validate_size()` warns on above 90 KB and fails above 102 KB.
+   **A golden diff is a claim that the visual change is intended.** If one appears and you
+   did not mean it, the change is wrong — do not run `pytest --update-goldens` to silence
+   it.
 7. If anything fails, fix it or report it honestly with the real command output —
    never claim a clean run you did not see.
 
