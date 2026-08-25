@@ -54,8 +54,11 @@ rather than reinventing it:
 ## Verify (do not finish until these pass)
 6. Run the repo's checks — `pytest` (the `tests/` suite), `ruff check .`,
    `ruff format --check .`, and `mypy` — plus any tests you add for the new behavior. If
-   your change touches anything the email pipeline consumes, also build an email
-   end-to-end and `.save()` it into `output/` (gitignored) to confirm a clean render.
+   your change touches anything the email pipeline consumes, also eyeball a render with
+   `python -m qa.preview kitchen_sink --lint`, which writes the HTML into `output/`
+   (gitignored) and reports portability findings. A golden-snapshot diff in the suite is a
+   claim that a visual change was intended — never regenerate one to make a failure go
+   away.
 7. If anything fails, fix it or report it honestly with the real command output —
    never claim a clean run you did not see.
 

@@ -204,26 +204,22 @@ argument always beats the config.
 ## Development
 
 ```bash
-pytest                                    # 685 tests: validation, error paths, size limits
+pytest                                    # 714 tests: validation, error paths, size limits
 ruff check . && ruff format --check .
-python -m mypy                            # config in pyproject: files = ["svc"]
+python -m mypy                            # config in pyproject: files = ["svc", "qa"]
 ```
 
 CI runs all four on every pull request (and on pushes to `main`), across Python 3.11 and
-3.13, plus a job that builds the wheel and renders an email from a clean venv outside the
-source tree — templates ship inside the package, and that job is what keeps non-editable
-installs working.
+3.13, plus two more jobs: one builds the wheel and renders an email from a clean venv
+outside the source tree — templates ship inside the package, and that job is what keeps
+non-editable installs working — and one renders the fixture gallery through headless
+Chromium and uploads the PNGs, so a visual change is reviewable from the pull request.
 
 `qa/fixtures/` is the gallery — `minimal`, `kitchen_sink` and `image_matrix`, each a
-deterministic email built in code. The suite renders all three and checks that every
-`cid:` reference has a manifest entry, and that a second build is byte-identical. To
-eyeball one:
-
-```python
-from qa.fixtures import all_fixtures
-
-all_fixtures()["kitchen_sink"]().save("output/kitchen-sink.html")
-```
+deterministic email built in code. The suite renders all three, checks that every `cid:`
+reference has a manifest entry, that a second build is byte-identical, and that each still
+matches its golden. To look at one, use the `preview` command below rather than a scratch
+script.
 
 ### Golden snapshots
 
@@ -289,8 +285,25 @@ sections**, so a too-large email says what to cut rather than only how much. The
 every gallery fixture. Each rule carries a citation, and the linter parses the HTML rather
 than grepping it.
 
-`qa/` is not shipped in the wheel. A `preview` CLI is the rest of epic
-[#54](https://github.com/RorySullivan1/pyHermes/issues/54).
+### One command for the whole loop
+
+`preview` builds an email, saves it, and optionally lints and screenshots it —
+for a gallery fixture or for your own in-progress draft:
+
+```bash
+python -m qa.preview --list                              # what fixtures exist
+python -m qa.preview kitchen_sink --lint --screenshot
+python -m qa.preview drafts/weekly.py:build --lint --open
+```
+
+The second form takes any zero-argument callable returning an `Email` or an `EmailBuilder`,
+which is what makes this useful for drafting a real newsletter rather than only for inspecting
+fixtures. Exit codes are meant for a shell: `0` clean, `1` lint errors, `2` the email could not
+be built. A missing browser is not a failure — `--screenshot` says so and carries on, since the
+`[qa]` extra is optional.
+
+`qa/` is not shipped in the wheel, so there is no installed `preview` entry point: the module
+form is the interface.
 
 ## Scope
 
