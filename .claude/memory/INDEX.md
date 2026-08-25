@@ -115,6 +115,9 @@
 - [2026-08-25] **Parse, never grep** (stdlib `html.parser`, no new dependency), and **a section marker must contain a letter** — the templates' decorative `<!-- ══════ -->` rules otherwise become the "heaviest region" — sessions/2026-08-25-1300-lint-pass.md
 - [2026-08-25] **Size-budget tests must render under the real config and override only the lint call**: `Email.render()` enforces the same limit and raises first. `Config` also rejects `size_limit_kb` below `inline_image_limit_kb`, and `size_warn_kb=0` — sessions/2026-08-25-1300-lint-pass.md
 
+- [2026-08-25] **A `[dev]`-only venv is the only faithful local stand-in for CI's `check` job.** mypy was green locally and red in CI because this machine has playwright installed and CI deliberately does not. Keep `scratchpad/devonly/`; run `./devonly/bin/python -m mypy` **from the repo root** — sessions/2026-08-25-1300-lint-pass.md
+- [2026-08-25] **A `[[tool.mypy.overrides]]` block captures every key that follows it.** Placed mid-section it silently moved six global strictness flags into a per-module override while still printing "Success"; only mypy's "Per-module sections should only specify per-module flags" warning showed it. Keep per-module sections BELOW every global flag, and assert the parsed config — sessions/2026-08-25-1300-lint-pass.md
+
 ## Log              (append-only pointers)
 - [2026-08-19 22:44] adopt-claudebrain-assets — curated + installed + activated `.claude/`; later committed to `main`, filed issues #1–3, removed `dev/` — sessions/2026-08-19-2244-adopt-claudebrain-assets.md
 - [2026-08-20 12:05] review-open-issues — verified all 10 open issues by repro, found unfiled container-title crash, delivered tackle order; no code changed — sessions/2026-08-20-1205-review-open-issues.md
