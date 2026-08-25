@@ -1,0 +1,267 @@
+"""
+Every public component, in every container geometry, with every metadata field set.
+
+The broadest fixture in the gallery, and the one a golden snapshot is worth
+the most on: a change to any component template, container ratio or skeleton
+variable moves this render. Two completeness tests keep it honest — a new
+``Component`` subclass or a new ``EmailMetadata`` field that never joins this
+fixture fails the suite rather than silently going unpinned forever.
+
+**This fixture is also #32's characterization referee.** #32 asked for one
+representative email pinning the surfaces the header epic restructures
+(``base.html``, ``EmailMetadata``, ``Email.render()``); #58 said the two must
+resolve to one harness rather than two. So the metadata below is exhaustive on
+purpose: every field carries a distinctive non-default value, which is what
+makes a golden diff point at the field that moved.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Any
+
+from svc.builder import (
+    AuthorBlock,
+    CardGroup,
+    ChartBlock,
+    DataTable,
+    Email,
+    EmailBuilder,
+    FullWidth,
+    ImageBlock,
+    NumberedList,
+    TextBlock,
+    ThreeColumn,
+    TwoColumn,
+)
+from svc.builder.enums import CardOrientation, ImageAlign, ThreeColumnRatio, TwoColumnRatio
+from svc.builder.images import EmailImage
+from svc.builder.models import Card, KpiItem, NumberedItem, TableRow
+
+from ._png import solid_png
+
+#: Fixed so the render never moves. A fixture that reads the clock cannot be
+#: snapshotted.
+_YEAR = "2026"
+
+_GAIN = "#4A7C59"
+_LOSS = "#B85450"
+
+_CHART_PNG = solid_png(320, 120, (42, 61, 84))
+_THUMB_PNG = solid_png(96, 96, (184, 84, 80))
+
+
+#: A hosted logo, carrying alt text and a width of its own that the explicit
+#: metadata below deliberately overrides. The two differ so the golden records
+#: *which* branch of the resolution chain won — explicit metadata beats the
+#: image's own value, which beats the firm name and the default width.
+_LOGO = EmailImage.hosted(
+    "https://cdn.example.com/hermes-logo.png",
+    alt="Hermes Research logotype",
+    width=110,
+)
+
+
+def _metadata() -> dict[str, Any]:
+    """
+    Every ``EmailMetadata`` field, each with a distinctive non-default value.
+
+    Exhaustive by rule, not by accident: ``TestKitchenSinkCompleteness`` in
+    ``tests/test_fixtures.py`` introspects the dataclass and fails if a field
+    added later never lands here. An unset field is one the golden cannot
+    pin, and pinning the skeleton is half of what #32 asked for.
+
+    The two image fields take different shapes on purpose — ``logo_url`` an
+    ``EmailImage``, ``header_bg_image_url`` a bare URL string — so the golden
+    covers both branches of ``EmailMetadata.to_dict()``'s collapse to a
+    ``src``.
+    """
+    return {
+        "email_subject": "Kitchen Sink — every component, every geometry",
+        "preheader_text": "One fixture exercising the whole component library.",
+        "firm_name": "Hermes Research",
+        "campaign_name": "kitchen-sink",
+        "date_range": "Week ending 24 August",
+        "issue_label": "Issue 001",
+        "header_disclaimer": "For illustrative purposes. Not investment advice.",
+        "header_bg_image_url": "https://cdn.example.com/header-bg.png",
+        "logo_url": _LOGO,
+        "logo_alt": "Hermes Research — weekly research letter",
+        "logo_width": 128,
+        "contact_description": "Reach the research desk with questions.",
+        "contact_url": "https://example.com/contact",
+        "contact_heading": "Questions about this note?",
+        "contact_cta_label": "Email the desk",
+        "footer_disclaimer": "<p>Distributed to registered recipients only.</p>",
+        "current_year": _YEAR,
+        "unsubscribe_url": "https://example.com/unsubscribe",
+        "unsubscribe_label": "Stop receiving this",
+        "view_in_browser_url": "https://example.com/archive/001",
+        "view_in_browser_label": "Read it in a browser",
+    }
+
+
+def build(template_dir: Path | None = None) -> Email:
+    """Build the kitchen-sink email. Deterministic: same bytes every call."""
+    return (
+        EmailBuilder(template_dir=template_dir)
+        .metadata(_metadata())
+        # FullWidth + horizontal CardGroup + highlight.
+        .section(
+            FullWidth(
+                title="Market Snapshot",
+                highlight=True,
+                content=CardGroup(
+                    [
+                        KpiItem("S&P 500", "5,234", _GAIN, "+1.42%"),
+                        KpiItem("UST 10Y", "4.28%", _LOSS, "+6 bps"),
+                        KpiItem("Gold", "2,411", _GAIN, "+0.85%"),
+                        KpiItem("VIX", "14.32", _GAIN, "-2.18 pts"),
+                    ],
+                    orientation=CardOrientation.HORIZONTAL,
+                ),
+            )
+        )
+        # Vertical CardGroup — the same cards, stacked, carrying prose bodies.
+        .section(
+            FullWidth(
+                title="Sector Notes",
+                content=CardGroup(
+                    [
+                        Card(
+                            "Technology",
+                            "+2.1%",
+                            _GAIN,
+                            "week",
+                            body="<p>Semiconductor strength led the advance.</p>",
+                        ),
+                        Card(
+                            "Energy",
+                            "-0.7%",
+                            _LOSS,
+                            "week",
+                            body="<p>Crude gave back the prior week's gain.</p>",
+                        ),
+                    ],
+                    orientation=CardOrientation.VERTICAL,
+                    subtitle="Relative performance",
+                ),
+            )
+        )
+        # DataTable, with per-cell colours.
+        .section(
+            FullWidth(
+                title="Factor Returns",
+                content=DataTable(
+                    headers=["Factor", "1M", "YTD"],
+                    rows=[
+                        TableRow(cells=["Value", "+1.8%", "+7.4%"], colors=["", _GAIN, _GAIN]),
+                        TableRow(cells=["Momentum", "-0.4%", "+11.2%"], colors=["", _LOSS, _GAIN]),
+                        TableRow(cells=["Quality", "+0.9%", "+5.1%"], colors=["", _GAIN, _GAIN]),
+                    ],
+                    source="Hermes Research",
+                    as_of="24 August 2026",
+                    subtitle="Long-short, gross of costs",
+                ),
+            )
+        )
+        # ChartBlock — attached, so the fixture also exercises Email.assets().
+        .section(
+            FullWidth(
+                title="Cumulative Performance",
+                content=ChartBlock(
+                    EmailImage.attached(_CHART_PNG, alt="Cumulative factor performance", width=320),
+                    source="Hermes Research",
+                    subtitle="Indexed to 100",
+                ),
+            )
+        )
+        # TwoColumn — all three ratios.
+        .section(
+            TwoColumn(
+                ratio=TwoColumnRatio.EQUAL,
+                title="Equal Columns",
+                left=TextBlock("<p>The left half of a 50-50 split.</p>"),
+                right=TextBlock("<p>The right half of a 50-50 split.</p>"),
+            )
+        )
+        .section(
+            TwoColumn(
+                ratio=TwoColumnRatio.NARROW_WIDE,
+                title="Narrow then Wide",
+                highlight=True,
+                left=ImageBlock(
+                    EmailImage.attached(_THUMB_PNG, alt="Thumbnail", width=96),
+                    caption="A 30% column",
+                    align=ImageAlign.LEFT,
+                ),
+                right=TextBlock("<p>Commentary occupying the wider 70% column.</p>"),
+            )
+        )
+        .section(
+            TwoColumn(
+                ratio=TwoColumnRatio.WIDE_NARROW,
+                title="Wide then Narrow",
+                left=TextBlock("<p>Commentary occupying the wider 70% column.</p>"),
+                right=AuthorBlock(
+                    "A. Analyst",
+                    job_title="Head of Research",
+                    email="research@example.com",
+                ),
+            )
+        )
+        # ThreeColumn — all four ratios.
+        .section(
+            ThreeColumn(
+                ratio=ThreeColumnRatio.EQUAL,
+                title="Three Equal",
+                left=TextBlock("<p>First third.</p>"),
+                center=TextBlock("<p>Second third.</p>"),
+                right=TextBlock("<p>Final third.</p>"),
+            )
+        )
+        .section(
+            ThreeColumn(
+                ratio=ThreeColumnRatio.WIDE_LEFT,
+                title="Wide Left",
+                left=TextBlock("<p>The 50% column.</p>"),
+                center=TextBlock("<p>Quarter.</p>"),
+                right=TextBlock("<p>Quarter.</p>"),
+            )
+        )
+        .section(
+            ThreeColumn(
+                ratio=ThreeColumnRatio.WIDE_CENTER,
+                title="Wide Centre",
+                left=TextBlock("<p>Quarter.</p>"),
+                center=TextBlock("<p>The 50% column.</p>"),
+                right=TextBlock("<p>Quarter.</p>"),
+            )
+        )
+        .section(
+            ThreeColumn(
+                ratio=ThreeColumnRatio.WIDE_RIGHT,
+                title="Wide Right",
+                left=TextBlock("<p>Quarter.</p>"),
+                center=TextBlock("<p>Quarter.</p>"),
+                right=TextBlock("<p>The 50% column.</p>"),
+            )
+        )
+        # NumberedList.
+        .section(
+            FullWidth(
+                title="What We Are Watching",
+                content=NumberedList(
+                    [
+                        NumberedItem(
+                            "01", "Inflation prints", "<p>Core services remain sticky.</p>"
+                        ),
+                        NumberedItem("02", "Earnings revisions", "<p>Breadth is narrowing.</p>"),
+                        NumberedItem("03", "Positioning", "<p>Futures length is extended.</p>"),
+                    ],
+                    subtitle="Three themes into next week",
+                ),
+            )
+        )
+        .build()
+    )

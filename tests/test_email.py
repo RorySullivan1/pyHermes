@@ -6,6 +6,8 @@ the single runtime check that matters most, and calling it with crafted
 strings pins the exact boundary without having to build a ~102 KB email.
 """
 
+from pathlib import Path
+
 import pytest
 
 from svc.builder import Email, EmailBuilder, FullWidth
@@ -108,6 +110,14 @@ class TestRendering:
         assert out.is_file()
         assert "Narrative prose." in out.read_text(encoding="utf-8")
 
+    def test_save_accepts_a_str_path(self, valid_metadata, text_block, tmp_path):
+        """The body coerces with Path(), and save_eml() takes the same union."""
+        email = Email(metadata=valid_metadata)
+        email.add_section(FullWidth(content=text_block))
+        out = email.save(str(tmp_path / "out.html"))
+        assert isinstance(out, Path)
+        assert out.is_file()
+
 
 class TestEmailBuilder:
     def test_fluent_chain_builds_an_email(self, valid_metadata, text_block):
@@ -139,7 +149,7 @@ class TestEmailBuilder:
             EmailBuilder()
             .metadata(valid_metadata)
             .section(FullWidth(content=text_block))
-            .save(tmp_path / "out.html")
+            .save(str(tmp_path / "out.html"))
         )
         assert out.is_file()
 

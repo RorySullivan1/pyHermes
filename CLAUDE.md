@@ -65,11 +65,95 @@ svc/
 │   └── sender.py       — GmailTransport protocol, GoogleApiTransport shim, send_message()
 ├── outlook/            ← Outlook send adapter over Microsoft Graph (same shape as gmail)
 │   └── sender.py       — OutlookTransport protocol, GraphApiTransport shim, send_message()
+qa/                     ← QA harness (epic #54); NOT shipped in the wheel
+├── goldens.py         — the golden snapshot harness: check_fixture(), write_fixture(),
+│                        render_manifest(), and the diagnosable mismatch report
+└── fixtures/          — the gallery: minimal, kitchen_sink, image_matrix, + all_fixtures()
+    └── goldens/       — the checked-in snapshots: <name>.html + <name>.assets.txt
 output/                 — generated email HTML (gitignored; not committed)
 tests/                  — pytest unit suite (validation, error paths, size limits)
 .github/workflows/      — CI: ruff, mypy, pytest
 .claude/                — curated tooling library (skills, agents, commands, hooks, memory)
 ```
+
+## The fixture gallery — `qa/fixtures`
+
+The shared set of representative emails every later QA tool consumes (#57, the first step of
+epic #54). Three fixtures, each a `build()` returning a built `Email`, enumerated through
+`all_fixtures()` so a consumer never imports them one by one:
+
+| Fixture | What it is for |
+|---|---|
+| `minimal` | The smallest valid email. Its value is negative space — it renders the skeleton with every optional region empty, so it catches a change to `base.html`'s defaults that a richer fixture masks by supplying the value itself |
+| `kitchen_sink` | Every public component in every container ratio, `highlight=True` included, **and every `EmailMetadata` field set to a distinctive non-default value**. The fixture the golden is worth the most on, and #32's characterization email |
+| `image_matrix` | All three embed strategies, plus the same attached image referenced twice — the shortest proof that `assets()` reports exactly the `cid:` references the HTML contains |
+
+**Determinism is the rule the gallery rests on**, and it is not a style preference: Content-IDs
+are `sha256(bytes)[:16]`, so a fixture image that varies changes the `cid:` references in the
+HTML and fails every downstream golden for a reason unrelated to the change under review.
+Hence fixed strings, no clock, no `random`, and PNG bytes generated from constants by
+[qa/fixtures/_png.py](qa/fixtures/_png.py) rather than checked in as binaries.
+
+**`qa/` is a top-level package, not `svc/qa` and not `tests/fixtures`** — the decision #57 left
+to its PR. It is out of `svc/` because the wheel ships `packages = ["svc"]` and the gallery is
+test data that would be dead weight for every installing user; it is out of `tests/` because
+`tests/` is not importable from an installed position and the epic's later tools (#59
+screenshots, #60 lint, #61 the `preview` CLI) are not tests. A root
+[conftest.py](conftest.py) puts the repo root on `sys.path` so `import qa` does not depend on
+hatchling's editable-install strategy happening to expose it. `qa/` **is** type-checked —
+`mypy` runs over `["svc", "qa"]`.
+
+**Adding a component means adding it to `kitchen_sink()`; so does adding an `EmailMetadata`
+field.** Two completeness tests introspect rather than hand-list: one over every public
+`Component` subclass exported from `svc.builder`, one over `dataclasses.fields(EmailMetadata)`,
+plus a third asserting each metadata value *differs from its own default* — a field set to its
+default is one the golden cannot pin, because the render would not move if the default changed
+underneath it. Only exemptions are named, in `DEPRECATED_COMPONENTS` (today: `KpiStrip`, whose
+markup duplicates a section already in the gallery and which warns on construction).
+
+Each `build()` also takes an optional `template_dir`, threaded to `EmailBuilder`, so the whole
+gallery can be rendered against a *candidate* template set — which is the question a template
+migration actually asks ("does this edit move any email?"), and how the golden harness's
+detection test perturbs a real template instead of only the compared text. It stays out of the
+`FixtureBuilder` alias deliberately: consumers must be able to call a builder with no arguments.
+
+## Golden snapshots — `qa/goldens.py` + `qa/fixtures/goldens/`
+
+The byte-identity bar the migration epics (#33, #41, #42, #49) all promise to hold, made
+mechanical (#58). Two artifacts per fixture, because a render and its attachments drift
+independently:
+
+| File | What it pins |
+|---|---|
+| `goldens/<name>.html` | The rendered HTML, byte for byte, no normalization |
+| `goldens/<name>.assets.txt` | One tab-separated record per `ImageAsset`, **in manifest order** — content-id, MIME type, byte length, filename |
+
+Four decisions worth not re-litigating:
+
+- **The manifest stores no image bytes.** They already live in the fixture that generates them,
+  and a Content-ID is `sha256(bytes)[:16]` — different bytes cannot keep the same id, so id plus
+  length catches everything a second copy would, at none of the repo weight.
+- **Order is preserved, not sorted.** The header epic moves image aggregation between classes;
+  a reordered `assets()` is a real change, and #32 asked for it to fail. A dropped or duplicated
+  asset can also happen with the HTML *byte-identical*, which is why this artifact is separate.
+- **Regeneration is opt-in and reviewed**: `pytest --update-goldens` is the only path (registered
+  in the root [conftest.py](conftest.py), because pytest reads `pytest_addoption` only from the
+  rootdir conftest). Nothing regenerates implicitly, and **a missing golden fails rather than
+  being created** — one that writes itself on first run pins whatever happened to be true that
+  day. *A golden diff in a PR is a claim that the visual change is intended*, and it is reviewed
+  as one.
+- **A mismatch must be diagnosable.** "Bytes differ" on a 47 KB document costs the next reader an
+  hour, so the report names the fixture, the artifact, the line, the byte offset, three lines of
+  context and both versions of the line that moved. That the harness *bites* is tested by
+  perturbing a real template and a real fixture and asserting the reported location, not assumed.
+
+`qa/goldens.py` imports no pytest, so #61's `preview` CLI can check goldens without pulling in a
+test framework.
+
+**#32 is satisfied here, not separately.** #58 required that the two resolve to one harness;
+#32 had not started, so `kitchen_sink` became the representative email it specified — exhaustive
+over `EmailMetadata`, every container ratio, a hosted logo and an attached image. Do not add a
+second `tests/test_golden_render.py`.
 
 ## Configuration — `svc/config`
 
@@ -567,9 +651,14 @@ Reach for these rather than improvising:
 - Tracked in [GitHub issues](https://github.com/RorySullivan1/pyHermes/issues), organised as
   epics with sub-issues: #38 header region, #45 size themes, #46 color themes, #52 delivery,
   #54 QA harness, #55 footer region, plus #53 plain-text and #56 typography as parents.
-- **The golden characterization test (#32/#58) gates all template migration**, and everything
-  touching `base.html` or `EmailMetadata` sequences rather than interleaving — several epics
-  contend on those two surfaces. The delivery epic (#52) is complete and contends with none
-  of them.
-- The repo has **no README**, which is a real gap now that it can build *and* send.
+- **The golden characterization test (#32/#58) has landed** — the gate every template
+  migration waited on is now in the suite. Everything touching `base.html` or `EmailMetadata`
+  still sequences rather than interleaves (several epics contend on those two surfaces), but
+  each of them now inherits byte-identity proof for free: change a template, and the gallery
+  tells you which email moved and where. The delivery epic (#52) is complete and contends
+  with none of them.
+- [README.md](README.md) is the human-facing entry point (what it is, install, build, send,
+  the constraints it enforces). CLAUDE.md stays the *rationale* document — the README says
+  what the library does, this file says why each constraint exists. Keep the split; do not
+  let the README grow into a second copy of the reasoning below.
 - Current project state and decisions: [.claude/memory/INDEX.md](.claude/memory/INDEX.md).
