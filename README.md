@@ -204,7 +204,7 @@ argument always beats the config.
 ## Development
 
 ```bash
-pytest                                    # 636 tests: validation, error paths, size limits
+pytest                                    # 685 tests: validation, error paths, size limits
 ruff check . && ruff format --check .
 python -m mypy                            # config in pyproject: files = ["svc"]
 ```
@@ -244,8 +244,52 @@ a golden that writes itself on first run pins whatever happened to be true that 
 **A golden diff in a pull request is a claim that the visual change is intended**, and it
 is reviewed as one.
 
-`qa/` is not shipped in the wheel. A screenshot runner, an email-client lint pass and a
-`preview` CLI are the rest of epic
+### Screenshots
+
+Renders the gallery through headless Chromium so a visual change can be looked at without
+checking out the branch:
+
+```bash
+pip install -e ".[qa]" && playwright install chromium
+python -m qa.screenshots                 # the whole gallery → output/screenshots/
+python -m qa.screenshots kitchen_sink    # one fixture
+```
+
+Two viewports per fixture — `chromium-desktop` (1000px) and `chromium-mobile` (375px, below
+`base.html`'s 700px breakpoint, so the mobile rules actually fire). `cid:` images are swapped
+for data URIs **in the screenshot copy only**, since a browser has no MIME message to resolve
+them against; the rendered HTML and the goldens are untouched.
+
+**These are checks, not artifacts.** They are gitignored, never diffed, and never committed.
+Viewports and scale factor are pinned; the *browser build* is not — each run records the
+Chromium version that produced it in `run.json` beside the images. And the names say
+`chromium` on purpose: this approximates Gmail in a browser and says nothing about Outlook's
+Word engine, which is the client most likely to break a layout. Client compatibility belongs
+to the lint pass ([#60](https://github.com/RorySullivan1/pyHermes/issues/60)).
+
+Playwright is the optional `[qa]` extra, so `pip install -e ".[dev]"` and `pytest` stay
+browser-free — the screenshot tests skip rather than fail. Where the environment supplies its
+own Chromium instead of one Playwright manages, point `PYHERMES_CHROMIUM` at the binary.
+
+### The lint pass
+
+Portability checks over rendered HTML — the rules that decide whether an email survives
+Outlook, enforced rather than merely documented:
+
+```python
+from qa.lint import lint_email, format_findings
+
+print(format_findings(lint_email(email)))
+```
+
+`img-width-attr` and `img-alt` (Outlook's Word engine ignores CSS `max-width`, and blocked
+images are its default state), `no-external-css`, `outlook-unsupported-css`, and
+`size-budget` — which reports the 90/102 KB thresholds **and attributes the bytes to
+sections**, so a too-large email says what to cut rather than only how much. The suite lints
+every gallery fixture. Each rule carries a citation, and the linter parses the HTML rather
+than grepping it.
+
+`qa/` is not shipped in the wheel. A `preview` CLI is the rest of epic
 [#54](https://github.com/RorySullivan1/pyHermes/issues/54).
 
 ## Scope

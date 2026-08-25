@@ -21,10 +21,16 @@ but Jinja2.
 pip install -e ".[dev]"       # editable install + pytest/ruff/mypy (see Gotchas)
 pytest                        # unit suite — validation, error paths, size limits
 ruff check . && ruff format --check .
-mypy                          # config in pyproject: files = ["svc"]
+mypy                          # config in pyproject: files = ["svc", "qa"]
+
+pip install -e ".[qa]"        # optional: adds Playwright for screenshots (#59)
+python -m qa.screenshots      # gallery → output/screenshots/ (gitignored)
+pytest --update-goldens       # the ONLY way to regenerate a golden (#58)
 ```
 
-CI runs all four on every PR ([.github/workflows/ci.yml](.github/workflows/ci.yml)).
+CI runs the first four on every PR, plus a `screenshots` job and the `wheel` job
+([.github/workflows/ci.yml](.github/workflows/ci.yml)). `[dev]` alone must stay browser-free:
+the screenshot tests skip rather than fail, and that is what proves `[qa]` is optional.
 
 The `tests/` pytest suite is the automated safety net (validation, error paths, size
 limits). There is no in-repo end-to-end smoke test — to eyeball a full render after a change
@@ -68,6 +74,10 @@ svc/
 qa/                     ← QA harness (epic #54); NOT shipped in the wheel
 ├── goldens.py         — the golden snapshot harness: check_fixture(), write_fixture(),
 │                        render_manifest(), and the diagnosable mismatch report
+├── screenshots.py     — headless-Chromium runner: `python -m qa.screenshots`, cid→data URI
+│                        substitution, run.json recording the browser build
+├── lint.py            — email-client portability rules over rendered HTML: lint_html(),
+│                        lint_email(), size_report(), SOURCES, DEFERRED_RULES
 └── fixtures/          — the gallery: minimal, kitchen_sink, image_matrix, + all_fixtures()
     └── goldens/       — the checked-in snapshots: <name>.html + <name>.assets.txt
 output/                 — generated email HTML (gitignored; not committed)
@@ -154,6 +164,85 @@ test framework.
 #32 had not started, so `kitchen_sink` became the representative email it specified — exhaustive
 over `EmailMetadata`, every container ratio, a hosted logo and an attached image. Do not add a
 second `tests/test_golden_render.py`.
+
+## Screenshots — `qa/screenshots.py`
+
+Renders the gallery through headless Chromium at two viewports (#59), so a visual change is
+reviewable without checking out the branch. `python -m qa.screenshots [fixture ...]` writes
+PNGs plus a `run.json` into `output/screenshots/` (gitignored).
+
+**The decision that shapes everything else: these are *checks*, not artifacts.** Nobody
+diffs them, nothing commits them, and no test compares them to a stored copy. That is why
+the browser build is **recorded rather than pinned** — buying cross-machine reproducibility
+with a pinned container image costs more than the guarantee is worth for an image a human
+glances at. What *is* pinned is what makes two runs on one machine comparable: viewport
+sizes, `device_scale_factor=1`, full-page capture. `run.json` carries the Chromium build,
+the Playwright version, the platform and the resolved executable — so if pixel-diff gating
+is ever wanted (an explicit non-goal of #54's first cut), that recording is what says
+whether two sets are even comparable, and pinning becomes a deliberate act rather than one
+inherited by accident.
+
+- **`cid:` is rewritten to a data URI for the screenshot only.** A browser has no MIME
+  message, so every attached image would otherwise be a broken-image icon and the screenshot
+  could not do its one job. The bytes come from `Email.assets()`, so the substitution is
+  exact. `render()` and the goldens are untouched, and a test asserts that separation.
+  Only `src` attributes are rewritten, never bare text — `image_matrix` titles a section
+  "Attached (cid:)", and substituting on the substring would corrupt copy.
+- **External requests are blocked**, so a run never waits on DNS for `example.com` and the
+  render shows what a reader with images off sees — which is Outlook's default state.
+- **The filenames say `chromium-desktop` / `chromium-mobile`, not `gmail` / `outlook`.**
+  Chromium approximates Gmail in a browser and says nothing about Outlook's Word engine.
+  Client compatibility belongs to the lint pass (#60), not to these images.
+- **Playwright is the optional `[qa]` extra.** `pip install -e ".[dev]"` + `pytest` must
+  stay browser-free — that is what proves the extra is genuinely optional, so the capture
+  tests *skip* rather than fail, and CI's `screenshots` job is the only place they run.
+  `PYHERMES_CHROMIUM` points the runner at a browser the environment supplies instead of one
+  Playwright manages (read at use time, never at import).
+
+## Lint pass — `qa/lint.py`
+
+The portability rules the repo *documented* but only enforced where someone remembered a
+test (#60). `lint_html(html)` returns `Finding(rule_id, severity, location, message)`;
+`lint_email(email)` is the convenience wrapper. The suite lints every gallery fixture, and
+#61's `preview` CLI reuses the same entry point on arbitrary HTML.
+
+| Rule | Severity | What it catches |
+|---|---|---|
+| `img-width-attr` | error | An `<img>` with no integer `width=`. Outlook's Word engine ignores CSS `max-width`, so the display width must be an attribute |
+| `img-alt` | error | Missing or blank `alt` — all a reader gets when images are blocked, which is Outlook desktop's default |
+| `no-external-css` | error | `<link rel=stylesheet>` or `@import`, including inside an mso conditional |
+| `outlook-unsupported-css` | error | `display:flex/grid`, `position:absolute/fixed` in an inline style |
+| `size-budget` | warn/error | The 90/102 KB thresholds, **attributing the bytes to section-marker regions** |
+
+Five decisions worth not re-litigating:
+
+- **It parses, it never greps.** The repo learned this the expensive way — a `grep` for
+  `Contact Us` matched inside a section-marker comment and produced a confident, wrong
+  answer. `html.parser.HTMLParser` is stdlib, so the check costs no dependency.
+- **Every rule carries its source**, in `SOURCES`, and a test asserts every rule that can
+  fire has one. A rule asserting something about a mail client that nobody can trace is a
+  preference wearing a rule's clothes. Most citations are Microsoft's own Outlook Classic
+  troubleshooting document; the two image rules cite the repo's own established decisions.
+- **`max-width` is deliberately NOT denied.** The templates pair it with a `width=`
+  attribute on purpose, so a blanket rule would fire on correct code — and a noisy rule gets
+  switched off, which is worse than no rule. `img-width-attr` covers what actually matters.
+- **`DEFERRED_RULES` is a recorded decision, not an oversight.** Three real, sourced findings
+  (unitless `line-height`, an `rgba()` background, an empty `url()`) are filed as #78 rather
+  than shipped, because the templates violate them today and the fix moves surfaces several
+  epics contend on. A linter that arrives red teaches everyone to ignore it. A test asserts
+  each deferred entry names its filed issue and is not also in `SOURCES`.
+- **`size-budget` extends `_validate_size`, it does not reshape it.** That method is a
+  `@staticmethod` on purpose and its messages are asserted by existing tests. The linter adds
+  the part `render()` never had: *which region* spent the budget. Regions run marker to
+  marker, and a marker must contain a letter — the templates also use `<!-- ══════ -->` as
+  decorative rules, and counting those made the heaviest "region" a row of box-drawing
+  characters, a breakdown that names nothing.
+
+**Markup inside `<!--[if mso]>` is not linted** as standard HTML. `HTMLParser` hands a
+conditional comment over as text rather than tags, which is the behaviour wanted: the block
+carries Outlook-only VML, so judging it by standard-HTML rules would fire on markup that is
+correct *because* it is non-standard. `no-external-css` still reads comment text, since an
+`@import` hidden in a conditional is just as external.
 
 ## Configuration — `svc/config`
 

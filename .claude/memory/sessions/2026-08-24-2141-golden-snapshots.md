@@ -55,19 +55,31 @@
 
 ## State at end
 
-- Branch `claude/review-open-issues-rr8quq` @ `32c1b65`, four commits ahead of `main`
-  (`925df46`): README, #57 gallery, memory log, #58 goldens.
-- 636 tests; ruff / `ruff format --check` / `python -m mypy` clean. No PR open for the branch.
+- **PR #75 merged** at 2026-08-25 04:22 → `main` @ `60b718d`. It carried the README, #57's
+  gallery and #58's goldens, and closed **#57, #58 and #32**. CI was green on 3.11/3.13 plus
+  the wheel job; 636 tests. The branch was then reset onto the merged `main`, and the PR watch
+  stopped.
+- Two things verified rather than assumed before it went up: the regeneration path from a
+  **clean checkout** (fresh clone + venv → `pytest` green against the committed goldens, then
+  `pytest --update-goldens` leaving `git status` empty), and the mismatch report itself, by
+  corrupting a golden by hand and reading the output.
+- One self-inflicted defect worth remembering: `<name>` inside inline backticks in a **PR body**
+  is swallowed as an HTML tag, so the goldens table shipped reading `goldens/.html`. Use a
+  brace placeholder (`{fixture}`) in GitHub prose.
 
 ## Open threads
 
-- **#32 and #58 can both be closed** by this landing — #58's acceptance criterion says the
-  resolution must be *recorded*, and it is (CLAUDE.md + the harness docstring + the fixture
-  docstring). Closing them on GitHub needs the user's go-ahead; so does opening a PR.
+- **#32 and #58 are closed** by PR #75. #32 also carries a comment pointing at where the
+  harness actually lives, because its own body proposes `tests/test_golden_render.py` +
+  `tests/fixtures/golden_email.html` — a #38 reader following the issue would otherwise build
+  the second mechanism #58 exists to prevent.
 - Epic #54 remainder: **#59 screenshots** is next, then #60 lint, #61 preview CLI, #62 docs.
   #59 inherits the gallery *and* the goldens — a screenshot run that disagrees with a golden
   means the renderer moved, not the design.
-- Epic #54's risk note still stands: pin the rendering environment for screenshots from the
-  start, and curate the Outlook-unsupported-CSS list rather than scraping it.
+- Epic #54's risk note still stands, and #59 has to answer it deliberately: **what rendering
+  environment to pin**. This container ships Chromium at `/opt/pw-browsers/chromium` with
+  `PLAYWRIGHT_BROWSERS_PATH` preset and `playwright install` disabled — convenient, and exactly
+  the thing one pins to by accident. Also curate the Outlook-unsupported-CSS list rather than
+  scraping it; a noisy linter gets disabled, which is worse than none.
 - The migration epics (#38 / #45 / #46 / #55 / #56) are now unblocked — the gate they all
   waited on is in the suite.
