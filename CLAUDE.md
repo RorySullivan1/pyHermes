@@ -26,6 +26,7 @@ mypy                          # config in pyproject: files = ["svc", "qa"]
 pip install -e ".[qa]"        # optional: adds Playwright for screenshots (#59)
 python -m qa.screenshots      # gallery → output/screenshots/ (gitignored)
 pytest --update-goldens       # the ONLY way to regenerate a golden (#58)
+python -m qa.preview kitchen_sink --lint    # build + save + lint one email (#61)
 ```
 
 CI runs the first four on every PR, plus a `screenshots` job and the `wheel` job
@@ -78,6 +79,8 @@ qa/                     ← QA harness (epic #54); NOT shipped in the wheel
 │                        substitution, run.json recording the browser build
 ├── lint.py            — email-client portability rules over rendered HTML: lint_html(),
 │                        lint_email(), size_report(), SOURCES, DEFERRED_RULES
+├── preview.py         — the CLI that composes the rest: `python -m qa.preview <target>`
+│                        [--lint] [--screenshot] [--open] [--list]
 └── fixtures/          — the gallery: minimal, kitchen_sink, image_matrix, + all_fixtures()
     └── goldens/       — the checked-in snapshots: <name>.html + <name>.assets.txt
 output/                 — generated email HTML (gitignored; not committed)
@@ -243,6 +246,50 @@ conditional comment over as text rather than tags, which is the behaviour wanted
 carries Outlook-only VML, so judging it by standard-HTML rules would fire on markup that is
 correct *because* it is non-standard. `no-external-css` still reads comment text, since an
 `@import` hidden in a conditional is just as external.
+
+## The preview CLI — `qa/preview.py`
+
+One entry point for the loop the docs used to prescribe by hand (#61):
+
+```bash
+python -m qa.preview --list
+python -m qa.preview kitchen_sink --lint --screenshot
+python -m qa.preview drafts/weekly.py:build --lint --open
+```
+
+**It composes; it never reimplements.** Fixtures come from `all_fixtures()`, findings from
+`lint_html()`, images from `capture_emails()`. A test asserts the HTML it writes equals
+`Email.render()` byte for byte, because the one thing that would make this tool worse than
+useless is being a second rendering path.
+
+That rule earned its keep immediately: `capture_gallery()` could only screenshot names in the
+registry, and **a user's draft never is one** — so `qa/screenshots.py` gained
+`capture_emails(mapping)`, keyed by email rather than by fixture name, and `capture_gallery`
+became a thin wrapper resolving names through the registry. The gap was fixed in the module
+that owned it rather than routed around in the CLI.
+
+Four decisions:
+
+- **Two target forms, told apart by the `:`** — a bare name is a gallery fixture; a
+  `path/to/module.py:callable` is any zero-argument callable returning an `Email` *or* an
+  `EmailBuilder`. Both are public API, so a caller should not have to remember which their own
+  function returns. Split on the **last** colon, so a Windows drive letter is not mistaken for
+  the separator. The output name is `{module_stem}-{callable}`, so two files both defining
+  `build()` do not collide in `output/`.
+- **Exit codes are the interface**: `0` clean, `1` lint errors, `2` unbuildable or
+  unresolvable. Warnings alone do not fail. That is what lets it run in a hook rather than be
+  read by a human every time.
+- **A missing browser is a skip, not a failure.** `[qa]` is optional by design, so
+  `--screenshot` reports and carries on — and a test asserts that skip does *not* mask a lint
+  error, since the two flags are independent.
+- **A builder error prints its own message and exits 2** — no traceback wall for what is
+  nearly always a data mistake. `EmailBuilderError` raised while *importing* a target module
+  propagates as itself rather than being flattened into "failed to import": the builder names
+  the field, and that is the useful message.
+
+**No console script**, deliberately. #57 put `qa/` outside the wheel because the gallery is
+test data; an installed `preview` entry point would contradict that, so the module form is the
+interface. This is the placement decision #61 said to inherit.
 
 ## Configuration — `svc/config`
 

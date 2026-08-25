@@ -44,6 +44,7 @@ import re
 import struct
 import sys
 import tempfile
+from collections.abc import Mapping
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
@@ -141,6 +142,49 @@ def inline_cid_images(html: str, email: Email) -> str:
 # ──────────────────────────────────────────────────────────────────────
 
 
+def capture_emails(
+    emails: Mapping[str, Email],
+    out_dir: Path | None = None,
+) -> tuple[list[Shot], dict[str, object]]:
+    """
+    Capture already-built emails, each under the name it is keyed by.
+
+    The gallery is one caller; #61's ``preview`` CLI is the other, and it can
+    hand over an email that is not in the registry at all — a user's
+    in-progress draft. Keeping the capture keyed by *email* rather than by
+    fixture name is what lets both use the same runner instead of the CLI
+    growing a second one.
+
+    Every email is rendered before the browser launches, so a build failure
+    costs no browser start.
+
+    Returns the shots and the environment record written to ``run.json``.
+
+    Raises:
+        ScreenshotError: If Playwright or its browser is unavailable.
+    """
+    out_dir = out_dir or DEFAULT_OUT_DIR
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    pages = {name: inline_cid_images(email.render(), email) for name, email in emails.items()}
+
+    sync_playwright = _load_playwright()
+    shots: list[Shot] = []
+
+    with sync_playwright() as playwright:
+        browser = _launch(playwright)
+        try:
+            environment = _describe(browser)
+            for name, html in pages.items():
+                shots.extend(_capture_one(browser, name, html, out_dir))
+        finally:
+            browser.close()
+
+    environment["shots"] = [{**asdict(shot), "path": shot.path.name} for shot in shots]
+    (out_dir / "run.json").write_text(json.dumps(environment, indent=2) + "\n", encoding="utf-8")
+    return shots, environment
+
+
 def capture_gallery(
     names: list[str] | None = None,
     out_dir: Path | None = None,
@@ -148,7 +192,8 @@ def capture_gallery(
     """
     Render the named fixtures (or the whole gallery) at every viewport.
 
-    Returns the shots and the environment record written to ``run.json``.
+    A thin wrapper over :func:`capture_emails` that resolves names through the
+    #57 registry.
 
     Raises:
         ScreenshotError: If Playwright or its browser is unavailable, or a
@@ -160,26 +205,7 @@ def capture_gallery(
     if unknown:
         raise ScreenshotError(f"Not in the gallery: {unknown}. Available: {sorted(gallery)}.")
 
-    out_dir = out_dir or DEFAULT_OUT_DIR
-    out_dir.mkdir(parents=True, exist_ok=True)
-
-    sync_playwright = _load_playwright()
-    shots: list[Shot] = []
-
-    with sync_playwright() as playwright:
-        browser = _launch(playwright)
-        try:
-            environment = _describe(browser)
-            for name in selected:
-                email = gallery[name]()
-                html = inline_cid_images(email.render(), email)
-                shots.extend(_capture_one(browser, name, html, out_dir))
-        finally:
-            browser.close()
-
-    environment["shots"] = [{**asdict(shot), "path": shot.path.name} for shot in shots]
-    (out_dir / "run.json").write_text(json.dumps(environment, indent=2) + "\n", encoding="utf-8")
-    return shots, environment
+    return capture_emails({name: gallery[name]() for name in selected}, out_dir)
 
 
 def _capture_one(browser: Any, name: str, html: str, out_dir: Path) -> list[Shot]:

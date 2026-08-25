@@ -204,7 +204,7 @@ argument always beats the config.
 ## Development
 
 ```bash
-pytest                                    # 685 tests: validation, error paths, size limits
+pytest                                    # 714 tests: validation, error paths, size limits
 ruff check . && ruff format --check .
 python -m mypy                            # config in pyproject: files = ["svc"]
 ```
@@ -289,8 +289,25 @@ sections**, so a too-large email says what to cut rather than only how much. The
 every gallery fixture. Each rule carries a citation, and the linter parses the HTML rather
 than grepping it.
 
-`qa/` is not shipped in the wheel. A `preview` CLI is the rest of epic
-[#54](https://github.com/RorySullivan1/pyHermes/issues/54).
+### One command for the whole loop
+
+`preview` builds an email, saves it, and optionally lints and screenshots it —
+for a gallery fixture or for your own in-progress draft:
+
+```bash
+python -m qa.preview --list                              # what fixtures exist
+python -m qa.preview kitchen_sink --lint --screenshot
+python -m qa.preview drafts/weekly.py:build --lint --open
+```
+
+The second form takes any zero-argument callable returning an `Email` or an `EmailBuilder`,
+which is what makes this useful for drafting a real newsletter rather than only for inspecting
+fixtures. Exit codes are meant for a shell: `0` clean, `1` lint errors, `2` the email could not
+be built. A missing browser is not a failure — `--screenshot` says so and carries on, since the
+`[qa]` extra is optional.
+
+`qa/` is not shipped in the wheel, so there is no installed `preview` entry point: the module
+form is the interface.
 
 ## Scope
 
