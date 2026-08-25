@@ -204,7 +204,7 @@ argument always beats the config.
 ## Development
 
 ```bash
-pytest                                    # 651 tests: validation, error paths, size limits
+pytest                                    # 685 tests: validation, error paths, size limits
 ruff check . && ruff format --check .
 python -m mypy                            # config in pyproject: files = ["svc"]
 ```
@@ -271,8 +271,26 @@ Playwright is the optional `[qa]` extra, so `pip install -e ".[dev]"` and `pytes
 browser-free — the screenshot tests skip rather than fail. Where the environment supplies its
 own Chromium instead of one Playwright manages, point `PYHERMES_CHROMIUM` at the binary.
 
-`qa/` is not shipped in the wheel. An email-client lint pass and a `preview` CLI are the rest
-of epic [#54](https://github.com/RorySullivan1/pyHermes/issues/54).
+### The lint pass
+
+Portability checks over rendered HTML — the rules that decide whether an email survives
+Outlook, enforced rather than merely documented:
+
+```python
+from qa.lint import lint_email, format_findings
+
+print(format_findings(lint_email(email)))
+```
+
+`img-width-attr` and `img-alt` (Outlook's Word engine ignores CSS `max-width`, and blocked
+images are its default state), `no-external-css`, `outlook-unsupported-css`, and
+`size-budget` — which reports the 90/102 KB thresholds **and attributes the bytes to
+sections**, so a too-large email says what to cut rather than only how much. The suite lints
+every gallery fixture. Each rule carries a citation, and the linter parses the HTML rather
+than grepping it.
+
+`qa/` is not shipped in the wheel. A `preview` CLI is the rest of epic
+[#54](https://github.com/RorySullivan1/pyHermes/issues/54).
 
 ## Scope
 

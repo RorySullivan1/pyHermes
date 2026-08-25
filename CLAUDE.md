@@ -76,6 +76,8 @@ qa/                     ← QA harness (epic #54); NOT shipped in the wheel
 │                        render_manifest(), and the diagnosable mismatch report
 ├── screenshots.py     — headless-Chromium runner: `python -m qa.screenshots`, cid→data URI
 │                        substitution, run.json recording the browser build
+├── lint.py            — email-client portability rules over rendered HTML: lint_html(),
+│                        lint_email(), size_report(), SOURCES, DEFERRED_RULES
 └── fixtures/          — the gallery: minimal, kitchen_sink, image_matrix, + all_fixtures()
     └── goldens/       — the checked-in snapshots: <name>.html + <name>.assets.txt
 output/                 — generated email HTML (gitignored; not committed)
@@ -196,6 +198,51 @@ inherited by accident.
   tests *skip* rather than fail, and CI's `screenshots` job is the only place they run.
   `PYHERMES_CHROMIUM` points the runner at a browser the environment supplies instead of one
   Playwright manages (read at use time, never at import).
+
+## Lint pass — `qa/lint.py`
+
+The portability rules the repo *documented* but only enforced where someone remembered a
+test (#60). `lint_html(html)` returns `Finding(rule_id, severity, location, message)`;
+`lint_email(email)` is the convenience wrapper. The suite lints every gallery fixture, and
+#61's `preview` CLI reuses the same entry point on arbitrary HTML.
+
+| Rule | Severity | What it catches |
+|---|---|---|
+| `img-width-attr` | error | An `<img>` with no integer `width=`. Outlook's Word engine ignores CSS `max-width`, so the display width must be an attribute |
+| `img-alt` | error | Missing or blank `alt` — all a reader gets when images are blocked, which is Outlook desktop's default |
+| `no-external-css` | error | `<link rel=stylesheet>` or `@import`, including inside an mso conditional |
+| `outlook-unsupported-css` | error | `display:flex/grid`, `position:absolute/fixed` in an inline style |
+| `size-budget` | warn/error | The 90/102 KB thresholds, **attributing the bytes to section-marker regions** |
+
+Five decisions worth not re-litigating:
+
+- **It parses, it never greps.** The repo learned this the expensive way — a `grep` for
+  `Contact Us` matched inside a section-marker comment and produced a confident, wrong
+  answer. `html.parser.HTMLParser` is stdlib, so the check costs no dependency.
+- **Every rule carries its source**, in `SOURCES`, and a test asserts every rule that can
+  fire has one. A rule asserting something about a mail client that nobody can trace is a
+  preference wearing a rule's clothes. Most citations are Microsoft's own Outlook Classic
+  troubleshooting document; the two image rules cite the repo's own established decisions.
+- **`max-width` is deliberately NOT denied.** The templates pair it with a `width=`
+  attribute on purpose, so a blanket rule would fire on correct code — and a noisy rule gets
+  switched off, which is worse than no rule. `img-width-attr` covers what actually matters.
+- **`DEFERRED_RULES` is a recorded decision, not an oversight.** Three real, sourced findings
+  (unitless `line-height`, an `rgba()` background, an empty `url()`) are filed as #78 rather
+  than shipped, because the templates violate them today and the fix moves surfaces several
+  epics contend on. A linter that arrives red teaches everyone to ignore it. A test asserts
+  each deferred entry names its filed issue and is not also in `SOURCES`.
+- **`size-budget` extends `_validate_size`, it does not reshape it.** That method is a
+  `@staticmethod` on purpose and its messages are asserted by existing tests. The linter adds
+  the part `render()` never had: *which region* spent the budget. Regions run marker to
+  marker, and a marker must contain a letter — the templates also use `<!-- ══════ -->` as
+  decorative rules, and counting those made the heaviest "region" a row of box-drawing
+  characters, a breakdown that names nothing.
+
+**Markup inside `<!--[if mso]>` is not linted** as standard HTML. `HTMLParser` hands a
+conditional comment over as text rather than tags, which is the behaviour wanted: the block
+carries Outlook-only VML, so judging it by standard-HTML rules would fire on markup that is
+correct *because* it is non-standard. `no-external-css` still reads comment text, since an
+`@import` hidden in a conditional is just as external.
 
 ## Configuration — `svc/config`
 
