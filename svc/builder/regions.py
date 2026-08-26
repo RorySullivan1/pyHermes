@@ -191,3 +191,32 @@ class Header:
         if isinstance(self.logo_url, EmailImage) and self.logo_url.width is not None:
             return self.logo_url.width
         return self.DEFAULT_LOGO_WIDTH
+
+
+@dataclass
+class MinimalHeader(Header):
+    """
+    A masthead with no background image and no VML.
+
+    The variant that proves the seam: a caller picks it with
+    ``Email(header=MinimalHeader(...))``, and nothing about the skeleton, the
+    body or the email's facts changes. Same logo resolution chains, same
+    facts flowing down — a flat ``#2C3E50`` band instead of a photograph with
+    a scrim over it.
+
+    Dropping the image removes the ``v:rect``/``v:fill``/``v:textbox`` block,
+    which is the most fragile markup in the repo: there is nothing left to
+    frame. That is the point of the variant, so a background image is
+    rejected at construction rather than silently ignored.
+    """
+
+    template_path: ClassVar[str] = "regions/header-minimal.html"
+
+    def validate(self) -> None:
+        if self.background_image_url:
+            raise ValidationError(
+                "'header.background_image_url' is not supported by MinimalHeader — "
+                "the variant exists to render a flat band with no VML. Use Header "
+                "for a background image."
+            )
+        super().validate()

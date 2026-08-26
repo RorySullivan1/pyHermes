@@ -99,6 +99,7 @@ from .models import (
 # Regions
 from .regions import (
     Header,
+    MinimalHeader,
 )
 
 __all__ = [
@@ -106,6 +107,7 @@ __all__ = [
     "TemplateEngine",
     # Regions
     "Header",
+    "MinimalHeader",
     # Models
     "EmailMetadata",
     "Card",

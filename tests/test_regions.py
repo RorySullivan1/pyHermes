@@ -10,7 +10,7 @@ import dataclasses
 
 import pytest
 
-from svc.builder import Email, EmailBuilder, Header
+from svc.builder import Email, EmailBuilder, Header, MinimalHeader
 from svc.builder.engine import TemplateEngine
 from svc.builder.exceptions import ValidationError
 from svc.builder.images import EmailImage
@@ -224,3 +224,68 @@ class TestTheEmailApi:
         # Referenced four times in the markup — logo and background, each once
         # for Outlook and once for everyone else — attached exactly once.
         assert email.render().count(f"cid:{image.content_id}") == 4
+
+
+class TestTheMinimalHeaderVariant:
+    """#36: a region abstraction with one implementation is a refactor in a hat."""
+
+    def test_it_is_exported_from_the_package(self):
+        from svc.builder import MinimalHeader as Exported
+
+        assert Exported is MinimalHeader
+
+    def test_it_renders_its_own_template(self):
+        assert MinimalHeader.template_path != Header.template_path
+        assert (TEMPLATE_DIR / MinimalHeader.template_path).is_file()
+
+    def test_a_background_image_is_rejected_rather_than_ignored(self):
+        with pytest.raises(ValidationError, match="not supported by MinimalHeader"):
+            MinimalHeader(background_image_url="https://cdn.test/bg.png")
+
+    def test_it_still_validates_what_the_base_header_does(self):
+        with pytest.raises(ValidationError, match=r"header\.logo_url"):
+            MinimalHeader(logo_url="javascript:alert(1)")
+
+    def test_the_fragile_outlook_markup_is_gone(self, valid_metadata):
+        html = Email(valid_metadata, header=MinimalHeader()).render()
+        for vml in ("<v:rect", "<v:fill", "<v:textbox"):
+            assert vml not in html
+        assert "background-image" not in html
+
+    def test_the_email_level_facts_still_flow_down(self):
+        facts = {
+            "email_subject": "Subject",
+            "firm_name": "Acme Research",
+            "campaign_name": "weekly-wrap",
+            "date_range": "Week ending 24 August",
+            "issue_label": "Issue 002",
+            "header_disclaimer": "Not investment advice.",
+        }
+        html = Email(facts, header=MinimalHeader()).render()
+        for value in facts.values():
+            if value != "Subject":
+                assert value in html
+
+    def test_the_logo_chains_are_inherited(self, png_bytes):
+        image = EmailImage.attached(png_bytes, alt="from the image", width=64)
+        header = MinimalHeader(logo_url=image)
+        assert header.resolved_logo_alt("Acme") == "from the image"
+        assert header.resolved_logo_width() == 64
+
+    def test_a_cid_logo_reaches_the_manifest_exactly_once(self, valid_metadata, png_bytes):
+        image = EmailImage.attached(png_bytes, alt="Firm logo")
+        email = Email(valid_metadata, header=MinimalHeader(logo_url=image))
+        assert [a.content_id for a in email.assets()] == [image.content_id]
+        # One <img>, not the default header's mso/non-mso pair.
+        assert email.render().count(f"cid:{image.content_id}") == 1
+
+    def test_the_mobile_rules_still_apply_to_it(self, valid_metadata):
+        """The variant is a region, not a second skeleton — base.html's CSS is shared."""
+        html = Email(valid_metadata, header=MinimalHeader()).render()
+        assert 'class="mobile-title"' in html
+        assert ".kpi-cell" in html
+
+    def test_the_default_header_is_undisturbed(self, valid_metadata):
+        """The variant adds; it does not change what an existing email renders."""
+        default = Email(valid_metadata).render()
+        assert "<v:rect" in default
