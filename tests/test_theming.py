@@ -9,12 +9,12 @@ at the default theme is the bar every later step of the epic is judged on.
 
 import dataclasses
 import re
-from pathlib import Path
 
 import pytest
 
-from svc.builder.engine import TemplateEngine
+from svc.builder.engine import BoundEngine, Renderer, TemplateEngine
 from svc.builder.exceptions import ValidationError
+from svc.builder.models import EmailMetadata
 from svc.builder.theming import (
     DEFAULT_THEME,
     THEMES,
@@ -24,6 +24,7 @@ from svc.builder.theming import (
     ShadowStyle,
     TextColors,
     Theme,
+    resolve_theme,
 )
 
 TEMPLATE_DIR = TemplateEngine().template_dir
@@ -227,16 +228,163 @@ class TestThePresetRegistry:
         assert default_color("") == DEFAULT_THEME.semantic.neutral
 
 
-class TestNothingRendersFromItYet:
-    def test_no_module_imports_theming(self):
+class TestTheThemeIsSelectable:
+    """#48: one field, resolved once, validated at construction."""
+
+    FACTS = {"email_subject": "S", "firm_name": "F", "campaign_name": "c"}
+
+    def test_the_default_is_the_shipped_palette(self):
+        assert EmailMetadata(**self.FACTS).theme is DEFAULT_THEME
+
+    def test_a_preset_name_is_accepted(self):
+        assert resolve_theme(EmailMetadata(**self.FACTS, theme="classic").theme) is DEFAULT_THEME
+
+    def test_a_theme_instance_is_accepted_as_is(self):
+        custom = Theme(palette=Palette(surface="#123456"))
+        assert EmailMetadata(**self.FACTS, theme=custom).theme is custom
+
+    def test_an_unknown_preset_raises_at_construction_and_names_the_known_ones(self):
+        with pytest.raises(ValidationError, match=r"unknown theme preset 'neon'.*classic"):
+            EmailMetadata(**self.FACTS, theme="neon")
+
+    def test_a_wrong_type_raises_at_construction(self):
+        with pytest.raises(ValidationError, match=r"'theme' must be a Theme or a preset name"):
+            EmailMetadata(**self.FACTS, theme=object())  # type: ignore[arg-type]
+
+    def test_the_field_keeps_what_the_caller_passed(self):
         """
-        #47 is inert by construction. The import lands in #48, and this test
-        is what makes "zero rendering change" checkable rather than asserted.
+        Construction *checks* by resolving; it does not rewrite. Resolution
+        stays a single point in ``Email.render()``, per the epic.
         """
-        package = Path(TEMPLATE_DIR).parent
-        importers = [
-            path.name
-            for path in sorted(package.glob("*.py"))
-            if path.name != "theming.py" and "theming" in path.read_text(encoding="utf-8")
+        assert EmailMetadata(**self.FACTS, theme="classic").theme == "classic"
+
+
+class TestTheThemeReachesEveryTemplate:
+    """
+    #48's plumbing, and the mechanism decision behind it.
+
+    A value owned by the email has to reach component templates several
+    layers down. Threading it through every ``render()`` signature would
+    change containers, components and regions; an environment global would
+    make the engine stateful and let two emails interleave. A per-render
+    binder does neither — which is what these check.
+    """
+
+    FACTS = {
+        "email_subject": "S",
+        "firm_name": "F",
+        "campaign_name": "c",
+        "contact_url": "https://x.test/c",
+    }
+
+    def _recording_engine(self, theme=None):
+        """A bound engine that records the context each template is given."""
+        seen: dict[str, dict] = {}
+        real = TemplateEngine()
+
+        class Recorder:
+            def render(self, name, context):
+                seen[name] = context
+                return real.render(name, context)
+
+        binder = Recorder() if theme is None else BoundEngine(real, {"theme": theme})
+        return binder, seen, real
+
+    def test_every_rendered_template_gets_the_theme(self):
+        from svc.builder import CardGroup, DataTable, Email, FullWidth, TextBlock, TwoColumn
+        from svc.builder.models import Card, TableRow
+
+        seen: dict[str, dict] = {}
+        real = TemplateEngine()
+        original = real.render
+
+        def recording(name, context):
+            seen[name] = context
+            return original(name, context)
+
+        real.render = recording  # type: ignore[method-assign]
+
+        email = Email(self.FACTS)
+        email._engine = real  # the binder is built from this inside render()
+        email.add_section(FullWidth(title="T", content=TextBlock("<p>x</p>")))
+        email.add_section(
+            TwoColumn(
+                ratio="50-50",
+                left=CardGroup([Card("L", "V"), Card("M", "W")], orientation="horizontal"),
+                right=DataTable(headers=["H"], rows=[TableRow(["c"])]),
+            )
+        )
+        email.render()
+
+        assert len(seen) >= 8, f"only rendered {sorted(seen)}"
+        for name, context in seen.items():
+            assert "theme" in context, f"{name} rendered without the theme"
+            assert context["theme"] is DEFAULT_THEME
+
+    def test_a_component_cannot_shadow_the_email_s_theme(self):
+        """
+        Shared values are layered *over* the caller's context, the same way
+        a region's facts are layered over its presentation.
+        """
+        binder = TemplateEngine().bound(theme=DEFAULT_THEME)
+        assert binder.shared["theme"] is DEFAULT_THEME
+        merged = {**{"theme": "impostor", "other": 1}, **binder.shared}
+        assert merged["theme"] is DEFAULT_THEME
+
+    def test_two_emails_sharing_an_engine_do_not_interleave(self):
+        """
+        The constraint #48 names. The binder is per-render, so a second
+        email's theme cannot reach the first — which an environment global
+        could not promise.
+        """
+        engine = TemplateEngine()
+        first = engine.bound(theme=DEFAULT_THEME)
+        other = Theme(palette=Palette(surface="#123456"))
+        second = engine.bound(theme=other)
+        assert first.shared["theme"] is DEFAULT_THEME
+        assert second.shared["theme"] is other
+        assert engine.environment.globals.get("theme") is None
+
+    def test_the_binder_is_a_renderer_and_keeps_the_template_dir(self):
+        engine = TemplateEngine()
+        binder = engine.bound(theme=DEFAULT_THEME)
+        assert isinstance(binder, Renderer)
+        assert binder.template_dir == engine.template_dir
+
+    def test_no_container_or_component_signature_changed(self):
+        """
+        The payoff of choosing a binder: the section tree still takes one
+        argument. A second parameter here is the mechanism leaking.
+        """
+        import inspect
+
+        from svc.builder import FullWidth, TextBlock
+        from svc.builder.containers import Container
+        from svc.builder.regions import Region
+
+        for func in (Container.render, FullWidth.render, TextBlock.render):
+            assert list(inspect.signature(func).parameters) == ["self", "engine"]
+        assert list(inspect.signature(Region.render_slots).parameters) == [
+            "self",
+            "engine",
+            "facts",
         ]
-        assert importers == [], f"{importers} already reach for the theme; #47 is inert"
+
+
+class TestTheStepIsInert:
+    """#48 plumbs; it does not paint. No template reads a token yet."""
+
+    def test_no_template_reads_the_theme_namespace(self):
+        assert "theme." not in _template_text()
+
+    def test_the_default_email_is_unchanged(self):
+        """
+        The goldens are the real gate (``tests/test_goldens.py``); this says
+        the same thing at the level of one email, so a failure here points
+        straight at the plumbing rather than at a template.
+        """
+        from svc.builder import Email
+
+        facts = {"email_subject": "S", "firm_name": "F", "campaign_name": "c"}
+        assert Email(facts).render() == Email({**facts, "theme": "classic"}).render()
+        assert Email(facts).render() == Email({**facts, "theme": DEFAULT_THEME}).render()

@@ -122,9 +122,18 @@ class TestKitchenSinkCompleteness:
         both the flat way, through the pre-split region keywords — which is
         deliberate, since that is the back-compatible path the epics promise
         to keep byte-identical. Their own fields are checked below.
+
+        ``theme`` is excluded for a reason with an expiry date: there is
+        exactly one preset today, so no value the fixture could pass would
+        differ from the default. #50 adds the second preset and the fixture
+        that pins it, and this exemption goes with it.
         """
         supplied = set(kitchen_sink_module._metadata())
-        declared = {f.name for f in dataclasses.fields(EmailMetadata)} - {"header", "footer"}
+        declared = {f.name for f in dataclasses.fields(EmailMetadata)} - {
+            "header",
+            "footer",
+            "theme",
+        }
         missing = declared - supplied
         assert not missing, (
             f"kitchen_sink()'s metadata never sets {sorted(missing)}. A field the "

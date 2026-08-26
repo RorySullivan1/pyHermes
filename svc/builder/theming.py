@@ -260,3 +260,29 @@ DEFAULT_THEME = Theme()
 #: never registered here — the registry is a set of design decisions, not a
 #: namespace.
 THEMES: dict[str, Theme] = {"classic": DEFAULT_THEME}
+
+
+def resolve_theme(value: Theme | str) -> Theme:
+    """
+    Turn whatever a caller supplied into a concrete :class:`Theme`.
+
+    Accepts a ``Theme`` — returned as-is, since it validated itself at its
+    own construction — or the name of a curated preset. An unknown name
+    raises :class:`~svc.builder.exceptions.ValidationError` naming what is
+    available, because "neon" is a typo, not a design decision.
+
+    Called from :meth:`svc.builder.email.Email.render` and from
+    :meth:`svc.builder.models.EmailMetadata.__post_init__`; the latter is
+    what makes a bad preset name fail at construction rather than at render.
+    """
+    if isinstance(value, Theme):
+        return value
+    if isinstance(value, str):
+        try:
+            return THEMES[value]
+        except KeyError:
+            raise ValidationError(
+                f"unknown theme preset {value!r}; known presets: "
+                f"{sorted(THEMES)}. Pass a Theme instance for a custom palette."
+            ) from None
+    raise ValidationError(f"'theme' must be a Theme or a preset name, got: {type(value).__name__}")

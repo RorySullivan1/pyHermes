@@ -31,6 +31,7 @@ from .exceptions import SizeError
 from .images import EmailImage, ImageAsset, dedupe_assets
 from .models import EmailMetadata
 from .regions import Footer, Header
+from .theming import resolve_theme
 
 # The shipped defaults, kept as module constants because they read as the
 # thresholds themselves at a call site. The live values come from
@@ -218,6 +219,8 @@ class Email:
         """
         Render the complete email HTML.
 
+        0. Resolve the theme once, and bind it to the engine every template
+           below renders through.
         1. Render the header and footer regions into their skeleton slots.
         2. Render every section via its container.
         3. Inject all of it into the base skeleton.
@@ -230,7 +233,12 @@ class Email:
         Raises:
             SizeError: If the HTML exceeds 102 KB.
         """
-        sections_html = "\n".join(section.render(self._engine) for section in self._sections)
+        # The one resolution point. Every template below — skeleton, regions,
+        # containers, components — reads the same Theme, because they all
+        # render through this binder rather than looking one up themselves.
+        engine = self._engine.bound(theme=resolve_theme(self._metadata.theme))
+
+        sections_html = "\n".join(section.render(engine) for section in self._sections)
 
         # Build skeleton context: the email's facts, plus one string per slot
         # each region fills. Every region goes through the same render path —
@@ -238,10 +246,10 @@ class Email:
         # *is* a default-constructed region.
         ctx = self._metadata.to_dict()
         ctx["sections_html"] = sections_html
-        ctx.update(self._header.render_slots(self._engine, self._metadata.header_facts()))
-        ctx.update(self._footer.render_slots(self._engine, self._metadata.footer_facts()))
+        ctx.update(self._header.render_slots(engine, self._metadata.header_facts()))
+        ctx.update(self._footer.render_slots(engine, self._metadata.footer_facts()))
 
-        html = self._engine.render("base.html", ctx)
+        html = engine.render("base.html", ctx)
 
         # Size check
         self._validate_size(html, self._inline_image_hint())

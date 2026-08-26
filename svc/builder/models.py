@@ -15,6 +15,7 @@ from .exceptions import ValidationError
 if TYPE_CHECKING:  # pragma: no cover - import cycle: images/regions import from here
     from .images import EmailImage
     from .regions import Footer, Header
+    from .theming import Theme
 
 # ──────────────────────────────────────────────────────────────────────
 # Helpers
@@ -85,6 +86,17 @@ def _default_footer() -> "Footer":
     return Footer()
 
 
+def _default_theme() -> "Theme":
+    """
+    The shipped palette. Imported inside the function because ``theming``
+    imports this module for :func:`_validate_color` — the same lazy-cycle
+    rule ``images`` and ``regions`` follow.
+    """
+    from .theming import DEFAULT_THEME
+
+    return DEFAULT_THEME
+
+
 @dataclass
 class EmailMetadata:
     """
@@ -137,6 +149,13 @@ class EmailMetadata:
     #: used to hardcode; ``Email(footer=...)`` overrides it for one email.
     footer: "Footer" = field(default_factory=_default_footer)
 
+    #: Every colour and shadow the email renders with. A
+    #: :class:`~svc.builder.theming.Theme` instance or the name of a curated
+    #: preset; see :mod:`svc.builder.theming` for the token table. Unlike a
+    #: region, this is the *entire* colour surface — there is deliberately no
+    #: per-component colour parameter anywhere in the builder.
+    theme: "Theme | str" = field(default_factory=_default_theme)
+
     # Back-compatible region keywords. InitVars, so they are constructor
     # arguments only: they never become attributes and never appear in
     # ``fields()``, ``repr`` or ``==`` — the region is the single owner.
@@ -186,6 +205,7 @@ class EmailMetadata:
         view_in_browser_label: "str | None",
     ) -> None:
         from .regions import Footer, Header
+        from .theming import resolve_theme
 
         self.header = self._hydrate(
             Header,
@@ -208,6 +228,12 @@ class EmailMetadata:
                 "view_in_browser_label": view_in_browser_label,
             },
         )
+
+        # Resolve only to check: a preset name that names nothing is a typo,
+        # and a typo belongs to construction, not to render. The field keeps
+        # whatever the caller passed — Email.render() is the one resolution
+        # point that turns it into a concrete Theme.
+        resolve_theme(self.theme)
 
     def _hydrate(self, region_cls: type, attr: str, legacy: dict[str, Any]) -> Any:
         """
@@ -252,10 +278,13 @@ class EmailMetadata:
         Flatten to the template context for ``base.html``.
 
         The regions are excluded: each renders itself from its own facts and
-        arrives in the skeleton as the slot strings it fills.
+        arrives in the skeleton as the slot strings it fills. ``theme`` is
+        excluded for the mirror-image reason: it reaches every template
+        through the bound engine, so carrying it here too would give one
+        value two sources.
         """
-        regions = {"header", "footer"}
-        return {f.name: getattr(self, f.name) for f in fields(self) if f.name not in regions}
+        skip = {"header", "footer", "theme"}
+        return {f.name: getattr(self, f.name) for f in fields(self) if f.name not in skip}
 
 
 # ──────────────────────────────────────────────────────────────────────

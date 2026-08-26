@@ -16,7 +16,7 @@ from __future__ import annotations
 import warnings
 from typing import Any
 
-from .engine import TemplateEngine
+from .engine import Renderer
 from .enums import CardOrientation, ImageAlign
 from .exceptions import ValidationError
 from .images import EmailImage, ImageAsset, coerce_image
@@ -56,12 +56,13 @@ class Component:
         """
         return [image.asset for image in self.images() if image.asset is not None]
 
-    def render(self, engine: TemplateEngine) -> str:
+    def render(self, engine: Renderer) -> str:
         """
         Render the component to an HTML string.
 
         Args:
-            engine: Initialised TemplateEngine.
+            engine: Anything with a ``render`` method — a TemplateEngine,
+                    or the bound view Email.render() hands down.
 
         Returns:
             Rendered HTML fragment.
