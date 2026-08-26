@@ -23,6 +23,7 @@ import svc.builder as builder_api
 from qa.fixtures import DEPRECATED_COMPONENTS, all_fixtures
 from qa.fixtures import kitchen_sink as kitchen_sink_module
 from qa.fixtures._png import solid_png
+from svc.builder import Header
 from svc.builder.components import Component
 from svc.builder.models import EmailMetadata
 from svc.delivery import collect_cid_references
@@ -117,13 +118,37 @@ class TestKitchenSinkCompleteness:
         The other half of #32: the golden can only pin a skeleton variable the
         fixture actually supplies. Introspected from the dataclass, so a field
         added later fails here instead of going quietly unpinned.
+
+        ``header`` is excluded because the fixture supplies it the flat way,
+        through the pre-split masthead keywords — which is deliberate, since
+        that is the back-compatible path the epic promises to keep
+        byte-identical. Its own fields are checked below.
         """
         supplied = set(kitchen_sink_module._metadata())
-        declared = {f.name for f in dataclasses.fields(EmailMetadata)}
+        declared = {f.name for f in dataclasses.fields(EmailMetadata)} - {"header"}
         missing = declared - supplied
         assert not missing, (
             f"kitchen_sink()'s metadata never sets {sorted(missing)}. A field the "
             "fixture leaves at its default is a field the golden cannot pin."
+        )
+
+    def test_every_header_field_is_set_distinctively(self):
+        """
+        The same rule for the masthead region: a ``Header`` field the fixture
+        leaves at its default is one the golden cannot pin. Read off the
+        *built* header rather than the fixture's dict, so it holds however
+        the fixture chooses to supply it.
+        """
+        header = kitchen_sink_module.build().header
+        defaults = Header()
+        undistinctive = {
+            f.name
+            for f in dataclasses.fields(Header)
+            if getattr(header, f.name) == getattr(defaults, f.name)
+        }
+        assert not undistinctive, (
+            f"kitchen_sink()'s header leaves {sorted(undistinctive)} at the field "
+            "default; pick a value that differs, or the golden cannot pin it."
         )
 
     def test_every_metadata_value_is_distinctive(self):
@@ -136,7 +161,9 @@ class TestKitchenSinkCompleteness:
         undistinctive = {
             name
             for name, value in kitchen_sink_module._metadata().items()
-            if value == getattr(defaults, name)
+            # The flat masthead keys are constructor-only; the header test
+            # above covers them.
+            if hasattr(defaults, name) and value == getattr(defaults, name)
         }
         assert not undistinctive, (
             f"kitchen_sink() sets {sorted(undistinctive)} to the field default; "

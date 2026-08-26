@@ -69,7 +69,7 @@ __all__ = [
 CID_SCHEME = "cid:"
 
 # A cid: reference inside a CSS url(), e.g.
-# style="background-image:url(cid:abc)". EmailMetadata.header_bg_image_url is
+# style="background-image:url(cid:abc)". Header.background_image_url is
 # a CSS background, so checking whether an attribute *value* starts with
 # "cid:" would miss it entirely. This scans an already-parsed attribute value
 # — the parse-don't-grep rule is about HTML structure, and CSS sitting inside

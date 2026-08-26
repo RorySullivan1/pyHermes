@@ -16,12 +16,17 @@ from svc.builder.exceptions import EmailBuilderError, ValidationError
 from svc.builder.models import EmailMetadata, _validate_url
 
 METADATA_URL_FIELDS = [
-    "logo_url",
-    "header_bg_image_url",
     "contact_url",
     "unsubscribe_url",
     "view_in_browser_url",
 ]
+
+#: The masthead URLs moved to the Header region (#34). The flat keywords still
+#: reach them, and the error now names where the field lives.
+HEADER_URL_FIELDS = {
+    "logo_url": "header.logo_url",
+    "header_bg_image_url": "header.background_image_url",
+}
 
 DANGEROUS = [
     "javascript:alert(1)",
@@ -102,6 +107,26 @@ class TestEmailMetadata:
 
     @pytest.mark.parametrize("field", METADATA_URL_FIELDS)
     def test_url_fields_stay_optional(self, valid_metadata, field):
+        valid_metadata[field] = ""
+        EmailMetadata(**valid_metadata).validate()
+
+    @pytest.mark.parametrize(("field", "named"), sorted(HEADER_URL_FIELDS.items()))
+    def test_every_masthead_url_is_validated(self, valid_metadata, field, named):
+        """
+        The flat keyword still reaches the check; the message names the
+        header, because that is where the field lives now.
+        """
+        valid_metadata[field] = "javascript:alert(1)"
+        with pytest.raises(ValidationError, match=named.replace(".", r"\.")):
+            EmailMetadata(**valid_metadata)
+
+    @pytest.mark.parametrize("field", sorted(HEADER_URL_FIELDS))
+    def test_safe_masthead_urls_are_accepted(self, valid_metadata, field):
+        valid_metadata[field] = "https://x.test/ok"
+        EmailMetadata(**valid_metadata).validate()
+
+    @pytest.mark.parametrize("field", sorted(HEADER_URL_FIELDS))
+    def test_masthead_url_fields_stay_optional(self, valid_metadata, field):
         valid_metadata[field] = ""
         EmailMetadata(**valid_metadata).validate()
 
