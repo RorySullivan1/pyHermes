@@ -905,6 +905,19 @@ rules the arithmetic had to *recover* rather than invent:
   is the rule made explicit — and it is the one token that moves *down* in `spacious`, where
   a 24px gutter puts a two-up split at 288px and holding it at 300 would have handed the
   airiest theme the tightest column padding.
+- **A column's *outer* edge takes no padding at all** (#85). The band is inset by
+  `frame.pad_x`, so padding the two edges that face the frame would indent that text past the
+  section heading above it — which is exactly what it did, for as long as the eight per-ratio
+  templates existed. Only gutter-facing sides pad, so the gap *between* columns is unchanged.
+
+**One left margin, and it is checkable.** Every section heading and every container content
+box starts at `frame.pad_x` from the frame edge — full-width and multi-column alike, at every
+density. Two things make that hold and are easy to undo by accident: the band's inset cell
+zeroes `font-size`/`line-height`, because the columns are inline-blocks and the newline
+between two of them would otherwise render as a space that no longer fits; and a highlighted
+band gives its 1px hairline back to every horizontal inset (`edge_pad`), or the last column
+wraps. A browser test asserts the invariant per fixture — the goldens cannot, because this
+was correct markup laid out wrongly.
 
 **The eight per-ratio templates are one template.** They were byte-identical apart from a
 Jinja comment and the numbers, so they were never carrying a per-ratio *decision* — they were

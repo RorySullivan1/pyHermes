@@ -676,10 +676,19 @@ def resolve_size_scheme(value: SizeTheme | str) -> SizeScheme:
 
 @dataclass(frozen=True)
 class ColumnGeometry:
-    """One column's computed width and the horizontal padding it earns."""
+    """
+    One column's computed width and the padding on each of its sides.
+
+    The two horizontal paddings are **not** the same number, and that is the
+    point: a column's *outer* edge faces the frame, which already supplies
+    ``frame.pad_x``, so padding it again would indent that column's text past
+    the section heading above it. Only the gutter-facing sides are padded
+    here. See :func:`column_layout`.
+    """
 
     width: int
-    pad_x: int | float
+    pad_left: int | float
+    pad_right: int | float
 
 
 def _remainder_order(count: int) -> list[int]:
@@ -716,11 +725,18 @@ def column_layout(weights: Sequence[int | float], scheme: SizeScheme) -> list[Co
     space between the gutters: floor every column, then hand the remainder
     out in :func:`_remainder_order`, largest fractional part first.
 
-    Each column also carries the padding it earns: a column at least
-    ``frame.narrow_column`` wide takes ``space.column_pad_x``, a narrower
-    one takes ``space.column_pad_x_narrow``. That threshold is not invented
-    here — it is read back out of the templates, where a 300px or 420px
-    column had 20px of padding and a 292px or smaller one had 16px.
+    Each column also carries the padding it earns on its **gutter-facing**
+    sides: a column at least ``frame.narrow_column`` wide takes
+    ``space.column_pad_x``, a narrower one takes ``space.column_pad_x_narrow``.
+    That threshold is not invented here — it is read back out of the
+    templates, where a 300px or 420px column had 20px of padding and a 292px
+    or smaller one had 16px.
+
+    The outer edges take **zero**, because the band is inset by
+    ``frame.pad_x`` and padding it twice is what made every multi-column
+    section hang 12-16px to the left of its own heading (#85). The gap
+    *between* two columns is unchanged: their facing paddings plus the
+    gutter, exactly as before.
     """
     count = len(weights)
     if count < 1:
@@ -746,14 +762,21 @@ def column_layout(weights: Sequence[int | float], scheme: SizeScheme) -> list[Co
         for index in ranked[:remainder]:
             widths[index] += 1
 
+    last = count - 1
     return [
         ColumnGeometry(
             width=width,
-            pad_x=(
-                scheme.space.column_pad_x
-                if width >= scheme.frame.narrow_column
-                else scheme.space.column_pad_x_narrow
-            ),
+            pad_left=0 if index == 0 else _gutter_pad(width, scheme),
+            pad_right=0 if index == last else _gutter_pad(width, scheme),
         )
-        for width in widths
+        for index, width in enumerate(widths)
     ]
+
+
+def _gutter_pad(width: int, scheme: SizeScheme) -> int | float:
+    """The horizontal padding a column of this width earns beside a gutter."""
+    return (
+        scheme.space.column_pad_x
+        if width >= scheme.frame.narrow_column
+        else scheme.space.column_pad_x_narrow
+    )

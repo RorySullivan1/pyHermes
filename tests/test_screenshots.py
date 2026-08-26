@@ -24,12 +24,17 @@ from qa.screenshots import (
     DEVICE_SCALE_FACTOR,
     VIEWPORTS,
     ScreenshotError,
+    _launch,
+    _load_playwright,
     available,
     capture_gallery,
     inline_cid_images,
     png_size,
 )
+from svc.builder.sizing import resolve_size_scheme
 from svc.delivery import collect_cid_references
+
+FIXTURE_NAMES = sorted(all_fixtures())
 
 requires_browser = pytest.mark.skipif(
     not available(),
@@ -133,6 +138,98 @@ class TestPngMeasurement:
 
         with pytest.raises(ScreenshotError, match="not a PNG"):
             png_size(path)
+
+
+#: Where a container's own content starts, relative to the frame.
+#:
+#: Headings, plus the left-most content cell of every section row — grouped
+#: by row so a *second* column's cell, which legitimately starts mid-frame,
+#: is not mistaken for a left margin. A component may indent further inside
+#: its own box (a card's border, a numbered list's ordinal column); that is
+#: the component's business, not the container's.
+_LEFT_MARGIN_PROBE = """() => {
+  const frame = document.querySelector('.email-container').getBoundingClientRect();
+  const out = [];
+  document.querySelectorAll('h2').forEach(h => out.push(
+      ['heading "' + h.textContent.trim().slice(0, 24) + '"',
+       Math.round(h.getBoundingClientRect().left - frame.left)]));
+  const rows = new Map();
+  document.querySelectorAll('td.mobile-pad').forEach(td => {
+      const box = td.getBoundingClientRect();
+      const left = box.left - frame.left + parseFloat(getComputedStyle(td).paddingLeft);
+      const row = Math.round(box.top);
+      if (!rows.has(row) || left < rows.get(row)) rows.set(row, left);
+  });
+  rows.forEach(left => out.push(['content cell', Math.round(left)]));
+  return out;
+}"""
+
+
+@pytest.fixture(scope="module")
+def section_anchors():
+    """
+    Every fixture measured in one browser session.
+
+    One launch rather than one per fixture, and the session is closed before
+    the capture tests below start their own — sync Playwright cannot nest in
+    a single thread.
+    """
+    if not available():
+        pytest.skip('no browser; screenshots are the optional "[qa]" extra')
+
+    # The module's own launcher, so PYHERMES_CHROMIUM handling and the
+    # ScreenshotError message are not reimplemented here just to measure a
+    # layout. Private, but this is that module's test.
+    measured = {}
+    with _load_playwright()() as playwright:
+        browser = _launch(playwright)
+        for name in FIXTURE_NAMES:
+            email = all_fixtures()[name]()
+            page = browser.new_page(viewport={"width": 1000, "height": 900})
+            page.route("**/*", lambda route: route.abort())
+            page.set_content(email.render())
+            measured[name] = (
+                resolve_size_scheme(email.metadata.size_theme).frame.pad_x,
+                page.evaluate(_LEFT_MARGIN_PROBE),
+            )
+            page.close()
+        browser.close()
+    return measured
+
+
+@requires_browser
+class TestEverySectionSharesOneLeftMargin:
+    """
+    #85, made an invariant rather than a fixed accident.
+
+    A section heading and the text under it must agree about where the left
+    margin is. They did not: the multi-column band was never inset by
+    ``frame.pad_x``, so its content sat 12-16px left of its own heading while
+    a full-width section's sat at 32, and the band left ~60px of dead space
+    on the right. The goldens could not see it — correct markup, laid out
+    wrongly — which is why the check belongs here.
+
+    It is expressed against the token rather than against 32, because that is
+    what makes it hold for all three densities.
+    """
+
+    @pytest.mark.parametrize("name", FIXTURE_NAMES)
+    def test_headings_and_content_start_at_the_frame_padding(self, name, section_anchors):
+        expected, anchors = section_anchors[name]
+        assert anchors, f"{name}: nothing to measure"
+        offenders = [f"{what} at {left}px" for what, left in anchors if left != expected]
+        assert not offenders, (
+            f"{name}: expected every section to start at frame.pad_x "
+            f"({expected}px), got " + ", ".join(sorted(set(offenders)))
+        )
+
+    def test_the_margin_follows_the_density_rather_than_a_constant(self, section_anchors):
+        """
+        The three themes inset by different amounts, so a test hardcoding 32
+        would pass on `standard` and prove nothing about the other two.
+        """
+        measured = {expected for expected, _ in section_anchors.values()}
+        assert measured == {24, 32, 40}
 
 
 @pytest.fixture(scope="module")
