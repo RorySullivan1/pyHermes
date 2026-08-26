@@ -301,15 +301,21 @@ class TestHeaderImages:
         with pytest.raises(ValidationError, match="header.logo_url"):
             EmailMetadata(**valid_metadata, logo_url="javascript:alert(1)")
 
-    def test_to_dict_covers_every_field_but_the_regions_and_theme(self, valid_metadata):
+    def test_to_dict_covers_every_field_but_the_regions_and_the_bound_ones(self, valid_metadata):
         """
         A region renders itself; it reaches base.html as its slot strings.
-        The theme reaches every template through the bound engine, so it is
-        out for the mirror-image reason — one value, one source.
+        The theme and the size theme reach every template through the bound
+        engine, so both are out for the mirror-image reason — one value,
+        one source.
         """
         metadata = EmailMetadata(**valid_metadata)
         declared = {f.name for f in dataclasses.fields(EmailMetadata)}
-        assert set(metadata.to_dict()) == declared - {"header", "footer", "theme"}
+        assert set(metadata.to_dict()) == declared - {
+            "header",
+            "footer",
+            "theme",
+            "size_theme",
+        }
 
 
 class TestEmailManifest:

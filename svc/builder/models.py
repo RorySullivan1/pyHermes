@@ -10,6 +10,7 @@ import re
 from dataclasses import InitVar, dataclass, field, fields
 from typing import TYPE_CHECKING, Any
 
+from .enums import SizeTheme
 from .exceptions import ValidationError
 
 if TYPE_CHECKING:  # pragma: no cover - import cycle: images/regions import from here
@@ -156,6 +157,13 @@ class EmailMetadata:
     #: per-component colour parameter anywhere in the builder.
     theme: "Theme | str" = field(default_factory=_default_theme)
 
+    #: How dense the email renders. A :class:`~svc.builder.enums.SizeTheme`
+    #: member or its bare string, and nothing else — deliberately narrower
+    #: than ``theme``, which also takes a custom object. See
+    #: :mod:`svc.builder.sizing` for the token table and for why the two
+    #: differ: callers pick a density, never a px.
+    size_theme: "SizeTheme | str" = SizeTheme.STANDARD
+
     # Back-compatible region keywords. InitVars, so they are constructor
     # arguments only: they never become attributes and never appear in
     # ``fields()``, ``repr`` or ``==`` — the region is the single owner.
@@ -205,6 +213,7 @@ class EmailMetadata:
         view_in_browser_label: "str | None",
     ) -> None:
         from .regions import Footer, Header
+        from .sizing import resolve_size_scheme
         from .theming import resolve_theme
 
         self.header = self._hydrate(
@@ -234,6 +243,7 @@ class EmailMetadata:
         # whatever the caller passed — Email.render() is the one resolution
         # point that turns it into a concrete Theme.
         resolve_theme(self.theme)
+        resolve_size_scheme(self.size_theme)
 
     def _hydrate(self, region_cls: type, attr: str, legacy: dict[str, Any]) -> Any:
         """
@@ -281,9 +291,10 @@ class EmailMetadata:
         arrives in the skeleton as the slot strings it fills. ``theme`` is
         excluded for the mirror-image reason: it reaches every template
         through the bound engine, so carrying it here too would give one
-        value two sources.
+        value two sources — and ``size_theme`` is excluded for exactly the
+        same reason, since the resolved scheme rides the same binder.
         """
-        skip = {"header", "footer", "theme"}
+        skip = {"header", "footer", "theme", "size_theme"}
         return {f.name: getattr(self, f.name) for f in fields(self) if f.name not in skip}
 
 

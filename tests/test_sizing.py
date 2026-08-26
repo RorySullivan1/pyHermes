@@ -306,3 +306,153 @@ class TestResolve:
     def test_wrong_type(self) -> None:
         with pytest.raises(ValidationError, match="must be a SizeTheme or its name"):
             resolve_size_scheme(28)  # type: ignore[arg-type]
+
+
+# ----------------------------------------------------------------------
+# #40 — the scheme is selectable, and it reaches every template
+# ----------------------------------------------------------------------
+
+
+class TestTheSizeThemeIsSelectable:
+    def test_the_default_is_standard(self) -> None:
+        from svc.builder.models import EmailMetadata
+
+        assert EmailMetadata().size_theme == SizeTheme.STANDARD
+
+    @pytest.mark.parametrize("value", [SizeTheme.STANDARD, "standard"])
+    def test_member_or_bare_string(self, value: SizeTheme | str) -> None:
+        from svc.builder.models import EmailMetadata
+
+        assert resolve_size_scheme(EmailMetadata(size_theme=value).size_theme) is (STANDARD_SIZES)
+
+    def test_the_field_keeps_what_the_caller_passed(self) -> None:
+        """
+        Resolution happens once, in ``Email.render()``. Construction only
+        *checks* — so a typo fails there, and the field stays the caller's
+        own value rather than a silently normalised one.
+        """
+        from svc.builder.models import EmailMetadata
+
+        assert EmailMetadata(size_theme="standard").size_theme == "standard"
+
+    def test_an_unknown_name_raises_at_construction(self) -> None:
+        from svc.builder.models import EmailMetadata
+
+        with pytest.raises(ValidationError, match="unknown size theme 'huge'"):
+            EmailMetadata(size_theme="huge")
+
+    def test_it_is_not_in_the_skeleton_context(self) -> None:
+        """One value, one source: the resolved scheme rides the binder."""
+        from svc.builder.models import EmailMetadata
+
+        assert "size_theme" not in EmailMetadata().to_dict()
+
+
+class TestTheSchemeReachesEveryTemplate:
+    """
+    #40's plumbing — and the decision it inherited rather than re-made.
+
+    #48 already built the injection mechanism the epic left to this issue:
+    ``TemplateEngine.bound(**shared)`` returns a per-render view that merges
+    shared values into every context. A size scheme is another shared value
+    on the same binder, so containers, components and regions keep their
+    one-argument ``render()`` and nothing in the section tree changed.
+    """
+
+    FACTS = {
+        "email_subject": "S",
+        "firm_name": "F",
+        "campaign_name": "c",
+        "contact_url": "https://x.test/c",
+    }
+
+    def _rendered_contexts(self, **metadata: object) -> dict[str, dict]:
+        from svc.builder import (
+            CardGroup,
+            DataTable,
+            Email,
+            FullWidth,
+            TemplateEngine,
+            TextBlock,
+            ThreeColumn,
+            TwoColumn,
+        )
+        from svc.builder.models import Card, TableRow
+
+        seen: dict[str, dict] = {}
+        real = TemplateEngine()
+        original = real.render
+
+        def recording(name: str, context: dict) -> str:
+            seen[name] = context
+            return original(name, context)
+
+        real.render = recording  # type: ignore[method-assign]
+
+        email = Email({**self.FACTS, **metadata})
+        email._engine = real  # the binder is built from this inside render()
+        email.add_section(FullWidth(title="T", content=TextBlock("<p>x</p>")))
+        email.add_section(
+            TwoColumn(
+                ratio="50-50",
+                left=CardGroup([Card("L", "V"), Card("M", "W")], orientation="horizontal"),
+                right=DataTable(headers=["H"], rows=[TableRow(["c"])]),
+            )
+        )
+        email.add_section(ThreeColumn(ratio="33-33-33", left=TextBlock("<p>y</p>")))
+        email.render()
+        return seen
+
+    def test_every_rendered_template_gets_the_size_namespace(self) -> None:
+        seen = self._rendered_contexts()
+        assert len(seen) >= 8, f"only rendered {sorted(seen)}"
+        for name, context in seen.items():
+            assert "size" in context, f"{name} rendered without the size scheme"
+            assert context["size"] is STANDARD_SIZES
+
+    def test_the_key_is_injected_unconditionally(self) -> None:
+        """
+        Never behind an ``if`` — the #5/#15 lesson. Under
+        ``StrictUndefined`` an unused key is free and a missing one raises,
+        so the asymmetry decides it.
+        """
+        for context in self._rendered_contexts(size_theme="standard").values():
+            assert "size" in context
+
+    def test_a_component_cannot_shadow_the_emails_scheme(self) -> None:
+        from svc.builder import TemplateEngine
+
+        binder = TemplateEngine().bound(size=STANDARD_SIZES)
+        merged = {**{"size": "impostor"}, **binder.shared}
+        assert merged["size"] is STANDARD_SIZES
+
+    def test_two_emails_sharing_an_engine_do_not_interleave(self) -> None:
+        """
+        The constraint the epic set for whichever mechanism was chosen. A
+        binder is per-render, so a second one cannot disturb the first.
+        """
+        from svc.builder import TemplateEngine
+
+        engine = TemplateEngine()
+        dense = STANDARD_SIZES.derive(type={"body": 13})
+        first = engine.bound(size=STANDARD_SIZES)
+        second = engine.bound(size=dense)
+        assert first.shared["size"] is STANDARD_SIZES
+        assert second.shared["size"] is dense
+
+    def test_the_engine_guarantees_a_scheme_on_its_own(self) -> None:
+        """
+        Rendering a component standalone stays a one-liner: the engine
+        layers ``STANDARD_SIZES`` *under* the caller's context, so a bound
+        scheme still wins over this floor.
+        """
+        from svc.builder import TemplateEngine
+
+        engine = TemplateEngine()
+        assert engine.render_string("{{ size.type.body }}", {}) == "14"
+        assert engine.render_string("{{ size.type.body }}", {"size": STANDARD_SIZES}) == "14"
+
+    def test_naming_the_default_renders_identically_to_omitting_it(self) -> None:
+        from qa.fixtures import kitchen_sink
+
+        assert kitchen_sink.build().render() == kitchen_sink.build().render()

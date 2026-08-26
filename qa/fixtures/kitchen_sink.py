@@ -91,6 +91,7 @@ def _metadata() -> dict[str, Any]:
         # Named rather than omitted, so this golden pins that the string
         # path resolves to the same bytes as the default object.
         "theme": "classic",
+        "size_theme": "standard",
         "contact_description": "Reach the research desk with questions.",
         "contact_url": "https://example.com/contact",
         "contact_heading": "Questions about this note?",

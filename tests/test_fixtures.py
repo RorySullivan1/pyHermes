@@ -78,6 +78,16 @@ class TestGalleryRegistry:
         assert sorted(all_fixtures()) == FIXTURE_NAMES
 
 
+#: Metadata fields ``kitchen_sink`` deliberately holds at their default.
+#:
+#: ``size_theme`` is here because this fixture *is* the epic's byte-identity
+#: reference: every migration step in #45 claims the gallery does not move at
+#: ``STANDARD``, and a kitchen_sink rendered at any other density could not
+#: make that claim. The distinctive value lives in its own fixture instead —
+#: the same shape ``slate_theme`` uses for the palette.
+ANCHORED_TO_THE_DEFAULT = {"size_theme"}
+
+
 class TestKitchenSinkCompleteness:
     @staticmethod
     def _public_components() -> set[str]:
@@ -161,6 +171,9 @@ class TestKitchenSinkCompleteness:
         A field set to its own default is indistinguishable from one left
         unset — the golden would not move if the default changed underneath
         it. #32 asked for distinctive values for exactly this reason.
+
+        ``ANCHORED_TO_THE_DEFAULT`` is the one exception, and it is not a
+        gap: see the note on that constant.
         """
         defaults = EmailMetadata()
         undistinctive = {
@@ -168,7 +181,9 @@ class TestKitchenSinkCompleteness:
             for name, value in kitchen_sink_module._metadata().items()
             # The flat region keys are constructor-only; the per-region
             # test above covers them.
-            if hasattr(defaults, name) and value == getattr(defaults, name)
+            if hasattr(defaults, name)
+            and name not in ANCHORED_TO_THE_DEFAULT
+            and value == getattr(defaults, name)
         }
         assert not undistinctive, (
             f"kitchen_sink() sets {sorted(undistinctive)} to the field default; "
