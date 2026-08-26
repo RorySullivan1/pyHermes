@@ -104,18 +104,30 @@ Four things the audit found, recorded rather than quietly fixed
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field, fields
+from collections.abc import Mapping
+from dataclasses import dataclass, field, fields, replace
+from typing import Any, ClassVar
 
 from .exceptions import ValidationError
 from .models import _validate_color
 
 
 def _validate_hex_fields(instance: object, prefix: str) -> None:
-    """Run every ``str`` field of a frozen token layer through the hex rule."""
+    """
+    Run every token of a frozen layer through the hex rule.
+
+    A non-string is rejected here rather than allowed to reach a template as
+    whatever it is: every field on these layers is a colour, so anything that
+    is not a ``#RRGGBB`` string is wrong in the same way.
+    """
     for spec in fields(instance):  # type: ignore[arg-type]
         value = getattr(instance, spec.name)
-        if isinstance(value, str):
-            _validate_color(value, f"{prefix}.{spec.name}")
+        name = f"{prefix}.{spec.name}"
+        if not isinstance(value, str):
+            raise ValidationError(
+                f"'{name}' must be a hex color string, got: {type(value).__name__}"
+            )
+        _validate_color(value, name)
 
 
 @dataclass(frozen=True)
@@ -268,29 +280,115 @@ class Theme:
     semantic: SemanticColors = field(default_factory=SemanticColors)
     shadow: ShadowStyle = field(default_factory=ShadowStyle)
 
+    LAYERS: ClassVar[dict[str, type]] = {
+        "palette": Palette,
+        "text": TextColors,
+        "semantic": SemanticColors,
+        "shadow": ShadowStyle,
+    }
+
     def __post_init__(self) -> None:
-        expected = {
-            "palette": Palette,
-            "text": TextColors,
-            "semantic": SemanticColors,
-            "shadow": ShadowStyle,
-        }
-        for name, layer_cls in expected.items():
+        for name, layer_cls in self.LAYERS.items():
             if not isinstance(getattr(self, name), layer_cls):
                 raise ValidationError(
                     f"'theme.{name}' must be a {layer_cls.__name__}, got: "
                     f"{type(getattr(self, name)).__name__}"
                 )
 
+    def derive(self, **layers: Any) -> Theme:
+        """
+        A copy of this theme with some tokens replaced.
+
+        The common case is not "build a palette from nothing" — it is "the
+        shipped palette, with our brand's masthead and accent"::
+
+            DEFAULT_THEME.derive(palette={"header_bg": "#1B3A5C",
+                                          "accent": "#7FA8B8"})
+
+        Each keyword names a layer and takes either a mapping of the tokens
+        to change or a whole replacement layer. Everything else is inherited,
+        and the result is a normal ``Theme`` — frozen, complete, and
+        **re-validated**, so a derived theme cannot be less valid than one
+        built from scratch.
+
+        Raises:
+            ValidationError: For an unknown layer, an unknown token within a
+                layer, or a value that fails its own rule.
+        """
+        unknown = set(layers) - set(self.LAYERS)
+        if unknown:
+            raise ValidationError(
+                f"unknown theme layer(s) {sorted(unknown)}; known layers: {sorted(self.LAYERS)}"
+            )
+        replacements: dict[str, Any] = {}
+        for name, override in layers.items():
+            layer_cls = self.LAYERS[name]
+            if isinstance(override, layer_cls):
+                replacements[name] = override
+                continue
+            if not isinstance(override, Mapping):
+                raise ValidationError(
+                    f"'{name}' must be a {layer_cls.__name__} or a mapping of its "
+                    f"tokens, got: {type(override).__name__}"
+                )
+            current = getattr(self, name)
+            known = {f.name for f in fields(current)}
+            stray = set(override) - known
+            if stray:
+                raise ValidationError(
+                    f"unknown {name} token(s) {sorted(stray)}; known tokens: {sorted(known)}"
+                )
+            replacements[name] = replace(current, **override)
+        return replace(self, **replacements)
+
 
 #: The palette this repo has always rendered. Every value traces to the audit
 #: in the module docstring.
 DEFAULT_THEME = Theme()
 
+#: A cool blue-grey counterpart to ``classic``'s warm stone.
+#:
+#: Curated, not computed. A hue rotation of the default would have been one
+#: line and would have proved nothing: every value here is chosen the way the
+#: default's were, which is what makes this a second design rather than a
+#: filter over the first. It exists so the seam carries weight — a preset
+#: nobody can compare against is a refactor — and as the reference for what
+#: a complete theme looks like when you write one yourself.
+SLATE_THEME = Theme(
+    palette=Palette(
+        wrapper_bg="#EDF0F3",
+        surface="#FFFFFF",
+        header_bg="#26333F",
+        accent="#4A6E8A",
+        rule="#CBD3DA",
+        rule_subtle="#E2E7EC",
+        rule_dark="#26333F",
+        highlight_tint="#F4F6F8",
+        row_alt="#F4F6F8",
+    ),
+    text=TextColors(
+        primary="#33393F",
+        secondary="#6B747C",
+        light="#98A1A9",
+        heading="#26333F",
+        fine_print="#82898F",
+        on_dark="#FFFFFF",
+        on_dark_secondary="#C6D2DC",
+        on_dark_muted="#8FA0AE",
+        on_accent="#FFFFFF",
+    ),
+    semantic=SemanticColors(positive="#3F7A63", negative="#A8514E", neutral="#5A6068"),
+    shadow=ShadowStyle(
+        scrim=Rgba("#0F1A24", 0.65),
+        title=Rgba("#000000", 0.4),
+        subtitle=Rgba("#000000", 0.3),
+    ),
+)
+
 #: Curated presets, repo-owned. A caller's own theme is passed as an object,
 #: never registered here — the registry is a set of design decisions, not a
-#: namespace.
-THEMES: dict[str, Theme] = {"classic": DEFAULT_THEME}
+#: namespace, and nothing mutates it at runtime.
+THEMES: dict[str, Theme] = {"classic": DEFAULT_THEME, "slate": SLATE_THEME}
 
 
 def resolve_theme(value: Theme | str) -> Theme:

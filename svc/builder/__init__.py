@@ -105,9 +105,32 @@ from .regions import (
     Region,
 )
 
+# Theming
+from .theming import (
+    DEFAULT_THEME,
+    SLATE_THEME,
+    THEMES,
+    Palette,
+    Rgba,
+    SemanticColors,
+    ShadowStyle,
+    TextColors,
+    Theme,
+)
+
 __all__ = [
     # Engine
     "TemplateEngine",
+    # Theming
+    "Theme",
+    "Palette",
+    "TextColors",
+    "SemanticColors",
+    "ShadowStyle",
+    "Rgba",
+    "DEFAULT_THEME",
+    "SLATE_THEME",
+    "THEMES",
     # Regions
     "Region",
     "Header",

@@ -17,6 +17,7 @@ from svc.builder.exceptions import ValidationError
 from svc.builder.models import EmailMetadata
 from svc.builder.theming import (
     DEFAULT_THEME,
+    SLATE_THEME,
     THEMES,
     Palette,
     Rgba,
@@ -231,10 +232,11 @@ class TestTheAuditIsTrue:
         used = set(re.findall(r"#[0-9A-Fa-f]{6}", _gallery_html()))
         known = {
             getattr(layer, spec.name)
-            for layer in (DEFAULT_THEME.palette, DEFAULT_THEME.text, DEFAULT_THEME.semantic)
+            for theme in (DEFAULT_THEME, SLATE_THEME)
+            for layer in (theme.palette, theme.text, theme.semantic)
             for spec in dataclasses.fields(layer)
-        } | {DEFAULT_THEME.shadow.scrim.color}
-        # kitchen_sink passes its own KpiItem/TableRow colours — caller data
+        } | {DEFAULT_THEME.shadow.scrim.color, SLATE_THEME.shadow.scrim.color}
+        # The fixtures pass their own KpiItem/TableRow colours — caller data
         # about the numbers, which the theme deliberately does not own.
         caller_data = {"#4A7C59", "#B85450", "#8B6F47", "#2E5F7F"}
         assert used - known - caller_data == set()
@@ -578,3 +580,153 @@ class TestThePerturbedTheme:
         html = email.render()
         assert "#0F0F0F" in html, "the caller's colour was overridden by the theme"
         assert "#BCDEF0" in html, "the unset card did not fall back to the theme"
+
+
+class TestTheCustomThemeApi:
+    """#50: the epic's reason to exist — a caller re-skins from one field."""
+
+    def test_the_layers_are_public(self):
+        import svc.builder as api
+
+        for name in (
+            "Theme",
+            "Palette",
+            "TextColors",
+            "SemanticColors",
+            "ShadowStyle",
+            "Rgba",
+            "DEFAULT_THEME",
+            "SLATE_THEME",
+            "THEMES",
+        ):
+            assert name in api.__all__, f"{name} is not public"
+            assert getattr(api, name) is not None
+
+    def test_a_theme_built_from_scratch_renders_everywhere(self):
+        """
+        Frozen plus no optional token fields means a custom theme is complete
+        by construction — there is no way to build one that later blows up
+        under StrictUndefined.
+        """
+        from qa.fixtures import kitchen_sink
+
+        scratch = Theme(
+            palette=Palette(surface="#FDFDFD", header_bg="#101820", accent="#B07D3A"),
+            text=TextColors(primary="#1A1A1A", heading="#101820"),
+            semantic=SemanticColors(neutral="#4B4B4B"),
+            shadow=ShadowStyle(scrim=Rgba("#101820", 0.7)),
+        )
+        email = kitchen_sink.build()
+        email.metadata.theme = scratch  # noqa: attribute set before render, deliberately
+        html = email.render()
+        for sentinel in ("#FDFDFD", "#101820", "#B07D3A", "#1A1A1A", "rgba(16,24,32,0.7)"):
+            assert sentinel in html
+
+    def test_derive_keeps_everything_it_was_not_told_to_change(self):
+        derived = DEFAULT_THEME.derive(palette={"header_bg": "#1B3A5C", "accent": "#7FA8B8"})
+        assert derived.palette.header_bg == "#1B3A5C"
+        assert derived.palette.accent == "#7FA8B8"
+        assert derived.palette.surface == DEFAULT_THEME.palette.surface
+        assert derived.text == DEFAULT_THEME.text
+        assert derived.shadow == DEFAULT_THEME.shadow
+
+    def test_derive_accepts_a_whole_layer_too(self):
+        derived = DEFAULT_THEME.derive(text=TextColors(primary="#111111"))
+        assert derived.text.primary == "#111111"
+        assert derived.palette == DEFAULT_THEME.palette
+
+    def test_derive_leaves_the_original_alone(self):
+        DEFAULT_THEME.derive(palette={"surface": "#000000"})
+        assert DEFAULT_THEME.palette.surface == "#FFFFFF"
+
+    def test_derive_can_be_chained(self):
+        theme = DEFAULT_THEME.derive(palette={"accent": "#111111"}).derive(
+            text={"primary": "#222222"}
+        )
+        assert theme.palette.accent == "#111111"
+        assert theme.text.primary == "#222222"
+
+    @pytest.mark.parametrize("bad", ["red", "#FFF", "#12345", "", 42])
+    def test_derive_revalidates(self, bad):
+        """A derived theme cannot be less valid than one built from scratch."""
+        with pytest.raises(ValidationError):
+            DEFAULT_THEME.derive(palette={"surface": bad})
+
+    def test_derive_rejects_an_unknown_token(self):
+        with pytest.raises(ValidationError, match=r"unknown palette token\(s\) \['sufrace'\]"):
+            DEFAULT_THEME.derive(palette={"sufrace": "#000000"})
+
+    def test_derive_rejects_an_unknown_layer(self):
+        with pytest.raises(ValidationError, match=r"unknown theme layer\(s\) \['colours'\]"):
+            DEFAULT_THEME.derive(colours={"surface": "#000000"})
+
+    def test_a_derived_theme_passes_the_size_check(self):
+        """Tokens are substitutions, not additions — the budget is unmoved."""
+        from qa.fixtures import kitchen_sink
+
+        plain = len(kitchen_sink.build().render().encode("utf-8"))
+        email = kitchen_sink.build()
+        email.metadata.theme = DEFAULT_THEME.derive(palette={"accent": "#7FA8B8"})
+        assert len(email.render().encode("utf-8")) == plain
+
+
+class TestTheSlatePreset:
+    """#50's in-repo proof that the seam carries weight."""
+
+    def _html(self) -> str:
+        from qa.fixtures import all_fixtures
+
+        return all_fixtures()["slate_theme"]().render()
+
+    def test_it_is_in_the_registry_and_selectable_by_name(self):
+        from svc.builder import Email
+
+        assert THEMES["slate"] is SLATE_THEME
+        facts = {"email_subject": "S", "firm_name": "F", "campaign_name": "c"}
+        assert (
+            Email({**facts, "theme": "slate"}).render()
+            == Email({**facts, "theme": SLATE_THEME}).render()
+        )
+
+    def test_it_is_a_complete_second_design_not_a_filter(self):
+        """
+        Every token differs from classic's except the two whites and the
+        black shadows, which are the same decision in both palettes.
+        """
+        shared = {"#FFFFFF", "#000000"}
+        for layer_name in ("palette", "text", "semantic"):
+            slate = getattr(SLATE_THEME, layer_name)
+            classic = getattr(DEFAULT_THEME, layer_name)
+            for spec in dataclasses.fields(slate):
+                value = getattr(slate, spec.name)
+                if value in shared:
+                    continue
+                assert value != getattr(classic, spec.name), (
+                    f"{layer_name}.{spec.name} is unchanged from classic — a preset "
+                    "that only half-differs proves half a seam"
+                )
+
+    @pytest.mark.parametrize("classic_value", ["#2C3E50", "#F2F1EE", "#F8F7F5", "#D6D2CB"])
+    def test_no_classic_value_leaks_into_a_slate_email(self, classic_value):
+        assert classic_value not in self._html()
+
+    def test_both_halves_of_the_scrim_carry_slate(self):
+        html = self._html()
+        assert SLATE_THEME.shadow.scrim.css in html
+        assert f'color="{SLATE_THEME.shadow.scrim.color}"' in html
+
+    def test_the_dark_mode_and_mobile_blocks_carry_slate(self):
+        html = self._html()
+        head = html[: html.rindex("</style>")]
+        assert SLATE_THEME.palette.rule in head  # the .kpi-cell hairline
+        assert SLATE_THEME.text.primary in head  # the dark-mode text override
+
+    def test_an_explicit_card_colour_survives_the_preset(self):
+        """The semantic-vs-presentation boundary, in the shipped gallery."""
+        html = self._html()
+        assert "#3F7A63" in html  # the fixture's own KPI colour
+        assert SLATE_THEME.semantic.neutral in html  # the unset card's fallback
+
+    def test_the_registry_is_not_mutated_at_runtime(self):
+        """Presets are repo-owned decisions; a user theme is passed, not registered."""
+        assert sorted(THEMES) == ["classic", "slate"]

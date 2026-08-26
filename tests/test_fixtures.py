@@ -123,17 +123,13 @@ class TestKitchenSinkCompleteness:
         deliberate, since that is the back-compatible path the epics promise
         to keep byte-identical. Their own fields are checked below.
 
-        ``theme`` is excluded for a reason with an expiry date: there is
-        exactly one preset today, so no value the fixture could pass would
-        differ from the default. #50 adds the second preset and the fixture
-        that pins it, and this exemption goes with it.
+        ``theme`` was exempt while only one preset existed; #50 retired that.
+        ``kitchen_sink`` names ``"classic"`` so its golden pins that the
+        string path resolves to the default's bytes, and ``slate_theme``
+        pins a genuinely different palette.
         """
         supplied = set(kitchen_sink_module._metadata())
-        declared = {f.name for f in dataclasses.fields(EmailMetadata)} - {
-            "header",
-            "footer",
-            "theme",
-        }
+        declared = {f.name for f in dataclasses.fields(EmailMetadata)} - {"header", "footer"}
         missing = declared - supplied
         assert not missing, (
             f"kitchen_sink()'s metadata never sets {sorted(missing)}. A field the "
