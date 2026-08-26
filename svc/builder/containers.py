@@ -4,7 +4,12 @@ Container classes for the email builder.
 A container defines the layout geometry for a section of the email —
 single column, two-column split, highlight band, etc.  Each container
 wraps one or more rendered component HTML fragments and produces a
-``<tr>`` block that drops into the main 680 px email body table.
+``<tr>`` block that drops into the main email body table.
+
+Column widths are **computed, never written down**: the ratio's own name
+is its weights, and :func:`~svc.builder.sizing.column_layout` splits the
+active scheme's content width by them. That is why one template serves
+every split — see #42 in :mod:`svc.builder.sizing`.
 
 Usage:
     engine  = TemplateEngine()
@@ -21,6 +26,7 @@ from .enums import ThreeColumnRatio, TwoColumnRatio
 from .exceptions import ValidationError
 from .images import ImageAsset
 from .models import _validate_color
+from .sizing import STANDARD_SIZES, SizeScheme, column_layout
 
 
 class Container:
@@ -85,9 +91,78 @@ class Container:
         raise NotImplementedError
 
 
+class _SplitContainer(Container):
+    """
+    Shared machinery for every multi-column container.
+
+    Two things live here rather than in ``TwoColumn`` and ``ThreeColumn``
+    separately, because they were the same in both: the ratio-to-weights
+    reading, and building the per-column context the one column template
+    consumes.
+    """
+
+    #: One template for every split. The ratio no longer selects a file —
+    #: it selects *numbers*, which is the whole point of #42.
+    template_path = "common/containers/columns.html"
+
+    #: The split this container was built with, as its bare string or the
+    #: matching enum member. Set by each subclass's ``__init__``.
+    ratio: str
+
+    #: The closed set of splits this container accepts.
+    _ratio_enum: type[TwoColumnRatio] | type[ThreeColumnRatio]
+
+    @classmethod
+    def _check_ratio(cls, ratio: str) -> None:
+        """
+        A StrEnum member equals and hashes as its string value, so this
+        membership test accepts both the enum and the bare ratio string.
+        """
+        if ratio not in set(cls._ratio_enum):
+            raise ValidationError(
+                f"Unsupported ratio '{ratio}'. Use: {[r.value for r in cls._ratio_enum]}"
+            )
+
+    @staticmethod
+    def _weights(ratio: str) -> list[int]:
+        """
+        A ratio's own name is its weights: ``"25-25-50"`` -> ``[25, 25, 50]``.
+
+        No lookup table, because a table would be a second place for the
+        split to be written down and therefore a second place to be wrong.
+        :func:`~svc.builder.sizing.column_layout` normalises by the sum, so
+        ``"33-33-33"`` is exact thirds rather than 99% of the frame.
+        """
+        return [int(part) for part in str(ratio).split("-")]
+
+    def _column_context(self, engine: Renderer, contents: list[str], scheme: SizeScheme) -> dict:
+        geometry = column_layout(self._weights(self.ratio), scheme)
+        ctx = self._base_context(engine)
+        ctx["columns"] = [
+            {"width": column.width, "pad_x": column.pad_x, "content": content}
+            for column, content in zip(geometry, contents, strict=True)
+        ]
+        return ctx
+
+    @staticmethod
+    def _scheme(engine: Renderer) -> SizeScheme:
+        """
+        The scheme the email bound, or the shipped one.
+
+        A container is handed a :class:`~svc.builder.engine.BoundEngine`
+        during ``Email.render()``, and that is where the resolved scheme
+        lives — the same binder the theme rides. Rendering a container
+        directly against a bare ``TemplateEngine`` stays legal and falls
+        back to ``STANDARD_SIZES``, matching the engine's own floor.
+        """
+        shared = getattr(engine, "shared", {})
+        scheme = shared.get("size") if isinstance(shared, dict) else None
+        return scheme if isinstance(scheme, SizeScheme) else STANDARD_SIZES
+
+
 class FullWidth(Container):
     """
-    Single-column, full 616 px content-width container.
+    Single-column container spanning the frame's full content width.
 
     Args:
         content:          A Component instance to render inside the container.
@@ -116,7 +191,7 @@ class FullWidth(Container):
         return engine.render(self.template_path, ctx)
 
 
-class TwoColumn(Container):
+class TwoColumn(_SplitContainer):
     """
     Two-column container with configurable split ratio.
 
@@ -124,7 +199,9 @@ class TwoColumn(Container):
     ``right`` is always the visually-right column. The ``ratio`` string
     determines the column widths.
 
-    Supported ratios:
+    Supported ratios (widths shown at the shipped 680 px frame, and
+    *derived* from it rather than hardcoded — a different frame width
+    yields different columns from the same ratio):
         ``"50-50"``  — equal 300 px columns
         ``"30-70"``  — 180 px left + 420 px right
         ``"70-30"``  — 420 px left + 180 px right
@@ -144,11 +221,7 @@ class TwoColumn(Container):
             or when both columns are omitted.
     """
 
-    _ratio_map = {
-        TwoColumnRatio.EQUAL: "common/containers/col-50-50.html",
-        TwoColumnRatio.NARROW_WIDE: "common/containers/col-30-70.html",
-        TwoColumnRatio.WIDE_NARROW: "common/containers/col-70-30.html",
-    }
+    _ratio_enum = TwoColumnRatio
 
     def __init__(
         self,
@@ -160,16 +233,10 @@ class TwoColumn(Container):
         highlight: bool = False,
     ):
         super().__init__(title, background_color, highlight)
-        # A StrEnum member equals and hashes as its string value, so this
-        # membership test accepts both the enum and the bare ratio string.
-        if ratio not in self._ratio_map:
-            raise ValidationError(
-                f"Unsupported ratio '{ratio}'. Use: {[r.value for r in self._ratio_map]}"
-            )
+        self._check_ratio(ratio)
         if left is None and right is None:
             raise ValidationError("TwoColumn requires at least one of 'left' or 'right'.")
         self.ratio = ratio
-        self.template_path = self._ratio_map[TwoColumnRatio(ratio)]
         self.left = left
         self.right = right
 
@@ -177,16 +244,17 @@ class TwoColumn(Container):
         return [c for c in (self.left, self.right) if c is not None]
 
     def render(self, engine: Renderer) -> str:
-        # Both keys are always injected: the column templates emit {{ left }}
-        # and {{ right }} unconditionally, so a missing key would raise under
-        # StrictUndefined.  An omitted column renders as an empty cell.
-        ctx = self._base_context(engine)
-        ctx["left"] = self.left.render(engine) if self.left else ""
-        ctx["right"] = self.right.render(engine) if self.right else ""
+        # Every column is always present in the list: the template walks it
+        # unconditionally, and an omitted column renders as an empty cell
+        # rather than a missing one — the geometry has to hold either way.
+        contents = [
+            component.render(engine) if component else "" for component in (self.left, self.right)
+        ]
+        ctx = self._column_context(engine, contents, self._scheme(engine))
         return engine.render(self.template_path, ctx)
 
 
-class ThreeColumn(Container):
+class ThreeColumn(_SplitContainer):
     """
     Three-column container with configurable split ratio.
 
@@ -194,7 +262,9 @@ class ThreeColumn(Container):
     visually left, middle, and right columns. The ``ratio`` string (or a
     :class:`~svc.builder.enums.ThreeColumnRatio` member) sets the widths.
 
-    Supported ratios (each totals the 616 px content width, two 16 px gutters):
+    Supported ratios (widths shown at the shipped 680 px frame — each
+    totals the 616 px content width across two 16 px gutters, and each is
+    derived from the frame rather than hardcoded):
         ``"33-33-33"``  — equal thirds (195 / 194 / 195 px)
         ``"50-25-25"``  — wide left    (292 / 146 / 146 px)
         ``"25-50-25"``  — wide centre  (146 / 292 / 146 px)
@@ -216,12 +286,7 @@ class ThreeColumn(Container):
             or when all three columns are omitted.
     """
 
-    _ratio_map = {
-        ThreeColumnRatio.EQUAL: "common/containers/col-33-33-33.html",
-        ThreeColumnRatio.WIDE_LEFT: "common/containers/col-50-25-25.html",
-        ThreeColumnRatio.WIDE_CENTER: "common/containers/col-25-50-25.html",
-        ThreeColumnRatio.WIDE_RIGHT: "common/containers/col-25-25-50.html",
-    }
+    _ratio_enum = ThreeColumnRatio
 
     def __init__(
         self,
@@ -234,18 +299,12 @@ class ThreeColumn(Container):
         highlight: bool = False,
     ):
         super().__init__(title, background_color, highlight)
-        # A StrEnum member equals and hashes as its string value, so this
-        # membership test accepts both the enum and the bare ratio string.
-        if ratio not in self._ratio_map:
-            raise ValidationError(
-                f"Unsupported ratio '{ratio}'. Use: {[r.value for r in self._ratio_map]}"
-            )
+        self._check_ratio(ratio)
         if left is None and center is None and right is None:
             raise ValidationError(
                 "ThreeColumn requires at least one of 'left', 'center', or 'right'."
             )
         self.ratio = ratio
-        self.template_path = self._ratio_map[ThreeColumnRatio(ratio)]
         self.left = left
         self.center = center
         self.right = right
@@ -254,12 +313,11 @@ class ThreeColumn(Container):
         return [c for c in (self.left, self.center, self.right) if c is not None]
 
     def render(self, engine: Renderer) -> str:
-        # All three keys are always injected: the column templates emit
-        # {{ left }} / {{ center }} / {{ right }} unconditionally, so a missing
-        # key would raise under StrictUndefined.  An omitted column renders as
-        # an empty cell.
-        ctx = self._base_context(engine)
-        ctx["left"] = self.left.render(engine) if self.left else ""
-        ctx["center"] = self.center.render(engine) if self.center else ""
-        ctx["right"] = self.right.render(engine) if self.right else ""
+        # See TwoColumn.render() — an omitted column is an empty cell, not a
+        # missing one, because the geometry has to hold either way.
+        contents = [
+            component.render(engine) if component else ""
+            for component in (self.left, self.center, self.right)
+        ]
+        ctx = self._column_context(engine, contents, self._scheme(engine))
         return engine.render(self.template_path, ctx)

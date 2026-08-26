@@ -31,6 +31,7 @@ from .exceptions import SizeError
 from .images import EmailImage, ImageAsset, dedupe_assets
 from .models import EmailMetadata
 from .regions import Footer, Header
+from .sizing import resolve_size_scheme
 from .theming import resolve_theme
 
 # The shipped defaults, kept as module constants because they read as the
@@ -219,8 +220,8 @@ class Email:
         """
         Render the complete email HTML.
 
-        0. Resolve the theme once, and bind it to the engine every template
-           below renders through.
+        0. Resolve the theme and the size scheme once, and bind both to
+           the engine every template below renders through.
         1. Render the header and footer regions into their skeleton slots.
         2. Render every section via its container.
         3. Inject all of it into the base skeleton.
@@ -234,9 +235,13 @@ class Email:
             SizeError: If the HTML exceeds 102 KB.
         """
         # The one resolution point. Every template below — skeleton, regions,
-        # containers, components — reads the same Theme, because they all
-        # render through this binder rather than looking one up themselves.
-        engine = self._engine.bound(theme=resolve_theme(self._metadata.theme))
+        # containers, components — reads the same Theme and the same
+        # SizeScheme, because they all render through this binder rather
+        # than looking either one up themselves.
+        engine = self._engine.bound(
+            theme=resolve_theme(self._metadata.theme),
+            size=resolve_size_scheme(self._metadata.size_theme),
+        )
 
         sections_html = "\n".join(section.render(engine) for section in self._sections)
 

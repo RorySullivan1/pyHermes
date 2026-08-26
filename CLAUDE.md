@@ -62,7 +62,7 @@ svc/
 ├── config.py           ← the tunable numbers, in one frozen dataclass
 ├── builder/            ← current OO email builder (use this for new work)
 │   ├── __init__.py     — public API surface (re-exports everything below)
-│   ├── engine.py       — TemplateEngine + BoundEngine (per-render theme binding)
+│   ├── engine.py       — TemplateEngine + BoundEngine (per-render theme + size binding)
 │   ├── email.py        — Email + EmailBuilder (fluent), _validate_size()
 │   ├── regions.py      — Region base + Header/MinimalHeader, Footer/MinimalFooter
 │                         (body = the section list, deliberately not a class)
@@ -70,9 +70,12 @@ svc/
 │   ├── components.py   — Component, CardGroup, DataTable, ChartBlock, ImageBlock, TextBlock, NumberedList, AuthorBlock
 │   ├── models.py       — EmailMetadata (the email's facts), Card, KpiItem, TableRow, NumberedItem, SectionConfig
 │   ├── images.py       — EmailImage (hosted/attached/inline), ImageAsset manifest, format sniffing
-│   ├── enums.py        — StrEnum vocab: TwoColumnRatio, ThreeColumnRatio, CardOrientation, EmbedStrategy, ImageAlign
+│   ├── enums.py        — StrEnum vocab: TwoColumnRatio, ThreeColumnRatio, CardOrientation, EmbedStrategy, ImageAlign, SizeTheme
 │   ├── theming.py      — Theme (Palette/TextColors/SemanticColors/ShadowStyle),
 │                         DEFAULT_THEME, SLATE_THEME, THEMES, resolve_theme
+│   ├── sizing.py       — SizeScheme (TypeScale/SpacingScale/ComponentScale/FrameGeometry),
+│                         STANDARD/COMPACT/SPACIOUS_SIZES, SIZE_SCHEMES, resolve_size_scheme,
+│                         column_layout() — the frame arithmetic eight templates used to hold
 │   ├── filters.py      — Jinja filters (e.g. validate_hex_color)
 │   ├── exceptions.py   — EmailBuilderError hierarchy
 │   └── templates/      ← packaged with the wheel (moved here in #10)
@@ -80,7 +83,8 @@ svc/
 │                                      sections_html, footer_contact_html, footer_legal_html)
 │       ├── regions/*.html           — header.html, header-minimal.html,
 │                                      footer-contact.html, footer-legal.html
-│       ├── common/containers/*.html — layout geometry (full-width, col-50-50/30-70/70-30, col-33-33-33/50-25-25/25-50-25/25-25-50)
+│       ├── common/containers/*.html — layout geometry: full-width.html + columns.html
+│                                      (one file for every split since #42; widths computed)
 │       ├── analysis/*.html          — data components (card-group, data-table, chart-block)
 │       ├── media/*.html             — image components (image-block)
 │       └── text/*.html              — text components (text-block, numbered-list, author-block)
@@ -104,7 +108,7 @@ qa/                     ← QA harness (epic #54); NOT shipped in the wheel
 ├── preview.py         — the CLI that composes the rest: `python -m qa.preview <target>`
 │                        [--lint] [--screenshot] [--open] [--list]
 └── fixtures/          — the gallery: minimal, kitchen_sink, image_matrix, minimal_header,
-                        minimal_footer, slate_theme,
+                        minimal_footer, slate_theme, compact_size, spacious_size,
                         + all_fixtures()
     └── goldens/       — the checked-in snapshots: <name>.html + <name>.assets.txt
 output/                 — generated email HTML (gitignored; not committed)
@@ -116,7 +120,7 @@ tests/                  — pytest unit suite (validation, error paths, size lim
 ## The fixture gallery — `qa/fixtures`
 
 The shared set of representative emails every later QA tool consumes (#57, the first step of
-epic #54). Four fixtures, each a `build()` returning a built `Email`, enumerated through
+epic #54). Eight fixtures, each a `build()` returning a built `Email`, enumerated through
 `all_fixtures()` so a consumer never imports them one by one:
 
 | Fixture | What it is for |
@@ -126,6 +130,7 @@ epic #54). Four fixtures, each a `build()` returning a built `Email`, enumerated
 | `image_matrix` | All three embed strategies, plus the same attached image referenced twice — the shortest proof that `assets()` reports exactly the `cid:` references the HTML contains |
 | `minimal_header` | The `MinimalHeader` variant (#36). Differs from the others in one argument, so its golden pins that a region swap changes the masthead and nothing else — no VML, no `background-image`, every email-level fact still present, and a CID logo attached exactly once through the region's own `images()` |
 | `slate_theme` | The `slate` preset (#50). Differs from `kitchen_sink` in one metadata field, so its golden pins that a palette reaches *everywhere* — every component, every ratio, the dark-mode forcing block and the mobile media query — and that a caller's own `KpiItem` colour survives while an unset `Card.color` takes the theme's neutral |
+| `compact_size` / `spacious_size` | The two density presets (#43). Each renders **`kitchen_sink`'s own content** at one non-default `size_theme` rather than restating it, so the pair diffs as a true A/B where every difference is the density: type, spacing, the component sizes that do not follow the global scale, the frame padding every column width is computed from, and `base.html`'s `@media` block moving with the rest. They are what retires `kitchen_sink`'s `size_theme` exemption — that fixture holds the field at its default on purpose, because it is the epic's byte-identity reference |
 | `minimal_footer` | The `MinimalFooter` variant (#66), the same argument at the other end. Its golden pins that the contact card and its `v:roundrect` are *absent* while the legal block is byte-identical to the default footer's — because the variant composes that template rather than forking it. Paired with the **default** header on purpose: the two region choices are independent, and swapping both at once could not say which one moved a byte |
 
 **Determinism is the rule the gallery rests on**, and it is not a style preference: Content-IDs
@@ -511,7 +516,19 @@ These are not conventions to remember — each has teeth, and the teeth are name
    carry their own copies of surface and text colours — the dark-mode forcing block and the
    mobile `@media` rule — because if they stop reading the same tokens as the inline styles
    they override, a themed email renders half-themed in exactly the clients hardest to test.
-5. **A region that carries images must declare them.** Same rule components already have,
+5. **A new template takes its sizes from the `size` namespace.** The same rule as 4, for
+   the other epic: a hardcoded scale-participating px is a size outside the scheme, which is
+   the drift epic #45 exists to end. One test fails on any `font-size` / `line-height` /
+   `padding` / `margin` declaration in a template that is neither tokenised nor on the named
+   exception list; a second fails if a *documented* exception stops being used, so the list
+   cannot outlive its reasons. The exceptions are four, each structural rather than
+   scale-participating: the preheader's `font-size:1px` hider, the accent rule's
+   `font-size:0; line-height:0` spacer cell, the `padding:1px 1px 1px 1px` hairline frame of
+   a highlighted band, and all-zero resets. Border widths, border radii, `arcsize`,
+   `letter-spacing` and `text-shadow` offsets are shape rather than density and stay literal.
+   Watch the `@media` block for rule 4's reason exactly: overrides carrying their own
+   literals leave an email desktop-themed and mobile-standard.
+6. **A region that carries images must declare them.** Same rule components already have,
    and the same failure if you skip it: the bytes never reach `Email.assets()` and the
    `cid:` reference renders as a broken image. Declaring means listing the field in
    `IMAGE_FIELDS` — `Region.images()` walks it — or overriding `images()` if the bytes come
@@ -526,11 +543,14 @@ These are not conventions to remember — each has teeth, and the teeth are name
 from svc.builder import EmailBuilder, Email, \
     Theme, Palette, TextColors, SemanticColors, ShadowStyle, Rgba, \
     DEFAULT_THEME, SLATE_THEME, THEMES, \
+    SizeScheme, TypeScale, SpacingScale, ComponentScale, FrameGeometry, \
+    STANDARD_SIZES, COMPACT_SIZES, SPACIOUS_SIZES, SIZE_SCHEMES, \
     Region, Header, MinimalHeader, Footer, MinimalFooter, \
     FullWidth, TwoColumn, ThreeColumn, \
     CardGroup, DataTable, ChartBlock, ImageBlock, TextBlock, NumberedList, AuthorBlock
 from svc.builder.models import Card, KpiItem, TableRow, NumberedItem, EmailMetadata, SectionConfig
-from svc.builder.enums import TwoColumnRatio, ThreeColumnRatio, CardOrientation, EmbedStrategy, ImageAlign
+from svc.builder.enums import TwoColumnRatio, ThreeColumnRatio, CardOrientation, \
+    EmbedStrategy, ImageAlign, SizeTheme
 from svc.builder.images import EmailImage, ImageAsset
 ```
 
@@ -712,9 +732,16 @@ reproduces today's output — so an existing email renders unchanged unless it o
   the block it lived in is not rendered at all.
 - **Colour is a parameter — but the whole `Theme` is the atom.** A caller picks a preset or
   builds a theme; they never set a colour at a call site. See *Theming* below.
-- **Not parameters, deliberately**: fonts, padding, and the 680px table geometry. That is
-  the design system, and letting callers vary it per email is how a template stops surviving
-  Outlook. Sizing is epic #45's domain, not a knob to add ad hoc.
+- **Density is a parameter — but the atom is the whole `SizeScheme`, and only by name.**
+  `EmailMetadata(size_theme="compact")` is the entire caller-facing sizing surface. See
+  *Sizing* below.
+- **Not parameters, deliberately**: fonts, and any individual px anywhere. Padding and the
+  680px frame are no longer *fixed* — a theme moves both — but they are still not something
+  a caller sets per email or per component. That distinction is the whole of the rule:
+  **callers pick a theme, never a px.** A `font_size=` on a call site would dissolve the
+  design system one component at a time, exactly as a `title_color=` would dissolve the
+  palette, and a template that stops surviving Outlook is how it would show up. A test
+  introspects every exported class and fails if such a parameter ever appears.
 
 ### Validation philosophy
 
@@ -783,7 +810,7 @@ EmailBuilder().metadata({..., "theme": DEFAULT_THEME.derive(  # or your own
   layers `DEFAULT_THEME` *under* the caller's context, so rendering a component on its own
   stays a one-liner. `Email.render()` binds the resolved theme on top, and that always wins.
 
-**How the theme reaches every template — the mechanism epic #45 inherits.** A value owned by
+**How the theme reaches every template — the mechanism epic #45 rode.** A value owned by
 the email must reach component templates several layers down. `TemplateEngine.bound(**shared)`
 returns a `BoundEngine`: a **per-render** view that merges shared values into every context
 and delegates the rest. Containers, components and regions keep taking one argument and
@@ -792,8 +819,9 @@ asserts those signatures never grew a parameter. Threading an argument would hav
 every call site; an environment global would have made the engine stateful, so two emails
 with different themes sharing an engine could interleave. Shared values layer **over** the
 caller's context, the same way `Region.context()` layers facts over presentation: what the
-email owns cannot be shadowed from below. **#40 (size themes) should ride this, not build a
-second one.**
+email owns cannot be shadowed from below. **#40 rode it rather than building a second one**:
+a size scheme is another shared value on the same binder, and nothing in the section tree
+changed signature to accept it.
 
 **Adding a preset**: curated values, not a hue rotation — every colour is a design decision,
 exactly as the default's are. Add it to `THEMES`, and **land it with a gallery fixture**, as
@@ -811,6 +839,85 @@ is not Outlook's.
 the skeleton still forces light rendering and the migration tokenised that block without
 changing what it does; no contrast or taste policing; **one theme per email** — a palette is
 an email-level voice, so there is no per-section mixing.
+
+### Sizing — density is one selected preset
+
+Sizes were 57 `font-size` declarations, ~50 line-heights and ~90 padding literals across 20
+templates, plus the 680px frame arithmetic written out **twice per column in eight container
+files**. An implied scale existed (28 / 22 / 21 / 17 / 14 / 13 / 11 / 10 / 9.5 px); nothing
+named it, owned it, or could vary it. Epic #45 replaced it with
+[svc/builder/sizing.py](svc/builder/sizing.py).
+
+```python
+EmailBuilder().metadata({..., "size_theme": "compact"})     # or "standard" / "spacious"
+```
+
+`EmailMetadata.size_theme` → resolved **once** in `Email.render()` → four frozen layers
+(`type`, `space`, `component`, `frame`) → templates read `{{ size.type.body }}`.
+
+- **Callers pick a theme, never a px — and here that is stricter than colour.** `size_theme`
+  accepts a `SizeTheme` member or its bare string and **nothing else**, where `theme` also
+  accepts a custom `Theme` object. The asymmetry is deliberate: a palette is an email's voice
+  and a house style may legitimately need its own, whereas density interacts with the 102 KB
+  clipping limit, Outlook's Word engine and the mobile collapse all at once — a scheme nobody
+  has rendered in a real client is a compatibility claim nobody has tested. Widening this
+  later is additive; narrowing it would not be.
+- **Tokens are named by role, not by number**, for the reason the colour epic learned the
+  expensive way: a value-keyed vocabulary is byte-identical and useless, because changing the
+  masthead would silently change every body heading that happened to share its size.
+- **Validation rejects an integral float.** A scheme holding `14.0` renders
+  `font-size:14.0px` — legal CSS, and a byte-identity failure. The rule cannot simply be
+  "ints only": `micro` is genuinely 9.5.
+- **`frame.inner` is a property, never a field.** A stored inner width could disagree with
+  `width - 2 * pad_x`, and the eight container templates are what that disagreement looked
+  like in practice.
+- **The engine guarantees a scheme; the email chooses which** — the same floor as the theme.
+  `TemplateEngine.render()` layers `STANDARD_SIZES` *under* the caller's context, so
+  rendering a component on its own stays a one-liner, and `Email.render()`'s binding wins.
+
+**Column geometry is arithmetic the builder owns.** A ratio's own *name* is its weights —
+`"25-25-50"` is `[25, 25, 50]` — and `column_layout()` splits the active scheme's content
+width by them. No lookup table: a table would be a second place for the split to be written
+down, and therefore a second place to be wrong. Weights normalise by their own sum, which is
+what makes `"33-33-33"` exact thirds rather than 99% of the frame with a 6px hole in it. Two
+rules the arithmetic had to *recover* rather than invent:
+
+- **The remainder goes outside-in.** 584px does not divide by three, and which two columns
+  gain a pixel was already decided by hand as 195 / 194 / 195. `_remainder_order()`
+  reproduces it — and it is the right rule independently, because a reader notices an
+  asymmetric left/right pair, not a centre column one pixel narrower than its neighbours.
+- **Column padding steps down below `frame.narrow_column`.** The 20px / 16px split was never
+  a rule, only a per-file choice: 300 and 420 had 20, 292 and smaller had 16. That threshold
+  is the rule made explicit — and it is the one token that moves *down* in `spacious`, where
+  a 24px gutter puts a two-up split at 288px and holding it at 300 would have handed the
+  airiest theme the tightest column padding.
+
+**The eight per-ratio templates are one template.** They were byte-identical apart from a
+Jinja comment and the numbers, so they were never carrying a per-ratio *decision* — they were
+carrying arithmetic nobody had done in Python. `TwoColumn` and `ThreeColumn` share
+`_SplitContainer` and one `template_path`; the ratio selects numbers, not a file, and a test
+fails if a `col-*.html` ever comes back. The attribute width and the CSS width come from one
+computed value, asserted per column at frames the email has never shipped at.
+
+**`.kpi-cell` reads `card_pad_*` on purpose.** On a phone a horizontal KPI strip *becomes*
+the vertical card layout, so it is padded like one rather than from a second pair of tokens.
+That is what stops a compact email rendering airier on a phone than on a desktop, and a test
+asserts it per theme.
+
+**Adding a theme**: add the `SizeTheme` member, populate a full `SizeScheme` — the
+completeness test enforces "full", and a member without a scheme raises a message saying so —
+and **land it with a gallery fixture**. Write it as `STANDARD_SIZES.derive(...)` so what the
+preset *decides* is the literal content of its definition and everything else is visibly
+inherited; `derive()` re-runs each layer's validation, so a derived scheme is checked exactly
+as a hand-built one. Curate, do not multiply: a multiplier would shrink fine print below
+legibility, scale leading linearly with type when leading should move the other way, and
+treat a KPI number as ordinary body copy. Tests assert all three.
+
+**Non-goals, as decisions**: no free-form size parameters (`size_theme` is the whole surface);
+**no narrow-frame theme** — all three keep the 680px frame, and #42 made width *derivable* so
+that shipping a different one becomes a deliberate act with its own client-testing burden and
+its own interplay with image `width=` attributes, rather than a side effect; one theme per
+email, since density is an email-level voice; and no font theming, which stays #56's.
 
 ## Architecture — `svc/delivery`
 
@@ -1039,21 +1146,24 @@ Reach for these rather than improvising:
 ## Open work
 
 - Tracked in [GitHub issues](https://github.com/RorySullivan1/pyHermes/issues), organised as
-  epics with sub-issues: #45 size themes, plus #53 plain-text and #56 typography as
-  parents. #38 (header region), #46 (colour themes), #52 (delivery), #54 (QA harness) and
-  #55 (footer region) are complete.
+  epics with sub-issues: #53 plain-text and #56 typography are the remaining parents. #38
+  (header region), #45 (size themes), #46 (colour themes), #52 (delivery), #54 (QA harness)
+  and #55 (footer region) are complete.
 - **The QA harness (#54) is complete**, and it changes how the visual epics discharge their
   own acceptance criteria:
-  - **#43 (size themes) gets its eyeball artifacts from the screenshot runner**, not from ad-hoc `.save()` calls. `python -m qa.preview <fixture>
-    --screenshot` locally; CI uploads the whole gallery on every PR. Side-by-side theme
-    review is two runs of one command.
-  - **Migration PRs under #45 cite gallery-wide goldens, not a single email.**
-    "Byte-identical" now means every gallery fixture plus its asset manifest — a
-    container-template edit that one email's ratios never exercise no longer slips through.
-  - **A theme lands with a fixture.** Epic #54 anticipated "one per theme as themes land";
-    the completeness tests make that concrete for components, metadata fields and both
-    regions' fields already — and `minimal_header` / `minimal_footer` are the worked
-    examples of a fixture that exists to pin one variant.
+  - **A visual epic gets its eyeball artifacts from the screenshot runner**, not from ad-hoc
+    `.save()` calls. `python -m qa.preview <fixture> --screenshot` locally; CI uploads the
+    whole gallery on every PR. Side-by-side theme review is two runs of one command, and
+    #43's density claim is legible straight off the image heights: 2516 / 3030 / 3731 px for
+    the same email at compact / standard / spacious.
+  - **Migration PRs cite gallery-wide goldens, not a single email.** "Byte-identical" means
+    every gallery fixture plus its asset manifest — a container-template edit that one
+    email's ratios never exercise no longer slips through. Both theme epics discharged their
+    claim this way: #46 moved one comment and nothing else; #45 moved nothing at all.
+  - **A theme lands with a fixture.** Epic #54 anticipated "one per theme as themes land",
+    and all four now exist — `slate_theme` for the palette, `compact_size` / `spacious_size`
+    for the two densities, with `minimal_header` / `minimal_footer` the worked examples of a
+    fixture that pins one variant.
 - **The region model is complete (#38 header, #55 footer)**, and between them `base.html`
   went from 277 lines to 116. What the remaining epics inherit:
   - **The mechanism is generalised, not duplicated.** `Region` owns validation, the image
@@ -1064,9 +1174,9 @@ Reach for these rather than improvising:
   - **`EmailMetadata` is facts only.** A new field belongs there if it is *true of the
     email* and on a region if it is *how something looks*. The flat-keyword `InitVar` pattern
     is how a field moves off the metadata without breaking an existing call site.
-  - **`base.html` is down to the head, the skeleton and the preheader** — so the theme epics (#45, #46)
-    now contend on far less of one file than they did, and on almost none of the markup that
-    made it fragile.
+  - **`base.html` is down to the head, the skeleton and the preheader** — which is why the
+    two theme epics (#45, #46) contended on far less of one file than they would have, and on
+    almost none of the markup that made it fragile.
   - **A variant is what proves a seam.** `MinimalHeader` and `MinimalFooter` each differ from
     their default in exactly which slots they fill; each has a gallery fixture and a golden.
     A seam with one implementation is a refactor.
@@ -1076,26 +1186,33 @@ Reach for these rather than improvising:
   each of them now inherits byte-identity proof for free: change a template, and the gallery
   tells you which email moved and where. The delivery epic (#52) is complete and contends
   with none of them.
-- **The colour epic (#46) is complete.** What #45 (size themes) inherits from it:
+- **Both theme epics are complete (#46 colour, #45 size).** Three techniques carried from
+  one to the other, and worth carrying to the next:
   - **The injection mechanism is built — ride it, do not build a second one.** #48 made the
-    choice #40 was told to coordinate on: `TemplateEngine.bound(**shared)` returns a
-    per-render `BoundEngine`, so nothing in the section tree changed signature. A size theme
-    is another shared value on the same binder.
+    choice #40 was told to make: `TemplateEngine.bound(**shared)` returns a per-render
+    `BoundEngine`, so nothing in the section tree changed signature. #40 added `size` as
+    another shared value on the same binder and touched no container, component or region.
+    A future email-level value should do the same.
   - **The audit pattern is worth repeating.** Naming tokens by *role* rather than by value
-    is what turned 245 literals into a vocabulary; doing it by value would have produced a
-    lookup table nobody could theme. Two tokens the first pass missed only surfaced because
-    the migration had to decide what each site *meant*.
+    is what turned 245 colour literals into a vocabulary, and the same move on ~200 size
+    literals surfaced a threshold nobody had written down: column padding steps at 300px.
+    A value-keyed substitution would have been byte-identical and useless.
   - **Byte-identity is provable before the intended change.** #49 restored the one comment
     it meant to alter, ran the goldens green, then re-applied it — so the golden diff in the
-    PR was exactly the intended change and nothing else. Do that.
+    PR was exactly the intended change and nothing else. #45 went one better and needed no
+    diff at all: every one of its four migration steps left all six pre-existing goldens
+    untouched, and the only new files are the two fixtures it shipped.
 - **Two findings the harness surfaced are still open**: #76 (the mobile `.kpi-cell` collapse
   overflows its viewport by its own padding — `base.html`'s CSS, still there) and #78 (three
   sourced Outlook findings the lint pass defers rather than shipping red; one of the three,
   the `rgba()` scrim, now composed from `ShadowStyle` in `templates/regions/header.html`).
-  #78 got easier: the scrim is one `Rgba` read by both the CSS and VML halves, so a fix
-  changes one object rather than two literals. They were deliberately **not** folded into
-  #38, #46 or #55: each changes rendered output, and both epics' whole claim
-  was that every step leaves the gallery byte-identical. They are their own PR, and the
+  Both got easier and one got sharper. #78's scrim is one `Rgba` read by both the CSS and VML
+  halves, so a fix changes one object rather than two literals. #76 is now *themed*: the
+  overflow scales with the density (383 / 387 / 395 px at a 375px viewport for compact /
+  standard / spacious), because `.kpi-cell` reads `component.card_pad_*` — so the fix is one
+  `box-sizing` rule in `base.html`, not a per-theme adjustment. They were deliberately **not**
+  folded into #38, #45, #46 or #55: each changes rendered output, and every one of those
+  epics claimed the gallery stays byte-identical at each step. They are their own PR, and the
   golden diff they produce is the point rather than the problem.
 - [README.md](README.md) is the human-facing entry point (what it is, install, build, send,
   the constraints it enforces). CLAUDE.md stays the *rationale* document — the README says

@@ -38,10 +38,16 @@ class TestConstruction:
             "text/text-block.html",
             "text/numbered-list.html",
             "text/author-block.html",
+            "media/image-block.html",
+            "regions/header.html",
+            "regions/header-minimal.html",
+            "regions/footer-contact.html",
+            "regions/footer-legal.html",
             "common/containers/full-width.html",
-            "common/containers/col-50-50.html",
-            "common/containers/col-30-70.html",
-            "common/containers/col-70-30.html",
+            # One file for every split since #42; the eight per-ratio
+            # templates it replaced differed only in a comment and the
+            # numbers, and the numbers are computed now.
+            "common/containers/columns.html",
         }
         missing = {t for t in expected if not (engine.template_dir / t).is_file()}
         assert not missing, f"templates missing from the package: {sorted(missing)}"

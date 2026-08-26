@@ -15,6 +15,7 @@ import jinja2
 
 from .exceptions import TemplateError
 from .filters import register_all
+from .sizing import STANDARD_SIZES
 from .theming import DEFAULT_THEME
 
 
@@ -119,8 +120,11 @@ class TemplateEngine:
         A view of this engine that adds ``shared`` to every render context.
 
         Used once per :meth:`svc.builder.email.Email.render` to carry the
-        resolved theme down the section tree. See :class:`BoundEngine` for
-        why this rather than a threaded argument or an environment global.
+        resolved theme and size scheme down the section tree. See
+        :class:`BoundEngine` for why this rather than a threaded argument or
+        an environment global — and note that the size epic (#45) rides this
+        binder rather than building a second one, which is the whole reason
+        it is keyword-general instead of theme-shaped.
         """
         return BoundEngine(self, dict(shared))
 
@@ -140,13 +144,14 @@ class TemplateEngine:
         """
         try:
             tpl = self.get_template(template_name)
-            # Every template reads colours from ``theme`` since #49, so the
-            # engine guarantees one is present: rendering a component on its
-            # own stays a one-liner, and it renders in the shipped palette.
-            # The *choice* of theme belongs to Email.render(), which binds a
-            # resolved one — and because the caller's context is layered on
+            # Every template reads colours from ``theme`` since #49 and sizes
+            # from ``size`` since #41, so the engine guarantees both are
+            # present: rendering a component on its own stays a one-liner,
+            # and it renders in the shipped palette at the shipped density.
+            # The *choice* of either belongs to Email.render(), which binds
+            # resolved ones — and because the caller's context is layered on
             # top here, that binding always wins over this floor.
-            return tpl.render(**{"theme": DEFAULT_THEME, **context})
+            return tpl.render(**{"theme": DEFAULT_THEME, "size": STANDARD_SIZES, **context})
         except jinja2.TemplateError as exc:
             raise TemplateError(f"Error rendering {template_name}: {exc}") from exc
 
@@ -165,8 +170,8 @@ class TemplateEngine:
         """
         try:
             tpl = self._env.from_string(source)
-            # Same theme floor as render(); see the note there.
-            return tpl.render(**{"theme": DEFAULT_THEME, **context})
+            # Same theme and size floor as render(); see the note there.
+            return tpl.render(**{"theme": DEFAULT_THEME, "size": STANDARD_SIZES, **context})
         except jinja2.TemplateError as exc:
             raise TemplateError(f"Error rendering string template: {exc}") from exc
 
@@ -176,9 +181,10 @@ class BoundEngine:
     """
     An engine view that merges email-level values into every render context.
 
-    The problem it solves: a value owned by the *email* — the resolved theme —
-    has to reach every template in the tree, including component templates
-    several layers down that know nothing about it. Threading it through
+    The problem it solves: a value owned by the *email* — the resolved theme,
+    the resolved size scheme — has to reach every template in the tree,
+    including component templates several layers down that know nothing
+    about it. Threading it through
     every ``render()`` signature would change containers, components and
     regions alike; setting it on the Jinja environment would make the engine
     stateful, and two emails with different themes sharing an engine could

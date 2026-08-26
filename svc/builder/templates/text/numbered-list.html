@@ -6,17 +6,17 @@
     items    — List of dicts with keys: number, title, body
 #}
 {% if subtitle %}
-<p style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; font-style: italic; color: {{ theme.text.secondary }}; margin: 0 0 12px 0; line-height: 1.4;">{{ subtitle | escape_html }}</p>
+<p style="font-family: Georgia, 'Times New Roman', serif; font-size: {{ size.type.secondary }}px; font-style: italic; color: {{ theme.text.secondary }}; margin: 0 0 {{ size.space.subtitle_gap }}px 0; line-height: {{ size.type.secondary_line }};">{{ subtitle | escape_html }}</p>
 {% endif %}
 {% for item in items %}
-<table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;{% if not loop.last %} margin-bottom: 16px;{% endif %}">
+<table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;{% if not loop.last %} margin-bottom: {{ size.space.block_gap }}px;{% endif %}">
   <tr>
-    <td width="22" style="padding: 0 12px 0 0; vertical-align: top;">
-      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 17px; font-weight: bold; color: {{ theme.palette.accent }}; margin: 0; line-height: 1.2;">{{ item.number | escape_html }}</p>
+    <td width="{{ size.component.list_ordinal_width }}" style="padding: 0 {{ size.component.list_ordinal_gap }}px 0 0; vertical-align: top;">
+      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: {{ size.type.section }}px; font-weight: bold; color: {{ theme.palette.accent }}; margin: 0; line-height: {{ size.type.title_line }};">{{ item.number | escape_html }}</p>
     </td>
     <td style="padding: 0; vertical-align: top;">
-      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; font-weight: bold; color: {{ theme.text.heading }}; margin: 0 0 6px 0; line-height: 1.3;">{{ item.title | escape_html }}</p>
-      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: {{ theme.text.primary }}; margin: 0; line-height: 1.68;">{{ item.body }}</p>
+      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: {{ size.type.item_title }}px; font-weight: bold; color: {{ theme.text.heading }}; margin: 0 0 {{ size.component.list_title_gap }}px 0; line-height: {{ size.type.heading_line }};">{{ item.title | escape_html }}</p>
+      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: {{ size.type.body }}px; color: {{ theme.text.primary }}; margin: 0; line-height: {{ size.component.list_body_line }};">{{ item.body }}</p>
     </td>
   </tr>
 </table>

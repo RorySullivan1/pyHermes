@@ -138,6 +138,7 @@ jobs:
               MinimalFooter,
               MinimalHeader,
               TextBlock,
+              TwoColumn,
           )
 
           METADATA = {
@@ -171,4 +172,27 @@ jobs:
           assert "<v:roundrect" not in variant.read_text(), "the variant rendered VML"
           assert "FOOTER PART 2" in variant.read_text(), "the variant dropped the legal block"
           print(f"OK: {variant} ({variant.stat().st_size} bytes)")
+
+          # common/containers/columns.html ships, and its widths are computed
+          # from the size scheme rather than hardcoded — so a non-default
+          # density must move them. Guards #42/#43 from a clean install.
+          def two_up(size_theme, name):
+              return (
+                  EmailBuilder()
+                  .metadata({**METADATA, "size_theme": size_theme})
+                  .section(
+                      TwoColumn(
+                          ratio="50-50",
+                          left=TextBlock("<p>Left.</p>"),
+                          right=TextBlock("<p>Right.</p>"),
+                      )
+                  )
+                  .save(Path(name))
+              ).read_text()
+
+          standard, compact = two_up("standard", "standard.html"), two_up("compact", "compact.html")
+          assert 'width="300"' in standard, "columns.html did not render at the shipped frame"
+          assert 'width="300"' not in compact, "a size theme did not move the column geometry"
+          assert "font-size:13px" in compact, "the compact type scale did not reach the email"
+          print("OK: columns.html renders, and its geometry follows the size theme")
           PY

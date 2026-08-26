@@ -166,6 +166,25 @@ about the *number*, and the theme only supplies the fallback behind them.
 
 Validation checks shape, not taste — a low-contrast palette is legal and will render.
 
+## Size
+
+Density works the same way, from one more metadata field:
+
+```python
+EmailBuilder().metadata({..., "size_theme": "compact"})   # or "standard" / "spacious"
+```
+
+Three curated presets. `compact` fits the same letter into about 17% less height, `spacious`
+gives it 23% more, and every font size, line-height, padding, gutter and column width follows
+— including the mobile `@media` overrides, so an email is never desktop-themed and
+mobile-standard. Column widths are computed from the frame rather than hardcoded, so they
+still fill the content width to the pixel at any density.
+
+Unlike `theme`, `size_theme` takes a preset name only. Density interacts with the clipping
+limit, Outlook's Word engine and the mobile collapse all at once, so a scheme nobody has
+rendered in a real client is a compatibility claim nobody has tested. There is no per-email
+or per-component size override: you pick a theme, never a px.
+
 ## What it enforces
 
 These are the failures that are invisible until a reader reports them, so they are checked
