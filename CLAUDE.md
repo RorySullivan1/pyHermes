@@ -45,7 +45,7 @@ Four things now stand behind that one command, and they answer different questio
 
 | | Answers |
 |---|---|
-| **The gallery** (`qa/fixtures/`) | *What do I render?* Three canonical emails, deterministic by rule, so every tool below has stable input |
+| **The gallery** (`qa/fixtures/`) | *What do I render?* Four canonical emails, deterministic by rule, so every tool below has stable input |
 | **The goldens** (`qa/fixtures/goldens/`) | *Did anything move?* Byte-identity on HTML **and** the asset manifest, for the whole gallery |
 | **Screenshots** (`qa/screenshots.py`) | *How does it look?* Two viewports through headless Chromium — a review artifact, not a gate |
 | **The lint pass** (`qa/lint.py`) | *Will it survive a real client?* The portability rules, with the size budget attributed to sections |
@@ -64,15 +64,17 @@ svc/
 │   ├── __init__.py     — public API surface (re-exports everything below)
 │   ├── engine.py       — TemplateEngine (Jinja2, StrictUndefined, autoescape OFF)
 │   ├── email.py        — Email + EmailBuilder (fluent), _validate_size()
+│   ├── regions.py      — Header, MinimalHeader (the masthead region; body = the section list)
 │   ├── containers.py   — Container, FullWidth, TwoColumn, ThreeColumn (+ `highlight=` property)
 │   ├── components.py   — Component, CardGroup, DataTable, ChartBlock, ImageBlock, TextBlock, NumberedList, AuthorBlock
-│   ├── models.py       — EmailMetadata, Card, KpiItem, TableRow, NumberedItem, SectionConfig
+│   ├── models.py       — EmailMetadata (the email's facts), Card, KpiItem, TableRow, NumberedItem, SectionConfig
 │   ├── images.py       — EmailImage (hosted/attached/inline), ImageAsset manifest, format sniffing
 │   ├── enums.py        — StrEnum vocab: TwoColumnRatio, ThreeColumnRatio, CardOrientation, EmbedStrategy, ImageAlign
 │   ├── filters.py      — Jinja filters (e.g. validate_hex_color)
 │   ├── exceptions.py   — EmailBuilderError hierarchy
 │   └── templates/      ← packaged with the wheel (moved here in #10)
-│       ├── base.html                — the rendered skeleton (one hole: {{ sections_html }})
+│       ├── base.html                — the rendered skeleton ({{ header_html }}, {{ sections_html }})
+│       ├── regions/*.html           — header.html, header-minimal.html
 │       ├── common/containers/*.html — layout geometry (full-width, col-50-50/30-70/70-30, col-33-33-33/50-25-25/25-50-25/25-25-50)
 │       ├── analysis/*.html          — data components (card-group, data-table, chart-block)
 │       ├── media/*.html             — image components (image-block)
@@ -96,7 +98,8 @@ qa/                     ← QA harness (epic #54); NOT shipped in the wheel
 │                        lint_email(), size_report(), SOURCES, DEFERRED_RULES
 ├── preview.py         — the CLI that composes the rest: `python -m qa.preview <target>`
 │                        [--lint] [--screenshot] [--open] [--list]
-└── fixtures/          — the gallery: minimal, kitchen_sink, image_matrix, + all_fixtures()
+└── fixtures/          — the gallery: minimal, kitchen_sink, image_matrix, minimal_header,
+                        + all_fixtures()
     └── goldens/       — the checked-in snapshots: <name>.html + <name>.assets.txt
 output/                 — generated email HTML (gitignored; not committed)
 tests/                  — pytest unit suite (validation, error paths, size limits)
@@ -107,14 +110,15 @@ tests/                  — pytest unit suite (validation, error paths, size lim
 ## The fixture gallery — `qa/fixtures`
 
 The shared set of representative emails every later QA tool consumes (#57, the first step of
-epic #54). Three fixtures, each a `build()` returning a built `Email`, enumerated through
+epic #54). Four fixtures, each a `build()` returning a built `Email`, enumerated through
 `all_fixtures()` so a consumer never imports them one by one:
 
 | Fixture | What it is for |
 |---|---|
 | `minimal` | The smallest valid email. Its value is negative space — it renders the skeleton with every optional region empty, so it catches a change to `base.html`'s defaults that a richer fixture masks by supplying the value itself |
-| `kitchen_sink` | Every public component in every container ratio, `highlight=True` included, **and every `EmailMetadata` field set to a distinctive non-default value**. The fixture the golden is worth the most on, and #32's characterization email |
+| `kitchen_sink` | Every public component in every container ratio, `highlight=True` included, **and every `EmailMetadata` and `Header` field set to a distinctive non-default value**. The fixture the golden is worth the most on, and #32's characterization email |
 | `image_matrix` | All three embed strategies, plus the same attached image referenced twice — the shortest proof that `assets()` reports exactly the `cid:` references the HTML contains |
+| `minimal_header` | The `MinimalHeader` variant (#36). Differs from the others in one argument, so its golden pins that a region swap changes the masthead and nothing else — no VML, no `background-image`, every email-level fact still present, and a CID logo attached exactly once through the region's own `images()` |
 
 **Determinism is the rule the gallery rests on**, and it is not a style preference: Content-IDs
 are `sha256(bytes)[:16]`, so a fixture image that varies changes the `cid:` references in the
@@ -132,12 +136,16 @@ hatchling's editable-install strategy happening to expose it. `qa/` **is** type-
 `mypy` runs over `["svc", "qa"]`.
 
 **Adding a component means adding it to `kitchen_sink()`; so does adding an `EmailMetadata`
-field.** Two completeness tests introspect rather than hand-list: one over every public
-`Component` subclass exported from `svc.builder`, one over `dataclasses.fields(EmailMetadata)`,
-plus a third asserting each metadata value *differs from its own default* — a field set to its
+or `Header` field.** Four completeness tests introspect rather than hand-list: one over every
+public `Component` subclass exported from `svc.builder`, one over
+`dataclasses.fields(EmailMetadata)`, a third asserting each metadata value *differs from its
+own default*, and a fourth doing both at once over `dataclasses.fields(Header)` — read off the
+*built* header, so it holds however the fixture chooses to supply it. A field set to its
 default is one the golden cannot pin, because the render would not move if the default changed
 underneath it. Only exemptions are named, in `DEPRECATED_COMPONENTS` (today: `KpiStrip`, whose
-markup duplicates a section already in the gallery and which warns on construction).
+markup duplicates a section already in the gallery and which warns on construction), plus
+`EmailMetadata.header` itself — `kitchen_sink` supplies it the flat, pre-split way on purpose,
+which is how the golden pins the back-compatible path.
 
 Each `build()` also takes an optional `template_dir`, threaded to `EmailBuilder`, so the whole
 gallery can be rendered against a *candidate* template set — which is the question a template
@@ -367,25 +375,66 @@ actually *reached*, because a config nobody reads is decoration.
 (A legacy flat string-replace assembler, `svc/assembler.py`, was removed in #14. It is
 recoverable from git history if ever needed for reference.)
 
-### The three-layer composition model
+### The four-layer composition model
 
-Every email is `skeleton ← containers ← components`:
+Every email is `skeleton ← regions (header | body) ← containers ← components`:
 
 1. **Skeleton** — [svc/builder/templates/base.html](svc/builder/templates/base.html). The full HTML page (head,
-   header, footer, palette comment) with one variable hole: `{{ sections_html }}`. Rendered
-   last by [Email.render()](svc/builder/email.py).
-2. **Containers** — layout geometry only. In [svc/builder/templates/common/containers/](svc/builder/templates/common/containers/).
+   preheader, footer, palette comment) with two variable holes: `{{ header_html }}` and
+   `{{ sections_html }}`. Rendered last by [Email.render()](svc/builder/email.py).
+2. **Regions** — the named areas of the email. Templates in
+   [svc/builder/templates/regions/](svc/builder/templates/regions/); Python wrappers in
+   [svc/builder/regions.py](svc/builder/regions.py). Today that is the **header**:
+   `Header` and `MinimalHeader`, each rendering its own template and declaring its own
+   images. The **body region is the ordered section list** — deliberately not a class, since
+   wrapping it would add a layer with no behaviour.
+3. **Containers** — layout geometry only. In [svc/builder/templates/common/containers/](svc/builder/templates/common/containers/).
    Each produces a `<tr>` block sized to the 680px outer email table. Python wrappers in
    [svc/builder/containers.py](svc/builder/containers.py).
-3. **Components** — content blocks. Templates in
+4. **Components** — content blocks. Templates in
    [svc/builder/templates/analysis/](svc/builder/templates/analysis/) and
    [svc/builder/templates/text/](svc/builder/templates/text/); Python wrappers in
    [svc/builder/components.py](svc/builder/components.py).
 
 A `Container` holds one or more `Component`s, calls `component.render(engine)`, and embeds
-the fragment into its own template. `Email` concatenates all section HTML into the skeleton's
-`sections_html` slot. **Adding a content type = new template file + new `Component` subclass**
-that sets `template_path` and implements `context()`.
+the fragment into its own template. `Email` renders the header region, concatenates all
+section HTML, and drops both into the skeleton's two slots. **Adding a content type = new
+template file + new `Component` subclass** that sets `template_path` and implements
+`context()`.
+
+**The footer is still in the skeleton, deliberately.** Both footer parts are the same kind of
+candidate as the header was, but the seam gets proven on one region first; a footer epic
+(#55) can then reuse the mechanism wholesale rather than inventing a second one.
+
+### The ownership rule — facts flow down
+
+**Facts about the email live on `EmailMetadata`; how the masthead presents them lives on the
+`Header`.** A region presents facts; it cannot own or contradict them.
+
+| Stays on `EmailMetadata` (facts / constraints) | Lives on `Header` (presentation) |
+|---|---|
+| `email_subject`, `preheader_text` | `background_image_url` |
+| `firm_name`, `campaign_name` | `logo_url`, `logo_alt`, `logo_width` |
+| `date_range`, `issue_label`, `header_disclaimer` | `resolved_logo_alt()`, `resolved_logo_width()`, `DEFAULT_LOGO_WIDTH` |
+| all contact / footer / legal + skeleton-copy fields | |
+
+`header_disclaimer` sits on the email side on purpose: it is *displayed* in the masthead, but
+it is legal copy pairing with `footer_disclaimer`, and legal copy is a fact about the email.
+The five facts in `EmailMetadata.HEADER_FACTS` are handed to the region at render time.
+
+The rule is **mechanical, not remembered**: `Header.context()` layers the email's facts *over*
+its own keys rather than under them, so a region cannot shadow a fact even by accident — and a
+test asserts the two key sets stay disjoint.
+
+**The flat masthead keywords still work.** `EmailMetadata(logo_url=…, logo_alt=…,
+logo_width=…, header_bg_image_url=…)` builds the header for you, so an email written before
+the split renders byte-identically. They are `InitVar`s — constructor arguments only, never
+attributes, absent from `fields()`, `repr` and `==` — so the header stays the single owner.
+Passing them *and* an explicit `header=` raises rather than silently picking one.
+
+Two consequences worth knowing: a bad masthead URL now raises at `EmailMetadata` construction
+rather than at `.validate()`, and the message names `header.logo_url` /
+`header.background_image_url` — where the field actually lives.
 
 ### Three standing rules the harness enforces
 
@@ -405,16 +454,35 @@ These are not conventions to remember — each has teeth, and the teeth are name
    `display:flex` perfectly and Outlook's Word engine does not. The filenames say `chromium`
    for exactly this reason. Conversely, a clean lint says nothing about whether the layout
    *reads* well; that is what the images are for.
+4. **A region that carries images must override `images()`.** Same rule components already
+   have, and the same failure if you skip it: the bytes never reach `Email.assets()` and the
+   `cid:` reference renders as a broken image. `Email.images()` is header + sections, so the
+   region is the only owner of its own images.
 
 ### Public API (import from `svc.builder`)
 
 ```python
-from svc.builder import EmailBuilder, Email, FullWidth, TwoColumn, ThreeColumn, \
+from svc.builder import EmailBuilder, Email, Header, MinimalHeader, \
+    FullWidth, TwoColumn, ThreeColumn, \
     CardGroup, DataTable, ChartBlock, ImageBlock, TextBlock, NumberedList, AuthorBlock
 from svc.builder.models import Card, KpiItem, TableRow, NumberedItem, EmailMetadata, SectionConfig
 from svc.builder.enums import TwoColumnRatio, ThreeColumnRatio, CardOrientation, EmbedStrategy, ImageAlign
 from svc.builder.images import EmailImage, ImageAsset
 ```
+
+Choosing a header is an argument, never a template fork — and there is no selection
+mechanism beyond passing the object:
+
+```python
+Email(metadata, header=MinimalHeader(logo_url=logo))          # non-fluent
+EmailBuilder().metadata({...}).header(MinimalHeader()).section(...)   # fluent
+```
+
+`EmailBuilder.header()` follows the same sequencing rule as `section()`: calling it before
+`metadata()` raises `RuntimeError` — a programming error in the call sequence, not rejected
+data. Omit it and the header comes from the metadata, which the flat keywords built.
+`Email.header` is a read-only accessor for the same reasons as `Email.metadata`; use
+`Email.set_header()` to swap it.
 
 Column ratios and card orientation are `StrEnum`s in [svc/builder/enums.py](svc/builder/enums.py):
 `TwoColumn`/`ThreeColumn` take a `ratio` and `CardGroup` takes an `orientation` as
@@ -524,11 +592,13 @@ hosted images have no bytes and data URIs carry their own. `ImageAsset.content_i
 consumer needs them.
 
 Aggregation walks the section tree without rendering it: `Component.images()` →
-`Container.components()` → `Email.assets()`, plus the `EmailMetadata` image fields
-(`logo_url`, `header_bg_image_url`), which accept an `EmailImage` as well as a bare URL
-string. **A new image-bearing component must override `images()`** or its bytes never reach
-the manifest, and its `cid:` reference will render as a broken image. (It must also join
-`kitchen_sink()` — see the three standing rules above, which a test enforces.)
+`Container.components()` → `Email.assets()`. `Email.images()` is **header + sections**: the
+masthead's `logo_url` and `background_image_url` reach the manifest through
+`Header.images()`, not through the metadata, and both accept an `EmailImage` as well as a
+bare URL string. **A new image-bearing component — or region — must override `images()`** or
+its bytes never reach the manifest, and its `cid:` reference will render as a broken image.
+(A component must also join `kitchen_sink()` — see the standing rules above, which a test
+enforces.)
 
 Rules the module enforces at construction, per the validation philosophy below:
 
@@ -558,11 +628,14 @@ working unchanged.
 Anything that is not **core controlled formatting** should be passable, with a default that
 reproduces today's output — so an existing email renders unchanged unless it opts in.
 
-- **Alt text is always a parameter.** `ImageBlock`/`ChartBlock` take `alt`; the skeleton
-  logo takes `logo_alt`, which resolves **explicit metadata → the `EmailImage`'s own `alt`
-  → `firm_name`**. `logo_width` resolves the same way, ending at
-  `EmailMetadata.DEFAULT_LOGO_WIDTH` (90). `header_bg_image_url` is a CSS background, and
-  a CSS background cannot carry alt text — it is decorative by construction.
+- **Alt text is always a parameter.** `ImageBlock`/`ChartBlock` take `alt`; the masthead
+  logo takes `Header.logo_alt`, which resolves **explicit header value → the `EmailImage`'s
+  own `alt` → `firm_name`**. `logo_width` resolves the same way, ending at
+  `Header.DEFAULT_LOGO_WIDTH` (90). The chains live on the region, and `firm_name` is a
+  *parameter* to `resolved_logo_alt()` rather than a field — the header is handed the fact,
+  it does not hold it. Defaults still reproduce the pre-split output.
+  `Header.background_image_url` is a CSS background, and a CSS background cannot carry alt
+  text — it is decorative by construction.
 - **Skeleton copy is parameterised**: `contact_heading`, `contact_cta_label`,
   `unsubscribe_label`, `view_in_browser_label`. Defaults are the strings `base.html` used
   to hardcode, so a newsletter in another language no longer needs a template fork. The CTA
@@ -820,8 +893,9 @@ Reach for these rather than improvising:
 ## Open work
 
 - Tracked in [GitHub issues](https://github.com/RorySullivan1/pyHermes/issues), organised as
-  epics with sub-issues: #38 header region, #45 size themes, #46 color themes, #52 delivery,
-  #54 QA harness, #55 footer region, plus #53 plain-text and #56 typography as parents.
+  epics with sub-issues: #45 size themes, #46 color themes, #55 footer region, plus #53
+  plain-text and #56 typography as parents. #38 (header region), #52 (delivery) and #54 (QA
+  harness) are complete.
 - **The QA harness (#54) is complete**, and it changes how the visual epics discharge their
   own acceptance criteria:
   - **#43 (size themes) and #50 (color presets) get their eyeball artifacts from the
@@ -829,20 +903,37 @@ Reach for these rather than improvising:
     --screenshot` locally; CI uploads the whole gallery on every PR. Side-by-side theme
     review is two runs of one command.
   - **Migration PRs under #38, #45 and #46 cite gallery-wide goldens, not a single email.**
-    "Byte-identical" now means all three fixtures plus their asset manifests — a
+    "Byte-identical" now means every gallery fixture plus its asset manifest — a
     container-template edit that one email's ratios never exercise no longer slips through.
   - **A theme lands with a fixture.** Epic #54 anticipated "one per theme as themes land";
-    the completeness tests make that concrete for components and metadata fields already.
+    the completeness tests make that concrete for components, metadata fields and `Header`
+    fields already — and #36's `minimal_header` is the worked example of a fixture that
+    exists to pin one variant.
+- **The header epic (#38) is complete**, and it left `base.html` 100 lines lighter. What the
+  next epic inherits from it:
+  - **The region mechanism is proven, not hypothetical.** #55 (footer) should transplant it
+    rather than invent a second one: extract to `templates/regions/`, give the region a
+    `template_path` + `context()` + `images()`, layer the email's facts *over* the region's
+    own keys, and select it with an argument. `MinimalHeader` is the worked example that the
+    seam carries a real second implementation.
+  - **`EmailMetadata` is now facts only.** A new field belongs there if it is *true of the
+    email* and on a region if it is *how something looks*. The flat-keyword `InitVar` pattern
+    is how a field moves off the metadata without breaking an existing call site.
+  - **`base.html` is down to the skeleton, the preheader and the two footer parts** — so the
+    theme epics (#45, #46) and #55 now contend on far less of one file than they did.
 - **The golden characterization test (#32/#58) has landed** — the gate every template
   migration waited on is now in the suite. Everything touching `base.html` or `EmailMetadata`
   still sequences rather than interleaves (several epics contend on those two surfaces), but
   each of them now inherits byte-identity proof for free: change a template, and the gallery
   tells you which email moved and where. The delivery epic (#52) is complete and contends
   with none of them.
-- **Two findings the harness surfaced are open and both wait on `base.html`**: #76 (the
-  mobile `.kpi-cell` collapse overflows its viewport by its own padding) and #78 (three
-  sourced Outlook findings the lint pass defers rather than shipping red). Whoever next
-  touches that file should pick them up — they are cheap while it is already open.
+- **Two findings the harness surfaced are still open**: #76 (the mobile `.kpi-cell` collapse
+  overflows its viewport by its own padding — `base.html`'s CSS, still there) and #78 (three
+  sourced Outlook findings the lint pass defers rather than shipping red; one of the three,
+  the `rgba()` scrim, now lives in `templates/regions/header.html`). They were deliberately
+  **not** folded into #38: each changes rendered output, and the epic's whole claim was that
+  every step leaves the gallery byte-identical. They are their own PR, and the golden diff
+  they produce is the point rather than the problem.
 - [README.md](README.md) is the human-facing entry point (what it is, install, build, send,
   the constraints it enforces). CLAUDE.md stays the *rationale* document — the README says
   what the library does, this file says why each constraint exists. Keep the split; do not

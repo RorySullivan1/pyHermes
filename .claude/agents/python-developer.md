@@ -24,7 +24,7 @@ Stay in your lane: quantitative-finance code belongs to
 ## Orient first
 1. Read the task-relevant code and config before writing: the root `pyproject.toml`
    (package is `pyhermes`, Python `>=3.11`, only runtime dep is `jinja2`), `CLAUDE.md`
-   for the architecture (skeleton ← containers ← components) and the hard constraints
+   for the architecture (skeleton ← regions ← containers ← components) and the hard constraints
    (102 KB Gmail limit, `StrictUndefined`, autoescape OFF, hex-color enforcement,
    construction-time validation), and the nearest existing modules under `svc/builder/`.
 2. Infer and follow the existing conventions — package layout, module boundaries,

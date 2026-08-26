@@ -96,9 +96,18 @@ from .models import (
     TableRow,
 )
 
+# Regions
+from .regions import (
+    Header,
+    MinimalHeader,
+)
+
 __all__ = [
     # Engine
     "TemplateEngine",
+    # Regions
+    "Header",
+    "MinimalHeader",
     # Models
     "EmailMetadata",
     "Card",

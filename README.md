@@ -105,16 +105,32 @@ fixtures to drift.
 
 ## The composition model
 
-Every email is **skeleton ← containers ← components**:
+Every email is **skeleton ← regions ← containers ← components**:
 
 | Layer | What it owns | Where |
 |---|---|---|
-| **Skeleton** | the whole page — head, header, footer — with one hole, `{{ sections_html }}` | `svc/builder/templates/base.html` |
+| **Skeleton** | the whole page — head, preheader, footer — with two holes, `{{ header_html }}` and `{{ sections_html }}` | `svc/builder/templates/base.html` |
+| **Regions** | the masthead: `Header`, `MinimalHeader`. (The *body* region is the ordered section list — not a class) | `svc/builder/regions.py` |
 | **Containers** | layout geometry only: `FullWidth`, `TwoColumn`, `ThreeColumn` | `svc/builder/containers.py` |
 | **Components** | content: `CardGroup`, `DataTable`, `ChartBlock`, `ImageBlock`, `TextBlock`, `NumberedList`, `AuthorBlock` | `svc/builder/components.py` |
 
 A container holds components, renders each, and embeds the fragments into its own `<tr>`
-block sized to the 680px outer table. `Email` concatenates the sections into the skeleton.
+block sized to the 680px outer table. `Email` renders the header region and concatenates the
+sections, then drops both into the skeleton.
+
+**Facts about the email live on `EmailMetadata`; how the masthead presents them lives on the
+header.** The firm name, campaign name, date range, issue label and disclaimer are handed
+*down* to the region at render time — it presents them, it cannot contradict them. Swapping
+the masthead is one argument, not a template fork:
+
+```python
+from svc.builder import EmailBuilder, MinimalHeader
+
+EmailBuilder().metadata({...}).header(MinimalHeader(logo_url=logo)).section(...)
+```
+
+The pre-split spelling still works: `EmailMetadata(logo_url=…, logo_alt=…, logo_width=…,
+header_bg_image_url=…)` builds the header for you.
 
 Adding a content type is a new template file plus a `Component` subclass that sets
 `template_path` and implements `context()`.

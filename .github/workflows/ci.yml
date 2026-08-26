@@ -132,20 +132,32 @@ jobs:
           /tmp/wheelenv/bin/python - <<'PY'
           from pathlib import Path
 
-          from svc.builder import EmailBuilder, FullWidth, TextBlock
+          from svc.builder import EmailBuilder, FullWidth, MinimalHeader, TextBlock
+
+          METADATA = {
+              "email_subject": "Wheel smoke test",
+              "firm_name": "CI",
+              "campaign_name": "wheel",
+          }
 
           out = (
               EmailBuilder()
-              .metadata(
-                  {
-                      "email_subject": "Wheel smoke test",
-                      "firm_name": "CI",
-                      "campaign_name": "wheel",
-                  }
-              )
+              .metadata(METADATA)
               .section(FullWidth(content=TextBlock("<p>Rendered from a wheel.</p>")))
               .save(Path("out.html"))
           )
           assert "Rendered from a wheel." in out.read_text(), "template did not render"
+          assert "<v:rect" in out.read_text(), "regions/header.html did not render"
           print(f"OK: {out} ({out.stat().st_size} bytes)")
+
+          # Every region template must ship, not just the default one.
+          variant = (
+              EmailBuilder()
+              .metadata(METADATA)
+              .header(MinimalHeader())
+              .section(FullWidth(content=TextBlock("<p>Variant.</p>")))
+              .save(Path("variant.html"))
+          )
+          assert "<v:rect" not in variant.read_text(), "the variant rendered VML"
+          print(f"OK: {variant} ({variant.stat().st_size} bytes)")
           PY

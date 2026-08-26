@@ -7,13 +7,14 @@ metadata for the email skeleton, typed data for each component, etc.
 """
 
 import re
-from dataclasses import dataclass, field, fields
+from dataclasses import InitVar, dataclass, field, fields
 from typing import TYPE_CHECKING, Any
 
 from .exceptions import ValidationError
 
-if TYPE_CHECKING:  # pragma: no cover - import cycle: images imports _validate_url
-    from .images import EmailImage, ImageAsset
+if TYPE_CHECKING:  # pragma: no cover - import cycle: images/regions import from here
+    from .images import EmailImage
+    from .regions import Header
 
 # ──────────────────────────────────────────────────────────────────────
 # Helpers
@@ -65,25 +66,46 @@ def _validate_url(value: str, name: str) -> None:
 # ──────────────────────────────────────────────────────────────────────
 
 
+def _default_header() -> "Header":
+    """
+    A blank :class:`~svc.builder.regions.Header`.
+
+    Imported inside the function because ``regions`` imports this module for
+    its validators — the same lazy-cycle rule ``images`` follows.
+    """
+    from .regions import Header
+
+    return Header()
+
+
 @dataclass
 class EmailMetadata:
     """
-    Top-level metadata for the email skeleton (header, footer, preheader).
+    Email-level metadata: the facts an email is built from.
 
-    Every field maps to a variable in ``templates/base.html``.
+    **Facts live here; masthead presentation lives on the header.** Subject,
+    preheader, firm, campaign, dates and the contact/legal copy are things
+    that are *true of the email*; the background image, the logo and its
+    resolution chains are one way of *presenting* them, and belong to
+    :class:`~svc.builder.regions.Header`. The header is handed the facts at
+    render time and cannot contradict them.
+
+    ``header_disclaimer`` sits on the email side of that line deliberately:
+    it is displayed in the masthead, but it is legal copy pairing with
+    ``footer_disclaimer``, and legal copy is a fact about the email.
+
+    Every remaining field maps to a variable in ``templates/base.html``.
+
+    The four flat masthead keyword arguments (``logo_url``, ``logo_alt``,
+    ``logo_width``, ``header_bg_image_url``) are still accepted and build the
+    header for you, so an email written before the split is unchanged.
+    Passing them *and* an explicit ``header=`` is an error rather than a
+    silent precedence rule.
     """
 
     email_subject: str = ""
     preheader_text: str = ""
     header_disclaimer: str = ""
-    header_bg_image_url: "str | EmailImage" = ""
-    logo_url: "str | EmailImage" = ""
-    #: Logo alt text. Falls back to the EmailImage's own ``alt`` when the
-    #: logo is one, then to ``firm_name`` — the logo is never left unlabelled.
-    logo_alt: str = ""
-    #: Logo display width in px. Falls back to the EmailImage's own ``width``,
-    #: then to ``DEFAULT_LOGO_WIDTH``.
-    logo_width: int | None = None
     firm_name: str = ""
     campaign_name: str = ""
     date_range: str = ""
@@ -103,86 +125,73 @@ class EmailMetadata:
     unsubscribe_label: str = "Unsubscribe"
     view_in_browser_label: str = "View in browser"
 
-    #: Metadata fields that may hold an EmailImage instead of a bare URL.
-    IMAGE_FIELDS = ("logo_url", "header_bg_image_url")
+    #: How the masthead presents the facts above. Defaults to a blank header;
+    #: ``Email(header=...)`` overrides it for one email.
+    header: "Header" = field(default_factory=_default_header)
 
-    #: Logo width used when neither the metadata nor the EmailImage sets one.
-    DEFAULT_LOGO_WIDTH = 90
+    # Back-compatible masthead keywords. InitVars, so they are constructor
+    # arguments only: they never become attributes and never appear in
+    # ``fields()``, ``repr`` or ``==`` — the header is the single owner.
+    logo_url: InitVar["str | EmailImage | None"] = None
+    logo_alt: InitVar["str | None"] = None
+    logo_width: InitVar["int | None"] = None
+    header_bg_image_url: InitVar["str | EmailImage | None"] = None
+
+    #: Email-level facts the header region renders. Passed *down* to it; the
+    #: header layers them over its own context, so it cannot shadow one.
+    HEADER_FACTS = (
+        "header_disclaimer",
+        "firm_name",
+        "campaign_name",
+        "date_range",
+        "issue_label",
+    )
+
+    def __post_init__(
+        self,
+        logo_url: "str | EmailImage | None",
+        logo_alt: "str | None",
+        logo_width: "int | None",
+        header_bg_image_url: "str | EmailImage | None",
+    ) -> None:
+        from .regions import Header
+
+        legacy: dict[str, Any] = {
+            "logo_url": logo_url,
+            "logo_alt": logo_alt,
+            "logo_width": logo_width,
+            "background_image_url": header_bg_image_url,
+        }
+        supplied = {name: value for name, value in legacy.items() if value is not None}
+        if not supplied:
+            return
+        if self.header != Header():
+            raise ValidationError(
+                f"EmailMetadata got both 'header=' and the flat masthead field(s) "
+                f"{sorted(supplied)}. Pass one or the other — the flat names are "
+                f"the pre-split spelling of the same thing."
+            )
+        self.header = Header(**supplied)
 
     def validate(self) -> None:
         """Validate required fields and URL schemes."""
         for fname in ("email_subject", "firm_name", "campaign_name"):
             _require(getattr(self, fname), fname)
-        for fname in (
-            "logo_url",
-            "header_bg_image_url",
-            "contact_url",
-            "unsubscribe_url",
-            "view_in_browser_url",
-        ):
-            value = getattr(self, fname)
-            # An EmailImage validated its own URL (or its own bytes) at
-            # construction; only a bare string still needs checking here.
-            if isinstance(value, str):
-                _validate_url(value, f"metadata.{fname}")
+        for fname in ("contact_url", "unsubscribe_url", "view_in_browser_url"):
+            _validate_url(getattr(self, fname), f"metadata.{fname}")
 
-    def images(self) -> "list[EmailImage]":
-        """Return the EmailImages held in the metadata's image fields."""
-        from .images import EmailImage
-
-        return [
-            value
-            for fname in self.IMAGE_FIELDS
-            if isinstance(value := getattr(self, fname), EmailImage)
-        ]
-
-    def assets(self) -> "list[ImageAsset]":
-        """Return the attachment manifest entries for the metadata images."""
-        return [image.asset for image in self.images() if image.asset is not None]
+    def header_facts(self) -> dict[str, Any]:
+        """The email-level facts a header region renders."""
+        return {name: getattr(self, name) for name in self.HEADER_FACTS}
 
     def to_dict(self) -> dict[str, Any]:
         """
         Flatten to the template context for ``base.html``.
 
-        Image fields collapse to their resolved ``src`` — the skeleton wants
-        a string to drop into an attribute, and the bytes behind a ``cid:``
-        reference travel through the asset manifest instead.
+        The header is excluded: it renders itself from :meth:`header_facts`
+        and arrives in the skeleton as one ``header_html`` string.
         """
-        from .images import EmailImage
-
-        context = {
-            f.name: value.src if isinstance(value := getattr(self, f.name), EmailImage) else value
-            for f in fields(self)
-        }
-        context["logo_alt"] = self.resolved_logo_alt()
-        context["logo_width"] = self.resolved_logo_width()
-        return context
-
-    def resolved_logo_alt(self) -> str:
-        """
-        The alt text the logo actually renders with.
-
-        Explicit ``logo_alt`` wins; otherwise an ``EmailImage`` logo supplies
-        its own ``alt``; otherwise the firm name, which is what the skeleton
-        hardcoded before this was configurable.
-        """
-        from .images import EmailImage
-
-        if self.logo_alt:
-            return self.logo_alt
-        if isinstance(self.logo_url, EmailImage) and self.logo_url.alt:
-            return self.logo_url.alt
-        return self.firm_name
-
-    def resolved_logo_width(self) -> int:
-        """The logo width actually rendered: metadata, then image, then default."""
-        from .images import EmailImage
-
-        if self.logo_width is not None:
-            return self.logo_width
-        if isinstance(self.logo_url, EmailImage) and self.logo_url.width is not None:
-            return self.logo_url.width
-        return self.DEFAULT_LOGO_WIDTH
+        return {f.name: getattr(self, f.name) for f in fields(self) if f.name != "header"}
 
 
 # ──────────────────────────────────────────────────────────────────────

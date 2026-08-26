@@ -30,6 +30,7 @@ from .enums import EmbedStrategy
 from .exceptions import SizeError
 from .images import EmailImage, ImageAsset, dedupe_assets
 from .models import EmailMetadata
+from .regions import Header
 
 # The shipped defaults, kept as module constants because they read as the
 # thresholds themselves at a call site. The live values come from
@@ -43,10 +44,16 @@ class Email:
     """
     Represents a complete, renderable email.
 
+    The email is ``header | body``: the metadata holds the facts, the header
+    region presents them, and the body is the ordered section list.
+
     Args:
-        metadata:     Dict or EmailMetadata with skeleton-level variables.
+        metadata:     Dict or EmailMetadata with the email's facts.
         template_dir: Path to the ``templates/`` directory.  Defaults to
                       the copy packaged inside ``svc.builder``.
+        header:       The masthead region. Defaults to the metadata's own
+                      header, which the flat masthead keywords build — so an
+                      email that never mentions a header is unchanged.
 
     Raises:
         ValidationError: If required metadata (``email_subject``, ``firm_name``,
@@ -57,6 +64,7 @@ class Email:
         self,
         metadata: dict[str, Any] | EmailMetadata,
         template_dir: Path | None = None,
+        header: Header | None = None,
     ):
         self._engine = TemplateEngine(template_dir)
 
@@ -70,6 +78,7 @@ class Email:
         # confusing render-time symptom.
         self._metadata.validate()
 
+        self._header: Header = header if header is not None else self._metadata.header
         self._sections: list[Container] = []
 
     @property
@@ -93,9 +102,28 @@ class Email:
         """
         return self._metadata
 
+    @property
+    def header(self) -> Header:
+        """
+        The masthead region this email renders.
+
+        Read-only for the same reasons as :attr:`metadata`; use
+        :meth:`set_header` to swap it.
+        """
+        return self._header
+
     # ------------------------------------------------------------------
     # Building
     # ------------------------------------------------------------------
+
+    def set_header(self, header: Header) -> Email:
+        """
+        Replace the masthead region.
+
+        Returns ``self`` for optional chaining.
+        """
+        self._header = header
+        return self
 
     def add_section(self, container: Container) -> Email:
         """
@@ -112,10 +140,10 @@ class Email:
 
     def images(self) -> list[EmailImage]:
         """
-        Every image this email references, metadata first, then sections
+        Every image this email references, header first, then sections
         in order.
         """
-        images = list(self._metadata.images())
+        images = list(self._header.images())
         for section in self._sections:
             for component in section.components():
                 images.extend(component.images())
@@ -147,7 +175,7 @@ class Email:
                 message.attach(asset.data, asset.mime_type,
                                cid=asset.content_id, filename=asset.filename)
         """
-        assets = list(self._metadata.assets())
+        assets = list(self._header.assets())
         for section in self._sections:
             assets.extend(section.assets())
         return dedupe_assets(assets)
@@ -160,9 +188,10 @@ class Email:
         """
         Render the complete email HTML.
 
-        1. Render every section via its container.
-        2. Inject rendered sections into the base skeleton.
-        3. Validate final size against the 102 KB Gmail limit.
+        1. Render the header region.
+        2. Render every section via its container.
+        3. Inject both into the base skeleton.
+        4. Validate final size against the 102 KB Gmail limit.
 
         Returns:
             Complete HTML string.
@@ -170,11 +199,13 @@ class Email:
         Raises:
             SizeError: If the HTML exceeds 102 KB.
         """
-        # Render sections
+        # Render the header region, then the sections
+        header_html = self._header.render(self._engine, self._metadata.header_facts())
         sections_html = "\n".join(section.render(self._engine) for section in self._sections)
 
         # Build skeleton context
         ctx = self._metadata.to_dict()
+        ctx["header_html"] = header_html
         ctx["sections_html"] = sections_html
 
         html = self._engine.render("base.html", ctx)
@@ -271,6 +302,19 @@ class EmailBuilder:
     def metadata(self, data: dict[str, Any] | EmailMetadata) -> EmailBuilder:
         """Set email metadata and initialise the Email instance."""
         self._email = Email(metadata=data, template_dir=self._template_dir)
+        return self
+
+    def header(self, header: Header) -> EmailBuilder:
+        """
+        Set the masthead region.
+
+        Same sequencing rule as :meth:`section`: the email must exist first,
+        so calling this before :meth:`metadata` is a programming error in the
+        call sequence rather than rejected data.
+        """
+        if self._email is None:
+            raise RuntimeError("Call .metadata() before setting the header.")
+        self._email.set_header(header)
         return self
 
     def section(self, container: Container) -> EmailBuilder:

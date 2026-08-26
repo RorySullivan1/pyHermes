@@ -19,7 +19,7 @@ from collections.abc import Callable
 
 from svc.builder import Email
 
-from . import image_matrix, kitchen_sink, minimal
+from . import image_matrix, kitchen_sink, minimal, minimal_header
 
 #: Components that are exempt from the ``kitchen_sink`` completeness rule.
 #:
@@ -55,6 +55,7 @@ def all_fixtures() -> dict[str, FixtureBuilder]:
         "minimal": minimal.build,
         "kitchen_sink": kitchen_sink.build,
         "image_matrix": image_matrix.build,
+        "minimal_header": minimal_header.build,
     }
 
 

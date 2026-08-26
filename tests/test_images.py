@@ -8,6 +8,7 @@ strategy, and that the manifest matches the ``cid:`` references in the HTML.
 """
 
 import base64
+import dataclasses
 
 import pytest
 
@@ -271,32 +272,40 @@ class TestChartBlockImages:
         assert ChartBlock(image).alt_text == "Chart"
 
 
-class TestMetadataImages:
+class TestHeaderImages:
+    """
+    The masthead's images belong to the header region, not the metadata.
+
+    The flat keywords still build that header, which is what keeps an email
+    written before the split working unchanged.
+    """
+
     def test_logo_accepts_an_email_image(self, valid_metadata, png_bytes):
         image = EmailImage.attached(png_bytes, alt="Firm logo")
         metadata = EmailMetadata(**valid_metadata, logo_url=image)
         metadata.validate()
-        assert metadata.to_dict()["logo_url"] == image.src
+        assert metadata.header.context({})["logo_url"] == image.src
 
     def test_a_plain_url_is_untouched(self, valid_metadata):
         metadata = EmailMetadata(**valid_metadata, logo_url="https://cdn.test/l.png")
-        assert metadata.to_dict()["logo_url"] == "https://cdn.test/l.png"
+        assert metadata.header.context({})["logo_url"] == "https://cdn.test/l.png"
 
-    def test_metadata_images_reach_the_manifest(self, valid_metadata, png_bytes):
+    def test_header_images_reach_the_manifest(self, valid_metadata, png_bytes):
         image = EmailImage.attached(png_bytes, alt="Firm logo")
         metadata = EmailMetadata(**valid_metadata, header_bg_image_url=image)
-        assert [a.content_id for a in metadata.assets()] == [image.content_id]
+        assert [a.content_id for a in metadata.header.assets()] == [image.content_id]
 
     def test_a_plain_url_still_has_its_scheme_checked(self, valid_metadata):
-        metadata = EmailMetadata(**valid_metadata, logo_url="javascript:alert(1)")
-        with pytest.raises(ValidationError, match="metadata.logo_url"):
-            metadata.validate()
+        # Now at construction: the header validates in __init__, so the flat
+        # keyword raises where it is written rather than at .validate().
+        with pytest.raises(ValidationError, match="header.logo_url"):
+            EmailMetadata(**valid_metadata, logo_url="javascript:alert(1)")
 
-    def test_to_dict_still_covers_every_field(self, valid_metadata):
+    def test_to_dict_covers_every_field_but_the_header(self, valid_metadata):
+        """The header renders itself; it reaches base.html as one string."""
         metadata = EmailMetadata(**valid_metadata)
-        assert set(metadata.to_dict()) == {
-            f.name for f in EmailMetadata.__dataclass_fields__.values()
-        }
+        declared = {f.name for f in dataclasses.fields(EmailMetadata)}
+        assert set(metadata.to_dict()) == declared - {"header"}
 
 
 class TestEmailManifest:
