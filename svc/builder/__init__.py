@@ -108,7 +108,9 @@ from .regions import (
 
 # Sizing
 from .sizing import (
+    COMPACT_SIZES,
     SIZE_SCHEMES,
+    SPACIOUS_SIZES,
     STANDARD_SIZES,
     ComponentScale,
     FrameGeometry,
@@ -150,6 +152,8 @@ __all__ = [
     "ComponentScale",
     "FrameGeometry",
     "STANDARD_SIZES",
+    "COMPACT_SIZES",
+    "SPACIOUS_SIZES",
     "SIZE_SCHEMES",
     # Regions
     "Region",

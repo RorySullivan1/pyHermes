@@ -784,3 +784,211 @@ class TestTheGeometryReachesTheTemplateOnce:
         assert html.count('width="680"') >= 2  # body table + the legal block
         assert "max-width:680px" in html
         assert "max-width:700px" in html  # the breakpoint, derived from the frame
+
+
+# ----------------------------------------------------------------------
+# #43 — the two shipped alternatives
+# ----------------------------------------------------------------------
+
+ALL_THEMES = list(SizeTheme)
+
+
+class TestTheShippedSchemes:
+    def test_every_theme_has_a_scheme(self) -> None:
+        """
+        The completeness net from #39, now real for all three.
+
+        A ``SizeTheme`` member without a scheme was acceptable inside this
+        epic's window and is not acceptable after it: it would be a name a
+        caller can pass that fails at construction.
+        """
+        assert set(SIZE_SCHEMES) == set(SizeTheme)
+
+    @pytest.mark.parametrize("theme", ALL_THEMES)
+    def test_every_layer_and_token_is_populated(self, theme: SizeTheme) -> None:
+        scheme = SIZE_SCHEMES[theme]
+        for layer, layer_cls in SizeScheme.LAYERS.items():
+            value = getattr(scheme, layer)
+            assert isinstance(value, layer_cls)
+            for spec in fields(layer_cls):
+                token = getattr(value, spec.name)
+                assert isinstance(token, (int, float)) and token > 0
+
+    @pytest.mark.parametrize("theme", ALL_THEMES)
+    def test_selectable_by_bare_string(self, theme: SizeTheme) -> None:
+        from svc.builder.models import EmailMetadata
+
+        assert (
+            resolve_size_scheme(EmailMetadata(size_theme=theme.value).size_theme)
+            is (SIZE_SCHEMES[theme])
+        )
+
+    def test_a_registered_theme_without_a_scheme_still_says_so(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """
+        The guard #39 left in place, exercised rather than assumed. It
+        matters again the moment a fourth member is added ahead of its
+        values.
+        """
+        from svc.builder import sizing
+
+        monkeypatch.delitem(sizing.SIZE_SCHEMES, SizeTheme.SPACIOUS)
+        with pytest.raises(ValidationError, match="has no scheme yet"):
+            resolve_size_scheme("spacious")
+
+    def test_the_registry_is_not_mutated_at_runtime(self) -> None:
+        before = dict(SIZE_SCHEMES)
+        resolve_size_scheme("compact")
+        resolve_size_scheme(SizeTheme.SPACIOUS)
+        assert SIZE_SCHEMES == before
+
+
+class TestTheSchemesAreCuratedNotScaled:
+    """
+    The epic's word was *curated*, and that is checkable.
+
+    A multiplier would be cheaper to write and worse to read: it would
+    shrink fine print below legibility, scale leading linearly with type
+    when leading should move the other way, and treat a KPI number as
+    ordinary body copy.
+    """
+
+    def test_no_single_multiplier_explains_a_theme(self) -> None:
+        from svc.builder.sizing import COMPACT_SIZES
+
+        ratios = {
+            round(
+                getattr(COMPACT_SIZES.type, spec.name) / getattr(STANDARD_SIZES.type, spec.name),
+                3,
+            )
+            for spec in fields(TypeScale)
+        }
+        assert len(ratios) > 1, "the type scale is a single multiplier, not a curation"
+
+    def test_fine_print_holds_at_the_readability_floor_in_compact(self) -> None:
+        from svc.builder.sizing import COMPACT_SIZES
+
+        assert COMPACT_SIZES.type.micro == STANDARD_SIZES.type.micro == 9.5
+        assert COMPACT_SIZES.type.label == STANDARD_SIZES.type.label == 10
+
+    def test_leading_does_not_track_type_linearly(self) -> None:
+        from svc.builder.sizing import COMPACT_SIZES
+
+        type_drop = COMPACT_SIZES.type.body / STANDARD_SIZES.type.body
+        leading_drop = COMPACT_SIZES.type.body_line / STANDARD_SIZES.type.body_line
+        assert leading_drop > type_drop, "smaller type needs proportionally more leading, not less"
+
+    def test_the_kpi_value_gives_up_the_least(self) -> None:
+        from svc.builder.sizing import COMPACT_SIZES
+
+        kpi = COMPACT_SIZES.component.kpi_value / STANDARD_SIZES.component.kpi_value
+        title = COMPACT_SIZES.type.title / STANDARD_SIZES.type.title
+        assert kpi > title, "a KPI strip exists to be read across a room"
+
+    def test_every_theme_keeps_the_shipped_frame_width(self) -> None:
+        """
+        An epic non-goal, stated as a test. Density is not width: a
+        narrow-frame theme is a separate, deliberate decision with its own
+        client-testing burden and its own interplay with image ``width=``.
+        """
+        for theme, scheme in SIZE_SCHEMES.items():
+            assert scheme.frame.width == 680, theme
+
+    def test_spacious_moves_the_narrow_column_threshold_down(self) -> None:
+        """
+        The one token that moves the *other* way in the roomiest theme, and
+        the clearest evidence these were curated rather than scaled. A 24px
+        gutter puts a two-up split at 288px; holding the threshold at 300
+        would have given the airiest theme the tightest column padding.
+        """
+        from svc.builder.sizing import SPACIOUS_SIZES
+
+        two_up = column_layout([50, 50], SPACIOUS_SIZES)
+        assert two_up[0].width < STANDARD_SIZES.frame.narrow_column
+        assert two_up[0].pad_x == SPACIOUS_SIZES.space.column_pad_x
+        assert two_up[0].pad_x > STANDARD_SIZES.space.column_pad_x
+
+
+class TestEveryThemeRendersAWholeEmail:
+    @pytest.fixture(params=[t.value for t in SizeTheme])
+    def rendered(self, request: pytest.FixtureRequest) -> tuple[SizeScheme, str]:
+        from qa.fixtures import kitchen_sink
+
+        theme = SizeTheme(request.param)
+        html = kitchen_sink.build(size_theme=theme).render()
+        return SIZE_SCHEMES[theme], html
+
+    def test_it_renders_and_passes_the_size_check(self, rendered: tuple[SizeScheme, str]) -> None:
+        """
+        ``render()`` applies the 102 KB limit itself, so reaching this
+        assertion at all means the density did not push the document over.
+        """
+        _, html = rendered
+        assert html.startswith("<!DOCTYPE html>")
+        assert len(html.encode()) < 102 * 1024
+
+    def test_its_sentinels_appear(self, rendered: tuple[SizeScheme, str]) -> None:
+        scheme, html = rendered
+        for token in ("type.body", "type.title", "space.gutter", "component.kpi_value"):
+            layer, name = token.split(".")
+            assert str(getattr(getattr(scheme, layer), name)) in html, token
+
+    def test_its_columns_still_fill_the_frame(self, rendered: tuple[SizeScheme, str]) -> None:
+        scheme, _ = rendered
+        for ratio in RATIOS:
+            columns = column_layout([int(p) for p in ratio.split("-")], scheme)
+            gutters = scheme.space.gutter * (len(columns) - 1)
+            assert sum(c.width for c in columns) + gutters == scheme.frame.inner
+
+    def test_the_mobile_collapse_is_never_airier_than_the_desktop_cell(
+        self, rendered: tuple[SizeScheme, str]
+    ) -> None:
+        """
+        #43's mobile-coherence criterion, and the reason ``.kpi-cell`` reads
+        ``card_pad_*`` rather than tokens of its own: on a phone a KPI strip
+        *becomes* the vertical card layout, so it must be padded like one.
+        """
+        scheme, html = rendered
+        block = html[html.index(".kpi-cell {") : html.index(".kpi-cell-last")]
+        expected = f"padding:{scheme.component.card_pad_y}px {scheme.component.card_pad_x}px"
+        assert expected in block
+
+
+class TestTheCallerFacingSurfaceStaysClosed:
+    def test_size_theme_is_the_whole_of_it(self) -> None:
+        """
+        No per-component size parameter appeared anywhere in this epic. A
+        ``font_size=`` on a call site would dissolve the design system one
+        component at a time, exactly as a ``title_color=`` would have
+        dissolved the palette.
+        """
+        import inspect
+
+        import svc.builder as builder
+
+        banned = ("font_size", "line_height", "padding", "size_px", "width_px")
+        offenders: list[str] = []
+        for name in builder.__all__:
+            obj = getattr(builder, name)
+            if not inspect.isclass(obj):
+                continue
+            try:
+                parameters = inspect.signature(obj).parameters
+            except (TypeError, ValueError):  # pragma: no cover - builtins
+                continue
+            offenders += [f"{name}({parameter})" for parameter in parameters if parameter in banned]
+        assert not offenders, f"per-call-site size parameters appeared: {offenders}"
+
+    def test_a_scheme_object_is_not_accepted_as_a_size_theme(self) -> None:
+        """
+        Deliberately narrower than ``theme``, which does take a custom
+        object. Density interacts with the clipping limit, the Word engine
+        and the mobile collapse at once, so an unrendered scheme is a
+        compatibility claim nobody has tested. Widening this later is
+        additive.
+        """
+        from svc.builder.models import EmailMetadata
+
+        with pytest.raises(ValidationError, match="must be a SizeTheme or its name"):
+            EmailMetadata(size_theme=STANDARD_SIZES)  # type: ignore[arg-type]

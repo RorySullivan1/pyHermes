@@ -83,8 +83,10 @@ class TestGalleryRegistry:
 #: ``size_theme`` is here because this fixture *is* the epic's byte-identity
 #: reference: every migration step in #45 claims the gallery does not move at
 #: ``STANDARD``, and a kitchen_sink rendered at any other density could not
-#: make that claim. The distinctive value lives in its own fixture instead —
-#: the same shape ``slate_theme`` uses for the palette.
+#: make that claim. The distinctive values live in ``compact_size`` and
+#: ``spacious_size``, which render *this same email* one field apart — the
+#: same shape ``slate_theme`` uses for the palette, and a true A/B because
+#: they reuse the content rather than restating it.
 ANCHORED_TO_THE_DEFAULT = {"size_theme"}
 
 

@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:v="urn:schemas-microsoft-com:vml"
+      xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="x-apple-disable-message-reformatting">
+  <meta name="color-scheme" content="light only">
+  <meta name="supported-color-schemes" content="light only">
+  <title>Kitchen Sink — every component, every geometry</title>
+  <!--[if mso]>
+  <noscript>
+    <xml><o:OfficeDocumentSettings>
+      <o:PixelsPerInch>96</o:PixelsPerInch>
+    </o:OfficeDocumentSettings></xml>
+  </noscript>
+  <style type="text/css">
+    body, td, th { font-family: Georgia, 'Times New Roman', serif; }
+    body { background-color: #F2F1EE !important; }
+  </style>
+  <![endif]-->
+  <style type="text/css">
+    body, table, td, a { -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%; }
+    table, td { mso-table-lspace:0pt; mso-table-rspace:0pt; }
+    img { -ms-interpolation-mode:bicubic; border:0; outline:none; text-decoration:none; }
+    @media only screen and (max-width:700px) {
+      .email-container { width:100% !important; }
+      .stack-column { display:block !important; width:100% !important; }
+      .mobile-pad { padding:26px 22px !important; }
+      .mobile-title { font-size:24px !important; }
+      .kpi-cell { display:block !important; width:100% !important; border-right:none !important; border-bottom:1px solid #D6D2CB !important; padding:20px 22px !important; }
+      .kpi-cell-last { border-bottom:none !important; }
+    }
+    /* Force light rendering in all dark mode contexts */
+    :root { color-scheme: light only; }
+    [data-ogsc] .email-container,
+    [data-ogsb] .email-container { background-color:#FFFFFF !important; }
+    [data-ogsc] .surface,
+    [data-ogsb] .surface { background-color:#FFFFFF !important; }
+    [data-ogsc] .body-text,
+    [data-ogsb] .body-text { color:#3B3B3B !important; }
+    @media (prefers-color-scheme:dark) {
+      .email-container { background-color:#FFFFFF !important; }
+      .body-text { color:#3B3B3B !important; }
+      .surface { background-color:#FFFFFF !important; }
+    }
+  </style>
+</head>
+<!--
+  ACADEMIC FINANCIAL EMAIL SKELETON — Design Reference
+  ====================================================
+  Palette:
+    Every colour and shadow comes from the resolved Theme, which arrives as
+    the "theme" namespace. The token table — name, value, and the sites each
+    one covers — lives in svc/builder/theming.py, where something other than
+    a person can read it. The hand-maintained list that used to sit here had
+    already drifted: it named a row-alt colour the table never used.
+-->
+<body style="margin:0; padding:0; background-color:#F2F1EE; font-family:Georgia,'Times New Roman',serif;" bgcolor="#F2F1EE">
+
+  <!-- Preheader -->
+  <div style="display:none;max-height:0;overflow:hidden;font-size:1px;color:#F2F1EE;">
+    One fixture exercising the whole component library.&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;
+  </div>
+
+  <!-- Outer wrapper -->
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+         style="background-color:#F2F1EE;" bgcolor="#F2F1EE">
+    <tr>
+      <td align="center" style="padding:36px 0;">
+
+        <!-- ============================================ -->
+        <!-- MAIN CONTAINER — 680px                       -->
+        <!-- ============================================ -->
+        <table class="email-container" role="presentation" width="680" cellpadding="0" cellspacing="0"
+               border="0" style="background-color:#FFFFFF; max-width:680px;" bgcolor="#FFFFFF">
+
+          <!-- ══════════════════════════════════════════ -->
+          <!-- HEADER: Disclaimer bar                    -->
+          <!-- ══════════════════════════════════════════ -->
+          <tr>
+            <td style="background-color:#2C3E50; padding:10px 40px; text-align:center;" bgcolor="#2C3E50">
+              <p style="margin:0; font-family:Arial,Helvetica,sans-serif; font-size:10.5px;
+                        font-weight:300; color:#90A4AE; letter-spacing:0.3px; line-height:1.5;">
+                For illustrative purposes. Not investment advice.
+              </p>
+            </td>
+          </tr>
+
+          <!-- ══════════════════════════════════════════ -->
+          <!-- HEADER: Background image + text overlay   -->
+          <!-- ══════════════════════════════════════════ -->
+          <tr>
+            <td style="background-color:#2C3E50;" bgcolor="#2C3E50">
+              <!--[if mso]>
+              <v:rect xmlns:v="urn:schemas-microsoft-com:vml" fill="true" stroke="false"
+                      style="width:680px;height:220px;">
+                <v:fill type="frame" src="https://cdn.example.com/header-bg.png" color="#141E2C" opacity="65%"/>
+                <v:textbox inset="40px,0,40px,0" style="mso-fit-shape-to-text:false;">
+              <![endif]-->
+              <div style="background-image:url('https://cdn.example.com/header-bg.png');
+                          background-color:#2C3E50; background-size:cover;
+                          background-position:center center; background-repeat:no-repeat;">
+                <!-- Dark overlay for text legibility -->
+                <div style="background-color:rgba(20,30,44,0.65);">
+                <!-- Logo row -->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <td style="padding:24px 40px 0;" align="right">
+                      <!--[if mso]>
+                      <img src="https://cdn.example.com/hermes-logo.png" width="128" alt="Hermes Research — weekly research letter" style="display:block;">
+                      <![endif]-->
+                      <!--[if !mso]><!-->
+                      <img src="https://cdn.example.com/hermes-logo.png" width="128" alt="Hermes Research — weekly research letter"
+                           style="display:block; max-width:128px; height:auto;">
+                      <!--<![endif]-->
+                    </td>
+                  </tr>
+                </table>
+                <!-- Campaign name + subject -->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <td style="padding:14px 40px 8px;">
+                      <p style="margin:0; font-family:Georgia,'Times New Roman',serif; font-size:32px;
+                                font-weight:bold; color:#FFFFFF; line-height:1.25; letter-spacing:0.3px;
+                                text-shadow:0 1px 3px rgba(0,0,0,0.4);"
+                         class="mobile-title">
+                        Hermes Research
+                      </p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:0 40px 12px;">
+                      <p style="margin:0; font-family:Arial,Helvetica,sans-serif; font-size:14px;
+                                font-weight:400; color:#CFD8DC; line-height:1.4;
+                                text-shadow:0 1px 2px rgba(0,0,0,0.3);">
+                        kitchen-sink
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+                <!-- Accent rule -->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <td style="padding:0 40px;">
+                      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                        <tr>
+                          <td style="border-top:2px solid #5B8A9A; font-size:0; line-height:0;" height="1">&nbsp;</td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+                <!-- Date / Issue bar -->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <td style="padding:14px 40px 24px;">
+                      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                        <tr>
+                          <td style="font-family:Arial,Helvetica,sans-serif; font-size:12px;
+                                     color:#90A4AE; letter-spacing:0.6px; text-transform:uppercase;">
+                            Week ending 24 August
+                          </td>
+                          <td align="right" style="font-family:Arial,Helvetica,sans-serif; font-size:12px;
+                                                    color:#90A4AE; letter-spacing:0.6px; text-transform:uppercase;">
+                            Issue 001
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+                </div><!-- /dark overlay -->
+              </div>
+              <!--[if mso]>
+                </v:textbox>
+              </v:rect>
+              <![endif]-->
+            </td>
+          </tr>
+
+          <!-- ══════════════════════════════════════════ -->
+          <!-- SECTIONS: Insert containers here          -->
+          <!-- ══════════════════════════════════════════ -->
+          <tr>
+  <td style="padding:1px 1px 1px 1px; background-color:#FFFFFF; border-top:1px solid #D6D2CB; border-bottom:1px solid #D6D2CB;">
+    <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#F8F7F5;">
+      <tr>
+        <td style="padding:30px 40px 16px 40px;">
+          <h2 style="margin:0; font-family:Georgia,'Times New Roman',serif; font-size:19px; font-weight:bold; color:#2C3E50; line-height:1.25;">
+            Market Snapshot
+          </h2>
+        </td>
+      </tr>
+    </table>
+    <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#F8F7F5;">
+      <tr>
+        <td class="mobile-pad" style="padding:22px 40px 20px 40px; font-family:Arial,Helvetica,sans-serif; font-size:15px; color:#3B3B3B; line-height:1.85;">
+          <table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border: 1px solid #D6D2CB;">
+  <tr>
+    <td class="kpi-cell" style="width: 25.0%; border-right: 1px solid #D6D2CB; padding: 22px 16px; text-align: center; background-color: #FFFFFF;">
+      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #7A7A72; text-transform: uppercase; margin: 0 0 8px 0; letter-spacing: 0.5px; font-weight: bold;">S&amp;P 500</p>
+      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 24px; font-weight: bold; color: #4A7C59; margin: 0 0 6px 0; line-height: 1.25;">5,234</p>
+      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #A09E97; margin: 0; line-height: 1.5;">+1.42%</p>
+    </td>
+    <td class="kpi-cell" style="width: 25.0%; border-right: 1px solid #D6D2CB; padding: 22px 16px; text-align: center; background-color: #FFFFFF;">
+      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #7A7A72; text-transform: uppercase; margin: 0 0 8px 0; letter-spacing: 0.5px; font-weight: bold;">UST 10Y</p>
+      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 24px; font-weight: bold; color: #B85450; margin: 0 0 6px 0; line-height: 1.25;">4.28%</p>
+      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #A09E97; margin: 0; line-height: 1.5;">+6 bps</p>
+    </td>
+    <td class="kpi-cell" style="width: 25.0%; border-right: 1px solid #D6D2CB; padding: 22px 16px; text-align: center; background-color: #FFFFFF;">
+      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #7A7A72; text-transform: uppercase; margin: 0 0 8px 0; letter-spacing: 0.5px; font-weight: bold;">Gold</p>
+      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 24px; font-weight: bold; color: #4A7C59; margin: 0 0 6px 0; line-height: 1.25;">2,411</p>
+      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #A09E97; margin: 0; line-height: 1.5;">+0.85%</p>
+    </td>
+    <td class="kpi-cell kpi-cell-last" style="width: 25.0%; padding: 22px 16px; text-align: center; background-color: #FFFFFF;">
+      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #7A7A72; text-transform: uppercase; margin: 0 0 8px 0; letter-spacing: 0.5px; font-weight: bold;">VIX</p>
+      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 24px; font-weight: bold; color: #4A7C59; margin: 0 0 6px 0; line-height: 1.25;">14.32</p>
+      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #A09E97; margin: 0; line-height: 1.5;">-2.18 pts</p>
+    </td>
+  </tr>
+</table>
+
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+
+<tr>
+  <td style="padding:0; background-color:#FFFFFF;">
+    <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td style="padding:30px 40px 16px 40px;">
+          <h2 style="margin:0; font-family:Georgia,'Times New Roman',serif; font-size:19px; font-weight:bold; color:#2C3E50; line-height:1.25;">
+            Sector Notes
+          </h2>
+        </td>
+      </tr>
+    </table>
+    <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:22px 40px 20px 40px; font-family:Arial,Helvetica,sans-serif; font-size:15px; color:#3B3B3B; line-height:1.85;">
+          <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; font-style: italic; color: #7A7A72; margin: 0 0 16px 0; line-height: 1.5;">Relative performance</p>
+<table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border: 1px solid #D6D2CB;">
+  <tr>
+    <td style="padding: 20px 22px; text-align: left; background-color: #FFFFFF; border-bottom: 1px solid #D6D2CB;">
+      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #7A7A72; text-transform: uppercase; margin: 0 0 8px 0; letter-spacing: 0.5px; font-weight: bold;">Technology</p>
+      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 24px; font-weight: bold; color: #4A7C59; margin: 0 0 6px 0; line-height: 1.25;">+2.1%</p>
+      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #A09E97; margin: 0; line-height: 1.5;">week</p>
+      <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #3B3B3B; line-height: 1.75; margin: 12px 0 0 0;"><p>Semiconductor strength led the advance.</p></div>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 20px 22px; text-align: left; background-color: #FFFFFF;">
+      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #7A7A72; text-transform: uppercase; margin: 0 0 8px 0; letter-spacing: 0.5px; font-weight: bold;">Energy</p>
+      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 24px; font-weight: bold; color: #B85450; margin: 0 0 6px 0; line-height: 1.25;">-0.7%</p>
+      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #A09E97; margin: 0; line-height: 1.5;">week</p>
+      <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #3B3B3B; line-height: 1.75; margin: 12px 0 0 0;"><p>Crude gave back the prior week's gain.</p></div>
+    </td>
+  </tr>
+</table>
+
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+
+<tr>
+  <td style="padding:0; background-color:#FFFFFF;">
+    <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td style="padding:30px 40px 16px 40px;">
+          <h2 style="margin:0; font-family:Georgia,'Times New Roman',serif; font-size:19px; font-weight:bold; color:#2C3E50; line-height:1.25;">
+            Factor Returns
+          </h2>
+        </td>
+      </tr>
+    </table>
+    <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:22px 40px 20px 40px; font-family:Arial,Helvetica,sans-serif; font-size:15px; color:#3B3B3B; line-height:1.85;">
+          <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; font-style: italic; color: #7A7A72; margin: 0 0 16px 0; line-height: 1.5;">Long-short, gross of costs</p>
+<table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
+  <tr style="border-top: 1px solid #D6D2CB; border-bottom: 2px solid #2C3E50;">
+    <th style="font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; text-align: left; padding: 16px; letter-spacing: 0.5px;">Factor</th>
+    <th style="font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; text-align: right; padding: 16px; letter-spacing: 0.5px;">1M</th>
+    <th style="font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; text-align: right; padding: 16px; letter-spacing: 0.5px;">YTD</th>
+  </tr>
+  <tr style="border-bottom: 1px solid #EAE8E4;">
+    <td style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #3B3B3B; text-align: left; padding: 16px; background-color: #FFFFFF;">Value</td>
+    <td style="font-family: 'Courier New', Courier, monospace; font-size: 14px; font-weight: bold; color: #4A7C59; text-align: right; padding: 16px; background-color: #FFFFFF;">+1.8%</td>
+    <td style="font-family: 'Courier New', Courier, monospace; font-size: 14px; font-weight: bold; color: #4A7C59; text-align: right; padding: 16px; background-color: #FFFFFF;">+7.4%</td>
+  </tr>
+  <tr style="border-bottom: 1px solid #EAE8E4;">
+    <td style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #3B3B3B; text-align: left; padding: 16px; background-color: #F8F7F5;">Momentum</td>
+    <td style="font-family: 'Courier New', Courier, monospace; font-size: 14px; font-weight: bold; color: #B85450; text-align: right; padding: 16px; background-color: #F8F7F5;">-0.4%</td>
+    <td style="font-family: 'Courier New', Courier, monospace; font-size: 14px; font-weight: bold; color: #4A7C59; text-align: right; padding: 16px; background-color: #F8F7F5;">+11.2%</td>
+  </tr>
+  <tr style="border-bottom: 1px solid #D6D2CB;">
+    <td style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #3B3B3B; text-align: left; padding: 16px; background-color: #FFFFFF;">Quality</td>
+    <td style="font-family: 'Courier New', Courier, monospace; font-size: 14px; font-weight: bold; color: #4A7C59; text-align: right; padding: 16px; background-color: #FFFFFF;">+0.9%</td>
+    <td style="font-family: 'Courier New', Courier, monospace; font-size: 14px; font-weight: bold; color: #4A7C59; text-align: right; padding: 16px; background-color: #FFFFFF;">+5.1%</td>
+  </tr>
+</table>
+<p style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #A09E97; font-style: italic; margin: 12px 0 0 0;">Hermes Research as of 24 August 2026</p>
+
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+
+<tr>
+  <td style="padding:0; background-color:#FFFFFF;">
+    <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td style="padding:30px 40px 16px 40px;">
+          <h2 style="margin:0; font-family:Georgia,'Times New Roman',serif; font-size:19px; font-weight:bold; color:#2C3E50; line-height:1.25;">
+            Cumulative Performance
+          </h2>
+        </td>
+      </tr>
+    </table>
+    <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:22px 40px 20px 40px; font-family:Arial,Helvetica,sans-serif; font-size:15px; color:#3B3B3B; line-height:1.85;">
+          <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; font-style: italic; color: #7A7A72; margin: 0 0 16px 0; line-height: 1.5;">Indexed to 100</p>
+<table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
+  <tr>
+    <td style="padding: 0;">
+      <img src="cid:f718e1e0628201c0" alt="Cumulative factor performance"
+width="320"           style="display: block; max-width: 100%; height: auto; border: 1px solid #D6D2CB; margin: 0;">
+    </td>
+  </tr>
+</table>
+<p style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #A09E97; font-style: italic; margin: 12px 0 0 0;">Hermes Research</p>
+
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+
+<tr>
+  <td style="padding:0; background-color:#FFFFFF;">
+    <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td style="padding:4px 40px 16px 40px; border-bottom:1px solid #D6D2CB;">
+          <h2 style="margin:0; font-family:Georgia,'Times New Roman',serif; font-size:19px; font-weight:bold; color:#2C3E50; line-height:1.25;">
+            Equal Columns
+          </h2>
+        </td>
+      </tr>
+    </table>
+    <!--[if mso]>
+    <table width="600" border="0" cellpadding="0" cellspacing="0" style="width:600px;">
+      <tr>
+        <td width="288" valign="top" style="width:288px; padding:0;">
+    <![endif]-->
+    <table width="288" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:288px; margin-right:24px; background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:4px 26px 34px 26px; font-family:Arial,Helvetica,sans-serif; font-size:15px; color:#3B3B3B; line-height:1.85;">
+          <p class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 1.85; margin: 0 0 22px 0;"><p>The left half of a 50-50 split.</p></p>
+
+        </td>
+      </tr>
+    </table>
+    <!--[if mso]>
+        </td>
+        <td width="288" valign="top" style="width:288px; padding:0;">
+    <![endif]-->
+    <table width="288" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:288px; background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:4px 26px 34px 26px; font-family:Arial,Helvetica,sans-serif; font-size:15px; color:#3B3B3B; line-height:1.85;">
+          <p class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 1.85; margin: 0 0 22px 0;"><p>The right half of a 50-50 split.</p></p>
+
+        </td>
+      </tr>
+    </table>
+    <!--[if mso]>
+        </td>
+      </tr>
+    </table>
+    <![endif]-->
+  </td>
+</tr>
+
+<tr>
+  <td style="padding:1px 1px 1px 1px; background-color:#FFFFFF; border-top:1px solid #D6D2CB; border-bottom:1px solid #D6D2CB;">
+    <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#F8F7F5;">
+      <tr>
+        <td style="padding:4px 40px 16px 40px; border-bottom:1px solid #D6D2CB;">
+          <h2 style="margin:0; font-family:Georgia,'Times New Roman',serif; font-size:19px; font-weight:bold; color:#2C3E50; line-height:1.25;">
+            Narrow then Wide
+          </h2>
+        </td>
+      </tr>
+    </table>
+    <!--[if mso]>
+    <table width="600" border="0" cellpadding="0" cellspacing="0" style="width:600px;">
+      <tr>
+        <td width="173" valign="top" style="width:173px; padding:0;">
+    <![endif]-->
+    <table width="173" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:173px; margin-right:24px; background-color:#F8F7F5;">
+      <tr>
+        <td class="mobile-pad" style="padding:4px 20px 34px 20px; font-family:Arial,Helvetica,sans-serif; font-size:15px; color:#3B3B3B; line-height:1.85;">
+          <table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
+  <tr>
+    <td align="left" style="padding: 0;">
+      <img src="cid:2900c6494e08b7f0" alt="Thumbnail"
+width="96"           style="display: block; border: 0; outline: none; text-decoration: none; max-width: 100%; height: auto;">
+      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #A09E97; font-style: italic; margin: 12px 0 0 0;">A 30% column</p>
+    </td>
+  </tr>
+</table>
+
+        </td>
+      </tr>
+    </table>
+    <!--[if mso]>
+        </td>
+        <td width="403" valign="top" style="width:403px; padding:0;">
+    <![endif]-->
+    <table width="403" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:403px; background-color:#F8F7F5;">
+      <tr>
+        <td class="mobile-pad" style="padding:4px 26px 34px 26px; font-family:Arial,Helvetica,sans-serif; font-size:15px; color:#3B3B3B; line-height:1.85;">
+          <p class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 1.85; margin: 0 0 22px 0;"><p>Commentary occupying the wider 70% column.</p></p>
+
+        </td>
+      </tr>
+    </table>
+    <!--[if mso]>
+        </td>
+      </tr>
+    </table>
+    <![endif]-->
+  </td>
+</tr>
+
+<tr>
+  <td style="padding:0; background-color:#FFFFFF;">
+    <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td style="padding:4px 40px 16px 40px; border-bottom:1px solid #D6D2CB;">
+          <h2 style="margin:0; font-family:Georgia,'Times New Roman',serif; font-size:19px; font-weight:bold; color:#2C3E50; line-height:1.25;">
+            Wide then Narrow
+          </h2>
+        </td>
+      </tr>
+    </table>
+    <!--[if mso]>
+    <table width="600" border="0" cellpadding="0" cellspacing="0" style="width:600px;">
+      <tr>
+        <td width="403" valign="top" style="width:403px; padding:0;">
+    <![endif]-->
+    <table width="403" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:403px; margin-right:24px; background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:4px 26px 34px 26px; font-family:Arial,Helvetica,sans-serif; font-size:15px; color:#3B3B3B; line-height:1.85;">
+          <p class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 1.85; margin: 0 0 22px 0;"><p>Commentary occupying the wider 70% column.</p></p>
+
+        </td>
+      </tr>
+    </table>
+    <!--[if mso]>
+        </td>
+        <td width="173" valign="top" style="width:173px; padding:0;">
+    <![endif]-->
+    <table width="173" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:173px; background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:4px 20px 34px 20px; font-family:Arial,Helvetica,sans-serif; font-size:15px; color:#3B3B3B; line-height:1.85;">
+          <table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border-top: 1px solid #EAE8E4; padding-top: 20px; margin-top: 0;">
+  <tr>
+    <td style="padding-top: 20px; padding-bottom: 0;">
+      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; font-weight: bold; color: #2C3E50; margin: 0 0 6px 0; line-height: 1.4;">A. Analyst</p>
+      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #7A7A72; margin: 0; line-height: 1.5;">Head of Research <span style="margin: 0 6px;">&middot;</span> research@example.com</p>
+    </td>
+  </tr>
+</table>
+
+        </td>
+      </tr>
+    </table>
+    <!--[if mso]>
+        </td>
+      </tr>
+    </table>
+    <![endif]-->
+  </td>
+</tr>
+
+<tr>
+  <td style="padding:0; background-color:#FFFFFF;">
+    <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td style="padding:4px 40px 16px 40px; border-bottom:1px solid #D6D2CB;">
+          <h2 style="margin:0; font-family:Georgia,'Times New Roman',serif; font-size:19px; font-weight:bold; color:#2C3E50; line-height:1.25;">
+            Three Equal
+          </h2>
+        </td>
+      </tr>
+    </table>
+    <!--[if mso]>
+    <table width="600" border="0" cellpadding="0" cellspacing="0" style="width:600px;">
+      <tr>
+        <td width="184" valign="top" style="width:184px; padding:0;">
+    <![endif]-->
+    <table width="184" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:184px; margin-right:24px; background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:4px 20px 34px 20px; font-family:Arial,Helvetica,sans-serif; font-size:15px; color:#3B3B3B; line-height:1.85;">
+          <p class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 1.85; margin: 0 0 22px 0;"><p>First third.</p></p>
+
+        </td>
+      </tr>
+    </table>
+    <!--[if mso]>
+        </td>
+        <td width="184" valign="top" style="width:184px; padding:0;">
+    <![endif]-->
+    <table width="184" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:184px; margin-right:24px; background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:4px 20px 34px 20px; font-family:Arial,Helvetica,sans-serif; font-size:15px; color:#3B3B3B; line-height:1.85;">
+          <p class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 1.85; margin: 0 0 22px 0;"><p>Second third.</p></p>
+
+        </td>
+      </tr>
+    </table>
+    <!--[if mso]>
+        </td>
+        <td width="184" valign="top" style="width:184px; padding:0;">
+    <![endif]-->
+    <table width="184" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:184px; background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:4px 20px 34px 20px; font-family:Arial,Helvetica,sans-serif; font-size:15px; color:#3B3B3B; line-height:1.85;">
+          <p class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 1.85; margin: 0 0 22px 0;"><p>Final third.</p></p>
+
+        </td>
+      </tr>
+    </table>
+    <!--[if mso]>
+        </td>
+      </tr>
+    </table>
+    <![endif]-->
+  </td>
+</tr>
+
+<tr>
+  <td style="padding:0; background-color:#FFFFFF;">
+    <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td style="padding:4px 40px 16px 40px; border-bottom:1px solid #D6D2CB;">
+          <h2 style="margin:0; font-family:Georgia,'Times New Roman',serif; font-size:19px; font-weight:bold; color:#2C3E50; line-height:1.25;">
+            Wide Left
+          </h2>
+        </td>
+      </tr>
+    </table>
+    <!--[if mso]>
+    <table width="600" border="0" cellpadding="0" cellspacing="0" style="width:600px;">
+      <tr>
+        <td width="276" valign="top" style="width:276px; padding:0;">
+    <![endif]-->
+    <table width="276" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:276px; margin-right:24px; background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:4px 26px 34px 26px; font-family:Arial,Helvetica,sans-serif; font-size:15px; color:#3B3B3B; line-height:1.85;">
+          <p class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 1.85; margin: 0 0 22px 0;"><p>The 50% column.</p></p>
+
+        </td>
+      </tr>
+    </table>
+    <!--[if mso]>
+        </td>
+        <td width="138" valign="top" style="width:138px; padding:0;">
+    <![endif]-->
+    <table width="138" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:138px; margin-right:24px; background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:4px 20px 34px 20px; font-family:Arial,Helvetica,sans-serif; font-size:15px; color:#3B3B3B; line-height:1.85;">
+          <p class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 1.85; margin: 0 0 22px 0;"><p>Quarter.</p></p>
+
+        </td>
+      </tr>
+    </table>
+    <!--[if mso]>
+        </td>
+        <td width="138" valign="top" style="width:138px; padding:0;">
+    <![endif]-->
+    <table width="138" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:138px; background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:4px 20px 34px 20px; font-family:Arial,Helvetica,sans-serif; font-size:15px; color:#3B3B3B; line-height:1.85;">
+          <p class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 1.85; margin: 0 0 22px 0;"><p>Quarter.</p></p>
+
+        </td>
+      </tr>
+    </table>
+    <!--[if mso]>
+        </td>
+      </tr>
+    </table>
+    <![endif]-->
+  </td>
+</tr>
+
+<tr>
+  <td style="padding:0; background-color:#FFFFFF;">
+    <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td style="padding:4px 40px 16px 40px; border-bottom:1px solid #D6D2CB;">
+          <h2 style="margin:0; font-family:Georgia,'Times New Roman',serif; font-size:19px; font-weight:bold; color:#2C3E50; line-height:1.25;">
+            Wide Centre
+          </h2>
+        </td>
+      </tr>
+    </table>
+    <!--[if mso]>
+    <table width="600" border="0" cellpadding="0" cellspacing="0" style="width:600px;">
+      <tr>
+        <td width="138" valign="top" style="width:138px; padding:0;">
+    <![endif]-->
+    <table width="138" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:138px; margin-right:24px; background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:4px 20px 34px 20px; font-family:Arial,Helvetica,sans-serif; font-size:15px; color:#3B3B3B; line-height:1.85;">
+          <p class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 1.85; margin: 0 0 22px 0;"><p>Quarter.</p></p>
+
+        </td>
+      </tr>
+    </table>
+    <!--[if mso]>
+        </td>
+        <td width="276" valign="top" style="width:276px; padding:0;">
+    <![endif]-->
+    <table width="276" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:276px; margin-right:24px; background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:4px 26px 34px 26px; font-family:Arial,Helvetica,sans-serif; font-size:15px; color:#3B3B3B; line-height:1.85;">
+          <p class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 1.85; margin: 0 0 22px 0;"><p>The 50% column.</p></p>
+
+        </td>
+      </tr>
+    </table>
+    <!--[if mso]>
+        </td>
+        <td width="138" valign="top" style="width:138px; padding:0;">
+    <![endif]-->
+    <table width="138" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:138px; background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:4px 20px 34px 20px; font-family:Arial,Helvetica,sans-serif; font-size:15px; color:#3B3B3B; line-height:1.85;">
+          <p class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 1.85; margin: 0 0 22px 0;"><p>Quarter.</p></p>
+
+        </td>
+      </tr>
+    </table>
+    <!--[if mso]>
+        </td>
+      </tr>
+    </table>
+    <![endif]-->
+  </td>
+</tr>
+
+<tr>
+  <td style="padding:0; background-color:#FFFFFF;">
+    <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td style="padding:4px 40px 16px 40px; border-bottom:1px solid #D6D2CB;">
+          <h2 style="margin:0; font-family:Georgia,'Times New Roman',serif; font-size:19px; font-weight:bold; color:#2C3E50; line-height:1.25;">
+            Wide Right
+          </h2>
+        </td>
+      </tr>
+    </table>
+    <!--[if mso]>
+    <table width="600" border="0" cellpadding="0" cellspacing="0" style="width:600px;">
+      <tr>
+        <td width="138" valign="top" style="width:138px; padding:0;">
+    <![endif]-->
+    <table width="138" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:138px; margin-right:24px; background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:4px 20px 34px 20px; font-family:Arial,Helvetica,sans-serif; font-size:15px; color:#3B3B3B; line-height:1.85;">
+          <p class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 1.85; margin: 0 0 22px 0;"><p>Quarter.</p></p>
+
+        </td>
+      </tr>
+    </table>
+    <!--[if mso]>
+        </td>
+        <td width="138" valign="top" style="width:138px; padding:0;">
+    <![endif]-->
+    <table width="138" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:138px; margin-right:24px; background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:4px 20px 34px 20px; font-family:Arial,Helvetica,sans-serif; font-size:15px; color:#3B3B3B; line-height:1.85;">
+          <p class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 1.85; margin: 0 0 22px 0;"><p>Quarter.</p></p>
+
+        </td>
+      </tr>
+    </table>
+    <!--[if mso]>
+        </td>
+        <td width="276" valign="top" style="width:276px; padding:0;">
+    <![endif]-->
+    <table width="276" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:276px; background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:4px 26px 34px 26px; font-family:Arial,Helvetica,sans-serif; font-size:15px; color:#3B3B3B; line-height:1.85;">
+          <p class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 1.85; margin: 0 0 22px 0;"><p>The 50% column.</p></p>
+
+        </td>
+      </tr>
+    </table>
+    <!--[if mso]>
+        </td>
+      </tr>
+    </table>
+    <![endif]-->
+  </td>
+</tr>
+
+<tr>
+  <td style="padding:0; background-color:#FFFFFF;">
+    <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td style="padding:30px 40px 16px 40px;">
+          <h2 style="margin:0; font-family:Georgia,'Times New Roman',serif; font-size:19px; font-weight:bold; color:#2C3E50; line-height:1.25;">
+            What We Are Watching
+          </h2>
+        </td>
+      </tr>
+    </table>
+    <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:22px 40px 20px 40px; font-family:Arial,Helvetica,sans-serif; font-size:15px; color:#3B3B3B; line-height:1.85;">
+          <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; font-style: italic; color: #7A7A72; margin: 0 0 16px 0; line-height: 1.5;">Three themes into next week</p>
+<table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; margin-bottom: 22px;">
+  <tr>
+    <td width="26" style="padding: 0 16px 0 0; vertical-align: top;">
+      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 19px; font-weight: bold; color: #5B8A9A; margin: 0; line-height: 1.25;">01</p>
+    </td>
+    <td style="padding: 0; vertical-align: top;">
+      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 16px; font-weight: bold; color: #2C3E50; margin: 0 0 8px 0; line-height: 1.4;">Inflation prints</p>
+      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; margin: 0; line-height: 1.8;"><p>Core services remain sticky.</p></p>
+    </td>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; margin-bottom: 22px;">
+  <tr>
+    <td width="26" style="padding: 0 16px 0 0; vertical-align: top;">
+      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 19px; font-weight: bold; color: #5B8A9A; margin: 0; line-height: 1.25;">02</p>
+    </td>
+    <td style="padding: 0; vertical-align: top;">
+      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 16px; font-weight: bold; color: #2C3E50; margin: 0 0 8px 0; line-height: 1.4;">Earnings revisions</p>
+      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; margin: 0; line-height: 1.8;"><p>Breadth is narrowing.</p></p>
+    </td>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
+  <tr>
+    <td width="26" style="padding: 0 16px 0 0; vertical-align: top;">
+      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 19px; font-weight: bold; color: #5B8A9A; margin: 0; line-height: 1.25;">03</p>
+    </td>
+    <td style="padding: 0; vertical-align: top;">
+      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 16px; font-weight: bold; color: #2C3E50; margin: 0 0 8px 0; line-height: 1.4;">Positioning</p>
+      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; margin: 0; line-height: 1.8;"><p>Futures length is extended.</p></p>
+    </td>
+  </tr>
+</table>
+
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+
+
+          <!-- ══════════════════════════════════════════ -->
+          <!-- FOOTER PART 1: Contact Us (inside body)   -->
+          <!-- ══════════════════════════════════════════ -->
+          <tr>
+            <td style="padding:12px 40px 40px; background-color:#FFFFFF;" bgcolor="#FFFFFF">
+              <!-- Contact card -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+                     style="border:1px solid #D6D2CB; border-radius:4px;">
+                <tr>
+                  <td style="padding:30px 32px;">
+                    <p style="margin:0; font-family:Georgia,'Times New Roman',serif; font-size:18px;
+                              font-weight:bold; color:#2C3E50; letter-spacing:0.2px;">
+                      Questions about this note?
+                    </p>
+                    <p style="margin:8px 0 22px; font-family:Arial,Helvetica,sans-serif; font-size:14px;
+                              color:#7A7A72; line-height:1.7;">
+                      Reach the research desk with questions.
+                    </p>
+                    <!-- CTA Button — VML for Outlook, CSS for others -->
+                    <!--[if mso]>
+                    <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="https://example.com/contact"
+                      style="height:44px;v-text-anchor:middle;width:170px;" arcsize="8%"
+                      strokecolor="#5B8A9A" fillcolor="#5B8A9A">
+                      <w:anchorlock/>
+                      <center style="color:#FFFFFF;font-family:Arial,Helvetica,sans-serif;
+                                     font-size:14px;font-weight:bold;">
+                        Email the desk
+                      </center>
+                    </v:roundrect>
+                    <![endif]-->
+                    <!--[if !mso]><!-->
+                    <a href="https://example.com/contact"
+                       style="background-color:#5B8A9A; border-radius:3px; color:#FFFFFF;
+                              display:inline-block; font-family:Arial,Helvetica,sans-serif;
+                              font-size:14px; font-weight:bold; line-height:44px;
+                              text-align:center; text-decoration:none; width:170px;
+                              -webkit-text-size-adjust:none;">
+                      Email the desk
+                    </a>
+                    <!--<![endif]-->
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+        </table>
+        <!-- /Main container -->
+
+        <!-- ════════════════════════════════════════════ -->
+        <!-- FOOTER PART 2: Disclaimer (outside body)    -->
+        <!-- ════════════════════════════════════════════ -->
+        <table role="presentation" width="680" cellpadding="0" cellspacing="0" border="0"
+               style="max-width:680px; background-color:#F2F1EE;" bgcolor="#F2F1EE" class="email-container">
+          <tr>
+            <td style="padding:28px 40px 12px; background-color:#F2F1EE;" bgcolor="#F2F1EE">
+              <p style="margin:0; font-family:Arial,Helvetica,sans-serif; font-size:10.5px;
+                        color:#8A8880; line-height:1.75; text-align:center;">
+                <p>Distributed to registered recipients only.</p>
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:10px 40px 32px; background-color:#F2F1EE;" bgcolor="#F2F1EE">
+              <p style="margin:0; font-family:Arial,Helvetica,sans-serif; font-size:10.5px;
+                        color:#A09E97; text-align:center;">
+                &copy; 2026 Hermes Research &nbsp;&middot;&nbsp;
+                <a href="https://example.com/unsubscribe" style="color:#5B8A9A; text-decoration:underline;">Stop receiving this</a>
+                &nbsp;&middot;&nbsp;
+                <a href="https://example.com/archive/001" style="color:#5B8A9A; text-decoration:underline;">Read it in a browser</a>
+              </p>
+            </td>
+          </tr>
+        </table>
+
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>

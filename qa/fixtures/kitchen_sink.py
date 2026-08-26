@@ -105,11 +105,21 @@ def _metadata() -> dict[str, Any]:
     }
 
 
-def build(template_dir: Path | None = None) -> Email:
-    """Build the kitchen-sink email. Deterministic: same bytes every call."""
+def build(template_dir: Path | None = None, **metadata_overrides: Any) -> Email:
+    """
+    Build the kitchen-sink email. Deterministic: same bytes every call.
+
+    ``metadata_overrides`` replaces individual metadata fields, which is how
+    ``compact_size`` and ``spacious_size`` render *this exact email* at
+    another density. Reusing the content rather than hand-writing two more
+    emails is what makes those goldens a true A/B: byte-for-byte the same
+    copy, one field different, so every difference in the diff is the
+    density and nothing else. Both extra parameters are optional, so the
+    ``FixtureBuilder`` contract — callable with no arguments — still holds.
+    """
     return (
         EmailBuilder(template_dir=template_dir)
-        .metadata(_metadata())
+        .metadata(_metadata() | metadata_overrides)
         # FullWidth + horizontal CardGroup + highlight.
         .section(
             FullWidth(

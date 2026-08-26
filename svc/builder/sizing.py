@@ -440,10 +440,201 @@ class SizeScheme:
 #: sizing epic is measured against.
 STANDARD_SIZES = SizeScheme()
 
+#: Denser: more of the letter on one screen, without shrinking what a
+#: reader actually reads.
+#:
+#: Written as a ``derive`` so the diff *is* the design: every number below
+#: is a decision, and everything absent is deliberately inherited. Four
+#: rules shape it, and none of them is a multiplier —
+#:
+#: * **Type shrinks from the top down.** The masthead loses 4px and body
+#:   copy loses 1; ``label`` and ``micro`` do not move at all. Fine print at
+#:   9.5px is already at the readability floor, and a "compact" theme that
+#:   made a disclaimer unreadable would be a broken theme, not a dense one.
+#: * **Leading tightens less than type does.** Smaller type needs
+#:   proportionally *more* leading, not less, so ``body_line`` goes 1.72 to
+#:   1.6 rather than tracking the 14-to-13 drop.
+#: * **Most of the density is spacing.** Padding and gaps are what a reader
+#:   experiences as airiness, and they are also what costs the least
+#:   legibility to reclaim.
+#: * **The number the reader came for shrinks least.** ``kpi_value`` gives
+#:   up 2px of 21; a KPI strip exists to be read across a room.
+COMPACT_SIZES = SizeScheme().derive(
+    type={
+        "title": 24,
+        "title_mobile": 20,
+        "section": 16,
+        "subheading": 15,
+        "item_title": 14,
+        "body": 13,
+        "secondary": 12,
+        "small": 10,
+        # label (10) and micro (9.5) hold: the readability floor.
+        "title_line": 1.15,
+        "heading_line": 1.25,
+        "body_line": 1.6,
+        "secondary_line": 1.35,
+    },
+    space={
+        "gutter": 12,
+        "section_title_top": 16,
+        "section_title_bottom": 8,
+        "content_top": 12,
+        "content_bottom": 10,
+        "column_bottom": 18,
+        "column_pad_x": 16,
+        "column_pad_x_narrow": 12,
+        "mobile_pad_y": 14,
+        "mobile_pad_x": 14,
+        "block_gap": 12,
+        "subtitle_gap": 8,
+        "caption_gap": 6,
+        "masthead_bar_y": 5,
+        "masthead_logo_top": 12,
+        "masthead_title_top": 8,
+        "masthead_title_bottom": 4,
+        "masthead_campaign_bottom": 6,
+        "masthead_meta_top": 8,
+        "masthead_meta_bottom": 12,
+        "masthead_vml_height": 150,
+        "footer_contact_top": 6,
+        "footer_contact_bottom": 20,
+        "footer_legal_top": 14,
+        "footer_legal_bottom": 6,
+        "footer_copyright_top": 4,
+        "footer_copyright_bottom": 16,
+    },
+    component={
+        "kpi_value": 19,
+        "card_pad_y": 10,
+        "card_pad_x": 12,
+        "kpi_pad_y": 12,
+        "kpi_pad_x": 10,
+        "card_label_gap": 4,
+        "card_value_gap": 3,
+        "card_body_line": 1.5,
+        "table_cell_pad": 8,
+        "list_ordinal_width": 20,
+        "list_ordinal_gap": 10,
+        "list_title_gap": 4,
+        "list_body_line": 1.55,
+        "author_name_gap": 3,
+        "author_rule_gap": 10,
+        "cta_width": 140,
+        "cta_height": 34,
+        "contact_pad_y": 16,
+        "contact_pad_x": 18,
+        "contact_heading_gap": 4,
+        "contact_cta_gap": 12,
+        "contact_line": 1.45,
+        "legal_line": 1.5,
+    },
+    # The frame width does not move — see the epic's non-goals. What moves
+    # is how much of it is margin: 24px of side padding instead of 32 gives
+    # every column 16px more to work with.
+    frame={"pad_x": 24, "outer_pad_y": 20},
+)
+
+#: Airier: fewer things per screen, each with room around it.
+#:
+#: Not the inverse of ``COMPACT`` applied to the same numbers — the two were
+#: curated separately, and it shows in ``narrow_column``, the one token that
+#: moves *down* in the roomiest theme:
+#:
+#: * A 24px gutter spends more of the frame between the columns, so a
+#:   two-up split lands at 288px, just under the 300px threshold. Holding
+#:   the threshold there would have handed the airiest theme the *tightest*
+#:   column padding — and a 288px column carrying 15px type is not narrow,
+#:   it is half the email. 260 is where the distinction actually falls here.
+#: * Type grows across the whole scale, ``micro`` included: 10.5px fine
+#:   print is the one place where "spacious" is a legibility gain rather
+#:   than a stylistic one.
+#: * Leading opens further than type grows, which is what makes long prose
+#:   read as unhurried rather than merely large.
+SPACIOUS_SIZES = SizeScheme().derive(
+    type={
+        "title": 32,
+        "title_mobile": 24,
+        "section": 19,
+        "subheading": 18,
+        "item_title": 16,
+        "body": 15,
+        "secondary": 14,
+        "small": 12,
+        "label": 11,
+        "micro": 10.5,
+        "title_line": 1.25,
+        "heading_line": 1.4,
+        "body_line": 1.85,
+        "secondary_line": 1.5,
+    },
+    space={
+        "gutter": 24,
+        "section_title_top": 30,
+        "section_title_top_split": 4,
+        "section_title_bottom": 16,
+        "content_top": 22,
+        "content_bottom": 20,
+        "column_top": 4,
+        "column_bottom": 34,
+        "column_pad_x": 26,
+        "column_pad_x_narrow": 20,
+        "mobile_pad_y": 26,
+        "mobile_pad_x": 22,
+        "block_gap": 22,
+        "subtitle_gap": 16,
+        "caption_gap": 12,
+        "masthead_bar_y": 10,
+        "masthead_logo_top": 24,
+        "masthead_title_top": 14,
+        "masthead_title_bottom": 8,
+        "masthead_campaign_bottom": 12,
+        "masthead_meta_top": 14,
+        "masthead_meta_bottom": 24,
+        "masthead_vml_height": 220,
+        "footer_contact_top": 12,
+        "footer_contact_bottom": 40,
+        "footer_legal_top": 28,
+        "footer_legal_bottom": 12,
+        "footer_copyright_top": 10,
+        "footer_copyright_bottom": 32,
+    },
+    component={
+        "kpi_value": 24,
+        "card_pad_y": 20,
+        "card_pad_x": 22,
+        "kpi_pad_y": 22,
+        "kpi_pad_x": 16,
+        "card_label_gap": 8,
+        "card_value_gap": 6,
+        "card_body_line": 1.75,
+        "table_cell_pad": 16,
+        "list_ordinal_width": 26,
+        "list_ordinal_gap": 16,
+        "list_title_gap": 8,
+        "list_body_line": 1.8,
+        "author_name_gap": 6,
+        "author_sep_gap": 6,
+        "author_rule_gap": 20,
+        "cta_width": 170,
+        "cta_height": 44,
+        "contact_pad_y": 30,
+        "contact_pad_x": 32,
+        "contact_heading_gap": 8,
+        "contact_cta_gap": 22,
+        "contact_line": 1.7,
+        "legal_line": 1.75,
+    },
+    frame={"pad_x": 40, "outer_pad_y": 36, "narrow_column": 260},
+)
+
 #: Every scheme the repo ships, by name. Repo-owned and never mutated at
-#: runtime; ``COMPACT`` and ``SPACIOUS`` are populated by #43.
+#: runtime — a caller selects one by name; there is no register-your-own
+#: path, for the reason in this module's docstring.
 SIZE_SCHEMES: dict[SizeTheme, SizeScheme] = {
+    SizeTheme.COMPACT: COMPACT_SIZES,
     SizeTheme.STANDARD: STANDARD_SIZES,
+    SizeTheme.SPACIOUS: SPACIOUS_SIZES,
 }
 
 
