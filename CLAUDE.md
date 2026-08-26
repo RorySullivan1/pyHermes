@@ -252,9 +252,12 @@ test (#60). `lint_html(html)` returns `Finding(rule_id, severity, location, mess
 | `img-alt` | error | Missing or blank `alt` — all a reader gets when images are blocked, which is Outlook desktop's default |
 | `no-external-css` | error | `<link rel=stylesheet>` or `@import`, including inside an mso conditional |
 | `outlook-unsupported-css` | error | `display:flex/grid`, `position:absolute/fixed` in an inline style |
+| `outlook-line-height` | error | A **unitless** `line-height`; Outlook Classic ignores it. `0` is allowed |
+| `outlook-transparent-background` | error | `background-color` carrying an alpha channel — Outlook demotes it to a background image |
+| `empty-url` | error | `url()` with nothing in it; a client may resolve it against the message body |
 | `size-budget` | warn/error | The 90/102 KB thresholds, **attributing the bytes to section-marker regions** |
 
-Five decisions worth not re-litigating:
+Six decisions worth not re-litigating:
 
 - **It parses, it never greps.** The repo learned this the expensive way — a `grep` for
   `Contact Us` matched inside a section-marker comment and produced a confident, wrong
@@ -266,11 +269,22 @@ Five decisions worth not re-litigating:
 - **`max-width` is deliberately NOT denied.** The templates pair it with a `width=`
   attribute on purpose, so a blanket rule would fire on correct code — and a noisy rule gets
   switched off, which is worse than no rule. `img-width-attr` covers what actually matters.
-- **`DEFERRED_RULES` is a recorded decision, not an oversight.** Three real, sourced findings
-  (unitless `line-height`, an `rgba()` background, an empty `url()`) are filed as #78 rather
-  than shipped, because the templates violate them today and the fix moves surfaces several
-  epics contend on. A linter that arrives red teaches everyone to ignore it. A test asserts
-  each deferred entry names its filed issue and is not also in `SOURCES`.
+- **`DEFERRED_RULES` is a recorded decision, not an oversight — and it is now empty.** #60
+  shipped green by *filing* the three findings the templates violated rather than arriving
+  red, because a linter that arrives red teaches everyone to ignore it. All three were #78
+  and all three are fixed, so all three rules moved into `SOURCES`. The mechanism stays for
+  the next such finding, which belongs there rather than shipped red or quietly dropped. Two
+  tests hold the shape: nothing may sit in both places, and the three rules #78 unblocked
+  must be *shipping* rather than merely gone.
+- **An Outlook rule does not fire on markup Outlook cannot see.** `<!--[if !mso]><!-->` is
+  *downlevel-revealed* — the comment ends immediately, so what follows is real HTML to any
+  parser, correctly, since every client but Outlook renders it. The rules in
+  `_OUTLOOK_ONLY_RULES` are suppressed between such a conditional and its `<![endif]`. The
+  set is **named, not matched on the `outlook-` prefix**: `img-width-attr` is motivated by
+  Outlook too and deliberately keeps firing there, because a width attribute is good practice
+  in every client. This is what lets the masthead scrim satisfy
+  `outlook-transparent-background` by being hidden from Outlook rather than made opaque —
+  which would have painted over the very photograph it exists to darken.
 - **`size-budget` extends `_validate_size`, it does not reshape it.** That method is a
   `@staticmethod` on purpose and its messages are asserted by existing tests. The linter adds
   the part `render()` never had: *which region* spent the budget. Regions run marker to
@@ -1202,18 +1216,30 @@ Reach for these rather than improvising:
     PR was exactly the intended change and nothing else. #45 went one better and needed no
     diff at all: every one of its four migration steps left all six pre-existing goldens
     untouched, and the only new files are the two fixtures it shipped.
-- **Two findings the harness surfaced are still open**: #76 (the mobile `.kpi-cell` collapse
-  overflows its viewport by its own padding — `base.html`'s CSS, still there) and #78 (three
-  sourced Outlook findings the lint pass defers rather than shipping red; one of the three,
-  the `rgba()` scrim, now composed from `ShadowStyle` in `templates/regions/header.html`).
-  Both got easier and one got sharper. #78's scrim is one `Rgba` read by both the CSS and VML
-  halves, so a fix changes one object rather than two literals. #76 is now *themed*: the
-  overflow scales with the density (383 / 387 / 395 px at a 375px viewport for compact /
-  standard / spacious), because `.kpi-cell` reads `component.card_pad_*` — so the fix is one
-  `box-sizing` rule in `base.html`, not a per-theme adjustment. They were deliberately **not**
-  folded into #38, #45, #46 or #55: each changes rendered output, and every one of those
-  epics claimed the gallery stays byte-identical at each step. They are their own PR, and the
-  golden diff they produce is the point rather than the problem.
+- **The two findings the harness surfaced are closed** (#76, #78) — the first work in a
+  while whose *point* was a golden diff rather than its absence. Both had been deferred by
+  every epic for the same reason: each changes rendered output, and every epic claimed the
+  gallery stays byte-identical at each step. What they leave behind:
+  - **Only a browser could have caught #76.** The HTML was byte-identical to its golden the
+    whole time the mobile KPI strip overflowed its viewport, the size gate passed, and no
+    unit test measures layout. The regression test therefore lives with the screenshots, and
+    it asserts *equality* with the viewport where the old one asserted `>=`.
+  - **Measure the fix, do not reason about it.** #76's issue recommended dropping
+    `width:100%` on the grounds that a `display:block` element fills its container. In
+    Chromium a `<td>` re-displayed as block inside a table shrink-wraps instead, collapsing
+    the cell to a ~120px stub. `box-sizing:border-box` was the fix; the measurement is in the
+    commit.
+  - **A rule can be satisfied by scope, not only by value.** #78's `rgba()` scrim could not
+    be made opaque — it exists to darken a photograph, and an opaque colour would paint over
+    it. Outlook already draws that scrim from `v:fill`, so the CSS copy is now
+    downlevel-revealed, and the linter learned to model `<!--[if !mso]><!-->` rather than
+    the rule being weakened.
+  - **The size epic made #78's biggest finding small.** 107 unitless `line-height`
+    occurrences would have been a template-wide sweep before #45; afterwards leading is a
+    token, so it was one `percent` filter at the boundary. The care was all in *inheritance*
+    — a unitless value is inherited as a number and recomputed per element, a percentage as
+    the computed px — which is why the nine elements that inherited their leading now state
+    it explicitly, and why the change is pixel-neutral rather than merely legal.
 - [README.md](README.md) is the human-facing entry point (what it is, install, build, send,
   the constraints it enforces). CLAUDE.md stays the *rationale* document — the README says
   what the library does, this file says why each constraint exists. Keep the split; do not
