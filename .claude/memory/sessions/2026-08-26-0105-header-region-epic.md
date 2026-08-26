@@ -48,14 +48,14 @@
   the variant too, since it is `base.html`'s `.kpi-cell` CSS, shared by every region.
 
 ## State at end
-- Branch `claude/review-open-issues-rr8quq` @ `9650711`, 5 commits ahead of `main` (`f359a4f`).
-  **No PR opened** — not asked for.
+- **PR #80 merged to `main` (`673a6f2`) at 2026-08-26 04:12**, closing #33–#37 and epic #38
+  (6/6 sub-issues). All four CI jobs green on the head — including `wheel`, the check this PR
+  extended. Branch reset to `main`; PR watch stopped.
 - 767 tests pass (714 before this epic); ruff, ruff format, mypy all green; wheel contains both region templates and
   still no `qa/`.
 - `base.html` is 277 → 177 lines. Remaining: skeleton, preheader, both footer parts.
 
 ## Open threads
-- **Open the PR for #38** when asked; it should close #33, #34, #35, #36, #37 and #38.
 - **#76 and #78 were deliberately NOT folded in.** Each changes rendered output, and the
   epic's whole claim was that every step leaves the gallery byte-identical. They are their own
   PR, where the golden diff is the point rather than the problem. One of #78's three findings
