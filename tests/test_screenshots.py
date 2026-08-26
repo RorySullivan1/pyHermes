@@ -136,6 +136,51 @@ class TestPngMeasurement:
 
 
 @pytest.fixture(scope="module")
+def kpi_shots(tmp_path_factory):
+    """
+    The three fixtures carrying a horizontal ``CardGroup``, at every density.
+
+    That group is what #76 was about, and the densities are what made it
+    interesting: the overflow was its own padding, so it scaled with the
+    theme (383 / 387 / 395 px at a 375px viewport).
+    """
+    if not available():
+        pytest.skip('no browser; screenshots are the optional "[qa]" extra')
+    out = tmp_path_factory.mktemp("kpi")
+    shots, _ = capture_gallery(["kitchen_sink", "compact_size", "spacious_size"], out)
+    return shots
+
+
+@requires_browser
+class TestNothingOverflowsItsViewport:
+    """
+    #76's regression test, and the reason it lives here rather than in the
+    goldens: the HTML was byte-identical to its golden the whole time it was
+    broken, the size gate passed, and no unit test measures layout. Only a
+    browser could see it.
+    """
+
+    def test_every_capture_is_exactly_its_viewport_wide(self, kpi_shots):
+        offenders = [
+            f"{shot.path.name}: {shot.width} > {VIEWPORTS[shot.viewport][0]}"
+            for shot in kpi_shots
+            if shot.width != VIEWPORTS[shot.viewport][0]
+        ]
+        assert not offenders, "a reader would scroll sideways: " + ", ".join(offenders)
+
+    def test_the_mobile_rule_keeps_its_padding_inside(self):
+        """
+        The mechanism, asserted separately from the measurement so a failure
+        says *which* of the two broke. Email HTML sets no global
+        ``box-sizing``, so under the ``content-box`` default a
+        ``width:100%`` cell adds its padding on top of the full width.
+        """
+        html = all_fixtures()["kitchen_sink"]().render()
+        rule = html[html.index(".kpi-cell {") : html.index(".kpi-cell-last")]
+        assert "box-sizing:border-box !important" in rule
+
+
+@pytest.fixture(scope="module")
 def run(tmp_path_factory):
     """One capture of one fixture, shared — launching a browser is not cheap."""
     if not available():
