@@ -88,16 +88,21 @@ def size_kb(value: str) -> float:
     return len(str(value).encode("utf-8")) / 1024
 
 
-def default_color(value: Any, fallback: str = "#5A5A5A") -> str:
+def default_color(value: Any, fallback: str) -> str:
     """
-    Return the value if truthy, otherwise return the fallback color.
-    Validates the result is a hex color.
+    Return the value if truthy, otherwise the fallback. Validates the result.
+
+    ``fallback`` is required rather than defaulted: the sensible default is
+    the active theme's neutral, and a filter must not reach for a theme
+    globally — it is handed one, the same way every template is. A literal
+    here would be a colour outside the palette by construction.
 
     Raises:
         ValidationError: If the resolved color is not a ``#RRGGBB`` string.
 
-    Usage in templates:
-        {{ row_color | default_color('#4A7C59') }}
+    Usage in templates::
+
+        {{ card.color | default_color(theme.semantic.neutral) }}
     """
     result = value if value else fallback
     return validate_hex_color(result)

@@ -11,17 +11,17 @@
     chart_source      — Attribution string (optional)
 #}
 {% if subtitle %}
-<p style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; font-style: italic; color: #7A7A72; margin: 0 0 12px 0; line-height: 1.4;">{{ subtitle | escape_html }}</p>
+<p style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; font-style: italic; color: {{ theme.text.secondary }}; margin: 0 0 12px 0; line-height: 1.4;">{{ subtitle | escape_html }}</p>
 {% endif %}
 <table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
   <tr>
     <td style="padding: 0;">
       <img src="{{ chart_image_url | escape_html }}" alt="{{ chart_alt_text | escape_html }}"
            {% if chart_image_width %}width="{{ chart_image_width }}"{% else %}width="100%"{% endif %}
-           style="display: block; max-width: 100%; height: auto; border: 1px solid #D6D2CB; margin: 0;">
+           style="display: block; max-width: 100%; height: auto; border: 1px solid {{ theme.palette.rule }}; margin: 0;">
     </td>
   </tr>
 </table>
 {% if chart_source %}
-<p style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #A09E97; font-style: italic; margin: 8px 0 0 0;">{{ chart_source | escape_html }}</p>
+<p style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: {{ theme.text.light }}; font-style: italic; margin: 8px 0 0 0;">{{ chart_source | escape_html }}</p>
 {% endif %}

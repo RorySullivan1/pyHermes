@@ -304,7 +304,11 @@ class Card:
     Attributes:
         label:    Short eyebrow above the value (e.g. "S&P 500"). Required.
         value:    The headline figure or phrase, set large.
-        color:    Hex colour for the value. Defaults to neutral grey.
+        color:    Hex colour for the value. **Unset by default**, and
+                  resolved at render to the active theme's neutral — a
+                  construction-time default could not see a render-time
+                  theme, and would pin one colour outside the palette.
+                  An explicit value is validated here, exactly as before.
         sublabel: Small caption under the value (e.g. "+1.42% WoW").
         body:     Optional prose beneath the card. **HTML field** — emitted
                   raw so callers can pass markup, so escaping untrusted text
@@ -316,13 +320,14 @@ class Card:
 
     label: str
     value: str = ""
-    color: str = "#5A5A5A"
+    color: str = ""
     sublabel: str = ""
     body: str = ""
 
     def validate(self) -> None:
         _require(self.label, "card.label")
-        _validate_color(self.color, "card.color")
+        if self.color:
+            _validate_color(self.color, "card.color")
         if not self.value and not self.body:
             raise ValidationError(
                 "'card' requires a 'value' or a 'body'; a label alone says nothing."
@@ -342,7 +347,8 @@ class KpiItem(Card):
     def validate(self) -> None:
         _require(self.label, "kpi.label")
         _require(self.value, "kpi.value")
-        _validate_color(self.color, "kpi.color")
+        if self.color:
+            _validate_color(self.color, "kpi.color")
 
 
 @dataclass

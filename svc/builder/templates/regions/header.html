@@ -2,9 +2,9 @@
           <!-- HEADER: Disclaimer bar                    -->
           <!-- ══════════════════════════════════════════ -->
           <tr>
-            <td style="background-color:#2C3E50; padding:7px 32px; text-align:center;" bgcolor="#2C3E50">
+            <td style="background-color:{{ theme.palette.header_bg }}; padding:7px 32px; text-align:center;" bgcolor="{{ theme.palette.header_bg }}">
               <p style="margin:0; font-family:Arial,Helvetica,sans-serif; font-size:9.5px;
-                        font-weight:300; color:#90A4AE; letter-spacing:0.3px; line-height:1.4;">
+                        font-weight:300; color:{{ theme.text.on_dark_muted }}; letter-spacing:0.3px; line-height:1.4;">
                 {{header_disclaimer}}
               </p>
             </td>
@@ -14,18 +14,18 @@
           <!-- HEADER: Background image + text overlay   -->
           <!-- ══════════════════════════════════════════ -->
           <tr>
-            <td style="background-color:#2C3E50;" bgcolor="#2C3E50">
+            <td style="background-color:{{ theme.palette.header_bg }};" bgcolor="{{ theme.palette.header_bg }}">
               <!--[if mso]>
               <v:rect xmlns:v="urn:schemas-microsoft-com:vml" fill="true" stroke="false"
                       style="width:680px;height:180px;">
-                <v:fill type="frame" src="{{ background_image_url | escape_html }}" color="#141E2C" opacity="65%"/>
+                <v:fill type="frame" src="{{ background_image_url | escape_html }}" color="{{ theme.shadow.scrim.color }}" opacity="{{ theme.shadow.scrim.opacity_percent }}"/>
                 <v:textbox inset="32px,0,32px,0" style="mso-fit-shape-to-text:false;">
               <![endif]-->
               <div style="background-image:url('{{ background_image_url | escape_html }}');
-                          background-color:#2C3E50; background-size:cover;
+                          background-color:{{ theme.palette.header_bg }}; background-size:cover;
                           background-position:center center; background-repeat:no-repeat;">
                 <!-- Dark overlay for text legibility -->
-                <div style="background-color:rgba(20,30,44,0.65);">
+                <div style="background-color:{{ theme.shadow.scrim }};">
                 <!-- Logo row -->
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                   <tr>
@@ -45,8 +45,8 @@
                   <tr>
                     <td style="padding:10px 32px 6px;">
                       <p style="margin:0; font-family:Georgia,'Times New Roman',serif; font-size:28px;
-                                font-weight:bold; color:#FFFFFF; line-height:1.2; letter-spacing:0.3px;
-                                text-shadow:0 1px 3px rgba(0,0,0,0.4);"
+                                font-weight:bold; color:{{ theme.text.on_dark }}; line-height:1.2; letter-spacing:0.3px;
+                                text-shadow:0 1px 3px {{ theme.shadow.title }};"
                          class="mobile-title">
                         {{ firm_name | escape_html }}
                       </p>
@@ -55,8 +55,8 @@
                   <tr>
                     <td style="padding:0 32px 8px;">
                       <p style="margin:0; font-family:Arial,Helvetica,sans-serif; font-size:13px;
-                                font-weight:400; color:#CFD8DC; line-height:1.3;
-                                text-shadow:0 1px 2px rgba(0,0,0,0.3);">
+                                font-weight:400; color:{{ theme.text.on_dark_secondary }}; line-height:1.3;
+                                text-shadow:0 1px 2px {{ theme.shadow.subtitle }};">
                         {{ campaign_name | escape_html }}
                       </p>
                     </td>
@@ -68,7 +68,7 @@
                     <td style="padding:0 32px;">
                       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                         <tr>
-                          <td style="border-top:2px solid #5B8A9A; font-size:0; line-height:0;" height="1">&nbsp;</td>
+                          <td style="border-top:2px solid {{ theme.palette.accent }}; font-size:0; line-height:0;" height="1">&nbsp;</td>
                         </tr>
                       </table>
                     </td>
@@ -81,11 +81,11 @@
                       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                         <tr>
                           <td style="font-family:Arial,Helvetica,sans-serif; font-size:11px;
-                                     color:#90A4AE; letter-spacing:0.6px; text-transform:uppercase;">
+                                     color:{{ theme.text.on_dark_muted }}; letter-spacing:0.6px; text-transform:uppercase;">
                             {{ date_range | escape_html }}
                           </td>
                           <td align="right" style="font-family:Arial,Helvetica,sans-serif; font-size:11px;
-                                                    color:#90A4AE; letter-spacing:0.6px; text-transform:uppercase;">
+                                                    color:{{ theme.text.on_dark_muted }}; letter-spacing:0.6px; text-transform:uppercase;">
                             {{ issue_label | escape_html }}
                           </td>
                         </tr>

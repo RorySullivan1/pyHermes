@@ -121,7 +121,9 @@ class TestFilters:
 
     def test_default_color_errors_are_catchable_as_the_base_class(self, engine):
         with pytest.raises(EmailBuilderError):
-            engine.render_string("{{ c | default_color }}", {"c": "not-a-color"})
+            engine.render_string(
+                "{{ c | default_color(theme.semantic.neutral) }}", {"c": "not-a-color"}
+            )
 
     def test_default_color_validates_its_fallback(self, engine):
         with pytest.raises(ValidationError):
@@ -137,7 +139,12 @@ class TestFilters:
         assert not issubclass(ValidationError, TemplateError)
 
     def test_default_color_falls_back(self, engine):
-        assert engine.render_string("{{ c | default_color }}", {"c": ""}) == "#5A5A5A"
+        # The fallback is a required argument since #49: a filter is handed a
+        # theme's colour, it never reaches for one globally.
+        rendered = engine.render_string(
+            "{{ c | default_color(theme.semantic.neutral) }}", {"c": ""}
+        )
+        assert rendered == "#5A5A5A"
 
     def test_size_kb_measures_utf8_bytes(self, engine):
         # "é" is 2 bytes in UTF-8, so 512 of them is exactly 1 KB.

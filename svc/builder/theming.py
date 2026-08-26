@@ -37,13 +37,14 @@ counts are over ``svc/builder/templates/``; the palette comment's own 13
 lines are excluded from "renders in".
 
 Palette
-    ``wrapper_bg``     ``#F2F1EE``  12×  base, footer-legal — the warm stone padding
-    ``surface``        ``#FFFFFF``  67×  everywhere — the white email body
-    ``header_bg``      ``#2C3E50``  22×  header regions, headings, rules — soft navy
+    ``wrapper_bg``     ``#F2F1EE``  13×  base, footer-legal — the warm stone padding,
+                                         and the preheader text hidden against it
+    ``surface``        ``#FFFFFF``  63×  everywhere — the white email body
+    ``header_bg``      ``#2C3E50``   9×  the masthead band — soft navy
     ``accent``         ``#5B8A9A``   9×  links, the CTA button, rules — muted teal
     ``rule``           ``#D6D2CB``  33×  the standard hairline, all 8 containers
     ``rule_subtle``    ``#EAE8E4``   2×  data-table row separators, author-block top
-    ``rule_dark``      ``#2C3E50``   —   the same value as ``header_bg``; see below
+    ``rule_dark``      ``#2C3E50``   1×  the section-title underline
     ``highlight_tint`` ``#F8F7F5``  27×  ``highlight=True`` in all 8 containers
     ``row_alt``        ``#F8F7F5``   9×  data-table alternating rows
 
@@ -51,16 +52,19 @@ TextColors
     ``primary``        ``#3B3B3B``  26×  body copy
     ``secondary``      ``#7A7A72``  12×  captions, sources, sublabels
     ``light``          ``#A09E97``   6×  as-of lines, the copyright line
+    ``heading``        ``#2C3E50``  11×  section titles, table headers, author name
     ``fine_print``     ``#8A8880``   1×  the footer disclaimer
-    ``on_dark``        ``#FFFFFF``   —   the firm name over navy; ``surface``'s value
+    ``on_dark``        ``#FFFFFF``   2×  the firm name over navy
     ``on_dark_secondary`` ``#CFD8DC``  2×  the campaign name over navy
     ``on_dark_muted``  ``#90A4AE``   6×  header disclaimer, date range, issue label
+    ``on_accent``      ``#FFFFFF``   2×  the contact CTA's label, on the accent fill
 
 SemanticColors
     ``positive``       ``#4A7C59``   0×  **no render site today** — see below
     ``negative``       ``#B85450``   0×  **no render site today** — see below
-    ``neutral``        ``#5A5A5A``   2×  data-table header + cell fallback,
-                                         ``filters.default_color``, ``Card.color``
+    ``neutral``        ``#5A5A5A``   2×  the data-table header row and its cell
+                                         fallback; also what an unset
+                                         ``Card.color`` resolves to
 
 ShadowStyle
     ``scrim``          ``#141E2C`` @ 0.65  the header hero's legibility overlay
@@ -83,6 +87,13 @@ Four things the audit found, recorded rather than quietly fixed
 * **``rule_dark`` is ``header_bg``'s value by design, and stays a distinct
   token** for the same reason — a section heading's underline matching the
   masthead is a decision a theme may want to keep or break.
+
+* **``default_color`` and ``validate_hex_color`` were registered filters that
+  no template called.** ``default_color``'s ``#5A5A5A`` was therefore a
+  literal in a code path nothing exercised. The migration puts the filter to
+  work — ``{{ card.color | default_color(theme.semantic.neutral) }}`` — which
+  removes the literal, resolves an unset ``Card.color`` against the live
+  theme, and validates an explicit one on the way through.
 
 * **``positive`` and ``negative`` render nowhere by default.** They live in
   the docstring examples and in callers' own ``KpiItem`` data. They are
@@ -134,15 +145,23 @@ class TextColors:
     ``on_dark`` → ``on_dark_secondary`` → ``on_dark_muted`` is the same ladder
     over the navy masthead. ``fine_print`` is the footer disclaimer, which
     sits between ``secondary`` and ``light`` and is neither.
+
+    ``heading`` and ``on_accent`` share a value with ``palette.header_bg``
+    and ``palette.surface`` today, and are separate tokens for the reason the
+    whole module exists: a theme with a navy masthead and charcoal headings,
+    or a pale accent needing dark button text, is a design somebody may want.
+    Type is not a surface, even when it borrows a surface's colour.
     """
 
     primary: str = "#3B3B3B"
     secondary: str = "#7A7A72"
     light: str = "#A09E97"
+    heading: str = "#2C3E50"
     fine_print: str = "#8A8880"
     on_dark: str = "#FFFFFF"
     on_dark_secondary: str = "#CFD8DC"
     on_dark_muted: str = "#90A4AE"
+    on_accent: str = "#FFFFFF"
 
     def __post_init__(self) -> None:
         _validate_hex_fields(self, "text")
@@ -198,6 +217,18 @@ class Rgba:
         """The ``rgba(...)`` string, in exactly the shipped formatting."""
         red, green, blue = (int(self.color[i : i + 2], 16) for i in (1, 3, 5))
         return f"rgba({red},{green},{blue},{float(self.alpha):.10g})"
+
+    @property
+    def opacity_percent(self) -> str:
+        """
+        The same alpha in VML's spelling: ``65%``.
+
+        Outlook's ``<v:fill>`` takes the colour and the opacity as two
+        separate attributes, so the scrim exists twice in the masthead — once
+        as CSS ``rgba()`` for everyone else, once as VML for Outlook. Both
+        read this one object, which is the only reason they cannot drift.
+        """
+        return f"{float(self.alpha) * 100:.10g}%"
 
     def __str__(self) -> str:
         """So a template can write ``{{ theme.shadow.scrim }}`` and get CSS."""

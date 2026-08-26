@@ -18,7 +18,7 @@
   </noscript>
   <style type="text/css">
     body, td, th { font-family: Georgia, 'Times New Roman', serif; }
-    body { background-color: #F2F1EE !important; }
+    body { background-color: {{ theme.palette.wrapper_bg }} !important; }
   </style>
   <![endif]-->
   <style type="text/css">
@@ -30,21 +30,21 @@
       .stack-column { display:block !important; width:100% !important; }
       .mobile-pad { padding:20px 18px !important; }
       .mobile-title { font-size:22px !important; }
-      .kpi-cell { display:block !important; width:100% !important; border-right:none !important; border-bottom:1px solid #D6D2CB !important; padding:14px 16px !important; }
+      .kpi-cell { display:block !important; width:100% !important; border-right:none !important; border-bottom:1px solid {{ theme.palette.rule }} !important; padding:14px 16px !important; }
       .kpi-cell-last { border-bottom:none !important; }
     }
     /* Force light rendering in all dark mode contexts */
     :root { color-scheme: light only; }
     [data-ogsc] .email-container,
-    [data-ogsb] .email-container { background-color:#FFFFFF !important; }
+    [data-ogsb] .email-container { background-color:{{ theme.palette.surface }} !important; }
     [data-ogsc] .surface,
-    [data-ogsb] .surface { background-color:#FFFFFF !important; }
+    [data-ogsb] .surface { background-color:{{ theme.palette.surface }} !important; }
     [data-ogsc] .body-text,
-    [data-ogsb] .body-text { color:#3B3B3B !important; }
+    [data-ogsb] .body-text { color:{{ theme.text.primary }} !important; }
     @media (prefers-color-scheme:dark) {
-      .email-container { background-color:#FFFFFF !important; }
-      .body-text { color:#3B3B3B !important; }
-      .surface { background-color:#FFFFFF !important; }
+      .email-container { background-color:{{ theme.palette.surface }} !important; }
+      .body-text { color:{{ theme.text.primary }} !important; }
+      .surface { background-color:{{ theme.palette.surface }} !important; }
     }
   </style>
 </head>
@@ -52,30 +52,22 @@
   ACADEMIC FINANCIAL EMAIL SKELETON — Design Reference
   ====================================================
   Palette:
-    Wrapper bg .... #F2F1EE  (warm stone padding)
-    Surface ....... #FFFFFF  (white email body)
-    Header ........ #2C3E50  (soft navy)
-    Accent ........ #5B8A9A  (muted teal)
-    Text primary .. #3B3B3B  (warm charcoal)
-    Text secondary  #7A7A72  (warm gray)
-    Text light .... #A09E97  (stone gray)
-    Positive ...... #4A7C59  (forest green)
-    Negative ...... #B85450  (muted brick)
-    Neutral ....... #5A5A5A
-    Rule light .... #D6D2CB  (warm rule)
-    Rule dark ..... #2C3E50  (header match)
-    Row alt ....... #F5F4F1  (warm tint)
+    Every colour and shadow comes from the resolved Theme, which arrives as
+    the "theme" namespace. The token table — name, value, and the sites each
+    one covers — lives in svc/builder/theming.py, where something other than
+    a person can read it. The hand-maintained list that used to sit here had
+    already drifted: it named a row-alt colour the table never used.
 -->
-<body style="margin:0; padding:0; background-color:#F2F1EE; font-family:Georgia,'Times New Roman',serif;" bgcolor="#F2F1EE">
+<body style="margin:0; padding:0; background-color:{{ theme.palette.wrapper_bg }}; font-family:Georgia,'Times New Roman',serif;" bgcolor="{{ theme.palette.wrapper_bg }}">
 
   <!-- Preheader -->
-  <div style="display:none;max-height:0;overflow:hidden;font-size:1px;color:#F2F1EE;">
+  <div style="display:none;max-height:0;overflow:hidden;font-size:1px;color:{{ theme.palette.wrapper_bg }};">
     {{ preheader_text | escape_html }}&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;
   </div>
 
   <!-- Outer wrapper -->
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
-         style="background-color:#F2F1EE;" bgcolor="#F2F1EE">
+         style="background-color:{{ theme.palette.wrapper_bg }};" bgcolor="{{ theme.palette.wrapper_bg }}">
     <tr>
       <td align="center" style="padding:28px 0;">
 
@@ -83,7 +75,7 @@
         <!-- MAIN CONTAINER — 680px                       -->
         <!-- ============================================ -->
         <table class="email-container" role="presentation" width="680" cellpadding="0" cellspacing="0"
-               border="0" style="background-color:#FFFFFF; max-width:680px;" bgcolor="#FFFFFF">
+               border="0" style="background-color:{{ theme.palette.surface }}; max-width:680px;" bgcolor="{{ theme.palette.surface }}">
 
 {# The header region renders separately and arrives here whole. It sits at
    column 0 on purpose: an indented {{ }} would prepend that indentation to

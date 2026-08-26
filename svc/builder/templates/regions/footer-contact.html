@@ -2,27 +2,27 @@
           <!-- FOOTER PART 1: Contact Us (inside body)   -->
           <!-- ══════════════════════════════════════════ -->
           <tr>
-            <td style="padding:8px 32px 30px; background-color:#FFFFFF;" bgcolor="#FFFFFF">
+            <td style="padding:8px 32px 30px; background-color:{{ theme.palette.surface }};" bgcolor="{{ theme.palette.surface }}">
               <!-- Contact card -->
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
-                     style="border:1px solid #D6D2CB; border-radius:4px;">
+                     style="border:1px solid {{ theme.palette.rule }}; border-radius:4px;">
                 <tr>
                   <td style="padding:22px 24px;">
                     <p style="margin:0; font-family:Georgia,'Times New Roman',serif; font-size:16px;
-                              font-weight:bold; color:#2C3E50; letter-spacing:0.2px;">
+                              font-weight:bold; color:{{ theme.text.heading }}; letter-spacing:0.2px;">
                       {{ contact_heading | escape_html }}
                     </p>
                     <p style="margin:6px 0 16px; font-family:Arial,Helvetica,sans-serif; font-size:13px;
-                              color:#7A7A72; line-height:1.55;">
+                              color:{{ theme.text.secondary }}; line-height:1.55;">
                       {{ contact_description | escape_html }}
                     </p>
                     <!-- CTA Button — VML for Outlook, CSS for others -->
                     <!--[if mso]>
                     <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="{{ contact_url | escape_html }}"
                       style="height:38px;v-text-anchor:middle;width:150px;" arcsize="8%"
-                      strokecolor="#5B8A9A" fillcolor="#5B8A9A">
+                      strokecolor="{{ theme.palette.accent }}" fillcolor="{{ theme.palette.accent }}">
                       <w:anchorlock/>
-                      <center style="color:#FFFFFF;font-family:Arial,Helvetica,sans-serif;
+                      <center style="color:{{ theme.text.on_dark }};font-family:Arial,Helvetica,sans-serif;
                                      font-size:13px;font-weight:bold;">
                         {{ contact_cta_label | escape_html }}
                       </center>
@@ -30,7 +30,7 @@
                     <![endif]-->
                     <!--[if !mso]><!-->
                     <a href="{{ contact_url | escape_html }}"
-                       style="background-color:#5B8A9A; border-radius:3px; color:#FFFFFF;
+                       style="background-color:{{ theme.palette.accent }}; border-radius:3px; color:{{ theme.text.on_dark }};
                               display:inline-block; font-family:Arial,Helvetica,sans-serif;
                               font-size:13px; font-weight:bold; line-height:38px;
                               text-align:center; text-decoration:none; width:150px;

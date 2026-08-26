@@ -11,22 +11,22 @@
     cards       — List of dicts with keys: label, value, color, sublabel, body
 #}
 {% if subtitle %}
-<p style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; font-style: italic; color: #7A7A72; margin: 0 0 12px 0; line-height: 1.4;">{{ subtitle | escape_html }}</p>
+<p style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; font-style: italic; color: {{ theme.text.secondary }}; margin: 0 0 12px 0; line-height: 1.4;">{{ subtitle | escape_html }}</p>
 {% endif %}
 {% if orientation == 'vertical' %}
-<table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border: 1px solid #D6D2CB;">
+<table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border: 1px solid {{ theme.palette.rule }};">
 {% for card in cards %}
   <tr>
-    <td style="padding: 14px 16px; text-align: left; background-color: #FFFFFF;{% if not loop.last %} border-bottom: 1px solid #D6D2CB;{% endif %}">
-      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #7A7A72; text-transform: uppercase; margin: 0 0 6px 0; letter-spacing: 0.5px; font-weight: bold;">{{ card.label | escape_html }}</p>
+    <td style="padding: 14px 16px; text-align: left; background-color: {{ theme.palette.surface }};{% if not loop.last %} border-bottom: 1px solid {{ theme.palette.rule }};{% endif %}">
+      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: {{ theme.text.secondary }}; text-transform: uppercase; margin: 0 0 6px 0; letter-spacing: 0.5px; font-weight: bold;">{{ card.label | escape_html }}</p>
 {% if card.value %}
-      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 21px; font-weight: bold; color: {{ card.color }}; margin: 0 0 4px 0; line-height: 1.2;">{{ card.value | escape_html }}</p>
+      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 21px; font-weight: bold; color: {{ card.color | default_color(theme.semantic.neutral) }}; margin: 0 0 4px 0; line-height: 1.2;">{{ card.value | escape_html }}</p>
 {% endif %}
 {% if card.sublabel %}
-      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #A09E97; margin: 0; line-height: 1.4;">{{ card.sublabel | escape_html }}</p>
+      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: {{ theme.text.light }}; margin: 0; line-height: 1.4;">{{ card.sublabel | escape_html }}</p>
 {% endif %}
 {% if card.body %}
-      <div style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; color: #3B3B3B; line-height: 1.6; margin: 8px 0 0 0;">{{ card.body }}</div>
+      <div style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; color: {{ theme.text.primary }}; line-height: 1.6; margin: 8px 0 0 0;">{{ card.body }}</div>
 {% endif %}
     </td>
   </tr>
@@ -34,15 +34,15 @@
 </table>
 {% else %}
 {% set col_width = (100 / cards | length) | round(2) %}
-<table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border: 1px solid #D6D2CB;">
+<table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border: 1px solid {{ theme.palette.rule }};">
   <tr>
 {% for card in cards %}
-    <td class="kpi-cell{% if loop.last %} kpi-cell-last{% endif %}" style="width: {{ col_width }}%;{% if not loop.last %} border-right: 1px solid #D6D2CB;{% endif %} padding: 16px 12px; text-align: center; background-color: #FFFFFF;">
-      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #7A7A72; text-transform: uppercase; margin: 0 0 6px 0; letter-spacing: 0.5px; font-weight: bold;">{{ card.label | escape_html }}</p>
-      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 21px; font-weight: bold; color: {{ card.color }}; margin: 0 0 4px 0; line-height: 1.2;">{{ card.value | escape_html }}</p>
-      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #A09E97; margin: 0; line-height: 1.4;">{{ card.sublabel | escape_html }}</p>
+    <td class="kpi-cell{% if loop.last %} kpi-cell-last{% endif %}" style="width: {{ col_width }}%;{% if not loop.last %} border-right: 1px solid {{ theme.palette.rule }};{% endif %} padding: 16px 12px; text-align: center; background-color: {{ theme.palette.surface }};">
+      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: {{ theme.text.secondary }}; text-transform: uppercase; margin: 0 0 6px 0; letter-spacing: 0.5px; font-weight: bold;">{{ card.label | escape_html }}</p>
+      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 21px; font-weight: bold; color: {{ card.color | default_color(theme.semantic.neutral) }}; margin: 0 0 4px 0; line-height: 1.2;">{{ card.value | escape_html }}</p>
+      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: {{ theme.text.light }}; margin: 0; line-height: 1.4;">{{ card.sublabel | escape_html }}</p>
 {% if card.body %}
-      <div style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; color: #3B3B3B; line-height: 1.6; margin: 8px 0 0 0;">{{ card.body }}</div>
+      <div style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; color: {{ theme.text.primary }}; line-height: 1.6; margin: 8px 0 0 0;">{{ card.body }}</div>
 {% endif %}
     </td>
 {% endfor %}

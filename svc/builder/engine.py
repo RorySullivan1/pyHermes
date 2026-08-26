@@ -15,6 +15,7 @@ import jinja2
 
 from .exceptions import TemplateError
 from .filters import register_all
+from .theming import DEFAULT_THEME
 
 
 @runtime_checkable
@@ -139,7 +140,13 @@ class TemplateEngine:
         """
         try:
             tpl = self.get_template(template_name)
-            return tpl.render(**context)
+            # Every template reads colours from ``theme`` since #49, so the
+            # engine guarantees one is present: rendering a component on its
+            # own stays a one-liner, and it renders in the shipped palette.
+            # The *choice* of theme belongs to Email.render(), which binds a
+            # resolved one — and because the caller's context is layered on
+            # top here, that binding always wins over this floor.
+            return tpl.render(**{"theme": DEFAULT_THEME, **context})
         except jinja2.TemplateError as exc:
             raise TemplateError(f"Error rendering {template_name}: {exc}") from exc
 
@@ -158,7 +165,8 @@ class TemplateEngine:
         """
         try:
             tpl = self._env.from_string(source)
-            return tpl.render(**context)
+            # Same theme floor as render(); see the note there.
+            return tpl.render(**{"theme": DEFAULT_THEME, **context})
         except jinja2.TemplateError as exc:
             raise TemplateError(f"Error rendering string template: {exc}") from exc
 

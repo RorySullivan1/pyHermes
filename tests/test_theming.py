@@ -36,6 +36,16 @@ def _template_text() -> str:
     return "\n".join(p.read_text(encoding="utf-8") for p in sorted(TEMPLATE_DIR.rglob("*.html")))
 
 
+def _gallery_html() -> str:
+    """
+    Every gallery fixture, rendered. Since #49 the templates carry tokens
+    rather than literals, so a claim about a colour is a claim about output.
+    """
+    from qa.fixtures import all_fixtures
+
+    return "\n".join(build().render() for build in all_fixtures().values())
+
+
 class TestTheLayersAreATightVocabulary:
     @pytest.mark.parametrize("layer", [*LAYERS, ShadowStyle, Theme, Rgba])
     def test_every_layer_is_frozen(self, layer):
@@ -119,12 +129,26 @@ class TestTheRgbaFormattingContract:
         assert getattr(DEFAULT_THEME.shadow, shadow).css == expected
 
     @pytest.mark.parametrize("shadow", ["scrim", "title", "subtitle"])
-    def test_the_shipped_literal_is_still_in_the_templates(self, shadow):
+    def test_the_shipped_literal_still_reaches_the_output(self, shadow):
         """
-        Reads the other way round too: if someone edits a template's rgba,
-        this fails here rather than silently making the token a fiction.
+        The other direction: the composed string must still land in a real
+        email, or the token is a fiction the goldens happen not to notice.
         """
-        assert getattr(DEFAULT_THEME.shadow, shadow).css in _template_text()
+        assert getattr(DEFAULT_THEME.shadow, shadow).css in _gallery_html()
+
+    def test_the_vml_half_of_the_scrim_carries_the_same_alpha(self):
+        """
+        Outlook takes the scrim as two attributes rather than one rgba, so
+        it exists twice in the masthead. Both read one object — which is the
+        only reason they cannot drift apart.
+        """
+        assert DEFAULT_THEME.shadow.scrim.opacity_percent == "65%"
+        html = _gallery_html()
+        assert f'color="{DEFAULT_THEME.shadow.scrim.color}" opacity="65%"' in html
+
+    def test_the_vml_percentage_drops_trailing_zeros_too(self):
+        assert Rgba("#000000", 0.5).opacity_percent == "50%"
+        assert Rgba("#000000", 1).opacity_percent == "100%"
 
     def test_no_trailing_zeros(self):
         assert Rgba("#000000", 0.50).css == "rgba(0,0,0,0.5)"
@@ -155,43 +179,77 @@ class TestTheAuditIsTrue:
             )
 
     @pytest.mark.parametrize("layer_name", ["palette", "text"])
-    def test_every_surface_and_text_token_is_in_the_templates(self, layer_name):
+    def test_every_surface_and_text_token_reaches_the_output(self, layer_name):
         """
         ``semantic`` is exempt and the docstring says why: ``positive`` and
         ``negative`` have no render site today — they are the published
         vocabulary, carried by callers' own data.
         """
-        text = _template_text()
+        html = _gallery_html()
         layer = getattr(DEFAULT_THEME, layer_name)
         for spec in dataclasses.fields(layer):
             value = getattr(layer, spec.name)
-            assert value in text, f"{layer_name}.{spec.name} ({value}) renders nowhere"
+            assert value in html, f"{layer_name}.{spec.name} ({value}) renders nowhere"
 
-    def test_the_audit_covers_every_hex_the_templates_use(self):
+    def test_no_colour_literal_survives_in_a_template(self):
         """
-        The completeness half: a colour in a template with no token is one
-        the migration would have to leave hardcoded.
+        #49's headline criterion, and the rule a new component inherits: a
+        hardcoded hex or rgba in a template is a colour outside the palette,
+        which is the drift this epic exists to end. There are no documented
+        exceptions — the audit found none that needed one.
         """
-        used = set(re.findall(r"#[0-9A-Fa-f]{6}", _template_text()))
+        offenders = {
+            str(path.relative_to(TEMPLATE_DIR)): found
+            for path in sorted(TEMPLATE_DIR.rglob("*.html"))
+            if (found := re.findall(r"#[0-9A-Fa-f]{6}|rgba\(", path.read_text(encoding="utf-8")))
+        }
+        assert offenders == {}
+
+    def test_no_colour_literal_survives_in_python(self):
+        package = TEMPLATE_DIR.parent
+        offenders = {}
+        for path in sorted(package.glob("*.py")):
+            source = path.read_text(encoding="utf-8")
+            if path.name == "theming.py":
+                continue  # the tokens themselves live here, by definition
+            # Docstrings legitimately show example colours; a *default* or an
+            # assignment is what would put one back in the render path.
+            for line in source.splitlines():
+                stripped = line.strip()
+                if re.search(r"#[0-9A-Fa-f]{6}", stripped) and re.match(
+                    r"^(color|fallback)\s*[:=]", stripped
+                ):
+                    offenders.setdefault(path.name, []).append(stripped)
+        assert offenders == {}
+
+    def test_the_audit_covers_every_colour_the_gallery_renders(self):
+        """
+        The completeness half, now measured on output: a colour in a
+        rendered email that no token accounts for is one that got there
+        without going through the theme.
+        """
+        used = set(re.findall(r"#[0-9A-Fa-f]{6}", _gallery_html()))
         known = {
             getattr(layer, spec.name)
             for layer in (DEFAULT_THEME.palette, DEFAULT_THEME.text, DEFAULT_THEME.semantic)
             for spec in dataclasses.fields(layer)
         } | {DEFAULT_THEME.shadow.scrim.color}
-        # The palette comment in base.html is the one place a hex appears
-        # that no token needs to cover; #49 deletes it.
-        comment_only = {"#F5F4F1"}
-        assert used - known - comment_only == set()
+        # kitchen_sink passes its own KpiItem/TableRow colours — caller data
+        # about the numbers, which the theme deliberately does not own.
+        caller_data = {"#4A7C59", "#B85450", "#8B6F47", "#2E5F7F"}
+        assert used - known - caller_data == set()
 
-    def test_the_stale_palette_comment_value_is_used_nowhere_real(self):
+    def test_the_stale_palette_comment_is_gone(self):
         """
-        The audit's headline finding: the comment claimed row-alt was
-        ``#F5F4F1``; the table actually alternates with ``#F8F7F5``.
+        The audit's headline finding, now fixed at the root: the comment
+        claimed row-alt was ``#F5F4F1``; the table alternates with
+        ``#F8F7F5``. The comment no longer exists to be wrong.
         """
         base = (TEMPLATE_DIR / "base.html").read_text(encoding="utf-8")
-        assert base.count("#F5F4F1") == 1  # the comment line, and nothing else
+        assert "#F5F4F1" not in base
+        assert "theming.py" in base, "the comment should point at the live table"
         assert DEFAULT_THEME.palette.row_alt == "#F8F7F5"
-        assert DEFAULT_THEME.palette.row_alt in (
+        assert "{{ theme.palette.row_alt }}" in (
             (TEMPLATE_DIR / "analysis" / "data-table.html").read_text(encoding="utf-8")
         )
 
@@ -214,18 +272,37 @@ class TestThePresetRegistry:
     def test_the_default_theme_is_a_default_construction(self):
         assert DEFAULT_THEME == Theme()
 
-    def test_the_python_side_fallbacks_are_covered(self):
+    def test_an_unset_card_colour_resolves_against_the_theme(self):
         """
-        The three literals #49 has to remove from Python live in the theme
-        now: ``Card.color``'s default, ``default_color``'s fallback, and the
-        data-table's cell fallback are all the neutral.
+        A construction-time default cannot see a render-time theme, so
+        ``Card.color`` is unset by default and resolved in the template.
+        Byte identity is the proof the substitution is exact.
         """
+        from svc.builder import CardGroup, Email, FullWidth
         from svc.builder.filters import default_color
         from svc.builder.models import Card
 
-        assert DEFAULT_THEME.semantic.neutral == "#5A5A5A"
-        assert Card("L", "V").color == DEFAULT_THEME.semantic.neutral
-        assert default_color("") == DEFAULT_THEME.semantic.neutral
+        assert Card("L", "V").color == ""
+        assert default_color("", DEFAULT_THEME.semantic.neutral) == "#5A5A5A"
+
+        facts = {"email_subject": "S", "firm_name": "F", "campaign_name": "c"}
+        email = Email(facts)
+        email.add_section(
+            FullWidth(content=CardGroup([Card("L", "V"), Card("M", "W")], "horizontal"))
+        )
+        assert f"color: {DEFAULT_THEME.semantic.neutral};" in email.render()
+
+    def test_an_explicit_card_colour_is_still_validated_at_construction(self):
+        """
+        Unset skips the check; explicit does not. The component is where a
+        card is validated, and that did not move.
+        """
+        from svc.builder import CardGroup
+        from svc.builder.models import Card
+
+        CardGroup([Card("L", "V"), Card("M", "W")], "horizontal")  # unset: fine
+        with pytest.raises(ValidationError, match=r"card\.color"):
+            CardGroup([Card("L", "V", color="nope"), Card("M", "W")], "horizontal")
 
 
 class TestTheThemeIsSelectable:
@@ -371,11 +448,13 @@ class TestTheThemeReachesEveryTemplate:
         ]
 
 
-class TestTheStepIsInert:
-    """#48 plumbs; it does not paint. No template reads a token yet."""
+class TestTheDefaultThemeChangesNothing:
+    """The bar every step of the epic is judged on."""
 
-    def test_no_template_reads_the_theme_namespace(self):
-        assert "theme." not in _template_text()
+    def test_every_template_now_reads_the_theme_namespace(self):
+        for path in sorted(TEMPLATE_DIR.rglob("*.html")):
+            source = path.read_text(encoding="utf-8")
+            assert "theme." in source, f"{path.name} takes no colour from the theme"
 
     def test_the_default_email_is_unchanged(self):
         """
@@ -388,3 +467,114 @@ class TestTheStepIsInert:
         facts = {"email_subject": "S", "firm_name": "F", "campaign_name": "c"}
         assert Email(facts).render() == Email({**facts, "theme": "classic"}).render()
         assert Email(facts).render() == Email({**facts, "theme": DEFAULT_THEME}).render()
+
+
+class TestThePerturbedTheme:
+    """
+    #49's proof that the tokens are live rather than decorative.
+
+    Byte-identity says the migration was faithful; it says nothing about
+    whether anything is actually *reading* the theme. Only a non-default
+    value can, and it has to show up in the two blocks that used to carry
+    their own copies — a themed email rendering half-themed in dark mode is
+    the exact bug this checks for.
+    """
+
+    SENTINELS = {
+        "surface": "#123456",
+        "wrapper_bg": "#234567",
+        "header_bg": "#345678",
+        "accent": "#456789",
+        "rule": "#56789A",
+        "highlight_tint": "#6789AB",
+        "row_alt": "#789ABC",
+    }
+
+    def _themed_html(self) -> str:
+        from svc.builder import CardGroup, DataTable, Email, FullWidth, TextBlock, TwoColumn
+        from svc.builder.models import Card, TableRow
+
+        theme = Theme(
+            palette=Palette(**self.SENTINELS),
+            text=TextColors(primary="#89ABCD", on_dark="#9ABCDE", heading="#ABCDEF"),
+            semantic=SemanticColors(neutral="#BCDEF0"),
+            shadow=ShadowStyle(scrim=Rgba("#CDEF01", 0.25)),
+        )
+        email = Email(
+            {
+                "email_subject": "S",
+                "firm_name": "F",
+                "campaign_name": "c",
+                "contact_url": "https://x.test/c",
+                "footer_disclaimer": "<p>d</p>",
+                "theme": theme,
+            }
+        )
+        email.add_section(FullWidth(title="T", content=TextBlock("<p>x</p>"), highlight=True))
+        email.add_section(
+            TwoColumn(
+                ratio="50-50",
+                left=CardGroup([Card("L", "V"), Card("M", "W")], "horizontal"),
+                # Two rows so the table alternates: the second is the alt row.
+                right=DataTable(headers=["H"], rows=[TableRow(["a"]), TableRow(["b"])]),
+            )
+        )
+        return email.render()
+
+    @pytest.mark.parametrize("token", sorted(SENTINELS))
+    def test_every_palette_sentinel_reaches_the_html(self, token):
+        assert self.SENTINELS[token] in self._themed_html(), f"{token} is decorative"
+
+    @pytest.mark.parametrize("sentinel", ["#89ABCD", "#9ABCDE", "#ABCDEF", "#BCDEF0"])
+    def test_every_text_and_semantic_sentinel_reaches_the_html(self, sentinel):
+        assert sentinel in self._themed_html()
+
+    def test_the_dark_mode_forcing_block_is_themed_too(self):
+        """
+        It restates surface and text colours with ``!important``. If it kept
+        its own copies, a themed email would render half-themed in exactly
+        the clients that are hardest to test.
+        """
+        html = self._themed_html()
+        block = html[html.index("Force light rendering") : html.rindex("</style>")]
+        # Two [data-ogsc]/[data-ogsb] rules plus the two inside the
+        # prefers-color-scheme query — every copy reads the same token.
+        assert block.count("#123456") == 4
+        assert "#89ABCD" in block
+        assert "#FFFFFF" not in block and "#3B3B3B" not in block
+
+    def test_the_mobile_media_block_is_themed_too(self):
+        html = self._themed_html()
+        block = html[html.index("max-width:700px") : html.index("Force light rendering")]
+        assert "#56789A" in block, "the .kpi-cell rule kept its own hairline colour"
+
+    def test_both_halves_of_the_scrim_move_together(self):
+        """CSS rgba for everyone, VML attributes for Outlook — one source."""
+        html = self._themed_html()
+        assert "rgba(205,239,1,0.25)" in html
+        assert 'color="#CDEF01" opacity="25%"' in html
+
+    def test_caller_data_still_wins_over_the_theme(self):
+        """
+        ``KpiItem.color`` and ``TableRow.colors`` are statements about the
+        numbers, not about the design. The theme supplies the fallback only.
+        """
+        from svc.builder import CardGroup, Email, FullWidth
+        from svc.builder.models import Card
+
+        email = Email(
+            {
+                "email_subject": "S",
+                "firm_name": "F",
+                "campaign_name": "c",
+                "theme": Theme(semantic=SemanticColors(neutral="#BCDEF0")),
+            }
+        )
+        email.add_section(
+            FullWidth(
+                content=CardGroup([Card("L", "V", color="#0F0F0F"), Card("M", "W")], "horizontal")
+            )
+        )
+        html = email.render()
+        assert "#0F0F0F" in html, "the caller's colour was overridden by the theme"
+        assert "#BCDEF0" in html, "the unset card did not fall back to the theme"
