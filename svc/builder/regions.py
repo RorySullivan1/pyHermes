@@ -43,7 +43,7 @@ from .exceptions import ValidationError
 from .models import _validate_url
 
 if TYPE_CHECKING:  # pragma: no cover - import cycle: images imports _validate_url
-    from .engine import TemplateEngine
+    from .engine import Renderer
     from .images import EmailImage, ImageAsset
 
 
@@ -173,7 +173,7 @@ class Region:
         }
         return {**presentation, **facts}
 
-    def render_slots(self, engine: TemplateEngine, facts: dict[str, Any]) -> dict[str, str]:
+    def render_slots(self, engine: Renderer, facts: dict[str, Any]) -> dict[str, str]:
         """
         Render this region into the skeleton variables it fills.
 
@@ -257,7 +257,7 @@ class Header(Region):
         }
         return {**super().context({}), **resolved, **facts}
 
-    def render(self, engine: TemplateEngine, facts: dict[str, Any]) -> str:
+    def render(self, engine: Renderer, facts: dict[str, Any]) -> str:
         """
         The masthead HTML.
 

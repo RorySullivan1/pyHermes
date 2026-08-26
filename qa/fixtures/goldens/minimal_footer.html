@@ -52,19 +52,11 @@
   ACADEMIC FINANCIAL EMAIL SKELETON — Design Reference
   ====================================================
   Palette:
-    Wrapper bg .... #F2F1EE  (warm stone padding)
-    Surface ....... #FFFFFF  (white email body)
-    Header ........ #2C3E50  (soft navy)
-    Accent ........ #5B8A9A  (muted teal)
-    Text primary .. #3B3B3B  (warm charcoal)
-    Text secondary  #7A7A72  (warm gray)
-    Text light .... #A09E97  (stone gray)
-    Positive ...... #4A7C59  (forest green)
-    Negative ...... #B85450  (muted brick)
-    Neutral ....... #5A5A5A
-    Rule light .... #D6D2CB  (warm rule)
-    Rule dark ..... #2C3E50  (header match)
-    Row alt ....... #F5F4F1  (warm tint)
+    Every colour and shadow comes from the resolved Theme, which arrives as
+    the "theme" namespace. The token table — name, value, and the sites each
+    one covers — lives in svc/builder/theming.py, where something other than
+    a person can read it. The hand-maintained list that used to sit here had
+    already drifted: it named a row-alt colour the table never used.
 -->
 <body style="margin:0; padding:0; background-color:#F2F1EE; font-family:Georgia,'Times New Roman',serif;" bgcolor="#F2F1EE">
 

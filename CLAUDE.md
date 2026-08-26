@@ -62,7 +62,7 @@ svc/
 ├── config.py           ← the tunable numbers, in one frozen dataclass
 ├── builder/            ← current OO email builder (use this for new work)
 │   ├── __init__.py     — public API surface (re-exports everything below)
-│   ├── engine.py       — TemplateEngine (Jinja2, StrictUndefined, autoescape OFF)
+│   ├── engine.py       — TemplateEngine + BoundEngine (per-render theme binding)
 │   ├── email.py        — Email + EmailBuilder (fluent), _validate_size()
 │   ├── regions.py      — Region base + Header/MinimalHeader, Footer/MinimalFooter
 │                         (body = the section list, deliberately not a class)
@@ -71,6 +71,8 @@ svc/
 │   ├── models.py       — EmailMetadata (the email's facts), Card, KpiItem, TableRow, NumberedItem, SectionConfig
 │   ├── images.py       — EmailImage (hosted/attached/inline), ImageAsset manifest, format sniffing
 │   ├── enums.py        — StrEnum vocab: TwoColumnRatio, ThreeColumnRatio, CardOrientation, EmbedStrategy, ImageAlign
+│   ├── theming.py      — Theme (Palette/TextColors/SemanticColors/ShadowStyle),
+│                         DEFAULT_THEME, SLATE_THEME, THEMES, resolve_theme
 │   ├── filters.py      — Jinja filters (e.g. validate_hex_color)
 │   ├── exceptions.py   — EmailBuilderError hierarchy
 │   └── templates/      ← packaged with the wheel (moved here in #10)
@@ -102,7 +104,7 @@ qa/                     ← QA harness (epic #54); NOT shipped in the wheel
 ├── preview.py         — the CLI that composes the rest: `python -m qa.preview <target>`
 │                        [--lint] [--screenshot] [--open] [--list]
 └── fixtures/          — the gallery: minimal, kitchen_sink, image_matrix, minimal_header,
-                        minimal_footer,
+                        minimal_footer, slate_theme,
                         + all_fixtures()
     └── goldens/       — the checked-in snapshots: <name>.html + <name>.assets.txt
 output/                 — generated email HTML (gitignored; not committed)
@@ -123,6 +125,7 @@ epic #54). Four fixtures, each a `build()` returning a built `Email`, enumerated
 | `kitchen_sink` | Every public component in every container ratio, `highlight=True` included, **and every `EmailMetadata`, `Header` and `Footer` field set to a distinctive non-default value**. The fixture the golden is worth the most on, and #32's characterization email |
 | `image_matrix` | All three embed strategies, plus the same attached image referenced twice — the shortest proof that `assets()` reports exactly the `cid:` references the HTML contains |
 | `minimal_header` | The `MinimalHeader` variant (#36). Differs from the others in one argument, so its golden pins that a region swap changes the masthead and nothing else — no VML, no `background-image`, every email-level fact still present, and a CID logo attached exactly once through the region's own `images()` |
+| `slate_theme` | The `slate` preset (#50). Differs from `kitchen_sink` in one metadata field, so its golden pins that a palette reaches *everywhere* — every component, every ratio, the dark-mode forcing block and the mobile media query — and that a caller's own `KpiItem` colour survives while an unset `Card.color` takes the theme's neutral |
 | `minimal_footer` | The `MinimalFooter` variant (#66), the same argument at the other end. Its golden pins that the contact card and its `v:roundrect` are *absent* while the legal block is byte-identical to the default footer's — because the variant composes that template rather than forking it. Paired with the **default** header on purpose: the two region choices are independent, and swapping both at once could not say which one moved a byte |
 
 **Determinism is the rule the gallery rests on**, and it is not a style preference: Content-IDs
@@ -482,7 +485,7 @@ render. A golden could not do this job: a variant that dropped the unsubscribe l
 have a golden of its own, and it would pin the omission as faithfully as it pins anything
 else.
 
-### Three standing rules the harness enforces
+### Standing rules the harness enforces
 
 These are not conventions to remember — each has teeth, and the teeth are named:
 
@@ -500,7 +503,15 @@ These are not conventions to remember — each has teeth, and the teeth are name
    `display:flex` perfectly and Outlook's Word engine does not. The filenames say `chromium`
    for exactly this reason. Conversely, a clean lint says nothing about whether the layout
    *reads* well; that is what the images are for.
-4. **A region that carries images must declare them.** Same rule components already have,
+4. **A new template takes its colours from the `theme` namespace.** A hardcoded hex or
+   `rgba()` literal in a template is a bug — it is a colour outside the palette, which is
+   the drift epic #46 exists to end. Two tests enforce it: one asserts no literal survives
+   in any template, another that none survives as a default in Python. There are **no
+   documented exceptions**; the audit found none that needed one. Watch the two blocks that
+   carry their own copies of surface and text colours — the dark-mode forcing block and the
+   mobile `@media` rule — because if they stop reading the same tokens as the inline styles
+   they override, a themed email renders half-themed in exactly the clients hardest to test.
+5. **A region that carries images must declare them.** Same rule components already have,
    and the same failure if you skip it: the bytes never reach `Email.assets()` and the
    `cid:` reference renders as a broken image. Declaring means listing the field in
    `IMAGE_FIELDS` — `Region.images()` walks it — or overriding `images()` if the bytes come
@@ -513,6 +524,8 @@ These are not conventions to remember — each has teeth, and the teeth are name
 
 ```python
 from svc.builder import EmailBuilder, Email, \
+    Theme, Palette, TextColors, SemanticColors, ShadowStyle, Rgba, \
+    DEFAULT_THEME, SLATE_THEME, THEMES, \
     Region, Header, MinimalHeader, Footer, MinimalFooter, \
     FullWidth, TwoColumn, ThreeColumn, \
     CardGroup, DataTable, ChartBlock, ImageBlock, TextBlock, NumberedList, AuthorBlock
@@ -697,9 +710,11 @@ reproduces today's output — so an existing email renders unchanged unless it o
   Outlook, an anchor for everyone else) — both read the same parameter, and a test asserts
   the label appears in both under `Footer` and **zero** times under `MinimalFooter`, where
   the block it lived in is not rendered at all.
-- **Not parameters, deliberately**: fonts, colours, padding, and the 680px table geometry.
-  That is the design system, and letting callers vary it per email is how a template stops
-  surviving Outlook.
+- **Colour is a parameter — but the whole `Theme` is the atom.** A caller picks a preset or
+  builds a theme; they never set a colour at a call site. See *Theming* below.
+- **Not parameters, deliberately**: fonts, padding, and the 680px table geometry. That is
+  the design system, and letting callers vary it per email is how a template stops surviving
+  Outlook. Sizing is epic #45's domain, not a knob to add ad hoc.
 
 ### Validation philosophy
 
@@ -721,6 +736,81 @@ failure, not a template one.
 The one deliberate exception is `EmailBuilder`'s `RuntimeError` for calling `section()` or
 `build()` before `metadata()` — a programming error in the call sequence, not rejected
 data.
+
+### Theming — colour is one validated object
+
+Colour was 18 hex values in 245 occurrences across all 20 template files, three `rgba()`
+literals and three Python fallbacks, described by a palette *comment* in `base.html` that
+nothing could read — and that had already drifted, naming a row-alt colour the data table
+never used. Epic #46 replaced it with [svc/builder/theming.py](svc/builder/theming.py).
+
+```python
+from svc.builder import DEFAULT_THEME, Palette, Theme
+
+EmailBuilder().metadata({..., "theme": "slate"})              # a curated preset
+EmailBuilder().metadata({..., "theme": DEFAULT_THEME.derive(  # or your own
+    palette={"header_bg": "#1B3A5C", "accent": "#7FA8B8"})})
+```
+
+`EmailMetadata.theme` → resolved **once** in `Email.render()` → four frozen layers
+(`palette`, `text`, `semantic`, `shadow`) → templates read `{{ theme.palette.surface }}`.
+
+- **The `Theme` is the unit of customisation, never a single colour at a call site.** That
+  is what keeps a palette coherent while still being open: the layers are frozen, no token
+  field is optional, and every value is validated at construction — so a `Theme` that exists
+  is a `Theme` that renders, and `StrictUndefined` cannot be tripped by a half-built one.
+  **There is deliberately no per-component colour parameter**; a `title_color=` anywhere
+  would dissolve the palette one call site at a time. `Container.background_color` is the
+  one pre-existing escape hatch and stays exactly as it was — neither removed nor extended.
+- **Tokens are named by role, not by value.** The same `#FFFFFF` is `palette.surface` behind
+  a table and `text.on_dark` over the navy; the same `#2C3E50` is `palette.header_bg` as a
+  band, `text.heading` as type and `palette.rule_dark` as an underline. Several tokens share
+  a value today and are separate on purpose — type is not a surface, even when it borrows a
+  surface's colour, and `row_alt` vs `highlight_tint` is a distinction the old comment drew
+  before the templates lost it.
+- **Shadows are stored as hex + alpha, never as an `rgba()` string** — otherwise a theme
+  author is hand-writing CSS instead of picking a colour. `Rgba.css` composes the CSS form
+  and `Rgba.opacity_percent` the VML one, on a **byte-exact contract**: no spaces after
+  commas, no trailing zeros. The masthead scrim exists twice (CSS for everyone, VML
+  attributes for Outlook) and both read one object, which is the only reason they cannot
+  drift.
+- **Semantic data stays data.** `KpiItem.color` and `TableRow.colors` are the caller's
+  statement about the *number* ("this is down"), not a styling choice. The theme supplies
+  only the fallback behind them. `Card.color` is **unset by default** and resolved at render
+  to `theme.semantic.neutral` — a construction-time default cannot see a render-time theme —
+  while an explicit value is still validated at construction exactly as before.
+- **The engine guarantees a theme; the email chooses which.** `TemplateEngine.render()`
+  layers `DEFAULT_THEME` *under* the caller's context, so rendering a component on its own
+  stays a one-liner. `Email.render()` binds the resolved theme on top, and that always wins.
+
+**How the theme reaches every template — the mechanism epic #45 inherits.** A value owned by
+the email must reach component templates several layers down. `TemplateEngine.bound(**shared)`
+returns a `BoundEngine`: a **per-render** view that merges shared values into every context
+and delegates the rest. Containers, components and regions keep taking one argument and
+calling `engine.render(path, ctx)` unchanged — they are simply handed the view, and a test
+asserts those signatures never grew a parameter. Threading an argument would have changed
+every call site; an environment global would have made the engine stateful, so two emails
+with different themes sharing an engine could interleave. Shared values layer **over** the
+caller's context, the same way `Region.context()` layers facts over presentation: what the
+email owns cannot be shadowed from below. **#40 (size themes) should ride this, not build a
+second one.**
+
+**Adding a preset**: curated values, not a hue rotation — every colour is a design decision,
+exactly as the default's are. Add it to `THEMES`, and **land it with a gallery fixture**, as
+`slate_theme` does. The registry is repo-owned and never mutated at runtime; a user's theme
+is passed as an object, not registered by name.
+
+**Contrast is a recommendation, not a rule.** Validation checks *shape* — valid hex, alpha in
+range, completeness — never aesthetics. Aim for at least 4.5:1 between `text.primary` and
+`palette.surface`, and between `text.on_dark` and `palette.header_bg`; a theme that fails
+that is legal and will render, and no `ValidationError` will tell you. Judge it with
+`python -m qa.preview <fixture> --screenshot`, remembering that Chromium's colour handling
+is not Outlook's.
+
+**Non-goals, as decisions**: no font theming (its own client-testing burden); no dark theme —
+the skeleton still forces light rendering and the migration tokenised that block without
+changing what it does; no contrast or taste policing; **one theme per email** — a palette is
+an email-level voice, so there is no per-section mixing.
 
 ## Architecture — `svc/delivery`
 
@@ -949,16 +1039,15 @@ Reach for these rather than improvising:
 ## Open work
 
 - Tracked in [GitHub issues](https://github.com/RorySullivan1/pyHermes/issues), organised as
-  epics with sub-issues: #45 size themes, #46 color themes, plus #53 plain-text and #56
-  typography as parents. #38 (header region), #52 (delivery), #54 (QA harness) and #55
-  (footer region) are complete.
+  epics with sub-issues: #45 size themes, plus #53 plain-text and #56 typography as
+  parents. #38 (header region), #46 (colour themes), #52 (delivery), #54 (QA harness) and
+  #55 (footer region) are complete.
 - **The QA harness (#54) is complete**, and it changes how the visual epics discharge their
   own acceptance criteria:
-  - **#43 (size themes) and #50 (color presets) get their eyeball artifacts from the
-    screenshot runner**, not from ad-hoc `.save()` calls. `python -m qa.preview <fixture>
+  - **#43 (size themes) gets its eyeball artifacts from the screenshot runner**, not from ad-hoc `.save()` calls. `python -m qa.preview <fixture>
     --screenshot` locally; CI uploads the whole gallery on every PR. Side-by-side theme
     review is two runs of one command.
-  - **Migration PRs under #38, #45 and #46 cite gallery-wide goldens, not a single email.**
+  - **Migration PRs under #45 cite gallery-wide goldens, not a single email.**
     "Byte-identical" now means every gallery fixture plus its asset manifest — a
     container-template edit that one email's ratios never exercise no longer slips through.
   - **A theme lands with a fixture.** Epic #54 anticipated "one per theme as themes land";
@@ -987,11 +1076,25 @@ Reach for these rather than improvising:
   each of them now inherits byte-identity proof for free: change a template, and the gallery
   tells you which email moved and where. The delivery epic (#52) is complete and contends
   with none of them.
+- **The colour epic (#46) is complete.** What #45 (size themes) inherits from it:
+  - **The injection mechanism is built — ride it, do not build a second one.** #48 made the
+    choice #40 was told to coordinate on: `TemplateEngine.bound(**shared)` returns a
+    per-render `BoundEngine`, so nothing in the section tree changed signature. A size theme
+    is another shared value on the same binder.
+  - **The audit pattern is worth repeating.** Naming tokens by *role* rather than by value
+    is what turned 245 literals into a vocabulary; doing it by value would have produced a
+    lookup table nobody could theme. Two tokens the first pass missed only surfaced because
+    the migration had to decide what each site *meant*.
+  - **Byte-identity is provable before the intended change.** #49 restored the one comment
+    it meant to alter, ran the goldens green, then re-applied it — so the golden diff in the
+    PR was exactly the intended change and nothing else. Do that.
 - **Two findings the harness surfaced are still open**: #76 (the mobile `.kpi-cell` collapse
   overflows its viewport by its own padding — `base.html`'s CSS, still there) and #78 (three
   sourced Outlook findings the lint pass defers rather than shipping red; one of the three,
-  the `rgba()` scrim, now lives in `templates/regions/header.html`). They were deliberately
-  **not** folded into #38 or #55: each changes rendered output, and both epics' whole claim
+  the `rgba()` scrim, now composed from `ShadowStyle` in `templates/regions/header.html`).
+  #78 got easier: the scrim is one `Rgba` read by both the CSS and VML halves, so a fix
+  changes one object rather than two literals. They were deliberately **not** folded into
+  #38, #46 or #55: each changes rendered output, and both epics' whole claim
   was that every step leaves the gallery byte-identical. They are their own PR, and the
   golden diff they produce is the point rather than the problem.
 - [README.md](README.md) is the human-facing entry point (what it is, install, build, send,

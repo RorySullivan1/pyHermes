@@ -16,7 +16,7 @@ Usage:
 from __future__ import annotations
 
 from .components import Component
-from .engine import TemplateEngine
+from .engine import Renderer
 from .enums import ThreeColumnRatio, TwoColumnRatio
 from .exceptions import ValidationError
 from .images import ImageAsset
@@ -49,7 +49,7 @@ class Container:
         self.background_color = background_color
         self.highlight = highlight
 
-    def _base_context(self, engine: TemplateEngine) -> dict:
+    def _base_context(self, engine: Renderer) -> dict:
         """
         Shared context keys injected into every container template.
 
@@ -81,7 +81,7 @@ class Container:
         """Return the attachment manifest entries from every component here."""
         return [asset for component in self.components() for asset in component.assets()]
 
-    def render(self, engine: TemplateEngine) -> str:
+    def render(self, engine: Renderer) -> str:
         raise NotImplementedError
 
 
@@ -110,7 +110,7 @@ class FullWidth(Container):
     def components(self) -> list[Component]:
         return [self.content]
 
-    def render(self, engine: TemplateEngine) -> str:
+    def render(self, engine: Renderer) -> str:
         ctx = self._base_context(engine)
         ctx["content"] = self.content.render(engine)
         return engine.render(self.template_path, ctx)
@@ -176,7 +176,7 @@ class TwoColumn(Container):
     def components(self) -> list[Component]:
         return [c for c in (self.left, self.right) if c is not None]
 
-    def render(self, engine: TemplateEngine) -> str:
+    def render(self, engine: Renderer) -> str:
         # Both keys are always injected: the column templates emit {{ left }}
         # and {{ right }} unconditionally, so a missing key would raise under
         # StrictUndefined.  An omitted column renders as an empty cell.
@@ -253,7 +253,7 @@ class ThreeColumn(Container):
     def components(self) -> list[Component]:
         return [c for c in (self.left, self.center, self.right) if c is not None]
 
-    def render(self, engine: TemplateEngine) -> str:
+    def render(self, engine: Renderer) -> str:
         # All three keys are always injected: the column templates emit
         # {{ left }} / {{ center }} / {{ right }} unconditionally, so a missing
         # key would raise under StrictUndefined.  An omitted column renders as

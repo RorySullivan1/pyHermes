@@ -34,11 +34,19 @@ class TestKpiItem:
             KpiItem(label="   ", value="5,234").validate()
 
     @pytest.mark.parametrize(
-        "color", ["4A7C59", "#4A7C5", "#4A7C599", "#GGGGGG", "red", "#4a7c59ff", ""]
+        "color", ["4A7C59", "#4A7C5", "#4A7C599", "#GGGGGG", "red", "#4a7c59ff"]
     )
     def test_non_hex_color_raises(self, color):
         with pytest.raises(ValidationError, match="hex color"):
             KpiItem(label="L", value="V", color=color).validate()
+
+    def test_an_unset_color_is_allowed_and_means_the_theme_s_neutral(self):
+        """
+        Empty stopped being invalid in #49: a construction-time default
+        cannot see a render-time theme, so unset is how a card says "use the
+        palette". An explicit value is still checked, exactly as above.
+        """
+        KpiItem(label="L", value="V", color="").validate()
 
     @pytest.mark.parametrize("color", ["#4A7C59", "#4a7c59", "#000000", "#FFFFFF"])
     def test_hex_color_accepts_both_cases(self, color):

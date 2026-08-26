@@ -6,17 +6,17 @@
     items    — List of dicts with keys: number, title, body
 #}
 {% if subtitle %}
-<p style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; font-style: italic; color: #7A7A72; margin: 0 0 12px 0; line-height: 1.4;">{{ subtitle | escape_html }}</p>
+<p style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; font-style: italic; color: {{ theme.text.secondary }}; margin: 0 0 12px 0; line-height: 1.4;">{{ subtitle | escape_html }}</p>
 {% endif %}
 {% for item in items %}
 <table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;{% if not loop.last %} margin-bottom: 16px;{% endif %}">
   <tr>
     <td width="22" style="padding: 0 12px 0 0; vertical-align: top;">
-      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 17px; font-weight: bold; color: #5B8A9A; margin: 0; line-height: 1.2;">{{ item.number | escape_html }}</p>
+      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 17px; font-weight: bold; color: {{ theme.palette.accent }}; margin: 0; line-height: 1.2;">{{ item.number | escape_html }}</p>
     </td>
     <td style="padding: 0; vertical-align: top;">
-      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; font-weight: bold; color: #2C3E50; margin: 0 0 6px 0; line-height: 1.3;">{{ item.title | escape_html }}</p>
-      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: #3B3B3B; margin: 0; line-height: 1.68;">{{ item.body }}</p>
+      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; font-weight: bold; color: {{ theme.text.heading }}; margin: 0 0 6px 0; line-height: 1.3;">{{ item.title | escape_html }}</p>
+      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: {{ theme.text.primary }}; margin: 0; line-height: 1.68;">{{ item.body }}</p>
     </td>
   </tr>
 </table>

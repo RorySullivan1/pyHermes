@@ -52,9 +52,10 @@
   `-` strips all contiguous whitespace, not one newline.
 
 ## State at end
-- Branch `claude/review-open-issues-rr8quq` @ five commits on `main` (`673a6f2`): the memory
-  commit from #38, then #63, #64+#65, #66, #67. Epic #55 complete, not yet pushed or PR'd at
-  the time this file was written.
+- **PR #81 merged** to `main` (`e7dda2a`) at 12:39, closing #63–#67 and **epic #55** (5/5).
+  All four CI jobs green on the head `41f210c` on the first run, the extended `wheel` job
+  included. 828 tests verified again on merged `main`. Branch reset to `main`; PR watch
+  stopped and both check-in triggers deleted.
 - `base.html` 177 → **116 lines** (head, skeleton, preheader). Four slots:
   `header_html`, `sections_html`, `footer_contact_html`, `footer_legal_html`.
 - Gallery is five fixtures: `minimal`, `kitchen_sink`, `image_matrix`, `minimal_header`,

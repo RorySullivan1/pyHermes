@@ -147,6 +147,25 @@ Adding a content type is a new template file plus a `Component` subclass that se
 Column ratios and card orientation are `StrEnum`s that accept either the member or its bare
 string — `ratio=ThreeColumnRatio.WIDE_LEFT` is `ratio="50-25-25"`.
 
+## Colour
+
+Every colour and shadow comes from one validated `Theme`, chosen with one metadata field:
+
+```python
+from svc.builder import DEFAULT_THEME, EmailBuilder
+
+EmailBuilder().metadata({..., "theme": "slate"})                 # a curated preset
+EmailBuilder().metadata({..., "theme": DEFAULT_THEME.derive(     # or your own
+    palette={"header_bg": "#1B3A5C", "accent": "#7FA8B8"})})
+```
+
+The theme is the unit of customisation — you pick or build a whole one, never a colour at a
+call site. Its layers are frozen and validated at construction, so a theme that exists is a
+theme that renders. `KpiItem.color` and `TableRow.colors` stay yours: they say something
+about the *number*, and the theme only supplies the fallback behind them.
+
+Validation checks shape, not taste — a low-contrast palette is legal and will render.
+
 ## What it enforces
 
 These are the failures that are invisible until a reader reports them, so they are checked

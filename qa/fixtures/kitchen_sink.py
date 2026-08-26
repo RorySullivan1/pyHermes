@@ -88,6 +88,9 @@ def _metadata() -> dict[str, Any]:
         "logo_url": _LOGO,
         "logo_alt": "Hermes Research — weekly research letter",
         "logo_width": 128,
+        # Named rather than omitted, so this golden pins that the string
+        # path resolves to the same bytes as the default object.
+        "theme": "classic",
         "contact_description": "Reach the research desk with questions.",
         "contact_url": "https://example.com/contact",
         "contact_heading": "Questions about this note?",
