@@ -105,32 +105,41 @@ fixtures to drift.
 
 ## The composition model
 
-Every email is **skeleton ← regions ← containers ← components**:
+Every email is **skeleton ← regions ← containers ← components**, and the regions are
+`header | body | footer`:
 
 | Layer | What it owns | Where |
 |---|---|---|
-| **Skeleton** | the whole page — head, preheader, footer — with two holes, `{{ header_html }}` and `{{ sections_html }}` | `svc/builder/templates/base.html` |
-| **Regions** | the masthead: `Header`, `MinimalHeader`. (The *body* region is the ordered section list — not a class) | `svc/builder/regions.py` |
+| **Skeleton** | the whole page — head, preheader, wrapper — with four holes: `{{ header_html }}`, `{{ sections_html }}`, `{{ footer_contact_html }}`, `{{ footer_legal_html }}` | `svc/builder/templates/base.html` |
+| **Regions** | the masthead (`Header`, `MinimalHeader`) and the close (`Footer`, `MinimalFooter`). (The *body* region is the ordered section list — not a class) | `svc/builder/regions.py` |
 | **Containers** | layout geometry only: `FullWidth`, `TwoColumn`, `ThreeColumn` | `svc/builder/containers.py` |
 | **Components** | content: `CardGroup`, `DataTable`, `ChartBlock`, `ImageBlock`, `TextBlock`, `NumberedList`, `AuthorBlock` | `svc/builder/components.py` |
 
 A container holds components, renders each, and embeds the fragments into its own `<tr>`
-block sized to the 680px outer table. `Email` renders the header region and concatenates the
-sections, then drops both into the skeleton.
+block sized to the 680px outer table. Each region renders into the slots it fills — the
+header fills one, the footer two — and `Email` drops all of it into the skeleton.
 
-**Facts about the email live on `EmailMetadata`; how the masthead presents them lives on the
-header.** The firm name, campaign name, date range, issue label and disclaimer are handed
-*down* to the region at render time — it presents them, it cannot contradict them. Swapping
-the masthead is one argument, not a template fork:
+**Facts about the email live on `EmailMetadata`; how a region presents them lives on the
+region.** The firm name, campaign name, dates, disclaimers and outbound URLs are handed
+*down* at render time — a region presents them, it cannot contradict them. Swapping either
+region is one argument, not a template fork:
 
 ```python
-from svc.builder import EmailBuilder, MinimalHeader
+from svc.builder import EmailBuilder, MinimalFooter, MinimalHeader
 
-EmailBuilder().metadata({...}).header(MinimalHeader(logo_url=logo)).section(...)
+(EmailBuilder()
+    .metadata({...})
+    .header(MinimalHeader(logo_url=logo))
+    .footer(MinimalFooter())          # legal block only: no contact card, no VML
+    .section(...))
 ```
 
+A variant may drop the contact card, but **not** the disclaimer or the unsubscribe link —
+that floor is enforced at construction, not left to convention.
+
 The pre-split spelling still works: `EmailMetadata(logo_url=…, logo_alt=…, logo_width=…,
-header_bg_image_url=…)` builds the header for you.
+header_bg_image_url=…)` builds the header for you, and `EmailMetadata(contact_heading=…,
+contact_cta_label=…, unsubscribe_label=…, …)` builds the footer.
 
 Adding a content type is a new template file plus a `Component` subclass that sets
 `template_path` and implements `context()`.
