@@ -65,8 +65,9 @@ leaving the suite / ruff / mypy green and **all six pre-existing goldens unregen
 
 ## State at end
 
-- Branch `claude/review-open-issues-rr8quq`, six commits on `main` @ `ec3e2bd`.
-- 1186 tests green (938 before), ruff + `ruff format --check` + mypy clean.
+- **PR #83 merged to `main` (`1105532`) at 2026-08-26 20:47**, closing #39–#44 and epic #45
+  at 6/6. Branch reset to `main`; 1179 passed / 7 skipped on merged main, ruff + mypy clean,
+  eight golden fixture pairs present.
 - Gallery is **eight** fixtures; `svc/builder/templates/common/containers/` is **two** files.
 - Zero scale-participating px literals in any template; four named exceptions remain.
 
