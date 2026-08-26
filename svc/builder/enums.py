@@ -51,6 +51,22 @@ class CardOrientation(StrEnum):
     VERTICAL = "vertical"
 
 
+class SizeTheme(StrEnum):
+    """
+    Density presets for the whole email.
+
+    The *entire* caller-facing sizing surface: ``EmailMetadata(size_theme=…)``
+    takes a member here or its bare string, and there is deliberately no
+    per-email or per-component px override anywhere in the builder. The
+    theme-to-values mapping lives in :mod:`svc.builder.sizing`, not here —
+    this enum holds only the vocabulary, per the note above.
+    """
+
+    COMPACT = "compact"
+    STANDARD = "standard"
+    SPACIOUS = "spacious"
+
+
 class EmbedStrategy(StrEnum):
     """
     How an image's bytes reach the reader.

@@ -68,6 +68,7 @@ from .enums import (
     CardOrientation,
     EmbedStrategy,
     ImageAlign,
+    SizeTheme,
     ThreeColumnRatio,
     TwoColumnRatio,
 )
@@ -105,6 +106,17 @@ from .regions import (
     Region,
 )
 
+# Sizing
+from .sizing import (
+    SIZE_SCHEMES,
+    STANDARD_SIZES,
+    ComponentScale,
+    FrameGeometry,
+    SizeScheme,
+    SpacingScale,
+    TypeScale,
+)
+
 # Theming
 from .theming import (
     DEFAULT_THEME,
@@ -131,6 +143,14 @@ __all__ = [
     "DEFAULT_THEME",
     "SLATE_THEME",
     "THEMES",
+    # Sizing
+    "SizeScheme",
+    "TypeScale",
+    "SpacingScale",
+    "ComponentScale",
+    "FrameGeometry",
+    "STANDARD_SIZES",
+    "SIZE_SCHEMES",
     # Regions
     "Region",
     "Header",
@@ -165,6 +185,7 @@ __all__ = [
     "CardOrientation",
     "EmbedStrategy",
     "ImageAlign",
+    "SizeTheme",
     # Images
     "EmailImage",
     "ImageAsset",
