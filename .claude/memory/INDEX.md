@@ -2,7 +2,7 @@
 
 ## State            (rewrite in place — current truth only, ≤ ~10 lines)
 - pyHermes = **builder** + **`svc/delivery`** (#68) + **`svc/gmail`** (#69) + **`svc/outlook`** (Graph, #70) + docs (#71). **Epic #52 is COMPLETE** — an email can be built and sent, with pyHermes depending on nothing but Jinja2.
-- `main` @ `4a12ca3` — **PR #77 merged** (2026-08-25 15:29): screenshots (#59) + lint pass (#60), closing both. PR #75 before it (README, #57 gallery, #58 goldens; closed #57/#58/#32). No PR open; `claude/review-open-issues-rr8quq` was reset to `main` and carries only merged history — restart it from `main` again for the next unit of work.
+- `main` @ `f359a4f` — **PR #79 merged** (2026-08-25 23:59): preview CLI (#61) + harness docs (#62), closing those and **epic #54**. PR #77 before it (#59 screenshots, #60 lint); PR #75 before that (README, #57 gallery, #58 goldens, #32). No PR open; `claude/review-open-issues-rr8quq` was reset to `main` and carries only merged history — restart it from `main` again for the next unit of work.
 - Earlier history through **PR #31 (merged)**: image embedding (`images.py`, `ImageBlock`, `templates/media/`, `Email.assets()`), the parameter pass, plus PR #27's rework (**`Highlight` is gone** → `highlight=True` on any container; **`KpiItem` subclasses `Card`**; stacking is `CardGroup(orientation="vertical")`).
 - Parameters with defaults: `logo_alt` / `logo_width` resolve **explicit metadata → the `EmailImage`'s own value → `firm_name` / 90**, and the four skeleton-copy strings (`contact_heading`, `contact_cta_label`, `unsubscribe_label`, `view_in_browser_label`) default to what `base.html` used to hardcode.
 - **`svc/config.py` holds every judgment-call number** (frozen `Config`; `get_config()` at use time, `config_override()` in tests, `from_env()` only when asked). Facts about the world stay literals.
@@ -93,7 +93,7 @@
 ## Threads          (open items; remove when closed)
 - **Epics #38/#45/#46 all start at golden test #32**; the render-context injection mechanism is built once — first of #40 (size) / #48 (theme) to land sets the pattern.
 - **#55 footer sub-issues (#63–#67) are filed early per user request, superseding the wait-for-#38 rule for filing — but NOT for execution**: whoever picks up #63 must first reconcile the issue text against #38's *merged* mechanism (the risk is recorded on #55 itself). #56 (typography) still files after #45+#46 merge.
-- **QA harness #54 is COMPLETE** (#57 gallery → #58 goldens → #59 screenshots → #60 lint → #61 preview CLI → #62 docs). The shipped mechanism, in one line each:
+- **QA harness #54 is COMPLETE and CLOSED** (all 6 sub-issues merged) (#57 gallery → #58 goldens → #59 screenshots → #60 lint → #61 preview CLI → #62 docs). The shipped mechanism, in one line each:
   - `qa/fixtures/` — three deterministic emails + `all_fixtures()`; completeness tests force a new component *and* a new `EmailMetadata` field to join `kitchen_sink`.
   - `qa/goldens.py` + `qa/fixtures/goldens/` — byte-identity on HTML **and** the asset manifest; `pytest --update-goldens` is the only regeneration path, and a missing golden fails rather than being created.
   - `qa/screenshots.py` — two viewports, `cid:`→data URI for the capture only, browser build *recorded* in `run.json` rather than pinned.
@@ -157,3 +157,4 @@
 - [2026-08-25 15:29] PR #77 merged to `main` (`4a12ca3`) — screenshot runner (#59) + lint pass (#60); closed both. 685 tests green on merged main. Branch reset; PR watch stopped. Epic #54 now needs only #61 + #62 — sessions/2026-08-25-1300-lint-pass.md
 - [2026-08-25 16:00] preview-cli — built #61: `qa/preview.py` (fixture or `module.py:callable` targets, `--lint`/`--screenshot`/`--open`/`--list`, shell-usable exit codes) + `capture_emails()` extracted in `qa/screenshots.py`; 29 tests, 714 total — sessions/2026-08-25-1600-preview-cli.md
 - [2026-08-25 16:30] harness-docs — closed #62 and epic #54: rewrote CLAUDE.md's eyeball workflow around `preview`, added the three standing rules with their enforcing tests, wired #43/#50/#38/#45/#46 to the harness, and corrected two stale agent definitions + the README's mypy/CI lines — sessions/2026-08-25-1630-harness-docs.md
+- [2026-08-25 23:59] PR #79 merged to `main` (`f359a4f`) — preview CLI (#61) + harness docs (#62); closed both and **epic #54**. 714 tests green on merged main. Branch reset; PR watch stopped — sessions/2026-08-25-1630-harness-docs.md
