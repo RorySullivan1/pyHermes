@@ -108,6 +108,34 @@ def default_color(value: Any, fallback: str) -> str:
     return validate_hex_color(result)
 
 
+def percent(value: Any) -> str:
+    """
+    A ratio as a CSS percentage: ``1.72`` -> ``"172%"``.
+
+    Line-heights are stored as ratios in :mod:`svc.builder.sizing`, because a
+    ratio is what the design vocabulary means and what a scheme's own tests
+    compare. They are *emitted* as percentages because Outlook Classic does
+    not support a unitless ``line-height`` at all (#78) — so the conversion
+    belongs at the boundary, in a filter, rather than in the token.
+
+    The formatting contract matters as much as the arithmetic: ``1.72 * 100``
+    is ``171.99999999999997`` in binary floating point, and ``172.0%`` would
+    be as wrong as ``171.99999999999997%``. ``.10g`` rounds to ten
+    significant digits and drops the trailing zeros, the same contract
+    :meth:`svc.builder.theming.Rgba.css` holds.
+
+    Raises:
+        ValidationError: If the value is not a number.
+
+    Usage in templates::
+
+        line-height:{{ size.type.body_line | percent }}
+    """
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ValidationError(f"percent() needs a number, got: {type(value).__name__} ({value!r})")
+    return f"{value * 100:.10g}%"
+
+
 def register_all(env: jinja2.Environment) -> None:
     """
     Register all custom filters and tests on a Jinja2 Environment.
@@ -119,3 +147,4 @@ def register_all(env: jinja2.Environment) -> None:
     env.filters["validate_hex_color"] = validate_hex_color
     env.filters["size_kb"] = size_kb
     env.filters["default_color"] = default_color
+    env.filters["percent"] = percent

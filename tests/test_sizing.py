@@ -18,6 +18,7 @@ import pytest
 
 from svc.builder.enums import SizeTheme
 from svc.builder.exceptions import ValidationError
+from svc.builder.filters import percent
 from svc.builder.sizing import (
     SIZE_SCHEMES,
     STANDARD_SIZES,
@@ -543,9 +544,14 @@ class TestTheTokensAreLive:
             pytest.skip(f"{token} is resolved in Python, never emitted")
         layer, name = token.split(".")
         value = getattr(getattr(self.scheme, layer), name)
-        assert str(value) in perturbed_html, (
-            f"{token} = {value} never reached the rendered email — the token "
-            "is decorative, not wired"
+        # A leading token is stored as a ratio and *emitted* as a percentage,
+        # because Outlook Classic ignores a unitless line-height (#78). So the
+        # sentinel to look for is its CSS form, which also pins that the
+        # conversion happens at all.
+        expected = percent(value) if name.endswith("_line") else str(value)
+        assert expected in perturbed_html, (
+            f"{token} = {value} never reached the rendered email as "
+            f"{expected!r} — the token is decorative, not wired"
         )
 
     def test_the_mobile_media_block_is_sized_too(self, perturbed_html: str) -> None:

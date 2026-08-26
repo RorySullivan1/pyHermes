@@ -133,6 +133,120 @@ class TestOutlookUnsupportedCss:
         assert not lint_html('<td style="padding:16px 12px; background-color:#FFFFFF;">x</td>')
 
 
+class TestOutlookLineHeight:
+    """#78's first finding, now a shipped rule."""
+
+    def test_a_unitless_line_height_is_an_error(self):
+        findings = lint_html('<p style="line-height:1.5">x</p>')
+        assert [f.rule_id for f in findings] == ["outlook-line-height"]
+
+    def test_the_message_names_the_replacement(self):
+        """
+        A rule that says only "this is wrong" costs the reader the arithmetic.
+        """
+        (finding,) = lint_html('<p style="line-height:1.72">x</p>')
+        assert "150%" not in finding.message
+        assert "172%" in finding.message
+
+    @pytest.mark.parametrize("value", ["172%", "38px", "1.2em", "normal", "inherit"])
+    def test_a_value_with_a_unit_is_fine(self, value):
+        assert not lint_html(f'<p style="line-height:{value}">x</p>')
+
+    def test_zero_is_deliberately_allowed(self):
+        """
+        The accent rule's spacer cell collapses a row with ``line-height:0``.
+        Zero is unambiguous without a unit, and ``0%`` would say the same
+        thing less clearly — so the rule permits it rather than forcing a
+        cosmetic edit on markup that is already correct.
+        """
+        assert not lint_html('<td style="font-size:0; line-height:0">&nbsp;</td>')
+
+    def test_the_gallery_emits_percentages(self):
+        """The templates' side of the same claim, on rendered output."""
+        html = all_fixtures()["kitchen_sink"]().render()
+        assert "line-height:1.72" not in html and "line-height: 1.72" not in html
+        assert "line-height: 172%" in html
+
+
+class TestOutlookTransparentBackground:
+    """#78's second finding."""
+
+    @pytest.mark.parametrize(
+        "value", ["rgba(1,2,3,0.5)", "rgba( 1, 2, 3, .5 )", "hsla(1,2%,3%,0.5)", "#11223344"]
+    )
+    def test_an_alpha_channel_is_an_error(self, value):
+        findings = lint_html(f'<div style="background-color:{value}">x</div>')
+        assert [f.rule_id for f in findings] == ["outlook-transparent-background"]
+
+    @pytest.mark.parametrize("value", ["#112233", "rgb(1,2,3)", "transparent"])
+    def test_an_opaque_colour_is_fine(self, value):
+        assert not lint_html(f'<div style="background-color:{value}">x</div>')
+
+
+class TestEmptyUrl:
+    """#78's third finding."""
+
+    @pytest.mark.parametrize("value", ["url('')", 'url("")', "url()", "url(  )"])
+    def test_an_empty_url_is_an_error(self, value):
+        # The attribute takes whichever quote the value does not, or the
+        # value would close it and the parser would never see the
+        # declaration at all.
+        quote = "'" if '"' in value else '"'
+        findings = lint_html(f"<div style={quote}background-image:{value}{quote}>x</div>")
+        assert [f.rule_id for f in findings] == ["empty-url"]
+
+    def test_a_real_url_is_fine(self):
+        assert not lint_html('<div style="background-image:url(a.png)">x</div>')
+
+    def test_the_masthead_never_emits_one(self):
+        """
+        ``minimal`` sets no header background image, which is the case that
+        used to render ``url('')``.
+        """
+        assert "url('')" not in all_fixtures()["minimal"]().render()
+
+
+class TestMarkupOutlookCannotSee:
+    """
+    ``<!--[if !mso]><!-->`` is *downlevel-revealed*: the comment ends at once,
+    so what follows is real HTML to every parser — and to every client except
+    Outlook. An Outlook-specific rule therefore has nothing to say about it.
+    """
+
+    HIDDEN = '<!--[if !mso]><!--><p style="line-height:1.5">x</p><!--<![endif]-->'
+
+    def test_an_outlook_rule_is_suppressed_there(self):
+        assert not lint_html(self.HIDDEN)
+
+    def test_the_same_markup_outside_still_fires(self):
+        """The negative control: the suppression is scoped, not a hole."""
+        assert [f.rule_id for f in lint_html('<p style="line-height:1.5">x</p>')] == [
+            "outlook-line-height"
+        ]
+
+    def test_it_reopens_after_the_endif(self):
+        html = self.HIDDEN + '<p style="line-height:1.5">y</p>'
+        assert [f.rule_id for f in lint_html(html)] == ["outlook-line-height"]
+
+    def test_a_rule_that_is_not_about_outlook_still_fires(self):
+        """
+        ``img-alt`` is suppressed by nothing: a reader with images off sees
+        the missing alt in every client, Outlook or not. That is why the
+        suppression set is named rather than matched on a rule-id prefix.
+        """
+        html = '<!--[if !mso]><!--><img src="a.png" width="10"><!--<![endif]-->'
+        assert [f.rule_id for f in lint_html(html)] == ["img-alt"]
+
+    def test_the_masthead_scrim_uses_it(self):
+        """
+        The shipped case: the rgba scrim is still rendered for every other
+        client, and Outlook gets the same scrim from ``v:fill`` instead.
+        """
+        html = all_fixtures()["kitchen_sink"]().render()
+        assert '<!--[if !mso]><!--><div style="background-color:rgba' in html
+        assert not lint_html(html)
+
+
 class TestSizeBudget:
     """
     Note the shape of these: the HTML is rendered under the *real* config, and
@@ -245,12 +359,31 @@ class TestEveryRuleIsSourced:
 
         assert "source:" in report
 
-    def test_deferred_rules_are_named_and_explained(self):
+    def test_nothing_is_both_shipped_and_deferred(self):
         """
         The deferred set is a recorded decision, not an oversight — each entry
         says why it cannot land green yet and where the finding is filed.
+
+        It is **empty** today, and that is the state this asserts holds
+        *consistently* rather than the state it demands: the three entries it
+        carried were #78, all three are fixed, and all three rules moved into
+        ``SOURCES``. A rule may not sit in both places, and a deferred one
+        must still name its filed issue.
         """
-        assert DEFERRED_RULES
         for rule_id, reason in DEFERRED_RULES.items():
             assert rule_id not in SOURCES, f"{rule_id} is both shipped and deferred"
-            assert "#78" in reason, f"{rule_id} does not point at its filed issue"
+            assert "#" in reason, f"{rule_id} does not point at its filed issue"
+
+    def test_the_three_findings_from_78_now_ship(self):
+        """
+        The rules #78 unblocked. Each is only meaningful once its finding is
+        gone from the gallery, which ``TestTheGalleryIsClean`` asserts — this
+        is the other half: they are switched on rather than quietly dropped.
+        """
+        for rule_id in (
+            "outlook-line-height",
+            "outlook-transparent-background",
+            "empty-url",
+        ):
+            assert rule_id in SOURCES, f"{rule_id} was dropped rather than shipped"
+            assert rule_id not in DEFERRED_RULES

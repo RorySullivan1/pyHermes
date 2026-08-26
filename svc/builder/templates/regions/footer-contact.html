@@ -13,7 +13,7 @@
                       {{ contact_heading | escape_html }}
                     </p>
                     <p style="margin:{{ size.component.contact_heading_gap }}px 0 {{ size.component.contact_cta_gap }}px; font-family:Arial,Helvetica,sans-serif; font-size:{{ size.type.secondary }}px;
-                              color:{{ theme.text.secondary }}; line-height:{{ size.component.contact_line }};">
+                              color:{{ theme.text.secondary }}; line-height:{{ size.component.contact_line | percent }};">
                       {{ contact_description | escape_html }}
                     </p>
                     <!-- CTA Button — VML for Outlook, CSS for others -->

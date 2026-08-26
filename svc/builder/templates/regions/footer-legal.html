@@ -6,7 +6,7 @@
           <tr>
             <td style="padding:{{ size.space.footer_legal_top }}px {{ size.frame.pad_x }}px {{ size.space.footer_legal_bottom }}px; background-color:{{ theme.palette.wrapper_bg }};" bgcolor="{{ theme.palette.wrapper_bg }}">
               <p style="margin:0; font-family:Arial,Helvetica,sans-serif; font-size:{{ size.type.micro }}px;
-                        color:{{ theme.text.fine_print }}; line-height:{{ size.component.legal_line }}; text-align:center;">
+                        color:{{ theme.text.fine_print }}; line-height:{{ size.component.legal_line | percent }}; text-align:center;">
                 {{footer_disclaimer}}
               </p>
             </td>

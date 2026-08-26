@@ -87,7 +87,7 @@
           <tr>
             <td style="background-color:#2C3E50; padding:7px 32px; text-align:center;" bgcolor="#2C3E50">
               <p style="margin:0; font-family:Arial,Helvetica,sans-serif; font-size:9.5px;
-                        font-weight:300; color:#90A4AE; letter-spacing:0.3px; line-height:1.4;">
+                        font-weight:300; color:#90A4AE; letter-spacing:0.3px; line-height:140%;">
                 
               </p>
             </td>
@@ -104,11 +104,16 @@
                 <v:fill type="frame" src="" color="#141E2C" opacity="65%"/>
                 <v:textbox inset="32px,0,32px,0" style="mso-fit-shape-to-text:false;">
               <![endif]-->
-              <div style="background-image:url('');
-                          background-color:#2C3E50; background-size:cover;
+              <div style="background-color:#2C3E50; background-size:cover;
                           background-position:center center; background-repeat:no-repeat;">
-                <!-- Dark overlay for text legibility -->
-                <div style="background-color:rgba(20,30,44,0.65);">
+                <!-- Dark overlay for text legibility.  Hidden from Outlook on
+                     purpose: the v:fill above already applies this exact scrim
+                     through its own color + opacity attributes, and the Word
+                     engine demotes a transparent background-color to a
+                     background image, inheriting VML's limitations for a
+                     second copy of an effect it has already drawn (#78).
+                     Both halves still read one Rgba, so they cannot drift. -->
+                <!--[if !mso]><!--><div style="background-color:rgba(20,30,44,0.65);"><!--<![endif]-->
                 <!-- Logo row -->
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                   <tr>
@@ -128,7 +133,7 @@
                   <tr>
                     <td style="padding:10px 32px 6px;">
                       <p style="margin:0; font-family:Georgia,'Times New Roman',serif; font-size:28px;
-                                font-weight:bold; color:#FFFFFF; line-height:1.2; letter-spacing:0.3px;
+                                font-weight:bold; color:#FFFFFF; line-height:120%; letter-spacing:0.3px;
                                 text-shadow:0 1px 3px rgba(0,0,0,0.4);"
                          class="mobile-title">
                         Hermes Research
@@ -138,7 +143,7 @@
                   <tr>
                     <td style="padding:0 32px 8px;">
                       <p style="margin:0; font-family:Arial,Helvetica,sans-serif; font-size:13px;
-                                font-weight:400; color:#CFD8DC; line-height:1.3;
+                                font-weight:400; color:#CFD8DC; line-height:130%;
                                 text-shadow:0 1px 2px rgba(0,0,0,0.3);">
                         minimal
                       </p>
@@ -176,7 +181,7 @@
                     </td>
                   </tr>
                 </table>
-                </div><!-- /dark overlay -->
+                <!--[if !mso]><!--></div><!--<![endif]--><!-- /dark overlay -->
               </div>
               <!--[if mso]>
                 </v:textbox>
@@ -192,8 +197,8 @@
   <td style="padding:0; background-color:#FFFFFF;">
     <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
       <tr>
-        <td class="mobile-pad" style="padding:16px 32px 14px 32px; font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#3B3B3B; line-height:1.72;">
-          <p class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: #3B3B3B; line-height: 1.72; margin: 0 0 16px 0;"><p>The smallest valid email.</p></p>
+        <td class="mobile-pad" style="padding:16px 32px 14px 32px; font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#3B3B3B; line-height:172%;">
+          <p class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: #3B3B3B; line-height: 172%; margin: 0 0 16px 0;"><p>The smallest valid email.</p></p>
 
         </td>
       </tr>
@@ -217,7 +222,7 @@
                       Questions or feedback?
                     </p>
                     <p style="margin:6px 0 16px; font-family:Arial,Helvetica,sans-serif; font-size:13px;
-                              color:#7A7A72; line-height:1.55;">
+                              color:#7A7A72; line-height:155%;">
                       
                     </p>
                     <!-- CTA Button — VML for Outlook, CSS for others -->
@@ -259,7 +264,7 @@
           <tr>
             <td style="padding:20px 32px 8px; background-color:#F2F1EE;" bgcolor="#F2F1EE">
               <p style="margin:0; font-family:Arial,Helvetica,sans-serif; font-size:9.5px;
-                        color:#8A8880; line-height:1.6; text-align:center;">
+                        color:#8A8880; line-height:160%; text-align:center;">
                 
               </p>
             </td>
