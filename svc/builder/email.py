@@ -207,6 +207,8 @@ class Email:
         ctx = self._metadata.to_dict()
         ctx["header_html"] = header_html
         ctx["sections_html"] = sections_html
+        for slot in ("footer_contact", "footer_legal"):
+            ctx[f"{slot}_html"] = self._engine.render(f"regions/{slot.replace('_', '-')}.html", ctx)
 
         html = self._engine.render("base.html", ctx)
 

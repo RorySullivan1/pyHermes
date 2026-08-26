@@ -52,19 +52,16 @@ class TestTheHeaderLeftTheSkeleton:
     )
     def test_the_skeleton_no_longer_names_a_header_only_variable(self, variable):
         """
-        ``firm_name`` is the exception that proves the rule — the footer's
-        copyright line still names it, which is why facts stay email-level.
+        ``firm_name`` is the exception that proves the rule: it is a *fact*,
+        so the footer's copyright line names it too — which is why facts stay
+        email-level rather than moving onto the region that displays them.
         """
         base = _template("base.html")
         header = _template("regions/header.html")
         assert variable in header
-        if variable != "firm_name":
-            assert variable not in base
-
-    def test_the_footer_deliberately_stayed(self):
-        """Epic non-goal: the footer is the same kind of candidate, later."""
-        base = _template("base.html")
-        assert "FOOTER PART 1" in base and "FOOTER PART 2" in base
+        assert variable not in base
+        if variable == "firm_name":
+            assert variable in _template("regions/footer-legal.html")
 
 
 class TestTheHeaderModel:
