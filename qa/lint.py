@@ -90,12 +90,13 @@ DEFERRED_RULES: dict[str, str] = {
     ),
     "outlook-transparent-background": (
         "Outlook Classic treats a background-color with transparency as a "
-        "background image, inheriting VML's limitations. base.html's header "
-        "scrim is rgba(20,30,44,0.65). #78."
+        "background image, inheriting VML's limitations. The header "
+        "region's scrim is rgba(20,30,44,0.65). #78."
     ),
     "empty-url": (
-        "base.html emits background-image:url('') when header_bg_image_url is "
-        "unset; an empty url() can resolve to the current document. #78."
+        "regions/header.html emits background-image:url('') when no header "
+        "background image is set; an empty url() can resolve to the current "
+        "document. #78."
     ),
 }
 

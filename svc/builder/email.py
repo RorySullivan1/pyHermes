@@ -160,9 +160,10 @@ class Email:
         """
         Render the complete email HTML.
 
-        1. Render every section via its container.
-        2. Inject rendered sections into the base skeleton.
-        3. Validate final size against the 102 KB Gmail limit.
+        1. Render the header region.
+        2. Render every section via its container.
+        3. Inject both into the base skeleton.
+        4. Validate final size against the 102 KB Gmail limit.
 
         Returns:
             Complete HTML string.
@@ -170,11 +171,13 @@ class Email:
         Raises:
             SizeError: If the HTML exceeds 102 KB.
         """
-        # Render sections
+        # Render the header region, then the sections
+        header_html = self._engine.render("regions/header.html", self._metadata.to_dict())
         sections_html = "\n".join(section.render(self._engine) for section in self._sections)
 
         # Build skeleton context
         ctx = self._metadata.to_dict()
+        ctx["header_html"] = header_html
         ctx["sections_html"] = sections_html
 
         html = self._engine.render("base.html", ctx)
