@@ -30,7 +30,7 @@ from .enums import EmbedStrategy
 from .exceptions import SizeError
 from .images import EmailImage, ImageAsset, dedupe_assets
 from .models import EmailMetadata
-from .regions import Header
+from .regions import Footer, Header
 
 # The shipped defaults, kept as module constants because they read as the
 # thresholds themselves at a call site. The live values come from
@@ -44,8 +44,8 @@ class Email:
     """
     Represents a complete, renderable email.
 
-    The email is ``header | body``: the metadata holds the facts, the header
-    region presents them, and the body is the ordered section list.
+    The email is ``header | body | footer``: the metadata holds the facts,
+    the two regions present them, and the body is the ordered section list.
 
     Args:
         metadata:     Dict or EmailMetadata with the email's facts.
@@ -54,6 +54,7 @@ class Email:
         header:       The masthead region. Defaults to the metadata's own
                       header, which the flat masthead keywords build — so an
                       email that never mentions a header is unchanged.
+        footer:       The closing region, on exactly the same terms.
 
     Raises:
         ValidationError: If required metadata (``email_subject``, ``firm_name``,
@@ -65,6 +66,7 @@ class Email:
         metadata: dict[str, Any] | EmailMetadata,
         template_dir: Path | None = None,
         header: Header | None = None,
+        footer: Footer | None = None,
     ):
         self._engine = TemplateEngine(template_dir)
 
@@ -79,6 +81,7 @@ class Email:
         self._metadata.validate()
 
         self._header: Header = header if header is not None else self._metadata.header
+        self._footer: Footer = footer if footer is not None else self._metadata.footer
         self._sections: list[Container] = []
 
     @property
@@ -112,6 +115,16 @@ class Email:
         """
         return self._header
 
+    @property
+    def footer(self) -> Footer:
+        """
+        The closing region this email renders.
+
+        Read-only for the same reasons as :attr:`metadata`; use
+        :meth:`set_footer` to swap it.
+        """
+        return self._footer
+
     # ------------------------------------------------------------------
     # Building
     # ------------------------------------------------------------------
@@ -123,6 +136,15 @@ class Email:
         Returns ``self`` for optional chaining.
         """
         self._header = header
+        return self
+
+    def set_footer(self, footer: Footer) -> Email:
+        """
+        Replace the closing region.
+
+        Returns ``self`` for optional chaining.
+        """
+        self._footer = footer
         return self
 
     def add_section(self, container: Container) -> Email:
@@ -140,13 +162,20 @@ class Email:
 
     def images(self) -> list[EmailImage]:
         """
-        Every image this email references, header first, then sections
-        in order.
+        Every image this email references: header, then sections in order,
+        then footer.
+
+        The footer participates even though no shipped variant carries an
+        image. The slot has to exist or a variant that adds one — a signature
+        block, a set of social icons — silently drops its bytes and renders a
+        broken ``cid:`` reference, which is the failure the ``images()`` rule
+        exists to prevent.
         """
         images = list(self._header.images())
         for section in self._sections:
             for component in section.components():
                 images.extend(component.images())
+        images.extend(self._footer.images())
         return images
 
     def assets(self) -> list[ImageAsset]:
@@ -178,6 +207,7 @@ class Email:
         assets = list(self._header.assets())
         for section in self._sections:
             assets.extend(section.assets())
+        assets.extend(self._footer.assets())
         return dedupe_assets(assets)
 
     # ------------------------------------------------------------------
@@ -188,10 +218,11 @@ class Email:
         """
         Render the complete email HTML.
 
-        1. Render the header region.
+        1. Render the header and footer regions into their skeleton slots.
         2. Render every section via its container.
-        3. Inject both into the base skeleton.
-        4. Validate final size against the 102 KB Gmail limit.
+        3. Inject all of it into the base skeleton.
+        4. Validate final size against the 102 KB Gmail limit — on the
+           *composed* document, so region bytes are inside the budget.
 
         Returns:
             Complete HTML string.
@@ -199,14 +230,16 @@ class Email:
         Raises:
             SizeError: If the HTML exceeds 102 KB.
         """
-        # Render the header region, then the sections
-        header_html = self._header.render(self._engine, self._metadata.header_facts())
         sections_html = "\n".join(section.render(self._engine) for section in self._sections)
 
-        # Build skeleton context
+        # Build skeleton context: the email's facts, plus one string per slot
+        # each region fills. Every region goes through the same render path —
+        # there is no separate "default footer" branch, because the default
+        # *is* a default-constructed region.
         ctx = self._metadata.to_dict()
-        ctx["header_html"] = header_html
         ctx["sections_html"] = sections_html
+        ctx.update(self._header.render_slots(self._engine, self._metadata.header_facts()))
+        ctx.update(self._footer.render_slots(self._engine, self._metadata.footer_facts()))
 
         html = self._engine.render("base.html", ctx)
 
@@ -315,6 +348,17 @@ class EmailBuilder:
         if self._email is None:
             raise RuntimeError("Call .metadata() before setting the header.")
         self._email.set_header(header)
+        return self
+
+    def footer(self, footer: Footer) -> EmailBuilder:
+        """
+        Set the closing region.
+
+        Same sequencing rule as :meth:`header`.
+        """
+        if self._email is None:
+            raise RuntimeError("Call .metadata() before setting the footer.")
+        self._email.set_footer(footer)
         return self
 
     def section(self, container: Container) -> EmailBuilder:

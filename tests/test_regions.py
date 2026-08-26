@@ -52,19 +52,16 @@ class TestTheHeaderLeftTheSkeleton:
     )
     def test_the_skeleton_no_longer_names_a_header_only_variable(self, variable):
         """
-        ``firm_name`` is the exception that proves the rule — the footer's
-        copyright line still names it, which is why facts stay email-level.
+        ``firm_name`` is the exception that proves the rule: it is a *fact*,
+        so the footer's copyright line names it too — which is why facts stay
+        email-level rather than moving onto the region that displays them.
         """
         base = _template("base.html")
         header = _template("regions/header.html")
         assert variable in header
-        if variable != "firm_name":
-            assert variable not in base
-
-    def test_the_footer_deliberately_stayed(self):
-        """Epic non-goal: the footer is the same kind of candidate, later."""
-        base = _template("base.html")
-        assert "FOOTER PART 1" in base and "FOOTER PART 2" in base
+        assert variable not in base
+        if variable == "firm_name":
+            assert variable in _template("regions/footer-legal.html")
 
 
 class TestTheHeaderModel:
@@ -235,8 +232,8 @@ class TestTheMinimalHeaderVariant:
         assert Exported is MinimalHeader
 
     def test_it_renders_its_own_template(self):
-        assert MinimalHeader.template_path != Header.template_path
-        assert (TEMPLATE_DIR / MinimalHeader.template_path).is_file()
+        assert MinimalHeader.TEMPLATE_PATHS != Header.TEMPLATE_PATHS
+        assert (TEMPLATE_DIR / MinimalHeader.TEMPLATE_PATHS["header"]).is_file()
 
     def test_a_background_image_is_rejected_rather_than_ignored(self):
         with pytest.raises(ValidationError, match="not supported by MinimalHeader"):

@@ -94,81 +94,20 @@
           <!-- ══════════════════════════════════════════ -->
           {{ sections_html }}
 
-          <!-- ══════════════════════════════════════════ -->
-          <!-- FOOTER PART 1: Contact Us (inside body)   -->
-          <!-- ══════════════════════════════════════════ -->
-          <tr>
-            <td style="padding:8px 32px 30px; background-color:#FFFFFF;" bgcolor="#FFFFFF">
-              <!-- Contact card -->
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
-                     style="border:1px solid #D6D2CB; border-radius:4px;">
-                <tr>
-                  <td style="padding:22px 24px;">
-                    <p style="margin:0; font-family:Georgia,'Times New Roman',serif; font-size:16px;
-                              font-weight:bold; color:#2C3E50; letter-spacing:0.2px;">
-                      {{ contact_heading | escape_html }}
-                    </p>
-                    <p style="margin:6px 0 16px; font-family:Arial,Helvetica,sans-serif; font-size:13px;
-                              color:#7A7A72; line-height:1.55;">
-                      {{ contact_description | escape_html }}
-                    </p>
-                    <!-- CTA Button — VML for Outlook, CSS for others -->
-                    <!--[if mso]>
-                    <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="{{ contact_url | escape_html }}"
-                      style="height:38px;v-text-anchor:middle;width:150px;" arcsize="8%"
-                      strokecolor="#5B8A9A" fillcolor="#5B8A9A">
-                      <w:anchorlock/>
-                      <center style="color:#FFFFFF;font-family:Arial,Helvetica,sans-serif;
-                                     font-size:13px;font-weight:bold;">
-                        {{ contact_cta_label | escape_html }}
-                      </center>
-                    </v:roundrect>
-                    <![endif]-->
-                    <!--[if !mso]><!-->
-                    <a href="{{ contact_url | escape_html }}"
-                       style="background-color:#5B8A9A; border-radius:3px; color:#FFFFFF;
-                              display:inline-block; font-family:Arial,Helvetica,sans-serif;
-                              font-size:13px; font-weight:bold; line-height:38px;
-                              text-align:center; text-decoration:none; width:150px;
-                              -webkit-text-size-adjust:none;">
-                      {{ contact_cta_label | escape_html }}
-                    </a>
-                    <!--<![endif]-->
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-
+{# The footer arrives in two slots, not one. Its contact card is a <tr>
+   inside the body table; its legal block is a sibling table below, outside
+   the container the body closes. One fragment spanning both would have to
+   close a tag the skeleton opened, so the region fills two holes instead.
+   Both sit at column 0 for the header's reason: an indented {{ }} would
+   prepend that indentation to the fragment's first line only, and each
+   block already carries its own. A slot a variant leaves unfilled renders
+   empty — that is how MinimalFooter omits the contact card without the
+   skeleton growing a conditional. #}
+{{ footer_contact_html }}
         </table>
         <!-- /Main container -->
 
-        <!-- ════════════════════════════════════════════ -->
-        <!-- FOOTER PART 2: Disclaimer (outside body)    -->
-        <!-- ════════════════════════════════════════════ -->
-        <table role="presentation" width="680" cellpadding="0" cellspacing="0" border="0"
-               style="max-width:680px; background-color:#F2F1EE;" bgcolor="#F2F1EE" class="email-container">
-          <tr>
-            <td style="padding:20px 32px 8px; background-color:#F2F1EE;" bgcolor="#F2F1EE">
-              <p style="margin:0; font-family:Arial,Helvetica,sans-serif; font-size:9.5px;
-                        color:#8A8880; line-height:1.6; text-align:center;">
-                {{footer_disclaimer}}
-              </p>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:6px 32px 24px; background-color:#F2F1EE;" bgcolor="#F2F1EE">
-              <p style="margin:0; font-family:Arial,Helvetica,sans-serif; font-size:9.5px;
-                        color:#A09E97; text-align:center;">
-                &copy; {{ current_year | escape_html }} {{ firm_name | escape_html }} &nbsp;&middot;&nbsp;
-                <a href="{{ unsubscribe_url | escape_html }}" style="color:#5B8A9A; text-decoration:underline;">{{ unsubscribe_label | escape_html }}</a>
-                &nbsp;&middot;&nbsp;
-                <a href="{{ view_in_browser_url | escape_html }}" style="color:#5B8A9A; text-decoration:underline;">{{ view_in_browser_label | escape_html }}</a>
-              </p>
-            </td>
-          </tr>
-        </table>
-
+{{ footer_legal_html }}
       </td>
     </tr>
   </table>

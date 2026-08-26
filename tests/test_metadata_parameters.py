@@ -101,7 +101,9 @@ class TestLogoWidth:
 class TestSkeletonCopy:
     @pytest.mark.parametrize(("field", "default"), sorted(LABEL_DEFAULTS.items()))
     def test_defaults_match_what_was_hardcoded(self, valid_metadata, text_block, field, default):
-        assert getattr(EmailMetadata(**valid_metadata), field) == default
+        # The labels are the footer region's copy since #64; the flat keyword
+        # is the pre-split spelling, so the default is read off the region.
+        assert getattr(EmailMetadata(**valid_metadata).footer, field) == default
         assert default in render(valid_metadata, text_block)
 
     @pytest.mark.parametrize("field", sorted(LABEL_DEFAULTS))

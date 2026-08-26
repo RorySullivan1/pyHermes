@@ -98,16 +98,22 @@ from .models import (
 
 # Regions
 from .regions import (
+    Footer,
     Header,
+    MinimalFooter,
     MinimalHeader,
+    Region,
 )
 
 __all__ = [
     # Engine
     "TemplateEngine",
     # Regions
+    "Region",
     "Header",
     "MinimalHeader",
+    "Footer",
+    "MinimalFooter",
     # Models
     "EmailMetadata",
     "Card",
