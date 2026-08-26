@@ -14,7 +14,14 @@ from typing import ClassVar
 import pytest
 
 from qa.fixtures._png import solid_png
-from svc.builder import Email, EmailBuilder, Footer, FullWidth, TextBlock
+from svc.builder import (
+    Email,
+    EmailBuilder,
+    Footer,
+    FullWidth,
+    MinimalFooter,
+    TextBlock,
+)
 from svc.builder.engine import TemplateEngine
 from svc.builder.exceptions import SizeError, ValidationError
 from svc.builder.images import EmailImage
@@ -318,3 +325,124 @@ class TestTheFooterIsInsideTheSizeBudget:
             self._build().render()
             with pytest.raises(SizeError):
                 self._build(contact_description="x" * 4096).render()
+
+
+def _public_footers() -> list[type[Footer]]:
+    """Every ``Footer`` the package exports, found by introspection."""
+    import svc.builder as builder_api
+
+    return sorted(
+        (
+            obj
+            for name in builder_api.__all__
+            if isinstance(obj := getattr(builder_api, name), type) and issubclass(obj, Footer)
+        ),
+        key=lambda cls: cls.__name__,
+    )
+
+
+class TestTheMinimalFooterVariant:
+    """#66: a seam with one implementation is a refactor, not a seam."""
+
+    FACTS = {
+        "email_subject": "S",
+        "firm_name": "Hermes Research",
+        "campaign_name": "c",
+        "current_year": "2026",
+        "footer_disclaimer": "<em>Legal copy</em>",
+        "contact_url": "https://x.test/c",
+        "unsubscribe_url": "https://x.test/u",
+        "view_in_browser_url": "https://x.test/v",
+    }
+
+    def _html(self, footer):
+        return Email(self.FACTS, footer=footer).render()
+
+    def test_it_is_exported_and_is_a_footer(self):
+        from svc.builder import MinimalFooter as Exported
+
+        assert Exported is MinimalFooter
+        assert issubclass(MinimalFooter, Footer)
+
+    def test_it_composes_the_legal_template_rather_than_forking_it(self):
+        assert MinimalFooter.TEMPLATE_PATHS["footer_legal"] == Footer.TEMPLATE_PATHS["footer_legal"]
+
+    def test_the_contact_card_is_absent(self):
+        html = self._html(MinimalFooter())
+        assert "FOOTER PART 1" not in html
+        assert "Questions or feedback?" not in html
+
+    def test_no_vml_anywhere_in_the_footer(self):
+        """
+        The variant's real payoff: the ``v:roundrect`` dual emission is gone
+        by omission, not adapted. The masthead's VML is untouched — this is
+        a footer choice.
+        """
+        html = self._html(MinimalFooter())
+        below = html.split("/Main container", 1)[1]
+        assert "v:" not in below and "[if mso]" not in below
+
+    def test_the_legal_block_is_intact(self):
+        html = self._html(MinimalFooter())
+        assert "<em>Legal copy</em>" in html
+        assert "https://x.test/u" in html and "https://x.test/v" in html
+        assert "2026" in html and "Hermes Research" in html
+
+    def test_the_legal_block_is_byte_identical_to_the_default_footers(self):
+        """Composition, proven: the shared template renders the same bytes."""
+        marker = "FOOTER PART 2"
+        default = self._html(Footer())
+        minimal = self._html(MinimalFooter())
+        assert default[default.index(marker) :] == minimal[minimal.index(marker) :]
+
+    def test_the_cta_label_appears_twice_by_default_and_never_here(self):
+        """
+        The companion to the skeleton-copy test: the default emits the label
+        twice (VML for Outlook, an anchor for everyone else); the variant
+        emits it zero times because the block it lived in is gone.
+        """
+        assert self._html(Footer(contact_cta_label="Reach out")).count("Reach out") == 2
+        assert self._html(MinimalFooter(contact_cta_label="Reach out")).count("Reach out") == 0
+
+    def test_choosing_a_footer_leaves_the_masthead_alone(self):
+        """The two region choices are independent — this one moves no byte above."""
+        marker = "SECTIONS: Insert containers here"
+        default = self._html(Footer())
+        minimal = self._html(MinimalFooter())
+        assert default[: default.index(marker)] == minimal[: minimal.index(marker)]
+
+
+class TestTheComplianceFloor:
+    """
+    #55's non-goal, enforced: legal content is not optional.
+
+    A golden cannot express this. A variant that dropped the unsubscribe link
+    would have a golden of its own, and the golden would pin the omission as
+    faithfully as it pins anything else.
+    """
+
+    def test_the_required_slot_cannot_be_left_unfilled(self):
+        @dataclasses.dataclass
+        class ContactOnlyFooter(Footer):
+            TEMPLATE_PATHS: ClassVar[dict[str, str]] = {
+                "footer_contact": "regions/footer-contact.html"
+            }
+
+        with pytest.raises(ValidationError, match=r"required slot\(s\) \['footer_legal'\]"):
+            ContactOnlyFooter()
+
+    def test_the_contact_slot_is_droppable_by_contrast(self):
+        """The floor is a floor, not a ban on variation."""
+        assert "footer_contact" not in Footer.REQUIRED_SLOTS
+        MinimalFooter()
+
+    @pytest.mark.parametrize("footer_cls", _public_footers(), ids=lambda c: c.__name__)
+    def test_every_shipped_footer_renders_the_legal_essentials(self, footer_cls):
+        """
+        The structural half, over every ``Footer`` the package exports —
+        introspected, so a variant added later is covered without anyone
+        remembering to list it here.
+        """
+        html = Email(TestTheMinimalFooterVariant.FACTS, footer=footer_cls()).render()
+        assert "<em>Legal copy</em>" in html, f"{footer_cls.__name__} drops the disclaimer"
+        assert "https://x.test/u" in html, f"{footer_cls.__name__} drops the unsubscribe link"

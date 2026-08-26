@@ -132,7 +132,13 @@ jobs:
           /tmp/wheelenv/bin/python - <<'PY'
           from pathlib import Path
 
-          from svc.builder import EmailBuilder, FullWidth, MinimalHeader, TextBlock
+          from svc.builder import (
+              EmailBuilder,
+              FullWidth,
+              MinimalFooter,
+              MinimalHeader,
+              TextBlock,
+          )
 
           METADATA = {
               "email_subject": "Wheel smoke test",
@@ -148,6 +154,8 @@ jobs:
           )
           assert "Rendered from a wheel." in out.read_text(), "template did not render"
           assert "<v:rect" in out.read_text(), "regions/header.html did not render"
+          assert "<v:roundrect" in out.read_text(), "regions/footer-contact.html did not render"
+          assert "FOOTER PART 2" in out.read_text(), "regions/footer-legal.html did not render"
           print(f"OK: {out} ({out.stat().st_size} bytes)")
 
           # Every region template must ship, not just the default one.
@@ -155,9 +163,12 @@ jobs:
               EmailBuilder()
               .metadata(METADATA)
               .header(MinimalHeader())
+              .footer(MinimalFooter())
               .section(FullWidth(content=TextBlock("<p>Variant.</p>")))
               .save(Path("variant.html"))
           )
           assert "<v:rect" not in variant.read_text(), "the variant rendered VML"
+          assert "<v:roundrect" not in variant.read_text(), "the variant rendered VML"
+          assert "FOOTER PART 2" in variant.read_text(), "the variant dropped the legal block"
           print(f"OK: {variant} ({variant.stat().st_size} bytes)")
           PY

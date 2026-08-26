@@ -100,7 +100,9 @@
    close a tag the skeleton opened, so the region fills two holes instead.
    Both sit at column 0 for the header's reason: an indented {{ }} would
    prepend that indentation to the fragment's first line only, and each
-   block already carries its own. #}
+   block already carries its own. A slot a variant leaves unfilled renders
+   empty — that is how MinimalFooter omits the contact card without the
+   skeleton growing a conditional. #}
 {{ footer_contact_html }}
         </table>
         <!-- /Main container -->

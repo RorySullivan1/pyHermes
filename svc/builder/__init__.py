@@ -100,6 +100,7 @@ from .models import (
 from .regions import (
     Footer,
     Header,
+    MinimalFooter,
     MinimalHeader,
     Region,
 )
@@ -112,6 +113,7 @@ __all__ = [
     "Header",
     "MinimalHeader",
     "Footer",
+    "MinimalFooter",
     # Models
     "EmailMetadata",
     "Card",

@@ -373,8 +373,39 @@ class Footer(Region):
         "footer_legal": "regions/footer-legal.html",
     }
 
+    #: The compliance floor. A variant may drop the contact card — it is a
+    #: courtesy. It may not drop the legal block: the disclaimer and the
+    #: unsubscribe link are what make the mailing lawful to send, and a
+    #: variant that omitted them would still have a golden, and the golden
+    #: would pin the omission as though it were intended.
+    REQUIRED_SLOTS: ClassVar[tuple[str, ...]] = ("footer_legal",)
+
     contact_heading: str = "Questions or feedback?"
     contact_description: str = ""
     contact_cta_label: str = "Contact Us"
     unsubscribe_label: str = "Unsubscribe"
     view_in_browser_label: str = "View in browser"
+
+
+@dataclass
+class MinimalFooter(Footer):
+    """
+    The legal block only: no contact card, and therefore no VML.
+
+    The variant that proves the footer is a seam rather than a refactor. It
+    **composes** the shipped legal template instead of forking it — the whole
+    difference is which slots it fills, so the legal block cannot drift
+    between the two footers.
+
+    Dropping the contact card also drops the ``v:roundrect`` dual emission,
+    the footer's most fragile markup, exactly as :class:`MinimalHeader` drops
+    the masthead's VML hero. The contact fields stay on the class rather than
+    being removed: they are inherited, harmless, and removing them would make
+    swapping a ``Footer`` for a ``MinimalFooter`` a rewrite rather than a
+    one-word change.
+
+    What it may *not* drop is the legal block — see
+    :attr:`Footer.REQUIRED_SLOTS`.
+    """
+
+    TEMPLATE_PATHS: ClassVar[dict[str, str]] = {"footer_legal": "regions/footer-legal.html"}
