@@ -232,8 +232,8 @@ class TestTheMinimalHeaderVariant:
         assert Exported is MinimalHeader
 
     def test_it_renders_its_own_template(self):
-        assert MinimalHeader.template_path != Header.template_path
-        assert (TEMPLATE_DIR / MinimalHeader.template_path).is_file()
+        assert MinimalHeader.TEMPLATE_PATHS != Header.TEMPLATE_PATHS
+        assert (TEMPLATE_DIR / MinimalHeader.TEMPLATE_PATHS["header"]).is_file()
 
     def test_a_background_image_is_rejected_rather_than_ignored(self):
         with pytest.raises(ValidationError, match="not supported by MinimalHeader"):

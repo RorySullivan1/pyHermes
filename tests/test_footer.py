@@ -8,9 +8,18 @@ express (a *variant* that dropped the unsubscribe link would have its own
 golden, and the golden would happily pin the omission).
 """
 
+import dataclasses
+from typing import ClassVar
+
 import pytest
 
+from qa.fixtures._png import solid_png
+from svc.builder import Email, EmailBuilder, Footer, FullWidth, TextBlock
 from svc.builder.engine import TemplateEngine
+from svc.builder.exceptions import SizeError, ValidationError
+from svc.builder.images import EmailImage
+from svc.builder.models import EmailMetadata
+from svc.config import config_override
 
 TEMPLATE_DIR = TemplateEngine().template_dir
 
@@ -81,3 +90,231 @@ class TestTheFooterLeftTheSkeleton:
             assert f"{{{{ {escaped} | escape_html }}}}" in contact
         for escaped in ("current_year", "firm_name", "unsubscribe_label", "unsubscribe_url"):
             assert f"{{{{ {escaped} | escape_html }}}}" in legal
+
+
+class TestTheFooterModel:
+    """#64: the footer's wording is a model of its own, validated early."""
+
+    def test_it_is_exported_from_the_package(self):
+        from svc.builder import Footer as Exported
+
+        assert Exported is Footer
+
+    @pytest.mark.parametrize(
+        ("field", "default"),
+        [
+            ("contact_heading", "Questions or feedback?"),
+            ("contact_cta_label", "Contact Us"),
+            ("unsubscribe_label", "Unsubscribe"),
+            ("view_in_browser_label", "View in browser"),
+            ("contact_description", ""),
+        ],
+    )
+    def test_defaults_reproduce_the_hardcoded_copy(self, field, default):
+        assert getattr(Footer(), field) == default
+
+    def test_the_facts_are_absent_from_its_constructor(self):
+        """
+        The ownership rule, from the region's side: a ``Footer`` cannot carry
+        a competing ``firm_name`` or unsubscribe URL, because it has nowhere
+        to put one.
+        """
+        declared = {f.name for f in dataclasses.fields(Footer)}
+        assert declared.isdisjoint(EmailMetadata.FOOTER_FACTS)
+        for fact in EmailMetadata.FOOTER_FACTS:
+            with pytest.raises(TypeError):
+                Footer(**{fact: "smuggled"})
+
+    def test_the_two_key_sets_are_disjoint(self):
+        """
+        What makes ``{**presentation, **facts}`` safe rather than lucky. If
+        the sets ever overlap, the layering silently starts *resolving* a
+        collision instead of never having one.
+        """
+        presentation = set(Footer().context({}))
+        assert presentation.isdisjoint(EmailMetadata.FOOTER_FACTS)
+
+    def test_a_fact_wins_over_a_presentation_key_of_the_same_name(self):
+        ctx = Footer().context({"contact_cta_label": "FACT"})
+        assert ctx["contact_cta_label"] == "FACT"
+
+
+class TestTheFlatKeywordsStillWork:
+    """#64: the pre-split spelling builds the region for you."""
+
+    @pytest.mark.parametrize(
+        "field",
+        [
+            "contact_heading",
+            "contact_description",
+            "contact_cta_label",
+            "unsubscribe_label",
+            "view_in_browser_label",
+        ],
+    )
+    def test_a_flat_keyword_lands_on_the_footer(self, field):
+        metadata = EmailMetadata(**{field: "FLAT"})
+        assert getattr(metadata.footer, field) == "FLAT"
+
+    @pytest.mark.parametrize(
+        "field",
+        [
+            "contact_heading",
+            "contact_description",
+            "contact_cta_label",
+            "unsubscribe_label",
+            "view_in_browser_label",
+        ],
+    )
+    def test_a_flat_keyword_never_becomes_an_attribute(self, field):
+        """
+        InitVars leave a class attribute behind, so ``hasattr`` says little;
+        what matters is that no per-instance state shadows the region.
+        """
+        assert field not in vars(EmailMetadata(contact_heading="FLAT"))
+
+    def test_a_flat_keyword_is_absent_from_fields_repr_and_equality(self):
+        declared = {f.name for f in dataclasses.fields(EmailMetadata)}
+        assert "contact_cta_label" not in declared
+        assert EmailMetadata(contact_cta_label="A") != EmailMetadata(contact_cta_label="B")
+
+    def test_flat_and_explicit_together_is_an_error(self):
+        with pytest.raises(ValidationError, match=r"flat footer field\(s\)"):
+            EmailMetadata(footer=Footer(contact_cta_label="A"), contact_cta_label="B")
+
+    def test_the_two_regions_hydrate_independently(self):
+        metadata = EmailMetadata(logo_url="https://x.test/l.png", contact_cta_label="Write in")
+        assert metadata.header.logo_url == "https://x.test/l.png"
+        assert metadata.footer.contact_cta_label == "Write in"
+
+
+class TestTheEmailApi:
+    """#65: selecting a footer is an argument, on the header's terms."""
+
+    def _metadata(self, **extra):
+        return {
+            "email_subject": "S",
+            "firm_name": "F",
+            "campaign_name": "c",
+            "contact_url": "https://x.test/c",
+            **extra,
+        }
+
+    def test_the_constructor_argument_wins_over_the_metadata(self):
+        email = Email(self._metadata(), footer=Footer(contact_cta_label="ARGUMENT"))
+        assert email.footer.contact_cta_label == "ARGUMENT"
+        assert "ARGUMENT" in email.render()
+
+    def test_omitting_it_uses_the_metadata_footer(self):
+        metadata = EmailMetadata(**self._metadata(contact_cta_label="FLAT"))
+        assert Email(metadata).footer is metadata.footer
+
+    def test_the_accessor_is_read_only(self):
+        email = Email(self._metadata())
+        with pytest.raises(AttributeError):
+            email.footer = Footer()  # type: ignore[misc]
+
+    def test_set_footer_swaps_it_and_chains(self):
+        email = Email(self._metadata())
+        assert email.set_footer(Footer(contact_cta_label="SWAPPED")) is email
+        assert "SWAPPED" in email.render()
+
+    def test_the_builder_sets_it(self):
+        html = (
+            EmailBuilder()
+            .metadata(self._metadata())
+            .footer(Footer(contact_cta_label="FLUENT"))
+            .section(FullWidth(content=TextBlock("<p>body</p>")))
+            .render()
+        )
+        assert "FLUENT" in html
+
+    def test_the_builder_rejects_it_before_metadata(self):
+        with pytest.raises(RuntimeError, match="Call .metadata"):
+            EmailBuilder().footer(Footer())
+
+    def test_the_default_and_explicit_paths_render_identically(self):
+        """
+        #65's "one render path, not two": the default is a
+        default-constructed region, not a legacy inline branch.
+        """
+        flat = Email(self._metadata(contact_cta_label="SAME")).render()
+        explicit = Email(self._metadata(), footer=Footer(contact_cta_label="SAME")).render()
+        assert flat == explicit
+
+
+@dataclasses.dataclass
+class _SignedFooter(Footer):
+    """
+    A hypothetical variant that carries bytes.
+
+    No shipped footer has an image, which is exactly why the protocol slot
+    has to be exercised: the failure it prevents — a region whose bytes never
+    reach the manifest and whose ``cid:`` reference renders broken — cannot
+    show up in the gallery until someone writes this class for real.
+    """
+
+    IMAGE_FIELDS: ClassVar[tuple[str, ...]] = ("signature_url",)
+
+    signature_url: str | EmailImage = ""
+
+
+class TestTheFooterFeedsTheManifest:
+    """#65: a region's images reach ``Email.assets()`` or they reach nobody."""
+
+    def _email(self, footer):
+        return Email(
+            {
+                "email_subject": "S",
+                "firm_name": "F",
+                "campaign_name": "c",
+                "contact_url": "https://x.test/c",
+            },
+            footer=footer,
+        )
+
+    def test_an_image_bearing_footer_reaches_assets(self):
+        image = EmailImage.attached(solid_png(8, 8, (10, 20, 30)), alt="Signature", width=40)
+        email = self._email(_SignedFooter(signature_url=image))
+        assert [a.content_id for a in email.assets()] == [image.asset.content_id]
+        assert image in email.images()
+
+    def test_the_default_footer_contributes_nothing(self):
+        assert self._email(Footer()).assets() == []
+
+    def test_a_dangerous_url_on_a_footer_image_field_names_the_footer(self):
+        """The base's validation generalised: the message says where it lives."""
+        with pytest.raises(ValidationError, match=r"footer\.signature_url"):
+            _SignedFooter(signature_url="javascript:alert(1)")
+
+    def test_a_non_url_non_image_is_rejected(self):
+        with pytest.raises(ValidationError, match=r"footer\.signature_url"):
+            _SignedFooter(signature_url=object())  # type: ignore[arg-type]
+
+
+class TestTheFooterIsInsideTheSizeBudget:
+    """#65: composition must not open a seam where footer bytes escape."""
+
+    def _build(self, **extra):
+        return Email(
+            {
+                "email_subject": "S",
+                "firm_name": "F",
+                "campaign_name": "c",
+                "contact_url": "https://x.test/c",
+                **extra,
+            }
+        )
+
+    def test_footer_bytes_count_against_the_limit(self):
+        baseline_kb = len(self._build().render().encode("utf-8")) / 1024
+        # A ceiling the lean email clears and the heavy footer does not, so
+        # the only thing under test is whether the footer's bytes are counted.
+        with config_override(
+            size_limit_kb=baseline_kb + 1,
+            size_warn_kb=baseline_kb,
+            inline_image_limit_kb=1,
+        ):
+            self._build().render()
+            with pytest.raises(SizeError):
+                self._build(contact_description="x" * 4096).render()

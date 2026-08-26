@@ -14,7 +14,7 @@ from .exceptions import ValidationError
 
 if TYPE_CHECKING:  # pragma: no cover - import cycle: images/regions import from here
     from .images import EmailImage
-    from .regions import Header
+    from .regions import Footer, Header
 
 # ──────────────────────────────────────────────────────────────────────
 # Helpers
@@ -78,6 +78,13 @@ def _default_header() -> "Header":
     return Header()
 
 
+def _default_footer() -> "Footer":
+    """A default :class:`~svc.builder.regions.Footer`. Same lazy-cycle rule."""
+    from .regions import Footer
+
+    return Footer()
+
+
 @dataclass
 class EmailMetadata:
     """
@@ -92,15 +99,21 @@ class EmailMetadata:
 
     ``header_disclaimer`` sits on the email side of that line deliberately:
     it is displayed in the masthead, but it is legal copy pairing with
-    ``footer_disclaimer``, and legal copy is a fact about the email.
+    ``footer_disclaimer``, and legal copy is a fact about the email. The
+    footer's line falls the same way: the disclaimer, the copyright year and
+    the three outbound URLs are facts; the wording that surrounds them —
+    headings, the button label, the link labels — belongs to
+    :class:`~svc.builder.regions.Footer`.
 
     Every remaining field maps to a variable in ``templates/base.html``.
 
-    The four flat masthead keyword arguments (``logo_url``, ``logo_alt``,
-    ``logo_width``, ``header_bg_image_url``) are still accepted and build the
-    header for you, so an email written before the split is unchanged.
-    Passing them *and* an explicit ``header=`` is an error rather than a
-    silent precedence rule.
+    The flat region keyword arguments are still accepted and build the region
+    for you, so an email written before either split is unchanged: four for
+    the masthead (``logo_url``, ``logo_alt``, ``logo_width``,
+    ``header_bg_image_url``) and five for the footer (``contact_heading``,
+    ``contact_description``, ``contact_cta_label``, ``unsubscribe_label``,
+    ``view_in_browser_label``). Passing one *and* the region it belongs to is
+    an error rather than a silent precedence rule.
     """
 
     email_subject: str = ""
@@ -110,32 +123,32 @@ class EmailMetadata:
     campaign_name: str = ""
     date_range: str = ""
     issue_label: str = ""
-    contact_description: str = ""
     contact_url: str = ""
     footer_disclaimer: str = ""
     current_year: str = ""
     unsubscribe_url: str = ""
     view_in_browser_url: str = ""
 
-    # Skeleton copy. Defaults reproduce what base.html used to hardcode, so
-    # existing emails are unchanged; override for different wording or a
-    # newsletter that isn't in English.
-    contact_heading: str = "Questions or feedback?"
-    contact_cta_label: str = "Contact Us"
-    unsubscribe_label: str = "Unsubscribe"
-    view_in_browser_label: str = "View in browser"
-
     #: How the masthead presents the facts above. Defaults to a blank header;
     #: ``Email(header=...)`` overrides it for one email.
     header: "Header" = field(default_factory=_default_header)
 
-    # Back-compatible masthead keywords. InitVars, so they are constructor
+    #: How the closing region words them. Defaults to the copy ``base.html``
+    #: used to hardcode; ``Email(footer=...)`` overrides it for one email.
+    footer: "Footer" = field(default_factory=_default_footer)
+
+    # Back-compatible region keywords. InitVars, so they are constructor
     # arguments only: they never become attributes and never appear in
-    # ``fields()``, ``repr`` or ``==`` — the header is the single owner.
+    # ``fields()``, ``repr`` or ``==`` — the region is the single owner.
     logo_url: InitVar["str | EmailImage | None"] = None
     logo_alt: InitVar["str | None"] = None
     logo_width: InitVar["int | None"] = None
     header_bg_image_url: InitVar["str | EmailImage | None"] = None
+    contact_heading: InitVar["str | None"] = None
+    contact_description: InitVar["str | None"] = None
+    contact_cta_label: InitVar["str | None"] = None
+    unsubscribe_label: InitVar["str | None"] = None
+    view_in_browser_label: InitVar["str | None"] = None
 
     #: Email-level facts the header region renders. Passed *down* to it; the
     #: header layers them over its own context, so it cannot shadow one.
@@ -147,31 +160,77 @@ class EmailMetadata:
         "issue_label",
     )
 
+    #: Email-level facts the footer region renders, on the same terms. The
+    #: three URLs are here rather than on the region because an unsubscribe
+    #: address is a property of the mailing, not a way of wording it — and
+    #: :meth:`validate` already checks all three schemes.
+    FOOTER_FACTS = (
+        "firm_name",
+        "current_year",
+        "footer_disclaimer",
+        "contact_url",
+        "unsubscribe_url",
+        "view_in_browser_url",
+    )
+
     def __post_init__(
         self,
         logo_url: "str | EmailImage | None",
         logo_alt: "str | None",
         logo_width: "int | None",
         header_bg_image_url: "str | EmailImage | None",
+        contact_heading: "str | None",
+        contact_description: "str | None",
+        contact_cta_label: "str | None",
+        unsubscribe_label: "str | None",
+        view_in_browser_label: "str | None",
     ) -> None:
-        from .regions import Header
+        from .regions import Footer, Header
 
-        legacy: dict[str, Any] = {
-            "logo_url": logo_url,
-            "logo_alt": logo_alt,
-            "logo_width": logo_width,
-            "background_image_url": header_bg_image_url,
-        }
+        self.header = self._hydrate(
+            Header,
+            "header",
+            {
+                "logo_url": logo_url,
+                "logo_alt": logo_alt,
+                "logo_width": logo_width,
+                "background_image_url": header_bg_image_url,
+            },
+        )
+        self.footer = self._hydrate(
+            Footer,
+            "footer",
+            {
+                "contact_heading": contact_heading,
+                "contact_description": contact_description,
+                "contact_cta_label": contact_cta_label,
+                "unsubscribe_label": unsubscribe_label,
+                "view_in_browser_label": view_in_browser_label,
+            },
+        )
+
+    def _hydrate(self, region_cls: type, attr: str, legacy: dict[str, Any]) -> Any:
+        """
+        Build a region from the flat keywords, or keep the one already set.
+
+        The flat names are the pre-split spelling of the region's own fields,
+        so supplying both is ambiguous rather than a precedence question —
+        and the ambiguity is rejected rather than resolved. ``None`` is what
+        marks a keyword unsupplied, which is why every one of them defaults
+        to ``None`` rather than to the value it used to carry: the region
+        holds the real default now.
+        """
+        current = getattr(self, attr)
         supplied = {name: value for name, value in legacy.items() if value is not None}
         if not supplied:
-            return
-        if self.header != Header():
+            return current
+        if current != region_cls():
             raise ValidationError(
-                f"EmailMetadata got both 'header=' and the flat masthead field(s) "
+                f"EmailMetadata got both '{attr}=' and the flat {attr} field(s) "
                 f"{sorted(supplied)}. Pass one or the other — the flat names are "
                 f"the pre-split spelling of the same thing."
             )
-        self.header = Header(**supplied)
+        return region_cls(**supplied)
 
     def validate(self) -> None:
         """Validate required fields and URL schemes."""
@@ -184,14 +243,19 @@ class EmailMetadata:
         """The email-level facts a header region renders."""
         return {name: getattr(self, name) for name in self.HEADER_FACTS}
 
+    def footer_facts(self) -> dict[str, Any]:
+        """The email-level facts a footer region renders."""
+        return {name: getattr(self, name) for name in self.FOOTER_FACTS}
+
     def to_dict(self) -> dict[str, Any]:
         """
         Flatten to the template context for ``base.html``.
 
-        The header is excluded: it renders itself from :meth:`header_facts`
-        and arrives in the skeleton as one ``header_html`` string.
+        The regions are excluded: each renders itself from its own facts and
+        arrives in the skeleton as the slot strings it fills.
         """
-        return {f.name: getattr(self, f.name) for f in fields(self) if f.name != "header"}
+        regions = {"header", "footer"}
+        return {f.name: getattr(self, f.name) for f in fields(self) if f.name not in regions}
 
 
 # ──────────────────────────────────────────────────────────────────────
