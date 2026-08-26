@@ -12,6 +12,7 @@ from __future__ import annotations
 import re
 from dataclasses import FrozenInstanceError, fields
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -456,3 +457,165 @@ class TestTheSchemeReachesEveryTemplate:
         from qa.fixtures import kitchen_sink
 
         assert kitchen_sink.build().render() == kitchen_sink.build().render()
+
+
+# ----------------------------------------------------------------------
+# #41 — the tokens are live, and no scale literal survives
+# ----------------------------------------------------------------------
+
+#: Tokens that legitimately never appear in rendered HTML.
+#:
+#: ``narrow_column`` is a Python-side threshold — it *chooses* between the
+#: two column paddings rather than being emitted — and ``column_pad_x`` /
+#: ``column_pad_x_narrow`` are what it chooses between, resolved in
+#: ``containers.py`` since #42 and therefore reaching the page as a computed
+#: number rather than as themselves.
+NEVER_RENDERED = {"frame.narrow_column"}
+
+#: Tokens #41 did not migrate because the geometry they drive belongs to
+#: #42. Emptied there — this set exists so the gap is a named, temporary
+#: exemption rather than a silently missing assertion.
+PENDING_GEOMETRY = {"frame.width", "frame.mobile_breakpoint"}
+
+
+def _sentinel_scheme() -> SizeScheme:
+    """
+    A scheme in which every token is a distinctive, findable number.
+
+    Sizes count up from 1010 and line-heights from 4.01, so each token's
+    value appears in the rendered HTML if and only if some template
+    actually reads it. The frame keeps a sane shape — padding inside the
+    width, breakpoint outside it — because ``FrameGeometry`` validates
+    those relationships and a nonsense frame would fail construction
+    rather than prove anything.
+    """
+    px = iter(range(1010, 1400))
+    line = iter(x / 100 for x in range(401, 500))
+    layers: dict[str, Any] = {}
+    for layer, layer_cls in SizeScheme.LAYERS.items():
+        values: dict[str, int | float] = {}
+        for spec in fields(layer_cls):
+            values[spec.name] = next(line) if spec.name.endswith("_line") else next(px)
+        if layer == "frame":
+            values.update(width=3901, pad_x=1017, mobile_breakpoint=3999)
+        layers[layer] = layer_cls(**values)
+    return SizeScheme(**layers)
+
+
+class TestTheTokensAreLive:
+    """
+    #41's real question: are the tokens wired, or merely present?
+
+    A migration that replaced a literal with a token *nothing reads* would
+    be byte-identical and completely inert. Rendering the exhaustive fixture
+    under a scheme whose every token is a distinct sentinel answers it
+    token by token, and fails naming the one that never arrived.
+    """
+
+    @pytest.fixture()
+    def perturbed_html(self, monkeypatch: pytest.MonkeyPatch) -> str:
+        from qa.fixtures import kitchen_sink
+        from svc.builder import sizing
+
+        scheme = _sentinel_scheme()
+        monkeypatch.setitem(sizing.SIZE_SCHEMES, SizeTheme.SPACIOUS, scheme)
+        builder = kitchen_sink.build()
+        builder._metadata.size_theme = SizeTheme.SPACIOUS  # type: ignore[union-attr]
+        self.scheme = scheme
+        return builder.render()
+
+    @pytest.mark.parametrize(
+        "token",
+        sorted(
+            f"{layer}.{spec.name}"
+            for layer, layer_cls in SizeScheme.LAYERS.items()
+            for spec in fields(layer_cls)
+        ),
+    )
+    def test_every_token_reaches_the_html(self, token: str, perturbed_html: str) -> None:
+        if token in NEVER_RENDERED:
+            pytest.skip(f"{token} is resolved in Python, never emitted")
+        if token in PENDING_GEOMETRY:
+            pytest.skip(f"{token} drives container geometry, migrated in #42")
+        layer, name = token.split(".")
+        value = getattr(getattr(self.scheme, layer), name)
+        assert str(value) in perturbed_html, (
+            f"{token} = {value} never reached the rendered email — the token "
+            "is decorative, not wired"
+        )
+
+    def test_the_mobile_media_block_is_sized_too(self, perturbed_html: str) -> None:
+        """
+        The trap the epic named: ``@media`` overrides carrying their own
+        literals would leave a themed email desktop-sized and mobile-
+        standard. The block must read the same tokens as the inline styles
+        it overrides.
+        """
+        block = perturbed_html[
+            perturbed_html.index("@media only screen") : perturbed_html.index(
+                "/* Force light rendering"
+            )
+        ]
+        for token in ("space.mobile_pad_y", "space.mobile_pad_x", "type.title_mobile"):
+            layer, name = token.split(".")
+            assert str(getattr(getattr(self.scheme, layer), name)) in block, token
+
+    def test_the_kpi_collapse_reuses_the_vertical_cards_padding(self, perturbed_html: str) -> None:
+        """
+        Deliberate sharing, not a coincidence: the mobile collapse *is* the
+        vertical card layout, so ``.kpi-cell`` reads ``card_pad_*`` rather
+        than a second pair of tokens. #43 depends on this — it is what stops
+        a compact email rendering airier on a phone than on a desktop.
+        """
+        block = perturbed_html[
+            perturbed_html.index(".kpi-cell {") : perturbed_html.index(".kpi-cell-last")
+        ]
+        assert str(self.scheme.component.card_pad_y) in block
+        assert str(self.scheme.component.card_pad_x) in block
+
+
+class TestNoScaleLiteralSurvives:
+    """
+    The other half of #41: a hardcoded px in a template is a bug.
+
+    Stated as a rule with teeth, the way the colour epic's no-hex-literal
+    rule is — the exceptions are named, and anything else fails here rather
+    than being noticed in review.
+    """
+
+    #: Every literal a template may still carry, and why. See
+    #: :mod:`svc.builder.sizing` for the full reasoning.
+    DELIBERATE = {
+        "padding:1px 1px 1px 1px": "the hairline frame of a highlighted band",
+        "font-size:1px": "the preheader hider — not type",
+        "font-size:0": "the accent rule's spacer cell",
+        "line-height:0": "ditto",
+    }
+
+    DECL = re.compile(
+        r"(?:font-size|line-height|padding|padding-top|padding-bottom|margin"
+        r"|margin-top|margin-bottom|margin-right)\s*:\s*[^;\"}]*"
+    )
+
+    def test_every_size_declaration_is_a_token_or_a_named_exception(self) -> None:
+        offenders: list[str] = []
+        for path in _templates():
+            for line_no, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+                for decl in self.DECL.findall(line):
+                    decl = decl.strip().rstrip(";")
+                    if "{{" in decl or not re.search(r"[1-9]", decl):
+                        continue  # tokenised, or an all-zero reset
+                    if any(decl.startswith(known) for known in self.DELIBERATE):
+                        continue
+                    offenders.append(f"{path.relative_to(TEMPLATE_DIR)}:{line_no}: {decl}")
+        assert not offenders, (
+            "hardcoded sizes outside the documented exceptions:\n  " + "\n  ".join(offenders)
+        )
+
+    def test_the_named_exceptions_are_all_still_there(self) -> None:
+        """
+        An exception list that outlives its exception is a lie in the docs.
+        """
+        blob = "\n".join(p.read_text(encoding="utf-8") for p in _templates())
+        for literal in self.DELIBERATE:
+            assert literal in blob, f"{literal!r} is documented but no longer used"

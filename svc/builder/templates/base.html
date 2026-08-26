@@ -28,9 +28,9 @@
     @media only screen and (max-width:700px) {
       .email-container { width:100% !important; }
       .stack-column { display:block !important; width:100% !important; }
-      .mobile-pad { padding:20px 18px !important; }
-      .mobile-title { font-size:22px !important; }
-      .kpi-cell { display:block !important; width:100% !important; border-right:none !important; border-bottom:1px solid {{ theme.palette.rule }} !important; padding:14px 16px !important; }
+      .mobile-pad { padding:{{ size.space.mobile_pad_y }}px {{ size.space.mobile_pad_x }}px !important; }
+      .mobile-title { font-size:{{ size.type.title_mobile }}px !important; }
+      .kpi-cell { display:block !important; width:100% !important; border-right:none !important; border-bottom:1px solid {{ theme.palette.rule }} !important; padding:{{ size.component.card_pad_y }}px {{ size.component.card_pad_x }}px !important; }
       .kpi-cell-last { border-bottom:none !important; }
     }
     /* Force light rendering in all dark mode contexts */
@@ -69,7 +69,7 @@
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
          style="background-color:{{ theme.palette.wrapper_bg }};" bgcolor="{{ theme.palette.wrapper_bg }}">
     <tr>
-      <td align="center" style="padding:28px 0;">
+      <td align="center" style="padding:{{ size.frame.outer_pad_y }}px 0;">
 
         <!-- ============================================ -->
         <!-- MAIN CONTAINER — 680px                       -->
