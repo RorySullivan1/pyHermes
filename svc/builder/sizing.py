@@ -174,6 +174,7 @@ rule cannot simply be "ints only". Line-heights obey the same rule, so
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass, fields, replace
 from typing import Any, ClassVar
 
@@ -475,3 +476,93 @@ def resolve_size_scheme(value: SizeTheme | str) -> SizeScheme:
     raise ValidationError(
         f"'size_theme' must be a SizeTheme or its name, got: {type(value).__name__}"
     )
+
+
+# ----------------------------------------------------------------------
+# Column geometry — the arithmetic eight templates used to write out by hand
+# ----------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class ColumnGeometry:
+    """One column's computed width and the horizontal padding it earns."""
+
+    width: int
+    pad_x: int | float
+
+
+def _remainder_order(count: int) -> list[int]:
+    """
+    Which columns get the leftover pixels, in order: outside-in.
+
+    ``[0, n-1, 1, n-2, ...]``. Three equal columns of 584px cannot each be
+    194.67 wide, so two of them gain a pixel — and *which* two is a design
+    decision that was already made, by hand, in ``col-33-33-33.html``:
+    195 / 194 / 195. Outside-in reproduces it, and it is the right rule
+    independently. A reader notices an asymmetric left/right pair; nobody
+    notices a centre column one pixel narrower than its neighbours.
+    """
+    order: list[int] = []
+    low, high = 0, count - 1
+    while low <= high:
+        order.append(low)
+        if high != low:
+            order.append(high)
+        low, high = low + 1, high - 1
+    return order
+
+
+def column_layout(weights: Sequence[int | float], scheme: SizeScheme) -> list[ColumnGeometry]:
+    """
+    Split the frame's content width into columns, per the ratio's weights.
+
+    Weights are normalised by their own sum rather than assumed to total
+    100 — which is what makes ``"33-33-33"`` exact thirds rather than 99%
+    of the frame with a 6px hole in it.
+
+    Widths are integers because Outlook's Word engine reads the ``width``
+    **attribute**, and an attribute is an integer. They sum to exactly the
+    space between the gutters: floor every column, then hand the remainder
+    out in :func:`_remainder_order`, largest fractional part first.
+
+    Each column also carries the padding it earns: a column at least
+    ``frame.narrow_column`` wide takes ``space.column_pad_x``, a narrower
+    one takes ``space.column_pad_x_narrow``. That threshold is not invented
+    here — it is read back out of the templates, where a 300px or 420px
+    column had 20px of padding and a 292px or smaller one had 16px.
+    """
+    count = len(weights)
+    if count < 1:
+        raise ValidationError("a column layout needs at least one column")
+    total = sum(weights)
+    if total <= 0:
+        raise ValidationError(f"column weights must be positive, got: {list(weights)}")
+
+    available = scheme.frame.inner - scheme.space.gutter * (count - 1)
+    if available < count:
+        raise ValidationError(
+            f"{count} columns and {count - 1} gutter(s) of "
+            f"{scheme.space.gutter}px leave {available}px inside a "
+            f"{scheme.frame.inner}px content width — not enough for one pixel each."
+        )
+
+    exact = [available * weight / total for weight in weights]
+    widths = [int(value) for value in exact]
+    remainder = int(available) - sum(widths)
+    if remainder:
+        order = _remainder_order(count)
+        ranked = sorted(order, key=lambda index: -(exact[index] - widths[index]))
+        for index in ranked[:remainder]:
+            widths[index] += 1
+
+    return [
+        ColumnGeometry(
+            width=width,
+            pad_x=(
+                scheme.space.column_pad_x
+                if width >= scheme.frame.narrow_column
+                else scheme.space.column_pad_x_narrow
+            ),
+        )
+        for width in widths
+    ]

@@ -25,7 +25,7 @@
     body, table, td, a { -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%; }
     table, td { mso-table-lspace:0pt; mso-table-rspace:0pt; }
     img { -ms-interpolation-mode:bicubic; border:0; outline:none; text-decoration:none; }
-    @media only screen and (max-width:700px) {
+    @media only screen and (max-width:{{ size.frame.mobile_breakpoint }}px) {
       .email-container { width:100% !important; }
       .stack-column { display:block !important; width:100% !important; }
       .mobile-pad { padding:{{ size.space.mobile_pad_y }}px {{ size.space.mobile_pad_x }}px !important; }
@@ -72,10 +72,10 @@
       <td align="center" style="padding:{{ size.frame.outer_pad_y }}px 0;">
 
         <!-- ============================================ -->
-        <!-- MAIN CONTAINER — 680px                       -->
+        <!-- MAIN CONTAINER — {{ size.frame.width }}px                       -->
         <!-- ============================================ -->
-        <table class="email-container" role="presentation" width="680" cellpadding="0" cellspacing="0"
-               border="0" style="background-color:{{ theme.palette.surface }}; max-width:680px;" bgcolor="{{ theme.palette.surface }}">
+        <table class="email-container" role="presentation" width="{{ size.frame.width }}" cellpadding="0" cellspacing="0"
+               border="0" style="background-color:{{ theme.palette.surface }}; max-width:{{ size.frame.width }}px;" bgcolor="{{ theme.palette.surface }}">
 
 {# The header region renders separately and arrives here whole. It sits at
    column 0 on purpose: an indented {{ }} would prepend that indentation to

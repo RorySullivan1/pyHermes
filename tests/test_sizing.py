@@ -26,6 +26,8 @@ from svc.builder.sizing import (
     SizeScheme,
     SpacingScale,
     TypeScale,
+    _remainder_order,
+    column_layout,
     resolve_size_scheme,
 )
 
@@ -463,19 +465,14 @@ class TestTheSchemeReachesEveryTemplate:
 # #41 — the tokens are live, and no scale literal survives
 # ----------------------------------------------------------------------
 
-#: Tokens that legitimately never appear in rendered HTML.
+#: The one token that legitimately never appears in rendered HTML.
 #:
-#: ``narrow_column`` is a Python-side threshold — it *chooses* between the
-#: two column paddings rather than being emitted — and ``column_pad_x`` /
-#: ``column_pad_x_narrow`` are what it chooses between, resolved in
-#: ``containers.py`` since #42 and therefore reaching the page as a computed
-#: number rather than as themselves.
+#: ``narrow_column`` is a threshold, not a size: it *chooses* between
+#: ``space.column_pad_x`` and ``space.column_pad_x_narrow`` in Python. Both
+#: of those still reach the page — the sentinel frame below is shaped so
+#: that some column falls on each side of the threshold, or one of them
+#: would go untested.
 NEVER_RENDERED = {"frame.narrow_column"}
-
-#: Tokens #41 did not migrate because the geometry they drive belongs to
-#: #42. Emptied there — this set exists so the gap is a named, temporary
-#: exemption rather than a silently missing assertion.
-PENDING_GEOMETRY = {"frame.width", "frame.mobile_breakpoint"}
 
 
 def _sentinel_scheme() -> SizeScheme:
@@ -497,7 +494,16 @@ def _sentinel_scheme() -> SizeScheme:
         for spec in fields(layer_cls):
             values[spec.name] = next(line) if spec.name.endswith("_line") else next(px)
         if layer == "frame":
-            values.update(width=3901, pad_x=1017, mobile_breakpoint=3999)
+            # Wide enough that three sentinel-sized gutters still leave real
+            # columns, and with the threshold a quarter of the way in, so
+            # both column paddings are exercised rather than only the wide one.
+            width, pad_x = 20_001, 1017
+            values.update(
+                width=width,
+                pad_x=pad_x,
+                mobile_breakpoint=width + 99,
+                narrow_column=(width - 2 * pad_x) // 4,
+            )
         layers[layer] = layer_cls(**values)
     return SizeScheme(**layers)
 
@@ -535,8 +541,6 @@ class TestTheTokensAreLive:
     def test_every_token_reaches_the_html(self, token: str, perturbed_html: str) -> None:
         if token in NEVER_RENDERED:
             pytest.skip(f"{token} is resolved in Python, never emitted")
-        if token in PENDING_GEOMETRY:
-            pytest.skip(f"{token} drives container geometry, migrated in #42")
         layer, name = token.split(".")
         value = getattr(getattr(self.scheme, layer), name)
         assert str(value) in perturbed_html, (
@@ -619,3 +623,164 @@ class TestNoScaleLiteralSurvives:
         blob = "\n".join(p.read_text(encoding="utf-8") for p in _templates())
         for literal in self.DELIBERATE:
             assert literal in blob, f"{literal!r} is documented but no longer used"
+
+
+# ----------------------------------------------------------------------
+# #42 — column geometry is arithmetic, not eight files of literals
+# ----------------------------------------------------------------------
+
+RATIOS = ["50-50", "30-70", "70-30", "33-33-33", "50-25-25", "25-50-25", "25-25-50"]
+
+#: What the eight deleted per-ratio templates hardcoded, column by column:
+#: the width and the horizontal cell padding each column carried.
+THE_OLD_LITERALS: dict[str, list[tuple[int, int]]] = {
+    "50-50": [(300, 20), (300, 20)],
+    "30-70": [(180, 16), (420, 20)],
+    "70-30": [(420, 20), (180, 16)],
+    "33-33-33": [(195, 16), (194, 16), (195, 16)],
+    "50-25-25": [(292, 16), (146, 16), (146, 16)],
+    "25-50-25": [(146, 16), (292, 16), (146, 16)],
+    "25-25-50": [(146, 16), (146, 16), (292, 16)],
+}
+
+
+class TestColumnGeometry:
+    @pytest.mark.parametrize("ratio", RATIOS)
+    def test_it_reproduces_what_the_templates_hardcoded(self, ratio: str) -> None:
+        """
+        The byte-identity claim, stated as arithmetic.
+
+        Padding included: the 20px / 16px split was never written down as a
+        rule, only as a per-file choice, and ``narrow_column`` is that rule
+        recovered — a 300 or 420px column had 20, a 292 or smaller one had 16.
+        """
+        weights = [int(part) for part in ratio.split("-")]
+        computed = [(c.width, c.pad_x) for c in column_layout(weights, STANDARD_SIZES)]
+        assert computed == THE_OLD_LITERALS[ratio]
+
+    def test_equal_thirds_put_the_odd_pixels_on_the_outside(self) -> None:
+        """
+        584px does not divide by three, so two columns gain a pixel — and
+        *which* two was already decided by hand, in ``col-33-33-33.html``.
+        Outside-in reproduces it and is the better rule anyway: a reader
+        notices an asymmetric left/right pair, not a centre column one pixel
+        narrower than its neighbours.
+        """
+        assert [c.width for c in column_layout([33, 33, 33], STANDARD_SIZES)] == [
+            195,
+            194,
+            195,
+        ]
+
+    @pytest.mark.parametrize(
+        "count,expected", [(1, [0]), (2, [0, 1]), (3, [0, 2, 1]), (4, [0, 3, 1, 2])]
+    )
+    def test_the_remainder_order_is_outside_in(self, count: int, expected: list[int]) -> None:
+        assert _remainder_order(count) == expected
+
+    def test_weights_normalise_by_their_own_sum(self) -> None:
+        """
+        ``"33-33-33"`` sums to 99, not 100. Normalising by the sum is what
+        makes it exact thirds instead of 99% of the frame with a hole in it.
+        """
+        widths = [c.width for c in column_layout([33, 33, 33], STANDARD_SIZES)]
+        assert sum(widths) + 2 * STANDARD_SIZES.space.gutter == STANDARD_SIZES.frame.inner
+
+    @pytest.mark.parametrize("ratio", RATIOS)
+    @pytest.mark.parametrize("width", [480, 600, 680, 700, 1024])
+    def test_columns_and_gutters_fill_the_frame_exactly(self, ratio: str, width: int) -> None:
+        """
+        The acceptance criterion at a frame the email has never shipped at.
+
+        Every width a positive integer — Outlook reads the ``width``
+        *attribute*, and an attribute cannot be 194.67 — and the columns
+        plus their gutters accounting for the content width to the pixel.
+        """
+        scheme = STANDARD_SIZES.derive(frame={"width": width, "mobile_breakpoint": width + 20})
+        weights = [int(part) for part in ratio.split("-")]
+        columns = column_layout(weights, scheme)
+
+        assert len(columns) == len(weights)
+        assert all(isinstance(c.width, int) and c.width > 0 for c in columns)
+        gutters = scheme.space.gutter * (len(columns) - 1)
+        assert sum(c.width for c in columns) + gutters == scheme.frame.inner
+
+    def test_an_impossible_frame_is_refused_rather_than_rendered(self) -> None:
+        scheme = STANDARD_SIZES.derive(frame={"width": 50, "pad_x": 10})
+        with pytest.raises(ValidationError, match="not enough for one pixel each"):
+            column_layout([33, 33, 33], scheme)
+
+
+class TestTheGeometryReachesTheTemplateOnce:
+    """
+    The attribute and the CSS must come from the *same* number.
+
+    Writing it twice per column, in eight files, is what the epic named as
+    the problem — so the test is not "the numbers are right" but "there is
+    only one number".
+    """
+
+    def _render(self, ratio: str, scheme: SizeScheme | None = None) -> str:
+        from svc.builder import TemplateEngine, TextBlock, ThreeColumn, TwoColumn
+
+        engine = TemplateEngine().bound(size=scheme or STANDARD_SIZES)
+        slots = [TextBlock(f"<p>{n}</p>") for n in ("a", "b", "c")]
+        if ratio.count("-") == 1:
+            container = TwoColumn(ratio=ratio, left=slots[0], right=slots[1])
+        else:
+            container = ThreeColumn(ratio=ratio, left=slots[0], center=slots[1], right=slots[2])
+        return container.render(engine)
+
+    @pytest.mark.parametrize("ratio", RATIOS)
+    @pytest.mark.parametrize("width", [680, 900])
+    def test_attribute_and_css_width_agree_per_column(self, ratio: str, width: int) -> None:
+        scheme = STANDARD_SIZES.derive(frame={"width": width, "mobile_breakpoint": width + 20})
+        html = self._render(ratio, scheme)
+        expected = [c.width for c in column_layout([int(p) for p in ratio.split("-")], scheme)]
+
+        # Each column appears twice in the MSO ghost table (attribute + CSS)
+        # and twice on its own inline-block table — four times, one number.
+        for column_width in expected:
+            attrs = html.count(f'width="{column_width}"')
+            css = html.count(f"width:{column_width}px")
+            assert attrs == css, (
+                f"{ratio} at {width}px: {attrs} attribute(s) but {css} CSS width(s) "
+                f"for a {column_width}px column"
+            )
+
+    @pytest.mark.parametrize("ratio", RATIOS)
+    def test_no_width_literal_survives_in_the_column_template(self, ratio: str) -> None:
+        """
+        Rendering at a non-shipped frame is the check that bites: a leftover
+        literal would still say 300 or 616 while everything around it moved.
+        """
+        scheme = STANDARD_SIZES.derive(frame={"width": 900, "mobile_breakpoint": 920})
+        html = self._render(ratio, scheme)
+        for stale in ('width="616"', "width:616px", 'width="300"', 'width="195"'):
+            assert stale not in html, f"{stale} survived a frame change"
+
+    def test_the_container_template_carries_no_number(self) -> None:
+        source = (TEMPLATE_DIR / "common" / "containers" / "columns.html").read_text(
+            encoding="utf-8"
+        )
+        body = source[source.index("#}") :]  # the docstring comment may cite sizes
+        offenders = re.findall(r'width[=:]\s*"?[0-9]+(?![0-9%])', body)
+        assert not offenders, f"hardcoded widths in columns.html: {offenders}"
+
+    def test_one_template_serves_every_split(self) -> None:
+        from svc.builder import ThreeColumn, TwoColumn
+
+        assert TwoColumn.template_path == ThreeColumn.template_path
+        assert not list((TEMPLATE_DIR / "common" / "containers").glob("col-*.html")), (
+            "a per-ratio template came back; the ratio selects numbers, not a file"
+        )
+
+    def test_the_frame_width_reaches_the_skeleton_and_the_footer(self) -> None:
+        from qa.fixtures import kitchen_sink
+
+        builder = kitchen_sink.build()
+        builder._metadata.size_theme = SizeTheme.STANDARD  # type: ignore[union-attr]
+        html = builder.render()
+        assert html.count('width="680"') >= 2  # body table + the legal block
+        assert "max-width:680px" in html
+        assert "max-width:700px" in html  # the breakpoint, derived from the frame

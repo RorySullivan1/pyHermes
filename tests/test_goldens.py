@@ -99,8 +99,13 @@ class TestTheHarnessDetectsDrift:
         """
         The headline case: one attribute changed in ``base.html``, which is
         exactly the kind of edit the header epic (#38) makes repeatedly.
+
+        The anchor is an attribute rather than a number because #42 left
+        ``base.html`` with no width literal to perturb — every one of them
+        now reads ``size.frame.width``. The rendered side still checks a
+        number, since that is what the golden holds.
         """
-        templates = _perturbed_templates(tmp_path, 'width="680"', 'width="681"')
+        templates = _perturbed_templates(tmp_path, 'align="center"', 'align="left"')
         email = all_fixtures()["minimal"](template_dir=templates)
 
         mismatches = check_fixture("minimal", email)
@@ -109,9 +114,12 @@ class TestTheHarnessDetectsDrift:
         (mismatch,) = mismatches
         assert mismatch.fixture == "minimal"
         assert mismatch.artifact == "rendered HTML"
-        expected_line = _line_of(html_path("minimal").read_text(encoding="utf-8"), 'width="680"')
+        expected_line = _line_of(
+            html_path("minimal").read_text(encoding="utf-8"),
+            '<td align="center" style="padding:28px 0;">',
+        )
         assert f"line {expected_line}," in mismatch.report
-        assert 'width="681"' in mismatch.report
+        assert 'align="left"' in mismatch.report
 
     def test_a_fixture_data_change_is_caught_and_located(self, monkeypatch):
         """

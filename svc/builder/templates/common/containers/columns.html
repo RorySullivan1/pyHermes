@@ -1,0 +1,61 @@
+{#
+  MULTI-COLUMN CONTAINER
+
+  One template for every split, two columns or three. The eight per-ratio
+  files this replaced were byte-identical apart from a Jinja comment and
+  the numbers — which is what made the frame an assumption spread across
+  eight files rather than a value the builder owns.
+
+  Widths arrive computed: svc.builder.sizing.column_layout() splits the
+  frame's content width by the ratio's own weights, floors each column and
+  distributes the remainder outside-in, then gives each column the padding
+  its width earns. The MSO ghost table and the inline-block table read the
+  *same* number, because there is now only one number to read.
+
+  Context variables:
+    columns          — One dict per column: width, pad_x, content
+    section_title    — Optional heading spanning every column
+    background_color — Optional hex override; defaults to the theme's surface,
+                       or its highlight tint when highlighted
+    highlight        — When true, tints the band and adds hairline rules top and bottom
+#}
+<tr>
+  <td style="{% if highlight %}padding:1px 1px 1px 1px; background-color:{{ theme.palette.surface }}; border-top:1px solid {{ theme.palette.rule }}; border-bottom:1px solid {{ theme.palette.rule }};{% else %}padding:0; background-color:{{ background_color | default(theme.palette.surface) }};{% endif %}">
+{% if section_title %}
+    <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:{{ background_color | default(theme.palette.highlight_tint if highlight else theme.palette.surface) }};">
+      <tr>
+        <td style="padding:{{ size.space.section_title_top_split }}px {{ size.frame.pad_x }}px {{ size.space.section_title_bottom }}px {{ size.frame.pad_x }}px; border-bottom:1px solid {{ theme.palette.rule }};">
+          <h2 style="margin:0; font-family:Georgia,'Times New Roman',serif; font-size:{{ size.type.section }}px; font-weight:bold; color:{{ theme.text.heading }}; line-height:{{ size.type.title_line }};">
+            {{ section_title | escape_html }}
+          </h2>
+        </td>
+      </tr>
+    </table>
+{% endif %}
+    <!--[if mso]>
+    <table width="{{ size.frame.inner }}" border="0" cellpadding="0" cellspacing="0" style="width:{{ size.frame.inner }}px;">
+      <tr>
+        <td width="{{ columns[0].width }}" valign="top" style="width:{{ columns[0].width }}px; padding:0;">
+    <![endif]-->
+{% for col in columns %}
+    <table width="{{ col.width }}" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:{{ col.width }}px;{% if not loop.last %} margin-right:{{ size.space.gutter }}px;{% endif %} background-color:{{ background_color | default(theme.palette.highlight_tint if highlight else theme.palette.surface) }};">
+      <tr>
+        <td class="mobile-pad" style="padding:{{ size.space.column_top }}px {{ col.pad_x }}px {{ size.space.column_bottom }}px {{ col.pad_x }}px; font-family:Arial,Helvetica,sans-serif; font-size:{{ size.type.body }}px; color:{{ theme.text.primary }}; line-height:{{ size.type.body_line }};">
+          {{ col.content }}
+        </td>
+      </tr>
+    </table>
+{% if not loop.last %}
+    <!--[if mso]>
+        </td>
+        <td width="{{ columns[loop.index].width }}" valign="top" style="width:{{ columns[loop.index].width }}px; padding:0;">
+    <![endif]-->
+{% endif %}
+{% endfor %}
+    <!--[if mso]>
+        </td>
+      </tr>
+    </table>
+    <![endif]-->
+  </td>
+</tr>
