@@ -55,8 +55,10 @@
   real stylesheet.
 
 ## State at end
-- Epic #46 complete on `claude/review-open-issues-rr8quq`, five commits on `main` (`e7dda2a`).
-  Not yet pushed or PR'd when this file was written.
+- **PR #82 merged** to `main` (`ec3e2bd`) at 13:15, closing #47–#51 and **epic #46** (5/5).
+  All four CI jobs green on the head `9e37ae6` on the first run, in about 90 seconds. 938 tests
+  verified again on merged `main`. Branch reset to `main`; PR watch stopped and both check-in
+  triggers deleted.
 - Gallery is six fixtures; `slate_theme` is the sixth. Zero colour literals remain in any
   template or as a Python default — two tests enforce it, with no documented exceptions.
 
