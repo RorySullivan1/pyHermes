@@ -531,6 +531,46 @@ class Header(Region):
 
 
 @dataclass
+class EmptyHeader(Header):
+    """
+    A header that renders nothing at all — no band, no empty ``<tr>``.
+
+    Not every email carries a strip, and the slot mechanism already supports
+    true omission: an unfilled slot renders as the empty string, so the
+    skeleton needs no conditional. This gives that a name. A class rather
+    than a flag (``Header(visible=False)``) because variants are classes
+    here, and a class is what an introspecting test can find.
+
+    **An empty ``header_disclaimer`` on a plain ``Header`` still renders the
+    band, and that is deliberate.** It is tempting to auto-collapse — but the
+    presence of the *box* would then depend on a fact the email owns rather
+    than on the region, which inverts the rule the whole layer rests on: a
+    region decides how it renders and whether it renders; a fact is only its
+    content. The footer already draws the line in the same place, with
+    ``Footer.disclaimer`` empty omitting the fine-print *line* while the
+    footer itself still renders. "I have no copy" and "I do not want this
+    box" are different statements, and this class is the second one.
+
+    What a blank default actually looks like is worth knowing before
+    reaching for it: on the theme's own colours the band is `#2C3E50` sitting
+    directly above the masthead's identical `#2C3E50`, so it is invisible —
+    14px of extra navy. It only reads as a mistake once #95 let the header
+    carry a background of its own, and a caller who colours a box they put
+    nothing in wants this class.
+
+    **The asymmetry with `Footer` is not a lower standard.**
+    :attr:`Region.REQUIRED_SLOTS` is a rule about *variants not silently
+    dropping structure*, never about a caller supplying content — pyHermes
+    does not require disclaimer language, and whether an email needs one is
+    the sender's judgement. ``Footer`` names its slot required because a
+    footer that renders nothing is a footer that failed; ``Header`` names
+    none because its whole box is genuinely optional.
+    """
+
+    TEMPLATE_PATHS: ClassVar[dict[str, str]] = {}
+
+
+@dataclass
 class Footer(Region):
     """
     The closing region: a structured, partially-flexible block.

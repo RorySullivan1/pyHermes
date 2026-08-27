@@ -27,6 +27,7 @@ from . import (
     minimal,
     minimal_banner,
     minimal_footer,
+    no_header,
     slate_theme,
     spacious_size,
 )
@@ -68,6 +69,7 @@ def all_fixtures() -> dict[str, FixtureBuilder]:
         "image_matrix": image_matrix.build,
         "minimal_banner": minimal_banner.build,
         "minimal_footer": minimal_footer.build,
+        "no_header": no_header.build,
         "slate_theme": slate_theme.build,
         "compact_size": compact_size.build,
         "spacious_size": spacious_size.build,

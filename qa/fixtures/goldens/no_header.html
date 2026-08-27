@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:v="urn:schemas-microsoft-com:vml"
+      xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="x-apple-disable-message-reformatting">
+  <meta name="color-scheme" content="light only">
+  <meta name="supported-color-schemes" content="light only">
+  <title>No Header — the strip omitted entirely</title>
+  <!--[if mso]>
+  <noscript>
+    <xml><o:OfficeDocumentSettings>
+      <o:PixelsPerInch>96</o:PixelsPerInch>
+    </o:OfficeDocumentSettings></xml>
+  </noscript>
+  <style type="text/css">
+    body, td, th { font-family: Georgia, 'Times New Roman', serif; }
+    body { background-color: #F2F1EE !important; }
+  </style>
+  <![endif]-->
+  <style type="text/css">
+    body, table, td, a { -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%; }
+    table, td { mso-table-lspace:0pt; mso-table-rspace:0pt; }
+    img { -ms-interpolation-mode:bicubic; border:0; outline:none; text-decoration:none; }
+    @media only screen and (max-width:700px) {
+      .email-container { width:100% !important; }
+      .stack-column { display:block !important; width:100% !important; }
+      .mobile-pad { padding:20px 18px !important; }
+      .mobile-title { font-size:22px !important; }
+      /* box-sizing is what keeps the padding *inside* the 100% width. Without it
+         the content-box default adds it on top and the cell overflows the
+         viewport by its own padding (#76). Word ignores this whole @media
+         block, so the property it lacks costs Outlook nothing. */
+      .kpi-cell { display:block !important; width:100% !important; box-sizing:border-box !important; border-right:none !important; border-bottom:1px solid #D6D2CB !important; padding:14px 16px !important; }
+      .kpi-cell-last { border-bottom:none !important; }
+    }
+    /* Force light rendering in all dark mode contexts */
+    :root { color-scheme: light only; }
+    [data-ogsc] .email-container,
+    [data-ogsb] .email-container { background-color:#FFFFFF !important; }
+    [data-ogsc] .surface,
+    [data-ogsb] .surface { background-color:#FFFFFF !important; }
+    [data-ogsc] .body-text,
+    [data-ogsb] .body-text { color:#3B3B3B !important; }
+    @media (prefers-color-scheme:dark) {
+      .email-container { background-color:#FFFFFF !important; }
+      .body-text { color:#3B3B3B !important; }
+      .surface { background-color:#FFFFFF !important; }
+    }
+  </style>
+</head>
+<!--
+  ACADEMIC FINANCIAL EMAIL SKELETON — Design Reference
+  ====================================================
+  Palette:
+    Every colour and shadow comes from the resolved Theme, which arrives as
+    the "theme" namespace. The token table — name, value, and the sites each
+    one covers — lives in svc/builder/theming.py, where something other than
+    a person can read it. The hand-maintained list that used to sit here had
+    already drifted: it named a row-alt colour the table never used.
+-->
+<body style="margin:0; padding:0; background-color:#F2F1EE; font-family:Georgia,'Times New Roman',serif;" bgcolor="#F2F1EE">
+
+  <!-- Preheader -->
+  <div style="display:none;max-height:0;overflow:hidden;font-size:1px;color:#F2F1EE;">
+    The region fills no slot, so nothing renders.&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;
+  </div>
+
+  <!-- Outer wrapper -->
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+         style="background-color:#F2F1EE;" bgcolor="#F2F1EE">
+    <tr>
+      <td align="center" style="padding:28px 0;">
+
+        <!-- ============================================ -->
+        <!-- MAIN CONTAINER — 680px                       -->
+        <!-- ============================================ -->
+        <table class="email-container" role="presentation" width="680" cellpadding="0" cellspacing="0"
+               border="0" style="background-color:#FFFFFF; max-width:680px;" bgcolor="#FFFFFF">
+
+
+          <!-- ══════════════════════════════════════════ -->
+          <!-- HEADER: Background image + text overlay   -->
+          <!-- ══════════════════════════════════════════ -->
+          <tr>
+            <td style="background-color:#2C3E50;" bgcolor="#2C3E50">
+              <!--[if mso]>
+              <v:rect xmlns:v="urn:schemas-microsoft-com:vml" fill="true" stroke="false"
+                      style="width:680px;height:180px;">
+                <v:fill type="frame" src="" color="#141E2C" opacity="65%"/>
+                <v:textbox inset="32px,0,32px,0" style="mso-fit-shape-to-text:false;">
+              <![endif]-->
+              <div style="background-color:#2C3E50; background-size:cover;
+                          background-position:center center; background-repeat:no-repeat;">
+                <!-- Dark overlay for text legibility.  Hidden from Outlook on
+                     purpose: the v:fill above already applies this exact scrim
+                     through its own color + opacity attributes, and the Word
+                     engine demotes a transparent background-color to a
+                     background image, inheriting VML's limitations for a
+                     second copy of an effect it has already drawn (#78).
+                     Both halves still read one Rgba, so they cannot drift. -->
+                <!--[if !mso]><!--><div style="background-color:rgba(20,30,44,0.65);"><!--<![endif]-->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <td width="100%" valign="bottom" style="padding:18px 0 6px 32px;">
+                      <p style="margin:0; font-family:Georgia,'Times New Roman',serif; font-size:28px;
+                                font-weight:bold; color:#FFFFFF; line-height:120%; letter-spacing:0.3px;
+                                text-shadow:0 1px 3px rgba(0,0,0,0.4);"
+                         class="mobile-title">
+                        Hermes Research
+                      </p>
+                    </td>
+                    <td valign="bottom" align="right" style="padding:18px 32px 6px 16px;">
+                      <!--[if mso]>
+                      <img src="" width="90" alt="Hermes Research" style="display:block;">
+                      <![endif]-->
+                      <!--[if !mso]><!-->
+                      <img src="" width="90" alt="Hermes Research"
+                           style="display:block; max-width:90px; height:auto;">
+                      <!--<![endif]-->
+                    </td>
+                  </tr>
+                  <tr>
+                    <td valign="middle" style="padding:0 0 8px 32px;">
+                      <p style="margin:0; font-family:Arial,Helvetica,sans-serif; font-size:13px;
+                                font-weight:400; color:#CFD8DC; line-height:130%;
+                                text-shadow:0 1px 2px rgba(0,0,0,0.3);">
+                        no-header
+                      </p>
+                    </td>
+                    <td valign="middle" align="right" style="padding:0 32px 8px 16px;">
+                    </td>
+                  </tr>
+                </table>
+                <!-- Accent rule -->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <td style="padding:0 32px;">
+                      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                        <tr>
+                          <td style="border-top:2px solid #5B8A9A; font-size:0; line-height:0;" height="1">&nbsp;</td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+                <!-- Date / Issue bar -->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <td style="padding:10px 32px 18px;">
+                      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                        <tr>
+                          <td style="font-family:Arial,Helvetica,sans-serif; font-size:11px;
+                                     color:#90A4AE; letter-spacing:0.6px; text-transform:uppercase;">
+                            Week ending 24 August
+                          </td>
+                          <td align="right" style="font-family:Arial,Helvetica,sans-serif; font-size:11px;
+                                                    color:#90A4AE; letter-spacing:0.6px; text-transform:uppercase;">
+                            Issue 005
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+                <!--[if !mso]><!--></div><!--<![endif]--><!-- /dark overlay -->
+              </div>
+              <!--[if mso]>
+                </v:textbox>
+              </v:rect>
+              <![endif]-->
+            </td>
+          </tr>
+
+          <!-- ══════════════════════════════════════════ -->
+          <!-- SECTIONS: Insert containers here          -->
+          <!-- ══════════════════════════════════════════ -->
+          <tr>
+  <td style="padding:0; background-color:#FFFFFF;">
+    <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td style="padding:22px 32px 12px 32px;">
+          <h2 style="margin:0; font-family:Georgia,'Times New Roman',serif; font-size:17px; font-weight:bold; color:#2C3E50; line-height:120%;">
+            Body Unchanged
+          </h2>
+        </td>
+      </tr>
+    </table>
+    <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:16px 32px 14px 32px; font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#3B3B3B; line-height:172%;">
+          <p class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: #3B3B3B; line-height: 172%; margin: 0 0 16px 0;"><p>Omitting the strip is a region choice; nothing below it moves.</p></p>
+
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+
+
+        </table>
+        <!-- /Main container -->
+
+        <!-- FOOTER: copyright, links and optional disclaimer -->
+        <table role="presentation" width="680" cellpadding="0" cellspacing="0" border="0"
+               style="max-width:680px; background-color:#F2F1EE;" bgcolor="#F2F1EE" class="email-container">
+          <tr>
+            <td style="padding:20px 32px 24px; background-color:#F2F1EE;" bgcolor="#F2F1EE">
+              <p style="margin:6px 0 0; font-family:Arial,Helvetica,sans-serif; font-size:9.5px;
+                        color:#A09E97; text-align:center;">
+                &copy; 2026 Hermes Research &nbsp;&middot;&nbsp;
+                <a href="https://example.com/unsubscribe" style="color:#5B8A9A; text-decoration:underline;">Unsubscribe</a>
+                &nbsp;&middot;&nbsp;
+                <a href="https://example.com/archive/005" style="color:#5B8A9A; text-decoration:underline;">View in browser</a>
+              </p>
+            </td>
+          </tr>
+        </table>
+
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>

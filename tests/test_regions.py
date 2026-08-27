@@ -11,11 +11,13 @@ import re
 
 import pytest
 
+import svc.builder as builder_api
 from svc.builder import (
     Banner,
     BannerPalette,
     Email,
     EmailBuilder,
+    EmptyHeader,
     Footer,
     Header,
     MinimalBanner,
@@ -32,6 +34,15 @@ TEMPLATE_DIR = TemplateEngine().template_dir
 
 def _template(name: str) -> str:
     return (TEMPLATE_DIR / name).read_text(encoding="utf-8")
+
+
+def _facts_for(region_cls: type) -> tuple[str, ...]:
+    """The facts a region of this kind is handed, by its context name."""
+    return {
+        "header": EmailMetadata.HEADER_FACTS,
+        "banner": EmailMetadata.BANNER_FACTS,
+        "footer": EmailMetadata.FOOTER_FACTS,
+    }[region_cls.CONTEXT_NAME]
 
 
 def _theme_token(path: str):
@@ -582,6 +593,136 @@ class TestTheHeaderRegion:
         """
         with pytest.raises(TypeError):
             Header(logo_url="https://cdn.test/logo.png")  # type: ignore[call-arg]
+
+
+class TestTheOmittedHeader:
+    """
+    #96: a region that fills no slot, and the decision beside it.
+
+    The slot mechanism already supported true omission — an unfilled slot
+    renders as the empty string, so the skeleton needs no conditional. What
+    this adds is a name for it, and a recorded answer to the question the
+    epic flagged: what an *empty default* header does.
+    """
+
+    def test_it_renders_nothing_at_all(self, valid_metadata):
+        """
+        Not "renders an empty band" — nothing. Asserted by absence of the
+        markup rather than only by the golden, so the claim is legible in
+        the suite rather than buried in a 300-line snapshot.
+        """
+        email = Email({**valid_metadata, "header_disclaimer": "Not advice."}, header=EmptyHeader())
+        html = email.render()
+        assert "HEADER: Disclaimer bar" not in html
+        assert "Not advice." not in html
+        assert (
+            html.count("<tr>")
+            == Email({**valid_metadata, "header_disclaimer": "Not advice."}).render().count("<tr>")
+            - 1
+        )
+
+    def test_the_fact_survives_the_region_declining_it(self, valid_metadata):
+        """
+        The region decides whether to display the copy; it does not own it.
+        An email that omits its strip still knows what the strip would have
+        said, which is what makes swapping the region back a one-line change.
+        """
+        email = Email({**valid_metadata, "header_disclaimer": "Not advice."}, header=EmptyHeader())
+        assert email.metadata.header_disclaimer == "Not advice."
+
+    def test_an_empty_default_still_renders_the_band(self, valid_metadata):
+        """
+        #96's step-2 decision, pinned so it cannot drift silently.
+
+        Auto-collapsing on empty copy was the alternative, and it was
+        rejected on ownership rather than on taste: it would make the
+        presence of the *box* depend on a fact the email owns rather than on
+        the region, inverting the rule the layer rests on. ``Footer`` draws
+        the same line — an empty ``disclaimer`` omits the fine-print line
+        while the footer itself still renders.
+        """
+        html = Email(valid_metadata).render()
+        assert "HEADER: Disclaimer bar" in html
+
+    def test_it_keeps_the_headers_presentation_surface(self):
+        """
+        A subclass, so a caller can swap the variant in and out without
+        rewriting the arguments — even though they render nothing today.
+        """
+        assert EmptyHeader(align="left").align == "left"
+        with pytest.raises(ValidationError, match="header.align"):
+            EmptyHeader(align="middle")
+
+    def test_the_required_slot_asymmetry_is_deliberate(self):
+        """
+        ``Header`` declares no required slot and ``Footer`` declares one, and
+        that is not a lower standard for the header. ``REQUIRED_SLOTS`` is a
+        rule about *variants not dropping structure*, never about a caller
+        supplying content — pyHermes does not require disclaimer language.
+        The header's empty tuple says its whole box is optional; the
+        footer's says a footer that renders nothing is a footer that failed.
+        """
+        assert Header.REQUIRED_SLOTS == ()
+        assert Footer.REQUIRED_SLOTS == ("footer",)
+        with pytest.raises(ValidationError, match="required slot"):
+            type("EmptyFooter", (Footer,), {"TEMPLATE_PATHS": {}})()
+
+
+class TestEveryRegionVariantHoldsTheContract:
+    """
+    The shared contract, checked by introspection rather than by a list.
+
+    Every region and variant exported from ``svc.builder`` goes through this,
+    so a variant added later is covered without anyone remembering to name
+    it here — which is what #96 asked for and what a hand-written
+    parametrize list cannot promise.
+    """
+
+    @staticmethod
+    def _variants() -> list[type]:
+        from svc.builder import regions as region_api
+
+        return [
+            obj
+            for obj in vars(builder_api).values()
+            if isinstance(obj, type)
+            and issubclass(obj, region_api.Region)
+            and obj is not region_api.Region
+        ]
+
+    def test_the_walk_finds_every_shipped_region(self):
+        """A guard on the guard: an empty walk would pass everything below."""
+        found = {cls.__name__ for cls in self._variants()}
+        assert found >= {"Header", "EmptyHeader", "Banner", "MinimalBanner", "Footer"}
+
+    def test_each_declares_only_slots_the_skeleton_names(self):
+        skeleton = _template("base.html")
+        for cls in self._variants():
+            for slot in cls.SLOTS:
+                assert f"{{{{ {slot}_html }}}}" in skeleton, f"{cls.__name__} names an unknown slot"
+
+    def test_each_fills_only_slots_it_declares(self):
+        for cls in self._variants():
+            assert set(cls.TEMPLATE_PATHS) <= set(cls.SLOTS), (
+                f"{cls.__name__} maps a template to a slot it does not declare"
+            )
+
+    def test_every_template_a_variant_names_ships(self):
+        for cls in self._variants():
+            for path in cls.TEMPLATE_PATHS.values():
+                assert (TEMPLATE_DIR / path).is_file(), f"{cls.__name__} names a missing template"
+
+    def test_each_constructs_and_renders_from_its_defaults(self):
+        """
+        Default-constructible is the contract ``EmailMetadata`` relies on:
+        every region field is built by a ``default_factory`` calling the
+        class with no arguments.
+        """
+        engine = TemplateEngine()
+        for cls in self._variants():
+            region = cls()
+            slots = region.render_slots(engine, dict.fromkeys(_facts_for(cls), ""))
+            assert set(slots) == {f"{slot}_html" for slot in cls.SLOTS}
 
 
 class TestTheFlatKeywordsStillWork:
