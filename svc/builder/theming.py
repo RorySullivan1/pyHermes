@@ -342,6 +342,121 @@ class Theme:
         return replace(self, **replacements)
 
 
+@dataclass(frozen=True)
+class BannerPalette:
+    """
+    The masthead's colours, when the theme's cannot know what is underneath.
+
+    **The single named exception to "no per-component colour parameter", and
+    it has a reason no other region shares.** Every other colour decision is
+    made against a surface the theme itself supplies, so the theme can curate
+    the pair. The masthead is the one place a *caller* supplies the backdrop:
+    ``Banner.background_image_url`` is a photograph the palette has never
+    been handed, and white-on-navy tokens are simply a guess over it. No
+    email-level palette can be right about an image it cannot see.
+
+    The property the standing rule protects survives intact, which is why
+    this is an exception rather than a breach: a caller still picks a
+    coherent *atom* and never a colour at a call site. ``BannerPalette`` is
+    validated, frozen and complete in the same way ``Palette`` is — it is a
+    second palette, scoped to one region, not a bag of overrides.
+
+    **This does not generalise.** "Now every region gets a palette" is the
+    failure mode, not the roadmap: the footer, the strip and every component
+    render on surfaces the theme owns, so a palette there would be exactly
+    the dissolution the rule exists to prevent. A future region earns one
+    only by taking a backdrop from the caller too.
+
+    Every field defaults to ``None``, meaning *the resolved theme's token*.
+    :meth:`resolved` turns that into a total palette with no ``None`` left,
+    and that is what the template reads — so an override and an inherited
+    token reach the markup by the same path and cannot diverge.
+
+    Attributes:
+        band:            The masthead band (``palette.header_bg``).
+        title:           The headline (``text.on_dark``).
+        subtitle:        The second line (``text.on_dark_secondary``).
+        meta:            Department, date range and issue label — one role,
+                         because they are one ladder rung (``text.on_dark_muted``).
+        accent:          The rule under the copy (``palette.accent``).
+        scrim:           The darkening layer over the photograph, as one
+                         :class:`Rgba` (``shadow.scrim``). It stays a single
+                         object because the masthead emits it twice — CSS
+                         ``rgba()`` for everyone, ``v:fill`` colour plus
+                         opacity for Outlook — and two sources is precisely
+                         the drift this module exists to end.
+        title_shadow:    Legibility shadow behind the headline (``shadow.title``).
+        subtitle_shadow: The same behind the second line (``shadow.subtitle``).
+
+    Contrast stays a recommendation, exactly as for :class:`Theme`: an
+    illegible banner over its own photograph is legal, renders, and no
+    ``ValidationError`` will say otherwise. Judge it with
+    ``python -m qa.preview <fixture> --screenshot``.
+    """
+
+    #: Role → the dotted theme path it falls back to. The template reads the
+    #: resolved object, so this mapping is the *only* place the correspondence
+    #: is written down, and a test walks it against the templates.
+    FALLBACKS: ClassVar[dict[str, str]] = {
+        "band": "palette.header_bg",
+        "title": "text.on_dark",
+        "subtitle": "text.on_dark_secondary",
+        "meta": "text.on_dark_muted",
+        "accent": "palette.accent",
+        "scrim": "shadow.scrim",
+        "title_shadow": "shadow.title",
+        "subtitle_shadow": "shadow.subtitle",
+    }
+
+    band: str | None = None
+    title: str | None = None
+    subtitle: str | None = None
+    meta: str | None = None
+    accent: str | None = None
+    scrim: Rgba | None = None
+    title_shadow: Rgba | None = None
+    subtitle_shadow: Rgba | None = None
+
+    def __post_init__(self) -> None:
+        for spec in fields(self):
+            value = getattr(self, spec.name)
+            if value is None:
+                continue
+            name = f"banner.palette.{spec.name}"
+            if spec.name in _RGBA_ROLES:
+                if not isinstance(value, Rgba):
+                    raise ValidationError(f"'{name}' must be an Rgba, got: {type(value).__name__}")
+                continue
+            if not isinstance(value, str):
+                raise ValidationError(
+                    f"'{name}' must be a hex color string, got: {type(value).__name__}"
+                )
+            _validate_color(value, name)
+
+    def resolved(self, theme: Theme) -> BannerPalette:
+        """
+        This palette with every unset role filled from ``theme``.
+
+        Total by construction: no field of the result is ``None``, so the
+        template needs no ``{% if %}`` per colour and ``StrictUndefined``
+        has nothing to trip on. An override and an inherited token arrive by
+        the same path, which is what makes "unset renders byte-identically"
+        a property of the mechanism rather than a claim to re-test per role.
+        """
+        filled: dict[str, Any] = {}
+        for role, path in self.FALLBACKS.items():
+            value = getattr(self, role)
+            if value is None:
+                layer, token = path.split(".")
+                value = getattr(getattr(theme, layer), token)
+            filled[role] = value
+        return BannerPalette(**filled)
+
+
+#: The two roles that carry an alpha, and so are ``Rgba`` rather than hex.
+_RGBA_ROLES = frozenset({"scrim", "title_shadow", "subtitle_shadow"})
+
+
 #: The palette this repo has always rendered. Every value traces to the audit
 #: in the module docstring.
 DEFAULT_THEME = Theme()

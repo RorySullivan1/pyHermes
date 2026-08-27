@@ -16,7 +16,7 @@ import jinja2
 from .exceptions import TemplateError
 from .filters import register_all
 from .sizing import STANDARD_SIZES
-from .theming import DEFAULT_THEME
+from .theming import DEFAULT_THEME, Theme
 
 
 @runtime_checkable
@@ -24,12 +24,22 @@ class Renderer(Protocol):
     """
     What a container, component or region actually needs from an engine.
 
-    Only :meth:`render` — which is why a :class:`BoundEngine` can stand in
-    for a :class:`TemplateEngine` anywhere in the section tree without a
-    single call site changing.
+    :meth:`render`, and the theme in force — which is why a
+    :class:`BoundEngine` can stand in for a :class:`TemplateEngine` anywhere
+    in the section tree without a single call site changing.
+
+    :attr:`theme` exists because one consumer needs the theme as an *object*
+    rather than as context: :class:`~svc.builder.regions.Banner` resolves a
+    :class:`~svc.builder.theming.BannerPalette` against it in Python, so that
+    the template reads one total palette instead of eight fallbacks. Reading
+    it here rather than threading it through ``render_slots`` is what keeps
+    that signature the one every region shares.
     """
 
     def render(self, template_name: str, context: dict[str, Any]) -> str: ...
+
+    @property
+    def theme(self) -> "Theme": ...
 
 
 def _packaged_template_dir() -> Path:
@@ -95,6 +105,17 @@ class TemplateEngine:
     def template_dir(self) -> Path:
         """Return the resolved template directory path."""
         return self._template_dir
+
+    @property
+    def theme(self) -> Theme:
+        """
+        The theme an unbound render gets, which is the default.
+
+        The floor :meth:`render` already guarantees by layering
+        ``DEFAULT_THEME`` under the caller's context, stated as an object so
+        a consumer that needs the theme itself does not have to re-derive it.
+        """
+        return DEFAULT_THEME
 
     def get_template(self, name: str) -> jinja2.Template:
         """
@@ -212,3 +233,15 @@ class BoundEngine:
     def template_dir(self) -> Path:
         """The underlying engine's template directory."""
         return self.engine.template_dir
+
+    @property
+    def theme(self) -> "Theme":
+        """
+        The theme this render is bound to, falling through to the engine's.
+
+        Same precedence as :meth:`render` applies to the context: a bound
+        theme wins, and an engine bound without one still guarantees the
+        default rather than ``None``.
+        """
+        bound = self.shared.get("theme")
+        return bound if isinstance(bound, Theme) else self.engine.theme

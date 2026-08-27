@@ -13,7 +13,7 @@ engineered for those constraints, and enforces the ones that break silently. It 
 **Jinja2 and nothing else**, including on the send path.
 
 ```python
-from svc.builder import EmailBuilder, FullWidth, CardGroup, TextBlock
+from svc.builder import Banner, EmailBuilder, FullWidth, CardGroup, TextBlock
 from svc.builder.models import KpiItem
 
 email = (
@@ -22,7 +22,13 @@ email = (
         "email_subject": "Weekly Market Wrap",
         "firm_name": "Research & Strategy",
         "campaign_name": "weekly-wrap",
+        "department": "Rates Strategy",          # optional; omitted, the line collapses
     })
+    .banner(Banner(
+        title="Q3 Outlook",                      # unset, this is the firm name
+        subtitle="What the curve is pricing",    # unset, the campaign name
+        logo_url="https://cdn.example.com/logo.png",
+    ))
     .section(FullWidth(
         content=CardGroup([
             KpiItem("S&P 500", "5,234", "#4A7C59", "+1.42%"),
@@ -110,8 +116,8 @@ Every email is **skeleton ← regions ← containers ← components**, and the r
 
 | Layer | What it owns | Where |
 |---|---|---|
-| **Skeleton** | the whole page — head, preheader, wrapper — with three holes: `{{ header_html }}`, `{{ sections_html }}`, `{{ footer_html }}` | `svc/builder/templates/base.html` |
-| **Regions** | the masthead (`Header`, `MinimalHeader`) and the close (`Footer`). (The *body* region is the ordered section list — not a class) | `svc/builder/regions.py` |
+| **Skeleton** | the whole page — head, preheader, wrapper — with four holes: `{{ header_bar_html }}`, `{{ banner_html }}`, `{{ sections_html }}`, `{{ footer_html }}` | `svc/builder/templates/base.html` |
+| **Regions** | the masthead (`Banner`, `MinimalBanner`) and the close (`Footer`). (The *body* region is the ordered section list — not a class) | `svc/builder/regions.py` |
 | **Containers** | layout geometry only: `FullWidth`, `TwoColumn`, `ThreeColumn` | `svc/builder/containers.py` |
 | **Components** | content: `CardGroup`, `DataTable`, `ChartBlock`, `ImageBlock`, `TextBlock`, `NumberedList`, `AuthorBlock`, `ContactBlock` | `svc/builder/components.py` |
 
@@ -125,11 +131,11 @@ time — a region presents them, it cannot contradict them. Swapping the header 
 argument, not a template fork:
 
 ```python
-from svc.builder import EmailBuilder, MinimalHeader
+from svc.builder import EmailBuilder, MinimalBanner
 
 (EmailBuilder()
     .metadata({...})
-    .header(MinimalHeader(logo_url=logo))
+    .banner(MinimalBanner(logo_url=logo))
     .section(...))
 ```
 
@@ -158,6 +164,53 @@ Adding a content type is a new template file plus a `Component` subclass that se
 
 Column ratios and card orientation are `StrEnum`s that accept either the member or its bare
 string — `ratio=ThreeColumnRatio.WIDE_LEFT` is `ratio="50-25-25"`.
+
+## Banner
+
+The masthead is a region you pass, not a template you fork. Omit it and one is built from the
+metadata; pass a `Banner` and it renders instead:
+
+```python
+from svc.builder import Banner, BannerPalette, MinimalBanner, Rgba
+from svc.builder.images import EmailImage
+
+Banner(
+    title="Q3 Outlook",                      # unset → firm_name
+    subtitle="What the curve is pricing",    # unset → campaign_name
+    logo_url=EmailImage.attached("marks/hermes.png", alt="Hermes Research", width=118),
+    background_image_url="https://cdn.example.com/masthead.jpg",
+)
+
+MinimalBanner(logo_url=...)                  # the same masthead as a flat band, no photograph
+```
+
+It lays out as a 2×2 grid: the title with the logo beside it, the subtitle with the optional
+`department` beside that, then the date range and issue label. A department nobody sets leaves
+no empty line and reserves no height.
+
+The title and subtitle are *presentation* — free-form copy for this email's masthead — while
+`firm_name`, `campaign_name` and `department` are facts about the email, and a banner that
+renames itself changes only the masthead. The footer's copyright line still says who sent it.
+
+**One colour exception lives here.** Everywhere else you pick a whole `Theme` and never a
+colour; the masthead is the one place *you* supply the surface, because a background
+photograph is something the theme has never seen. White-on-navy tokens over a pale image are
+a guess, so a banner may carry its own palette:
+
+```python
+Banner(
+    background_image_url=...,
+    palette=BannerPalette(
+        band="#123A3E", title="#F4EADA", subtitle="#CBD9D6",
+        meta="#8FAEA9", accent="#D9A05B", scrim=Rgba("#08211F", 0.45),
+    ),
+)
+```
+
+Every role you leave out takes the theme's own token, so this stays an override of a few
+colours rather than a second palette to maintain. It is still an *atom* — validated, frozen,
+picked as a set — and it is bounded to the masthead: no other region has one, because no
+other region renders on a surface you supplied.
 
 ## Colour
 
@@ -403,6 +456,7 @@ svc/
 ├── delivery/     transport-neutral MIME assembly + shared retry policy
 ├── gmail/        Gmail send adapter
 └── outlook/      Outlook send adapter over Microsoft Graph
+qa/               the fixture gallery, goldens, screenshots, lint, preview CLI
 tests/            pytest suite
 ```
 

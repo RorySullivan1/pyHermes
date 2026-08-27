@@ -1,31 +1,19 @@
           <!-- ══════════════════════════════════════════ -->
-          <!-- HEADER: Disclaimer bar                    -->
-          <!-- ══════════════════════════════════════════ -->
-          <tr>
-            <td style="background-color:{{ theme.palette.header_bg }}; padding:{{ size.space.masthead_bar_y }}px {{ size.frame.pad_x }}px; text-align:center;" bgcolor="{{ theme.palette.header_bg }}">
-              <p style="margin:0; font-family:Arial,Helvetica,sans-serif; font-size:{{ size.type.micro }}px;
-                        font-weight:300; color:{{ theme.text.on_dark_muted }}; letter-spacing:0.3px; line-height:{{ size.type.secondary_line | percent }};">
-                {{header_disclaimer}}
-              </p>
-            </td>
-          </tr>
-
-          <!-- ══════════════════════════════════════════ -->
           <!-- HEADER: Background image + text overlay   -->
           <!-- ══════════════════════════════════════════ -->
           <tr>
-            <td style="background-color:{{ theme.palette.header_bg }};" bgcolor="{{ theme.palette.header_bg }}">
+            <td style="background-color:{{ banner_palette.band }};" bgcolor="{{ banner_palette.band }}">
               <!--[if mso]>
               <v:rect xmlns:v="urn:schemas-microsoft-com:vml" fill="true" stroke="false"
                       style="width:{{ size.frame.width }}px;height:{{ size.space.masthead_vml_height }}px;">
-                <v:fill type="frame" src="{{ background_image_url | escape_html }}" color="{{ theme.shadow.scrim.color }}" opacity="{{ theme.shadow.scrim.opacity_percent }}"/>
+                <v:fill type="frame" src="{{ background_image_url | escape_html }}" color="{{ banner_palette.scrim.color }}" opacity="{{ banner_palette.scrim.opacity_percent }}"/>
                 <v:textbox inset="{{ size.frame.pad_x }}px,0,{{ size.frame.pad_x }}px,0" style="mso-fit-shape-to-text:false;">
               <![endif]-->
               {# The background-image declaration is emitted only when there is
                  one. url('') is not inert: a client may resolve it against the
                  current document and issue a spurious request (#78). #}
               <div style="{% if background_image_url %}background-image:url('{{ background_image_url | escape_html }}');
-                          {% endif %}background-color:{{ theme.palette.header_bg }}; background-size:cover;
+                          {% endif %}background-color:{{ banner_palette.band }}; background-size:cover;
                           background-position:center center; background-repeat:no-repeat;">
                 <!-- Dark overlay for text legibility.  Hidden from Outlook on
                      purpose: the v:fill above already applies this exact scrim
@@ -34,11 +22,32 @@
                      background image, inheriting VML's limitations for a
                      second copy of an effect it has already drawn (#78).
                      Both halves still read one Rgba, so they cannot drift. -->
-                <!--[if !mso]><!--><div style="background-color:{{ theme.shadow.scrim }};"><!--<![endif]-->
-                <!-- Logo row -->
+                <!--[if !mso]><!--><div style="background-color:{{ banner_palette.scrim }};"><!--<![endif]-->
+                {# One 2x2 table, not a logo row above a copy block. The logo shares a row
+                   with the title and the department shares one with the subtitle, so the
+                   two right-hand marks align with the lines they belong to instead of
+                   stacking in a band of their own. The left cell carries width="100%" so
+                   the right one shrinks to its content — an explicit right-column width
+                   would have to be wide enough for the logo *and* the department, and
+                   whichever is narrower would then sit short of the frame edge.
+
+                   The copy reads the *resolved* keys, never ``firm_name`` / ``campaign_name``
+                   directly: those are facts, they land last in ``Banner.context()``, and
+                   reading them here would make ``Banner.title`` unreachable — silently,
+                   since the render would still work. A test greps for exactly that.
+                   Jinja comments on purpose: an HTML one would move every golden in the
+                   gallery for a note nobody but us reads. #}
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                   <tr>
-                    <td style="padding:{{ size.space.masthead_logo_top }}px {{ size.frame.pad_x }}px 0;" align="right">
+                    <td width="100%" valign="bottom" style="padding:{{ size.space.masthead_top }}px 0 {{ size.space.masthead_title_bottom }}px {{ size.frame.pad_x }}px;">
+                      <p style="margin:0; font-family:Georgia,'Times New Roman',serif; font-size:{{ size.type.title }}px;
+                                font-weight:bold; color:{{ banner_palette.title }}; line-height:{{ size.type.title_line | percent }}; letter-spacing:0.3px;
+                                text-shadow:0 1px 3px {{ banner_palette.title_shadow }};"
+                         class="mobile-title">
+                        {{ banner_title | escape_html }}
+                      </p>
+                    </td>
+                    <td valign="bottom" align="right" style="padding:{{ size.space.masthead_top }}px {{ size.frame.pad_x }}px {{ size.space.masthead_title_bottom }}px {{ size.space.gutter }}px;">
                       <!--[if mso]>
                       <img src="{{ logo_url | escape_html }}" width="{{ logo_width }}" alt="{{ logo_alt | escape_html }}" style="display:block;">
                       <![endif]-->
@@ -48,26 +57,21 @@
                       <!--<![endif]-->
                     </td>
                   </tr>
-                </table>
-                <!-- Campaign name + subject -->
-                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                   <tr>
-                    <td style="padding:{{ size.space.masthead_title_top }}px {{ size.frame.pad_x }}px {{ size.space.masthead_title_bottom }}px;">
-                      <p style="margin:0; font-family:Georgia,'Times New Roman',serif; font-size:{{ size.type.title }}px;
-                                font-weight:bold; color:{{ theme.text.on_dark }}; line-height:{{ size.type.title_line | percent }}; letter-spacing:0.3px;
-                                text-shadow:0 1px 3px {{ theme.shadow.title }};"
-                         class="mobile-title">
-                        {{ firm_name | escape_html }}
+                    <td valign="middle" style="padding:0 0 {{ size.space.masthead_campaign_bottom }}px {{ size.frame.pad_x }}px;">
+                      <p style="margin:0; font-family:Arial,Helvetica,sans-serif; font-size:{{ size.type.secondary }}px;
+                                font-weight:400; color:{{ banner_palette.subtitle }}; line-height:{{ size.type.heading_line | percent }};
+                                text-shadow:0 1px 2px {{ banner_palette.subtitle_shadow }};">
+                        {{ banner_subtitle | escape_html }}
                       </p>
                     </td>
-                  </tr>
-                  <tr>
-                    <td style="padding:0 {{ size.frame.pad_x }}px {{ size.space.masthead_campaign_bottom }}px;">
-                      <p style="margin:0; font-family:Arial,Helvetica,sans-serif; font-size:{{ size.type.secondary }}px;
-                                font-weight:400; color:{{ theme.text.on_dark_secondary }}; line-height:{{ size.type.heading_line | percent }};
-                                text-shadow:0 1px 2px {{ theme.shadow.subtitle }};">
-                        {{ campaign_name | escape_html }}
+                    <td valign="middle" align="right" style="padding:0 {{ size.frame.pad_x }}px {{ size.space.masthead_campaign_bottom }}px {{ size.space.gutter }}px;">
+                      {% if department %}
+                      <p style="margin:0; font-family:Arial,Helvetica,sans-serif; font-size:{{ size.type.small }}px;
+                                color:{{ banner_palette.meta }}; letter-spacing:0.6px; text-transform:uppercase;">
+                        {{ department | escape_html }}
                       </p>
+                      {% endif %}
                     </td>
                   </tr>
                 </table>
@@ -77,7 +81,7 @@
                     <td style="padding:0 {{ size.frame.pad_x }}px;">
                       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                         <tr>
-                          <td style="border-top:2px solid {{ theme.palette.accent }}; font-size:0; line-height:0;" height="1">&nbsp;</td>
+                          <td style="border-top:2px solid {{ banner_palette.accent }}; font-size:0; line-height:0;" height="1">&nbsp;</td>
                         </tr>
                       </table>
                     </td>
@@ -90,11 +94,11 @@
                       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                         <tr>
                           <td style="font-family:Arial,Helvetica,sans-serif; font-size:{{ size.type.small }}px;
-                                     color:{{ theme.text.on_dark_muted }}; letter-spacing:0.6px; text-transform:uppercase;">
+                                     color:{{ banner_palette.meta }}; letter-spacing:0.6px; text-transform:uppercase;">
                             {{ date_range | escape_html }}
                           </td>
                           <td align="right" style="font-family:Arial,Helvetica,sans-serif; font-size:{{ size.type.small }}px;
-                                                    color:{{ theme.text.on_dark_muted }}; letter-spacing:0.6px; text-transform:uppercase;">
+                                                    color:{{ banner_palette.meta }}; letter-spacing:0.6px; text-transform:uppercase;">
                             {{ issue_label | escape_html }}
                           </td>
                         </tr>

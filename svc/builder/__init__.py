@@ -100,9 +100,9 @@ from .models import (
 
 # Regions
 from .regions import (
+    Banner,
     Footer,
-    Header,
-    MinimalHeader,
+    MinimalBanner,
     Region,
 )
 
@@ -124,6 +124,7 @@ from .theming import (
     DEFAULT_THEME,
     SLATE_THEME,
     THEMES,
+    BannerPalette,
     Palette,
     Rgba,
     SemanticColors,
@@ -142,6 +143,7 @@ __all__ = [
     "SemanticColors",
     "ShadowStyle",
     "Rgba",
+    "BannerPalette",
     "DEFAULT_THEME",
     "SLATE_THEME",
     "THEMES",
@@ -157,8 +159,8 @@ __all__ = [
     "SIZE_SCHEMES",
     # Regions
     "Region",
-    "Header",
-    "MinimalHeader",
+    "Banner",
+    "MinimalBanner",
     "Footer",
     # Models
     "EmailMetadata",

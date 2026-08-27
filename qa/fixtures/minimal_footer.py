@@ -1,7 +1,7 @@
 """
 The structured ``Footer`` variant, in the gallery.
 
-The footer's counterpart to :mod:`qa.fixtures.minimal_header`. This email
+The footer's counterpart to :mod:`qa.fixtures.minimal_banner`. This email
 uses a ``Footer`` exercising the visual surface — ``background_color``,
 ``border=True``, and an attached sign-off image — in addition to a
 disclaimer, demonstrating that:

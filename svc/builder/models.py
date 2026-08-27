@@ -15,7 +15,7 @@ from .exceptions import ValidationError
 
 if TYPE_CHECKING:  # pragma: no cover - import cycle: images/regions import from here
     from .images import EmailImage
-    from .regions import Footer, Header
+    from .regions import Banner, Footer
     from .theming import Theme
 
 # ──────────────────────────────────────────────────────────────────────
@@ -68,16 +68,16 @@ def _validate_url(value: str, name: str) -> None:
 # ──────────────────────────────────────────────────────────────────────
 
 
-def _default_header() -> "Header":
+def _default_banner() -> "Banner":
     """
-    A blank :class:`~svc.builder.regions.Header`.
+    A blank :class:`~svc.builder.regions.Banner`.
 
     Imported inside the function because ``regions`` imports this module for
     its validators — the same lazy-cycle rule ``images`` follows.
     """
-    from .regions import Header
+    from .regions import Banner
 
-    return Header()
+    return Banner()
 
 
 def _default_footer() -> "Footer":
@@ -107,7 +107,7 @@ class EmailMetadata:
     preheader, firm, campaign, dates and the outbound URLs are things that are
     *true of the email*; the background image, the logo and its resolution
     chains are one way of *presenting* them, and belong to
-    :class:`~svc.builder.regions.Header`. The header is handed the facts at
+    :class:`~svc.builder.regions.Banner`. The header is handed the facts at
     render time and cannot contradict them.
 
     ``header_disclaimer`` sits on the email side of that line deliberately:
@@ -134,6 +134,12 @@ class EmailMetadata:
     header_disclaimer: str = ""
     firm_name: str = ""
     campaign_name: str = ""
+    #: The desk within the firm, e.g. "Rates Strategy". A *fact*, decided
+    #: rather than assumed: a department is who the email is from, the same
+    #: kind of truth as ``firm_name``. Putting it on the banner would let two
+    #: renders of one email disagree about its sender. Optional — empty
+    #: collapses the line entirely rather than reserving space for it.
+    department: str = ""
     date_range: str = ""
     issue_label: str = ""
     current_year: str = ""
@@ -141,8 +147,8 @@ class EmailMetadata:
     view_in_browser_url: str = ""
 
     #: How the masthead presents the facts above. Defaults to a blank header;
-    #: ``Email(header=...)`` overrides it for one email.
-    header: "Header" = field(default_factory=_default_header)
+    #: ``Email(banner=...)`` overrides it for one email.
+    banner: "Banner" = field(default_factory=_default_banner)
 
     #: How the closing region words them. Defaults to the copy ``base.html``
     #: used to hardcode; ``Email(footer=...)`` overrides it for one email.
@@ -174,10 +180,11 @@ class EmailMetadata:
 
     #: Email-level facts the header region renders. Passed *down* to it; the
     #: header layers them over its own context, so it cannot shadow one.
-    HEADER_FACTS = (
+    BANNER_FACTS = (
         "header_disclaimer",
         "firm_name",
         "campaign_name",
+        "department",
         "date_range",
         "issue_label",
     )
@@ -202,13 +209,13 @@ class EmailMetadata:
         unsubscribe_label: "str | None",
         view_in_browser_label: "str | None",
     ) -> None:
-        from .regions import Footer, Header
+        from .regions import Banner, Footer
         from .sizing import resolve_size_scheme
         from .theming import resolve_theme
 
-        self.header = self._hydrate(
-            Header,
-            "header",
+        self.banner = self._hydrate(
+            Banner,
+            "banner",
             {
                 "logo_url": logo_url,
                 "logo_alt": logo_alt,
@@ -262,9 +269,9 @@ class EmailMetadata:
         for fname in ("unsubscribe_url", "view_in_browser_url"):
             _validate_url(getattr(self, fname), f"metadata.{fname}")
 
-    def header_facts(self) -> dict[str, Any]:
+    def banner_facts(self) -> dict[str, Any]:
         """The email-level facts a header region renders."""
-        return {name: getattr(self, name) for name in self.HEADER_FACTS}
+        return {name: getattr(self, name) for name in self.BANNER_FACTS}
 
     def footer_facts(self) -> dict[str, Any]:
         """The email-level facts a footer region renders."""
@@ -281,7 +288,7 @@ class EmailMetadata:
         value two sources — and ``size_theme`` is excluded for exactly the
         same reason, since the resolved scheme rides the same binder.
         """
-        skip = {"header", "footer", "theme", "size_theme"}
+        skip = {"banner", "footer", "theme", "size_theme"}
         return {f.name: getattr(self, f.name) for f in fields(self) if f.name not in skip}
 
 

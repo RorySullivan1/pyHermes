@@ -1,7 +1,7 @@
 """
 Regions — the layer between the skeleton and the containers.
 
-The composition model is ``skeleton ← regions (header | body | footer) ←
+The composition model is ``skeleton ← regions (header | banner | body | footer) ←
 containers ← components``. A *region* is a named area of the email that
 renders itself from its own template(s) and declares its own images, the way
 a :class:`~svc.builder.components.Component` already does for a content
@@ -20,17 +20,34 @@ keys rather than under them.
 680px geometry stay in the templates, exactly as for containers and
 components. A region varies the *structure* of the masthead, not its look.
 
-**A region fills one or more named slots.** The header fills one
-(``{{ header_html }}``); the footer also fills one (``{{ footer_html }}``),
+**A region fills one or more named slots.** The banner fills two since #89 —
+``{{ header_bar_html }}`` for the strip at the top of the email and
+``{{ banner_html }}`` for the masthead below it, which shared a template only
+by accident of file layout; the footer fills one (``{{ footer_html }}``),
 rendered as a self-contained sibling table below the body.
 :meth:`Region.render_slots` is the contract the skeleton consumes, and a
 slot a variant leaves unfilled renders empty, which is how a variant
 *omits* a block rather than conditionalising it away.
 
+**``Banner`` was called ``Header`` until #90, and there is no alias.** The
+name is being reused: #87 gives the strip at the top of the email a region of
+its own, and *that* becomes ``Header``. A deprecated warn-and-forward shim —
+the courtesy ``KpiStrip`` extends to ``CardGroup`` — would collide with the
+new class rather than ease the migration, so the break is clean and loud on
+purpose. Between #90 and #87, ``from svc.builder import Header`` raises
+``ImportError``; afterwards an old-style ``Header(logo_url=…)`` fails at
+construction, because the class that answers to the name has no such field.
+Both failures happen at the call site, immediately, which is the point: a
+name that quietly changed meaning would keep running and be wrong. The flat
+keywords (``logo_url``, ``logo_alt``, ``logo_width``, ``header_bg_image_url``
+on :class:`~svc.builder.models.EmailMetadata`) are unaffected and still build
+the region — they are the common call path, and they never named the class.
+
 The body region is deliberately not a class: it *is* the email's ordered
 section list, and wrapping that in an object would add a layer with no
-behaviour. The preheader stays skeleton plumbing for the same reason —
-header, body and footer are the complete set.
+behaviour. The preheader stays skeleton plumbing for the same reason. The
+strip the banner still renders becomes a region of its own in #87; until
+then the banner owns both of its slots.
 """
 
 from __future__ import annotations
@@ -44,6 +61,7 @@ from .models import _validate_color, _validate_url
 if TYPE_CHECKING:  # pragma: no cover - import cycle: images imports _validate_url
     from .engine import Renderer
     from .images import EmailImage, ImageAsset
+    from .theming import BannerPalette
 
 
 @dataclass
@@ -52,7 +70,7 @@ class Region:
     The shared half of a region: validation, images and the render contract.
 
     A region owns *presentation*; the email owns the *facts* and hands them
-    over at render time. Everything below is the part header and footer do
+    over at render time. Everything below is the part banner and footer do
     identically — :meth:`context` layering facts over presentation,
     :meth:`images` feeding the asset manifest, and :meth:`render_slots`
     turning the region into the one-or-more HTML strings the skeleton needs.
@@ -64,7 +82,7 @@ class Region:
     a one-line change on both sides.
     """
 
-    #: Prefix for this region's validation messages, e.g. ``header.logo_url``.
+    #: Prefix for this region's validation messages, e.g. ``banner.logo_url``.
     #: A caller reading the error should learn *where the field lives*.
     CONTEXT_NAME: ClassVar[str] = "region"
 
@@ -193,14 +211,25 @@ class Region:
 
 
 @dataclass
-class Header(Region):
+class Banner(Region):
     """
     The masthead: how an email presents the facts it holds.
 
-    Owns presentation only — the background image, the logo and the logo's
-    resolution chains. The wording it displays (firm name, campaign name,
-    date range, issue label, disclaimer) belongs to the email and arrives
-    through :meth:`context`.
+    Owns presentation only — the background image, the logo, the headline
+    copy, and the resolution chains behind each. The facts it displays (firm
+    name, campaign name, date range, issue label, disclaimer) belong to the
+    email and arrive through :meth:`context`.
+
+    **The headline is presentation, and that is not a contradiction.** Until
+    #91 the masthead's large type *was* ``firm_name`` and its second line
+    *was* ``campaign_name``, so an email that wanted to lead with *"Q3
+    Outlook"* had to lie about who sent it. The facts-over-presentation
+    layering makes shadowing a fact impossible by design — correctly — so
+    the escape is the one the logo's alt text already uses: a presentation
+    field with a resolution chain, landing in a key of its *own*
+    (``banner_title``, ``banner_subtitle``) that the template reads instead
+    of the fact. The fact still flows down untouched, which is why the
+    footer's copyright line is unaffected by a banner that renames itself.
 
     Attributes:
         background_image_url: Hero background. A CSS background cannot carry
@@ -214,57 +243,116 @@ class Header(Region):
                     because Outlook's Word engine ignores ``max-width``.
                     Falls back to the ``EmailImage``'s own ``width``, then to
                     :data:`DEFAULT_LOGO_WIDTH`.
+        title:      Free-form headline. Falls back to the email's
+                    ``firm_name``. Plain text, escaped on the way out —
+                    "free form" means arbitrary *copy*, not markup, and the
+                    raw-HTML surface stays where it already is (the
+                    disclaimers, ``TextBlock.content``).
+        subtitle:   Free-form second line. Falls back to ``campaign_name``,
+                    escaped the same way.
+        palette:    Optional :class:`~svc.builder.theming.BannerPalette` —
+                    the one place in the builder a caller may move a colour
+                    without replacing the whole :class:`Theme`, because it is
+                    the one place the *caller* supplies the surface being
+                    rendered on. Unset roles take the theme's tokens. See the
+                    class for why this does not generalise to other regions.
 
     Validates at construction, like every model here.
     """
 
-    CONTEXT_NAME: ClassVar[str] = "header"
+    CONTEXT_NAME: ClassVar[str] = "banner"
 
-    #: The masthead fills a single slot: ``{{ header_html }}``.
-    SLOTS: ClassVar[tuple[str, ...]] = ("header",)
+    #: Two slots, not one. The strip at the top of the email and the masthead
+    #: below it are separate blocks with separate owners — different content,
+    #: different reasons to change — and they shared a template only by
+    #: accident of file layout. #87 gives the strip its own region; this
+    #: region fills both until then.
+    SLOTS: ClassVar[tuple[str, ...]] = ("header_bar", "banner")
 
-    TEMPLATE_PATHS: ClassVar[dict[str, str]] = {"header": "regions/header.html"}
+    TEMPLATE_PATHS: ClassVar[dict[str, str]] = {
+        "header_bar": "regions/header-bar.html",
+        "banner": "regions/banner.html",
+    }
 
     #: Fields that may hold an EmailImage instead of a bare URL.
     IMAGE_FIELDS: ClassVar[tuple[str, ...]] = ("logo_url", "background_image_url")
 
-    #: Logo width used when neither the header nor the EmailImage sets one.
+    #: Logo width used when neither the banner nor the EmailImage sets one.
     DEFAULT_LOGO_WIDTH: ClassVar[int] = 90
 
     background_image_url: str | EmailImage = ""
     logo_url: str | EmailImage = ""
     logo_alt: str = ""
     logo_width: int | None = None
+    title: str = ""
+    subtitle: str = ""
+    palette: BannerPalette | None = None
 
     def validate(self) -> None:
         super().validate()
         if self.logo_width is not None and self.logo_width <= 0:
-            raise ValidationError(f"'header.logo_width' must be positive, got: {self.logo_width}")
+            raise ValidationError(f"'banner.logo_width' must be positive, got: {self.logo_width}")
 
     def context(self, facts: dict[str, Any]) -> dict[str, Any]:
         """
-        The base context, with the logo's resolution chains applied.
+        The base context, with this region's resolution chains applied.
 
-        ``logo_alt`` and ``logo_width`` reach the template resolved rather
-        than raw, and ``facts`` still lands last — the ownership rule holds
-        through the override.
+        Four keys arrive resolved rather than raw, and ``facts`` still lands
+        *last* — the ownership rule holds through the override rather than
+        being carved out of.
+
+        ``logo_alt`` and ``logo_width`` resolve in place, because no fact
+        answers to either name. ``title`` and ``subtitle`` cannot: their
+        chains end at ``firm_name`` and ``campaign_name``, which are facts
+        the email owns and which land after this dict. So they resolve into
+        ``banner_title`` and ``banner_subtitle``, names no fact uses, and the
+        template reads *those*. A test greps the templates to keep it that
+        way — reading ``{{ firm_name }}`` again would work, silently, and
+        make the field unreachable.
         """
         firm_name = str(facts.get("firm_name", ""))
+        campaign_name = str(facts.get("campaign_name", ""))
         resolved = {
             "logo_alt": self.resolved_logo_alt(firm_name),
             "logo_width": self.resolved_logo_width(),
+            "banner_title": self.resolved_title(firm_name),
+            "banner_subtitle": self.resolved_subtitle(campaign_name),
         }
         return {**super().context({}), **resolved, **facts}
 
+    def render_slots(self, engine: Renderer, facts: dict[str, Any]) -> dict[str, str]:
+        """
+        As the base, with this region's colours resolved against the theme.
+
+        The resolution happens *here* rather than in :meth:`context` because
+        the theme is not a fact and not a field — it reaches the templates
+        through the bound engine, and the engine is only in hand at render
+        time. What lands in the context is a **total**
+        :class:`~svc.builder.theming.BannerPalette` under ``banner_palette``,
+        so the template reads one object for every colour it draws and an
+        override is indistinguishable from an inherited token by the time the
+        markup sees it.
+        """
+        return super().render_slots(engine, {**facts, "banner_palette": self._palette(engine)})
+
+    def _palette(self, engine: Renderer) -> BannerPalette:
+        """This banner's colours, filled in from whatever theme is bound."""
+        from .theming import BannerPalette
+
+        return (self.palette or BannerPalette()).resolved(engine.theme)
+
     def render(self, engine: Renderer, facts: dict[str, Any]) -> str:
         """
-        The masthead HTML.
+        Every slot this region fills, in skeleton order, as one string.
 
-        A convenience over :meth:`render_slots` for the single-slot case, and
-        deliberately a delegation rather than a second call to ``engine`` —
-        one rendering path is the whole point.
+        A convenience over :meth:`render_slots`, and deliberately a
+        delegation rather than a second call to ``engine`` — one rendering
+        path is the whole point. Joining on a newline reproduces what the
+        single pre-split template rendered byte for byte, because the strip
+        already ends with one and the skeleton supplies the other.
         """
-        return self.render_slots(engine, facts)["header_html"]
+        slots = self.render_slots(engine, facts)
+        return "\n".join(slots[f"{slot}_html"] for slot in self.SLOTS)
 
     # ------------------------------------------------------------------
     # Resolution chains
@@ -277,7 +365,7 @@ class Header(Region):
         Explicit ``logo_alt`` wins; otherwise an ``EmailImage`` logo supplies
         its own ``alt``; otherwise the firm name, which is what the skeleton
         hardcoded before this was configurable. ``firm_name`` is a parameter
-        rather than a field because it is a fact about the email — the header
+        rather than a field because it is a fact about the email — the banner
         is handed it, it does not hold it.
         """
         from .images import EmailImage
@@ -289,7 +377,7 @@ class Header(Region):
         return firm_name
 
     def resolved_logo_width(self) -> int:
-        """The logo width actually rendered: header, then image, then default."""
+        """The logo width actually rendered: banner, then image, then default."""
         from .images import EmailImage
 
         if self.logo_width is not None:
@@ -298,14 +386,28 @@ class Header(Region):
             return self.logo_url.width
         return self.DEFAULT_LOGO_WIDTH
 
+    def resolved_title(self, firm_name: str = "") -> str:
+        """
+        The headline the masthead actually renders: explicit, then the firm.
+
+        ``firm_name`` is a parameter rather than a field for the reason
+        :meth:`resolved_logo_alt` gives — it is a fact about the email, and
+        the banner is handed it rather than holding it.
+        """
+        return self.title or firm_name
+
+    def resolved_subtitle(self, campaign_name: str = "") -> str:
+        """The second line: explicit, then the campaign name. Same shape."""
+        return self.subtitle or campaign_name
+
 
 @dataclass
-class MinimalHeader(Header):
+class MinimalBanner(Banner):
     """
     A masthead with no background image and no VML.
 
     The variant that proves the seam: a caller picks it with
-    ``Email(header=MinimalHeader(...))``, and nothing about the skeleton, the
+    ``Email(banner=MinimalBanner(...))``, and nothing about the skeleton, the
     body or the email's facts changes. Same logo resolution chains, same
     facts flowing down — a flat ``#2C3E50`` band instead of a photograph with
     a scrim over it.
@@ -316,13 +418,21 @@ class MinimalHeader(Header):
     rejected at construction rather than silently ignored.
     """
 
-    TEMPLATE_PATHS: ClassVar[dict[str, str]] = {"header": "regions/header-minimal.html"}
+    #: Composed rather than restated: the variant differs in the *banner*
+    #: only, so it inherits the strip's path instead of carrying a second
+    #: copy of it. A full replacement would let the two drift the moment one
+    #: path changed — which is exactly what the duplicated strip template did
+    #: before #89 removed it.
+    TEMPLATE_PATHS: ClassVar[dict[str, str]] = {
+        **Banner.TEMPLATE_PATHS,
+        "banner": "regions/banner-minimal.html",
+    }
 
     def validate(self) -> None:
         if self.background_image_url:
             raise ValidationError(
-                "'header.background_image_url' is not supported by MinimalHeader — "
-                "the variant exists to render a flat band with no VML. Use Header "
+                "'banner.background_image_url' is not supported by MinimalBanner — "
+                "the variant exists to render a flat band with no VML. Use Banner "
                 "for a background image."
             )
         super().validate()

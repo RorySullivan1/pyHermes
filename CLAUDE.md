@@ -64,7 +64,7 @@ svc/
 │   ├── __init__.py     — public API surface (re-exports everything below)
 │   ├── engine.py       — TemplateEngine + BoundEngine (per-render theme + size binding)
 │   ├── email.py        — Email + EmailBuilder (fluent), _validate_size()
-│   ├── regions.py      — Region base + Header/MinimalHeader, Footer
+│   ├── regions.py      — Region base + Banner/MinimalBanner, Footer
 │                         (body = the section list, deliberately not a class)
 │   ├── containers.py   — Container, FullWidth, TwoColumn, ThreeColumn (+ `highlight=` property)
 │   ├── components.py   — Component, CardGroup, DataTable, ChartBlock, ImageBlock, TextBlock, NumberedList, AuthorBlock, ContactBlock
@@ -79,9 +79,10 @@ svc/
 │   ├── filters.py      — Jinja filters (e.g. validate_hex_color)
 │   ├── exceptions.py   — EmailBuilderError hierarchy
 │   └── templates/      ← packaged with the wheel (moved here in #10)
-│       ├── base.html                — the rendered skeleton (three slots: header_html,
-│                                      sections_html, footer_html)
-│       ├── regions/*.html           — header.html, header-minimal.html, footer.html
+│       ├── base.html                — the rendered skeleton (four slots: header_bar_html,
+│                                      banner_html, sections_html, footer_html)
+│       ├── regions/*.html           — header-bar.html, banner.html, banner-minimal.html,
+│                                      footer.html
 │       ├── common/containers/*.html — layout geometry: full-width.html + columns.html
 │                                      (one file for every split since #42; widths computed)
 │       ├── analysis/*.html          — data components (card-group, data-table, chart-block)
@@ -106,7 +107,7 @@ qa/                     ← QA harness (epic #54); NOT shipped in the wheel
 │                        lint_email(), size_report(), SOURCES, DEFERRED_RULES
 ├── preview.py         — the CLI that composes the rest: `python -m qa.preview <target>`
 │                        [--lint] [--screenshot] [--open] [--list]
-└── fixtures/          — the gallery: minimal, kitchen_sink, image_matrix, minimal_header,
+└── fixtures/          — the gallery: minimal, kitchen_sink, image_matrix, minimal_banner,
                         minimal_footer, slate_theme, compact_size, spacious_size,
                         + all_fixtures()
     └── goldens/       — the checked-in snapshots: <name>.html + <name>.assets.txt
@@ -119,17 +120,18 @@ tests/                  — pytest unit suite (validation, error paths, size lim
 ## The fixture gallery — `qa/fixtures`
 
 The shared set of representative emails every later QA tool consumes (#57, the first step of
-epic #54). Eight fixtures, each a `build()` returning a built `Email`, enumerated through
+epic #54). Nine fixtures, each a `build()` returning a built `Email`, enumerated through
 `all_fixtures()` so a consumer never imports them one by one:
 
 | Fixture | What it is for |
 |---|---|
 | `minimal` | The smallest valid email. Its value is negative space — it renders the skeleton with every optional region empty, so it catches a change to `base.html`'s defaults that a richer fixture masks by supplying the value itself |
-| `kitchen_sink` | Every public component in every container ratio, `highlight=True` included, **and every `EmailMetadata`, `Header` and `Footer` field set to a distinctive non-default value**. The fixture the golden is worth the most on, and #32's characterization email |
+| `kitchen_sink` | Every public component in every container ratio, `highlight=True` included, **and every `EmailMetadata`, `Banner` and `Footer` field set to a distinctive non-default value**. The fixture the golden is worth the most on, and #32's characterization email |
 | `image_matrix` | All three embed strategies, plus the same attached image referenced twice — the shortest proof that `assets()` reports exactly the `cid:` references the HTML contains |
-| `minimal_header` | The `MinimalHeader` variant (#36). Differs from the others in one argument, so its golden pins that a region swap changes the masthead and nothing else — no VML, no `background-image`, every email-level fact still present, and a CID logo attached exactly once through the region's own `images()` |
+| `minimal_banner` | The `MinimalBanner` variant (#36, renamed in #90). Differs from the others in one argument, so its golden pins that a region swap changes the masthead and nothing else — no VML, no `background-image`, every email-level fact still present, and a CID logo attached exactly once through the region's own `images()` |
 | `slate_theme` | The `slate` preset (#50). Differs from `kitchen_sink` in one metadata field, so its golden pins that a palette reaches *everywhere* — every component, every ratio, the dark-mode forcing block and the mobile media query — and that a caller's own `KpiItem` colour survives while an unset `Card.color` takes the theme's neutral |
 | `compact_size` / `spacious_size` | The two density presets (#43). Each renders **`kitchen_sink`'s own content** at one non-default `size_theme` rather than restating it, so the pair diffs as a true A/B where every difference is the density: type, spacing, the component sizes that do not follow the global scale, the frame padding every column width is computed from, and `base.html`'s `@media` block moving with the rest. They are what retires `kitchen_sink`'s `size_theme` exemption — that fixture holds the field at its default on purpose, because it is the epic's byte-identity reference |
+| `custom_banner` | Every banner axis at once (#94), which is what closes epic #88 — free-form `title`/`subtitle`, a `department`, an **attached** background image and a `BannerPalette` tuned to it. The one fixture a *cross-axis* regression shows up in, since no per-axis test can see an interaction. It also covers the only embed path the gallery otherwise lacked: a `cid:` background, reaching the manifest through `Banner.images()`' walk of `IMAGE_FIELDS` and appearing in both the CSS `background-image` and the VML `v:fill`. Its body is short on purpose — `kitchen_sink` exercises the component library, and a fat body here would make this golden noisy for reasons unrelated to the masthead |
 | `minimal_footer` | A minimal-footer build (#66), the same argument at the other end. Paired with the **default** header on purpose: the two region choices are independent, and swapping both at once could not say which one moved a byte |
 
 **Determinism is the rule the gallery rests on**, and it is not a style preference: Content-IDs
@@ -148,7 +150,7 @@ hatchling's editable-install strategy happening to expose it. `qa/` **is** type-
 `mypy` runs over `["svc", "qa"]`.
 
 **Adding a component means adding it to `kitchen_sink()`; so does adding an `EmailMetadata`,
-`Header` or `Footer` field.** Four completeness tests introspect rather than hand-list: one
+`Banner` or `Footer` field.** Four completeness tests introspect rather than hand-list: one
 over every public `Component` subclass exported from `svc.builder`, one over
 `dataclasses.fields(EmailMetadata)`, a third asserting each metadata value *differs from its
 own default*, and a fourth doing both at once over each **region** — parametrized across
@@ -157,8 +159,14 @@ to supply it. A field set to its
 default is one the golden cannot pin, because the render would not move if the default changed
 underneath it. Only exemptions are named, in `DEPRECATED_COMPONENTS` (today: `KpiStrip`, whose
 markup duplicates a section already in the gallery and which warns on construction), plus
-`EmailMetadata.header` and `EmailMetadata.footer` themselves — `kitchen_sink` supplies both
-the flat, pre-split way on purpose, which is how the golden pins the back-compatible path.
+`EmailMetadata.banner` and `EmailMetadata.footer` themselves — `kitchen_sink` builds both
+regions **explicitly**, so their own fields are pinned by the per-region test rather than by
+the metadata one. The flat, pre-split banner keywords used to be pinned by this fixture's
+golden and are no longer: #91 gave the banner two fields with no flat spelling (the keywords
+exist for a pre-split call site, and a field added after the split has none), so the coverage
+moved to `TestTheFlatKeywordsStillWork` — where it is *stronger*, because a golden pins each
+spelling's own bytes and would not notice the two diverging, while the test asserts they
+**converge**.
 
 Each `build()` also takes an optional `template_dir`, threaded to `EmailBuilder`, so the whole
 gallery can be rendered against a *candidate* template set — which is the question a template
@@ -404,17 +412,20 @@ recoverable from git history if ever needed for reference.)
 
 ### The four-layer composition model
 
-Every email is `skeleton ← regions (header | body | footer) ← containers ← components`:
+Every email is `skeleton ← regions (banner | body | footer) ← containers ← components`:
+
+Two region *classes* ship today, `Banner` and `Footer`; the banner fills **two** slots since #89, the strip at the top of the email and the masthead below it. #87 gives the strip a class of its own, `Header`, at which point the chain reads `header | banner | body | footer`.
 
 1. **Skeleton** — [svc/builder/templates/base.html](svc/builder/templates/base.html). The full HTML page (head,
-   preheader, palette comment) with three variable holes: `{{ header_html }}`,
+   preheader, palette comment) with four variable holes: `{{ header_bar_html }}`,
+   `{{ banner_html }}`,
    `{{ sections_html }}`, and `{{ footer_html }}`.
    Rendered last by [Email.render()](svc/builder/email.py).
 2. **Regions** — the named areas of the email. Templates in
    [svc/builder/templates/regions/](svc/builder/templates/regions/); Python wrappers in
    [svc/builder/regions.py](svc/builder/regions.py), all sharing a `Region` base that owns
    validation, the image walk, the facts-over-presentation layering and `render_slots()`.
-   Two header variants (`Header`/`MinimalHeader`) and one footer (`Footer`). The **body region is
+   Two banner variants (`Banner`/`MinimalBanner`) and one footer (`Footer`). The **body region is
    the ordered section list** — deliberately not a class, since wrapping it would add a
    layer with no behaviour.
 3. **Containers** — layout geometry only. In [svc/builder/templates/common/containers/](svc/builder/templates/common/containers/).
@@ -433,11 +444,13 @@ implements `context()`.
 
 **A region fills its named slot(s)** — a region declares `SLOTS` (the skeleton's contract, fixed) and
 `TEMPLATE_PATHS` (what this variant fills), and `Region.render_slots()` returns one HTML
-string per slot. The header fills one (`header_html`); the footer also fills one (`footer_html`)
-— a single table rendered below the body. `Header.render()` survives as the single-slot convenience and
+string per slot. The header fills **two** since #89 — `header_bar_html` for the strip at the
+top of the email and `banner_html` for the masthead below it, which shared a template only by
+accident of file layout; the footer fills one (`footer_html`)
+— a single table rendered below the body. `Banner.render()` survives as the whole-region convenience and
 delegates to `render_slots()` — one rendering path, not two.
 
-**The preheader stays skeleton plumbing.** Header, body and footer are the complete set;
+**The preheader stays skeleton plumbing.** Banner, body and footer are the complete set today;
 a fourth region is a decision to reopen, not a gap to fill.
 
 ### The ownership rule — facts flow down
@@ -448,23 +461,61 @@ them.
 
 | Stays on `EmailMetadata` (facts / constraints) | Lives on the region (presentation) |
 |---|---|
-| `email_subject`, `preheader_text` | `Header.background_image_url` |
-| `firm_name`, `campaign_name` | `Header.logo_url`, `logo_alt`, `logo_width` |
-| `date_range`, `issue_label`, `header_disclaimer` | `Header.resolved_logo_alt()`, `resolved_logo_width()`, `DEFAULT_LOGO_WIDTH` |
+| `email_subject`, `preheader_text` | `Banner.background_image_url` |
+| `firm_name`, `campaign_name` | `Banner.logo_url`, `logo_alt`, `logo_width` |
+| (the same two, as the headline's fallbacks) | `Banner.title`, `subtitle`, `resolved_title()`, `resolved_subtitle()` |
+| (the theme, as every colour's fallback) | `Banner.palette` — the masthead's own `BannerPalette` |
+| `date_range`, `issue_label`, `header_disclaimer`, `department` | `Banner.resolved_logo_alt()`, `resolved_logo_width()`, `DEFAULT_LOGO_WIDTH` |
 | `firm_name`, `current_year` | `Footer.background_color`, `border`, `border_color`, `image`/`image_alt`/`image_width` |
 | `unsubscribe_url`, `view_in_browser_url` | `Footer.unsubscribe_label`, `view_in_browser_label`, `disclaimer` (optional, free-form HTML) |
 
 Two boundary calls, each made for a reason rather than by shape:
 
 - **`header_disclaimer` is a fact**, though it is *displayed* in the masthead: it is legal
-  copy that belongs to the email, not to the masthead design.
+  copy that belongs to the email, not to the masthead design. It renders in the **strip**
+  rather than the banner, so it travels to whatever region owns the strip — which #87 makes
+  `Header`. The fact/presentation split is what makes that a slot change rather than a data
+  migration: the field stays where it is and the new region is handed it.
+- **The masthead's headline is presentation, and its fallbacks are facts (#91).** Until then
+  the large type *was* `firm_name` and the second line *was* `campaign_name`, so an email
+  leading with "Q3 Outlook" had to lie about who sent it. `Banner.title` / `subtitle` are
+  free-form copy; unset, they resolve to those two facts. The resolution lands in **keys of
+  its own** — `banner_title`, `banner_subtitle` — which the templates read *instead of* the
+  facts, because resolving in place would be a region shadowing a fact, the one thing the
+  layering exists to prevent. A test greps both templates so the chain cannot be quietly
+  bypassed: reading `{{ firm_name }}` again would render correctly for every email that
+  never sets a title, and make the field unreachable with nothing failing.
+- **`department` is a fact, though the headline beside it is presentation (#92).** The desk
+  an email comes from is *who sent it*, the same kind of truth as `firm_name` — putting it on
+  the region would let two renders of one email disagree about its sender. It is optional, and
+  absence **collapses rather than blanks**: the `{% if %}` guards the element, not its text, so
+  an email that sets no department leaves no empty `<p>` and reserves no height.
+
+**The masthead is a 2×2 grid, and that is what makes it fit.** The logo shares a row with the
+title and the department shares one with the subtitle, rather than both stacking in a band
+above the copy. Three things follow, and none of them is cosmetic:
+
+- **It fits the Outlook hero box now; stacked, it never did.** `masthead_vml_height` is a
+  `v:rect` the content cannot grow (`mso-fit-shape-to-text:false`), and the stacked masthead
+  measured 178.6 / 207.5 / 244.6px against boxes of 150 / 180 / 220 — overflowing at every
+  density, with the department taking it to ~46px over. Paired, it is 143.0 / 163.9 / 190.6px:
+  inside the box everywhere, and the department costs nothing because it shares a row. Keep
+  that headroom in mind before adding a masthead line, because exceeding it degrades quietly
+  (the photograph stops, the flat band continues).
+- **The left cell carries `width="100%"` so the right one shrinks to its content.** An explicit
+  right-column width would have to be wide enough for the logo *and* the department, and
+  whichever is narrower would then sit short of the frame edge.
+- **The department wraps; it must not `nowrap`.** Keeping it on one line beside the subtitle
+  looked right and reproduced #76 exactly: a real desk name pushed a 375px viewport to 572px.
+  A browser test pins it, alongside the four that pin the pairing itself — the goldens can see
+  `valign` and `align="right"` in the markup, and neither says where a box lands.
 - **The footer's two URLs are facts**, though the header's `logo_url` is presentation. A
   logo is an image the *region* chose; an unsubscribe address is a property of the mailing,
   and `EmailMetadata.validate()` already checks both schemes. What the footer owns is
   the wording *around* them — the link labels — and the optional `disclaimer` block (free-form
   HTML, emitted raw and unwrapped; escaping untrusted text in it is the caller's job).
 
-`EmailMetadata.HEADER_FACTS` and `FOOTER_FACTS` name what is handed down at render time.
+`EmailMetadata.BANNER_FACTS` and `FOOTER_FACTS` name what is handed down at render time.
 
 The rule is **mechanical, not remembered**: `Region.context()` layers the email's facts *over*
 its own keys rather than under them, so a region cannot shadow a fact even by accident — and a
@@ -477,8 +528,8 @@ absent from `fields()`, `repr` and `==` — so the region stays the single owner
 *and* the explicit region raises rather than silently picking one.
 
 Two consequences worth knowing: a bad masthead URL now raises at `EmailMetadata` construction
-rather than at `.validate()`, and the message names `header.logo_url` /
-`header.background_image_url` — where the field actually lives.
+rather than at `.validate()`, and the message names `banner.logo_url` /
+`banner.background_image_url` — where the field actually lives.
 
 **An explicit region replaces the one the flat keywords built.** `Email(footer=…)`,
 `set_footer()` and `EmailBuilder.footer()` are swaps, not merges, so a flat
@@ -544,11 +595,11 @@ These are not conventions to remember — each has teeth, and the teeth are name
 
 ```python
 from svc.builder import EmailBuilder, Email, \
-    Theme, Palette, TextColors, SemanticColors, ShadowStyle, Rgba, \
+    Theme, Palette, TextColors, SemanticColors, ShadowStyle, Rgba, BannerPalette, \
     DEFAULT_THEME, SLATE_THEME, THEMES, \
     SizeScheme, TypeScale, SpacingScale, ComponentScale, FrameGeometry, \
     STANDARD_SIZES, COMPACT_SIZES, SPACIOUS_SIZES, SIZE_SCHEMES, \
-    Region, Header, MinimalHeader, Footer, \
+    Region, Banner, MinimalBanner, Footer, \
     FullWidth, TwoColumn, ThreeColumn, \
     CardGroup, DataTable, ChartBlock, ImageBlock, TextBlock, NumberedList, AuthorBlock, ContactBlock
 from svc.builder.models import Card, KpiItem, TableRow, NumberedItem, EmailMetadata, SectionConfig
@@ -557,19 +608,30 @@ from svc.builder.enums import TwoColumnRatio, ThreeColumnRatio, CardOrientation,
 from svc.builder.images import EmailImage, ImageAsset
 ```
 
+**`Banner` was called `Header` until #90, and no alias survived.** The name is being reused:
+#87 gives the strip at the top of the email a region of its own, and *that* becomes `Header`.
+A deprecated warn-and-forward shim — the courtesy `KpiStrip` extends to `CardGroup` — would
+collide with the new class rather than ease the migration, so the break is clean and loud on
+purpose. Between #90 and #87, `from svc.builder import Header` raises `ImportError`;
+afterwards an old-style `Header(logo_url=…)` fails at construction, because the class that
+answers to the name has no such field. Both failures happen at the call site, immediately,
+which is the point: a name that quietly changed meaning would keep running and be wrong. The
+flat keywords are unaffected and still build the region — they are the common call path, and
+they never named the class.
+
 Choosing a region is an argument, never a template fork — and there is no selection
 mechanism beyond passing the object. Both regions work identically:
 
 ```python
-Email(metadata, header=MinimalHeader(logo_url=logo))   # non-fluent
-EmailBuilder().metadata({...}).header(MinimalHeader()).section(...)
+Email(metadata, banner=MinimalBanner(logo_url=logo))   # non-fluent
+EmailBuilder().metadata({...}).banner(MinimalBanner()).section(...)
 ```
 
-`EmailBuilder.header()` / `.footer()` follow the same sequencing rule as `section()`: calling
+`EmailBuilder.banner()` / `.footer()` follow the same sequencing rule as `section()`: calling
 one before `metadata()` raises `RuntimeError` — a programming error in the call sequence, not
 rejected data. Omit them and the regions come from the metadata, which the flat keywords
-built. `Email.header` and `Email.footer` are read-only accessors for the same reasons as
-`Email.metadata`; use `Email.set_header()` / `Email.set_footer()` to swap them.
+built. `Email.banner` and `Email.footer` are read-only accessors for the same reasons as
+`Email.metadata`; use `Email.set_banner()` / `Email.set_footer()` to swap them.
 
 Column ratios and card orientation are `StrEnum`s in [svc/builder/enums.py](svc/builder/enums.py):
 `TwoColumn`/`ThreeColumn` take a `ratio` and `CardGroup` takes an `orientation` as
@@ -681,7 +743,7 @@ consumer needs them.
 Aggregation walks the section tree without rendering it: `Component.images()` →
 `Container.components()` → `Email.assets()`. `Email.images()` is **header + sections +
 footer**: the masthead's `logo_url` and `background_image_url` reach the manifest through
-`Header.images()`, not through the metadata, and both accept an `EmailImage` as well as a
+`Banner.images()`, not through the metadata, and both accept an `EmailImage` as well as a
 bare URL string. No shipped footer carries an image, and the footer is walked anyway — the
 slot has to exist before a variant with a signature block or social icons is written, or its
 bytes drop silently. **A new image-bearing component — or region — must override `images()`** or
@@ -718,20 +780,28 @@ Anything that is not **core controlled formatting** should be passable, with a d
 reproduces today's output — so an existing email renders unchanged unless it opts in.
 
 - **Alt text is always a parameter.** `ImageBlock`/`ChartBlock` take `alt`; the masthead
-  logo takes `Header.logo_alt`, which resolves **explicit header value → the `EmailImage`'s
+  logo takes `Banner.logo_alt`, which resolves **explicit banner value → the `EmailImage`'s
   own `alt` → `firm_name`**. `logo_width` resolves the same way, ending at
-  `Header.DEFAULT_LOGO_WIDTH` (90). The chains live on the region, and `firm_name` is a
+  `Banner.DEFAULT_LOGO_WIDTH` (90). The chains live on the region, and `firm_name` is a
   *parameter* to `resolved_logo_alt()` rather than a field — the header is handed the fact,
   it does not hold it. Defaults still reproduce the pre-split output.
-  `Header.background_image_url` is a CSS background, and a CSS background cannot carry alt
+  `Banner.background_image_url` is a CSS background, and a CSS background cannot carry alt
   text — it is decorative by construction.
+- **The masthead's copy is a parameter, with the fact as its default.** `Banner.title` and
+  `Banner.subtitle` follow `logo_alt`'s shape exactly — a presentation field, a resolution
+  chain, the fact arriving as a *parameter* to `resolved_title()` rather than as a field.
+  Both are **plain text and escaped on the way out**: "free form" means arbitrary copy, not
+  markup, and the raw-HTML surface stays where it already is (the disclaimers,
+  `TextBlock.content`).
 - **Footer copy is parameterised** and lives on the `Footer` region:
   `unsubscribe_label`, `view_in_browser_label`, and the optional `disclaimer` (free-form HTML).
   Defaults reproduce what `base.html` used to hardcode, so a newsletter in another language no
   longer needs a template fork. The contact call-to-action is no longer part of the footer —
   use `FullWidth(content=ContactBlock(heading=…, cta_url=…))` as a body section instead.
 - **Colour is a parameter — but the whole `Theme` is the atom.** A caller picks a preset or
-  builds a theme; they never set a colour at a call site. See *Theming* below.
+  builds a theme; they never set a colour at a call site. The masthead has a second atom,
+  `Banner.palette` (a `BannerPalette`), for the one surface a caller supplies — same shape,
+  same rule, bounded to one region. See *Theming* below.
 - **Density is a parameter — but the atom is the whole `SizeScheme`, and only by name.**
   `EmailMetadata(size_theme="compact")` is the entire caller-facing sizing surface. See
   *Sizing* below.
@@ -789,6 +859,18 @@ EmailBuilder().metadata({..., "theme": DEFAULT_THEME.derive(  # or your own
   **There is deliberately no per-component colour parameter**; a `title_color=` anywhere
   would dissolve the palette one call site at a time. `Container.background_color` is the
   one pre-existing escape hatch and stays exactly as it was — neither removed nor extended.
+- **`BannerPalette` is the rule's single named exception, and the name of the reason is
+  "a backdrop the palette cannot see" (#93).** Every other colour decision is made against a
+  surface the theme itself supplies, so the theme can curate the pair. The masthead is the one
+  place a *caller* supplies it: `Banner.background_image_url` is a photograph the palette has
+  never been handed, and white-on-navy tokens over a pale image are simply a guess. What the
+  rule protects survives intact, which is why this is an exception rather than a breach — a
+  caller still picks a validated, frozen, coherent **atom**, never a colour at a call site.
+  **It does not generalise**: "now every region gets a palette" is the failure mode, not the
+  roadmap. The footer, the strip and every component render on surfaces the theme owns. A
+  future region earns one only by taking its backdrop from the caller too — and the strip is
+  the worked example of the line, since `BannerPalette` is scoped to the *banner slot* and
+  leaves `header_bar_html` on the theme's tokens, with a test asserting it.
 - **Tokens are named by role, not by value.** The same `#FFFFFF` is `palette.surface` behind
   a table and `text.on_dark` over the navy; the same `#2C3E50` is `palette.header_bg` as a
   band, `text.heading` as type and `palette.rule_dark` as an underline. Several tokens share
@@ -809,6 +891,22 @@ EmailBuilder().metadata({..., "theme": DEFAULT_THEME.derive(  # or your own
 - **The engine guarantees a theme; the email chooses which.** `TemplateEngine.render()`
   layers `DEFAULT_THEME` *under* the caller's context, so rendering a component on its own
   stays a one-liner. `Email.render()` binds the resolved theme on top, and that always wins.
+
+**How a `BannerPalette` reaches the markup.** Eight roles, one per colour the banner slot
+draws — `band`, `title`, `subtitle`, `meta`, `accent`, `scrim`, `title_shadow`,
+`subtitle_shadow` — each defaulting to `None`, meaning *the theme's token*. `FALLBACKS` is the
+single place the role→token correspondence is written down. `Banner.render_slots()` calls
+`palette.resolved(engine.theme)` and puts a **total** palette in the context under
+`banner_palette`, so the template reads one object per colour with no `{% if %}` and nothing
+for `StrictUndefined` to trip on — and an override reaches the markup by the same path an
+inherited token does, which is what makes "unset renders byte-identically" a property of the
+mechanism rather than a claim to re-test per role. `Renderer` grew a `theme` property for
+this: the banner needs the theme as an *object*, and reading it off the engine is what kept
+`render_slots()` the signature every region shares. **The scrim stays one `Rgba`** because the
+masthead emits it twice (CSS `rgba()` for everyone, `v:fill` colour + opacity for Outlook), and
+two sources is the drift this module exists to end. Three tests hold the wiring: the templates
+may not read `theme.` at all, they may not name a role `FALLBACKS` does not declare, and every
+declared role must actually be drawn.
 
 **How the theme reaches every template — the mechanism epic #45 rode.** A value owned by
 the email must reach component templates several layers down. `TemplateEngine.bound(**shared)`
@@ -1159,9 +1257,26 @@ Reach for these rather than improvising:
 ## Open work
 
 - Tracked in [GitHub issues](https://github.com/RorySullivan1/pyHermes/issues), organised as
-  epics with sub-issues: #53 plain-text and #56 typography are the remaining parents. #38
-  (header region), #45 (size themes), #46 (colour themes), #52 (delivery), #54 (QA harness)
-  and #55 (footer region) are complete.
+  epics with sub-issues: **#87 (the strip becomes its own `Header` region), #53 plain-text and
+  #56 typography are the remaining parents.** #38 (header region), #45 (size themes), #46
+  (colour themes), #52 (delivery), #54 (QA harness), #55 (footer region) and **#88 (banner
+  region)** are complete.
+- **The banner epic (#88) is complete** — #89 split the masthead from the strip, #90 renamed
+  `Header` → `Banner`, #91 gave the headline free-form copy with resolution chains, #92 added
+  the department, #93 added `BannerPalette`, #94 landed `custom_banner` and these docs. Three
+  things it leaves for whatever comes next:
+  - **A caller-supplied surface is what earns a palette.** `BannerPalette` is the standing
+    colour rule's single named exception, and the reason is specific rather than
+    region-shaped: the masthead is the one place the *caller* supplies the backdrop. The
+    scoping is enforced, not just described — the palette covers the banner **slot**, and the
+    strip in the same region keeps the theme's tokens.
+  - **A presentation field whose fallback is a fact resolves into a key of its own.**
+    `banner_title` / `banner_subtitle`, never `firm_name` / `campaign_name` in place. Resolving
+    in place would be a region shadowing a fact, which the layering exists to prevent, and the
+    render would still work — so a grep test holds it rather than a convention.
+  - **The goldens cannot see layout.** #92's placement, the 2×2 pairing and the mobile
+    overflow that `white-space:nowrap` reintroduced are all byte-identical questions the
+    snapshots answer "fine" to. They live with the screenshots for the reason #76 established.
 - **The QA harness (#54) is complete**, and it changes how the visual epics discharge their
   own acceptance criteria:
   - **A visual epic gets its eyeball artifacts from the screenshot runner**, not from ad-hoc
@@ -1175,23 +1290,28 @@ Reach for these rather than improvising:
     claim this way: #46 moved one comment and nothing else; #45 moved nothing at all.
   - **A theme lands with a fixture.** Epic #54 anticipated "one per theme as themes land",
     and all four now exist — `slate_theme` for the palette, `compact_size` / `spacious_size`
-    for the two densities, with `minimal_header` the worked example of a fixture that pins one
-    region variant.
+    for the two densities, with `minimal_banner` the worked example of a fixture that pins one
+    region variant. #88 added the other kind: `custom_banner` pins a *combination* rather than
+    a variant, because each of its four axes has its own tests and none of them can see an
+    interaction.
 - **The region model is complete (#38 header, #55 footer)**, and between them `base.html`
-  went from 277 lines to 116. What the remaining epics inherit:
+  went from 277 lines to 109. What the remaining epics inherit:
   - **The mechanism is generalised, not duplicated.** `Region` owns validation, the image
     walk, the facts-over-presentation layering and `render_slots()`; a region declares its
-    slots, its templates and its fields. A future region-like idea should start there —
-    though "no third region" is a decision, not a gap: the preheader stays skeleton
-    plumbing.
+    slots, its templates and its fields. A future region-like idea should start there.
+    #87 is the next one and is the mechanism's own test: the strip already renders from a
+    template of its own into a slot of its own, so promoting it should be a change of
+    *owner*, not of markup. The preheader stays skeleton plumbing regardless — that one is a
+    decision, not a gap.
   - **`EmailMetadata` is facts only.** A new field belongs there if it is *true of the
     email* and on a region if it is *how something looks*. The flat-keyword `InitVar` pattern
     is how a field moves off the metadata without breaking an existing call site.
   - **`base.html` is down to the head, the skeleton and the preheader** — which is why the
     two theme epics (#45, #46) contended on far less of one file than they would have, and on
     almost none of the markup that made it fragile.
-  - **A variant is what proves a seam.** `MinimalHeader` differs from `Header` in exactly
-    which slots it fills; it has a gallery fixture and a golden.
+  - **A variant is what proves a seam.** `MinimalBanner` differs from `Banner` in exactly
+    which slots it fills — it composes `TEMPLATE_PATHS` rather than replacing it, so the two
+    cannot drift on the slot they share; it has a gallery fixture and a golden.
     A seam with one implementation is a refactor.
 - **The golden characterization test (#32/#58) has landed** — the gate every template
   migration waited on is now in the suite. Everything touching `base.html` or `EmailMetadata`

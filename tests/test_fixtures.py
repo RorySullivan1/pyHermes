@@ -130,10 +130,11 @@ class TestKitchenSinkCompleteness:
         fixture actually supplies. Introspected from the dataclass, so a field
         added later fails here instead of going quietly unpinned.
 
-        ``header`` and ``footer`` are excluded because the fixture supplies
-        both the flat way, through the pre-split region keywords — which is
-        deliberate, since that is the back-compatible path the epics promise
-        to keep byte-identical. Their own fields are checked below.
+        ``banner`` and ``footer`` are excluded because the fixture builds
+        both regions explicitly rather than through the metadata. Their own
+        fields are checked below, distinctively, by the per-region test. The
+        flat pre-split keywords are covered elsewhere and by a stronger
+        assertion than a golden — see ``TestTheFlatKeywordsStillWork``.
 
         ``theme`` was exempt while only one preset existed; #50 retired that.
         ``kitchen_sink`` names ``"classic"`` so its golden pins that the
@@ -141,14 +142,14 @@ class TestKitchenSinkCompleteness:
         pins a genuinely different palette.
         """
         supplied = set(kitchen_sink_module._metadata())
-        declared = {f.name for f in dataclasses.fields(EmailMetadata)} - {"header", "footer"}
+        declared = {f.name for f in dataclasses.fields(EmailMetadata)} - {"banner", "footer"}
         missing = declared - supplied
         assert not missing, (
             f"kitchen_sink()'s metadata never sets {sorted(missing)}. A field the "
             "fixture leaves at its default is a field the golden cannot pin."
         )
 
-    @pytest.mark.parametrize("region_name", ["header", "footer"])
+    @pytest.mark.parametrize("region_name", ["banner", "footer"])
     def test_every_region_field_is_set_distinctively(self, region_name):
         """
         The same rule for each region: a field the fixture leaves at its
@@ -204,6 +205,66 @@ class TestKitchenSinkCompleteness:
         ):
             assert ratio in source, f"kitchen_sink() never uses the {ratio} ratio."
         assert "highlight=True" in source
+
+
+class TestCustomBannerCarriesEveryAxis:
+    """
+    #94's whole reason for existing, asserted rather than described.
+
+    A fixture whose docstring claims four axes and whose builder quietly
+    dropped one would still render, still lint, still match its own golden —
+    and would stop being the cross-axis pin the epic closed on.
+    """
+
+    @staticmethod
+    @pytest.fixture(scope="class")
+    def email():
+        from qa.fixtures import custom_banner
+
+        return custom_banner.build()
+
+    def test_the_copy_is_free_form(self, email):
+        banner = email.banner
+        assert banner.title and banner.title != email.metadata.firm_name
+        assert banner.subtitle and banner.subtitle != email.metadata.campaign_name
+
+    def test_it_names_a_department(self, email):
+        assert email.metadata.department
+
+    def test_the_backdrop_is_attached_rather_than_hosted(self, email):
+        """
+        The path no other fixture covers. A hosted URL would exercise the
+        string branch every other banner fixture already does; only an
+        attached one reaches the manifest and puts a ``cid:`` in both the CSS
+        and the VML.
+        """
+        from svc.builder.enums import EmbedStrategy
+        from svc.builder.images import EmailImage
+
+        backdrop = email.banner.background_image_url
+        assert isinstance(backdrop, EmailImage)
+        assert backdrop.strategy is EmbedStrategy.CID
+
+        html = email.render()
+        assert f"url('cid:{backdrop.content_id}')" in html
+        assert f'src="cid:{backdrop.content_id}"' in html, "the v:fill lost the backdrop"
+        assert backdrop.content_id in {asset.content_id for asset in email.assets()}
+
+    def test_every_palette_role_is_set(self, email):
+        """
+        A partially-filled palette would leave some roles inheriting, and the
+        interaction this fixture exists to pin is the *tuned* masthead.
+        """
+        palette = email.banner.palette
+        assert palette is not None
+        assert all(getattr(palette, spec.name) is not None for spec in dataclasses.fields(palette))
+
+    def test_the_theme_is_left_alone(self, email):
+        """
+        A preset and a palette moving at once would leave a golden diff
+        nobody can attribute. ``slate_theme`` pins the preset path.
+        """
+        assert email.metadata.theme == EmailMetadata().theme
 
 
 class TestDeterministicPng:

@@ -81,10 +81,14 @@
         <table class="email-container" role="presentation" width="{{ size.frame.width }}" cellpadding="0" cellspacing="0"
                border="0" style="background-color:{{ theme.palette.surface }}; max-width:{{ size.frame.width }}px;" bgcolor="{{ theme.palette.surface }}">
 
-{# The header region renders separately and arrives here whole. It sits at
-   column 0 on purpose: an indented {{ }} would prepend that indentation to
-   the region's first line only, and the region already carries its own. #}
-{{ header_html }}
+{# The header region fills two slots, not one: the strip and the masthead
+   below it are separate blocks with separate owners, and #87 gives the strip
+   its own region. Both sit at column 0 on purpose — an indented {{ }} would
+   prepend that indentation to the fragment's first line only, and each block
+   already carries its own. The blank line between them comes from the strip's
+   own trailing newline plus this line's; do not add a third. #}
+{{ header_bar_html }}
+{{ banner_html }}
           <!-- ══════════════════════════════════════════ -->
           <!-- SECTIONS: Insert containers here          -->
           <!-- ══════════════════════════════════════════ -->

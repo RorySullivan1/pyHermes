@@ -9,6 +9,7 @@ at the default theme is the bar every later step of the epic is judged on.
 
 import dataclasses
 import re
+from dataclasses import fields
 
 import pytest
 
@@ -19,6 +20,7 @@ from svc.builder.theming import (
     DEFAULT_THEME,
     SLATE_THEME,
     THEMES,
+    BannerPalette,
     Palette,
     Rgba,
     SemanticColors,
@@ -239,7 +241,7 @@ class TestTheAuditIsTrue:
         # The fixtures pass their own KpiItem/TableRow colours — caller data
         # about the numbers, which the theme deliberately does not own.
         caller_data = {"#4A7C59", "#B85450", "#8B6F47", "#2E5F7F"}
-        assert used - known - caller_data == set()
+        assert used - known - caller_data - _banner_palette_colours() == set()
 
     def test_the_stale_palette_comment_is_gone(self):
         """
@@ -336,6 +338,96 @@ class TestTheThemeIsSelectable:
         stays a single point in ``Email.render()``, per the epic.
         """
         assert EmailMetadata(**self.FACTS, theme="classic").theme == "classic"
+
+
+def _banner_palette_colours() -> set[str]:
+    """
+    Every hex a gallery fixture's own :class:`BannerPalette` puts on the page.
+
+    Read off the fixtures rather than hand-listed, for the reason the audit
+    exists: a list of allowed colours that someone maintains by hand is the
+    thing that drifted in the first place.
+    """
+    from qa.fixtures import all_fixtures
+
+    found: set[str] = set()
+    for build in all_fixtures().values():
+        palette = getattr(build().banner, "palette", None)
+        if palette is None:
+            continue
+        for spec in fields(palette):
+            value = getattr(palette, spec.name)
+            if isinstance(value, str):
+                found.add(value)
+            elif isinstance(value, Rgba):
+                found.add(value.color)
+    return found
+
+
+class TestBannerPalette:
+    """
+    #93: the one named exception to "no per-component colour parameter".
+
+    It earns the exception by being the one place a *caller* supplies the
+    surface — a photograph the theme has never been handed — and it keeps the
+    property the rule protects: a coherent validated atom, not a colour at a
+    call site.
+    """
+
+    def test_unset_roles_take_the_themes_tokens(self):
+        resolved = BannerPalette().resolved(DEFAULT_THEME)
+        assert resolved.band == DEFAULT_THEME.palette.header_bg
+        assert resolved.title == DEFAULT_THEME.text.on_dark
+        assert resolved.scrim is DEFAULT_THEME.shadow.scrim
+
+    def test_resolution_is_total(self):
+        """
+        No field of a resolved palette is ``None`` — which is what lets the
+        template read one object per colour with no ``{% if %}`` and nothing
+        for ``StrictUndefined`` to trip on.
+        """
+        for theme in (DEFAULT_THEME, SLATE_THEME):
+            resolved = BannerPalette().resolved(theme)
+            assert all(getattr(resolved, f.name) is not None for f in fields(resolved))
+
+    def test_an_explicit_role_wins(self):
+        assert BannerPalette(title="#1B1B1B").resolved(DEFAULT_THEME).title == "#1B1B1B"
+
+    def test_it_resolves_against_whichever_theme_is_bound(self):
+        """A preset's tokens reach the banner, not just the default's."""
+        assert BannerPalette().resolved(SLATE_THEME).band == SLATE_THEME.palette.header_bg
+
+    @pytest.mark.parametrize("role", ["band", "title", "subtitle", "meta", "accent"])
+    def test_a_bad_hex_raises_naming_the_field(self, role):
+        with pytest.raises(ValidationError, match=f"banner.palette.{role}"):
+            BannerPalette(**{role: "salmon"})
+
+    @pytest.mark.parametrize("role", ["band", "title", "subtitle", "meta", "accent"])
+    def test_a_non_string_raises_naming_the_field(self, role):
+        with pytest.raises(ValidationError, match=f"banner.palette.{role}"):
+            BannerPalette(**{role: 42})
+
+    @pytest.mark.parametrize("role", ["scrim", "title_shadow", "subtitle_shadow"])
+    def test_an_alpha_role_demands_an_rgba(self, role):
+        """
+        A bare hex would silently drop the alpha, and the scrim's whole job
+        is the alpha. Rejected rather than coerced.
+        """
+        with pytest.raises(ValidationError, match=f"banner.palette.{role}"):
+            BannerPalette(**{role: "#FFFFFF"})
+
+    def test_every_role_has_a_fallback(self):
+        """
+        ``FALLBACKS`` is the only place the role → token correspondence is
+        written down, so a field added without one would resolve to ``None``
+        and reach the template as the string "None".
+        """
+        assert {f.name for f in fields(BannerPalette())} == set(BannerPalette.FALLBACKS)
+
+    def test_every_fallback_names_a_real_token(self):
+        for role, path in BannerPalette.FALLBACKS.items():
+            layer, token = path.split(".")
+            assert hasattr(getattr(DEFAULT_THEME, layer), token), f"{role} -> {path}"
 
 
 class TestTheThemeReachesEveryTemplate:
@@ -453,9 +545,19 @@ class TestTheDefaultThemeChangesNothing:
     """The bar every step of the epic is judged on."""
 
     def test_every_template_now_reads_the_theme_namespace(self):
+        """
+        Two namespaces satisfy this, not one. The banner templates read
+        ``banner_palette`` exclusively (#93) — an object whose every unset
+        role *is* the theme's token, resolved in Python so the markup needs
+        no fallback per colour. That is the theme reaching the template by a
+        second path, not a template escaping it; what the rule forbids is a
+        literal, and the no-literal test next door still covers that.
+        """
         for path in sorted(TEMPLATE_DIR.rglob("*.html")):
             source = path.read_text(encoding="utf-8")
-            assert "theme." in source, f"{path.name} takes no colour from the theme"
+            assert "theme." in source or "banner_palette." in source, (
+                f"{path.name} takes no colour from the theme"
+            )
 
     def test_the_default_email_is_unchanged(self):
         """
@@ -618,6 +720,10 @@ class TestTheCustomThemeApi:
         )
         email = kitchen_sink.build()
         email.metadata.theme = scratch  # noqa: attribute set before render, deliberately
+        # The fixture carries a BannerPalette (#93), and the question here is
+        # whether the *theme* reaches every site — an override answering for
+        # the scrim would make this test pass while proving nothing.
+        email.set_banner(dataclasses.replace(email.banner, palette=None))
         html = email.render()
         for sentinel in ("#FDFDFD", "#101820", "#B07D3A", "#1A1A1A", "rgba(16,24,32,0.7)"):
             assert sentinel in html

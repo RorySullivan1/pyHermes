@@ -181,7 +181,7 @@ class TestEnvelopeValidation:
     def test_control_char_in_scalar_field_raises_message_error(
         self, plain_email, field, control_char
     ):
-        # Header injection: a bare newline reaching email.policy raises
+        # Banner injection: a bare newline reaching email.policy raises
         # ValueError, not MessageError -- callers following the documented
         # "catch DeliveryError" contract in exceptions.py would miss it.
         envelope = {**ENVELOPE, field: f"a{control_char}Bcc: x@evil.test"}
