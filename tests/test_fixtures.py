@@ -207,6 +207,66 @@ class TestKitchenSinkCompleteness:
         assert "highlight=True" in source
 
 
+class TestCustomBannerCarriesEveryAxis:
+    """
+    #94's whole reason for existing, asserted rather than described.
+
+    A fixture whose docstring claims four axes and whose builder quietly
+    dropped one would still render, still lint, still match its own golden —
+    and would stop being the cross-axis pin the epic closed on.
+    """
+
+    @staticmethod
+    @pytest.fixture(scope="class")
+    def email():
+        from qa.fixtures import custom_banner
+
+        return custom_banner.build()
+
+    def test_the_copy_is_free_form(self, email):
+        banner = email.banner
+        assert banner.title and banner.title != email.metadata.firm_name
+        assert banner.subtitle and banner.subtitle != email.metadata.campaign_name
+
+    def test_it_names_a_department(self, email):
+        assert email.metadata.department
+
+    def test_the_backdrop_is_attached_rather_than_hosted(self, email):
+        """
+        The path no other fixture covers. A hosted URL would exercise the
+        string branch every other banner fixture already does; only an
+        attached one reaches the manifest and puts a ``cid:`` in both the CSS
+        and the VML.
+        """
+        from svc.builder.enums import EmbedStrategy
+        from svc.builder.images import EmailImage
+
+        backdrop = email.banner.background_image_url
+        assert isinstance(backdrop, EmailImage)
+        assert backdrop.strategy is EmbedStrategy.CID
+
+        html = email.render()
+        assert f"url('cid:{backdrop.content_id}')" in html
+        assert f'src="cid:{backdrop.content_id}"' in html, "the v:fill lost the backdrop"
+        assert backdrop.content_id in {asset.content_id for asset in email.assets()}
+
+    def test_every_palette_role_is_set(self, email):
+        """
+        A partially-filled palette would leave some roles inheriting, and the
+        interaction this fixture exists to pin is the *tuned* masthead.
+        """
+        palette = email.banner.palette
+        assert palette is not None
+        assert all(getattr(palette, spec.name) is not None for spec in dataclasses.fields(palette))
+
+    def test_the_theme_is_left_alone(self, email):
+        """
+        A preset and a palette moving at once would leave a golden diff
+        nobody can attribute. ``slate_theme`` pins the preset path.
+        """
+        assert email.metadata.theme == EmailMetadata().theme
+
+
 class TestDeterministicPng:
     def test_same_arguments_yield_the_same_bytes(self):
         assert solid_png(8, 4, (1, 2, 3)) == solid_png(8, 4, (1, 2, 3))
