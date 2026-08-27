@@ -25,6 +25,7 @@ from svc.builder import (
     CardGroup,
     Email,
     EmailBuilder,
+    Footer,
     FullWidth,
     MinimalHeader,
     TextBlock,
@@ -53,14 +54,12 @@ def build(template_dir: Path | None = None) -> Email:
                 "issue_label": "Issue 002",
                 "header_disclaimer": "For illustrative purposes. Not investment advice.",
                 "current_year": "2026",
-                "footer_disclaimer": "<p>Distributed to registered recipients only.</p>",
-                "contact_description": "Reach the research desk with questions.",
-                "contact_url": "https://example.com/contact",
                 "unsubscribe_url": "https://example.com/unsubscribe",
                 "view_in_browser_url": "https://example.com/archive/002",
             }
         )
         .header(MinimalHeader(logo_url=_LOGO))
+        .footer(Footer(disclaimer="<p>Distributed to registered recipients only.</p>"))
         .section(
             FullWidth(
                 title="Same Body, Different Masthead",

@@ -183,7 +183,7 @@ class TestAttributesCannotBeBrokenOut:
 
     def test_metadata_urls_are_escaped(self, valid_metadata, text_block):
         valid_metadata["logo_url"] = 'https://x.test/l.png?a="b'
-        valid_metadata["contact_url"] = "https://x.test/c?a=1&b=2"
+        valid_metadata["unsubscribe_url"] = "https://x.test/u?a=1&b=2"
         email = Email(metadata=valid_metadata)
         email.add_section(FullWidth(content=text_block))
         html = email.render()
@@ -203,8 +203,12 @@ class TestHtmlFieldsStayRaw:
         assert "<em>emphasis</em>" in html
 
     def test_metadata_disclaimers_are_not_escaped(self, valid_metadata, text_block):
-        valid_metadata["footer_disclaimer"] = '<a href="https://x.test">Terms</a>'
-        email = Email(metadata=valid_metadata)
+        from svc.builder import Footer
+
+        email = Email(
+            metadata=valid_metadata,
+            footer=Footer(disclaimer='<a href="https://x.test">Terms</a>'),
+        )
         email.add_section(FullWidth(content=text_block))
         assert '<a href="https://x.test">Terms</a>' in email.render()
 

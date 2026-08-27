@@ -1,0 +1,39 @@
+{#
+  FOOTER REGION — one self-contained table below the body.
+
+  Presentation is a parameter here (unlike containers): background_color, an
+  optional full box, and an optional sign-off image. The disclaimer is raw and
+  UNWRAPPED — a <div>, never a <p> — so caller HTML renders correctly. The
+  copyright + links line always renders. Square corners: Outlook ignores
+  border-radius, so the box is a plain solid border.
+
+  Context: background_color, border, border_color, image, image_alt,
+  image_width, disclaimer, unsubscribe_label, view_in_browser_label (region);
+  firm_name, current_year, unsubscribe_url, view_in_browser_url (facts).
+#}
+        <!-- FOOTER: copyright, links and optional disclaimer -->
+        <table role="presentation" width="{{ size.frame.width }}" cellpadding="0" cellspacing="0" border="0"
+               style="max-width:{{ size.frame.width }}px; background-color:{{ background_color | default(theme.palette.wrapper_bg, true) }};" bgcolor="{{ background_color | default(theme.palette.wrapper_bg, true) }}" class="email-container">
+          <tr>
+            <td style="padding:{{ size.space.footer_legal_top }}px {{ size.frame.pad_x }}px {{ size.space.footer_copyright_bottom }}px;{% if border %} border:1px solid {{ border_color | default(theme.palette.rule, true) }};{% endif %} background-color:{{ background_color | default(theme.palette.wrapper_bg, true) }};" bgcolor="{{ background_color | default(theme.palette.wrapper_bg, true) }}">
+{% if image %}
+              <p style="margin:0 0 {{ size.space.footer_legal_top }}px; text-align:center;">
+                <img src="{{ image | escape_html }}" alt="{{ image_alt | escape_html }}" width="{{ image_width }}" style="display:inline-block; border:0; height:auto;">
+              </p>
+{% endif %}
+{% if disclaimer %}
+              <div style="font-family:Arial,Helvetica,sans-serif; font-size:{{ size.type.micro }}px;
+                          color:{{ theme.text.fine_print }}; line-height:{{ size.component.legal_line | percent }}; text-align:center;">
+                {{ disclaimer }}
+              </div>
+{% endif %}
+              <p style="margin:{{ size.space.footer_copyright_top }}px 0 0; font-family:Arial,Helvetica,sans-serif; font-size:{{ size.type.micro }}px;
+                        color:{{ theme.text.light }}; text-align:center;">
+                &copy; {{ current_year | escape_html }} {{ firm_name | escape_html }} &nbsp;&middot;&nbsp;
+                <a href="{{ unsubscribe_url | escape_html }}" style="color:{{ theme.palette.accent }}; text-decoration:underline;">{{ unsubscribe_label | escape_html }}</a>
+                &nbsp;&middot;&nbsp;
+                <a href="{{ view_in_browser_url | escape_html }}" style="color:{{ theme.palette.accent }}; text-decoration:underline;">{{ view_in_browser_label | escape_html }}</a>
+              </p>
+            </td>
+          </tr>
+        </table>

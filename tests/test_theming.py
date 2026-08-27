@@ -353,7 +353,6 @@ class TestTheThemeReachesEveryTemplate:
         "email_subject": "S",
         "firm_name": "F",
         "campaign_name": "c",
-        "contact_url": "https://x.test/c",
     }
 
     def _recording_engine(self, theme=None):
@@ -502,15 +501,16 @@ class TestThePerturbedTheme:
             semantic=SemanticColors(neutral="#BCDEF0"),
             shadow=ShadowStyle(scrim=Rgba("#CDEF01", 0.25)),
         )
+        from svc.builder import Footer
+
         email = Email(
             {
                 "email_subject": "S",
                 "firm_name": "F",
                 "campaign_name": "c",
-                "contact_url": "https://x.test/c",
-                "footer_disclaimer": "<p>d</p>",
                 "theme": theme,
-            }
+            },
+            footer=Footer(disclaimer="<p>d</p>"),
         )
         email.add_section(FullWidth(title="T", content=TextBlock("<p>x</p>"), highlight=True))
         email.add_section(

@@ -28,6 +28,7 @@ from svc.builder import (
     DataTable,
     Email,
     EmailBuilder,
+    Footer,
     FullWidth,
     ImageBlock,
     NumberedList,
@@ -93,16 +94,9 @@ def _metadata() -> dict[str, Any]:
         # path resolves to the same bytes as the default object.
         "theme": "classic",
         "size_theme": "standard",
-        "contact_description": "Reach the research desk with questions.",
-        "contact_url": "https://example.com/contact",
-        "contact_heading": "Questions about this note?",
-        "contact_cta_label": "Email the desk",
-        "footer_disclaimer": "<p>Distributed to registered recipients only.</p>",
         "current_year": _YEAR,
         "unsubscribe_url": "https://example.com/unsubscribe",
-        "unsubscribe_label": "Stop receiving this",
         "view_in_browser_url": "https://example.com/archive/001",
-        "view_in_browser_label": "Read it in a browser",
     }
 
 
@@ -121,6 +115,23 @@ def build(template_dir: Path | None = None, **metadata_overrides: Any) -> Email:
     return (
         EmailBuilder(template_dir=template_dir)
         .metadata(_metadata() | metadata_overrides)
+        .footer(
+            Footer(
+                background_color="#F2F1EE",
+                border=True,
+                border_color="#D6D2CB",
+                image=EmailImage.hosted(
+                    "https://cdn.example.com/hermes-mark.png",
+                    alt="Hermes Research mark",
+                    width=80,
+                ),
+                image_alt="Hermes Research mark",
+                image_width=80,
+                disclaimer="<p>Distributed to registered recipients only.</p>",
+                unsubscribe_label="Stop receiving this",
+                view_in_browser_label="Read it in a browser",
+            )
+        )
         # FullWidth + horizontal CardGroup + highlight.
         .section(
             FullWidth(

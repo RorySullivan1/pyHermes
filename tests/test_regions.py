@@ -61,7 +61,7 @@ class TestTheHeaderLeftTheSkeleton:
         assert variable in header
         assert variable not in base
         if variable == "firm_name":
-            assert variable in _template("regions/footer-legal.html")
+            assert variable in _template("regions/footer.html")
 
 
 class TestTheHeaderModel:

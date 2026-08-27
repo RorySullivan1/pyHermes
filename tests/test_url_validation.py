@@ -16,7 +16,6 @@ from svc.builder.exceptions import EmailBuilderError, ValidationError
 from svc.builder.models import EmailMetadata, _validate_url
 
 METADATA_URL_FIELDS = [
-    "contact_url",
     "unsubscribe_url",
     "view_in_browser_url",
 ]
@@ -82,9 +81,9 @@ class TestValidateUrlHelper:
 
     def test_error_names_the_field_and_lists_allowed_schemes(self):
         with pytest.raises(ValidationError) as exc:
-            _validate_url("javascript:alert(1)", "metadata.contact_url")
+            _validate_url("javascript:alert(1)", "metadata.unsubscribe_url")
         message = str(exc.value)
-        assert "metadata.contact_url" in message
+        assert "metadata.unsubscribe_url" in message
         for scheme in ("http", "https", "mailto", "cid"):
             assert scheme in message
 
@@ -132,7 +131,7 @@ class TestEmailMetadata:
 
     def test_rejected_at_construction_not_render(self, valid_metadata):
         # The repo validates in __init__, not at render time.
-        valid_metadata["contact_url"] = "javascript:alert(1)"
+        valid_metadata["unsubscribe_url"] = "javascript:alert(1)"
         with pytest.raises(ValidationError):
             EmailBuilder().metadata(valid_metadata)
 
@@ -156,6 +155,6 @@ class TestChartBlock:
 
 
 def test_a_dangerous_url_never_reaches_the_rendered_email(valid_metadata, text_block):
-    valid_metadata["contact_url"] = "javascript:alert(1)"
+    valid_metadata["unsubscribe_url"] = "javascript:alert(1)"
     with pytest.raises(ValidationError):
         (EmailBuilder().metadata(valid_metadata).section(FullWidth(content=text_block)).render())

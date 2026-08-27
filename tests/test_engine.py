@@ -41,8 +41,7 @@ class TestConstruction:
             "media/image-block.html",
             "regions/header.html",
             "regions/header-minimal.html",
-            "regions/footer-contact.html",
-            "regions/footer-legal.html",
+            "regions/footer.html",
             "common/containers/full-width.html",
             # One file for every split since #42; the eight per-ratio
             # templates it replaced differed only in a comment and the
