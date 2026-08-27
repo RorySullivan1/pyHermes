@@ -36,9 +36,11 @@ from pathlib import Path
 from svc.builder import (
     CardGroup,
     ChartBlock,
+    ContactBlock,
     DataTable,
     Email,
     EmailBuilder,
+    Footer,
     FullWidth,
     TextBlock,
     TwoColumn,
@@ -120,11 +122,9 @@ def build(template_dir: Path | None = None) -> Email:
                 "firm_name": "Hermes Research",
                 "campaign_name": "research-brief",
                 "date_range": "Week ending 24 August 2026",
-                "footer_disclaimer": (
-                    "<p>For illustrative purposes only. Not investment advice.</p>"
-                ),
             }
         )
+        .footer(Footer(disclaimer="For illustrative purposes only. Not investment advice."))
         # 1. Two DataTables side by side (50-50). colors is index-aligned with
         #    cells; "" leaves a cell its default colour.
         .section(
@@ -187,6 +187,17 @@ def build(template_dir: Path | None = None) -> Email:
                     source="Hermes Research",
                     subtitle="Indexed to 100 at year start",
                 ),
+            )
+        )
+        # 4. Contact card — demonstrates the new ContactBlock component.
+        .section(
+            FullWidth(
+                content=ContactBlock(
+                    heading="Questions about this note?",
+                    description="Reach the research desk.",
+                    cta_label="Email the desk",
+                    cta_url="mailto:research@example.com",
+                )
             )
         )
         .build()

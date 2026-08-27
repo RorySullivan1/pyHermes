@@ -21,7 +21,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from svc.builder import CardGroup, Email, EmailBuilder, FullWidth, TextBlock
+from svc.builder import CardGroup, Email, EmailBuilder, Footer, FullWidth, TextBlock
 from svc.builder.enums import CardOrientation
 from svc.builder.models import KpiItem
 
@@ -41,11 +41,9 @@ def build(template_dir: Path | None = None) -> Email:
                 "firm_name": "Hermes Research",
                 "campaign_name": "market-snapshot",
                 "date_range": "Week ending 24 August 2026",
-                "footer_disclaimer": (
-                    "<p>For illustrative purposes only. Not investment advice.</p>"
-                ),
             }
         )
+        .footer(Footer(disclaimer="For illustrative purposes only. Not investment advice."))
         # Highlighted KPI strip: 2–4 cards across, colour-coded by direction.
         .section(
             FullWidth(
