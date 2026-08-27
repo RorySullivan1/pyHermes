@@ -24,6 +24,7 @@ from svc.builder import (
     AuthorBlock,
     CardGroup,
     ChartBlock,
+    ContactBlock,
     DataTable,
     Email,
     EmailBuilder,
@@ -274,6 +275,17 @@ def build(template_dir: Path | None = None, **metadata_overrides: Any) -> Email:
                         NumberedItem("03", "Positioning", "<p>Futures length is extended.</p>"),
                     ],
                     subtitle="Three themes into next week",
+                ),
+            )
+        )
+        # ContactBlock — body component for a contact call-to-action.
+        .section(
+            FullWidth(
+                content=ContactBlock(
+                    heading="Questions about this note?",
+                    description="Reach the research desk with any questions.",
+                    cta_label="Email the desk",
+                    cta_url="https://example.com/contact",
                 ),
             )
         )

@@ -44,6 +44,7 @@ from .components import (
     CardGroup,
     ChartBlock,
     Component,
+    ContactBlock,
     DataTable,
     ImageBlock,
     KpiStrip,
@@ -178,6 +179,7 @@ __all__ = [
     "TextBlock",
     "NumberedList",
     "AuthorBlock",
+    "ContactBlock",
     # Containers
     "Container",
     "FullWidth",
