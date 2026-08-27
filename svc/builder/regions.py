@@ -61,6 +61,7 @@ from .models import _validate_color, _validate_url
 if TYPE_CHECKING:  # pragma: no cover - import cycle: images imports _validate_url
     from .engine import Renderer
     from .images import EmailImage, ImageAsset
+    from .theming import BannerPalette
 
 
 @dataclass
@@ -249,6 +250,12 @@ class Banner(Region):
                     disclaimers, ``TextBlock.content``).
         subtitle:   Free-form second line. Falls back to ``campaign_name``,
                     escaped the same way.
+        palette:    Optional :class:`~svc.builder.theming.BannerPalette` —
+                    the one place in the builder a caller may move a colour
+                    without replacing the whole :class:`Theme`, because it is
+                    the one place the *caller* supplies the surface being
+                    rendered on. Unset roles take the theme's tokens. See the
+                    class for why this does not generalise to other regions.
 
     Validates at construction, like every model here.
     """
@@ -279,6 +286,7 @@ class Banner(Region):
     logo_width: int | None = None
     title: str = ""
     subtitle: str = ""
+    palette: BannerPalette | None = None
 
     def validate(self) -> None:
         super().validate()
@@ -311,6 +319,27 @@ class Banner(Region):
             "banner_subtitle": self.resolved_subtitle(campaign_name),
         }
         return {**super().context({}), **resolved, **facts}
+
+    def render_slots(self, engine: Renderer, facts: dict[str, Any]) -> dict[str, str]:
+        """
+        As the base, with this region's colours resolved against the theme.
+
+        The resolution happens *here* rather than in :meth:`context` because
+        the theme is not a fact and not a field — it reaches the templates
+        through the bound engine, and the engine is only in hand at render
+        time. What lands in the context is a **total**
+        :class:`~svc.builder.theming.BannerPalette` under ``banner_palette``,
+        so the template reads one object for every colour it draws and an
+        override is indistinguishable from an inherited token by the time the
+        markup sees it.
+        """
+        return super().render_slots(engine, {**facts, "banner_palette": self._palette(engine)})
+
+    def _palette(self, engine: Renderer) -> BannerPalette:
+        """This banner's colours, filled in from whatever theme is bound."""
+        from .theming import BannerPalette
+
+        return (self.palette or BannerPalette()).resolved(engine.theme)
 
     def render(self, engine: Renderer, facts: dict[str, Any]) -> str:
         """

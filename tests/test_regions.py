@@ -7,20 +7,28 @@ that bar is silent about.
 """
 
 import dataclasses
+import re
 
 import pytest
 
-from svc.builder import Banner, Email, EmailBuilder, MinimalBanner
+from svc.builder import Banner, BannerPalette, Email, EmailBuilder, MinimalBanner, Rgba
 from svc.builder.engine import TemplateEngine
 from svc.builder.exceptions import ValidationError
 from svc.builder.images import EmailImage
 from svc.builder.models import EmailMetadata
+from svc.builder.theming import DEFAULT_THEME
 
 TEMPLATE_DIR = TemplateEngine().template_dir
 
 
 def _template(name: str) -> str:
     return (TEMPLATE_DIR / name).read_text(encoding="utf-8")
+
+
+def _theme_token(path: str):
+    """Follow a ``BannerPalette.FALLBACKS`` path into the default theme."""
+    layer, token = path.split(".")
+    return getattr(getattr(DEFAULT_THEME, layer), token)
 
 
 class TestTheBannerLeftTheSkeleton:
@@ -268,6 +276,185 @@ class TestTheDepartmentLine:
         metadata = EmailMetadata(**valid_metadata, department="Rates & Credit")
         html = metadata.banner.render(TemplateEngine(), metadata.banner_facts())
         assert "Rates &amp; Credit" in html
+
+
+BANNER_TEMPLATES = ["regions/banner.html", "regions/banner-minimal.html"]
+
+
+class TestTheBannerPaletteReachesTheMarkup:
+    """
+    #93: bounded colour deviation, wired through one resolved object.
+
+    ``theming.py`` owns whether a ``BannerPalette`` is *valid*; this owns
+    whether it *renders* — every role reaching its own site, an unset one
+    reaching it identically, and the scrim's two emissions staying one
+    source.
+    """
+
+    @staticmethod
+    def _banner(palette=None, **banner_kwargs):
+        metadata = EmailMetadata(
+            email_subject="s",
+            firm_name="Hermes Research",
+            campaign_name="weekly",
+            department="Rates Strategy",
+            date_range="Week ending 24 August",
+            issue_label="Issue 001",
+            banner=Banner(
+                background_image_url="https://cdn.test/bg.png",
+                logo_url="https://cdn.test/logo.png",
+                palette=palette,
+                **banner_kwargs,
+            ),
+        )
+        return metadata.banner.render_slots(TemplateEngine(), metadata.banner_facts())[
+            "banner_html"
+        ]
+
+    @pytest.mark.parametrize("template", BANNER_TEMPLATES)
+    def test_the_template_reads_the_palette_not_the_theme(self, template):
+        """
+        The bypass that would render correctly and be wrong: a template
+        reading ``theme.text.on_dark`` again works for every banner that sets
+        no palette, so nothing else in the suite notices, and the role is
+        simply unreachable. Same grep, same reason, as #91's.
+        """
+        source = _template(template)
+        assert "{{ theme." not in source, (
+            f"{template} reads a theme token directly; every banner colour must "
+            "come through 'banner_palette' or the override is unreachable."
+        )
+
+    @pytest.mark.parametrize("template", BANNER_TEMPLATES)
+    def test_it_names_only_roles_the_palette_declares(self, template):
+        """
+        The other direction. ``StrictUndefined`` would catch a typo, but only
+        for the variant actually rendered — and the two templates diverge.
+        """
+        named = set(re.findall(r"banner_palette\.([a-z_]+)", _template(template)))
+        assert named <= set(BannerPalette.FALLBACKS), (
+            f"{template} names {sorted(named - set(BannerPalette.FALLBACKS))}, "
+            "which BannerPalette does not declare."
+        )
+
+    def test_every_declared_role_is_actually_drawn(self):
+        """
+        A role no template reads is a field a caller can set to no effect.
+        The default banner is the exhaustive one; the minimal variant reads a
+        subset, deliberately (it has no photograph, so no scrim and no
+        legibility shadows).
+        """
+        drawn = set(re.findall(r"banner_palette\.([a-z_]+)", _template(BANNER_TEMPLATES[0])))
+        assert drawn == set(BannerPalette.FALLBACKS)
+
+    @pytest.mark.parametrize("role", ["band", "title", "subtitle", "meta", "accent"])
+    def test_one_role_moves_and_nothing_else_does(self, role):
+        """
+        Stronger than "the override appears": the whole render must equal the
+        default one with that role's token substituted. A change anywhere
+        else — a colour that moved because two roles share a token by
+        accident — fails here.
+        """
+        default = self._banner()
+        override = "#123456"
+        moved = self._banner(palette=BannerPalette(**{role: override}))
+        fallback = _theme_token(BannerPalette.FALLBACKS[role])
+        assert default.replace(fallback, override) == moved
+
+    @pytest.mark.parametrize("role", ["title_shadow", "subtitle_shadow"])
+    def test_a_shadow_role_moves_on_its_own(self, role):
+        default = self._banner()
+        override = Rgba("#123456", 0.5)
+        moved = self._banner(palette=BannerPalette(**{role: override}))
+        fallback = _theme_token(BannerPalette.FALLBACKS[role])
+        assert default.replace(fallback.css, override.css) == moved
+
+    def test_both_halves_of_a_custom_scrim_move_together(self):
+        """
+        The masthead emits the scrim twice — CSS ``rgba()`` for everyone,
+        ``v:fill`` colour plus opacity for Outlook — and #46's whole lesson is
+        that two sources drift. An override has to reach both, which is why
+        the field is one ``Rgba`` and not a colour beside an alpha.
+        """
+        html = self._banner(palette=BannerPalette(scrim=Rgba("#CDEF01", 0.25)))
+        assert "rgba(205,239,1,0.25)" in html
+        assert 'color="#CDEF01" opacity="25%"' in html
+        assert str(DEFAULT_THEME.shadow.scrim) not in html
+
+    def test_an_unset_palette_renders_the_theme_byte_for_byte(self):
+        assert self._banner() == self._banner(palette=BannerPalette())
+
+    def test_it_does_not_reach_the_strip(self):
+        """
+        Scoped to the banner slot, not to the region. The strip at the top of
+        the email renders on a surface the *theme* supplies, so it keeps the
+        theme's tokens — and it becomes its own region in #87. Widening the
+        palette to cover it would be "now every region gets a palette" one
+        slot early.
+        """
+        metadata = EmailMetadata(
+            email_subject="s",
+            firm_name="f",
+            campaign_name="c",
+            header_disclaimer="disclaimer",
+            banner=Banner(palette=BannerPalette(band="#123456", meta="#654321")),
+        )
+        strip = metadata.banner.render_slots(TemplateEngine(), metadata.banner_facts())[
+            "header_bar_html"
+        ]
+        assert "#123456" not in strip and "#654321" not in strip
+        assert DEFAULT_THEME.palette.header_bg in strip
+
+
+class TestTheTwoTreacherousBlocksLeaveTheBannerAlone:
+    """
+    #46's lesson, checked rather than remembered.
+
+    The dark-mode forcing block and the mobile ``@media`` rule carry their
+    own copies of colours, so a themed email can render half-themed in the
+    clients hardest to test. #93 asks the question for the banner: does
+    either block reach it? Today neither does — the banner carries exactly
+    one class, ``.mobile-title``, and the only rule naming it sets a
+    ``font-size``. That is worth an assertion, because a later edit adding
+    ``.surface`` to the masthead or a colour to ``.mobile-title`` would
+    silently put a second source in front of ``BannerPalette``.
+    """
+
+    @staticmethod
+    def _skeleton() -> str:
+        from svc.builder import Email
+
+        return Email({"email_subject": "s", "firm_name": "f", "campaign_name": "c"}).render()
+
+    def test_the_banner_carries_one_class_and_it_is_size_only(self):
+        used = {
+            name
+            for template in BANNER_TEMPLATES
+            for match in re.findall(r'class="([^"]+)"', _template(template))
+            for name in match.split()
+        }
+        assert used == {"mobile-title"}
+
+        html = self._skeleton()
+        rule = html[html.index(".mobile-title {") :]
+        rule = rule[: rule.index("}")]
+        assert "color" not in rule, f".mobile-title now sets a colour: {rule}"
+
+    def test_no_colour_rule_targets_a_class_the_banner_uses(self):
+        """
+        Read off the skeleton's own CSS rather than hand-listed, so a new
+        dark-mode selector is covered without anyone remembering to add it.
+        """
+        html = self._skeleton()
+        style = html[html.index('<style type="text/css">') : html.index("</style>", 100)]
+        coloured: set[str] = set()
+        for selector, body in re.findall(r"([^{}]+)\{([^{}]*)\}", style):
+            if "color:" in body:
+                coloured.update(re.findall(r"\.([A-Za-z0-9_-]+)", selector))
+        assert "mobile-title" not in coloured, (
+            "a colour rule now targets the banner's only class; it would win "
+            "over BannerPalette in exactly the clients hardest to test."
+        )
 
 
 class TestTheFlatKeywordsStillWork:

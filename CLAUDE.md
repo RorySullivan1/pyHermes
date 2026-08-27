@@ -461,6 +461,7 @@ them.
 | `email_subject`, `preheader_text` | `Banner.background_image_url` |
 | `firm_name`, `campaign_name` | `Banner.logo_url`, `logo_alt`, `logo_width` |
 | (the same two, as the headline's fallbacks) | `Banner.title`, `subtitle`, `resolved_title()`, `resolved_subtitle()` |
+| (the theme, as every colour's fallback) | `Banner.palette` — the masthead's own `BannerPalette` |
 | `date_range`, `issue_label`, `header_disclaimer`, `department` | `Banner.resolved_logo_alt()`, `resolved_logo_width()`, `DEFAULT_LOGO_WIDTH` |
 | `firm_name`, `current_year` | `Footer.background_color`, `border`, `border_color`, `image`/`image_alt`/`image_width` |
 | `unsubscribe_url`, `view_in_browser_url` | `Footer.unsubscribe_label`, `view_in_browser_label`, `disclaimer` (optional, free-form HTML) |
@@ -588,7 +589,7 @@ These are not conventions to remember — each has teeth, and the teeth are name
 
 ```python
 from svc.builder import EmailBuilder, Email, \
-    Theme, Palette, TextColors, SemanticColors, ShadowStyle, Rgba, \
+    Theme, Palette, TextColors, SemanticColors, ShadowStyle, Rgba, BannerPalette, \
     DEFAULT_THEME, SLATE_THEME, THEMES, \
     SizeScheme, TypeScale, SpacingScale, ComponentScale, FrameGeometry, \
     STANDARD_SIZES, COMPACT_SIZES, SPACIOUS_SIZES, SIZE_SCHEMES, \
@@ -781,7 +782,9 @@ reproduces today's output — so an existing email renders unchanged unless it o
   longer needs a template fork. The contact call-to-action is no longer part of the footer —
   use `FullWidth(content=ContactBlock(heading=…, cta_url=…))` as a body section instead.
 - **Colour is a parameter — but the whole `Theme` is the atom.** A caller picks a preset or
-  builds a theme; they never set a colour at a call site. See *Theming* below.
+  builds a theme; they never set a colour at a call site. The masthead has a second atom,
+  `Banner.palette` (a `BannerPalette`), for the one surface a caller supplies — same shape,
+  same rule, bounded to one region. See *Theming* below.
 - **Density is a parameter — but the atom is the whole `SizeScheme`, and only by name.**
   `EmailMetadata(size_theme="compact")` is the entire caller-facing sizing surface. See
   *Sizing* below.
@@ -839,6 +842,18 @@ EmailBuilder().metadata({..., "theme": DEFAULT_THEME.derive(  # or your own
   **There is deliberately no per-component colour parameter**; a `title_color=` anywhere
   would dissolve the palette one call site at a time. `Container.background_color` is the
   one pre-existing escape hatch and stays exactly as it was — neither removed nor extended.
+- **`BannerPalette` is the rule's single named exception, and the name of the reason is
+  "a backdrop the palette cannot see" (#93).** Every other colour decision is made against a
+  surface the theme itself supplies, so the theme can curate the pair. The masthead is the one
+  place a *caller* supplies it: `Banner.background_image_url` is a photograph the palette has
+  never been handed, and white-on-navy tokens over a pale image are simply a guess. What the
+  rule protects survives intact, which is why this is an exception rather than a breach — a
+  caller still picks a validated, frozen, coherent **atom**, never a colour at a call site.
+  **It does not generalise**: "now every region gets a palette" is the failure mode, not the
+  roadmap. The footer, the strip and every component render on surfaces the theme owns. A
+  future region earns one only by taking its backdrop from the caller too — and the strip is
+  the worked example of the line, since `BannerPalette` is scoped to the *banner slot* and
+  leaves `header_bar_html` on the theme's tokens, with a test asserting it.
 - **Tokens are named by role, not by value.** The same `#FFFFFF` is `palette.surface` behind
   a table and `text.on_dark` over the navy; the same `#2C3E50` is `palette.header_bg` as a
   band, `text.heading` as type and `palette.rule_dark` as an underline. Several tokens share
@@ -859,6 +874,22 @@ EmailBuilder().metadata({..., "theme": DEFAULT_THEME.derive(  # or your own
 - **The engine guarantees a theme; the email chooses which.** `TemplateEngine.render()`
   layers `DEFAULT_THEME` *under* the caller's context, so rendering a component on its own
   stays a one-liner. `Email.render()` binds the resolved theme on top, and that always wins.
+
+**How a `BannerPalette` reaches the markup.** Eight roles, one per colour the banner slot
+draws — `band`, `title`, `subtitle`, `meta`, `accent`, `scrim`, `title_shadow`,
+`subtitle_shadow` — each defaulting to `None`, meaning *the theme's token*. `FALLBACKS` is the
+single place the role→token correspondence is written down. `Banner.render_slots()` calls
+`palette.resolved(engine.theme)` and puts a **total** palette in the context under
+`banner_palette`, so the template reads one object per colour with no `{% if %}` and nothing
+for `StrictUndefined` to trip on — and an override reaches the markup by the same path an
+inherited token does, which is what makes "unset renders byte-identically" a property of the
+mechanism rather than a claim to re-test per role. `Renderer` grew a `theme` property for
+this: the banner needs the theme as an *object*, and reading it off the engine is what kept
+`render_slots()` the signature every region shares. **The scrim stays one `Rgba`** because the
+masthead emits it twice (CSS `rgba()` for everyone, `v:fill` colour + opacity for Outlook), and
+two sources is the drift this module exists to end. Three tests hold the wiring: the templates
+may not read `theme.` at all, they may not name a role `FALLBACKS` does not declare, and every
+declared role must actually be drawn.
 
 **How the theme reaches every template — the mechanism epic #45 rode.** A value owned by
 the email must reach component templates several layers down. `TemplateEngine.bound(**shared)`

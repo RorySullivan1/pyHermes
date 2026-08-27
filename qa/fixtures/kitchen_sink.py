@@ -23,6 +23,7 @@ from typing import Any
 from svc.builder import (
     AuthorBlock,
     Banner,
+    BannerPalette,
     CardGroup,
     ChartBlock,
     ContactBlock,
@@ -33,6 +34,7 @@ from svc.builder import (
     FullWidth,
     ImageBlock,
     NumberedList,
+    Rgba,
     TextBlock,
     ThreeColumn,
     TwoColumn,
@@ -133,6 +135,24 @@ def build(template_dir: Path | None = None, **metadata_overrides: Any) -> Email:
                 # the footer's copyright line most visibly (#91).
                 title="Q3 Outlook",
                 subtitle="What the curve is pricing",
+                # Every role at a non-default, because the golden can only
+                # pin a colour the fixture actually moves — and here that is
+                # forced rather than chosen: `palette` is a `Banner` field,
+                # and the region-completeness test fails on any field left at
+                # its default. What it pins is the *mechanism*, one role per
+                # site. The fixtures that leave it unset — `slate_theme` most
+                # usefully, since its tokens differ from the default's — are
+                # what pin the inheritance.
+                palette=BannerPalette(
+                    band="#3A2B3F",
+                    title="#FDF6E3",
+                    subtitle="#D8C7CF",
+                    meta="#A8909B",
+                    accent="#C48A5A",
+                    scrim=Rgba("#241A28", 0.55),
+                    title_shadow=Rgba("#1A121D", 0.45),
+                    subtitle_shadow=Rgba("#1A121D", 0.35),
+                ),
             )
         )
         .footer(
