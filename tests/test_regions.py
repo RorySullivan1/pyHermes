@@ -248,12 +248,16 @@ class TestTheDepartmentLine:
         fixture that does not opt in byte-identical, and is asserted here by
         string absence rather than by eyeball.
         """
-        metadata = EmailMetadata(**valid_metadata, banner=region())
-        html = metadata.banner.render(TemplateEngine(), metadata.banner_facts())
-        assert "text-transform:uppercase" in html, "the date/issue bar should still be here"
-        assert "masthead_department_top" not in html
-        # The department's <p> is the only one carrying a top margin.
-        assert "margin:6px 0 0 0" not in html
+        empty = EmailMetadata(**valid_metadata, banner=region())
+        set_ = EmailMetadata(**valid_metadata, department="Rates Strategy", banner=region())
+        engine = TemplateEngine()
+        without = empty.banner.render(engine, empty.banner_facts())
+        with_ = set_.banner.render(engine, set_.banner_facts())
+        # Counted rather than sniffed for a marker string: the department's
+        # own styling is the meta bar's too (same type, colour and casing),
+        # so an absent element is the only thing that distinguishes them.
+        assert with_.count("<p ") == without.count("<p ") + 1
+        assert "Rates Strategy" not in without
 
     def test_it_is_a_fact_the_banner_cannot_shadow(self, valid_metadata):
         metadata = EmailMetadata(**valid_metadata, department="Rates Strategy")

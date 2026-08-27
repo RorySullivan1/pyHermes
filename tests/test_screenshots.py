@@ -232,26 +232,31 @@ class TestEverySectionSharesOneLeftMargin:
         assert measured == {24, 32, 40}
 
 
-#: The department line's box, the logo's, and the cell that holds both.
+#: The four boxes the masthead's alignment claim is about.
 #:
-#: Right-alignment is the claim, so it is measured as an *edge* rather than
-#: inferred from ``align="right"`` being present in the markup — which is
-#: what the goldens already pin, and which says nothing about where the text
-#: actually lands.
-_DEPARTMENT_PROBE = """() => {
-  const p = [...document.querySelectorAll('p')]
-      .find(e => e.textContent.trim() === 'Rates Strategy');
-  if (!p) return null;
-  const cell = p.closest('td');
-  const box = p.getBoundingClientRect();
-  const logo = cell.querySelector('img').getBoundingClientRect();
-  return {right_of_logo: box.right - logo.right,
-          below_logo: box.top - logo.bottom,
-          inside_cell: cell.getBoundingClientRect().bottom - box.bottom};
+#: Measured as *edges* rather than inferred from ``align="right"`` being
+#: present in the markup — which is what the goldens already pin, and which
+#: says nothing about where the text actually lands.
+_MASTHEAD_PROBE = """() => {
+  const find = t => [...document.querySelectorAll('p')]
+      .find(e => e.textContent.trim() === t);
+  const dept = find('Rates Strategy'), title = find('Q3 Outlook');
+  const sub = find('What the curve is pricing');
+  const logo = document.querySelector('img[alt="Hermes Research"]');
+  if (!dept || !title || !sub || !logo) return null;
+  const r = e => e.getBoundingClientRect();
+  return {
+    dept_right: r(dept).right, logo_right: r(logo).right,
+    title_bottom: r(title).bottom, logo_bottom: r(logo).bottom,
+    sub_centre: r(sub).top + r(sub).height / 2,
+    dept_centre: r(dept).top + r(dept).height / 2,
+    title_left: r(title).left, sub_left: r(sub).left,
+    dept_above_sub_bottom: r(sub).bottom - r(dept).top,
+  };
 }"""
 
 
-def _department_email(variant, size_theme, department):
+def _masthead_email(variant, size_theme):
     """A one-section email whose only interesting feature is its masthead."""
     from svc.builder import Banner, EmailBuilder, FullWidth, MinimalBanner, TextBlock
 
@@ -260,21 +265,28 @@ def _department_email(variant, size_theme, department):
         EmailBuilder()
         .metadata(
             {
-                "email_subject": "Department line",
+                "email_subject": "Masthead",
                 "firm_name": "Hermes Research",
-                "campaign_name": "department",
-                "department": department,
+                "campaign_name": "masthead",
+                "department": "Rates Strategy",
                 "size_theme": size_theme,
             }
         )
-        .banner(region(logo_url="https://cdn.example.com/logo.png"))
+        .banner(
+            region(
+                logo_url="https://cdn.example.com/logo.png",
+                logo_alt="Hermes Research",
+                title="Q3 Outlook",
+                subtitle="What the curve is pricing",
+            )
+        )
         .section(FullWidth(content=TextBlock("<p>body</p>")))
         .build()
     )
 
 
 @pytest.fixture(scope="module")
-def department_boxes():
+def masthead_boxes():
     """Both banner variants at all three densities, in one browser session."""
     if not available():
         pytest.skip('no browser; screenshots are the optional "[qa]" extra')
@@ -286,47 +298,106 @@ def department_boxes():
             for size_theme in ("compact", "standard", "spacious"):
                 page = browser.new_page(viewport={"width": 1000, "height": 900})
                 page.route("**/*", lambda route: route.abort())
-                page.set_content(_department_email(variant, size_theme, "Rates Strategy").render())
-                measured[variant, size_theme] = page.evaluate(_DEPARTMENT_PROBE)
+                page.set_content(_masthead_email(variant, size_theme).render())
+                measured[variant, size_theme] = page.evaluate(_MASTHEAD_PROBE)
                 page.close()
         browser.close()
     return measured
 
 
+VARIANTS = [
+    (variant, size_theme)
+    for variant in ("banner", "minimal")
+    for size_theme in ("compact", "standard", "spacious")
+]
+
+
 @requires_browser
-class TestTheDepartmentLineSitsUnderTheLogo:
+@pytest.mark.parametrize("variant,size_theme", VARIANTS)
+class TestTheMastheadPairsItsLines:
     """
-    #92's placement, measured rather than eyeballed.
+    The masthead is a 2x2 grid, and this is the claim that makes it one.
 
-    The goldens pin the markup and the collapse; neither can say where the
-    text lands. ``align="right"`` on the cell is inherited by the logo and
-    the line alike, and that inheritance is the whole mechanism — so it is
-    worth an assertion that would fail if a later edit moved the line out of
-    the logo's cell, where it would still render, still validate, and still
-    look plausible in a diff.
+    The logo belongs to the title's row and the department to the subtitle's,
+    rather than both stacking in a band above the copy. Nothing in the
+    goldens can say that: the markup pins ``valign`` and ``align="right"``,
+    and neither says where a box lands. So it is measured — in both variants,
+    at every density, because a row that pairs correctly at ``standard`` and
+    not at ``spacious`` is the failure mode a single measurement misses.
     """
 
-    @pytest.mark.parametrize("variant", ["banner", "minimal"])
-    @pytest.mark.parametrize("size_theme", ["compact", "standard", "spacious"])
-    def test_its_right_edge_meets_the_logos(self, variant, size_theme, department_boxes):
-        box = department_boxes[variant, size_theme]
-        assert box is not None, f"{variant}/{size_theme}: no department line rendered"
-        assert box["right_of_logo"] == 0
+    def test_the_logo_shares_the_titles_baseline(self, variant, size_theme, masthead_boxes):
+        box = masthead_boxes[variant, size_theme]
+        assert box is not None, f"{variant}/{size_theme}: the masthead did not render"
+        assert abs(box["title_bottom"] - box["logo_bottom"]) <= 1
 
-    @pytest.mark.parametrize("variant", ["banner", "minimal"])
-    @pytest.mark.parametrize("size_theme", ["compact", "standard", "spacious"])
-    def test_it_sits_one_token_below_the_logo(self, variant, size_theme, department_boxes):
-        """
-        The gap follows the density rather than a constant, which is what
-        makes the token real: 4 / 6 / 8 px.
-        """
-        expected = resolve_size_scheme(size_theme).space.masthead_department_top
-        assert department_boxes[variant, size_theme]["below_logo"] == expected
+    def test_the_department_centres_on_the_subtitle(self, variant, size_theme, masthead_boxes):
+        box = masthead_boxes[variant, size_theme]
+        assert abs(box["sub_centre"] - box["dept_centre"]) <= 1
 
-    @pytest.mark.parametrize("variant", ["banner", "minimal"])
-    def test_nothing_is_clipped_by_the_cell(self, variant, department_boxes):
-        for size_theme in ("compact", "standard", "spacious"):
-            assert department_boxes[variant, size_theme]["inside_cell"] >= 0
+    def test_the_department_is_beside_the_subtitle_not_below_it(
+        self, variant, size_theme, masthead_boxes
+    ):
+        """
+        The centres could agree while both lines sat in one column. They
+        share a row only if the department starts above where the subtitle
+        ends.
+        """
+        assert masthead_boxes[variant, size_theme]["dept_above_sub_bottom"] > 0
+
+    def test_the_right_hand_marks_share_one_edge(self, variant, size_theme, masthead_boxes):
+        box = masthead_boxes[variant, size_theme]
+        assert abs(box["dept_right"] - box["logo_right"]) <= 1
+
+    def test_a_long_department_wraps_rather_than_scrolls(self, variant, size_theme):
+        """
+        #76's failure mode, one row over. The department shares a row with
+        the subtitle, so a ``white-space:nowrap`` on it looked like the way
+        to keep the pairing intact — and at a 375px viewport a real desk name
+        ("Global Macro, Rates and Cross-Asset Strategy Desk — EMEA") pushed
+        the document to 572px, which is a reader scrolling sideways to read a
+        masthead. Wrapping to a second line costs the pairing nothing: the
+        cell grows, and both cells in the row grow with it.
+
+        Measured per variant and density because the frame padding the copy
+        competes with is a token, not a constant.
+        """
+        if not available():
+            pytest.skip('no browser; screenshots are the optional "[qa]" extra')
+        from svc.builder import Banner, EmailBuilder, FullWidth, MinimalBanner, TextBlock
+
+        region = Banner if variant == "banner" else MinimalBanner
+        email = (
+            EmailBuilder()
+            .metadata(
+                {
+                    "email_subject": "s",
+                    "firm_name": "Hermes Research",
+                    "campaign_name": "c",
+                    "department": "Global Macro, Rates and Cross-Asset Strategy Desk — EMEA",
+                    "size_theme": size_theme,
+                }
+            )
+            .banner(region(logo_url="https://cdn.example.com/logo.png", logo_width=128))
+            .section(FullWidth(content=TextBlock("<p>body</p>")))
+            .build()
+        )
+        with _load_playwright()() as playwright:
+            browser = _launch(playwright)
+            page = browser.new_page(viewport={"width": 375, "height": 800})
+            page.route("**/*", lambda route: route.abort())
+            page.set_content(email.render())
+            width = page.evaluate("() => document.documentElement.scrollWidth")
+            browser.close()
+        assert width == 375, f"a reader would scroll sideways: {width}px at a 375px viewport"
+
+    def test_the_copy_starts_at_the_frame_padding(self, variant, size_theme, masthead_boxes):
+        """
+        Title and subtitle are in different rows of the same table, so a
+        stray padding on one cell would stagger them.
+        """
+        box = masthead_boxes[variant, size_theme]
+        assert box["title_left"] == box["sub_left"]
 
 
 @pytest.fixture(scope="module")

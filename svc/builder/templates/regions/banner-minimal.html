@@ -3,48 +3,53 @@
           <!-- ══════════════════════════════════════════ -->
           <tr>
             <td style="background-color:{{ theme.palette.header_bg }};" bgcolor="{{ theme.palette.header_bg }}">
-              <!-- Logo row.  One <img>, not the default header's mso/non-mso
-                   pair: that pair exists because max-width misbehaves inside
-                   a v:textbox, and there is no v:textbox here.  Outlook
-                   ignores max-width and reads the width attribute. -->
+              {# One 2x2 table, not a logo row above a copy block. The logo shares a row
+                 with the title and the department shares one with the subtitle, so the
+                 two right-hand marks align with the lines they belong to instead of
+                 stacking in a band of their own. The left cell carries width="100%" so
+                 the right one shrinks to its content — an explicit right-column width
+                 would have to be wide enough for the logo *and* the department, and
+                 whichever is narrower would then sit short of the frame edge.
+
+                 The copy reads the *resolved* keys, never ``firm_name`` / ``campaign_name``
+                 directly: those are facts, they land last in ``Banner.context()``, and
+                 reading them here would make ``Banner.title`` unreachable — silently,
+                 since the render would still work. A test greps for exactly that.
+                 Jinja comments on purpose: an HTML one would move every golden in the
+                 gallery for a note nobody but us reads. #}
+              {# One <img>, not the default banner's mso/non-mso pair: that pair exists
+                 because max-width misbehaves inside a v:textbox, and there is no
+                 v:textbox here. Outlook ignores max-width and reads the width attribute.
+                 No text-shadow either: it buys legibility over a photograph, and there
+                 is no photograph. #}
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                 <tr>
-                  <td style="padding:{{ size.space.masthead_logo_top }}px {{ size.frame.pad_x }}px 0;" align="right">
-                    <img src="{{ logo_url | escape_html }}" width="{{ logo_width }}" alt="{{ logo_alt | escape_html }}"
-                         style="display:block; max-width:{{ logo_width }}px; height:auto;">
-                    {% if department %}
-                    <p style="margin:{{ size.space.masthead_department_top }}px 0 0 0; font-family:Arial,Helvetica,sans-serif;
-                              font-size:{{ size.type.small }}px; color:{{ theme.text.on_dark_muted }}; letter-spacing:0.6px; text-transform:uppercase;">
-                      {{ department | escape_html }}
-                    </p>
-                    {% endif %}
-                  </td>
-                </tr>
-              </table>
-              {# The two lines below read the *resolved* keys, never ``firm_name`` /
-                 ``campaign_name`` directly: those are facts, they land last in
-                 ``Banner.context()``, and reading them here would make ``Banner.title``
-                 unreachable — silently, since the render would still work. A test greps
-                 for exactly that. This is a Jinja comment on purpose: an HTML one would
-                 move every golden in the gallery for a note nobody but us reads (#91). #}
-              <!-- Firm name + campaign name.  No text-shadow: it buys
-                   legibility over a photograph, and there is no photograph. -->
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-                <tr>
-                  <td style="padding:{{ size.space.masthead_title_top }}px {{ size.frame.pad_x }}px {{ size.space.masthead_title_bottom }}px;">
+                  <td width="100%" valign="bottom" style="padding:{{ size.space.masthead_top }}px 0 {{ size.space.masthead_title_bottom }}px {{ size.frame.pad_x }}px;">
                     <p style="margin:0; font-family:Georgia,'Times New Roman',serif; font-size:{{ size.type.title }}px;
                               font-weight:bold; color:{{ theme.text.on_dark }}; line-height:{{ size.type.title_line | percent }}; letter-spacing:0.3px;"
                        class="mobile-title">
                       {{ banner_title | escape_html }}
                     </p>
                   </td>
+                  <td valign="bottom" align="right" style="padding:{{ size.space.masthead_top }}px {{ size.frame.pad_x }}px {{ size.space.masthead_title_bottom }}px {{ size.space.gutter }}px;">
+                    <img src="{{ logo_url | escape_html }}" width="{{ logo_width }}" alt="{{ logo_alt | escape_html }}"
+                         style="display:block; max-width:{{ logo_width }}px; height:auto;">
+                  </td>
                 </tr>
                 <tr>
-                  <td style="padding:0 {{ size.frame.pad_x }}px {{ size.space.masthead_campaign_bottom }}px;">
+                  <td valign="middle" style="padding:0 0 {{ size.space.masthead_campaign_bottom }}px {{ size.frame.pad_x }}px;">
                     <p style="margin:0; font-family:Arial,Helvetica,sans-serif; font-size:{{ size.type.secondary }}px;
                               font-weight:400; color:{{ theme.text.on_dark_secondary }}; line-height:{{ size.type.heading_line | percent }};">
                       {{ banner_subtitle | escape_html }}
                     </p>
+                  </td>
+                  <td valign="middle" align="right" style="padding:0 {{ size.frame.pad_x }}px {{ size.space.masthead_campaign_bottom }}px {{ size.space.gutter }}px;">
+                    {% if department %}
+                    <p style="margin:0; font-family:Arial,Helvetica,sans-serif; font-size:{{ size.type.small }}px;
+                              color:{{ theme.text.on_dark_muted }}; letter-spacing:0.6px; text-transform:uppercase;">
+                      {{ department | escape_html }}
+                    </p>
+                    {% endif %}
                   </td>
                 </tr>
               </table>

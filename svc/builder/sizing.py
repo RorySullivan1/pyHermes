@@ -81,11 +81,11 @@ frame's horizontal padding is what makes the content 616 wide::
     subtitle_gap              12   below any component subtitle
     caption_gap                8   above a source, caption, or card body
     masthead_bar_y             7   disclaimer bar
-    masthead_logo_top         18   logo row
-    masthead_title_top        10   firm-name cell, top
-    masthead_title_bottom      6   firm-name cell, bottom
-    masthead_campaign_bottom   8   campaign-name cell, bottom
-    masthead_department_top    6   department line, above (#92)
+    masthead_top              18   the masthead block, above the title/logo
+                                   row
+    masthead_title_bottom      6   between the title/logo row and the
+                                   subtitle/department row
+    masthead_campaign_bottom   8   below the subtitle/department row
     masthead_meta_top         10   date/issue bar, top
     masthead_meta_bottom      18   date/issue bar, bottom
     masthead_vml_height      180   the v:rect box Outlook draws instead of
@@ -263,27 +263,27 @@ class SpacingScale:
     caption_gap: int | float = 8
 
     masthead_bar_y: int | float = 7
-    masthead_logo_top: int | float = 18
-    masthead_title_top: int | float = 10
+    masthead_top: int | float = 18
     masthead_title_bottom: int | float = 6
     masthead_campaign_bottom: int | float = 8
-    masthead_department_top: int | float = 6
     masthead_meta_top: int | float = 10
     masthead_meta_bottom: int | float = 18
-    #: The v:rect Outlook draws in place of the CSS background image. It is
-    #: **not** a bound on the masthead's height and never was: the textbox
-    #: carries ``mso-fit-shape-to-text:false``, so the shape does not grow,
-    #: and the masthead's natural height already exceeds it at every density
-    #: — measured in Chromium at 178.6 / 207.5 / 244.6 px against boxes of
-    #: 150 / 180 / 220, a shortfall of ~25-29px predating #92. What falls
-    #: past the box still renders: the cell behind it carries
-    #: ``palette.header_bg`` as both a CSS colour and a ``bgcolor``, which is
-    #: also the ``v:fill`` colour, so the effect is that the photograph stops
-    #: and the flat band continues. #92's department line widens the
-    #: shortfall to ~44-47px; it does not create it, and raising the token to
-    #: cover the content would move every shipped golden. Recorded here
-    #: rather than fixed, because the fix is a decision about the hero's
-    #: proportions, not about this line.
+    #: The v:rect Outlook draws in place of the CSS background image, and a
+    #: box the masthead has to *fit inside*: the textbox carries
+    #: ``mso-fit-shape-to-text:false``, so the shape does not grow with its
+    #: content, and anything past it falls onto the flat band instead of the
+    #: photograph.
+    #:
+    #: It did not fit until the masthead became a 2x2 grid. Stacked — a logo
+    #: band above the copy — the natural height was 178.6 / 207.5 / 244.6 px
+    #: against boxes of 150 / 180 / 220, overflowing by ~25-29px at every
+    #: density, and the department line took that to ~44-47. Pairing the logo
+    #: with the title and the department with the subtitle removed a whole
+    #: band: 143.0 / 163.9 / 190.6 px, inside the box everywhere, and the
+    #: department now costs nothing because it shares a row. Both figures
+    #: measured in Chromium; keep the headroom in mind before adding a line
+    #: to the masthead, since exceeding it degrades quietly rather than
+    #: loudly.
     masthead_vml_height: int | float = 180
 
     footer_contact_top: int | float = 8
@@ -505,11 +505,9 @@ COMPACT_SIZES = SizeScheme().derive(
         "subtitle_gap": 8,
         "caption_gap": 6,
         "masthead_bar_y": 5,
-        "masthead_logo_top": 12,
-        "masthead_title_top": 8,
+        "masthead_top": 12,
         "masthead_title_bottom": 4,
         "masthead_campaign_bottom": 6,
-        "masthead_department_top": 4,
         "masthead_meta_top": 8,
         "masthead_meta_bottom": 12,
         "masthead_vml_height": 150,
@@ -600,11 +598,9 @@ SPACIOUS_SIZES = SizeScheme().derive(
         "subtitle_gap": 16,
         "caption_gap": 12,
         "masthead_bar_y": 10,
-        "masthead_logo_top": 24,
-        "masthead_title_top": 14,
+        "masthead_top": 24,
         "masthead_title_bottom": 8,
         "masthead_campaign_bottom": 12,
-        "masthead_department_top": 8,
         "masthead_meta_top": 14,
         "masthead_meta_bottom": 24,
         "masthead_vml_height": 220,

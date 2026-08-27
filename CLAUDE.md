@@ -482,7 +482,26 @@ Two boundary calls, each made for a reason rather than by shape:
   an email comes from is *who sent it*, the same kind of truth as `firm_name` — putting it on
   the region would let two renders of one email disagree about its sender. It is optional, and
   absence **collapses rather than blanks**: the `{% if %}` guards the element, not its text, so
-  an email that sets no department is byte-identical to one built before the field existed.
+  an email that sets no department leaves no empty `<p>` and reserves no height.
+
+**The masthead is a 2×2 grid, and that is what makes it fit.** The logo shares a row with the
+title and the department shares one with the subtitle, rather than both stacking in a band
+above the copy. Three things follow, and none of them is cosmetic:
+
+- **It fits the Outlook hero box now; stacked, it never did.** `masthead_vml_height` is a
+  `v:rect` the content cannot grow (`mso-fit-shape-to-text:false`), and the stacked masthead
+  measured 178.6 / 207.5 / 244.6px against boxes of 150 / 180 / 220 — overflowing at every
+  density, with the department taking it to ~46px over. Paired, it is 143.0 / 163.9 / 190.6px:
+  inside the box everywhere, and the department costs nothing because it shares a row. Keep
+  that headroom in mind before adding a masthead line, because exceeding it degrades quietly
+  (the photograph stops, the flat band continues).
+- **The left cell carries `width="100%"` so the right one shrinks to its content.** An explicit
+  right-column width would have to be wide enough for the logo *and* the department, and
+  whichever is narrower would then sit short of the frame edge.
+- **The department wraps; it must not `nowrap`.** Keeping it on one line beside the subtitle
+  looked right and reproduced #76 exactly: a real desk name pushed a 375px viewport to 572px.
+  A browser test pins it, alongside the four that pin the pairing itself — the goldens can see
+  `valign` and `align="right"` in the markup, and neither says where a box lands.
 - **The footer's two URLs are facts**, though the header's `logo_url` is presentation. A
   logo is an image the *region* chose; an unsubscribe address is a property of the mailing,
   and `EmailMetadata.validate()` already checks both schemes. What the footer owns is
