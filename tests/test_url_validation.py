@@ -20,11 +20,11 @@ METADATA_URL_FIELDS = [
     "view_in_browser_url",
 ]
 
-#: The masthead URLs moved to the Header region (#34). The flat keywords still
+#: The masthead URLs moved to the Banner region (#34). The flat keywords still
 #: reach them, and the error now names where the field lives.
 HEADER_URL_FIELDS = {
-    "logo_url": "header.logo_url",
-    "header_bg_image_url": "header.background_image_url",
+    "logo_url": "banner.logo_url",
+    "header_bg_image_url": "banner.background_image_url",
 }
 
 DANGEROUS = [

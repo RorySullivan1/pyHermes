@@ -1,7 +1,7 @@
 """
 The ``slate`` preset, in the gallery.
 
-The colour epic's counterpart to ``minimal_header`` / ``minimal_footer``: a
+The colour epic's counterpart to ``minimal_banner`` / ``minimal_footer``: a
 fixture that exists to pin one *choice*. It differs from ``kitchen_sink`` in
 exactly one metadata field — ``theme`` — and its golden is what proves the
 palette is live in every corner of a rendered email rather than only in the

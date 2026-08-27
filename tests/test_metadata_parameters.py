@@ -11,7 +11,7 @@ they are the design system, not content.
 
 import pytest
 
-from svc.builder import EmailBuilder, FullWidth, Header
+from svc.builder import Banner, EmailBuilder, FullWidth
 from svc.builder.images import EmailImage
 from svc.builder.models import EmailMetadata
 
@@ -63,7 +63,7 @@ class TestLogoAlt:
     def test_resolution_order_without_rendering(self, valid_metadata):
         """The chain lives on the header; the firm name is handed to it."""
         firm_name = valid_metadata["firm_name"]
-        header = EmailMetadata(**valid_metadata).header
+        header = EmailMetadata(**valid_metadata).banner
         assert header.resolved_logo_alt(firm_name) == firm_name
         header.logo_url = EmailImage.hosted("https://x.test/l.png", alt="img")
         assert header.resolved_logo_alt(firm_name) == "img"
@@ -88,8 +88,8 @@ class TestLogoWidth:
         assert 'width="64"' in html
 
     def test_resolution_order(self, valid_metadata):
-        header = EmailMetadata(**valid_metadata).header
-        assert header.resolved_logo_width() == Header.DEFAULT_LOGO_WIDTH
+        header = EmailMetadata(**valid_metadata).banner
+        assert header.resolved_logo_width() == Banner.DEFAULT_LOGO_WIDTH
         header.logo_url = EmailImage.hosted("https://x.test/l.png", alt="a", width=64)
         assert header.resolved_logo_width() == 64
         header.logo_width = 200

@@ -1,8 +1,8 @@
 """
-The ``MinimalHeader`` variant, in the gallery.
+The ``MinimalBanner`` variant, in the gallery.
 
 The proof that a region is a seam and not a refactor: this email differs from
-the others in exactly one argument — ``EmailBuilder.header(MinimalHeader(...))``
+the others in exactly one argument — ``EmailBuilder.banner(MinimalBanner(...))``
 — and nothing about the skeleton, the body, or the email's own facts moves
 with it.
 
@@ -27,7 +27,7 @@ from svc.builder import (
     EmailBuilder,
     Footer,
     FullWidth,
-    MinimalHeader,
+    MinimalBanner,
     TextBlock,
 )
 from svc.builder.images import EmailImage
@@ -46,7 +46,7 @@ def build(template_dir: Path | None = None) -> Email:
         EmailBuilder(template_dir=template_dir)
         .metadata(
             {
-                "email_subject": "Minimal Header — the variant, same facts",
+                "email_subject": "Minimal Banner — the variant, same facts",
                 "preheader_text": "A flat masthead band, no background image, no VML.",
                 "firm_name": "Hermes Research",
                 "campaign_name": "minimal-header",
@@ -58,7 +58,7 @@ def build(template_dir: Path | None = None) -> Email:
                 "view_in_browser_url": "https://example.com/archive/002",
             }
         )
-        .header(MinimalHeader(logo_url=_LOGO))
+        .banner(MinimalBanner(logo_url=_LOGO))
         .footer(Footer(disclaimer="<p>Distributed to registered recipients only.</p>"))
         .section(
             FullWidth(

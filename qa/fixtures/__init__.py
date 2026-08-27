@@ -24,8 +24,8 @@ from . import (
     image_matrix,
     kitchen_sink,
     minimal,
+    minimal_banner,
     minimal_footer,
-    minimal_header,
     slate_theme,
     spacious_size,
 )
@@ -64,7 +64,7 @@ def all_fixtures() -> dict[str, FixtureBuilder]:
         "minimal": minimal.build,
         "kitchen_sink": kitchen_sink.build,
         "image_matrix": image_matrix.build,
-        "minimal_header": minimal_header.build,
+        "minimal_banner": minimal_banner.build,
         "minimal_footer": minimal_footer.build,
         "slate_theme": slate_theme.build,
         "compact_size": compact_size.build,

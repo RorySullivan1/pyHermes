@@ -137,7 +137,7 @@ jobs:
               EmailBuilder,
               Footer,
               FullWidth,
-              MinimalHeader,
+              MinimalBanner,
               TextBlock,
               TwoColumn,
           )
@@ -168,12 +168,12 @@ jobs:
           variant = (
               EmailBuilder()
               .metadata(METADATA)
-              .header(MinimalHeader())
+              .banner(MinimalBanner())
               .section(FullWidth(content=TextBlock("<p>Variant.</p>")))
               .save(Path("variant.html"))
           )
           vhtml = variant.read_text()
-          assert "<v:rect" not in vhtml, "the minimal header rendered VML"
+          assert "<v:rect" not in vhtml, "the minimal banner rendered VML"
           assert "<v:roundrect" not in vhtml, "a footer with no contact card rendered a button"
           assert "Unsubscribe" in vhtml, "regions/footer.html did not render in the variant"
           print(f"OK: {variant} ({variant.stat().st_size} bytes)")

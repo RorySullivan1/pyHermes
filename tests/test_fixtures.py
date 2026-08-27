@@ -130,7 +130,7 @@ class TestKitchenSinkCompleteness:
         fixture actually supplies. Introspected from the dataclass, so a field
         added later fails here instead of going quietly unpinned.
 
-        ``header`` and ``footer`` are excluded because the fixture supplies
+        ``banner`` and ``footer`` are excluded because the fixture supplies
         both the flat way, through the pre-split region keywords — which is
         deliberate, since that is the back-compatible path the epics promise
         to keep byte-identical. Their own fields are checked below.
@@ -141,14 +141,14 @@ class TestKitchenSinkCompleteness:
         pins a genuinely different palette.
         """
         supplied = set(kitchen_sink_module._metadata())
-        declared = {f.name for f in dataclasses.fields(EmailMetadata)} - {"header", "footer"}
+        declared = {f.name for f in dataclasses.fields(EmailMetadata)} - {"banner", "footer"}
         missing = declared - supplied
         assert not missing, (
             f"kitchen_sink()'s metadata never sets {sorted(missing)}. A field the "
             "fixture leaves at its default is a field the golden cannot pin."
         )
 
-    @pytest.mark.parametrize("region_name", ["header", "footer"])
+    @pytest.mark.parametrize("region_name", ["banner", "footer"])
     def test_every_region_field_is_set_distinctively(self, region_name):
         """
         The same rule for each region: a field the fixture leaves at its

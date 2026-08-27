@@ -100,9 +100,9 @@ from .models import (
 
 # Regions
 from .regions import (
+    Banner,
     Footer,
-    Header,
-    MinimalHeader,
+    MinimalBanner,
     Region,
 )
 
@@ -157,8 +157,8 @@ __all__ = [
     "SIZE_SCHEMES",
     # Regions
     "Region",
-    "Header",
-    "MinimalHeader",
+    "Banner",
+    "MinimalBanner",
     "Footer",
     # Models
     "EmailMetadata",

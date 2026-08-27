@@ -30,7 +30,7 @@ from .enums import EmbedStrategy
 from .exceptions import SizeError
 from .images import EmailImage, ImageAsset, dedupe_assets
 from .models import EmailMetadata
-from .regions import Footer, Header
+from .regions import Banner, Footer
 from .sizing import resolve_size_scheme
 from .theming import resolve_theme
 
@@ -67,7 +67,7 @@ class Email:
         self,
         metadata: dict[str, Any] | EmailMetadata,
         template_dir: Path | None = None,
-        header: Header | None = None,
+        banner: Banner | None = None,
         footer: Footer | None = None,
     ):
         self._engine = TemplateEngine(template_dir)
@@ -82,7 +82,7 @@ class Email:
         # confusing render-time symptom.
         self._metadata.validate()
 
-        self._header: Header = header if header is not None else self._metadata.header
+        self._banner: Banner = banner if banner is not None else self._metadata.banner
         self._footer: Footer = footer if footer is not None else self._metadata.footer
         self._sections: list[Container] = []
 
@@ -108,14 +108,14 @@ class Email:
         return self._metadata
 
     @property
-    def header(self) -> Header:
+    def banner(self) -> Banner:
         """
         The masthead region this email renders.
 
         Read-only for the same reasons as :attr:`metadata`; use
-        :meth:`set_header` to swap it.
+        :meth:`set_banner` to swap it.
         """
-        return self._header
+        return self._banner
 
     @property
     def footer(self) -> Footer:
@@ -131,13 +131,13 @@ class Email:
     # Building
     # ------------------------------------------------------------------
 
-    def set_header(self, header: Header) -> Email:
+    def set_banner(self, banner: Banner) -> Email:
         """
         Replace the masthead region.
 
         Returns ``self`` for optional chaining.
         """
-        self._header = header
+        self._banner = banner
         return self
 
     def set_footer(self, footer: Footer) -> Email:
@@ -173,7 +173,7 @@ class Email:
         broken ``cid:`` reference, which is the failure the ``images()`` rule
         exists to prevent.
         """
-        images = list(self._header.images())
+        images = list(self._banner.images())
         for section in self._sections:
             for component in section.components():
                 images.extend(component.images())
@@ -206,7 +206,7 @@ class Email:
                 message.attach(asset.data, asset.mime_type,
                                cid=asset.content_id, filename=asset.filename)
         """
-        assets = list(self._header.assets())
+        assets = list(self._banner.assets())
         for section in self._sections:
             assets.extend(section.assets())
         assets.extend(self._footer.assets())
@@ -251,7 +251,7 @@ class Email:
         # *is* a default-constructed region.
         ctx = self._metadata.to_dict()
         ctx["sections_html"] = sections_html
-        ctx.update(self._header.render_slots(engine, self._metadata.header_facts()))
+        ctx.update(self._banner.render_slots(engine, self._metadata.banner_facts()))
         ctx.update(self._footer.render_slots(engine, self._metadata.footer_facts()))
 
         html = engine.render("base.html", ctx)
@@ -350,7 +350,7 @@ class EmailBuilder:
         self._email = Email(metadata=data, template_dir=self._template_dir)
         return self
 
-    def header(self, header: Header) -> EmailBuilder:
+    def banner(self, banner: Banner) -> EmailBuilder:
         """
         Set the masthead region.
 
@@ -360,7 +360,7 @@ class EmailBuilder:
         """
         if self._email is None:
             raise RuntimeError("Call .metadata() before setting the header.")
-        self._email.set_header(header)
+        self._email.set_banner(banner)
         return self
 
     def footer(self, footer: Footer) -> EmailBuilder:

@@ -111,7 +111,7 @@ Every email is **skeleton ← regions ← containers ← components**, and the r
 | Layer | What it owns | Where |
 |---|---|---|
 | **Skeleton** | the whole page — head, preheader, wrapper — with four holes: `{{ header_bar_html }}`, `{{ banner_html }}`, `{{ sections_html }}`, `{{ footer_html }}` | `svc/builder/templates/base.html` |
-| **Regions** | the masthead (`Header`, `MinimalHeader`) and the close (`Footer`). (The *body* region is the ordered section list — not a class) | `svc/builder/regions.py` |
+| **Regions** | the masthead (`Banner`, `MinimalBanner`) and the close (`Footer`). (The *body* region is the ordered section list — not a class) | `svc/builder/regions.py` |
 | **Containers** | layout geometry only: `FullWidth`, `TwoColumn`, `ThreeColumn` | `svc/builder/containers.py` |
 | **Components** | content: `CardGroup`, `DataTable`, `ChartBlock`, `ImageBlock`, `TextBlock`, `NumberedList`, `AuthorBlock`, `ContactBlock` | `svc/builder/components.py` |
 
@@ -125,11 +125,11 @@ time — a region presents them, it cannot contradict them. Swapping the header 
 argument, not a template fork:
 
 ```python
-from svc.builder import EmailBuilder, MinimalHeader
+from svc.builder import EmailBuilder, MinimalBanner
 
 (EmailBuilder()
     .metadata({...})
-    .header(MinimalHeader(logo_url=logo))
+    .banner(MinimalBanner(logo_url=logo))
     .section(...))
 ```
 

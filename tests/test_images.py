@@ -284,21 +284,21 @@ class TestHeaderImages:
         image = EmailImage.attached(png_bytes, alt="Firm logo")
         metadata = EmailMetadata(**valid_metadata, logo_url=image)
         metadata.validate()
-        assert metadata.header.context({})["logo_url"] == image.src
+        assert metadata.banner.context({})["logo_url"] == image.src
 
     def test_a_plain_url_is_untouched(self, valid_metadata):
         metadata = EmailMetadata(**valid_metadata, logo_url="https://cdn.test/l.png")
-        assert metadata.header.context({})["logo_url"] == "https://cdn.test/l.png"
+        assert metadata.banner.context({})["logo_url"] == "https://cdn.test/l.png"
 
     def test_header_images_reach_the_manifest(self, valid_metadata, png_bytes):
         image = EmailImage.attached(png_bytes, alt="Firm logo")
         metadata = EmailMetadata(**valid_metadata, header_bg_image_url=image)
-        assert [a.content_id for a in metadata.header.assets()] == [image.content_id]
+        assert [a.content_id for a in metadata.banner.assets()] == [image.content_id]
 
     def test_a_plain_url_still_has_its_scheme_checked(self, valid_metadata):
         # Now at construction: the header validates in __init__, so the flat
         # keyword raises where it is written rather than at .validate().
-        with pytest.raises(ValidationError, match="header.logo_url"):
+        with pytest.raises(ValidationError, match="banner.logo_url"):
             EmailMetadata(**valid_metadata, logo_url="javascript:alert(1)")
 
     def test_to_dict_covers_every_field_but_the_regions_and_the_bound_ones(self, valid_metadata):
@@ -311,7 +311,7 @@ class TestHeaderImages:
         metadata = EmailMetadata(**valid_metadata)
         declared = {f.name for f in dataclasses.fields(EmailMetadata)}
         assert set(metadata.to_dict()) == declared - {
-            "header",
+            "banner",
             "footer",
             "theme",
             "size_theme",
