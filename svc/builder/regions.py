@@ -617,8 +617,12 @@ class Footer(BoxSurface, Region):
     Attributes:
         border:           Draw a full box around the footer.
         border_color:     Hex; empty falls back to the theme rule colour.
-        image:            Optional sign-off mark (URL or EmailImage), rendered
-                          above the copyright line.
+        image:            Optional sign-off mark (URL or EmailImage). The box
+                          stacks **image → disclaimer → copyright row**, so
+                          this sits above the disclaimer, not in place of it.
+                          All three are independently optional and each
+                          collapses when unset, closing the gap rather than
+                          leaving one.
         image_alt:        Alt text; falls back to the EmailImage's own alt.
         image_width:      Display width in px; falls back to the EmailImage's
                           own width, then to :data:`DEFAULT_IMAGE_WIDTH`.
