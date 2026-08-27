@@ -484,13 +484,13 @@ them.
 
 | Stays on `EmailMetadata` (facts / constraints) | Lives on the region (presentation) |
 |---|---|
-| `header_disclaimer` | `Header.align`, `background_color`, `text_color` |
+| `header_disclaimer` | `Header.align`, `background_color`, `text_color` (the shared `BoxSurface`) |
 | `email_subject`, `preheader_text` | `Banner.background_image_url` |
 | `firm_name`, `campaign_name` | `Banner.logo_url`, `logo_alt`, `logo_width` |
 | (the same two, as the headline's fallbacks) | `Banner.title`, `subtitle`, `resolved_title()`, `resolved_subtitle()` |
 | (the theme, as every colour's fallback) | `Banner.palette` — the masthead's own `BannerPalette` |
 | `date_range`, `issue_label`, `header_disclaimer`, `department` | `Banner.resolved_logo_alt()`, `resolved_logo_width()`, `DEFAULT_LOGO_WIDTH` |
-| `firm_name`, `current_year` | `Footer.background_color`, `border`, `border_color`, `image`/`image_alt`/`image_width` |
+| `firm_name`, `current_year` | `Footer.align`, `background_color`, `text_color` (the shared `BoxSurface`), plus `border`, `border_color`, `image`/`image_alt`/`image_width` |
 | `unsubscribe_url`, `view_in_browser_url` | `Footer.unsubscribe_label`, `view_in_browser_label`, `disclaimer` (optional, free-form HTML) |
 
 Two boundary calls, each made for a reason rather than by shape:

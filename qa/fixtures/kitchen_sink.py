@@ -170,7 +170,12 @@ def build(template_dir: Path | None = None, **metadata_overrides: Any) -> Email:
         )
         .footer(
             Footer(
+                # The shared box surface, distinctively — the same three
+                # fields the header above sets, which is the parity this
+                # golden pins in the one place both boxes are visible.
+                align="left",
                 background_color="#F2F1EE",
+                text_color="#5C574E",
                 border=True,
                 border_color="#D6D2CB",
                 image=EmailImage.hosted(

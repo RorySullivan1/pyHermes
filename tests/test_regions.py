@@ -15,6 +15,7 @@ import svc.builder as builder_api
 from svc.builder import (
     Banner,
     BannerPalette,
+    BoxSurface,
     Email,
     EmailBuilder,
     EmptyHeader,
@@ -723,6 +724,130 @@ class TestEveryRegionVariantHoldsTheContract:
             region = cls()
             slots = region.render_slots(engine, dict.fromkeys(_facts_for(cls), ""))
             assert set(slots) == {f"{slot}_html" for slot in cls.SLOTS}
+
+
+class TestTheTwoBoxesShareOneSurface:
+    """
+    #99's parity, which is the requirement behind the whole footer epic: the
+    header and footer are the email's two customisable outer boxes, and two
+    boxes that behave alike should cost one API to learn.
+
+    Parity is structural — both mix in :class:`BoxSurface` — and the tests
+    below are what stop a third region redeclaring the three by hand, or the
+    two drifting in *semantics* while the names still match.
+    """
+
+    BOXES = [Header, Footer]
+
+    def test_both_inherit_the_surface_rather_than_redeclaring_it(self):
+        for cls in self.BOXES:
+            assert issubclass(cls, BoxSurface), (
+                f"{cls.__name__} must mix in BoxSurface, not restate its fields — "
+                "redeclaring them is how the two APIs drift apart."
+            )
+
+    def test_the_surface_is_the_same_three_fields_with_the_same_defaults(self):
+        surface = {f.name: f.default for f in dataclasses.fields(BoxSurface)}
+        assert surface == {"align": "center", "background_color": "", "text_color": ""}
+        for cls in self.BOXES:
+            own = {f.name: f.default for f in dataclasses.fields(cls)}
+            assert own.items() >= surface.items(), (
+                f"{cls.__name__} changed a shared field's default; parity is the "
+                "semantics, not only the names."
+            )
+
+    @pytest.mark.parametrize("cls", BOXES)
+    def test_each_validates_the_surface_the_same_way(self, cls):
+        with pytest.raises(ValidationError, match=f"{cls.CONTEXT_NAME}.align"):
+            cls(align="middle")
+        with pytest.raises(ValidationError, match=f"{cls.CONTEXT_NAME}.background_color"):
+            cls(background_color="beige")
+        with pytest.raises(ValidationError, match=f"{cls.CONTEXT_NAME}.text_color"):
+            cls(text_color="beige")
+
+    @pytest.mark.parametrize("cls", BOXES)
+    def test_each_resolves_the_surface_against_the_theme(self, cls):
+        """
+        The mechanism, not just the fields: an unset colour must arrive
+        resolved rather than empty, and a set one must win — in both boxes,
+        by the same hook.
+        """
+        inherited = cls().theme_context(DEFAULT_THEME)
+        assert inherited and all(v for v in inherited.values())
+        overridden = cls(background_color="#123456").theme_context(DEFAULT_THEME)
+        assert "#123456" in overridden.values()
+
+    def test_they_keep_their_own_fallback_tokens(self):
+        """
+        Shared fields, not shared tokens. The header's box sits on the dark
+        band and the footer's on the wrapper — parity that forced one set of
+        tokens on both would be parity as costume.
+        """
+        header = Header().theme_context(DEFAULT_THEME)
+        footer = Footer().theme_context(DEFAULT_THEME)
+        assert header["header_background"] == DEFAULT_THEME.palette.header_bg
+        assert footer["footer_background"] == DEFAULT_THEME.palette.wrapper_bg
+        assert header["header_background"] != footer["footer_background"]
+
+
+class TestTheFooterBox:
+    """#99: the footer's legal block gains the surface the header already had."""
+
+    @staticmethod
+    def _footer(**kwargs) -> str:
+        metadata = EmailMetadata(
+            email_subject="s",
+            firm_name="Hermes Research",
+            campaign_name="c",
+            current_year="2026",
+            unsubscribe_url="https://example.com/u",
+            view_in_browser_url="https://example.com/v",
+            footer=Footer(disclaimer="<p>Fine print.</p>", **kwargs),
+        )
+        return metadata.footer.render_slots(TemplateEngine(), metadata.footer_facts())[
+            "footer_html"
+        ]
+
+    def test_unset_renders_the_themes_own_values(self):
+        html = self._footer()
+        assert DEFAULT_THEME.palette.wrapper_bg in html
+        assert DEFAULT_THEME.text.fine_print in html
+        assert DEFAULT_THEME.text.light in html
+        assert "text-align:center" in html
+
+    @pytest.mark.parametrize("align", ["left", "center", "right"])
+    def test_alignment_reaches_every_row_of_the_box(self, align):
+        """
+        Disclaimer, copyright row and the sign-off image are one box, so one
+        alignment moves all three — a box half-aligned would read as a bug.
+        """
+        html = self._footer(align=align, image="https://cdn.test/mark.png")
+        assert html.count(f"text-align:{align}") == 3
+
+    def test_the_background_moves_and_the_text_follows_it(self):
+        html = self._footer(background_color="#1B2A38", text_color="#E8EEF2")
+        assert "#1B2A38" in html and "#E8EEF2" in html
+        assert DEFAULT_THEME.palette.wrapper_bg not in html
+        assert DEFAULT_THEME.text.fine_print not in html
+        assert DEFAULT_THEME.text.light not in html
+
+    def test_text_color_collapses_both_type_tokens(self):
+        """
+        Documented coarseness, pinned. The theme keeps ``fine_print`` and
+        ``light`` distinct; one override sets both, because a caller who has
+        changed the ground needs *both* rows legible on it.
+        """
+        html = self._footer(text_color="#E8EEF2")
+        assert html.count("color:#E8EEF2") == 2
+
+    def test_links_keep_the_accent(self):
+        """An explicit non-goal: the links are anchors, not box text."""
+        html = self._footer(background_color="#1B2A38", text_color="#E8EEF2")
+        assert DEFAULT_THEME.palette.accent in html
+
+    def test_the_border_colour_resolves_the_same_way(self):
+        assert DEFAULT_THEME.palette.rule in self._footer(border=True)
+        assert "#654321" in self._footer(border=True, border_color="#654321")
 
 
 class TestTheFlatKeywordsStillWork:

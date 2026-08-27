@@ -101,6 +101,7 @@ from .models import (
 # Regions
 from .regions import (
     Banner,
+    BoxSurface,
     EmptyHeader,
     Footer,
     Header,
@@ -162,6 +163,7 @@ __all__ = [
     # Regions
     "Region",
     "Banner",
+    "BoxSurface",
     "MinimalBanner",
     "Footer",
     "Header",

@@ -234,6 +234,57 @@ class Region:
 
 
 @dataclass
+class BoxSurface:
+    """
+    The three fields the email's two outer boxes share.
+
+    The header strip and the footer's legal block are the customisable boxes
+    that bracket the body, and the requirement behind them is that they be
+    *similar*: two boxes that behave alike should cost one API to learn, not
+    two. So the surface is declared once and mixed into both, which makes the
+    parity structural rather than a convention a test has to keep catching
+    after the fact. (The test exists anyway — it is what stops a third region
+    redeclaring these by hand instead of inheriting them.)
+
+    A region mixes this in beside :class:`Region` and keeps its own
+    :meth:`Region.theme_context`: the *fields* are shared, the tokens they
+    fall back to are not. The footer's box draws type in two theme tokens and
+    the header's in one, and pretending otherwise would be parity as
+    costume.
+
+    Attributes:
+        align:            ``left``, ``center`` or ``right``.
+        background_color: Hex; unset means the region's own theme token.
+        text_color:       Hex; unset means the region's own theme token. It
+                          ships with the background rather than alone,
+                          because a ground the caller chose makes the theme's
+                          type on it a guess — :class:`BannerPalette`'s
+                          reasoning at the size these boxes need.
+    """
+
+    #: The alignments that make sense for a band of copy. Not the full CSS
+    #: vocabulary: ``justify`` does nothing to a single short line, and the
+    #: rest are inline-level values.
+    ALIGNMENTS: ClassVar[frozenset[str]] = frozenset({"left", "center", "right"})
+
+    align: str = "center"
+    background_color: str = ""
+    text_color: str = ""
+
+    def validate_box_surface(self, context_name: str) -> None:
+        """Validate the three shared fields, naming the owning region."""
+        if self.align not in self.ALIGNMENTS:
+            raise ValidationError(
+                f"'{context_name}.align' must be one of {sorted(self.ALIGNMENTS)}, "
+                f"got: {self.align!r}"
+            )
+        for name in ("background_color", "text_color"):
+            value = getattr(self, name)
+            if value:
+                _validate_color(value, f"{context_name}.{name}")
+
+
+@dataclass
 class Banner(Region):
     """
     The masthead: how an email presents the facts it holds.
@@ -449,7 +500,7 @@ class MinimalBanner(Banner):
 
 
 @dataclass
-class Header(Region):
+class Header(BoxSurface, Region):
     """
     The strip at the very top of the email: one band of centred copy.
 
@@ -475,18 +526,10 @@ class Header(Region):
     belongs to the *email*, and this region only decides how the box presents
     it.
 
-    Attributes:
-        align:            ``left``, ``center`` or ``right``. Centred by
-                          default, which is what the strip has always been.
-        background_color: Hex; unset means the theme's band
-                          (``palette.header_bg``).
-        text_color:       Hex; unset means the theme's ``text.on_dark_muted``.
-                          It rides with the background rather than being
-                          offered alone, for :class:`BannerPalette`'s reason
-                          scoped to one token: a caller-supplied ground makes
-                          the theme's on-dark text a guess, so offering the
-                          surface without the type on it is offering half a
-                          decision.
+    Its presentation is :class:`BoxSurface` — ``align``, ``background_color``
+    and ``text_color``, shared with the footer's box so the two cost one API
+    to learn. Unset, the background is the theme's band
+    (``palette.header_bg``) and the text its ``text.on_dark_muted``.
 
     Validates at construction, like every model here.
     """
@@ -495,25 +538,9 @@ class Header(Region):
     SLOTS: ClassVar[tuple[str, ...]] = ("header_bar",)
     TEMPLATE_PATHS: ClassVar[dict[str, str]] = {"header_bar": "regions/header-bar.html"}
 
-    #: The alignments CSS ``text-align`` takes that make sense for one band of
-    #: copy. Not the full CSS vocabulary: ``justify`` on a single short line
-    #: does nothing, and the rest are inline-level values.
-    ALIGNMENTS: ClassVar[frozenset[str]] = frozenset({"left", "center", "right"})
-
-    align: str = "center"
-    background_color: str = ""
-    text_color: str = ""
-
     def validate(self) -> None:
         super().validate()
-        if self.align not in self.ALIGNMENTS:
-            raise ValidationError(
-                f"'header.align' must be one of {sorted(self.ALIGNMENTS)}, got: {self.align!r}"
-            )
-        for name in ("background_color", "text_color"):
-            value = getattr(self, name)
-            if value:
-                _validate_color(value, f"header.{name}")
+        self.validate_box_surface(self.CONTEXT_NAME)
 
     def theme_context(self, theme: Theme) -> dict[str, Any]:
         """
@@ -571,7 +598,7 @@ class EmptyHeader(Header):
 
 
 @dataclass
-class Footer(Region):
+class Footer(BoxSurface, Region):
     """
     The closing region: a structured, partially-flexible block.
 
@@ -582,8 +609,12 @@ class Footer(Region):
     :meth:`context`. The disclaimer is optional — an empty one omits the
     fine-print line; the copyright + links line always renders.
 
+    Its box presentation is :class:`BoxSurface` — ``align``,
+    ``background_color`` and ``text_color``, the same three the header strip
+    takes, so the email's two outer boxes cost one API to learn rather than
+    two. Everything below is the footer's own.
+
     Attributes:
-        background_color: Hex override; empty falls back to the theme surface.
         border:           Draw a full box around the footer.
         border_color:     Hex; empty falls back to the theme rule colour.
         image:            Optional sign-off mark (URL or EmailImage), rendered
@@ -602,7 +633,6 @@ class Footer(Region):
     IMAGE_FIELDS: ClassVar[tuple[str, ...]] = ("image",)
     DEFAULT_IMAGE_WIDTH: ClassVar[int] = 120
 
-    background_color: str = ""
     border: bool = False
     border_color: str = ""
     image: str | EmailImage = ""
@@ -614,10 +644,9 @@ class Footer(Region):
 
     def validate(self) -> None:
         super().validate()
-        for name in ("background_color", "border_color"):
-            value = getattr(self, name)
-            if value:
-                _validate_color(value, f"footer.{name}")
+        self.validate_box_surface(self.CONTEXT_NAME)
+        if self.border_color:
+            _validate_color(self.border_color, "footer.border_color")
         if self.image_width is not None and self.image_width <= 0:
             raise ValidationError(f"'footer.image_width' must be positive, got: {self.image_width}")
 
@@ -627,6 +656,32 @@ class Footer(Region):
             "image_width": self.resolved_image_width(),
         }
         return {**super().context({}), **resolved, **facts}
+
+    def theme_context(self, theme: Theme) -> dict[str, Any]:
+        """
+        The box's colours, resolved — the same mechanism the header uses.
+
+        The fallbacks are this region's own, which is why the mixin shares
+        the *fields* and not this: the box draws type in **two** theme
+        tokens, ``text.fine_print`` for the disclaimer and the lighter
+        ``text.light`` for the copyright row, and the header's box draws it
+        in one.
+
+        **``text_color`` is deliberately coarser than the theme**: set, it
+        collapses those two into one. That is the right trade rather than a
+        shortcut — a caller sets it *because* they set a background, and a
+        knob that recoloured only one of the two rows would leave the other
+        illegible on the new ground. Unset, the two stay distinct.
+
+        Link colour stays ``palette.accent``: the links are anchors, not box
+        text, and per-link colour is an explicit non-goal.
+        """
+        return {
+            "footer_background": self.background_color or theme.palette.wrapper_bg,
+            "footer_text": self.text_color or theme.text.fine_print,
+            "footer_text_muted": self.text_color or theme.text.light,
+            "footer_border": self.border_color or theme.palette.rule,
+        }
 
     def resolved_image_alt(self) -> str:
         from .images import EmailImage
