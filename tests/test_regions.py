@@ -26,19 +26,36 @@ def _template(name: str) -> str:
 class TestTheHeaderLeftTheSkeleton:
     """#33: the pure template split — the markup moved, the output did not."""
 
-    def test_the_region_template_ships_in_the_package(self):
-        assert (TEMPLATE_DIR / "regions" / "header.html").is_file()
+    @pytest.mark.parametrize("slot", ["header_bar", "banner"])
+    def test_the_region_templates_ship_in_the_package(self, slot):
+        assert (TEMPLATE_DIR / Header.TEMPLATE_PATHS[slot]).is_file()
 
-    def test_base_html_keeps_only_the_hole(self):
+    def test_base_html_keeps_only_the_holes(self):
         base = _template("base.html")
-        assert "{{ header_html }}" in base
+        for hole in ("{{ header_bar_html }}", "{{ banner_html }}"):
+            assert hole in base
         for moved in ("HEADER: Disclaimer bar", "HEADER: Background image", "v:rect"):
             assert moved not in base, f"base.html still carries header markup: {moved!r}"
 
     def test_the_fragile_outlook_markup_moved_intact(self):
-        header = _template("regions/header.html")
+        banner = _template("regions/banner.html")
         for vml in ("<v:rect", "<v:fill", "<v:textbox", "</v:textbox>", "</v:rect>"):
-            assert vml in header
+            assert vml in banner
+
+    def test_the_strip_exists_in_exactly_one_template(self):
+        """
+        #89's point. Both variants used to carry their own copy of the strip,
+        byte-identical apart from a marker comment — the drift-by-copy a
+        shared template makes impossible. ``MinimalHeader`` composes
+        ``Header``'s path rather than restating it.
+        """
+        carriers = [
+            path.name
+            for path in (TEMPLATE_DIR / "regions").glob("*.html")
+            if "{{header_disclaimer}}" in path.read_text(encoding="utf-8")
+        ]
+        assert carriers == ["header-bar.html"]
+        assert MinimalHeader.TEMPLATE_PATHS["header_bar"] == Header.TEMPLATE_PATHS["header_bar"]
 
     @pytest.mark.parametrize(
         "variable",
@@ -57,8 +74,8 @@ class TestTheHeaderLeftTheSkeleton:
         email-level rather than moving onto the region that displays them.
         """
         base = _template("base.html")
-        header = _template("regions/header.html")
-        assert variable in header
+        region = _template("regions/header-bar.html") + _template("regions/banner.html")
+        assert variable in region
         assert variable not in base
         if variable == "firm_name":
             assert variable in _template("regions/footer.html")
@@ -211,7 +228,7 @@ class TestTheEmailApi:
     def test_the_header_renders_into_the_skeleton(self, valid_metadata):
         email = Email({**valid_metadata, "logo_alt": "explicit"})
         html = email.render()
-        assert "{{ header_html }}" not in html
+        assert "{{ banner_html }}" not in html
         assert 'alt="explicit"' in html
 
     def test_a_cid_logo_is_attached_exactly_once(self, valid_metadata, png_bytes):
@@ -233,7 +250,7 @@ class TestTheMinimalHeaderVariant:
 
     def test_it_renders_its_own_template(self):
         assert MinimalHeader.TEMPLATE_PATHS != Header.TEMPLATE_PATHS
-        assert (TEMPLATE_DIR / MinimalHeader.TEMPLATE_PATHS["header"]).is_file()
+        assert (TEMPLATE_DIR / MinimalHeader.TEMPLATE_PATHS["banner"]).is_file()
 
     def test_a_background_image_is_rejected_rather_than_ignored(self):
         with pytest.raises(ValidationError, match="not supported by MinimalHeader"):

@@ -220,10 +220,17 @@ class Header(Region):
 
     CONTEXT_NAME: ClassVar[str] = "header"
 
-    #: The masthead fills a single slot: ``{{ header_html }}``.
-    SLOTS: ClassVar[tuple[str, ...]] = ("header",)
+    #: Two slots, not one. The strip at the top of the email and the masthead
+    #: below it are separate blocks with separate owners — different content,
+    #: different reasons to change — and they shared a template only by
+    #: accident of file layout. #87 gives the strip its own region; this
+    #: region fills both until then.
+    SLOTS: ClassVar[tuple[str, ...]] = ("header_bar", "banner")
 
-    TEMPLATE_PATHS: ClassVar[dict[str, str]] = {"header": "regions/header.html"}
+    TEMPLATE_PATHS: ClassVar[dict[str, str]] = {
+        "header_bar": "regions/header-bar.html",
+        "banner": "regions/banner.html",
+    }
 
     #: Fields that may hold an EmailImage instead of a bare URL.
     IMAGE_FIELDS: ClassVar[tuple[str, ...]] = ("logo_url", "background_image_url")
@@ -258,13 +265,16 @@ class Header(Region):
 
     def render(self, engine: Renderer, facts: dict[str, Any]) -> str:
         """
-        The masthead HTML.
+        Every slot this region fills, in skeleton order, as one string.
 
-        A convenience over :meth:`render_slots` for the single-slot case, and
-        deliberately a delegation rather than a second call to ``engine`` —
-        one rendering path is the whole point.
+        A convenience over :meth:`render_slots`, and deliberately a
+        delegation rather than a second call to ``engine`` — one rendering
+        path is the whole point. Joining on a newline reproduces what the
+        single pre-split template rendered byte for byte, because the strip
+        already ends with one and the skeleton supplies the other.
         """
-        return self.render_slots(engine, facts)["header_html"]
+        slots = self.render_slots(engine, facts)
+        return "\n".join(slots[f"{slot}_html"] for slot in self.SLOTS)
 
     # ------------------------------------------------------------------
     # Resolution chains
@@ -316,7 +326,15 @@ class MinimalHeader(Header):
     rejected at construction rather than silently ignored.
     """
 
-    TEMPLATE_PATHS: ClassVar[dict[str, str]] = {"header": "regions/header-minimal.html"}
+    #: Composed rather than restated: the variant differs in the *banner*
+    #: only, so it inherits the strip's path instead of carrying a second
+    #: copy of it. A full replacement would let the two drift the moment one
+    #: path changed — which is exactly what the duplicated strip template did
+    #: before #89 removed it.
+    TEMPLATE_PATHS: ClassVar[dict[str, str]] = {
+        **Header.TEMPLATE_PATHS,
+        "banner": "regions/banner-minimal.html",
+    }
 
     def validate(self) -> None:
         if self.background_image_url:

@@ -39,8 +39,9 @@ class TestConstruction:
             "text/numbered-list.html",
             "text/author-block.html",
             "media/image-block.html",
-            "regions/header.html",
-            "regions/header-minimal.html",
+            "regions/header-bar.html",
+            "regions/banner.html",
+            "regions/banner-minimal.html",
             "regions/footer.html",
             "common/containers/full-width.html",
             # One file for every split since #42; the eight per-ratio

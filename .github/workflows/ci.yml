@@ -158,7 +158,7 @@ jobs:
           )
           html = out.read_text()
           assert "Rendered from a wheel." in html, "template did not render"
-          assert "<v:rect" in html, "regions/header.html did not render"
+          assert "<v:rect" in html, "regions/banner.html did not render"
           assert "<v:roundrect" in html, "text/contact-block.html did not render"
           assert "Wheel disclaimer." in html, "regions/footer.html disclaimer did not render"
           assert "Unsubscribe" in html, "regions/footer.html copyright/links did not render"

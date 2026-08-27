@@ -79,9 +79,10 @@ svc/
 │   ├── filters.py      — Jinja filters (e.g. validate_hex_color)
 │   ├── exceptions.py   — EmailBuilderError hierarchy
 │   └── templates/      ← packaged with the wheel (moved here in #10)
-│       ├── base.html                — the rendered skeleton (three slots: header_html,
-│                                      sections_html, footer_html)
-│       ├── regions/*.html           — header.html, header-minimal.html, footer.html
+│       ├── base.html                — the rendered skeleton (four slots: header_bar_html,
+│                                      banner_html, sections_html, footer_html)
+│       ├── regions/*.html           — header-bar.html, banner.html, banner-minimal.html,
+│                                      footer.html
 │       ├── common/containers/*.html — layout geometry: full-width.html + columns.html
 │                                      (one file for every split since #42; widths computed)
 │       ├── analysis/*.html          — data components (card-group, data-table, chart-block)
@@ -407,7 +408,8 @@ recoverable from git history if ever needed for reference.)
 Every email is `skeleton ← regions (header | body | footer) ← containers ← components`:
 
 1. **Skeleton** — [svc/builder/templates/base.html](svc/builder/templates/base.html). The full HTML page (head,
-   preheader, palette comment) with three variable holes: `{{ header_html }}`,
+   preheader, palette comment) with four variable holes: `{{ header_bar_html }}`,
+   `{{ banner_html }}`,
    `{{ sections_html }}`, and `{{ footer_html }}`.
    Rendered last by [Email.render()](svc/builder/email.py).
 2. **Regions** — the named areas of the email. Templates in
@@ -433,7 +435,9 @@ implements `context()`.
 
 **A region fills its named slot(s)** — a region declares `SLOTS` (the skeleton's contract, fixed) and
 `TEMPLATE_PATHS` (what this variant fills), and `Region.render_slots()` returns one HTML
-string per slot. The header fills one (`header_html`); the footer also fills one (`footer_html`)
+string per slot. The header fills **two** since #89 — `header_bar_html` for the strip at the
+top of the email and `banner_html` for the masthead below it, which shared a template only by
+accident of file layout; the footer fills one (`footer_html`)
 — a single table rendered below the body. `Header.render()` survives as the single-slot convenience and
 delegates to `render_slots()` — one rendering path, not two.
 
