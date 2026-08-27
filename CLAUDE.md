@@ -120,7 +120,7 @@ tests/                  — pytest unit suite (validation, error paths, size lim
 ## The fixture gallery — `qa/fixtures`
 
 The shared set of representative emails every later QA tool consumes (#57, the first step of
-epic #54). Ten fixtures, each a `build()` returning a built `Email`, enumerated through
+epic #54). Eleven fixtures, each a `build()` returning a built `Email`, enumerated through
 `all_fixtures()` so a consumer never imports them one by one:
 
 | Fixture | What it is for |
@@ -133,6 +133,7 @@ epic #54). Ten fixtures, each a `build()` returning a built `Email`, enumerated 
 | `compact_size` / `spacious_size` | The two density presets (#43). Each renders **`kitchen_sink`'s own content** at one non-default `size_theme` rather than restating it, so the pair diffs as a true A/B where every difference is the density: type, spacing, the component sizes that do not follow the global scale, the frame padding every column width is computed from, and `base.html`'s `@media` block moving with the rest. They are what retires `kitchen_sink`'s `size_theme` exemption — that fixture holds the field at its default on purpose, because it is the epic's byte-identity reference |
 | `custom_banner` | Every banner axis at once (#94), which is what closes epic #88 — free-form `title`/`subtitle`, a `department`, an **attached** background image and a `BannerPalette` tuned to it. The one fixture a *cross-axis* regression shows up in, since no per-axis test can see an interaction. It also covers the only embed path the gallery otherwise lacked: a `cid:` background, reaching the manifest through `Banner.images()`' walk of `IMAGE_FIELDS` and appearing in both the CSS `background-image` and the VML `v:fill`. Its body is short on purpose — `kitchen_sink` exercises the component library, and a fat body here would make this golden noisy for reasons unrelated to the masthead |
 | `no_header` | The `EmptyHeader` variant (#96) — a region that fills **no** slot, so the strip is genuinely absent rather than blank. Differs from `minimal` in one argument, and pairs the **default** banner on purpose (`minimal_footer`'s reasoning: two region choices swapped at once could not say which moved a byte). Its `header_disclaimer` is *set*, which is the point — an empty one would leave the strip absent either way, and the golden could not tell "the variant omitted it" from "there was nothing to render" |
+| `custom_footer` | Both footer axes at once (#101), closing epic #98 — the coloured box surface (`align`, `background_color`, `text_color`) and a custom `LinkRow` with a link set that is neither the default pair nor the same length. Paired with the **default header** on purpose, so the two boxes are independent in the diff and their contrast is visible in a screenshot; it also carries the only `mailto:` link in the gallery, since a scheme check must keep passing what it allows and not only reject what it does not |
 | `minimal_footer` | A minimal-footer build (#66), the same argument at the other end. Paired with the **default** header on purpose: the two region choices are independent, and swapping both at once could not say which one moved a byte |
 
 **Determinism is the rule the gallery rests on**, and it is not a style preference: Content-IDs
@@ -492,6 +493,7 @@ them.
 | `date_range`, `issue_label`, `header_disclaimer`, `department` | `Banner.resolved_logo_alt()`, `resolved_logo_width()`, `DEFAULT_LOGO_WIDTH` |
 | `firm_name`, `current_year` | `Footer.align`, `background_color`, `text_color` (the shared `BoxSurface`), plus `border`, `border_color`, `image`/`image_alt`/`image_width` |
 | `unsubscribe_url`, `view_in_browser_url` | `Footer.unsubscribe_label`, `view_in_browser_label`, `disclaimer` (optional, free-form HTML) |
+| (those two + `firm_name`, `current_year`, as the row's default) | `Footer.link_row` — a `LinkRow` the caller composed; `None` builds the default row from the facts |
 
 Two boundary calls, each made for a reason rather than by shape:
 
@@ -562,6 +564,22 @@ rather than at `.validate()`, and the message names `banner.logo_url` /
 check only fires inside `EmailMetadata`, where both spellings are visible at once. Put
 presentation on whichever region actually renders; `qa/fixtures/minimal_footer.py` is the
 worked example.
+
+**The header and the footer are the email's two customisable boxes, and they share one
+surface.** `BoxSurface` declares `align`, `background_color` and `text_color` once and both
+regions mix it in, so the parity is *structural* rather than a convention someone has to keep
+re-checking. `TestTheTwoBoxesShareOneSurface` is what makes that a rule rather than a hope: it
+asserts both regions **inherit** the mixin rather than redeclaring the fields, that the shared
+defaults match, that both validate identically, and that both resolve through
+`theme_context()`. A claim with an enforcing test is a rule; one without is a wish.
+
+What the mixin deliberately does *not* share is the tokens. The strip's box falls back to
+`palette.header_bg` / `text.on_dark_muted` and the footer's to `palette.wrapper_bg` /
+`text.fine_print` + `text.light` — parity that forced one token set on both would be parity as
+costume, and a test pins that the two resolve to different backgrounds. The footer's
+`text_color` is one knob over *two* theme tokens on purpose: a caller sets it because they set
+a background, and recolouring only one of the two rows would leave the other illegible on the
+new ground.
 
 **The footer's row always renders; what is *in* it is the caller's call.** `REQUIRED_SLOTS`
 makes an unfilled slot a `ValidationError` at construction, so a variant cannot drop the block
@@ -908,20 +926,31 @@ EmailBuilder().metadata({..., "theme": DEFAULT_THEME.derive(  # or your own
   field is optional, and every value is validated at construction — so a `Theme` that exists
   is a `Theme` that renders, and `StrictUndefined` cannot be tripped by a half-built one.
   **There is deliberately no per-component colour parameter**; a `title_color=` anywhere
-  would dissolve the palette one call site at a time. `Container.background_color` is the
-  one pre-existing escape hatch and stays exactly as it was — neither removed nor extended.
-- **`BannerPalette` is the rule's single named exception, and the name of the reason is
-  "a backdrop the palette cannot see" (#93).** Every other colour decision is made against a
-  surface the theme itself supplies, so the theme can curate the pair. The masthead is the one
-  place a *caller* supplies it: `Banner.background_image_url` is a photograph the palette has
-  never been handed, and white-on-navy tokens over a pale image are simply a guess. What the
-  rule protects survives intact, which is why this is an exception rather than a breach — a
-  caller still picks a validated, frozen, coherent **atom**, never a colour at a call site.
-  **It does not generalise**: "now every region gets a palette" is the failure mode, not the
-  roadmap. The footer, the strip and every component render on surfaces the theme owns. A
-  future region earns one only by taking its backdrop from the caller too — and the strip is
-  the worked example of the line, since `BannerPalette` is scoped to the *banner slot* and
-  leaves `header_bar_html` on the theme's tokens, with a test asserting it.
+  would dissolve the palette one call site at a time.
+- **The exceptions are a closed list of three, and one sentence explains all of them: the
+  caller supplies the ground.** A theme can curate type against a surface it owns; it cannot
+  curate type against a surface it has never been handed. Where a caller chooses the ground,
+  and *only* there, they get a bounded say over what sits on it:
+
+  | Exception | Since | The ground the caller supplies |
+  |---|---|---|
+  | `Container.background_color` | pre-existing | a section band — the original escape hatch, neither removed nor extended |
+  | `Banner.palette` (`BannerPalette`) | #93 | a **photograph**: `background_image_url` is an image the palette has never seen, so white-on-navy tokens over a pale one are a guess |
+  | `Header` / `Footer` `background_color` + `text_color` (`BoxSurface`) | #95, #99 | the two outer **boxes**, the same reason at the size those boxes need |
+
+  Everything else renders on surfaces the theme owns and gets nothing — every component, and
+  every region's structural chrome. What the rule protects survives in all three, which is why
+  these are exceptions rather than breaches: a caller picks a validated, coherent **atom**
+  (a whole `BannerPalette`, or a background *with* the type that has to be legible on it),
+  never a lone colour at a call site.
+
+  **The list being closed is the point.** "Now every region gets a palette" is the failure
+  mode, not the roadmap; a fourth exception has to name a ground the caller supplies. The
+  scoping is enforced rather than described: `BannerPalette` covers the *banner slot* only, so
+  the strip in the same region keeps the theme's tokens even though the two share a class, and
+  a test asserts it. **And the colour pair never ships alone** — a background without the text
+  colour on it is half a decision, since the theme's type is a guess the moment the ground
+  moves.
 - **Tokens are named by role, not by value.** The same `#FFFFFF` is `palette.surface` behind
   a table and `text.on_dark` over the navy; the same `#2C3E50` is `palette.header_bg` as a
   band, `text.heading` as type and `palette.rule_dark` as an underline. Several tokens share
@@ -1192,6 +1221,7 @@ Recorded as decisions, so they are not re-litigated as oversights:
 | OAuth flows in adapters | Deliberately the caller's; see rule 1 above |
 | Campaign management | No scheduling, recipient lists, batching or send-time analytics — this layer delivers one message to addressees the caller supplies |
 | Open tracking / link rewriting | A product decision far beyond transport |
+| **Any compliance policy** | pyHermes does not decide what an email must *say*. Disclaimer language, unsubscribe links and every other compliance question are the caller's judgement: the library cannot know whether an email is a commercial newsletter, an internal note or a receipt, and each answers differently — a library that guessed would be wrong for two of the three. What it guarantees instead is narrower and checkable: a region *variant* will not silently drop content the caller supplied (`REQUIRED_SLOTS`), and what renders is shape- and safety-valid (hex colours, URL schemes). `LinkRow(links=[])` and an empty `disclaimer` are both valid |
 | `Retry-After` as an HTTP-date | Legal but rare; degrades to the computed backoff instead of crashing |
 
 

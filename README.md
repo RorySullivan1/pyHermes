@@ -140,9 +140,8 @@ from svc.builder import EmailBuilder, MinimalBanner
     .section(...))
 ```
 
-The footer's copyright, Unsubscribe and View-in-browser line always renders. The
-`Footer.disclaimer` field is optional free-form HTML for legal copy. For a contact
-call-to-action, add a `ContactBlock` body section instead of putting it in the footer:
+The footer always renders its closing block — see **Footer** below for what goes in it. For a
+contact call-to-action, add a `ContactBlock` body section instead of putting it in the footer:
 
 ```python
 from svc.builder import EmailBuilder, FullWidth, ContactBlock
@@ -238,6 +237,47 @@ Every role you leave out takes the theme's own token, so this stays an override 
 colours rather than a second palette to maintain. It is still an *atom* — validated, frozen,
 picked as a set — and it is bounded to the masthead: no other region has one, because no
 other region renders on a surface you supplied.
+
+## Footer
+
+The closing block, and the header's counterpart: it takes the **same three box fields**, so
+the email's two outer boxes cost one API to learn.
+
+```python
+from svc.builder import Footer
+from svc.builder.models import FooterLink, LinkRow
+
+Footer(
+    align="left",                      # the shared surface, as on Header
+    background_color="#1B2A38",
+    text_color="#D6E0E8",
+    border=True,                       # the footer's own
+    disclaimer="<p>Distributed to registered recipients only.</p>",
+    link_row=LinkRow(                  # omit it and the default row is built for you
+        copyright="2026 Hermes Research — all rights reserved",
+        links=[
+            FooterLink("Privacy", "https://example.com/privacy"),
+            FooterLink("Unsubscribe", "https://example.com/unsubscribe"),
+        ],
+    ),
+)
+```
+
+The copyright row is a `LinkRow`, not a template: pass one to add a link, drop one, or reword
+the copyright. Leave `link_row` unset and it is built from the email's own facts —
+`© {current_year} {firm_name}` plus your two URLs, worded by `unsubscribe_label` and
+`view_in_browser_label`.
+
+**pyHermes does not decide what your email must say.** Disclaimer language, unsubscribe links
+and every other compliance question are your judgement — the library cannot know whether this
+is a commercial newsletter, an internal note or a receipt. So `LinkRow(links=[])` renders a
+link-free row and an empty `disclaimer` renders no fine print, and both are valid. What it does
+guarantee is that a region *variant* will not silently drop content you supplied, and that what
+renders is shape- and safety-valid: hex colours, and URL schemes checked so a `javascript:`
+never lands in an `href`.
+
+`Footer.disclaimer` is raw HTML, like the header's — escaping untrusted text in it is your job.
+The box stacks **sign-off image → disclaimer → copyright row**, each independently optional.
 
 ## Colour
 

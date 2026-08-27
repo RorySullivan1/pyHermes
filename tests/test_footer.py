@@ -32,7 +32,18 @@ class TestFooterStructure:
         assert not (TEMPLATE_DIR / "regions" / "footer-legal.html").exists()
         assert (TEMPLATE_DIR / "regions" / "footer.html").is_file()
 
-    def test_copyright_and_links_always_render(self):
+    def test_the_default_row_renders_copyright_and_both_links(self):
+        """
+        The *default* path, and the distinction the name has to carry.
+
+        This asserts that a footer told nothing still renders the row built
+        from the email's own facts — a statement about resolution, **not** a
+        content mandate. pyHermes does not require an unsubscribe link or any
+        other content: a caller who supplies their own ``LinkRow`` may drop
+        either link, and ``TestTheLinkRow`` says so by name. What the region
+        guarantees is that a *variant* will not silently drop the block the
+        caller's content sits in, which is `REQUIRED_SLOTS`' actual job.
+        """
         html = _render()
         assert "&copy;" in html and "2026" in html
         assert "Unsubscribe" in html and "View in browser" in html

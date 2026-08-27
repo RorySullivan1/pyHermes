@@ -22,6 +22,7 @@ from svc.builder import Email
 from . import (
     compact_size,
     custom_banner,
+    custom_footer,
     image_matrix,
     kitchen_sink,
     minimal,
@@ -66,6 +67,7 @@ def all_fixtures() -> dict[str, FixtureBuilder]:
         "minimal": minimal.build,
         "kitchen_sink": kitchen_sink.build,
         "custom_banner": custom_banner.build,
+        "custom_footer": custom_footer.build,
         "image_matrix": image_matrix.build,
         "minimal_banner": minimal_banner.build,
         "minimal_footer": minimal_footer.build,
