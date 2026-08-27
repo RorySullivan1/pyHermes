@@ -112,18 +112,19 @@ fixtures to drift.
 ## The composition model
 
 Every email is **skeleton ← regions ← containers ← components**, and the regions are
-`header | body | footer`:
+`header | banner | body | footer`:
 
 | Layer | What it owns | Where |
 |---|---|---|
 | **Skeleton** | the whole page — head, preheader, wrapper — with four holes: `{{ header_bar_html }}`, `{{ banner_html }}`, `{{ sections_html }}`, `{{ footer_html }}` | `svc/builder/templates/base.html` |
-| **Regions** | the masthead (`Banner`, `MinimalBanner`) and the close (`Footer`). (The *body* region is the ordered section list — not a class) | `svc/builder/regions.py` |
+| **Regions** | the strip (`Header`, `EmptyHeader`), the masthead (`Banner`, `MinimalBanner`) and the close (`Footer`). (The *body* region is the ordered section list — not a class) | `svc/builder/regions.py` |
 | **Containers** | layout geometry only: `FullWidth`, `TwoColumn`, `ThreeColumn` | `svc/builder/containers.py` |
 | **Components** | content: `CardGroup`, `DataTable`, `ChartBlock`, `ImageBlock`, `TextBlock`, `NumberedList`, `AuthorBlock`, `ContactBlock` | `svc/builder/components.py` |
 
 A container holds components, renders each, and embeds the fragments into its own `<tr>`
-block sized to the 680px outer table. Each region renders into its slot — both the header
-and the footer fill one slot each — and `Email` drops all of it into the skeleton.
+block sized to the 680px outer table. Each region renders into exactly one slot, and `Email`
+drops all of it into the skeleton. A region that fills *no* slot renders nothing — which is
+how `EmptyHeader` omits the strip without the skeleton needing a conditional.
 
 **Facts about the email live on `EmailMetadata`; how a region presents them lives on the
 region.** The firm name, campaign name, dates and outbound URLs are handed *down* at render
@@ -164,6 +165,32 @@ Adding a content type is a new template file plus a `Component` subclass that se
 
 Column ratios and card orientation are `StrEnum`s that accept either the member or its bare
 string — `ratio=ThreeColumnRatio.WIDE_LEFT` is `ratio="50-25-25"`.
+
+## Header
+
+The strip at the very top of the email: one band of free-form copy, above the masthead. Its
+text is an email-level fact; the region owns how the box presents it.
+
+```python
+from svc.builder import EmptyHeader, Header
+
+EmailBuilder().metadata({..., "header_disclaimer": "For illustrative purposes."})
+    .header(Header(align="left", background_color="#EEF2F5", text_color="#1B1B1B"))
+
+EmailBuilder().metadata({...}).header(EmptyHeader())   # no strip at all
+```
+
+Three fields, and the footer's box takes the same three, so you learn one surface for the
+email's two outer boxes. Unset colours are the theme's. The pair ships together rather than
+the background alone: a ground you chose makes the theme's text colour a guess.
+
+`EmptyHeader` renders nothing — no band, no empty row. An empty `header_disclaimer` on a plain
+`Header` still renders the band, deliberately: "I have no copy" and "I don't want this box"
+are different statements, and the variant is the second one.
+
+**`header_disclaimer` is emitted as raw HTML**, as it always has been — escaping untrusted
+text in it is your job, with `escape_html()`. It is the same contract as `TextBlock.content`
+and `Footer.disclaimer`, and it is worth saying twice for a box this easy to reuse.
 
 ## Banner
 

@@ -413,9 +413,20 @@ recoverable from git history if ever needed for reference.)
 
 ### The four-layer composition model
 
-Every email is `skeleton ← regions (banner | body | footer) ← containers ← components`:
+Every email is `skeleton ← regions (header | banner | body | footer) ← containers ← components`:
 
-Two region *classes* ship today, `Banner` and `Footer`; the banner fills **two** slots since #89, the strip at the top of the email and the masthead below it. #87 gives the strip a class of its own, `Header`, at which point the chain reads `header | banner | body | footer`.
+| Region | Slot | Variants | What it is |
+|---|---|---|---|
+| `Header` | `header_bar_html` | `EmptyHeader` | The strip at the very top: one band of free-form copy |
+| `Banner` | `banner_html` | `MinimalBanner` | The masthead: headline, logo, department, dates |
+| *(the body)* | `sections_html` | — | The ordered section list, deliberately not a class |
+| `Footer` | `footer_html` | — | The closing block: copyright, links, optional disclaimer |
+
+**Each region owns exactly one slot, and a test asserts it.** Between #89 and #95 the banner
+owned two — the strip had its own template and its own slot but someone else's class — and #95
+promoted it. That the skeleton's slot set never changed across either step is what made the
+split a change of *owner* rather than of markup, and it is the strongest evidence the region
+mechanism generalises.
 
 1. **Skeleton** — [svc/builder/templates/base.html](svc/builder/templates/base.html). The full HTML page (head,
    preheader, palette comment) with four variable holes: `{{ header_bar_html }}`,
@@ -426,9 +437,11 @@ Two region *classes* ship today, `Banner` and `Footer`; the banner fills **two**
    [svc/builder/templates/regions/](svc/builder/templates/regions/); Python wrappers in
    [svc/builder/regions.py](svc/builder/regions.py), all sharing a `Region` base that owns
    validation, the image walk, the facts-over-presentation layering and `render_slots()`.
-   Two banner variants (`Banner`/`MinimalBanner`) and one footer (`Footer`). The **body region is
+   Three region classes and two variants, per the table above. The **body region is
    the ordered section list** — deliberately not a class, since wrapping it would add a
-   layer with no behaviour.
+   layer with no behaviour. The footer has no variant today; that is a gap, not a decision —
+   `Footer.REQUIRED_SLOTS` means a variant may not drop the closing block, never that no
+   variant may exist.
 3. **Containers** — layout geometry only. In [svc/builder/templates/common/containers/](svc/builder/templates/common/containers/).
    Each produces a `<tr>` block sized to the 680px outer email table. Python wrappers in
    [svc/builder/containers.py](svc/builder/containers.py).
@@ -443,25 +456,35 @@ concatenates all section HTML, and drops all of it into the skeleton. **Adding a
 type = new template file + new `Component` subclass** that sets `template_path` and
 implements `context()`.
 
-**A region fills its named slot(s)** — a region declares `SLOTS` (the skeleton's contract, fixed) and
-`TEMPLATE_PATHS` (what this variant fills), and `Region.render_slots()` returns one HTML
-string per slot. The header fills **two** since #89 — `header_bar_html` for the strip at the
-top of the email and `banner_html` for the masthead below it, which shared a template only by
-accident of file layout; the footer fills one (`footer_html`)
-— a single table rendered below the body. `Banner.render()` survives as the whole-region convenience and
-delegates to `render_slots()` — one rendering path, not two.
+**A region fills its named slot(s)** — a region declares `SLOTS` (the skeleton's contract, fixed)
+and `TEMPLATE_PATHS` (what *this variant* fills), and `Region.render_slots()` returns one HTML
+string per slot in `SLOTS`, filled or not. That distinction is the whole variant mechanism: an
+unfilled slot renders the empty string, so `EmptyHeader` omits the strip by declaring
+`TEMPLATE_PATHS = {}` and the skeleton needs no conditional. `Banner.render()` survives as the
+whole-region convenience and delegates to `render_slots()` — one rendering path, not two.
 
-**The preheader stays skeleton plumbing.** Banner, body and footer are the complete set today;
-a fourth region is a decision to reopen, not a gap to fill.
+**"No fourth region" was a real decision, and #87 reopened it deliberately.** This file used to
+say *"banner, body and footer are the complete set; a fourth region is a decision to reopen,
+not a gap to fill."* It is recorded as superseded rather than deleted, because the reasoning
+that retired it is worth keeping: the strip and the masthead were one region **only by accident
+of file layout** — different content, different owner, different reasons to change — so the
+fourth region was not a new idea bolted on but one that had been there all along, unnamed.
+
+**The other half of that decision still stands: the preheader stays skeleton plumbing.** It is
+a hidden `<div>` carrying inbox-preview text, not a named area of the email, and nothing about
+it wants validation, an image walk or a presentation surface. A fifth region is still a
+decision to reopen — and the bar #87 met is the one to meet: name the thing that is already
+structurally separate, rather than find a gap to fill.
 
 ### The ownership rule — facts flow down
 
 **Facts about the email live on `EmailMetadata`; how a region presents them lives on the
-region.** Stated once, for both regions: a region presents facts, it cannot own or contradict
+region.** Stated once, for all three: a region presents facts, it cannot own or contradict
 them.
 
 | Stays on `EmailMetadata` (facts / constraints) | Lives on the region (presentation) |
 |---|---|
+| `header_disclaimer` | `Header.align`, `background_color`, `text_color` |
 | `email_subject`, `preheader_text` | `Banner.background_image_url` |
 | `firm_name`, `campaign_name` | `Banner.logo_url`, `logo_alt`, `logo_width` |
 | (the same two, as the headline's fallbacks) | `Banner.title`, `subtitle`, `resolved_title()`, `resolved_subtitle()` |
@@ -472,11 +495,12 @@ them.
 
 Two boundary calls, each made for a reason rather than by shape:
 
-- **`header_disclaimer` is a fact**, though it is *displayed* in the masthead: it is legal
-  copy that belongs to the email, not to the masthead design. It renders in the **strip**
-  rather than the banner, so it travels to whatever region owns the strip — which #87 makes
-  `Header`. The fact/presentation split is what makes that a slot change rather than a data
-  migration: the field stays where it is and the new region is handed it.
+- **`header_disclaimer` is a fact, and the split is what let it travel for free.** It is legal
+  copy that belongs to the email, not to any region's design. #95 moved it from `BANNER_FACTS`
+  to `HEADER_FACTS` and handed it to the new region — the field itself never moved, because a
+  fact was never the banner's to begin with. That is the fact/presentation rule paying for
+  itself: a region change that would otherwise have been a data migration was a one-line
+  reassignment.
 - **The masthead's headline is presentation, and its fallbacks are facts (#91).** Until then
   the large type *was* `firm_name` and the second line *was* `campaign_name`, so an email
   leading with "Q3 Outlook" had to lie about who sent it. `Banner.title` / `subtitle` are
@@ -540,7 +564,9 @@ presentation on whichever region actually renders; `qa/fixtures/minimal_footer.p
 worked example.
 
 **The footer's copyright and unsubscribe line always renders.** There is no compliance floor to
-drop — `Footer` has no `MinimalFooter` variant. The disclaimer (`Footer.disclaimer`) is
+drop — `Footer` has no variant at all, and `REQUIRED_SLOTS` means one could not drop this
+block if it existed (PR #86 removed the `MinimalFooter` that used to omit a contact card the
+footer no longer renders). The disclaimer (`Footer.disclaimer`) is
 optional free-form HTML; the Unsubscribe and View-in-browser links are always present.
 `Footer.REQUIRED_SLOTS` makes an unfilled slot a `ValidationError` at construction, and a
 parametrized test asserts the footer survives its render.
@@ -587,10 +613,10 @@ These are not conventions to remember — each has teeth, and the teeth are name
    and the same failure if you skip it: the bytes never reach `Email.assets()` and the
    `cid:` reference renders as a broken image. Declaring means listing the field in
    `IMAGE_FIELDS` — `Region.images()` walks it — or overriding `images()` if the bytes come
-   from somewhere else. `Email.images()` is header + sections + footer, so the region is the
-   only owner of its own images. The footer participates even though no shipped variant
-   carries an image: a test builds one that does, because the slot has to work *before*
-   someone writes that variant for real.
+   from somewhere else. `Email.images()` is **header + banner + sections + footer**, so the
+   region is the only owner of its own images. The header and footer participate even though
+   no shipped variant of either carries an image: a test builds a footer that does, because
+   the slot has to work *before* someone writes that variant for real.
 
 ### Public API (import from `svc.builder`)
 
@@ -600,7 +626,7 @@ from svc.builder import EmailBuilder, Email, \
     DEFAULT_THEME, SLATE_THEME, THEMES, \
     SizeScheme, TypeScale, SpacingScale, ComponentScale, FrameGeometry, \
     STANDARD_SIZES, COMPACT_SIZES, SPACIOUS_SIZES, SIZE_SCHEMES, \
-    Region, Banner, MinimalBanner, Footer, \
+    Region, Header, EmptyHeader, Banner, MinimalBanner, Footer, \
     FullWidth, TwoColumn, ThreeColumn, \
     CardGroup, DataTable, ChartBlock, ImageBlock, TextBlock, NumberedList, AuthorBlock, ContactBlock
 from svc.builder.models import Card, KpiItem, TableRow, NumberedItem, EmailMetadata, SectionConfig
@@ -609,30 +635,31 @@ from svc.builder.enums import TwoColumnRatio, ThreeColumnRatio, CardOrientation,
 from svc.builder.images import EmailImage, ImageAsset
 ```
 
-**`Banner` was called `Header` until #90, and no alias survived.** The name is being reused:
-#87 gives the strip at the top of the email a region of its own, and *that* becomes `Header`.
-A deprecated warn-and-forward shim — the courtesy `KpiStrip` extends to `CardGroup` — would
-collide with the new class rather than ease the migration, so the break is clean and loud on
-purpose. Between #90 and #87, `from svc.builder import Header` raises `ImportError`;
-afterwards an old-style `Header(logo_url=…)` fails at construction, because the class that
-answers to the name has no such field. Both failures happen at the call site, immediately,
-which is the point: a name that quietly changed meaning would keep running and be wrong. The
-flat keywords are unaffected and still build the region — they are the common call path, and
-they never named the class.
+**`Header` means the strip; it meant the masthead until #90, and no alias bridges the two.**
+The name was *reused*, not retired — #90 renamed the masthead `Banner` and #95 gave the name
+to the strip — so a deprecated warn-and-forward shim (the courtesy `KpiStrip` extends to
+`CardGroup`) would have collided with the incoming class rather than eased the migration. The
+break is clean and loud on purpose: between #90 and #95 `from svc.builder import Header`
+raised `ImportError`, and since #95 an old-style `Header(logo_url=…)` raises `TypeError` at
+construction, because the class answering to the name has no such field. Both fail at the call
+site, immediately, which is the whole point — a name that quietly changed meaning would keep
+running and be wrong. The flat keywords are unaffected and still build the masthead: they are
+the common call path, and they never named the class.
 
 Choosing a region is an argument, never a template fork — and there is no selection
-mechanism beyond passing the object. Both regions work identically:
+mechanism beyond passing the object. Every region and variant works identically:
 
 ```python
-Email(metadata, banner=MinimalBanner(logo_url=logo))   # non-fluent
-EmailBuilder().metadata({...}).banner(MinimalBanner()).section(...)
+Email(metadata, header=EmptyHeader(), banner=MinimalBanner(logo_url=logo))   # non-fluent
+EmailBuilder().metadata({...}).header(Header(align="left")).banner(MinimalBanner()).section(...)
 ```
 
-`EmailBuilder.banner()` / `.footer()` follow the same sequencing rule as `section()`: calling
-one before `metadata()` raises `RuntimeError` — a programming error in the call sequence, not
-rejected data. Omit them and the regions come from the metadata, which the flat keywords
-built. `Email.banner` and `Email.footer` are read-only accessors for the same reasons as
-`Email.metadata`; use `Email.set_banner()` / `Email.set_footer()` to swap them.
+`EmailBuilder.header()` / `.banner()` / `.footer()` follow the same sequencing rule as
+`section()`: calling one before `metadata()` raises `RuntimeError` — a programming error in the
+call sequence, not rejected data. Omit them and the regions come from the metadata, which the
+flat keywords built. `Email.header`, `Email.banner` and `Email.footer` are read-only accessors
+for the same reasons as `Email.metadata`; use `Email.set_header()` / `set_banner()` /
+`set_footer()` to swap them.
 
 Column ratios and card orientation are `StrEnum`s in [svc/builder/enums.py](svc/builder/enums.py):
 `TwoColumn`/`ThreeColumn` take a `ratio` and `CardGroup` takes an `orientation` as
@@ -685,9 +712,15 @@ non-fluent `Email` class works identically.
     numbered-item number and title, and the plain metadata fields. **Pass these as raw
     text**; pre-escaping them now double-escapes (`&` would render as `&amp;`).
   - **HTML fields are emitted raw**, because callers deliberately pass markup:
-    `TextBlock.content`, `NumberedItem.body`, and the metadata disclaimers. **Escaping
-    untrusted text in these is the caller's job** — use
+    `TextBlock.content`, `NumberedItem.body`, `Footer.disclaimer`, and `header_disclaimer`.
+    **Escaping untrusted text in these is the caller's job** — use
     [escape_html()](svc/builder/filters.py) (`from svc.builder.filters import escape_html`).
+    `header_disclaimer` is the one worth naming twice (#95): making the strip a first-class,
+    obviously-reusable region makes it likelier someone passes untrusted text to it, and the
+    contract was *kept* rather than tightened because escaping it now would break every caller
+    passing markup. So `Header`'s docstring states it, and a test asserts the docstring still
+    does — a region whose text is raw HTML is a footgun, and a warning that lives only in a
+    commit message is how it stays one.
   - **Attributes** (`src`, `href`, `alt`, `<title>`) are always escaped, quotes included,
     so a value cannot break out of the attribute it sits in.
 
@@ -742,12 +775,12 @@ hosted images have no bytes and data URIs carry their own. `ImageAsset.content_i
 consumer needs them.
 
 Aggregation walks the section tree without rendering it: `Component.images()` →
-`Container.components()` → `Email.assets()`. `Email.images()` is **header + sections +
-footer**: the masthead's `logo_url` and `background_image_url` reach the manifest through
+`Container.components()` → `Email.assets()`. `Email.images()` is **header + banner + sections
++ footer**: the masthead's `logo_url` and `background_image_url` reach the manifest through
 `Banner.images()`, not through the metadata, and both accept an `EmailImage` as well as a
-bare URL string. No shipped footer carries an image, and the footer is walked anyway — the
-slot has to exist before a variant with a signature block or social icons is written, or its
-bytes drop silently. **A new image-bearing component — or region — must override `images()`** or
+bare URL string. No shipped header or footer carries an image, and both are walked anyway —
+the slot has to exist before a variant with a signature block or social icons is written, or
+its bytes drop silently. **A new image-bearing component — or region — must override `images()`** or
 its bytes never reach the manifest, and its `cid:` reference will render as a broken image.
 (A component must also join `kitchen_sink()` — see the standing rules above, which a test
 enforces.)
@@ -892,6 +925,22 @@ EmailBuilder().metadata({..., "theme": DEFAULT_THEME.derive(  # or your own
 - **The engine guarantees a theme; the email chooses which.** `TemplateEngine.render()`
   layers `DEFAULT_THEME` *under* the caller's context, so rendering a component on its own
   stays a one-liner. `Email.render()` binds the resolved theme on top, and that always wins.
+
+**A region resolves against the theme through `Region.theme_context()`.** The hook a region
+overrides when one of its presentation fields means *"the theme's token, unless I say
+otherwise"* — the banner's `BannerPalette`, the header's colour pair, and #98's footer box for
+the same two tokens. It exists because the theme is neither a fact nor a field: it reaches the
+templates through the bound engine, so a region only has it at render time and `context()`,
+which has no engine, cannot resolve there. What it returns is layered **with the facts**, over
+the region's own keys, so a resolved value cannot be shadowed by the raw field it came from —
+and that is why **a resolved key takes a different name than the field it resolves**:
+`Header.background_color` is what the caller set (possibly nothing), `header_background` is
+what renders, and the template reads only the second. Generalised in #95 rather than
+duplicated: the banner had grown its own `render_slots()` override, and the second region
+needing one is what turned a special case into the mechanism. Two tests ride on it — the
+"every template reads the theme namespace" check reads its accepted names off
+`theme_context()` itself, so a region that grows one is covered without anyone widening the
+test.
 
 **How a `BannerPalette` reaches the markup.** Eight roles, one per colour the banner slot
 draws — `band`, `title`, `subtitle`, `meta`, `accent`, `scrim`, `title_shadow`,
