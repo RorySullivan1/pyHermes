@@ -461,7 +461,7 @@ them.
 | `email_subject`, `preheader_text` | `Banner.background_image_url` |
 | `firm_name`, `campaign_name` | `Banner.logo_url`, `logo_alt`, `logo_width` |
 | (the same two, as the headline's fallbacks) | `Banner.title`, `subtitle`, `resolved_title()`, `resolved_subtitle()` |
-| `date_range`, `issue_label`, `header_disclaimer` | `Banner.resolved_logo_alt()`, `resolved_logo_width()`, `DEFAULT_LOGO_WIDTH` |
+| `date_range`, `issue_label`, `header_disclaimer`, `department` | `Banner.resolved_logo_alt()`, `resolved_logo_width()`, `DEFAULT_LOGO_WIDTH` |
 | `firm_name`, `current_year` | `Footer.background_color`, `border`, `border_color`, `image`/`image_alt`/`image_width` |
 | `unsubscribe_url`, `view_in_browser_url` | `Footer.unsubscribe_label`, `view_in_browser_label`, `disclaimer` (optional, free-form HTML) |
 
@@ -478,6 +478,11 @@ Two boundary calls, each made for a reason rather than by shape:
   layering exists to prevent. A test greps both templates so the chain cannot be quietly
   bypassed: reading `{{ firm_name }}` again would render correctly for every email that
   never sets a title, and make the field unreachable with nothing failing.
+- **`department` is a fact, though the headline beside it is presentation (#92).** The desk
+  an email comes from is *who sent it*, the same kind of truth as `firm_name` — putting it on
+  the region would let two renders of one email disagree about its sender. It is optional, and
+  absence **collapses rather than blanks**: the `{% if %}` guards the element, not its text, so
+  an email that sets no department is byte-identical to one built before the field existed.
 - **The footer's two URLs are facts**, though the header's `logo_url` is presentation. A
   logo is an image the *region* chose; an unsubscribe address is a property of the mailing,
   and `EmailMetadata.validate()` already checks both schemes. What the footer owns is

@@ -85,6 +85,9 @@ AUDIT: dict[str, dict[str, int | float]] = {
         "masthead_title_top": 10,
         "masthead_title_bottom": 6,
         "masthead_campaign_bottom": 8,
+        # Not archaeology: #92 added the department line, so this is the
+        # value it was written down at, pinned on the same terms.
+        "masthead_department_top": 6,
         "masthead_meta_top": 10,
         "masthead_meta_bottom": 18,
         "masthead_vml_height": 180,

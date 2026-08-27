@@ -232,6 +232,103 @@ class TestEverySectionSharesOneLeftMargin:
         assert measured == {24, 32, 40}
 
 
+#: The department line's box, the logo's, and the cell that holds both.
+#:
+#: Right-alignment is the claim, so it is measured as an *edge* rather than
+#: inferred from ``align="right"`` being present in the markup — which is
+#: what the goldens already pin, and which says nothing about where the text
+#: actually lands.
+_DEPARTMENT_PROBE = """() => {
+  const p = [...document.querySelectorAll('p')]
+      .find(e => e.textContent.trim() === 'Rates Strategy');
+  if (!p) return null;
+  const cell = p.closest('td');
+  const box = p.getBoundingClientRect();
+  const logo = cell.querySelector('img').getBoundingClientRect();
+  return {right_of_logo: box.right - logo.right,
+          below_logo: box.top - logo.bottom,
+          inside_cell: cell.getBoundingClientRect().bottom - box.bottom};
+}"""
+
+
+def _department_email(variant, size_theme, department):
+    """A one-section email whose only interesting feature is its masthead."""
+    from svc.builder import Banner, EmailBuilder, FullWidth, MinimalBanner, TextBlock
+
+    region = Banner if variant == "banner" else MinimalBanner
+    return (
+        EmailBuilder()
+        .metadata(
+            {
+                "email_subject": "Department line",
+                "firm_name": "Hermes Research",
+                "campaign_name": "department",
+                "department": department,
+                "size_theme": size_theme,
+            }
+        )
+        .banner(region(logo_url="https://cdn.example.com/logo.png"))
+        .section(FullWidth(content=TextBlock("<p>body</p>")))
+        .build()
+    )
+
+
+@pytest.fixture(scope="module")
+def department_boxes():
+    """Both banner variants at all three densities, in one browser session."""
+    if not available():
+        pytest.skip('no browser; screenshots are the optional "[qa]" extra')
+
+    measured = {}
+    with _load_playwright()() as playwright:
+        browser = _launch(playwright)
+        for variant in ("banner", "minimal"):
+            for size_theme in ("compact", "standard", "spacious"):
+                page = browser.new_page(viewport={"width": 1000, "height": 900})
+                page.route("**/*", lambda route: route.abort())
+                page.set_content(_department_email(variant, size_theme, "Rates Strategy").render())
+                measured[variant, size_theme] = page.evaluate(_DEPARTMENT_PROBE)
+                page.close()
+        browser.close()
+    return measured
+
+
+@requires_browser
+class TestTheDepartmentLineSitsUnderTheLogo:
+    """
+    #92's placement, measured rather than eyeballed.
+
+    The goldens pin the markup and the collapse; neither can say where the
+    text lands. ``align="right"`` on the cell is inherited by the logo and
+    the line alike, and that inheritance is the whole mechanism — so it is
+    worth an assertion that would fail if a later edit moved the line out of
+    the logo's cell, where it would still render, still validate, and still
+    look plausible in a diff.
+    """
+
+    @pytest.mark.parametrize("variant", ["banner", "minimal"])
+    @pytest.mark.parametrize("size_theme", ["compact", "standard", "spacious"])
+    def test_its_right_edge_meets_the_logos(self, variant, size_theme, department_boxes):
+        box = department_boxes[variant, size_theme]
+        assert box is not None, f"{variant}/{size_theme}: no department line rendered"
+        assert box["right_of_logo"] == 0
+
+    @pytest.mark.parametrize("variant", ["banner", "minimal"])
+    @pytest.mark.parametrize("size_theme", ["compact", "standard", "spacious"])
+    def test_it_sits_one_token_below_the_logo(self, variant, size_theme, department_boxes):
+        """
+        The gap follows the density rather than a constant, which is what
+        makes the token real: 4 / 6 / 8 px.
+        """
+        expected = resolve_size_scheme(size_theme).space.masthead_department_top
+        assert department_boxes[variant, size_theme]["below_logo"] == expected
+
+    @pytest.mark.parametrize("variant", ["banner", "minimal"])
+    def test_nothing_is_clipped_by_the_cell(self, variant, department_boxes):
+        for size_theme in ("compact", "standard", "spacious"):
+            assert department_boxes[variant, size_theme]["inside_cell"] >= 0
+
+
 @pytest.fixture(scope="module")
 def kpi_shots(tmp_path_factory):
     """

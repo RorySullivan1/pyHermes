@@ -224,6 +224,48 @@ class TestTheHeadlineIsPresentation:
         )
 
 
+class TestTheDepartmentLine:
+    """
+    #92: the desk beneath the firm — a fact, and an optional one.
+
+    ``department`` is on ``EmailMetadata`` rather than on ``Banner`` because
+    it is *who the email is from*, the same kind of truth as ``firm_name``.
+    Putting it on the region would let two renders of one email disagree
+    about its sender.
+    """
+
+    @pytest.mark.parametrize("region", [Banner, MinimalBanner])
+    def test_it_renders_when_set(self, valid_metadata, region):
+        metadata = EmailMetadata(**valid_metadata, department="Rates Strategy", banner=region())
+        html = metadata.banner.render(TemplateEngine(), metadata.banner_facts())
+        assert "Rates Strategy" in html
+
+    @pytest.mark.parametrize("region", [Banner, MinimalBanner])
+    def test_absence_collapses_rather_than_blanks(self, valid_metadata, region):
+        """
+        Guard the element, not its text. An empty ``department`` must leave
+        no ``<p>`` behind and reserve no height — which is what makes every
+        fixture that does not opt in byte-identical, and is asserted here by
+        string absence rather than by eyeball.
+        """
+        metadata = EmailMetadata(**valid_metadata, banner=region())
+        html = metadata.banner.render(TemplateEngine(), metadata.banner_facts())
+        assert "text-transform:uppercase" in html, "the date/issue bar should still be here"
+        assert "masthead_department_top" not in html
+        # The department's <p> is the only one carrying a top margin.
+        assert "margin:6px 0 0 0" not in html
+
+    def test_it_is_a_fact_the_banner_cannot_shadow(self, valid_metadata):
+        metadata = EmailMetadata(**valid_metadata, department="Rates Strategy")
+        assert "department" in EmailMetadata.BANNER_FACTS
+        assert metadata.banner_facts()["department"] == "Rates Strategy"
+
+    def test_the_copy_is_escaped(self, valid_metadata):
+        metadata = EmailMetadata(**valid_metadata, department="Rates & Credit")
+        html = metadata.banner.render(TemplateEngine(), metadata.banner_facts())
+        assert "Rates &amp; Credit" in html
+
+
 class TestTheFlatKeywordsStillWork:
     """#34's back-compatibility bar: an email written before the split."""
 

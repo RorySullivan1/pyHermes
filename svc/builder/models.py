@@ -134,6 +134,12 @@ class EmailMetadata:
     header_disclaimer: str = ""
     firm_name: str = ""
     campaign_name: str = ""
+    #: The desk within the firm, e.g. "Rates Strategy". A *fact*, decided
+    #: rather than assumed: a department is who the email is from, the same
+    #: kind of truth as ``firm_name``. Putting it on the banner would let two
+    #: renders of one email disagree about its sender. Optional — empty
+    #: collapses the line entirely rather than reserving space for it.
+    department: str = ""
     date_range: str = ""
     issue_label: str = ""
     current_year: str = ""
@@ -178,6 +184,7 @@ class EmailMetadata:
         "header_disclaimer",
         "firm_name",
         "campaign_name",
+        "department",
         "date_range",
         "issue_label",
     )

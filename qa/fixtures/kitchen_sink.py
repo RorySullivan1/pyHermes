@@ -88,6 +88,7 @@ def _metadata() -> dict[str, Any]:
         "preheader_text": "One fixture exercising the whole component library.",
         "firm_name": "Hermes Research",
         "campaign_name": "kitchen-sink",
+        "department": "Rates Strategy",
         "date_range": "Week ending 24 August",
         "issue_label": "Issue 001",
         "header_disclaimer": "For illustrative purposes. Not investment advice.",

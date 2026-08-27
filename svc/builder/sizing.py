@@ -85,10 +85,12 @@ frame's horizontal padding is what makes the content 616 wide::
     masthead_title_top        10   firm-name cell, top
     masthead_title_bottom      6   firm-name cell, bottom
     masthead_campaign_bottom   8   campaign-name cell, bottom
+    masthead_department_top    6   department line, above (#92)
     masthead_meta_top         10   date/issue bar, top
     masthead_meta_bottom      18   date/issue bar, bottom
     masthead_vml_height      180   the v:rect box Outlook draws instead of
-                                   the CSS background image
+                                   the CSS background image; see the note
+                                   below — it is not a bound on the content
     footer_contact_top         8   contact band, top
     footer_contact_bottom     30   contact band, bottom
     footer_legal_top          20   disclaimer band, top
@@ -265,8 +267,23 @@ class SpacingScale:
     masthead_title_top: int | float = 10
     masthead_title_bottom: int | float = 6
     masthead_campaign_bottom: int | float = 8
+    masthead_department_top: int | float = 6
     masthead_meta_top: int | float = 10
     masthead_meta_bottom: int | float = 18
+    #: The v:rect Outlook draws in place of the CSS background image. It is
+    #: **not** a bound on the masthead's height and never was: the textbox
+    #: carries ``mso-fit-shape-to-text:false``, so the shape does not grow,
+    #: and the masthead's natural height already exceeds it at every density
+    #: — measured in Chromium at 178.6 / 207.5 / 244.6 px against boxes of
+    #: 150 / 180 / 220, a shortfall of ~25-29px predating #92. What falls
+    #: past the box still renders: the cell behind it carries
+    #: ``palette.header_bg`` as both a CSS colour and a ``bgcolor``, which is
+    #: also the ``v:fill`` colour, so the effect is that the photograph stops
+    #: and the flat band continues. #92's department line widens the
+    #: shortfall to ~44-47px; it does not create it, and raising the token to
+    #: cover the content would move every shipped golden. Recorded here
+    #: rather than fixed, because the fix is a decision about the hero's
+    #: proportions, not about this line.
     masthead_vml_height: int | float = 180
 
     footer_contact_top: int | float = 8
@@ -492,6 +509,7 @@ COMPACT_SIZES = SizeScheme().derive(
         "masthead_title_top": 8,
         "masthead_title_bottom": 4,
         "masthead_campaign_bottom": 6,
+        "masthead_department_top": 4,
         "masthead_meta_top": 8,
         "masthead_meta_bottom": 12,
         "masthead_vml_height": 150,
@@ -586,6 +604,7 @@ SPACIOUS_SIZES = SizeScheme().derive(
         "masthead_title_top": 14,
         "masthead_title_bottom": 8,
         "masthead_campaign_bottom": 12,
+        "masthead_department_top": 8,
         "masthead_meta_top": 14,
         "masthead_meta_bottom": 24,
         "masthead_vml_height": 220,

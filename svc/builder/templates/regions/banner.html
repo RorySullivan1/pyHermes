@@ -34,6 +34,12 @@
                       <img src="{{ logo_url | escape_html }}" width="{{ logo_width }}" alt="{{ logo_alt | escape_html }}"
                            style="display:block; max-width:{{ logo_width }}px; height:auto;">
                       <!--<![endif]-->
+                      {% if department %}
+                      <p style="margin:{{ size.space.masthead_department_top }}px 0 0 0; font-family:Arial,Helvetica,sans-serif;
+                                font-size:{{ size.type.small }}px; color:{{ theme.text.on_dark_muted }}; letter-spacing:0.6px; text-transform:uppercase;">
+                        {{ department | escape_html }}
+                      </p>
+                      {% endif %}
                     </td>
                   </tr>
                 </table>
