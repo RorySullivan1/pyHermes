@@ -102,6 +102,7 @@ from .models import (
 from .regions import (
     Banner,
     Footer,
+    Header,
     MinimalBanner,
     Region,
 )
@@ -162,6 +163,7 @@ __all__ = [
     "Banner",
     "MinimalBanner",
     "Footer",
+    "Header",
     # Models
     "EmailMetadata",
     "Card",

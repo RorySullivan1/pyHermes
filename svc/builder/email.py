@@ -30,7 +30,7 @@ from .enums import EmbedStrategy
 from .exceptions import SizeError
 from .images import EmailImage, ImageAsset, dedupe_assets
 from .models import EmailMetadata
-from .regions import Banner, Footer
+from .regions import Banner, Footer, Header
 from .sizing import resolve_size_scheme
 from .theming import resolve_theme
 
@@ -67,6 +67,7 @@ class Email:
         self,
         metadata: dict[str, Any] | EmailMetadata,
         template_dir: Path | None = None,
+        header: Header | None = None,
         banner: Banner | None = None,
         footer: Footer | None = None,
     ):
@@ -82,6 +83,7 @@ class Email:
         # confusing render-time symptom.
         self._metadata.validate()
 
+        self._header: Header = header if header is not None else self._metadata.header
         self._banner: Banner = banner if banner is not None else self._metadata.banner
         self._footer: Footer = footer if footer is not None else self._metadata.footer
         self._sections: list[Container] = []
@@ -108,6 +110,16 @@ class Email:
         return self._metadata
 
     @property
+    def header(self) -> Header:
+        """
+        The strip at the top of the email.
+
+        Read-only for the same reasons as :attr:`metadata`; use
+        :meth:`set_header` to swap it.
+        """
+        return self._header
+
+    @property
     def banner(self) -> Banner:
         """
         The masthead region this email renders.
@@ -130,6 +142,15 @@ class Email:
     # ------------------------------------------------------------------
     # Building
     # ------------------------------------------------------------------
+
+    def set_header(self, header: Header) -> Email:
+        """
+        Replace the strip at the top of the email.
+
+        Returns ``self`` for optional chaining.
+        """
+        self._header = header
+        return self
 
     def set_banner(self, banner: Banner) -> Email:
         """
@@ -173,7 +194,7 @@ class Email:
         broken ``cid:`` reference, which is the failure the ``images()`` rule
         exists to prevent.
         """
-        images = list(self._banner.images())
+        images = list(self._header.images()) + list(self._banner.images())
         for section in self._sections:
             for component in section.components():
                 images.extend(component.images())
@@ -206,7 +227,7 @@ class Email:
                 message.attach(asset.data, asset.mime_type,
                                cid=asset.content_id, filename=asset.filename)
         """
-        assets = list(self._banner.assets())
+        assets = list(self._header.assets()) + list(self._banner.assets())
         for section in self._sections:
             assets.extend(section.assets())
         assets.extend(self._footer.assets())
@@ -251,6 +272,7 @@ class Email:
         # *is* a default-constructed region.
         ctx = self._metadata.to_dict()
         ctx["sections_html"] = sections_html
+        ctx.update(self._header.render_slots(engine, self._metadata.header_facts()))
         ctx.update(self._banner.render_slots(engine, self._metadata.banner_facts()))
         ctx.update(self._footer.render_slots(engine, self._metadata.footer_facts()))
 
@@ -350,9 +372,9 @@ class EmailBuilder:
         self._email = Email(metadata=data, template_dir=self._template_dir)
         return self
 
-    def banner(self, banner: Banner) -> EmailBuilder:
+    def header(self, header: Header) -> EmailBuilder:
         """
-        Set the masthead region.
+        Set the strip at the top of the email.
 
         Same sequencing rule as :meth:`section`: the email must exist first,
         so calling this before :meth:`metadata` is a programming error in the
@@ -360,6 +382,17 @@ class EmailBuilder:
         """
         if self._email is None:
             raise RuntimeError("Call .metadata() before setting the header.")
+        self._email.set_header(header)
+        return self
+
+    def banner(self, banner: Banner) -> EmailBuilder:
+        """
+        Set the masthead region.
+
+        Same sequencing rule as :meth:`header`.
+        """
+        if self._email is None:
+            raise RuntimeError("Call .metadata() before setting the banner.")
         self._email.set_banner(banner)
         return self
 

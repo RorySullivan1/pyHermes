@@ -32,6 +32,7 @@ from svc.builder import (
     EmailBuilder,
     Footer,
     FullWidth,
+    Header,
     ImageBlock,
     NumberedList,
     Rgba,
@@ -119,6 +120,18 @@ def build(template_dir: Path | None = None, **metadata_overrides: Any) -> Email:
     return (
         EmailBuilder(template_dir=template_dir)
         .metadata(_metadata() | metadata_overrides)
+        .header(
+            Header(
+                # Distinctive on every axis, because the golden can only pin
+                # a value the fixture actually moves — and here that is
+                # forced rather than chosen: the region-completeness test
+                # fails on any field left at its default. The fixtures that
+                # leave the header alone are what pin the theme's own band.
+                align="left",
+                background_color="#1E2B38",
+                text_color="#B8C6CE",
+            )
+        )
         .banner(
             Banner(
                 # The two image fields take different shapes on purpose —

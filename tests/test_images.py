@@ -311,6 +311,7 @@ class TestHeaderImages:
         metadata = EmailMetadata(**valid_metadata)
         declared = {f.name for f in dataclasses.fields(EmailMetadata)}
         assert set(metadata.to_dict()) == declared - {
+            "header",
             "banner",
             "footer",
             "theme",

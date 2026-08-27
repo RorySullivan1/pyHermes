@@ -15,7 +15,7 @@ from .exceptions import ValidationError
 
 if TYPE_CHECKING:  # pragma: no cover - import cycle: images/regions import from here
     from .images import EmailImage
-    from .regions import Banner, Footer
+    from .regions import Banner, Footer, Header
     from .theming import Theme
 
 # ──────────────────────────────────────────────────────────────────────
@@ -66,6 +66,13 @@ def _validate_url(value: str, name: str) -> None:
 # ──────────────────────────────────────────────────────────────────────
 # Email-level metadata
 # ──────────────────────────────────────────────────────────────────────
+
+
+def _default_header() -> "Header":
+    """A default strip. Imported lazily for the same cycle reason as below."""
+    from .regions import Header
+
+    return Header()
 
 
 def _default_banner() -> "Banner":
@@ -146,6 +153,11 @@ class EmailMetadata:
     unsubscribe_url: str = ""
     view_in_browser_url: str = ""
 
+    #: How the strip at the top of the email presents its copy. Defaults to
+    #: the centred band on the theme's own colours; ``Email(header=...)``
+    #: overrides it for one email.
+    header: "Header" = field(default_factory=_default_header)
+
     #: How the masthead presents the facts above. Defaults to a blank header;
     #: ``Email(banner=...)`` overrides it for one email.
     banner: "Banner" = field(default_factory=_default_banner)
@@ -178,10 +190,15 @@ class EmailMetadata:
     unsubscribe_label: InitVar["str | None"] = None
     view_in_browser_label: InitVar["str | None"] = None
 
-    #: Email-level facts the header region renders. Passed *down* to it; the
-    #: header layers them over its own context, so it cannot shadow one.
+    #: Email-level facts the strip renders. One today, and it stays a fact
+    #: rather than moving onto the region with the box's presentation: it is
+    #: legal copy that belongs to the *email*, the same call the footer's
+    #: two URLs get.
+    HEADER_FACTS = ("header_disclaimer",)
+
+    #: Email-level facts the masthead renders. Passed *down* to it; the
+    #: banner layers them over its own context, so it cannot shadow one.
     BANNER_FACTS = (
-        "header_disclaimer",
         "firm_name",
         "campaign_name",
         "department",
@@ -269,8 +286,12 @@ class EmailMetadata:
         for fname in ("unsubscribe_url", "view_in_browser_url"):
             _validate_url(getattr(self, fname), f"metadata.{fname}")
 
+    def header_facts(self) -> dict[str, Any]:
+        """The email-level facts the strip renders."""
+        return {name: getattr(self, name) for name in self.HEADER_FACTS}
+
     def banner_facts(self) -> dict[str, Any]:
-        """The email-level facts a header region renders."""
+        """The email-level facts a masthead region renders."""
         return {name: getattr(self, name) for name in self.BANNER_FACTS}
 
     def footer_facts(self) -> dict[str, Any]:
@@ -288,7 +309,7 @@ class EmailMetadata:
         value two sources — and ``size_theme`` is excluded for exactly the
         same reason, since the resolved scheme rides the same binder.
         """
-        skip = {"banner", "footer", "theme", "size_theme"}
+        skip = {"header", "banner", "footer", "theme", "size_theme"}
         return {f.name: getattr(self, f.name) for f in fields(self) if f.name not in skip}
 
 

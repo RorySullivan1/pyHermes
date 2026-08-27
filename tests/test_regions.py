@@ -11,7 +11,16 @@ import re
 
 import pytest
 
-from svc.builder import Banner, BannerPalette, Email, EmailBuilder, MinimalBanner, Rgba
+from svc.builder import (
+    Banner,
+    BannerPalette,
+    Email,
+    EmailBuilder,
+    Footer,
+    Header,
+    MinimalBanner,
+    Rgba,
+)
 from svc.builder.engine import TemplateEngine
 from svc.builder.exceptions import ValidationError
 from svc.builder.images import EmailImage
@@ -34,9 +43,10 @@ def _theme_token(path: str):
 class TestTheBannerLeftTheSkeleton:
     """#33: the pure template split — the markup moved, the output did not."""
 
-    @pytest.mark.parametrize("slot", ["header_bar", "banner"])
-    def test_the_region_templates_ship_in_the_package(self, slot):
-        assert (TEMPLATE_DIR / Banner.TEMPLATE_PATHS[slot]).is_file()
+    @pytest.mark.parametrize("region", [Header, Banner, MinimalBanner, Footer])
+    def test_the_region_templates_ship_in_the_package(self, region):
+        for path in region.TEMPLATE_PATHS.values():
+            assert (TEMPLATE_DIR / path).is_file()
 
     def test_base_html_keeps_only_the_holes(self):
         base = _template("base.html")
@@ -52,10 +62,10 @@ class TestTheBannerLeftTheSkeleton:
 
     def test_the_strip_exists_in_exactly_one_template(self):
         """
-        #89's point. Both variants used to carry their own copy of the strip,
-        byte-identical apart from a marker comment — the drift-by-copy a
-        shared template makes impossible. ``MinimalBanner`` composes
-        ``Banner``'s path rather than restating it.
+        #89's point, still true after #95 moved the owner. Both banner
+        variants used to carry their own copy of the strip, byte-identical
+        apart from a marker comment — the drift-by-copy a shared template
+        makes impossible.
         """
         carriers = [
             path.name
@@ -63,7 +73,19 @@ class TestTheBannerLeftTheSkeleton:
             if "{{header_disclaimer}}" in path.read_text(encoding="utf-8")
         ]
         assert carriers == ["header-bar.html"]
-        assert MinimalBanner.TEMPLATE_PATHS["header_bar"] == Banner.TEMPLATE_PATHS["header_bar"]
+
+    def test_exactly_one_region_owns_each_slot(self):
+        """
+        #95's structural claim. The strip lived in ``Banner.SLOTS`` between
+        #89 and #95 — its own template, its own slot, someone else's class.
+        Two regions declaring one slot would have the skeleton silently take
+        whichever rendered last.
+        """
+        owners: dict[str, list[str]] = {}
+        for region in (Header, Banner, Footer):
+            for slot in region.SLOTS:
+                owners.setdefault(slot, []).append(region.__name__)
+        assert owners == {"header_bar": ["Header"], "banner": ["Banner"], "footer": ["Footer"]}
 
     @pytest.mark.parametrize(
         "variable",
@@ -163,10 +185,19 @@ class TestFactsFlowDown:
         banner = Banner(logo_alt="a logo")
         assert banner.context({"logo_alt": "the email insists"})["logo_alt"] == "the email insists"
 
-    def test_the_two_key_sets_are_disjoint(self, valid_metadata):
+    @pytest.mark.parametrize(
+        "region_name,facts",
+        [
+            ("header", EmailMetadata.HEADER_FACTS),
+            ("banner", EmailMetadata.BANNER_FACTS),
+            ("footer", EmailMetadata.FOOTER_FACTS),
+        ],
+    )
+    def test_the_two_key_sets_are_disjoint(self, valid_metadata, region_name, facts):
         metadata = EmailMetadata(**valid_metadata)
-        presentation = set(metadata.banner.context({}))
-        assert presentation & set(EmailMetadata.BANNER_FACTS) == set()
+        region = getattr(metadata, region_name)
+        presentation = set(region.context({})) | set(region.theme_context(DEFAULT_THEME))
+        assert presentation & set(facts) == set()
 
     def test_the_template_names_only_keys_the_context_supplies(self, valid_metadata):
         """StrictUndefined turns a missing key into a render failure."""
@@ -399,7 +430,7 @@ class TestTheBannerPaletteReachesTheMarkup:
             header_disclaimer="disclaimer",
             banner=Banner(palette=BannerPalette(band="#123456", meta="#654321")),
         )
-        strip = metadata.banner.render_slots(TemplateEngine(), metadata.banner_facts())[
+        strip = metadata.header.render_slots(TemplateEngine(), metadata.header_facts())[
             "header_bar_html"
         ]
         assert "#123456" not in strip and "#654321" not in strip
@@ -455,6 +486,102 @@ class TestTheTwoTreacherousBlocksLeaveTheBannerAlone:
             "a colour rule now targets the banner's only class; it would win "
             "over BannerPalette in exactly the clients hardest to test."
         )
+
+
+class TestTheHeaderRegion:
+    """
+    #95: the strip stops being rendered by the banner and becomes a class.
+
+    The region mechanism's own test. The strip already had its own template
+    and its own slot after #89 — what #95 changes is the *owner*, so the
+    headline assertion is that no rendered byte moved (the goldens), and
+    everything here is about what the new owner adds.
+    """
+
+    @staticmethod
+    def _strip(metadata: EmailMetadata) -> str:
+        return metadata.header.render_slots(TemplateEngine(), metadata.header_facts())[
+            "header_bar_html"
+        ]
+
+    def test_the_flat_path_still_renders_the_strip(self, valid_metadata):
+        """
+        Most callers never touch the region: they set the copy on the
+        metadata and expect a band. That path did not change.
+        """
+        metadata = EmailMetadata(**valid_metadata, header_disclaimer="Not investment advice.")
+        assert "Not investment advice." in self._strip(metadata)
+
+    def test_unset_presentation_renders_the_themes_values(self, valid_metadata):
+        metadata = EmailMetadata(**valid_metadata, header_disclaimer="d")
+        strip = self._strip(metadata)
+        assert DEFAULT_THEME.palette.header_bg in strip
+        assert DEFAULT_THEME.text.on_dark_muted in strip
+        assert "text-align:center;" in strip
+
+    def test_the_colour_pair_moves_exactly_those_two_colours(self, valid_metadata):
+        """
+        Stronger than "the override appears": the whole strip must equal the
+        default one with those two substitutions and nothing else.
+        """
+        plain = EmailMetadata(**valid_metadata, header_disclaimer="d")
+        themed = EmailMetadata(
+            **valid_metadata,
+            header_disclaimer="d",
+            header=Header(background_color="#EEF2F5", text_color="#1B1B1B"),
+        )
+        expected = (
+            self._strip(plain)
+            .replace(DEFAULT_THEME.palette.header_bg, "#EEF2F5")
+            .replace(DEFAULT_THEME.text.on_dark_muted, "#1B1B1B")
+        )
+        assert expected == self._strip(themed)
+
+    @pytest.mark.parametrize("align", ["left", "center", "right"])
+    def test_alignment_reaches_the_markup(self, valid_metadata, align):
+        metadata = EmailMetadata(
+            **valid_metadata, header_disclaimer="d", header=Header(align=align)
+        )
+        assert f"text-align:{align};" in self._strip(metadata)
+
+    def test_a_bad_alignment_raises_naming_the_field(self):
+        with pytest.raises(ValidationError, match="header.align"):
+            Header(align="middle")
+
+    @pytest.mark.parametrize("field", ["background_color", "text_color"])
+    def test_a_bad_hex_raises_naming_the_field(self, field):
+        with pytest.raises(ValidationError, match=f"header.{field}"):
+            Header(**{field: "slate"})
+
+    def test_the_copy_is_raw_html_and_the_docstring_says_so(self, valid_metadata):
+        """
+        The contract #95 settled: kept raw for consistency with the other
+        disclaimers, because escaping it would break every caller passing
+        markup — so it is *stated* instead. A region whose text is raw HTML
+        is a footgun, and the warning living only in a commit message is how
+        it stays one.
+        """
+        metadata = EmailMetadata(**valid_metadata, header_disclaimer="<em>Not advice.</em>")
+        assert "<em>Not advice.</em>" in self._strip(metadata)
+        assert "raw HTML" in (Header.__doc__ or "")
+
+    def test_the_email_api_carries_it(self, valid_metadata):
+        chosen = Header(align="right")
+        assert Email(valid_metadata, header=chosen).header is chosen
+        assert Email(valid_metadata).set_header(chosen).header is chosen
+        assert EmailBuilder().metadata(valid_metadata).header(chosen).build().header is chosen
+
+    def test_the_builder_sequences_like_every_other_region(self, valid_metadata):
+        with pytest.raises(RuntimeError, match="metadata"):
+            EmailBuilder().header(Header())
+
+    def test_the_old_masthead_signature_fails_loudly(self):
+        """
+        #90 freed the name for this class rather than aliasing it, so the
+        one thing that must not happen is an old-style call quietly working.
+        """
+        with pytest.raises(TypeError):
+            Header(logo_url="https://cdn.test/logo.png")  # type: ignore[call-arg]
 
 
 class TestTheFlatKeywordsStillWork:

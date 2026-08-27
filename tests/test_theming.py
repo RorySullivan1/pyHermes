@@ -241,7 +241,7 @@ class TestTheAuditIsTrue:
         # The fixtures pass their own KpiItem/TableRow colours — caller data
         # about the numbers, which the theme deliberately does not own.
         caller_data = {"#4A7C59", "#B85450", "#8B6F47", "#2E5F7F"}
-        assert used - known - caller_data - _banner_palette_colours() == set()
+        assert used - known - caller_data - _region_colours() == set()
 
     def test_the_stale_palette_comment_is_gone(self):
         """
@@ -340,27 +340,54 @@ class TestTheThemeIsSelectable:
         assert EmailMetadata(**self.FACTS, theme="classic").theme == "classic"
 
 
-def _banner_palette_colours() -> set[str]:
-    """
-    Every hex a gallery fixture's own :class:`BannerPalette` puts on the page.
+def _theme_resolving_regions() -> list[type]:
+    """Every shipped region whose ``theme_context`` resolves anything."""
+    from svc.builder import regions as region_api
 
-    Read off the fixtures rather than hand-listed, for the reason the audit
-    exists: a list of allowed colours that someone maintains by hand is the
-    thing that drifted in the first place.
+    return [
+        obj
+        for obj in vars(region_api).values()
+        if isinstance(obj, type)
+        and issubclass(obj, region_api.Region)
+        and obj is not region_api.Region
+        and obj().theme_context(DEFAULT_THEME)
+    ]
+
+
+_HEX = re.compile(r"^#[0-9A-Fa-f]{6}$")
+
+
+def _region_colours() -> set[str]:
+    """
+    Every hex a gallery fixture's *regions* put on the page themselves.
+
+    The third legitimate source, beside the theme's tokens and the caller's
+    own KPI/table colours: a region may carry a bounded colour override — the
+    banner's :class:`BannerPalette` (#93), the header's pair (#95) — for the
+    surfaces a caller supplies rather than the theme.
+
+    Walked off the built regions rather than hand-listed, for the reason the
+    audit exists at all: a list of allowed colours someone maintains by hand
+    is the thing that drifted in the first place. It also means a region that
+    grows an override is covered without anyone remembering to widen this.
     """
     from qa.fixtures import all_fixtures
 
-    found: set[str] = set()
-    for build in all_fixtures().values():
-        palette = getattr(build().banner, "palette", None)
-        if palette is None:
-            continue
-        for spec in fields(palette):
-            value = getattr(palette, spec.name)
-            if isinstance(value, str):
+    def harvest(obj: object, found: set[str]) -> None:
+        for spec in fields(obj):  # type: ignore[arg-type]
+            value = getattr(obj, spec.name)
+            if isinstance(value, str) and _HEX.match(value):
                 found.add(value)
             elif isinstance(value, Rgba):
                 found.add(value.color)
+            elif dataclasses.is_dataclass(value) and not isinstance(value, type):
+                harvest(value, found)
+
+    found: set[str] = set()
+    for build in all_fixtures().values():
+        email = build()
+        for region in (email.header, email.banner, email.footer):
+            harvest(region, found)
     return found
 
 
@@ -546,18 +573,32 @@ class TestTheDefaultThemeChangesNothing:
 
     def test_every_template_now_reads_the_theme_namespace(self):
         """
-        Two namespaces satisfy this, not one. The banner templates read
-        ``banner_palette`` exclusively (#93) — an object whose every unset
-        role *is* the theme's token, resolved in Python so the markup needs
-        no fallback per colour. That is the theme reaching the template by a
-        second path, not a template escaping it; what the rule forbids is a
-        literal, and the no-literal test next door still covers that.
+        Two paths satisfy this, not one. A region may resolve a token in
+        Python and hand the template the *result* — ``banner_palette`` for
+        the masthead (#93), ``header_background`` / ``header_text`` for the
+        strip (#95) — so the markup needs no per-colour fallback and an
+        override arrives the same way an inherited token does. That is the
+        theme reaching the template by a second path, not a template escaping
+        it; what the rule forbids is a *literal*, and the no-literal test
+        next door still covers that.
+
+        The accepted names are read off ``Region.theme_context`` rather than
+        listed here, so a region that grows one is covered without anyone
+        remembering to widen this test — and a template naming a key no
+        region resolves still fails.
         """
+        resolved = {
+            key
+            for region in _theme_resolving_regions()
+            for key in region().theme_context(DEFAULT_THEME)
+        }
+        assert resolved, "no region resolves anything against the theme"
         for path in sorted(TEMPLATE_DIR.rglob("*.html")):
             source = path.read_text(encoding="utf-8")
-            assert "theme." in source or "banner_palette." in source, (
-                f"{path.name} takes no colour from the theme"
+            takes_colour = "theme." in source or any(
+                f"{{{{ {key}" in source or f"{{{{ {key}." in source for key in resolved
             )
+            assert takes_colour, f"{path.name} takes no colour from the theme"
 
     def test_the_default_email_is_unchanged(self):
         """

@@ -61,7 +61,7 @@ from .models import _validate_color, _validate_url
 if TYPE_CHECKING:  # pragma: no cover - import cycle: images imports _validate_url
     from .engine import Renderer
     from .images import EmailImage, ImageAsset
-    from .theming import BannerPalette
+    from .theming import BannerPalette, Theme
 
 
 @dataclass
@@ -190,6 +190,29 @@ class Region:
         }
         return {**presentation, **facts}
 
+    def theme_context(self, theme: Theme) -> dict[str, Any]:
+        """
+        Keys this region resolves against the email's theme. Empty by default.
+
+        The hook a region overrides when one of its presentation fields means
+        *"the theme's token, unless I say otherwise"*. It exists because the
+        theme is neither a fact nor a field: it reaches the templates through
+        the bound engine, and a region only has it at render time — so
+        resolving in :meth:`context`, which has no engine, is impossible.
+
+        What comes back is layered **with the facts**, over the region's own
+        keys, so a resolved value cannot be shadowed by the raw field it was
+        resolved from. That is why a resolved key takes a *different name*
+        than the field: ``Header.background_color`` is what the caller set
+        (possibly nothing), ``header_background`` is what actually renders,
+        and the template reads only the second.
+
+        Generalised rather than duplicated: the banner needed it first for
+        its :class:`~svc.builder.theming.BannerPalette`, the header for its
+        colour pair, and #98's footer box for the same two tokens.
+        """
+        return {}
+
     def render_slots(self, engine: Renderer, facts: dict[str, Any]) -> dict[str, str]:
         """
         Render this region into the skeleton variables it fills.
@@ -201,7 +224,7 @@ class Region:
         as the empty string — that is what makes dropping a block an
         omission rather than a conditional in the template.
         """
-        ctx = self.context(facts)
+        ctx = self.context({**facts, **self.theme_context(engine.theme)})
         return {
             f"{slot}_html": (
                 engine.render(self.TEMPLATE_PATHS[slot], ctx) if slot in self.TEMPLATE_PATHS else ""
@@ -262,17 +285,14 @@ class Banner(Region):
 
     CONTEXT_NAME: ClassVar[str] = "banner"
 
-    #: Two slots, not one. The strip at the top of the email and the masthead
-    #: below it are separate blocks with separate owners — different content,
-    #: different reasons to change — and they shared a template only by
-    #: accident of file layout. #87 gives the strip its own region; this
-    #: region fills both until then.
-    SLOTS: ClassVar[tuple[str, ...]] = ("header_bar", "banner")
+    #: One slot. The strip at the top of the email lived here between #89 and
+    #: #95 — separate template, separate slot, but rendered by this class —
+    #: and #95 gave it :class:`Header`. The skeleton's slot set never changed
+    #: across either step, which is what made the split a change of *owner*
+    #: rather than of markup.
+    SLOTS: ClassVar[tuple[str, ...]] = ("banner",)
 
-    TEMPLATE_PATHS: ClassVar[dict[str, str]] = {
-        "header_bar": "regions/header-bar.html",
-        "banner": "regions/banner.html",
-    }
+    TEMPLATE_PATHS: ClassVar[dict[str, str]] = {"banner": "regions/banner.html"}
 
     #: Fields that may hold an EmailImage instead of a bare URL.
     IMAGE_FIELDS: ClassVar[tuple[str, ...]] = ("logo_url", "background_image_url")
@@ -320,26 +340,18 @@ class Banner(Region):
         }
         return {**super().context({}), **resolved, **facts}
 
-    def render_slots(self, engine: Renderer, facts: dict[str, Any]) -> dict[str, str]:
+    def theme_context(self, theme: Theme) -> dict[str, Any]:
         """
-        As the base, with this region's colours resolved against the theme.
+        A **total** :class:`~svc.builder.theming.BannerPalette`, as
+        ``banner_palette``.
 
-        The resolution happens *here* rather than in :meth:`context` because
-        the theme is not a fact and not a field — it reaches the templates
-        through the bound engine, and the engine is only in hand at render
-        time. What lands in the context is a **total**
-        :class:`~svc.builder.theming.BannerPalette` under ``banner_palette``,
-        so the template reads one object for every colour it draws and an
-        override is indistinguishable from an inherited token by the time the
-        markup sees it.
+        Total by construction, so the template reads one object for every
+        colour it draws and an override is indistinguishable from an
+        inherited token by the time the markup sees it.
         """
-        return super().render_slots(engine, {**facts, "banner_palette": self._palette(engine)})
-
-    def _palette(self, engine: Renderer) -> BannerPalette:
-        """This banner's colours, filled in from whatever theme is bound."""
         from .theming import BannerPalette
 
-        return (self.palette or BannerPalette()).resolved(engine.theme)
+        return {"banner_palette": (self.palette or BannerPalette()).resolved(theme)}
 
     def render(self, engine: Renderer, facts: dict[str, Any]) -> str:
         """
@@ -347,9 +359,7 @@ class Banner(Region):
 
         A convenience over :meth:`render_slots`, and deliberately a
         delegation rather than a second call to ``engine`` — one rendering
-        path is the whole point. Joining on a newline reproduces what the
-        single pre-split template rendered byte for byte, because the strip
-        already ends with one and the skeleton supplies the other.
+        path is the whole point.
         """
         slots = self.render_slots(engine, facts)
         return "\n".join(slots[f"{slot}_html"] for slot in self.SLOTS)
@@ -418,11 +428,11 @@ class MinimalBanner(Banner):
     rejected at construction rather than silently ignored.
     """
 
-    #: Composed rather than restated: the variant differs in the *banner*
-    #: only, so it inherits the strip's path instead of carrying a second
-    #: copy of it. A full replacement would let the two drift the moment one
-    #: path changed — which is exactly what the duplicated strip template did
-    #: before #89 removed it.
+    #: Composed rather than restated. It reads as a no-op today, because #95
+    #: left the banner one slot and the variant differs in that one — but the
+    #: form is the point: a variant that overrides only what it changes
+    #: cannot drift from the parent on a slot they share, and the duplicated
+    #: strip template #89 removed is what that drift looked like.
     TEMPLATE_PATHS: ClassVar[dict[str, str]] = {
         **Banner.TEMPLATE_PATHS,
         "banner": "regions/banner-minimal.html",
@@ -436,6 +446,88 @@ class MinimalBanner(Banner):
                 "for a background image."
             )
         super().validate()
+
+
+@dataclass
+class Header(Region):
+    """
+    The strip at the very top of the email: one band of centred copy.
+
+    The email's outermost box above the body, and deliberately symmetric with
+    :class:`Footer` below it — the two are the customisable boxes that bracket
+    the sections, and #98 gives the footer's box these same three field names,
+    so a caller learns one surface rather than two.
+
+    **The name meant the masthead until #95.** ``Header`` was renamed to
+    :class:`Banner` in #90 precisely so it could be reused here, with no
+    deprecated alias in between: an old-style ``Header(logo_url=…)`` now fails
+    at construction, because this class has no such field. That is loud, at the
+    call site, which is the point — a name that quietly changed meaning would
+    keep running and be wrong.
+
+    **Its copy is raw HTML, and that is a footgun nobody has been warned
+    about.** ``header_disclaimer`` is emitted unescaped, as it always has
+    been, and as the other disclaimers are: escaping it now would break every
+    caller passing markup. So the contract is kept and stated instead —
+    **escaping untrusted text in it is the caller's job**, with
+    :func:`~svc.builder.filters.escape_html` the tool. The copy itself stays
+    on :class:`~svc.builder.models.EmailMetadata`: it is legal wording that
+    belongs to the *email*, and this region only decides how the box presents
+    it.
+
+    Attributes:
+        align:            ``left``, ``center`` or ``right``. Centred by
+                          default, which is what the strip has always been.
+        background_color: Hex; unset means the theme's band
+                          (``palette.header_bg``).
+        text_color:       Hex; unset means the theme's ``text.on_dark_muted``.
+                          It rides with the background rather than being
+                          offered alone, for :class:`BannerPalette`'s reason
+                          scoped to one token: a caller-supplied ground makes
+                          the theme's on-dark text a guess, so offering the
+                          surface without the type on it is offering half a
+                          decision.
+
+    Validates at construction, like every model here.
+    """
+
+    CONTEXT_NAME: ClassVar[str] = "header"
+    SLOTS: ClassVar[tuple[str, ...]] = ("header_bar",)
+    TEMPLATE_PATHS: ClassVar[dict[str, str]] = {"header_bar": "regions/header-bar.html"}
+
+    #: The alignments CSS ``text-align`` takes that make sense for one band of
+    #: copy. Not the full CSS vocabulary: ``justify`` on a single short line
+    #: does nothing, and the rest are inline-level values.
+    ALIGNMENTS: ClassVar[frozenset[str]] = frozenset({"left", "center", "right"})
+
+    align: str = "center"
+    background_color: str = ""
+    text_color: str = ""
+
+    def validate(self) -> None:
+        super().validate()
+        if self.align not in self.ALIGNMENTS:
+            raise ValidationError(
+                f"'header.align' must be one of {sorted(self.ALIGNMENTS)}, got: {self.align!r}"
+            )
+        for name in ("background_color", "text_color"):
+            value = getattr(self, name)
+            if value:
+                _validate_color(value, f"header.{name}")
+
+    def theme_context(self, theme: Theme) -> dict[str, Any]:
+        """
+        The two colours the band actually draws, resolved.
+
+        Under names of their own — ``header_background``, ``header_text`` —
+        rather than in place, so the template reads what *renders* and never
+        the raw field, which is empty for the caller who set nothing. Same
+        shape as ``banner_palette``, at the size this box needs.
+        """
+        return {
+            "header_background": self.background_color or theme.palette.header_bg,
+            "header_text": self.text_color or theme.text.on_dark_muted,
+        }
 
 
 @dataclass
