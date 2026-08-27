@@ -68,7 +68,6 @@ AUDIT: dict[str, dict[str, int | float]] = {
     "space": {
         "gutter": 16,
         "section_title_top": 22,
-        "section_title_top_split": 2,
         "section_title_bottom": 12,
         "content_top": 16,
         "content_bottom": 14,
