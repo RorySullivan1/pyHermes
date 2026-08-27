@@ -9,24 +9,24 @@
     as_of    — Date string (optional)
 #}
 {% if subtitle %}
-<p style="font-family: Georgia, 'Times New Roman', serif; font-size: {{ size.type.secondary }}px; font-style: italic; color: {{ theme.text.secondary }}; margin: 0 0 {{ size.space.subtitle_gap }}px 0; line-height: {{ size.type.secondary_line }};">{{ subtitle | escape_html }}</p>
+<p style="font-family: Georgia, 'Times New Roman', serif; font-size: {{ size.type.secondary }}px; font-style: italic; color: {{ theme.text.secondary }}; margin: 0 0 {{ size.space.subtitle_gap }}px 0; line-height: {{ size.type.secondary_line | percent }};">{{ subtitle | escape_html }}</p>
 {% endif %}
 <table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
   {# Header row #}
   <tr style="border-top: 1px solid {{ theme.palette.rule }}; border-bottom: 2px solid {{ theme.palette.rule_dark }};">
 {% for header in headers %}
-    <th style="font-family: Arial, Helvetica, sans-serif; font-size: {{ size.type.label }}px; font-weight: bold; color: {{ theme.semantic.neutral }}; text-transform: uppercase; text-align: {% if loop.first %}left{% else %}right{% endif %}; padding: {{ size.component.table_cell_pad }}px; letter-spacing: 0.5px;">{{ header | escape_html }}</th>
+    <th style="font-family: Arial, Helvetica, sans-serif; font-size: {{ size.type.label }}px; font-weight: bold; color: {{ theme.semantic.neutral }}; text-transform: uppercase; line-height: {{ size.type.body_line | percent }}; text-align: {% if loop.first %}left{% else %}right{% endif %}; padding: {{ size.component.table_cell_pad }}px; letter-spacing: 0.5px;">{{ header | escape_html }}</th>
 {% endfor %}
   </tr>
   {# Data rows #}
 {% for row in rows %}
   <tr style="border-bottom: 1px solid {% if loop.last %}{{ theme.palette.rule }}{% else %}{{ theme.palette.rule_subtle }}{% endif %};">
 {% for cell in row.cells %}
-    <td style="font-family: {% if loop.first %}Arial, Helvetica, sans-serif{% else %}'Courier New', Courier, monospace{% endif %}; font-size: {{ size.type.secondary }}px;{% if not loop.first %} font-weight: bold;{% endif %} color: {% if loop.first %}{{ theme.text.primary }}{% elif row.colors and row.colors[loop.index0] %}{{ row.colors[loop.index0] }}{% else %}{{ theme.semantic.neutral }}{% endif %}; text-align: {% if loop.first %}left{% else %}right{% endif %}; padding: {{ size.component.table_cell_pad }}px; background-color: {% if row.alt %}{{ theme.palette.row_alt }}{% else %}{{ theme.palette.surface }}{% endif %};">{{ cell | escape_html }}</td>
+    <td style="font-family: {% if loop.first %}Arial, Helvetica, sans-serif{% else %}'Courier New', Courier, monospace{% endif %}; font-size: {{ size.type.secondary }}px;{% if not loop.first %} font-weight: bold;{% endif %} line-height: {{ size.type.body_line | percent }}; color: {% if loop.first %}{{ theme.text.primary }}{% elif row.colors and row.colors[loop.index0] %}{{ row.colors[loop.index0] }}{% else %}{{ theme.semantic.neutral }}{% endif %}; text-align: {% if loop.first %}left{% else %}right{% endif %}; padding: {{ size.component.table_cell_pad }}px; background-color: {% if row.alt %}{{ theme.palette.row_alt }}{% else %}{{ theme.palette.surface }}{% endif %};">{{ cell | escape_html }}</td>
 {% endfor %}
   </tr>
 {% endfor %}
 </table>
 {% if source %}
-<p style="font-family: Arial, Helvetica, sans-serif; font-size: {{ size.type.micro }}px; color: {{ theme.text.light }}; font-style: italic; margin: {{ size.space.caption_gap }}px 0 0 0;">{{ source | escape_html }}{% if as_of %} as of {{ as_of | escape_html }}{% endif %}</p>
+<p style="font-family: Arial, Helvetica, sans-serif; font-size: {{ size.type.micro }}px; color: {{ theme.text.light }}; font-style: italic; margin: {{ size.space.caption_gap }}px 0 0 0; line-height: {{ size.type.body_line | percent }};">{{ source | escape_html }}{% if as_of %} as of {{ as_of | escape_html }}{% endif %}</p>
 {% endif %}

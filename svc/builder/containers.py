@@ -139,7 +139,12 @@ class _SplitContainer(Container):
         geometry = column_layout(self._weights(self.ratio), scheme)
         ctx = self._base_context(engine)
         ctx["columns"] = [
-            {"width": column.width, "pad_x": column.pad_x, "content": content}
+            {
+                "width": column.width,
+                "pad_left": column.pad_left,
+                "pad_right": column.pad_right,
+                "content": content,
+            }
             for column, content in zip(geometry, contents, strict=True)
         ]
         return ctx

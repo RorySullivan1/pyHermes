@@ -4,7 +4,7 @@
           <tr>
             <td style="background-color:{{ theme.palette.header_bg }}; padding:{{ size.space.masthead_bar_y }}px {{ size.frame.pad_x }}px; text-align:center;" bgcolor="{{ theme.palette.header_bg }}">
               <p style="margin:0; font-family:Arial,Helvetica,sans-serif; font-size:{{ size.type.micro }}px;
-                        font-weight:300; color:{{ theme.text.on_dark_muted }}; letter-spacing:0.3px; line-height:{{ size.type.secondary_line }};">
+                        font-weight:300; color:{{ theme.text.on_dark_muted }}; letter-spacing:0.3px; line-height:{{ size.type.secondary_line | percent }};">
                 {{header_disclaimer}}
               </p>
             </td>
@@ -33,7 +33,7 @@
                 <tr>
                   <td style="padding:{{ size.space.masthead_title_top }}px {{ size.frame.pad_x }}px {{ size.space.masthead_title_bottom }}px;">
                     <p style="margin:0; font-family:Georgia,'Times New Roman',serif; font-size:{{ size.type.title }}px;
-                              font-weight:bold; color:{{ theme.text.on_dark }}; line-height:{{ size.type.title_line }}; letter-spacing:0.3px;"
+                              font-weight:bold; color:{{ theme.text.on_dark }}; line-height:{{ size.type.title_line | percent }}; letter-spacing:0.3px;"
                        class="mobile-title">
                       {{ firm_name | escape_html }}
                     </p>
@@ -42,7 +42,7 @@
                 <tr>
                   <td style="padding:0 {{ size.frame.pad_x }}px {{ size.space.masthead_campaign_bottom }}px;">
                     <p style="margin:0; font-family:Arial,Helvetica,sans-serif; font-size:{{ size.type.secondary }}px;
-                              font-weight:400; color:{{ theme.text.on_dark_secondary }}; line-height:{{ size.type.heading_line }};">
+                              font-weight:400; color:{{ theme.text.on_dark_secondary }}; line-height:{{ size.type.heading_line | percent }};">
                       {{ campaign_name | escape_html }}
                     </p>
                   </td>

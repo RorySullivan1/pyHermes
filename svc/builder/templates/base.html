@@ -30,7 +30,11 @@
       .stack-column { display:block !important; width:100% !important; }
       .mobile-pad { padding:{{ size.space.mobile_pad_y }}px {{ size.space.mobile_pad_x }}px !important; }
       .mobile-title { font-size:{{ size.type.title_mobile }}px !important; }
-      .kpi-cell { display:block !important; width:100% !important; border-right:none !important; border-bottom:1px solid {{ theme.palette.rule }} !important; padding:{{ size.component.card_pad_y }}px {{ size.component.card_pad_x }}px !important; }
+      /* box-sizing is what keeps the padding *inside* the 100% width. Without it
+         the content-box default adds it on top and the cell overflows the
+         viewport by its own padding (#76). Word ignores this whole @media
+         block, so the property it lacks costs Outlook nothing. */
+      .kpi-cell { display:block !important; width:100% !important; box-sizing:border-box !important; border-right:none !important; border-bottom:1px solid {{ theme.palette.rule }} !important; padding:{{ size.component.card_pad_y }}px {{ size.component.card_pad_x }}px !important; }
       .kpi-cell-last { border-bottom:none !important; }
     }
     /* Force light rendering in all dark mode contexts */

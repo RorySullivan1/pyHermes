@@ -30,7 +30,11 @@
       .stack-column { display:block !important; width:100% !important; }
       .mobile-pad { padding:20px 18px !important; }
       .mobile-title { font-size:22px !important; }
-      .kpi-cell { display:block !important; width:100% !important; border-right:none !important; border-bottom:1px solid #D6D2CB !important; padding:14px 16px !important; }
+      /* box-sizing is what keeps the padding *inside* the 100% width. Without it
+         the content-box default adds it on top and the cell overflows the
+         viewport by its own padding (#76). Word ignores this whole @media
+         block, so the property it lacks costs Outlook nothing. */
+      .kpi-cell { display:block !important; width:100% !important; box-sizing:border-box !important; border-right:none !important; border-bottom:1px solid #D6D2CB !important; padding:14px 16px !important; }
       .kpi-cell-last { border-bottom:none !important; }
     }
     /* Force light rendering in all dark mode contexts */
@@ -83,7 +87,7 @@
           <tr>
             <td style="background-color:#2C3E50; padding:7px 32px; text-align:center;" bgcolor="#2C3E50">
               <p style="margin:0; font-family:Arial,Helvetica,sans-serif; font-size:9.5px;
-                        font-weight:300; color:#90A4AE; letter-spacing:0.3px; line-height:1.4;">
+                        font-weight:300; color:#90A4AE; letter-spacing:0.3px; line-height:140%;">
                 For illustrative purposes. Not investment advice.
               </p>
             </td>
@@ -100,11 +104,16 @@
                 <v:fill type="frame" src="" color="#141E2C" opacity="65%"/>
                 <v:textbox inset="32px,0,32px,0" style="mso-fit-shape-to-text:false;">
               <![endif]-->
-              <div style="background-image:url('');
-                          background-color:#2C3E50; background-size:cover;
+              <div style="background-color:#2C3E50; background-size:cover;
                           background-position:center center; background-repeat:no-repeat;">
-                <!-- Dark overlay for text legibility -->
-                <div style="background-color:rgba(20,30,44,0.65);">
+                <!-- Dark overlay for text legibility.  Hidden from Outlook on
+                     purpose: the v:fill above already applies this exact scrim
+                     through its own color + opacity attributes, and the Word
+                     engine demotes a transparent background-color to a
+                     background image, inheriting VML's limitations for a
+                     second copy of an effect it has already drawn (#78).
+                     Both halves still read one Rgba, so they cannot drift. -->
+                <!--[if !mso]><!--><div style="background-color:rgba(20,30,44,0.65);"><!--<![endif]-->
                 <!-- Logo row -->
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                   <tr>
@@ -124,7 +133,7 @@
                   <tr>
                     <td style="padding:10px 32px 6px;">
                       <p style="margin:0; font-family:Georgia,'Times New Roman',serif; font-size:28px;
-                                font-weight:bold; color:#FFFFFF; line-height:1.2; letter-spacing:0.3px;
+                                font-weight:bold; color:#FFFFFF; line-height:120%; letter-spacing:0.3px;
                                 text-shadow:0 1px 3px rgba(0,0,0,0.4);"
                          class="mobile-title">
                         Hermes Research
@@ -134,7 +143,7 @@
                   <tr>
                     <td style="padding:0 32px 8px;">
                       <p style="margin:0; font-family:Arial,Helvetica,sans-serif; font-size:13px;
-                                font-weight:400; color:#CFD8DC; line-height:1.3;
+                                font-weight:400; color:#CFD8DC; line-height:130%;
                                 text-shadow:0 1px 2px rgba(0,0,0,0.3);">
                         minimal-footer
                       </p>
@@ -172,7 +181,7 @@
                     </td>
                   </tr>
                 </table>
-                </div><!-- /dark overlay -->
+                <!--[if !mso]><!--></div><!--<![endif]--><!-- /dark overlay -->
               </div>
               <!--[if mso]>
                 </v:textbox>
@@ -189,7 +198,7 @@
     <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
       <tr>
         <td style="padding:22px 32px 12px 32px;">
-          <h2 style="margin:0; font-family:Georgia,'Times New Roman',serif; font-size:17px; font-weight:bold; color:#2C3E50; line-height:1.2;">
+          <h2 style="margin:0; font-family:Georgia,'Times New Roman',serif; font-size:17px; font-weight:bold; color:#2C3E50; line-height:120%;">
             Same Email, Shorter Close
           </h2>
         </td>
@@ -197,8 +206,8 @@
     </table>
     <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
       <tr>
-        <td class="mobile-pad" style="padding:16px 32px 14px 32px; font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#3B3B3B; line-height:1.72;">
-          <p class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: #3B3B3B; line-height: 1.72; margin: 0 0 16px 0;"><p>Choosing a footer region is an argument, not a template fork — and the contact card is dropped by leaving a slot unfilled, so no template grows a conditional to express its absence.</p></p>
+        <td class="mobile-pad" style="padding:16px 32px 14px 32px; font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#3B3B3B; line-height:172%;">
+          <p class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: #3B3B3B; line-height: 172%; margin: 0 0 16px 0;"><p>Choosing a footer region is an argument, not a template fork — and the contact card is dropped by leaving a slot unfilled, so no template grows a conditional to express its absence.</p></p>
 
         </td>
       </tr>
@@ -211,12 +220,15 @@
     <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
       <tr>
         <td style="padding:2px 32px 12px 32px; border-bottom:1px solid #D6D2CB;">
-          <h2 style="margin:0; font-family:Georgia,'Times New Roman',serif; font-size:17px; font-weight:bold; color:#2C3E50; line-height:1.2;">
+          <h2 style="margin:0; font-family:Georgia,'Times New Roman',serif; font-size:17px; font-weight:bold; color:#2C3E50; line-height:120%;">
             Two Views
           </h2>
         </td>
       </tr>
     </table>
+    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td style="padding:0 32px; font-size:0; line-height:0;">
     <!--[if mso]>
     <table width="616" border="0" cellpadding="0" cellspacing="0" style="width:616px;">
       <tr>
@@ -224,8 +236,8 @@
     <![endif]-->
     <table width="300" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:300px; margin-right:16px; background-color:#FFFFFF;">
       <tr>
-        <td class="mobile-pad" style="padding:2px 20px 26px 20px; font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#3B3B3B; line-height:1.72;">
-          <p class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: #3B3B3B; line-height: 1.72; margin: 0 0 16px 0;"><p>The legal block below is rendered from the very same template the default footer uses.</p></p>
+        <td class="mobile-pad" style="padding:2px 20px 26px 0px; font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#3B3B3B; line-height:172%;">
+          <p class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: #3B3B3B; line-height: 172%; margin: 0 0 16px 0;"><p>The legal block below is rendered from the very same template the default footer uses.</p></p>
 
         </td>
       </tr>
@@ -236,22 +248,22 @@
     <![endif]-->
     <table width="300" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:300px; background-color:#FFFFFF;">
       <tr>
-        <td class="mobile-pad" style="padding:2px 20px 26px 20px; font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#3B3B3B; line-height:1.72;">
+        <td class="mobile-pad" style="padding:2px 0px 26px 20px; font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#3B3B3B; line-height:172%;">
           <table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
   <tr style="border-top: 1px solid #D6D2CB; border-bottom: 2px solid #2C3E50;">
-    <th style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; text-align: left; padding: 12px; letter-spacing: 0.5px;">Metric</th>
-    <th style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; text-align: right; padding: 12px; letter-spacing: 0.5px;">Level</th>
+    <th style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 172%; text-align: left; padding: 12px; letter-spacing: 0.5px;">Metric</th>
+    <th style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 172%; text-align: right; padding: 12px; letter-spacing: 0.5px;">Level</th>
   </tr>
   <tr style="border-bottom: 1px solid #EAE8E4;">
-    <td style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; color: #3B3B3B; text-align: left; padding: 12px; background-color: #FFFFFF;">Policy rate</td>
-    <td style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; color: #5A5A5A; text-align: right; padding: 12px; background-color: #FFFFFF;">4.25%</td>
+    <td style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; line-height: 172%; color: #3B3B3B; text-align: left; padding: 12px; background-color: #FFFFFF;">Policy rate</td>
+    <td style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #FFFFFF;">4.25%</td>
   </tr>
   <tr style="border-bottom: 1px solid #D6D2CB;">
-    <td style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; color: #3B3B3B; text-align: left; padding: 12px; background-color: #F8F7F5;">Core CPI</td>
-    <td style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; color: #5A5A5A; text-align: right; padding: 12px; background-color: #F8F7F5;">2.8%</td>
+    <td style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; line-height: 172%; color: #3B3B3B; text-align: left; padding: 12px; background-color: #F8F7F5;">Core CPI</td>
+    <td style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #F8F7F5;">2.8%</td>
   </tr>
 </table>
-<p style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #A09E97; font-style: italic; margin: 8px 0 0 0;">Hermes Research</p>
+<p style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #A09E97; font-style: italic; margin: 8px 0 0 0; line-height: 172%;">Hermes Research</p>
 
         </td>
       </tr>
@@ -261,6 +273,9 @@
       </tr>
     </table>
     <![endif]-->
+        </td>
+      </tr>
+    </table>
   </td>
 </tr>
 
@@ -277,7 +292,7 @@
           <tr>
             <td style="padding:20px 32px 8px; background-color:#F2F1EE;" bgcolor="#F2F1EE">
               <p style="margin:0; font-family:Arial,Helvetica,sans-serif; font-size:9.5px;
-                        color:#8A8880; line-height:1.6; text-align:center;">
+                        color:#8A8880; line-height:160%; text-align:center;">
                 <p>Distributed to registered recipients only. Past performance is not indicative of future results.</p>
               </p>
             </td>

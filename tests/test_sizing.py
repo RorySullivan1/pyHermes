@@ -18,6 +18,7 @@ import pytest
 
 from svc.builder.enums import SizeTheme
 from svc.builder.exceptions import ValidationError
+from svc.builder.filters import percent
 from svc.builder.sizing import (
     SIZE_SCHEMES,
     STANDARD_SIZES,
@@ -543,9 +544,14 @@ class TestTheTokensAreLive:
             pytest.skip(f"{token} is resolved in Python, never emitted")
         layer, name = token.split(".")
         value = getattr(getattr(self.scheme, layer), name)
-        assert str(value) in perturbed_html, (
-            f"{token} = {value} never reached the rendered email — the token "
-            "is decorative, not wired"
+        # A leading token is stored as a ratio and *emitted* as a percentage,
+        # because Outlook Classic ignores a unitless line-height (#78). So the
+        # sentinel to look for is its CSS form, which also pins that the
+        # conversion happens at all.
+        expected = percent(value) if name.endswith("_line") else str(value)
+        assert expected in perturbed_html, (
+            f"{token} = {value} never reached the rendered email as "
+            f"{expected!r} — the token is decorative, not wired"
         )
 
     def test_the_mobile_media_block_is_sized_too(self, perturbed_html: str) -> None:
@@ -632,7 +638,12 @@ class TestNoScaleLiteralSurvives:
 RATIOS = ["50-50", "30-70", "70-30", "33-33-33", "50-25-25", "25-50-25", "25-25-50"]
 
 #: What the eight deleted per-ratio templates hardcoded, column by column:
-#: the width and the horizontal cell padding each column carried.
+#: the width, and the horizontal cell padding each column carried.
+#:
+#: The widths still hold exactly. The *padding* is now the value a column
+#: takes on its **gutter-facing** sides only — #85 zeroed the outer edges,
+#: because the band is inset by ``frame.pad_x`` and padding it twice is what
+#: made every multi-column section hang left of its own heading.
 THE_OLD_LITERALS: dict[str, list[tuple[int, int]]] = {
     "50-50": [(300, 20), (300, 20)],
     "30-70": [(180, 16), (420, 20)],
@@ -655,8 +666,47 @@ class TestColumnGeometry:
         recovered — a 300 or 420px column had 20, a 292 or smaller one had 16.
         """
         weights = [int(part) for part in ratio.split("-")]
-        computed = [(c.width, c.pad_x) for c in column_layout(weights, STANDARD_SIZES)]
+        columns = column_layout(weights, STANDARD_SIZES)
+        # The gutter-facing padding of each column: its right for the first,
+        # its left for the last, and either for a column with gutters on
+        # both sides.
+        computed = [
+            (c.width, c.pad_left if index else c.pad_right) for index, c in enumerate(columns)
+        ]
         assert computed == THE_OLD_LITERALS[ratio]
+
+    @pytest.mark.parametrize("ratio", RATIOS)
+    def test_the_outer_edges_carry_no_padding(self, ratio: str) -> None:
+        """
+        #85. The frame already supplies ``frame.pad_x`` on those two edges;
+        padding them again is what put a column's text 12-16px left of the
+        heading above it. Every *inner* edge still pads, so the gap between
+        two columns is unchanged.
+        """
+        weights = [int(part) for part in ratio.split("-")]
+        columns = column_layout(weights, STANDARD_SIZES)
+        assert columns[0].pad_left == 0
+        assert columns[-1].pad_right == 0
+        for column in columns[1:]:
+            assert column.pad_left > 0
+        for column in columns[:-1]:
+            assert column.pad_right > 0
+
+    @pytest.mark.parametrize("ratio", RATIOS)
+    def test_the_gap_between_columns_is_unchanged(self, ratio: str) -> None:
+        """
+        What #85 moved is the band's *outer* inset, not its internal rhythm:
+        two facing paddings plus the gutter, exactly as the deleted
+        templates had it.
+        """
+        weights = [int(part) for part in ratio.split("-")]
+        columns = column_layout(weights, STANDARD_SIZES)
+        old = THE_OLD_LITERALS[ratio]
+        for index in range(len(columns) - 1):
+            gap = (
+                columns[index].pad_right + STANDARD_SIZES.space.gutter + columns[index + 1].pad_left
+            )
+            assert gap == old[index][1] + STANDARD_SIZES.space.gutter + old[index + 1][1]
 
     def test_equal_thirds_put_the_odd_pixels_on_the_outside(self) -> None:
         """
@@ -906,8 +956,9 @@ class TestTheSchemesAreCuratedNotScaled:
 
         two_up = column_layout([50, 50], SPACIOUS_SIZES)
         assert two_up[0].width < STANDARD_SIZES.frame.narrow_column
-        assert two_up[0].pad_x == SPACIOUS_SIZES.space.column_pad_x
-        assert two_up[0].pad_x > STANDARD_SIZES.space.column_pad_x
+        # The gutter-facing side: the outer edge is zero for every theme.
+        assert two_up[0].pad_right == SPACIOUS_SIZES.space.column_pad_x
+        assert two_up[0].pad_right > STANDARD_SIZES.space.column_pad_x
 
 
 class TestEveryThemeRendersAWholeEmail:

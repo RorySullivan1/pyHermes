@@ -8,14 +8,14 @@
     author_email     — Contact email
 #}
 {% if subtitle %}
-<p style="font-family: Georgia, 'Times New Roman', serif; font-size: {{ size.type.secondary }}px; font-style: italic; color: {{ theme.text.secondary }}; margin: 0 0 {{ size.space.subtitle_gap }}px 0; line-height: {{ size.type.secondary_line }};">{{ subtitle | escape_html }}</p>
+<p style="font-family: Georgia, 'Times New Roman', serif; font-size: {{ size.type.secondary }}px; font-style: italic; color: {{ theme.text.secondary }}; margin: 0 0 {{ size.space.subtitle_gap }}px 0; line-height: {{ size.type.secondary_line | percent }};">{{ subtitle | escape_html }}</p>
 {% endif %}
 <table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border-top: 1px solid {{ theme.palette.rule_subtle }}; padding-top: {{ size.component.author_rule_gap }}px; margin-top: 0;">
   <tr>
     <td style="padding-top: {{ size.component.author_rule_gap }}px; padding-bottom: 0;">
-      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: {{ size.type.body }}px; font-weight: bold; color: {{ theme.text.heading }}; margin: 0 0 {{ size.component.author_name_gap }}px 0; line-height: {{ size.type.heading_line }};">{{ author_name | escape_html }}</p>
+      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: {{ size.type.body }}px; font-weight: bold; color: {{ theme.text.heading }}; margin: 0 0 {{ size.component.author_name_gap }}px 0; line-height: {{ size.type.heading_line | percent }};">{{ author_name | escape_html }}</p>
 {% if author_job_title or author_email %}
-      <p style="font-family: Arial, Helvetica, sans-serif; font-size: {{ size.type.small }}px; color: {{ theme.text.secondary }}; margin: 0; line-height: {{ size.type.secondary_line }};">{{ author_job_title | escape_html }}{% if author_job_title and author_email %} <span style="margin: 0 {{ size.component.author_sep_gap }}px;">&middot;</span> {% endif %}{{ author_email | escape_html }}</p>
+      <p style="font-family: Arial, Helvetica, sans-serif; font-size: {{ size.type.small }}px; color: {{ theme.text.secondary }}; margin: 0; line-height: {{ size.type.secondary_line | percent }};">{{ author_job_title | escape_html }}{% if author_job_title and author_email %} <span style="margin: 0 {{ size.component.author_sep_gap }}px;">&middot;</span> {% endif %}{{ author_email | escape_html }}</p>
 {% endif %}
     </td>
   </tr>

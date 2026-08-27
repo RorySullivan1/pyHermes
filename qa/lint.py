@@ -70,6 +70,25 @@ SOURCES: dict[str, str] = {
         "troubleshoot/dynamics-365/customer-insights/journeys/email/"
         "email-troubleshoot-rendering"
     ),
+    "outlook-line-height": (
+        "Microsoft, on Outlook Classic: 'numeric line-height values, such as "
+        "line-height: 1.5, aren't supported […] use percentage values for "
+        "line height'. learn.microsoft.com/troubleshoot/dynamics-365/"
+        "customer-insights/journeys/email/email-troubleshoot-rendering"
+        "#outlook-classic"
+    ),
+    "outlook-transparent-background": (
+        "Microsoft, on Outlook Classic: 'background colors that use "
+        "transparency' are treated 'as background images, so they're subject "
+        "to the same rendering limitations […] use a fully opaque color'. "
+        "Same source. The masthead scrim satisfies this by being hidden from "
+        "Outlook entirely, which already draws it through VML."
+    ),
+    "empty-url": (
+        "An empty url() is not inert: a client may resolve it against the "
+        "current document and issue a spurious request for the message body "
+        "itself. Templates guard the declaration on the value instead."
+    ),
     "size-budget": (
         "Gmail clips a message above ~102 KB behind a 'View entire message' "
         "link. svc/config.Config.size_limit_kb; Email._validate_size enforces "
@@ -79,26 +98,16 @@ SOURCES: dict[str, str] = {
 
 #: Rules that are real and sourced but do **not** ship, because the current
 #: templates violate them and the fix moves surfaces several epics contend on.
-#: Filed instead — see #78. Listed here so the omission is a recorded decision
-#: rather than an oversight, and so whoever fixes the finding knows a rule is
-#: waiting to be switched on.
-DEFERRED_RULES: dict[str, str] = {
-    "outlook-line-height": (
-        "Outlook Classic does not support unitless line-height (e.g. 1.5); "
-        "percentages are required. base.html and the component templates use "
-        "unitless values in 107 places, so the rule cannot land green. #78."
-    ),
-    "outlook-transparent-background": (
-        "Outlook Classic treats a background-color with transparency as a "
-        "background image, inheriting VML's limitations. The header "
-        "region's scrim is rgba(20,30,44,0.65). #78."
-    ),
-    "empty-url": (
-        "regions/header.html emits background-image:url('') when no header "
-        "background image is set; an empty url() can resolve to the current "
-        "document. #78."
-    ),
-}
+#: Filed instead, so the omission is a recorded decision rather than an
+#: oversight, and so whoever fixes the finding knows a rule is waiting.
+#:
+#: **Empty, and that is the point.** The three entries this held — unitless
+#: ``line-height``, the masthead's ``rgba()`` scrim, and ``background-image:
+#: url('')`` — were #78, and all three are fixed, so all three rules moved
+#: into ``SOURCES`` and now report. The mechanism stays because the next
+#: sourced finding the templates violate should be recorded here rather than
+#: shipped red or silently dropped.
+DEFERRED_RULES: dict[str, str] = {}
 
 #: Inline-style declarations Outlook's Word engine cannot lay out. Deliberately
 #: tiny and deliberately absent of `max-width`: the repo pairs `max-width` with
@@ -109,6 +118,31 @@ UNSUPPORTED_DECLARATIONS: dict[str, frozenset[str]] = {
     "display": frozenset({"flex", "inline-flex", "grid", "inline-grid"}),
     "position": frozenset({"absolute", "fixed"}),
 }
+
+#: The rules that are claims about Outlook specifically. They are suppressed
+#: inside a downlevel-revealed conditional (``<!--[if !mso]><!-->``), because
+#: markup Outlook cannot see cannot be a problem for Outlook. Named rather
+#: than matched on the ``outlook-`` prefix, so the suppression is a decision
+#: rather than a naming coincidence — ``img-width-attr`` is motivated by
+#: Outlook too, and deliberately keeps firing there: a width attribute is good
+#: practice in every client.
+_OUTLOOK_ONLY_RULES = frozenset(
+    {"outlook-line-height", "outlook-transparent-background", "outlook-unsupported-css"}
+)
+
+#: A ``line-height`` with no unit — the form Outlook Classic ignores. ``0`` is
+#: excluded deliberately: it is the accent rule's spacer cell collapsing a row
+#: to nothing, it is unambiguous without a unit, and ``0%`` would say the same
+#: thing less clearly. ``normal`` and the CSS-wide keywords are not numbers and
+#: never match.
+_UNITLESS_LINE_HEIGHT = re.compile(r"0*\.\d+|[1-9]\d*(?:\.\d+)?")
+
+#: A colour carrying an alpha channel. Outlook treats any of these as a
+#: background image rather than a fill.
+_TRANSPARENT_COLOR = re.compile(r"\b(?:rgba|hsla)\s*\(|#[0-9a-f]{8}\b")
+
+#: ``url()`` with nothing in it, quoted or not.
+_EMPTY_URL = re.compile(r"""url\(\s*(?:''|""|)\s*\)""")
 
 #: How many regions the size breakdown names. Enough to point at the culprit,
 #: short enough to read in a failure message.
@@ -154,12 +188,21 @@ class _Linter(HTMLParser):
     standard-HTML rules would fire on markup that is correct *because* it is
     non-standard. ``no-external-css`` still inspects comment text, since an
     ``@import`` hidden in a conditional is a real problem.
+
+    The mirror case is ``<!--[if !mso]><!-->``, which is *downlevel-revealed*:
+    the comment ends immediately, so the markup after it is real HTML to every
+    parser including this one — which is exactly right, since every client but
+    Outlook renders it. What that markup cannot be is an *Outlook* problem, so
+    the rules in ``_OUTLOOK_ONLY_RULES`` are suppressed between such a
+    conditional and its ``<![endif]``. Everything else still applies: a
+    missing ``alt`` is a missing ``alt`` wherever it sits.
     """
 
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
         self.findings: list[Finding] = []
         self._in_style = False
+        self._hidden_from_outlook = False
 
     # -- helpers ------------------------------------------------------
 
@@ -168,6 +211,8 @@ class _Linter(HTMLParser):
         return f"line {line}, col {column}{f' ({detail})' if detail else ''}"
 
     def _report(self, rule_id: str, severity: Severity, message: str, detail: str = "") -> None:
+        if self._hidden_from_outlook and rule_id in _OUTLOOK_ONLY_RULES:
+            return
         self.findings.append(
             Finding(
                 rule_id=rule_id,
@@ -205,6 +250,14 @@ class _Linter(HTMLParser):
             self._check_at_import(data)
 
     def handle_comment(self, data: str) -> None:
+        # A downlevel-revealed conditional opens as `[if !mso]><!` and closes
+        # as `<![endif]`; what sits between is markup Outlook never sees.
+        stripped = data.strip()
+        if stripped.startswith("[if !mso]"):
+            self._hidden_from_outlook = True
+        elif stripped == "<![endif]":
+            self._hidden_from_outlook = False
+
         # Conditional comments carry real CSS for Outlook; an @import there
         # would be just as external as one in a <style> block.
         self._check_at_import(data)
@@ -267,6 +320,34 @@ class _Linter(HTMLParser):
                     Severity.ERROR,
                     f'<{tag} style="{prop}:{value}"> — Outlook\'s Word engine '
                     "cannot lay this out; build layout from tables.",
+                    f"{prop}:{value}",
+                )
+            if prop == "line-height" and _UNITLESS_LINE_HEIGHT.fullmatch(value):
+                self._report(
+                    "outlook-line-height",
+                    Severity.ERROR,
+                    f'<{tag} style="line-height:{value}"> — Outlook\'s Word '
+                    f"engine ignores a unitless line-height; use "
+                    f"{float(value) * 100:.10g}% instead.",
+                    f"line-height:{value}",
+                )
+            if prop.endswith("background-color") and _TRANSPARENT_COLOR.search(value):
+                self._report(
+                    "outlook-transparent-background",
+                    Severity.ERROR,
+                    f'<{tag} style="{prop}:{value}"> — Outlook demotes a '
+                    "transparent background-color to a background image; use "
+                    "an opaque colour, or keep the declaration away from "
+                    "Outlook.",
+                    f"{prop}:{value}",
+                )
+            if _EMPTY_URL.search(value):
+                self._report(
+                    "empty-url",
+                    Severity.ERROR,
+                    f'<{tag} style="{prop}:{value}"> — an empty url() may '
+                    "resolve against the current document and fetch the "
+                    "message body; guard the declaration on the value.",
                     f"{prop}:{value}",
                 )
 

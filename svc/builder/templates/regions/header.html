@@ -4,7 +4,7 @@
           <tr>
             <td style="background-color:{{ theme.palette.header_bg }}; padding:{{ size.space.masthead_bar_y }}px {{ size.frame.pad_x }}px; text-align:center;" bgcolor="{{ theme.palette.header_bg }}">
               <p style="margin:0; font-family:Arial,Helvetica,sans-serif; font-size:{{ size.type.micro }}px;
-                        font-weight:300; color:{{ theme.text.on_dark_muted }}; letter-spacing:0.3px; line-height:{{ size.type.secondary_line }};">
+                        font-weight:300; color:{{ theme.text.on_dark_muted }}; letter-spacing:0.3px; line-height:{{ size.type.secondary_line | percent }};">
                 {{header_disclaimer}}
               </p>
             </td>
@@ -21,11 +21,20 @@
                 <v:fill type="frame" src="{{ background_image_url | escape_html }}" color="{{ theme.shadow.scrim.color }}" opacity="{{ theme.shadow.scrim.opacity_percent }}"/>
                 <v:textbox inset="{{ size.frame.pad_x }}px,0,{{ size.frame.pad_x }}px,0" style="mso-fit-shape-to-text:false;">
               <![endif]-->
-              <div style="background-image:url('{{ background_image_url | escape_html }}');
-                          background-color:{{ theme.palette.header_bg }}; background-size:cover;
+              {# The background-image declaration is emitted only when there is
+                 one. url('') is not inert: a client may resolve it against the
+                 current document and issue a spurious request (#78). #}
+              <div style="{% if background_image_url %}background-image:url('{{ background_image_url | escape_html }}');
+                          {% endif %}background-color:{{ theme.palette.header_bg }}; background-size:cover;
                           background-position:center center; background-repeat:no-repeat;">
-                <!-- Dark overlay for text legibility -->
-                <div style="background-color:{{ theme.shadow.scrim }};">
+                <!-- Dark overlay for text legibility.  Hidden from Outlook on
+                     purpose: the v:fill above already applies this exact scrim
+                     through its own color + opacity attributes, and the Word
+                     engine demotes a transparent background-color to a
+                     background image, inheriting VML's limitations for a
+                     second copy of an effect it has already drawn (#78).
+                     Both halves still read one Rgba, so they cannot drift. -->
+                <!--[if !mso]><!--><div style="background-color:{{ theme.shadow.scrim }};"><!--<![endif]-->
                 <!-- Logo row -->
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                   <tr>
@@ -45,7 +54,7 @@
                   <tr>
                     <td style="padding:{{ size.space.masthead_title_top }}px {{ size.frame.pad_x }}px {{ size.space.masthead_title_bottom }}px;">
                       <p style="margin:0; font-family:Georgia,'Times New Roman',serif; font-size:{{ size.type.title }}px;
-                                font-weight:bold; color:{{ theme.text.on_dark }}; line-height:{{ size.type.title_line }}; letter-spacing:0.3px;
+                                font-weight:bold; color:{{ theme.text.on_dark }}; line-height:{{ size.type.title_line | percent }}; letter-spacing:0.3px;
                                 text-shadow:0 1px 3px {{ theme.shadow.title }};"
                          class="mobile-title">
                         {{ firm_name | escape_html }}
@@ -55,7 +64,7 @@
                   <tr>
                     <td style="padding:0 {{ size.frame.pad_x }}px {{ size.space.masthead_campaign_bottom }}px;">
                       <p style="margin:0; font-family:Arial,Helvetica,sans-serif; font-size:{{ size.type.secondary }}px;
-                                font-weight:400; color:{{ theme.text.on_dark_secondary }}; line-height:{{ size.type.heading_line }};
+                                font-weight:400; color:{{ theme.text.on_dark_secondary }}; line-height:{{ size.type.heading_line | percent }};
                                 text-shadow:0 1px 2px {{ theme.shadow.subtitle }};">
                         {{ campaign_name | escape_html }}
                       </p>
@@ -93,7 +102,7 @@
                     </td>
                   </tr>
                 </table>
-                </div><!-- /dark overlay -->
+                <!--[if !mso]><!--></div><!--<![endif]--><!-- /dark overlay -->
               </div>
               <!--[if mso]>
                 </v:textbox>
