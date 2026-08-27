@@ -90,20 +90,13 @@
           <!-- ══════════════════════════════════════════ -->
           {{ sections_html }}
 
-{# The footer arrives in two slots, not one. Its contact card is a <tr>
-   inside the body table; its legal block is a sibling table below, outside
-   the container the body closes. One fragment spanning both would have to
-   close a tag the skeleton opened, so the region fills two holes instead.
-   Both sit at column 0 for the header's reason: an indented {{ }} would
-   prepend that indentation to the fragment's first line only, and each
-   block already carries its own. A slot a variant leaves unfilled renders
-   empty — that is how MinimalFooter omits the contact card without the
-   skeleton growing a conditional. #}
-{{ footer_contact_html }}
         </table>
         <!-- /Main container -->
 
-{{ footer_legal_html }}
+{# The footer renders as one self-contained table below the body. It sits at
+   column 0: an indented {{ }} would prepend that indentation to the fragment's
+   first line only, and the region carries its own. #}
+{{ footer_html }}
       </td>
     </tr>
   </table>

@@ -68,9 +68,8 @@ Every number below was read out of the templates before anything moved, and
 frame's horizontal padding is what makes the content 616 wide::
 
     gutter                    16   between columns (margin-right + ghost table)
-    section_title_top         22   c/full-width <h2> cell, top
-    section_title_top_split    2   the same cell in a multi-column container
-    section_title_bottom      12   both of the above, bottom
+    section_title_top         22   section <h2> cell, top (full-width and split alike)
+    section_title_bottom      12   section <h2> cell, bottom
     content_top               16   c/full-width content cell, top
     content_bottom            14   c/full-width content cell, bottom
     column_top                 2   a column cell, top
@@ -248,7 +247,6 @@ class SpacingScale:
 
     gutter: int | float = 16
     section_title_top: int | float = 22
-    section_title_top_split: int | float = 2
     section_title_bottom: int | float = 12
     content_top: int | float = 16
     content_bottom: int | float = 14
@@ -571,7 +569,6 @@ SPACIOUS_SIZES = SizeScheme().derive(
     space={
         "gutter": 24,
         "section_title_top": 30,
-        "section_title_top_split": 4,
         "section_title_bottom": 16,
         "content_top": 22,
         "content_bottom": 20,

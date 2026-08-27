@@ -12,6 +12,7 @@ from svc.builder import (
     AuthorBlock,
     CardGroup,
     ChartBlock,
+    ContactBlock,
     DataTable,
     NumberedList,
     TextBlock,
@@ -144,6 +145,29 @@ class TestAuthorBlock:
     def test_requires_name(self):
         with pytest.raises(ValidationError, match="name"):
             AuthorBlock(name="")
+
+
+class TestContactBlock:
+    def test_requires_a_heading(self):
+        with pytest.raises(ValidationError):
+            ContactBlock(heading="", cta_url="https://x.com/contact")
+
+    def test_requires_a_cta_url(self):
+        with pytest.raises(ValidationError):
+            ContactBlock(heading="Questions?", cta_url="")
+
+    def test_rejects_an_unsafe_cta_url(self):
+        with pytest.raises(ValidationError):
+            ContactBlock(heading="Questions?", cta_url="javascript:alert(1)")
+
+    def test_renders_the_dual_cta_and_escapes_text(self, engine):
+        html = ContactBlock(
+            "Questions & feedback?", "Ask the desk.", "Reach out", "https://x.com/contact"
+        ).render(engine)
+        assert "v:roundrect" in html  # Outlook button survives
+        assert "https://x.com/contact" in html
+        assert "Reach out" in html
+        assert "Questions &amp; feedback?" in html  # escaped by the template
 
 
 class TestComponentBase:

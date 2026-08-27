@@ -68,7 +68,6 @@ AUDIT: dict[str, dict[str, int | float]] = {
     "space": {
         "gutter": 16,
         "section_title_top": 22,
-        "section_title_top_split": 2,
         "section_title_bottom": 12,
         "content_top": 16,
         "content_bottom": 14,
@@ -367,7 +366,6 @@ class TestTheSchemeReachesEveryTemplate:
         "email_subject": "S",
         "firm_name": "F",
         "campaign_name": "c",
-        "contact_url": "https://x.test/c",
     }
 
     def _rendered_contexts(self, **metadata: object) -> dict[str, dict]:
@@ -473,7 +471,15 @@ class TestTheSchemeReachesEveryTemplate:
 #: of those still reach the page — the sentinel frame below is shaped so
 #: that some column falls on each side of the threshold, or one of them
 #: would go untested.
-NEVER_RENDERED = {"frame.narrow_column"}
+NEVER_RENDERED = {
+    "frame.narrow_column",
+    # The contact card was removed from the footer region in the Task 2
+    # footer rework; these spacing tokens are no longer used in any template.
+    "space.footer_contact_top",
+    "space.footer_contact_bottom",
+    # footer_legal_bottom was split into copyright_bottom in the rework.
+    "space.footer_legal_bottom",
+}
 
 
 def _sentinel_scheme() -> SizeScheme:

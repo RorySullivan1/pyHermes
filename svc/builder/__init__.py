@@ -44,6 +44,7 @@ from .components import (
     CardGroup,
     ChartBlock,
     Component,
+    ContactBlock,
     DataTable,
     ImageBlock,
     KpiStrip,
@@ -101,7 +102,6 @@ from .models import (
 from .regions import (
     Footer,
     Header,
-    MinimalFooter,
     MinimalHeader,
     Region,
 )
@@ -160,7 +160,6 @@ __all__ = [
     "Header",
     "MinimalHeader",
     "Footer",
-    "MinimalFooter",
     # Models
     "EmailMetadata",
     "Card",
@@ -178,6 +177,7 @@ __all__ = [
     "TextBlock",
     "NumberedList",
     "AuthorBlock",
+    "ContactBlock",
     # Containers
     "Container",
     "FullWidth",

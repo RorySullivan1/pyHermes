@@ -40,7 +40,7 @@
 {% if section_title %}
     <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:{{ background_color | default(theme.palette.highlight_tint if highlight else theme.palette.surface) }};">
       <tr>
-        <td style="padding:{{ size.space.section_title_top_split }}px {{ edge_pad }}px {{ size.space.section_title_bottom }}px {{ edge_pad }}px; border-bottom:1px solid {{ theme.palette.rule }};">
+        <td style="padding:{{ size.space.section_title_top }}px {{ edge_pad }}px {{ size.space.section_title_bottom }}px {{ edge_pad }}px;">
           <h2 style="margin:0; font-family:Georgia,'Times New Roman',serif; font-size:{{ size.type.section }}px; font-weight:bold; color:{{ theme.text.heading }}; line-height:{{ size.type.title_line | percent }};">
             {{ section_title | escape_html }}
           </h2>

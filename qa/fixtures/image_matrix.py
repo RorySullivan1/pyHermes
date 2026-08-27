@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from svc.builder import Email, EmailBuilder, FullWidth, ImageBlock, TextBlock, TwoColumn
+from svc.builder import Email, EmailBuilder, Footer, FullWidth, ImageBlock, TextBlock, TwoColumn
 from svc.builder.enums import ImageAlign, TwoColumnRatio
 from svc.builder.images import EmailImage
 from svc.builder.models import EmailMetadata
@@ -42,12 +42,12 @@ def build(template_dir: Path | None = None) -> Email:
         firm_name="Hermes Research",
         campaign_name="image-matrix",
         current_year="2026",
-        footer_disclaimer="<p>Distributed to registered recipients only.</p>",
     )
 
     return (
         EmailBuilder(template_dir=template_dir)
         .metadata(metadata)
+        .footer(Footer(disclaimer="<p>Distributed to registered recipients only.</p>"))
         .section(
             FullWidth(
                 title="Remote",

@@ -21,11 +21,10 @@ keys rather than under them.
 components. A region varies the *structure* of the masthead, not its look.
 
 **A region fills one or more named slots.** The header fills one
-(``{{ header_html }}``); the footer fills two, because its contact card is a
-``<tr>`` inside the body table while its legal block is a sibling table
-below — one fragment spanning both would have to close a tag the skeleton
-opened. :meth:`Region.render_slots` is the contract the skeleton consumes,
-and a slot a variant leaves unfilled renders empty, which is how a variant
+(``{{ header_html }}``); the footer also fills one (``{{ footer_html }}``),
+rendered as a self-contained sibling table below the body.
+:meth:`Region.render_slots` is the contract the skeleton consumes, and a
+slot a variant leaves unfilled renders empty, which is how a variant
 *omits* a block rather than conditionalising it away.
 
 The body region is deliberately not a class: it *is* the email's ordered
@@ -40,7 +39,7 @@ from dataclasses import dataclass, fields
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from .exceptions import ValidationError
-from .models import _validate_url
+from .models import _validate_color, _validate_url
 
 if TYPE_CHECKING:  # pragma: no cover - import cycle: images imports _validate_url
     from .engine import Renderer
@@ -332,80 +331,75 @@ class MinimalHeader(Header):
 @dataclass
 class Footer(Region):
     """
-    The closing region: how an email says the things it is obliged to say.
+    The closing region: a structured, partially-flexible block.
 
-    Owns the *wording* — the contact card's heading, description and button
-    label, and the two link labels in the legal line. It owns none of the
-    substance: the disclaimer, the copyright year, the firm's name and the
-    three outbound URLs are facts about the email, arrive through
-    :meth:`context`, and cannot be contradicted here.
-
-    That line is drawn where #38 drew the header's. The URLs stay facts —
-    unlike the header's ``logo_url``, which is an image the *region* chose,
-    an unsubscribe address is a property of the mailing, and
-    :meth:`svc.builder.models.EmailMetadata.validate` already checks all
-    three schemes.
-
-    The footer fills two slots because its blocks sit in different parents;
-    see the module docstring. A variant may drop the contact slot, but not
-    the legal one — :attr:`REQUIRED_SLOTS` makes the compliance floor a rule
-    rather than a convention.
+    The caller controls its background, an optional full-box border, an
+    optional sign-off image, the disclaimer text, and the two link labels.
+    It does not control fonts or geometry. The copyright year, firm name and
+    the two outbound URLs are facts about the email and arrive via
+    :meth:`context`. The disclaimer is optional — an empty one omits the
+    fine-print line; the copyright + links line always renders.
 
     Attributes:
-        contact_heading:      Bold line above the contact card's copy.
-        contact_description:  Prose under it. Escaped by the template.
-        contact_cta_label:    The button's text, emitted **twice** — once in
-                              the Outlook ``v:roundrect``, once in the anchor
-                              everyone else sees.
-        unsubscribe_label:    Text of the unsubscribe link.
-        view_in_browser_label: Text of the view-in-browser link.
-
-    Defaults reproduce the strings ``base.html`` used to hardcode, so an
-    email that never mentions a footer renders unchanged.
+        background_color: Hex override; empty falls back to the theme surface.
+        border:           Draw a full box around the footer.
+        border_color:     Hex; empty falls back to the theme rule colour.
+        image:            Optional sign-off mark (URL or EmailImage), rendered
+                          above the copyright line.
+        image_alt:        Alt text; falls back to the EmailImage's own alt.
+        image_width:      Display width in px; falls back to the EmailImage's
+                          own width, then to :data:`DEFAULT_IMAGE_WIDTH`.
+        disclaimer:       Free-form HTML, emitted **raw and unwrapped**.
+        unsubscribe_label / view_in_browser_label: link wording.
     """
 
     CONTEXT_NAME: ClassVar[str] = "footer"
+    SLOTS: ClassVar[tuple[str, ...]] = ("footer",)
+    TEMPLATE_PATHS: ClassVar[dict[str, str]] = {"footer": "regions/footer.html"}
+    REQUIRED_SLOTS: ClassVar[tuple[str, ...]] = ("footer",)
+    IMAGE_FIELDS: ClassVar[tuple[str, ...]] = ("image",)
+    DEFAULT_IMAGE_WIDTH: ClassVar[int] = 120
 
-    SLOTS: ClassVar[tuple[str, ...]] = ("footer_contact", "footer_legal")
-
-    TEMPLATE_PATHS: ClassVar[dict[str, str]] = {
-        "footer_contact": "regions/footer-contact.html",
-        "footer_legal": "regions/footer-legal.html",
-    }
-
-    #: The compliance floor. A variant may drop the contact card — it is a
-    #: courtesy. It may not drop the legal block: the disclaimer and the
-    #: unsubscribe link are what make the mailing lawful to send, and a
-    #: variant that omitted them would still have a golden, and the golden
-    #: would pin the omission as though it were intended.
-    REQUIRED_SLOTS: ClassVar[tuple[str, ...]] = ("footer_legal",)
-
-    contact_heading: str = "Questions or feedback?"
-    contact_description: str = ""
-    contact_cta_label: str = "Contact Us"
+    background_color: str = ""
+    border: bool = False
+    border_color: str = ""
+    image: str | EmailImage = ""
+    image_alt: str = ""
+    image_width: int | None = None
+    disclaimer: str = ""
     unsubscribe_label: str = "Unsubscribe"
     view_in_browser_label: str = "View in browser"
 
+    def validate(self) -> None:
+        super().validate()
+        for name in ("background_color", "border_color"):
+            value = getattr(self, name)
+            if value:
+                _validate_color(value, f"footer.{name}")
+        if self.image_width is not None and self.image_width <= 0:
+            raise ValidationError(f"'footer.image_width' must be positive, got: {self.image_width}")
 
-@dataclass
-class MinimalFooter(Footer):
-    """
-    The legal block only: no contact card, and therefore no VML.
+    def context(self, facts: dict[str, Any]) -> dict[str, Any]:
+        resolved = {
+            "image_alt": self.resolved_image_alt(),
+            "image_width": self.resolved_image_width(),
+        }
+        return {**super().context({}), **resolved, **facts}
 
-    The variant that proves the footer is a seam rather than a refactor. It
-    **composes** the shipped legal template instead of forking it — the whole
-    difference is which slots it fills, so the legal block cannot drift
-    between the two footers.
+    def resolved_image_alt(self) -> str:
+        from .images import EmailImage
 
-    Dropping the contact card also drops the ``v:roundrect`` dual emission,
-    the footer's most fragile markup, exactly as :class:`MinimalHeader` drops
-    the masthead's VML hero. The contact fields stay on the class rather than
-    being removed: they are inherited, harmless, and removing them would make
-    swapping a ``Footer`` for a ``MinimalFooter`` a rewrite rather than a
-    one-word change.
+        if self.image_alt:
+            return self.image_alt
+        if isinstance(self.image, EmailImage) and self.image.alt:
+            return self.image.alt
+        return ""
 
-    What it may *not* drop is the legal block — see
-    :attr:`Footer.REQUIRED_SLOTS`.
-    """
+    def resolved_image_width(self) -> int:
+        from .images import EmailImage
 
-    TEMPLATE_PATHS: ClassVar[dict[str, str]] = {"footer_legal": "regions/footer-legal.html"}
+        if self.image_width is not None:
+            return self.image_width
+        if isinstance(self.image, EmailImage) and self.image.width is not None:
+            return self.image.width
+        return self.DEFAULT_IMAGE_WIDTH

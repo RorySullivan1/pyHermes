@@ -9,7 +9,7 @@
   <meta name="x-apple-disable-message-reformatting">
   <meta name="color-scheme" content="light only">
   <meta name="supported-color-schemes" content="light only">
-  <title>Minimal Footer — legal only, no contact card</title>
+  <title>Footer with Disclaimer — legal copy, structured close</title>
   <!--[if mso]>
   <noscript>
     <xml><o:OfficeDocumentSettings>
@@ -66,7 +66,7 @@
 
   <!-- Preheader -->
   <div style="display:none;max-height:0;overflow:hidden;font-size:1px;color:#F2F1EE;">
-    The closing region without its courtesy half.&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;
+    The closing region with a disclaimer block.&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;
   </div>
 
   <!-- Outer wrapper -->
@@ -199,7 +199,7 @@
       <tr>
         <td style="padding:22px 32px 12px 32px;">
           <h2 style="margin:0; font-family:Georgia,'Times New Roman',serif; font-size:17px; font-weight:bold; color:#2C3E50; line-height:120%;">
-            Same Email, Shorter Close
+            Same Email, Structured Close
           </h2>
         </td>
       </tr>
@@ -207,7 +207,7 @@
     <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
       <tr>
         <td class="mobile-pad" style="padding:16px 32px 14px 32px; font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#3B3B3B; line-height:172%;">
-          <p class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: #3B3B3B; line-height: 172%; margin: 0 0 16px 0;"><p>Choosing a footer region is an argument, not a template fork — and the contact card is dropped by leaving a slot unfilled, so no template grows a conditional to express its absence.</p></p>
+          <p class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: #3B3B3B; line-height: 172%; margin: 0 0 16px 0;"><p>The footer region presents the email's legal copy as plain HTML, emitted raw and unwrapped — a disclaimer passed as a block element renders correctly inside a div wrapper, never inside a p.</p></p>
 
         </td>
       </tr>
@@ -219,7 +219,7 @@
   <td style="padding:0; background-color:#FFFFFF;">
     <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
       <tr>
-        <td style="padding:2px 32px 12px 32px; border-bottom:1px solid #D6D2CB;">
+        <td style="padding:22px 32px 12px 32px;">
           <h2 style="margin:0; font-family:Georgia,'Times New Roman',serif; font-size:17px; font-weight:bold; color:#2C3E50; line-height:120%;">
             Two Views
           </h2>
@@ -237,7 +237,7 @@
     <table width="300" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:300px; margin-right:16px; background-color:#FFFFFF;">
       <tr>
         <td class="mobile-pad" style="padding:2px 20px 26px 0px; font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#3B3B3B; line-height:172%;">
-          <p class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: #3B3B3B; line-height: 172%; margin: 0 0 16px 0;"><p>The legal block below is rendered from the very same template the default footer uses.</p></p>
+          <p class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: #3B3B3B; line-height: 172%; margin: 0 0 16px 0;"><p>The legal block below renders from a single template — the disclaimer, copyright line, and both links all present.</p></p>
 
         </td>
       </tr>
@@ -280,29 +280,25 @@
 </tr>
 
 
-
         </table>
         <!-- /Main container -->
 
-        <!-- ════════════════════════════════════════════ -->
-        <!-- FOOTER PART 2: Disclaimer (outside body)    -->
-        <!-- ════════════════════════════════════════════ -->
+        <!-- FOOTER: copyright, links and optional disclaimer -->
         <table role="presentation" width="680" cellpadding="0" cellspacing="0" border="0"
                style="max-width:680px; background-color:#F2F1EE;" bgcolor="#F2F1EE" class="email-container">
           <tr>
-            <td style="padding:20px 32px 8px; background-color:#F2F1EE;" bgcolor="#F2F1EE">
-              <p style="margin:0; font-family:Arial,Helvetica,sans-serif; font-size:9.5px;
-                        color:#8A8880; line-height:160%; text-align:center;">
-                <p>Distributed to registered recipients only. Past performance is not indicative of future results.</p>
+            <td style="padding:20px 32px 24px; border:1px solid #D6D2CB; background-color:#F2F1EE;" bgcolor="#F2F1EE">
+              <p style="margin:0 0 20px; text-align:center;">
+                <img src="cid:9644ef8a139469bc" alt="Sign-off" width="96" style="display:inline-block; border:0; height:auto;">
               </p>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:6px 32px 24px; background-color:#F2F1EE;" bgcolor="#F2F1EE">
-              <p style="margin:0; font-family:Arial,Helvetica,sans-serif; font-size:9.5px;
+              <div style="font-family:Arial,Helvetica,sans-serif; font-size:9.5px;
+                          color:#8A8880; line-height:160%; text-align:center;">
+                <p>Distributed to registered recipients only. Past performance is not indicative of future results.</p>
+              </div>
+              <p style="margin:6px 0 0; font-family:Arial,Helvetica,sans-serif; font-size:9.5px;
                         color:#A09E97; text-align:center;">
                 &copy; 2026 Hermes Research &nbsp;&middot;&nbsp;
-                <a href="https://example.com/unsubscribe" style="color:#5B8A9A; text-decoration:underline;">Remove me from this list</a>
+                <a href="https://example.com/unsubscribe" style="color:#5B8A9A; text-decoration:underline;">Unsubscribe</a>
                 &nbsp;&middot;&nbsp;
                 <a href="https://example.com/archive/003" style="color:#5B8A9A; text-decoration:underline;">View in browser</a>
               </p>

@@ -104,29 +104,29 @@ class EmailMetadata:
     Email-level metadata: the facts an email is built from.
 
     **Facts live here; masthead presentation lives on the header.** Subject,
-    preheader, firm, campaign, dates and the contact/legal copy are things
-    that are *true of the email*; the background image, the logo and its
-    resolution chains are one way of *presenting* them, and belong to
+    preheader, firm, campaign, dates and the outbound URLs are things that are
+    *true of the email*; the background image, the logo and its resolution
+    chains are one way of *presenting* them, and belong to
     :class:`~svc.builder.regions.Header`. The header is handed the facts at
     render time and cannot contradict them.
 
     ``header_disclaimer`` sits on the email side of that line deliberately:
-    it is displayed in the masthead, but it is legal copy pairing with
-    ``footer_disclaimer``, and legal copy is a fact about the email. The
-    footer's line falls the same way: the disclaimer, the copyright year and
-    the three outbound URLs are facts; the wording that surrounds them —
-    headings, the button label, the link labels — belongs to
-    :class:`~svc.builder.regions.Footer`.
+    it is displayed in the masthead, but it is legal copy and legal copy is a
+    fact about the email. The footer's disclaimer and contact card copy are now
+    presentation — they belong to :class:`~svc.builder.regions.Footer` (pass a
+    ``Footer(disclaimer=...)`` to set the fine-print, or use a
+    :class:`~svc.builder.components.ContactBlock` component for the contact
+    card).
 
     Every remaining field maps to a variable in ``templates/base.html``.
 
     The flat region keyword arguments are still accepted and build the region
-    for you, so an email written before either split is unchanged: four for
+    for you, so an email written before the header split is unchanged: four for
     the masthead (``logo_url``, ``logo_alt``, ``logo_width``,
-    ``header_bg_image_url``) and five for the footer (``contact_heading``,
-    ``contact_description``, ``contact_cta_label``, ``unsubscribe_label``,
-    ``view_in_browser_label``). Passing one *and* the region it belongs to is
-    an error rather than a silent precedence rule.
+    ``header_bg_image_url``). For the footer, ``unsubscribe_label`` and
+    ``view_in_browser_label`` are still accepted as flat keywords.
+    Passing one *and* the region it belongs to is an error rather than a
+    silent precedence rule.
     """
 
     email_subject: str = ""
@@ -136,8 +136,6 @@ class EmailMetadata:
     campaign_name: str = ""
     date_range: str = ""
     issue_label: str = ""
-    contact_url: str = ""
-    footer_disclaimer: str = ""
     current_year: str = ""
     unsubscribe_url: str = ""
     view_in_browser_url: str = ""
@@ -171,9 +169,6 @@ class EmailMetadata:
     logo_alt: InitVar["str | None"] = None
     logo_width: InitVar["int | None"] = None
     header_bg_image_url: InitVar["str | EmailImage | None"] = None
-    contact_heading: InitVar["str | None"] = None
-    contact_description: InitVar["str | None"] = None
-    contact_cta_label: InitVar["str | None"] = None
     unsubscribe_label: InitVar["str | None"] = None
     view_in_browser_label: InitVar["str | None"] = None
 
@@ -188,14 +183,12 @@ class EmailMetadata:
     )
 
     #: Email-level facts the footer region renders, on the same terms. The
-    #: three URLs are here rather than on the region because an unsubscribe
+    #: two URLs are here rather than on the region because an unsubscribe
     #: address is a property of the mailing, not a way of wording it — and
-    #: :meth:`validate` already checks all three schemes.
+    #: :meth:`validate` already checks both schemes.
     FOOTER_FACTS = (
         "firm_name",
         "current_year",
-        "footer_disclaimer",
-        "contact_url",
         "unsubscribe_url",
         "view_in_browser_url",
     )
@@ -206,9 +199,6 @@ class EmailMetadata:
         logo_alt: "str | None",
         logo_width: "int | None",
         header_bg_image_url: "str | EmailImage | None",
-        contact_heading: "str | None",
-        contact_description: "str | None",
-        contact_cta_label: "str | None",
         unsubscribe_label: "str | None",
         view_in_browser_label: "str | None",
     ) -> None:
@@ -230,9 +220,6 @@ class EmailMetadata:
             Footer,
             "footer",
             {
-                "contact_heading": contact_heading,
-                "contact_description": contact_description,
-                "contact_cta_label": contact_cta_label,
                 "unsubscribe_label": unsubscribe_label,
                 "view_in_browser_label": view_in_browser_label,
             },
@@ -272,7 +259,7 @@ class EmailMetadata:
         """Validate required fields and URL schemes."""
         for fname in ("email_subject", "firm_name", "campaign_name"):
             _require(getattr(self, fname), fname)
-        for fname in ("contact_url", "unsubscribe_url", "view_in_browser_url"):
+        for fname in ("unsubscribe_url", "view_in_browser_url"):
             _validate_url(getattr(self, fname), f"metadata.{fname}")
 
     def header_facts(self) -> dict[str, Any]:

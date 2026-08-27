@@ -380,6 +380,44 @@ class TextBlock(Component):
         }
 
 
+class ContactBlock(Component):
+    """
+    A contact call-to-action card: heading, blurb, and a button.
+
+    The body-component form of what used to be the footer's contact card.
+    Placed like any component — ``FullWidth(content=ContactBlock(...))`` —
+    typically as the last section. Owns the Outlook ``v:roundrect`` / anchor
+    dual button. Validates at construction, like every model here.
+    """
+
+    template_path = "text/contact-block.html"
+
+    def __init__(
+        self,
+        heading: str,
+        description: str = "",
+        cta_label: str = "Contact Us",
+        cta_url: str = "",
+    ):
+        if not heading:
+            raise ValidationError("ContactBlock requires a heading.")
+        if not cta_url:
+            raise ValidationError("ContactBlock requires a cta_url.")
+        _validate_url(cta_url, "ContactBlock.cta_url")
+        self.heading = heading
+        self.description = description
+        self.cta_label = cta_label
+        self.cta_url = cta_url
+
+    def context(self) -> dict[str, Any]:
+        return {
+            "contact_heading": self.heading,
+            "contact_description": self.description,
+            "contact_cta_label": self.cta_label,
+            "contact_url": self.cta_url,
+        }
+
+
 class NumberedList(Component):
     """
     Numbered theme / item list (e.g. "Key Themes" section).
