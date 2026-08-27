@@ -56,7 +56,7 @@ from dataclasses import dataclass, fields
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from .exceptions import ValidationError
-from .models import _validate_color, _validate_url
+from .models import FooterLink, LinkRow, _validate_color, _validate_url
 
 if TYPE_CHECKING:  # pragma: no cover - import cycle: images imports _validate_url
     from .engine import Renderer
@@ -94,8 +94,19 @@ class Region:
     #: Slot → template. A variant may omit a slot, which then renders empty.
     TEMPLATE_PATHS: ClassVar[dict[str, str]] = {}
 
-    #: Slots a variant may **not** leave unfilled. Empty for a region with
-    #: nothing to protect; the footer uses it as a compliance floor.
+    #: Slots a variant may **not** leave unfilled. Empty for a region whose
+    #: whole box is optional (the header); named by one whose block is
+    #: structural (the footer).
+    #:
+    #: **This is a rule about variants, never about callers.** It says a
+    #: subclass may not silently drop a block the region is *made of*; it
+    #: says nothing about what a caller must put in one. pyHermes does not
+    #: require disclaimer language, an unsubscribe link, or any other
+    #: content — it cannot know whether an email is a commercial newsletter,
+    #: an internal note or a receipt, and each answers that differently. The
+    #: two are easy to conflate, and this attribute was described as a
+    #: "compliance floor" until #100, which over-claimed in exactly that
+    #: direction.
     REQUIRED_SLOTS: ClassVar[tuple[str, ...]] = ()
 
     #: Fields that may hold an EmailImage instead of a bare URL.
@@ -645,6 +656,7 @@ class Footer(BoxSurface, Region):
     disclaimer: str = ""
     unsubscribe_label: str = "Unsubscribe"
     view_in_browser_label: str = "View in browser"
+    link_row: LinkRow | None = None
 
     def validate(self) -> None:
         super().validate()
@@ -658,8 +670,53 @@ class Footer(BoxSurface, Region):
         resolved = {
             "image_alt": self.resolved_image_alt(),
             "image_width": self.resolved_image_width(),
+            "copyright_html": self.resolved_copyright_html(facts),
+            "footer_links": self.resolved_links(facts),
         }
         return {**super().context({}), **resolved, **facts}
+
+    def resolved_copyright_html(self, facts: dict[str, Any]) -> str:
+        """
+        The copyright line, as HTML the builder produced.
+
+        Two paths, one key, because the alternative is a conditional in the
+        markup and therefore two rendering paths. The default keeps the
+        ``&copy;`` **entity** — deliberately, not by inertia: this is an
+        email library, and a bare ``©`` (U+00A9) mis-decoded as latin-1
+        renders as ``Â©`` in a client that guesses the charset wrong, which
+        is exactly the class of failure the whole package exists to avoid.
+        A caller's own line is plain text and escaped here, so the key is
+        named ``_html`` because it *is* HTML by the time the template sees
+        it — produced by the builder, never by the caller.
+        """
+        from .filters import escape_html
+
+        row = self.link_row or LinkRow()
+        if row.copyright:
+            return escape_html(row.copyright)
+        year = escape_html(str(facts.get("current_year", "")))
+        firm = escape_html(str(facts.get("firm_name", "")))
+        return f"&copy; {year} {firm}"
+
+    def resolved_links(self, facts: dict[str, Any]) -> list[FooterLink]:
+        """
+        The links the row actually renders.
+
+        ``link_row=None`` and ``LinkRow(links=None)`` both mean *the default
+        pair*, built from the email's two URL facts and this footer's own
+        labels — which is what keeps #64's label parameters working and an
+        unset row byte-identical. An explicit list is taken exactly as given,
+        **including an empty one**: which links an email carries is the
+        caller's judgement, not this library's.
+        """
+        row = self.link_row or LinkRow()
+        if row.links is not None:
+            return list(row.links)
+        pairs = (
+            (self.unsubscribe_label, facts.get("unsubscribe_url", "")),
+            (self.view_in_browser_label, facts.get("view_in_browser_url", "")),
+        )
+        return [FooterLink(label, str(url)) for label, url in pairs]
 
     def theme_context(self, theme: Theme) -> dict[str, Any]:
         """

@@ -6,6 +6,7 @@ from svc.builder import EmailBuilder, Footer, FullWidth, TextBlock
 from svc.builder.engine import TemplateEngine
 from svc.builder.exceptions import ValidationError
 from svc.builder.images import EmailImage
+from svc.builder.models import FooterLink, LinkRow
 
 TEMPLATE_DIR = TemplateEngine().template_dir
 
@@ -93,3 +94,104 @@ class TestMinimalFooterIsGone:
     def test_it_is_no_longer_importable(self):
         with pytest.raises(ImportError):
             from svc.builder import MinimalFooter  # noqa: F401
+
+
+class TestTheLinkRow:
+    """
+    #100: the copyright/link row stops being a fixed structure.
+
+    The trigger for making it an object is the one that made ``Card`` and
+    ``TableRow`` objects — the row has a variable-length part, and variable
+    length is what fields cannot express.
+    """
+
+    def test_none_resolves_to_todays_row(self):
+        """
+        The path most callers are on. ``link_row=None`` builds the default
+        pair from the email's own facts and this footer's labels, which is
+        what makes the whole change byte-identical for them — the goldens
+        are the real gate, and this says the same thing at one email.
+        """
+        html = _render()
+        assert "&copy; 2026 F" in html
+        assert "Unsubscribe" in html and "View in browser" in html
+
+    def test_the_label_fields_still_work_on_the_default_path(self):
+        """#64's back-compat: the labels parameterise the default pair."""
+        html = _render(Footer(unsubscribe_label="Opt out", view_in_browser_label="Read online"))
+        assert "Opt out" in html and "Read online" in html
+
+    def test_a_custom_row_renders_its_copy_and_every_link_in_order(self):
+        html = _render(
+            Footer(
+                link_row=LinkRow(
+                    copyright="2026 Acme — all rights reserved",
+                    links=[
+                        FooterLink("Privacy", "https://acme.test/privacy"),
+                        FooterLink("Terms", "https://acme.test/terms"),
+                    ],
+                )
+            )
+        )
+        assert "2026 Acme — all rights reserved" in html
+        assert html.index("Privacy") < html.index("Terms")
+        assert "&copy;" not in html, "a caller's own line replaces the default entirely"
+        assert html.count("&nbsp;&middot;&nbsp;") == 2
+
+    def test_the_copyright_is_plain_text_and_escaped(self):
+        html = _render(Footer(link_row=LinkRow(copyright="Smith & Sons <not markup>")))
+        assert "Smith &amp; Sons &lt;not markup&gt;" in html
+
+    def test_an_empty_link_list_renders_a_link_free_row(self):
+        """
+        Valid, not a ``ValidationError`` — and no dangling separator after
+        the copyright, which is the visible half of the behaviour.
+        """
+        html = _render(Footer(link_row=LinkRow(links=[])))
+        assert "&copy; 2026 F" in html
+        assert "&nbsp;&middot;&nbsp;" not in html
+        assert "Unsubscribe" not in html
+
+    def test_a_row_without_an_unsubscribe_link_is_allowed(self):
+        """
+        Named so the decision is visible rather than merely absent.
+
+        The library does not decide what an email must say: it cannot know
+        whether this is a commercial newsletter, an internal research note or
+        a transactional receipt, and each answers that differently. What it
+        still guarantees is narrower — a region *variant* may not silently
+        drop what the caller supplied, which is a rule about structure.
+        """
+        html = _render(
+            Footer(link_row=LinkRow(links=[FooterLink("Privacy", "https://acme.test/p")]))
+        )
+        assert "Unsubscribe" not in html
+        assert "Privacy" in html
+
+    def test_a_variant_still_may_not_drop_the_block(self):
+        """The other side of that line, and it is unchanged by #100."""
+        with pytest.raises(ValidationError, match="required slot"):
+            type("SilentFooter", (Footer,), {"TEMPLATE_PATHS": {}})()
+
+    def test_an_unsafe_url_is_still_rejected(self):
+        """
+        A *safety* rule, not a content one — the library has opinions about
+        what a link may do, never about which links an email carries.
+        """
+        with pytest.raises(ValidationError, match="footer_link.url"):
+            FooterLink("Click", "javascript:alert(1)")
+
+    def test_a_link_label_is_required(self):
+        with pytest.raises(ValidationError, match="footer_link.label"):
+            FooterLink("", "https://acme.test")
+
+    def test_the_list_must_hold_footer_links(self):
+        with pytest.raises(ValidationError, match=r"link_row.links\[0\]"):
+            LinkRow(links=[("Privacy", "https://acme.test")])  # type: ignore[list-item]
+
+    def test_link_labels_and_urls_are_escaped(self):
+        html = _render(
+            Footer(link_row=LinkRow(links=[FooterLink("Terms & Co", "https://a.test/?x=1&y=2")]))
+        )
+        assert "Terms &amp; Co" in html
+        assert "https://a.test/?x=1&amp;y=2" in html

@@ -563,13 +563,29 @@ check only fires inside `EmailMetadata`, where both spellings are visible at onc
 presentation on whichever region actually renders; `qa/fixtures/minimal_footer.py` is the
 worked example.
 
-**The footer's copyright and unsubscribe line always renders.** There is no compliance floor to
-drop — `Footer` has no variant at all, and `REQUIRED_SLOTS` means one could not drop this
-block if it existed (PR #86 removed the `MinimalFooter` that used to omit a contact card the
-footer no longer renders). The disclaimer (`Footer.disclaimer`) is
-optional free-form HTML; the Unsubscribe and View-in-browser links are always present.
-`Footer.REQUIRED_SLOTS` makes an unfilled slot a `ValidationError` at construction, and a
-parametrized test asserts the footer survives its render.
+**The footer's row always renders; what is *in* it is the caller's call.** `REQUIRED_SLOTS`
+makes an unfilled slot a `ValidationError` at construction, so a variant cannot drop the block
+— `Footer` has no variant at all today (PR #86 removed the `MinimalFooter` that used to omit a
+contact card the footer no longer renders). **That is a rule about variants, never about
+callers**, and the distinction is the one thing here worth not eroding: pyHermes does not
+require disclaimer language, an unsubscribe link, or any other content. It cannot know whether
+an email is a commercial newsletter, an internal research note or a transactional receipt, and
+each answers that differently — a library that guessed would be wrong for two of the three. So
+`Footer.disclaimer` may be empty, `LinkRow(links=[])` renders a link-free row, and a row that
+omits the unsubscribe destination renders exactly what the caller composed. The attribute was
+described as a "compliance floor" until #100; that over-claimed in precisely this direction.
+
+**The copyright row is a `LinkRow` (#100), not a template.** `© {year} {firm} · Unsubscribe ·
+View in browser` was fixed structure — #64 parameterised the *labels*, but the *set* stayed the
+markup's, so adding a "Privacy" link meant forking the file. `Footer.link_row` takes a
+`LinkRow(copyright, links)`; `None` means today's behaviour, built from the email's own facts
+and this footer's labels, which is why the default path is byte-identical and #64's label
+fields still work. The trigger for making it an object is the one that made `Card` and
+`TableRow` objects: **the row has a variable-length part, and variable length is what fields
+cannot express.** The default copyright keeps the `&copy;` **entity** rather than a bare `©` —
+this is an email library, and U+00A9 mis-decoded as latin-1 renders as a mojibake pair; a
+caller's own line is plain text, escaped by the resolver, which is why the template reads one
+already-HTML key instead of branching.
 
 ### Standing rules the harness enforces
 
@@ -629,7 +645,8 @@ from svc.builder import EmailBuilder, Email, \
     Region, Header, EmptyHeader, Banner, MinimalBanner, Footer, \
     FullWidth, TwoColumn, ThreeColumn, \
     CardGroup, DataTable, ChartBlock, ImageBlock, TextBlock, NumberedList, AuthorBlock, ContactBlock
-from svc.builder.models import Card, KpiItem, TableRow, NumberedItem, EmailMetadata, SectionConfig
+from svc.builder.models import Card, KpiItem, TableRow, NumberedItem, EmailMetadata, \
+    SectionConfig, LinkRow, FooterLink
 from svc.builder.enums import TwoColumnRatio, ThreeColumnRatio, CardOrientation, \
     EmbedStrategy, ImageAlign, SizeTheme
 from svc.builder.images import EmailImage, ImageAsset

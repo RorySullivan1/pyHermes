@@ -319,6 +319,76 @@ class EmailMetadata:
 
 
 @dataclass
+class FooterLink:
+    """
+    One link in the footer's copyright row.
+
+    A pair, because a link is a pair — the label and where it goes. The URL
+    passes the same scheme check every URL here does, which is a **safety**
+    rule (no ``javascript:`` in an ``href``) rather than a content one: the
+    library has opinions about what a link may *do*, never about which links
+    an email must carry.
+
+    Both are plain text and escaped on the way out.
+    """
+
+    label: str
+    url: str
+
+    def __post_init__(self) -> None:
+        _require(self.label, "footer_link.label")
+        _validate_url(self.url, "footer_link.url")
+
+
+@dataclass
+class LinkRow:
+    """
+    The footer's copyright and link line, as data rather than a template.
+
+    ``© {year} {firm} · Unsubscribe · View in browser`` was a fixed
+    structure: #64 made the *labels* fields, but the *set* stayed the
+    template's, so a footer could not add a "Privacy" link or drop
+    "View in browser" without forking the markup. This is the object the
+    epic's requirement asked for, and the trigger is the one that made
+    :class:`Card` and :class:`TableRow` objects — **the row has a
+    variable-length part, and variable length is what fields cannot
+    express.**
+
+    **The library does not decide what an email must say.** pyHermes cannot
+    know whether a given email is a commercial newsletter, an internal
+    research note or a transactional receipt, and each answers that question
+    differently — so ``links=[]`` is valid and renders a link-free row, a row
+    omitting the unsubscribe destination is valid and renders what the caller
+    composed, and an empty ``copyright`` is valid too. What is still
+    guaranteed is narrower and worth keeping: a region *variant* may not
+    silently drop what the caller supplied. That is a rule about structure,
+    not about content.
+
+    Attributes:
+        copyright: Free-form **plain text**, escaped on output. Empty means
+                   *resolve to* ``© {current_year} {firm_name}`` from the
+                   email's own facts, which is what makes an unset row
+                   byte-identical to the pre-#100 render.
+        links:     ``None`` means *build the default pair* from the metadata's
+                   two URLs and the footer's labels — so ``link_row=None``
+                   changes nothing. An explicit list, including an empty one,
+                   is taken exactly as given.
+    """
+
+    copyright: str = ""
+    links: list[FooterLink] | None = None
+
+    def __post_init__(self) -> None:
+        if self.links is None:
+            return
+        for index, link in enumerate(self.links):
+            if not isinstance(link, FooterLink):
+                raise ValidationError(
+                    f"'link_row.links[{index}]' must be a FooterLink, got: {type(link).__name__}"
+                )
+
+
+@dataclass
 class Card:
     """
     A callout: a value, a piece of wording, or both.

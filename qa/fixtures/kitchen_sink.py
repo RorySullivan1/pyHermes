@@ -42,7 +42,7 @@ from svc.builder import (
 )
 from svc.builder.enums import CardOrientation, ImageAlign, ThreeColumnRatio, TwoColumnRatio
 from svc.builder.images import EmailImage
-from svc.builder.models import Card, KpiItem, NumberedItem, TableRow
+from svc.builder.models import Card, FooterLink, KpiItem, LinkRow, NumberedItem, TableRow
 
 from ._png import solid_png
 
@@ -188,6 +188,20 @@ def build(template_dir: Path | None = None, **metadata_overrides: Any) -> Email:
                 disclaimer="<p>Distributed to registered recipients only.</p>",
                 unsubscribe_label="Stop receiving this",
                 view_in_browser_label="Read it in a browser",
+                # A row that differs from the default on every axis the
+                # object added: its own copyright wording, and a link set
+                # that is neither the default pair nor the same length —
+                # which is the whole reason the row became an object.
+                # `minimal_footer` leaves it None, pinning the resolution
+                # path and #64's label fields with it.
+                link_row=LinkRow(
+                    copyright="2026 Hermes Research — all rights reserved",
+                    links=[
+                        FooterLink("Privacy", "https://example.com/privacy"),
+                        FooterLink("Stop receiving this", "https://example.com/unsubscribe"),
+                        FooterLink("Contact", "mailto:research@example.com"),
+                    ],
+                ),
             )
         )
         # FullWidth + horizontal CardGroup + highlight.

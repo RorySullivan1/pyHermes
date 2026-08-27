@@ -25,6 +25,12 @@
   pre-existing property of the shipped palette, and contrast is a
   recommendation here, not a validated rule.)
 
+  The copyright row is a LinkRow (#100), resolved in Footer.context(): one
+  key for the copyright (already HTML — the default keeps the &copy; ENTITY,
+  since a bare U+00A9 mis-decoded as latin-1 renders as a mojibake pair) and
+  a list for the links, so a footer can add or drop one without forking this
+  file. An empty list renders the copyright with no separator after it.
+
   Context: align, border, image, image_alt, image_width, disclaimer,
   unsubscribe_label, view_in_browser_label (region); footer_background,
   footer_text, footer_text_muted, footer_border (resolved); firm_name,
@@ -48,10 +54,13 @@
 {% endif %}
               <p style="margin:{{ size.space.footer_copyright_top }}px 0 0; font-family:Arial,Helvetica,sans-serif; font-size:{{ size.type.micro }}px;
                         color:{{ footer_text_muted }}; text-align:{{ align }};">
-                &copy; {{ current_year | escape_html }} {{ firm_name | escape_html }} &nbsp;&middot;&nbsp;
-                <a href="{{ unsubscribe_url | escape_html }}" style="color:{{ theme.palette.accent }}; text-decoration:underline;">{{ unsubscribe_label | escape_html }}</a>
+                {{ copyright_html }}{% if footer_links %} &nbsp;&middot;&nbsp;{% endif +%}
+{% for link in footer_links %}
+                <a href="{{ link.url | escape_html }}" style="color:{{ theme.palette.accent }}; text-decoration:underline;">{{ link.label | escape_html }}</a>
+{% if not loop.last %}
                 &nbsp;&middot;&nbsp;
-                <a href="{{ view_in_browser_url | escape_html }}" style="color:{{ theme.palette.accent }}; text-decoration:underline;">{{ view_in_browser_label | escape_html }}</a>
+{% endif %}
+{% endfor %}
               </p>
             </td>
           </tr>
