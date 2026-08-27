@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:v="urn:schemas-microsoft-com:vml"
+      xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="x-apple-disable-message-reformatting">
+  <meta name="color-scheme" content="light only">
+  <meta name="supported-color-schemes" content="light only">
+  <title>Research Brief — Cross-Asset Review</title>
+  <!--[if mso]>
+  <noscript>
+    <xml><o:OfficeDocumentSettings>
+      <o:PixelsPerInch>96</o:PixelsPerInch>
+    </o:OfficeDocumentSettings></xml>
+  </noscript>
+  <style type="text/css">
+    body, td, th { font-family: Georgia, 'Times New Roman', serif; }
+    body { background-color: #F2F1EE !important; }
+  </style>
+  <![endif]-->
+  <style type="text/css">
+    body, table, td, a { -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%; }
+    table, td { mso-table-lspace:0pt; mso-table-rspace:0pt; }
+    img { -ms-interpolation-mode:bicubic; border:0; outline:none; text-decoration:none; }
+    @media only screen and (max-width:700px) {
+      .email-container { width:100% !important; }
+      .stack-column { display:block !important; width:100% !important; }
+      .mobile-pad { padding:20px 18px !important; }
+      .mobile-title { font-size:22px !important; }
+      /* box-sizing is what keeps the padding *inside* the 100% width. Without it
+         the content-box default adds it on top and the cell overflows the
+         viewport by its own padding (#76). Word ignores this whole @media
+         block, so the property it lacks costs Outlook nothing. */
+      .kpi-cell { display:block !important; width:100% !important; box-sizing:border-box !important; border-right:none !important; border-bottom:1px solid #D6D2CB !important; padding:14px 16px !important; }
+      .kpi-cell-last { border-bottom:none !important; }
+    }
+    /* Force light rendering in all dark mode contexts */
+    :root { color-scheme: light only; }
+    [data-ogsc] .email-container,
+    [data-ogsb] .email-container { background-color:#FFFFFF !important; }
+    [data-ogsc] .surface,
+    [data-ogsb] .surface { background-color:#FFFFFF !important; }
+    [data-ogsc] .body-text,
+    [data-ogsb] .body-text { color:#3B3B3B !important; }
+    @media (prefers-color-scheme:dark) {
+      .email-container { background-color:#FFFFFF !important; }
+      .body-text { color:#3B3B3B !important; }
+      .surface { background-color:#FFFFFF !important; }
+    }
+  </style>
+</head>
+<!--
+  ACADEMIC FINANCIAL EMAIL SKELETON — Design Reference
+  ====================================================
+  Palette:
+    Every colour and shadow comes from the resolved Theme, which arrives as
+    the "theme" namespace. The token table — name, value, and the sites each
+    one covers — lives in svc/builder/theming.py, where something other than
+    a person can read it. The hand-maintained list that used to sit here had
+    already drifted: it named a row-alt colour the table never used.
+-->
+<body style="margin:0; padding:0; background-color:#F2F1EE; font-family:Georgia,'Times New Roman',serif;" bgcolor="#F2F1EE">
+
+  <!-- Preheader -->
+  <div style="display:none;max-height:0;overflow:hidden;font-size:1px;color:#F2F1EE;">
+    Regional equities lead; the belly of the curve richens.&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;
+  </div>
+
+  <!-- Outer wrapper -->
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+         style="background-color:#F2F1EE;" bgcolor="#F2F1EE">
+    <tr>
+      <td align="center" style="padding:28px 0;">
+
+        <!-- ============================================ -->
+        <!-- MAIN CONTAINER — 680px                       -->
+        <!-- ============================================ -->
+        <table class="email-container" role="presentation" width="680" cellpadding="0" cellspacing="0"
+               border="0" style="background-color:#FFFFFF; max-width:680px;" bgcolor="#FFFFFF">
+
+          <!-- ══════════════════════════════════════════ -->
+          <!-- HEADER: Disclaimer bar                    -->
+          <!-- ══════════════════════════════════════════ -->
+          <tr>
+            <td style="background-color:#2C3E50; padding:7px 32px; text-align:center;" bgcolor="#2C3E50">
+              <p style="margin:0; font-family:Arial,Helvetica,sans-serif; font-size:9.5px;
+                        font-weight:300; color:#90A4AE; letter-spacing:0.3px; line-height:140%;">
+                
+              </p>
+            </td>
+          </tr>
+
+          <!-- ══════════════════════════════════════════ -->
+          <!-- HEADER: Background image + text overlay   -->
+          <!-- ══════════════════════════════════════════ -->
+          <tr>
+            <td style="background-color:#2C3E50;" bgcolor="#2C3E50">
+              <!--[if mso]>
+              <v:rect xmlns:v="urn:schemas-microsoft-com:vml" fill="true" stroke="false"
+                      style="width:680px;height:180px;">
+                <v:fill type="frame" src="" color="#141E2C" opacity="65%"/>
+                <v:textbox inset="32px,0,32px,0" style="mso-fit-shape-to-text:false;">
+              <![endif]-->
+              <div style="background-color:#2C3E50; background-size:cover;
+                          background-position:center center; background-repeat:no-repeat;">
+                <!-- Dark overlay for text legibility.  Hidden from Outlook on
+                     purpose: the v:fill above already applies this exact scrim
+                     through its own color + opacity attributes, and the Word
+                     engine demotes a transparent background-color to a
+                     background image, inheriting VML's limitations for a
+                     second copy of an effect it has already drawn (#78).
+                     Both halves still read one Rgba, so they cannot drift. -->
+                <!--[if !mso]><!--><div style="background-color:rgba(20,30,44,0.65);"><!--<![endif]-->
+                <!-- Logo row -->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <td style="padding:18px 32px 0;" align="right">
+                      <!--[if mso]>
+                      <img src="" width="90" alt="Hermes Research" style="display:block;">
+                      <![endif]-->
+                      <!--[if !mso]><!-->
+                      <img src="" width="90" alt="Hermes Research"
+                           style="display:block; max-width:90px; height:auto;">
+                      <!--<![endif]-->
+                    </td>
+                  </tr>
+                </table>
+                <!-- Campaign name + subject -->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <td style="padding:10px 32px 6px;">
+                      <p style="margin:0; font-family:Georgia,'Times New Roman',serif; font-size:28px;
+                                font-weight:bold; color:#FFFFFF; line-height:120%; letter-spacing:0.3px;
+                                text-shadow:0 1px 3px rgba(0,0,0,0.4);"
+                         class="mobile-title">
+                        Hermes Research
+                      </p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:0 32px 8px;">
+                      <p style="margin:0; font-family:Arial,Helvetica,sans-serif; font-size:13px;
+                                font-weight:400; color:#CFD8DC; line-height:130%;
+                                text-shadow:0 1px 2px rgba(0,0,0,0.3);">
+                        research-brief
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+                <!-- Accent rule -->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <td style="padding:0 32px;">
+                      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                        <tr>
+                          <td style="border-top:2px solid #5B8A9A; font-size:0; line-height:0;" height="1">&nbsp;</td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+                <!-- Date / Issue bar -->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <td style="padding:10px 32px 18px;">
+                      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                        <tr>
+                          <td style="font-family:Arial,Helvetica,sans-serif; font-size:11px;
+                                     color:#90A4AE; letter-spacing:0.6px; text-transform:uppercase;">
+                            Week ending 24 August 2026
+                          </td>
+                          <td align="right" style="font-family:Arial,Helvetica,sans-serif; font-size:11px;
+                                                    color:#90A4AE; letter-spacing:0.6px; text-transform:uppercase;">
+                            
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+                <!--[if !mso]><!--></div><!--<![endif]--><!-- /dark overlay -->
+              </div>
+              <!--[if mso]>
+                </v:textbox>
+              </v:rect>
+              <![endif]-->
+            </td>
+          </tr>
+
+          <!-- ══════════════════════════════════════════ -->
+          <!-- SECTIONS: Insert containers here          -->
+          <!-- ══════════════════════════════════════════ -->
+          <tr>
+  <td style="padding:0; background-color:#FFFFFF;">
+    <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td style="padding:22px 32px 12px 32px;">
+          <h2 style="margin:0; font-family:Georgia,'Times New Roman',serif; font-size:17px; font-weight:bold; color:#2C3E50; line-height:120%;">
+            Regional Equities &amp; Rates
+          </h2>
+        </td>
+      </tr>
+    </table>
+    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td style="padding:0 32px; font-size:0; line-height:0;">
+    <!--[if mso]>
+    <table width="616" border="0" cellpadding="0" cellspacing="0" style="width:616px;">
+      <tr>
+        <td width="300" valign="top" style="width:300px; padding:0;">
+    <![endif]-->
+    <table width="300" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:300px; margin-right:16px; background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:2px 20px 26px 0px; font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#3B3B3B; line-height:172%;">
+          <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; font-style: italic; color: #7A7A72; margin: 0 0 12px 0; line-height: 140%;">Total return, local currency</p>
+<table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
+  <tr style="border-top: 1px solid #D6D2CB; border-bottom: 2px solid #2C3E50;">
+    <th style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 172%; text-align: left; padding: 12px; letter-spacing: 0.5px;">Index</th>
+    <th style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 172%; text-align: right; padding: 12px; letter-spacing: 0.5px;">1W</th>
+    <th style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 172%; text-align: right; padding: 12px; letter-spacing: 0.5px;">YTD</th>
+  </tr>
+  <tr style="border-bottom: 1px solid #EAE8E4;">
+    <td style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; line-height: 172%; color: #3B3B3B; text-align: left; padding: 12px; background-color: #FFFFFF;">S&amp;P 500</td>
+    <td style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #4A7C59; text-align: right; padding: 12px; background-color: #FFFFFF;">+1.4%</td>
+    <td style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #4A7C59; text-align: right; padding: 12px; background-color: #FFFFFF;">+12.8%</td>
+  </tr>
+  <tr style="border-bottom: 1px solid #EAE8E4;">
+    <td style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; line-height: 172%; color: #3B3B3B; text-align: left; padding: 12px; background-color: #F8F7F5;">Euro Stoxx</td>
+    <td style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #4A7C59; text-align: right; padding: 12px; background-color: #F8F7F5;">+0.9%</td>
+    <td style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #4A7C59; text-align: right; padding: 12px; background-color: #F8F7F5;">+8.1%</td>
+  </tr>
+  <tr style="border-bottom: 1px solid #D6D2CB;">
+    <td style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; line-height: 172%; color: #3B3B3B; text-align: left; padding: 12px; background-color: #FFFFFF;">Nikkei</td>
+    <td style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #B85450; text-align: right; padding: 12px; background-color: #FFFFFF;">-0.3%</td>
+    <td style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #4A7C59; text-align: right; padding: 12px; background-color: #FFFFFF;">+15.2%</td>
+  </tr>
+</table>
+<p style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #A09E97; font-style: italic; margin: 8px 0 0 0; line-height: 172%;">Hermes Research</p>
+
+        </td>
+      </tr>
+    </table>
+    <!--[if mso]>
+        </td>
+        <td width="300" valign="top" style="width:300px; padding:0;">
+    <![endif]-->
+    <table width="300" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:300px; background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:2px 0px 26px 20px; font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#3B3B3B; line-height:172%;">
+          <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; font-style: italic; color: #7A7A72; margin: 0 0 12px 0; line-height: 140%;">On-the-run Treasuries</p>
+<table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
+  <tr style="border-top: 1px solid #D6D2CB; border-bottom: 2px solid #2C3E50;">
+    <th style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 172%; text-align: left; padding: 12px; letter-spacing: 0.5px;">Tenor</th>
+    <th style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 172%; text-align: right; padding: 12px; letter-spacing: 0.5px;">Yield</th>
+    <th style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 172%; text-align: right; padding: 12px; letter-spacing: 0.5px;">Δ1W</th>
+  </tr>
+  <tr style="border-bottom: 1px solid #EAE8E4;">
+    <td style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; line-height: 172%; color: #3B3B3B; text-align: left; padding: 12px; background-color: #FFFFFF;">UST 2Y</td>
+    <td style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #FFFFFF;">4.62%</td>
+    <td style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #4A7C59; text-align: right; padding: 12px; background-color: #FFFFFF;">-4 bps</td>
+  </tr>
+  <tr style="border-bottom: 1px solid #EAE8E4;">
+    <td style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; line-height: 172%; color: #3B3B3B; text-align: left; padding: 12px; background-color: #F8F7F5;">UST 10Y</td>
+    <td style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #F8F7F5;">4.28%</td>
+    <td style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #4A7C59; text-align: right; padding: 12px; background-color: #F8F7F5;">-6 bps</td>
+  </tr>
+  <tr style="border-bottom: 1px solid #D6D2CB;">
+    <td style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; line-height: 172%; color: #3B3B3B; text-align: left; padding: 12px; background-color: #FFFFFF;">UST 30Y</td>
+    <td style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #FFFFFF;">4.51%</td>
+    <td style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #B85450; text-align: right; padding: 12px; background-color: #FFFFFF;">+2 bps</td>
+  </tr>
+</table>
+<p style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #A09E97; font-style: italic; margin: 8px 0 0 0; line-height: 172%;">Hermes Research</p>
+
+        </td>
+      </tr>
+    </table>
+    <!--[if mso]>
+        </td>
+      </tr>
+    </table>
+    <![endif]-->
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+
+<tr>
+  <td style="padding:0; background-color:#FFFFFF;">
+    <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td style="padding:22px 32px 12px 32px;">
+          <h2 style="margin:0; font-family:Georgia,'Times New Roman',serif; font-size:17px; font-weight:bold; color:#2C3E50; line-height:120%;">
+            Positioning
+          </h2>
+        </td>
+      </tr>
+    </table>
+    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td style="padding:0 32px; font-size:0; line-height:0;">
+    <!--[if mso]>
+    <table width="616" border="0" cellpadding="0" cellspacing="0" style="width:616px;">
+      <tr>
+        <td width="180" valign="top" style="width:180px; padding:0;">
+    <![endif]-->
+    <table width="180" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:180px; margin-right:16px; background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:2px 16px 26px 0px; font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#3B3B3B; line-height:172%;">
+          <table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border: 1px solid #D6D2CB;">
+  <tr>
+    <td style="padding: 14px 16px; text-align: left; background-color: #FFFFFF; border-bottom: 1px solid #D6D2CB;">
+      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #7A7A72; text-transform: uppercase; margin: 0 0 6px 0; line-height: 172%; letter-spacing: 0.5px; font-weight: bold;">Net Equity</p>
+      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 21px; font-weight: bold; color: #4A7C59; margin: 0 0 4px 0; line-height: 120%;">62%</p>
+      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #A09E97; margin: 0; line-height: 140%;">+4 pts w/w</p>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 14px 16px; text-align: left; background-color: #FFFFFF;">
+      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #7A7A72; text-transform: uppercase; margin: 0 0 6px 0; line-height: 172%; letter-spacing: 0.5px; font-weight: bold;">Duration</p>
+      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 21px; font-weight: bold; color: #B85450; margin: 0 0 4px 0; line-height: 120%;">5.1y</p>
+      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #A09E97; margin: 0; line-height: 140%;">-0.3y w/w</p>
+    </td>
+  </tr>
+</table>
+
+        </td>
+      </tr>
+    </table>
+    <!--[if mso]>
+        </td>
+        <td width="420" valign="top" style="width:420px; padding:0;">
+    <![endif]-->
+    <table width="420" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:420px; background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:2px 0px 26px 20px; font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#3B3B3B; line-height:172%;">
+          <p class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: #3B3B3B; line-height: 172%; margin: 0 0 16px 0;"><p>We added modestly to equities on the pullback, concentrating the increase in cyclicals where earnings revisions have turned. In rates we trimmed duration into the rally, keeping a curve-steepening bias as the front end prices a nearer-term cut.</p></p>
+
+        </td>
+      </tr>
+    </table>
+    <!--[if mso]>
+        </td>
+      </tr>
+    </table>
+    <![endif]-->
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+
+<tr>
+  <td style="padding:0; background-color:#FFFFFF;">
+    <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td style="padding:22px 32px 12px 32px;">
+          <h2 style="margin:0; font-family:Georgia,'Times New Roman',serif; font-size:17px; font-weight:bold; color:#2C3E50; line-height:120%;">
+            Cumulative Performance
+          </h2>
+        </td>
+      </tr>
+    </table>
+    <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:16px 32px 14px 32px; font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#3B3B3B; line-height:172%;">
+          <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; font-style: italic; color: #7A7A72; margin: 0 0 12px 0; line-height: 140%;">Indexed to 100 at year start</p>
+<table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
+  <tr>
+    <td style="padding: 0;">
+      <img src="data:image/png;base64,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" alt="Cumulative cross-asset performance, indexed to 100"
+width="616"           style="display: block; max-width: 100%; height: auto; border: 1px solid #D6D2CB; margin: 0;">
+    </td>
+  </tr>
+</table>
+<p style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #A09E97; font-style: italic; margin: 8px 0 0 0; line-height: 172%;">Hermes Research</p>
+
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+
+
+          <!-- ══════════════════════════════════════════ -->
+          <!-- FOOTER PART 1: Contact Us (inside body)   -->
+          <!-- ══════════════════════════════════════════ -->
+          <tr>
+            <td style="padding:8px 32px 30px; background-color:#FFFFFF;" bgcolor="#FFFFFF">
+              <!-- Contact card -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+                     style="border:1px solid #D6D2CB; border-radius:4px;">
+                <tr>
+                  <td style="padding:22px 24px;">
+                    <p style="margin:0; font-family:Georgia,'Times New Roman',serif; font-size:16px;
+                              font-weight:bold; color:#2C3E50; letter-spacing:0.2px;">
+                      Questions or feedback?
+                    </p>
+                    <p style="margin:6px 0 16px; font-family:Arial,Helvetica,sans-serif; font-size:13px;
+                              color:#7A7A72; line-height:155%;">
+                      
+                    </p>
+                    <!-- CTA Button — VML for Outlook, CSS for others -->
+                    <!--[if mso]>
+                    <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href=""
+                      style="height:38px;v-text-anchor:middle;width:150px;" arcsize="8%"
+                      strokecolor="#5B8A9A" fillcolor="#5B8A9A">
+                      <w:anchorlock/>
+                      <center style="color:#FFFFFF;font-family:Arial,Helvetica,sans-serif;
+                                     font-size:13px;font-weight:bold;">
+                        Contact Us
+                      </center>
+                    </v:roundrect>
+                    <![endif]-->
+                    <!--[if !mso]><!-->
+                    <a href=""
+                       style="background-color:#5B8A9A; border-radius:3px; color:#FFFFFF;
+                              display:inline-block; font-family:Arial,Helvetica,sans-serif;
+                              font-size:13px; font-weight:bold; line-height:38px;
+                              text-align:center; text-decoration:none; width:150px;
+                              -webkit-text-size-adjust:none;">
+                      Contact Us
+                    </a>
+                    <!--<![endif]-->
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+        </table>
+        <!-- /Main container -->
+
+        <!-- ════════════════════════════════════════════ -->
+        <!-- FOOTER PART 2: Disclaimer (outside body)    -->
+        <!-- ════════════════════════════════════════════ -->
+        <table role="presentation" width="680" cellpadding="0" cellspacing="0" border="0"
+               style="max-width:680px; background-color:#F2F1EE;" bgcolor="#F2F1EE" class="email-container">
+          <tr>
+            <td style="padding:20px 32px 8px; background-color:#F2F1EE;" bgcolor="#F2F1EE">
+              <p style="margin:0; font-family:Arial,Helvetica,sans-serif; font-size:9.5px;
+                        color:#8A8880; line-height:160%; text-align:center;">
+                <p>For illustrative purposes only. Not investment advice.</p>
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:6px 32px 24px; background-color:#F2F1EE;" bgcolor="#F2F1EE">
+              <p style="margin:0; font-family:Arial,Helvetica,sans-serif; font-size:9.5px;
+                        color:#A09E97; text-align:center;">
+                &copy;  Hermes Research &nbsp;&middot;&nbsp;
+                <a href="" style="color:#5B8A9A; text-decoration:underline;">Unsubscribe</a>
+                &nbsp;&middot;&nbsp;
+                <a href="" style="color:#5B8A9A; text-decoration:underline;">View in browser</a>
+              </p>
+            </td>
+          </tr>
+        </table>
+
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>
