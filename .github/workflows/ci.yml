@@ -133,9 +133,10 @@ jobs:
           from pathlib import Path
 
           from svc.builder import (
+              ContactBlock,
               EmailBuilder,
+              Footer,
               FullWidth,
-              MinimalFooter,
               MinimalHeader,
               TextBlock,
               TwoColumn,
@@ -150,13 +151,17 @@ jobs:
           out = (
               EmailBuilder()
               .metadata(METADATA)
+              .footer(Footer(disclaimer="Wheel disclaimer."))
               .section(FullWidth(content=TextBlock("<p>Rendered from a wheel.</p>")))
+              .section(FullWidth(content=ContactBlock(heading="Contact", cta_url="https://example.com/c")))
               .save(Path("out.html"))
           )
-          assert "Rendered from a wheel." in out.read_text(), "template did not render"
-          assert "<v:rect" in out.read_text(), "regions/header.html did not render"
-          assert "<v:roundrect" in out.read_text(), "regions/footer-contact.html did not render"
-          assert "FOOTER PART 2" in out.read_text(), "regions/footer-legal.html did not render"
+          html = out.read_text()
+          assert "Rendered from a wheel." in html, "template did not render"
+          assert "<v:rect" in html, "regions/header.html did not render"
+          assert "<v:roundrect" in html, "text/contact-block.html did not render"
+          assert "Wheel disclaimer." in html, "regions/footer.html disclaimer did not render"
+          assert "Unsubscribe" in html, "regions/footer.html copyright/links did not render"
           print(f"OK: {out} ({out.stat().st_size} bytes)")
 
           # Every region template must ship, not just the default one.
@@ -164,13 +169,13 @@ jobs:
               EmailBuilder()
               .metadata(METADATA)
               .header(MinimalHeader())
-              .footer(MinimalFooter())
               .section(FullWidth(content=TextBlock("<p>Variant.</p>")))
               .save(Path("variant.html"))
           )
-          assert "<v:rect" not in variant.read_text(), "the variant rendered VML"
-          assert "<v:roundrect" not in variant.read_text(), "the variant rendered VML"
-          assert "FOOTER PART 2" in variant.read_text(), "the variant dropped the legal block"
+          vhtml = variant.read_text()
+          assert "<v:rect" not in vhtml, "the minimal header rendered VML"
+          assert "<v:roundrect" not in vhtml, "a footer with no contact card rendered a button"
+          assert "Unsubscribe" in vhtml, "regions/footer.html did not render in the variant"
           print(f"OK: {variant} ({variant.stat().st_size} bytes)")
 
           # common/containers/columns.html ships, and its widths are computed

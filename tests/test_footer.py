@@ -2,11 +2,10 @@
 
 import pytest
 
-from svc.builder import Email, EmailBuilder, Footer, FullWidth, TextBlock
+from svc.builder import EmailBuilder, Footer, FullWidth, TextBlock
 from svc.builder.engine import TemplateEngine
 from svc.builder.exceptions import ValidationError
 from svc.builder.images import EmailImage
-from svc.builder.models import EmailMetadata
 
 TEMPLATE_DIR = TemplateEngine().template_dir
 
@@ -60,13 +59,10 @@ class TestDisclaimer:
         # Find where the disclaimer appears and check the surrounding context.
         idx = html.index("<p>Not advice.</p>")
         # Look back 200 chars for an opening <p> that wraps our disclaimer.
-        context_before = html[max(0, idx - 200):idx]
+        context_before = html[max(0, idx - 200) : idx]
         # There should be no unclosed <p ...> immediately before our <p>.
         # The template uses a <div> wrapper, so we should see a <div before us.
         assert "<div" in context_before
-        # Confirm our <p> is NOT immediately preceded by a wrapping <p> tag.
-        # A nested <p><p> would mean the wrapper is a <p> instead of a <div>.
-        assert "<p>Not advice.</p>" in html
         # The immediate parent element should be a div, not a p.
         # Confirm the template wraps disclaimer in a div by checking no <p>\n...<p> pattern.
         legal = html.split("/Main container")[1]

@@ -363,7 +363,7 @@ class Footer(Region):
     background_color: str = ""
     border: bool = False
     border_color: str = ""
-    image: "str | EmailImage" = ""
+    image: str | EmailImage = ""
     image_alt: str = ""
     image_width: int | None = None
     disclaimer: str = ""

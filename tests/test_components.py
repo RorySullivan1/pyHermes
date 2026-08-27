@@ -14,7 +14,6 @@ from svc.builder import (
     ChartBlock,
     ContactBlock,
     DataTable,
-    FullWidth,
     NumberedList,
     TextBlock,
 )
@@ -165,10 +164,10 @@ class TestContactBlock:
         html = ContactBlock(
             "Questions & feedback?", "Ask the desk.", "Reach out", "https://x.com/contact"
         ).render(engine)
-        assert "v:roundrect" in html           # Outlook button survives
+        assert "v:roundrect" in html  # Outlook button survives
         assert "https://x.com/contact" in html
         assert "Reach out" in html
-        assert "Questions &amp; feedback?" in html   # escaped by the template
+        assert "Questions &amp; feedback?" in html  # escaped by the template
 
 
 class TestComponentBase:
