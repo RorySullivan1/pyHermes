@@ -22,6 +22,7 @@ from typing import Any
 
 from svc.builder import (
     AuthorBlock,
+    Banner,
     CardGroup,
     ChartBlock,
     ContactBlock,
@@ -73,10 +74,14 @@ def _metadata() -> dict[str, Any]:
     added later never lands here. An unset field is one the golden cannot
     pin, and pinning the skeleton is half of what #32 asked for.
 
-    The two image fields take different shapes on purpose — ``logo_url`` an
-    ``EmailImage``, ``header_bg_image_url`` a bare URL string — so the golden
-    covers both branches of ``EmailMetadata.to_dict()``'s collapse to a
-    ``src``.
+    The banner's own fields moved out of here in #91: ``title`` and
+    ``subtitle`` have no flat spelling — the flat keywords exist for
+    back-compatibility with a pre-split call site, and a field added after
+    the split has none — so the fixture builds the region explicitly, the way
+    it already builds the footer. What that costs is golden coverage of the
+    flat path, and ``TestTheFlatKeywordsStillWork`` buys it back with a
+    stronger guarantee than a golden gave: the two spellings must render the
+    *same bytes*, not merely each their own stable ones.
     """
     return {
         "email_subject": "Kitchen Sink — every component, every geometry",
@@ -86,10 +91,6 @@ def _metadata() -> dict[str, Any]:
         "date_range": "Week ending 24 August",
         "issue_label": "Issue 001",
         "header_disclaimer": "For illustrative purposes. Not investment advice.",
-        "header_bg_image_url": "https://cdn.example.com/header-bg.png",
-        "logo_url": _LOGO,
-        "logo_alt": "Hermes Research — weekly research letter",
-        "logo_width": 128,
         # Named rather than omitted, so this golden pins that the string
         # path resolves to the same bytes as the default object.
         "theme": "classic",
@@ -115,6 +116,24 @@ def build(template_dir: Path | None = None, **metadata_overrides: Any) -> Email:
     return (
         EmailBuilder(template_dir=template_dir)
         .metadata(_metadata() | metadata_overrides)
+        .banner(
+            Banner(
+                # The two image fields take different shapes on purpose —
+                # ``logo_url`` an EmailImage, ``background_image_url`` a bare
+                # URL string — so the golden covers both branches of the
+                # collapse to a ``src`` in ``Region.context()``.
+                background_image_url="https://cdn.example.com/header-bg.png",
+                logo_url=_LOGO,
+                logo_alt="Hermes Research — weekly research letter",
+                logo_width=128,
+                # Distinct from firm_name / campaign_name on purpose: the
+                # golden then pins that the masthead renders its own copy
+                # while the facts still reach everywhere else they appear —
+                # the footer's copyright line most visibly (#91).
+                title="Q3 Outlook",
+                subtitle="What the curve is pricing",
+            )
+        )
         .footer(
             Footer(
                 background_color="#F2F1EE",

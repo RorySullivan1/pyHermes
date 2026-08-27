@@ -125,6 +125,16 @@ class TestTheBannerModel:
         assert Banner(logo_url=image).resolved_logo_width() == 64
         assert Banner(logo_url=image, logo_width=200).resolved_logo_width() == 200
 
+    def test_the_title_chain(self):
+        assert Banner().resolved_title("Acme") == "Acme"
+        assert Banner(title="Q3 Outlook").resolved_title("Acme") == "Q3 Outlook"
+
+    def test_the_subtitle_chain(self):
+        assert Banner().resolved_subtitle("weekly") == "weekly"
+        assert Banner(subtitle="What the curve is pricing").resolved_subtitle("weekly") == (
+            "What the curve is pricing"
+        )
+
 
 class TestFactsFlowDown:
     """
@@ -155,6 +165,63 @@ class TestFactsFlowDown:
         metadata = EmailMetadata(**valid_metadata)
         html = metadata.banner.render(TemplateEngine(), metadata.banner_facts())
         assert valid_metadata["firm_name"] in html
+
+
+class TestTheHeadlineIsPresentation:
+    """
+    #91: the masthead stops being forced to say who sent the email.
+
+    The chain resolves into a key of its *own* rather than in place, because
+    its fallbacks are facts and facts land last in ``Region.context()``.
+    Resolving ``title`` into ``firm_name`` would be a region shadowing a
+    fact — the one thing the layering exists to prevent.
+    """
+
+    def test_an_explicit_title_reaches_the_masthead(self, valid_metadata):
+        metadata = EmailMetadata(**valid_metadata, banner=Banner(title="Q3 Outlook"))
+        html = metadata.banner.render(TemplateEngine(), metadata.banner_facts())
+        assert "Q3 Outlook" in html
+
+    def test_an_unset_title_falls_back_to_the_firm(self, valid_metadata):
+        metadata = EmailMetadata(**valid_metadata)
+        html = metadata.banner.render(TemplateEngine(), metadata.banner_facts())
+        assert valid_metadata["firm_name"] in html
+
+    def test_the_fact_still_reaches_the_rest_of_the_email(self, valid_metadata):
+        """
+        The acceptance criterion that says the escape hatch is not a lie: a
+        banner reading "Q3 Outlook" must not change who the copyright line
+        says sent it.
+        """
+        renamed = Email(valid_metadata, banner=Banner(title="Q3 Outlook")).render()
+        assert renamed.count(valid_metadata["firm_name"]) >= 1
+        plain = Email(valid_metadata).render()
+        # One occurrence moved (the masthead); every other one stayed.
+        assert renamed.count(valid_metadata["firm_name"]) == (
+            plain.count(valid_metadata["firm_name"]) - 1
+        )
+
+    def test_the_copy_is_escaped(self, valid_metadata):
+        """Free-form means arbitrary copy, not markup."""
+        metadata = EmailMetadata(**valid_metadata, banner=Banner(title="Rates & Credit <b>"))
+        html = metadata.banner.render(TemplateEngine(), metadata.banner_facts())
+        assert "Rates &amp; Credit &lt;b&gt;" in html
+
+    @pytest.mark.parametrize("template", ["regions/banner.html", "regions/banner-minimal.html"])
+    @pytest.mark.parametrize("fact", ["firm_name", "campaign_name"])
+    def test_the_template_reads_the_resolved_key_not_the_fact(self, template, fact):
+        """
+        The chain must not be bypassable. Reading ``{{ firm_name }}`` again
+        would render correctly for every email that never sets a title, so
+        nothing else in the suite would notice — the field would simply be
+        unreachable. Hence a grep, on the template rather than the render.
+        """
+        source = _template(template)
+        assert f"{{{{ {fact} " not in source, (
+            f"{template} reads the fact '{fact}' directly; the banner's headline "
+            "must come from 'banner_title' / 'banner_subtitle' or Banner.title "
+            "becomes unreachable."
+        )
 
 
 class TestTheFlatKeywordsStillWork:
@@ -202,6 +269,38 @@ class TestTheFlatKeywordsStillWork:
     def test_an_explicit_banner_alone_is_fine(self, valid_metadata):
         metadata = EmailMetadata(**valid_metadata, banner=Banner(logo_alt="explicit"))
         assert metadata.banner.logo_alt == "explicit"
+
+    def test_both_spellings_render_the_same_bytes(self, valid_metadata, png_bytes):
+        """
+        The guarantee ``kitchen_sink``'s golden used to carry.
+
+        Until #91 the broadest fixture built its masthead the flat way, so
+        the flat path was pinned byte-for-byte by a golden. #91 gave the
+        banner two fields with no flat spelling — the keywords exist for a
+        pre-split call site, and a field added after the split has none — so
+        the fixture moved to an explicit ``Banner`` and that coverage had to
+        go somewhere. Here is stronger than there: a golden pins each
+        spelling's own bytes and would not notice the two diverging, whereas
+        this asserts they *converge*, which is the actual promise.
+        """
+        image = EmailImage.attached(png_bytes, alt="Firm logo")
+        fields = {
+            "logo_url": image,
+            "logo_alt": "explicit",
+            "logo_width": 128,
+            "header_bg_image_url": "https://cdn.test/bg.png",
+        }
+        flat = Email({**valid_metadata, **fields})
+        explicit = Email(
+            valid_metadata,
+            banner=Banner(
+                logo_url=image,
+                logo_alt="explicit",
+                logo_width=128,
+                background_image_url="https://cdn.test/bg.png",
+            ),
+        )
+        assert flat.render() == explicit.render()
 
 
 class TestTheEmailApi:

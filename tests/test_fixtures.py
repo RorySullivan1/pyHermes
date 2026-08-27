@@ -130,10 +130,11 @@ class TestKitchenSinkCompleteness:
         fixture actually supplies. Introspected from the dataclass, so a field
         added later fails here instead of going quietly unpinned.
 
-        ``banner`` and ``footer`` are excluded because the fixture supplies
-        both the flat way, through the pre-split region keywords — which is
-        deliberate, since that is the back-compatible path the epics promise
-        to keep byte-identical. Their own fields are checked below.
+        ``banner`` and ``footer`` are excluded because the fixture builds
+        both regions explicitly rather than through the metadata. Their own
+        fields are checked below, distinctively, by the per-region test. The
+        flat pre-split keywords are covered elsewhere and by a stronger
+        assertion than a golden — see ``TestTheFlatKeywordsStillWork``.
 
         ``theme`` was exempt while only one preset existed; #50 retired that.
         ``kitchen_sink`` names ``"classic"`` so its golden pins that the

@@ -158,8 +158,14 @@ to supply it. A field set to its
 default is one the golden cannot pin, because the render would not move if the default changed
 underneath it. Only exemptions are named, in `DEPRECATED_COMPONENTS` (today: `KpiStrip`, whose
 markup duplicates a section already in the gallery and which warns on construction), plus
-`EmailMetadata.header` and `EmailMetadata.footer` themselves — `kitchen_sink` supplies both
-the flat, pre-split way on purpose, which is how the golden pins the back-compatible path.
+`EmailMetadata.banner` and `EmailMetadata.footer` themselves — `kitchen_sink` builds both
+regions **explicitly**, so their own fields are pinned by the per-region test rather than by
+the metadata one. The flat, pre-split banner keywords used to be pinned by this fixture's
+golden and are no longer: #91 gave the banner two fields with no flat spelling (the keywords
+exist for a pre-split call site, and a field added after the split has none), so the coverage
+moved to `TestTheFlatKeywordsStillWork` — where it is *stronger*, because a golden pins each
+spelling's own bytes and would not notice the two diverging, while the test asserts they
+**converge**.
 
 Each `build()` also takes an optional `template_dir`, threaded to `EmailBuilder`, so the whole
 gallery can be rendered against a *candidate* template set — which is the question a template
@@ -454,6 +460,7 @@ them.
 |---|---|
 | `email_subject`, `preheader_text` | `Banner.background_image_url` |
 | `firm_name`, `campaign_name` | `Banner.logo_url`, `logo_alt`, `logo_width` |
+| (the same two, as the headline's fallbacks) | `Banner.title`, `subtitle`, `resolved_title()`, `resolved_subtitle()` |
 | `date_range`, `issue_label`, `header_disclaimer` | `Banner.resolved_logo_alt()`, `resolved_logo_width()`, `DEFAULT_LOGO_WIDTH` |
 | `firm_name`, `current_year` | `Footer.background_color`, `border`, `border_color`, `image`/`image_alt`/`image_width` |
 | `unsubscribe_url`, `view_in_browser_url` | `Footer.unsubscribe_label`, `view_in_browser_label`, `disclaimer` (optional, free-form HTML) |
@@ -462,6 +469,15 @@ Two boundary calls, each made for a reason rather than by shape:
 
 - **`header_disclaimer` is a fact**, though it is *displayed* in the masthead: it is legal
   copy that belongs to the email, not to the masthead design.
+- **The masthead's headline is presentation, and its fallbacks are facts (#91).** Until then
+  the large type *was* `firm_name` and the second line *was* `campaign_name`, so an email
+  leading with "Q3 Outlook" had to lie about who sent it. `Banner.title` / `subtitle` are
+  free-form copy; unset, they resolve to those two facts. The resolution lands in **keys of
+  its own** — `banner_title`, `banner_subtitle` — which the templates read *instead of* the
+  facts, because resolving in place would be a region shadowing a fact, the one thing the
+  layering exists to prevent. A test greps both templates so the chain cannot be quietly
+  bypassed: reading `{{ firm_name }}` again would render correctly for every email that
+  never sets a title, and make the field unreachable with nothing failing.
 - **The footer's two URLs are facts**, though the header's `logo_url` is presentation. A
   logo is an image the *region* chose; an unsubscribe address is a property of the mailing,
   and `EmailMetadata.validate()` already checks both schemes. What the footer owns is
@@ -729,6 +745,12 @@ reproduces today's output — so an existing email renders unchanged unless it o
   it does not hold it. Defaults still reproduce the pre-split output.
   `Banner.background_image_url` is a CSS background, and a CSS background cannot carry alt
   text — it is decorative by construction.
+- **The masthead's copy is a parameter, with the fact as its default.** `Banner.title` and
+  `Banner.subtitle` follow `logo_alt`'s shape exactly — a presentation field, a resolution
+  chain, the fact arriving as a *parameter* to `resolved_title()` rather than as a field.
+  Both are **plain text and escaped on the way out**: "free form" means arbitrary copy, not
+  markup, and the raw-HTML surface stays where it already is (the disclaimers,
+  `TextBlock.content`).
 - **Footer copy is parameterised** and lives on the `Footer` region:
   `unsubscribe_label`, `view_in_browser_label`, and the optional `disclaimer` (free-form HTML).
   Defaults reproduce what `base.html` used to hardcode, so a newsletter in another language no

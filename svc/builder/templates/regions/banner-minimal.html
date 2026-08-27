@@ -15,6 +15,12 @@
                   </td>
                 </tr>
               </table>
+              {# The two lines below read the *resolved* keys, never ``firm_name`` /
+                 ``campaign_name`` directly: those are facts, they land last in
+                 ``Banner.context()``, and reading them here would make ``Banner.title``
+                 unreachable — silently, since the render would still work. A test greps
+                 for exactly that. This is a Jinja comment on purpose: an HTML one would
+                 move every golden in the gallery for a note nobody but us reads (#91). #}
               <!-- Firm name + campaign name.  No text-shadow: it buys
                    legibility over a photograph, and there is no photograph. -->
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
@@ -23,7 +29,7 @@
                     <p style="margin:0; font-family:Georgia,'Times New Roman',serif; font-size:{{ size.type.title }}px;
                               font-weight:bold; color:{{ theme.text.on_dark }}; line-height:{{ size.type.title_line | percent }}; letter-spacing:0.3px;"
                        class="mobile-title">
-                      {{ firm_name | escape_html }}
+                      {{ banner_title | escape_html }}
                     </p>
                   </td>
                 </tr>
@@ -31,7 +37,7 @@
                   <td style="padding:0 {{ size.frame.pad_x }}px {{ size.space.masthead_campaign_bottom }}px;">
                     <p style="margin:0; font-family:Arial,Helvetica,sans-serif; font-size:{{ size.type.secondary }}px;
                               font-weight:400; color:{{ theme.text.on_dark_secondary }}; line-height:{{ size.type.heading_line | percent }};">
-                      {{ campaign_name | escape_html }}
+                      {{ banner_subtitle | escape_html }}
                     </p>
                   </td>
                 </tr>

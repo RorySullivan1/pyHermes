@@ -214,10 +214,21 @@ class Banner(Region):
     """
     The masthead: how an email presents the facts it holds.
 
-    Owns presentation only — the background image, the logo and the logo's
-    resolution chains. The wording it displays (firm name, campaign name,
-    date range, issue label, disclaimer) belongs to the email and arrives
-    through :meth:`context`.
+    Owns presentation only — the background image, the logo, the headline
+    copy, and the resolution chains behind each. The facts it displays (firm
+    name, campaign name, date range, issue label, disclaimer) belong to the
+    email and arrive through :meth:`context`.
+
+    **The headline is presentation, and that is not a contradiction.** Until
+    #91 the masthead's large type *was* ``firm_name`` and its second line
+    *was* ``campaign_name``, so an email that wanted to lead with *"Q3
+    Outlook"* had to lie about who sent it. The facts-over-presentation
+    layering makes shadowing a fact impossible by design — correctly — so
+    the escape is the one the logo's alt text already uses: a presentation
+    field with a resolution chain, landing in a key of its *own*
+    (``banner_title``, ``banner_subtitle``) that the template reads instead
+    of the fact. The fact still flows down untouched, which is why the
+    footer's copyright line is unaffected by a banner that renames itself.
 
     Attributes:
         background_image_url: Hero background. A CSS background cannot carry
@@ -231,6 +242,13 @@ class Banner(Region):
                     because Outlook's Word engine ignores ``max-width``.
                     Falls back to the ``EmailImage``'s own ``width``, then to
                     :data:`DEFAULT_LOGO_WIDTH`.
+        title:      Free-form headline. Falls back to the email's
+                    ``firm_name``. Plain text, escaped on the way out —
+                    "free form" means arbitrary *copy*, not markup, and the
+                    raw-HTML surface stays where it already is (the
+                    disclaimers, ``TextBlock.content``).
+        subtitle:   Free-form second line. Falls back to ``campaign_name``,
+                    escaped the same way.
 
     Validates at construction, like every model here.
     """
@@ -259,6 +277,8 @@ class Banner(Region):
     logo_url: str | EmailImage = ""
     logo_alt: str = ""
     logo_width: int | None = None
+    title: str = ""
+    subtitle: str = ""
 
     def validate(self) -> None:
         super().validate()
@@ -267,16 +287,28 @@ class Banner(Region):
 
     def context(self, facts: dict[str, Any]) -> dict[str, Any]:
         """
-        The base context, with the logo's resolution chains applied.
+        The base context, with this region's resolution chains applied.
 
-        ``logo_alt`` and ``logo_width`` reach the template resolved rather
-        than raw, and ``facts`` still lands last — the ownership rule holds
-        through the override.
+        Four keys arrive resolved rather than raw, and ``facts`` still lands
+        *last* — the ownership rule holds through the override rather than
+        being carved out of.
+
+        ``logo_alt`` and ``logo_width`` resolve in place, because no fact
+        answers to either name. ``title`` and ``subtitle`` cannot: their
+        chains end at ``firm_name`` and ``campaign_name``, which are facts
+        the email owns and which land after this dict. So they resolve into
+        ``banner_title`` and ``banner_subtitle``, names no fact uses, and the
+        template reads *those*. A test greps the templates to keep it that
+        way — reading ``{{ firm_name }}`` again would work, silently, and
+        make the field unreachable.
         """
         firm_name = str(facts.get("firm_name", ""))
+        campaign_name = str(facts.get("campaign_name", ""))
         resolved = {
             "logo_alt": self.resolved_logo_alt(firm_name),
             "logo_width": self.resolved_logo_width(),
+            "banner_title": self.resolved_title(firm_name),
+            "banner_subtitle": self.resolved_subtitle(campaign_name),
         }
         return {**super().context({}), **resolved, **facts}
 
@@ -324,6 +356,20 @@ class Banner(Region):
         if isinstance(self.logo_url, EmailImage) and self.logo_url.width is not None:
             return self.logo_url.width
         return self.DEFAULT_LOGO_WIDTH
+
+    def resolved_title(self, firm_name: str = "") -> str:
+        """
+        The headline the masthead actually renders: explicit, then the firm.
+
+        ``firm_name`` is a parameter rather than a field for the reason
+        :meth:`resolved_logo_alt` gives — it is a fact about the email, and
+        the banner is handed it rather than holding it.
+        """
+        return self.title or firm_name
+
+    def resolved_subtitle(self, campaign_name: str = "") -> str:
+        """The second line: explicit, then the campaign name. Same shape."""
+        return self.subtitle or campaign_name
 
 
 @dataclass
