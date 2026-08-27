@@ -110,36 +110,48 @@ Every email is **skeleton ← regions ← containers ← components**, and the r
 
 | Layer | What it owns | Where |
 |---|---|---|
-| **Skeleton** | the whole page — head, preheader, wrapper — with four holes: `{{ header_html }}`, `{{ sections_html }}`, `{{ footer_contact_html }}`, `{{ footer_legal_html }}` | `svc/builder/templates/base.html` |
-| **Regions** | the masthead (`Header`, `MinimalHeader`) and the close (`Footer`, `MinimalFooter`). (The *body* region is the ordered section list — not a class) | `svc/builder/regions.py` |
+| **Skeleton** | the whole page — head, preheader, wrapper — with three holes: `{{ header_html }}`, `{{ sections_html }}`, `{{ footer_html }}` | `svc/builder/templates/base.html` |
+| **Regions** | the masthead (`Header`, `MinimalHeader`) and the close (`Footer`). (The *body* region is the ordered section list — not a class) | `svc/builder/regions.py` |
 | **Containers** | layout geometry only: `FullWidth`, `TwoColumn`, `ThreeColumn` | `svc/builder/containers.py` |
-| **Components** | content: `CardGroup`, `DataTable`, `ChartBlock`, `ImageBlock`, `TextBlock`, `NumberedList`, `AuthorBlock` | `svc/builder/components.py` |
+| **Components** | content: `CardGroup`, `DataTable`, `ChartBlock`, `ImageBlock`, `TextBlock`, `NumberedList`, `AuthorBlock`, `ContactBlock` | `svc/builder/components.py` |
 
 A container holds components, renders each, and embeds the fragments into its own `<tr>`
-block sized to the 680px outer table. Each region renders into the slots it fills — the
-header fills one, the footer two — and `Email` drops all of it into the skeleton.
+block sized to the 680px outer table. Each region renders into its slot — both the header
+and the footer fill one slot each — and `Email` drops all of it into the skeleton.
 
 **Facts about the email live on `EmailMetadata`; how a region presents them lives on the
-region.** The firm name, campaign name, dates, disclaimers and outbound URLs are handed
-*down* at render time — a region presents them, it cannot contradict them. Swapping either
-region is one argument, not a template fork:
+region.** The firm name, campaign name, dates and outbound URLs are handed *down* at render
+time — a region presents them, it cannot contradict them. Swapping the header region is one
+argument, not a template fork:
 
 ```python
-from svc.builder import EmailBuilder, MinimalFooter, MinimalHeader
+from svc.builder import EmailBuilder, MinimalHeader
 
 (EmailBuilder()
     .metadata({...})
     .header(MinimalHeader(logo_url=logo))
-    .footer(MinimalFooter())          # legal block only: no contact card, no VML
     .section(...))
 ```
 
-A variant may drop the contact card, but **not** the disclaimer or the unsubscribe link —
-that floor is enforced at construction, not left to convention.
+The footer's copyright, Unsubscribe and View-in-browser line always renders. The
+`Footer.disclaimer` field is optional free-form HTML for legal copy. For a contact
+call-to-action, add a `ContactBlock` body section instead of putting it in the footer:
+
+```python
+from svc.builder import EmailBuilder, FullWidth, ContactBlock
+
+(EmailBuilder()
+    .metadata({...})
+    .section(FullWidth(content=ContactBlock(
+        heading="Get in touch",
+        cta_label="Contact Us",
+        cta_url="mailto:research@example.com",
+    )))
+    .build())
+```
 
 The pre-split spelling still works: `EmailMetadata(logo_url=…, logo_alt=…, logo_width=…,
-header_bg_image_url=…)` builds the header for you, and `EmailMetadata(contact_heading=…,
-contact_cta_label=…, unsubscribe_label=…, …)` builds the footer.
+header_bg_image_url=…)` builds the header for you.
 
 Adding a content type is a new template file plus a `Component` subclass that sets
 `template_path` and implements `context()`.
