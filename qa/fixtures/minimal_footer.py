@@ -1,13 +1,13 @@
 """
-The plain ``Footer`` variant, in the gallery.
+The structured ``Footer`` variant, in the gallery.
 
 The footer's counterpart to :mod:`qa.fixtures.minimal_header`. This email
-uses a ``Footer`` with a disclaimer and custom label — demonstrating that
-the footer region presents the email's legal copy as plain HTML, emitted
-raw and unwrapped.
+uses a ``Footer`` exercising the visual surface — ``background_color``,
+``border=True``, and an attached sign-off image — in addition to a
+disclaimer, demonstrating that:
 
-What the golden on this fixture pins that no other one can:
-
+* a tinted, bordered footer renders without a full kitchen-sink email;
+* an attached ``EmailImage`` in the footer reaches the asset manifest;
 * the disclaimer is rendered inside a ``<div>`` (not a ``<p>``), so caller
   block elements render correctly;
 * the copyright + links line always renders, regardless of the disclaimer;
@@ -27,7 +27,12 @@ from svc.builder import (
     TextBlock,
     TwoColumn,
 )
+from svc.builder.images import EmailImage
 from svc.builder.models import TableRow
+
+from ._png import solid_png
+
+_SIGNOFF_PNG = solid_png(96, 96, (42, 61, 84))
 
 
 def build(template_dir: Path | None = None) -> Email:
@@ -50,11 +55,17 @@ def build(template_dir: Path | None = None) -> Email:
         )
         .footer(
             Footer(
+                background_color="#F2F1EE",
+                border=True,
+                image=EmailImage.attached(
+                    _SIGNOFF_PNG,
+                    alt="Sign-off",
+                    width=96,
+                ),
                 disclaimer=(
                     "<p>Distributed to registered recipients only. "
                     "Past performance is not indicative of future results.</p>"
                 ),
-                unsubscribe_label="Remove me from this list",
             )
         )
         .section(
