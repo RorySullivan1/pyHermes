@@ -21,6 +21,7 @@ from .enums import CardOrientation, ImageAlign
 from .exceptions import ValidationError
 from .images import EmailImage, ImageAsset, coerce_image
 from .models import Card, NumberedItem, TableRow, _validate_url
+from .textgen import format_link, html_to_text, join_blocks, link_line, table, wrap
 
 
 class Component:
@@ -55,6 +56,41 @@ class Component:
         component whose images are all hosted returns an empty list.
         """
         return [image.asset for image in self.images() if image.asset is not None]
+
+    def text(self) -> str:
+        """
+        Return this component's plain-text projection (#109).
+
+        The mirror of :meth:`images`, with the **opposite default**: an
+        absent image list is empty, an absent projection is an *error*. A
+        component with no visual content can exist — a spacer would — but a
+        *content* component invisible to text-mode readers is exactly the
+        accessibility failure epic #53 exists to fix, so a subclass that
+        never implements this fails the first email that projects it rather
+        than vanishing from the text part silently.
+
+        Every projection is built from this component's own data. Nothing
+        here parses the render: the text part is a second projection of the
+        section tree, not a degradation of the first one.
+        """
+        raise NotImplementedError(
+            f"{type(self).__name__} has no text() projection. Every component needs "
+            "one, or it disappears from the plain-text part of every email that "
+            "uses it. See svc/builder/textgen.py for the formatting policy."
+        )
+
+    def _with_subtitle(self, *blocks: str) -> str:
+        """
+        This component's blocks, behind its own subtitle.
+
+        Nine of the ten public components carry a ``subtitle`` — the italic
+        standfirst above their content — and it belongs to the *component*,
+        not to the container: ``FullWidth`` and the splits take a ``title``
+        and nothing else. ``ContactBlock`` is the one that has no subtitle
+        field, so this reads the attribute defensively rather than assuming.
+        """
+        subtitle = getattr(self, "subtitle", None)
+        return join_blocks(wrap(subtitle) if subtitle else "", *blocks)
 
     def render(self, engine: Renderer) -> str:
         """
@@ -123,6 +159,26 @@ class CardGroup(Component):
         self.cards = cards
         self.orientation = orientation
         self.subtitle = subtitle
+
+    def text(self) -> str:
+        """
+        One card per line: ``label: value (sublabel)``, prose beneath.
+
+        ``orientation`` projects to nothing. A horizontal strip and a vertical
+        stack are one card per line either way — the mobile collapse already
+        established that as the canonical linear order, so plain text inherits
+        an ordering the design system had already decided rather than picking
+        a second one.
+        """
+        lines = []
+        for card in self.cards:
+            head = f"{card.label}: {card.value}" if card.value else card.label
+            if card.sublabel:
+                head = f"{head} ({card.sublabel})"
+            lines.append(head)
+            if card.body:
+                lines.append(html_to_text(card.body))
+        return self._with_subtitle(wrap("\n".join(lines)))
 
     def context(self) -> dict[str, Any]:
         return {
@@ -203,6 +259,13 @@ class DataTable(Component):
         self.as_of = as_of
         self.subtitle = subtitle
 
+    def text(self) -> str:
+        """Aligned columns, then the attribution lines."""
+        return self._with_subtitle(
+            table(self.headers, [row.cells for row in self.rows]),
+            wrap("\n".join(filter(None, (self.source, self.as_of)))),
+        )
+
     def context(self) -> dict[str, Any]:
         return {
             "headers": self.headers,
@@ -273,6 +336,15 @@ class ChartBlock(Component):
     def images(self) -> list[EmailImage]:
         return [self.image]
 
+    def text(self) -> str:
+        """
+        The alt text in brackets, then the attribution.
+
+        ``alt`` is required at construction, so this projection is never
+        empty — which is the whole reason that rule exists.
+        """
+        return self._with_subtitle(wrap(f"[{self.image.alt}]"), wrap(self.source))
+
     def context(self) -> dict[str, Any]:
         return {
             "chart_image_url": self.image.src,
@@ -338,6 +410,18 @@ class ImageBlock(Component):
     def images(self) -> list[EmailImage]:
         return [self.image]
 
+    def text(self) -> str:
+        """
+        The alt text in brackets, its caption, and where a linked image goes.
+
+        ``align`` projects to nothing: plain text has one column, so an
+        alignment is presentation with nothing to present.
+        """
+        alt = f"[{self.image.alt}]"
+        if self.link_url:
+            alt = format_link(alt, self.link_url)
+        return self._with_subtitle(wrap(alt), wrap(self.caption))
+
     def context(self) -> dict[str, Any]:
         return {
             "image_src": self.image.src,
@@ -372,6 +456,10 @@ class TextBlock(Component):
             raise ValidationError("TextBlock requires content.")
         self.content = content
         self.subtitle = subtitle
+
+    def text(self) -> str:
+        """The prose, through #108's degrader — ``content`` is raw HTML."""
+        return self._with_subtitle(wrap(html_to_text(self.content)))
 
     def context(self) -> dict[str, Any]:
         return {
@@ -409,6 +497,21 @@ class ContactBlock(Component):
         self.cta_label = cta_label
         self.cta_url = cta_url
 
+    def text(self) -> str:
+        """
+        Heading, blurb, and the call to action as ``label: url``.
+
+        ``description`` does **not** go through the degrader: unlike the five
+        blessed surfaces it is escaped on its way into the template, so it is
+        plain text already and degrading it would decode entities the caller
+        wrote literally.
+        """
+        return self._with_subtitle(
+            wrap(self.heading),
+            wrap(self.description),
+            wrap(link_line(self.cta_label, self.cta_url)),
+        )
+
     def context(self) -> dict[str, Any]:
         return {
             "contact_heading": self.heading,
@@ -436,6 +539,23 @@ class NumberedList(Component):
             item.validate()
         self.items = items
         self.subtitle = subtitle
+
+    def text(self) -> str:
+        """
+        ``1. Title`` and its body, one item per block.
+
+        The ordinals come from the shipped ``NumberedItem.number`` field
+        rather than from an enumeration, because the caller chose them — and
+        this is the surface that carries them as *data*, which is why #108's
+        degrader can project an ``ol`` as plain bullets without losing
+        anything anyone expressed.
+        """
+        return self._with_subtitle(
+            *(
+                join_blocks(wrap(f"{item.number}. {item.title}"), wrap(html_to_text(item.body)))
+                for item in self.items
+            )
+        )
 
     def context(self) -> dict[str, Any]:
         return {
@@ -477,6 +597,11 @@ class AuthorBlock(Component):
         self.job_title = job_title
         self.email = email
         self.subtitle = subtitle
+
+    def text(self) -> str:
+        """The byline: name, then role and address on one line."""
+        byline = " · ".join(filter(None, (self.job_title, self.email)))
+        return self._with_subtitle(wrap("\n".join(filter(None, (self.name, byline)))))
 
     def context(self) -> dict[str, Any]:
         return {

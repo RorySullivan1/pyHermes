@@ -27,6 +27,7 @@ from .exceptions import ValidationError
 from .images import ImageAsset
 from .models import _validate_color
 from .sizing import STANDARD_SIZES, SizeScheme, column_layout
+from .textgen import join_blocks, underline
 
 
 class Container:
@@ -86,6 +87,22 @@ class Container:
     def assets(self) -> list[ImageAsset]:
         """Return the attachment manifest entries from every component here."""
         return [asset for component in self.components() for asset in component.assets()]
+
+    def text(self) -> str:
+        """
+        This section as plain text: its title, then its components (#109).
+
+        Implemented **once, here**, because :meth:`components` already returns
+        the occupied slots in reading order — which is what makes a split
+        collapse to sequential blocks for free: plain text has one column, so
+        a ``TwoColumn``'s left then right simply run top to bottom, and no
+        subclass needs its own projection.
+
+        ``highlight``, ``background_color`` and the column ratio project to
+        nothing. They are presentation, and a plain-text part has no surface
+        for them to sit on.
+        """
+        return join_blocks(underline(self.title or ""), *(c.text() for c in self.components()))
 
     def render(self, engine: Renderer) -> str:
         raise NotImplementedError

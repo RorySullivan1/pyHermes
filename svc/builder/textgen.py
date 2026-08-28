@@ -56,11 +56,42 @@ this in the parser, before any of this module's logic sees the text.
 
 **Output is deterministic**, byte for byte, for identical input. #110's text
 goldens depend on it, and so does the whole golden discipline behind them.
+
+The formatting policy
+---------------------
+
+Decided **once, here** (#109), rather than per component — the alternative is
+a house format that drifts one projection at a time. Every ``text()`` in the
+package composes these helpers instead of spelling their decisions itself:
+
+``LINE_WIDTH = 78``
+    Prose wraps here, one column under RFC 5322's 78-character soft limit for
+    a line of a message. **Tables never wrap** — see :func:`table`.
+
+*One* blank line between blocks, *two* between sections
+    :func:`join_blocks` and :func:`join_sections`. The rhythm is what gives a
+    plain-text email its structure, since it has no other typography.
+
+Links: :func:`format_link` inline, :func:`link_line` on a line of its own
+    Parentheses read better inside a sentence, a colon better in a list of
+    destinations. A link with no URL emits its label alone, because an email
+    is free to carry none.
+
+A section title sits over a rule of its own length
+    :func:`underline` — ``-`` for a section, ``=`` for the masthead, so the
+    email's one top-level heading reads as one. Nothing else is decorated.
+
+Chrome images project to nothing; content images project their alt text
+    A logo, a masthead background and a footer sign-off mark are decoration a
+    text reader loses nothing by missing. An ``ImageBlock`` or a
+    ``ChartBlock`` is the section's *content*, and its ``alt`` is required at
+    construction precisely so this projection is never empty.
 """
 
 from __future__ import annotations
 
 import re
+import textwrap
 from collections.abc import Callable
 from html.parser import HTMLParser
 
@@ -111,6 +142,22 @@ def format_link(label: str, url: str) -> str:
     if not label or label == url:
         return url
     return f"{label} ({url})"
+
+
+def link_line(label: str, url: str) -> str:
+    """
+    Spell one link that stands on a line of its own.
+
+    The list form, where :func:`format_link` is the inline one — a footer's
+    link row and a call-to-action are lists of destinations, and a colon reads
+    better there than the parentheses that suit a link inside a sentence.
+    Both spellings live here so the house format stays in one module.
+
+    A label with no URL emits the label alone. pyHermes does not require an
+    unsubscribe destination or any other link (#100), so an email that
+    supplies none must not project a dangling ``Unsubscribe:``.
+    """
+    return f"{label}: {url}" if url else label
 
 
 class _Degrader(HTMLParser):
@@ -250,4 +297,105 @@ def html_to_text(html: str, link_format: Callable[[str, str], str] = format_link
     return degrader.text()
 
 
-__all__ = ["format_link", "html_to_text"]
+#: Where prose wraps: one column under RFC 5322's 78-character soft limit.
+LINE_WIDTH = 78
+
+
+def wrap(text: str) -> str:
+    """
+    Wrap prose to :data:`LINE_WIDTH`, line by line.
+
+    Each line is wrapped on its own rather than the whole block being reflowed,
+    because the breaks already in it are meaningful — a ``br`` the caller
+    wrote, or one list item per line — and reflowing would run them together.
+
+    A ``- `` item keeps a hanging indent, so a wrapped bullet stays visibly
+    one item instead of looking like the start of the next.
+    """
+    out: list[str] = []
+    for line in text.split("\n"):
+        if not line:
+            out.append("")
+        elif line.startswith("- "):
+            out.extend(textwrap.wrap(line, LINE_WIDTH, subsequent_indent="  ") or [line])
+        else:
+            out.extend(textwrap.wrap(line, LINE_WIDTH) or [line])
+    return "\n".join(out)
+
+
+def underline(title: str, rule: str = "-") -> str:
+    """
+    A heading over a rule of its own length.
+
+    ``-`` for a section and ``=`` for the masthead, so the email's single
+    top-level heading reads as one. A plain-text email has no other
+    typography, so this and the blank-line rhythm carry all of its structure.
+    """
+    return f"{title}\n{rule * len(title)}" if title else ""
+
+
+def join_blocks(*blocks: str) -> str:
+    """Join blocks with one blank line, dropping the empty ones."""
+    return "\n\n".join(block for block in blocks if block)
+
+
+def join_sections(*sections: str) -> str:
+    """Join sections with two blank lines, dropping the empty ones."""
+    return "\n\n\n".join(section for section in sections if section)
+
+
+def table(headers: list[str], rows: list[list[str]]) -> str:
+    """
+    Aligned monospace columns: the epic's named fiddly spot.
+
+    Three decisions, and the third is the one worth stating:
+
+    * **Width comes from the widest cell in each column**, header included.
+    * **The first column is left-aligned and the rest are right-aligned.**
+      That is not a guess about the data — it is the convention the HTML
+      template already encodes, where ``loop.first`` picks the label face for
+      column one and the numeric face for the others. Reading the alignment
+      off the same rule is what keeps the two projections agreeing.
+    * **Nothing wraps inside a cell.** A table wider than
+      :data:`LINE_WIDTH` overflows the line-width policy rather than
+      corrupting its own alignment — a wrapped cell destroys the column that
+      is the entire reason to render a table as text at all. The policy
+      yields to the alignment here, deliberately, and this is where it says so.
+
+    Args:
+        headers: One label per column.
+        rows:    Cells per row, each row the same length as ``headers``.
+
+    Returns:
+        The header row, a rule, and one line per row. Empty if there are no
+        headers.
+    """
+    if not headers:
+        return ""
+    widths = [
+        max(len(headers[i]), *(len(row[i]) for row in rows)) if rows else len(headers[i])
+        for i in range(len(headers))
+    ]
+
+    def line(cells: list[str]) -> str:
+        first, *rest = (
+            cell.ljust(widths[i]) if i == 0 else cell.rjust(widths[i])
+            for i, cell in enumerate(cells)
+        )
+        return "  ".join([first, *rest]).rstrip()
+
+    rule = "  ".join("-" * width for width in widths)
+    return "\n".join([line(headers), rule, *(line(row) for row in rows)])
+
+
+__all__ = [
+    "LINE_WIDTH",
+    "format_link",
+    "html_to_text",
+    "join_blocks",
+    "join_sections",
+    "link_line",
+    "table",
+    "underline",
+    "wrap",
+]

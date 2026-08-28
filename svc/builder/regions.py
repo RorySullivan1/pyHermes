@@ -57,6 +57,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 from .exceptions import ValidationError
 from .models import FooterLink, LinkRow, _validate_color, _validate_url
+from .textgen import html_to_text, join_blocks, link_line, underline, wrap
 
 if TYPE_CHECKING:  # pragma: no cover - import cycle: images imports _validate_url
     from .engine import Renderer
@@ -223,6 +224,32 @@ class Region:
         colour pair, and #98's footer box for the same two tokens.
         """
         return {}
+
+    def text(self, facts: dict[str, Any]) -> str:
+        """
+        This region's plain-text projection (#109).
+
+        **A variant that fills no slot projects nothing**, checked here rather
+        than overridden per variant — it is the same rule
+        :meth:`render_slots` applies, read once for the whole region:
+        :class:`EmptyHeader` omits the strip from the HTML by declaring no
+        templates, and the text part has to agree without anybody remembering
+        to make it.
+
+        What a region projects is its **resolved** state — the same accessors
+        the HTML templates read, never the raw fields — so the two parts
+        cannot come to disagree about what the email says.
+        """
+        if not self.TEMPLATE_PATHS:
+            return ""
+        return self._text(facts)
+
+    def _text(self, facts: dict[str, Any]) -> str:
+        """The projection itself, once :meth:`text` has established there is one."""
+        raise NotImplementedError(
+            f"{type(self).__name__} has no _text() projection. Every region needs "
+            "one, or its content disappears from the plain-text part."
+        )
 
     def render_slots(self, engine: Renderer, facts: dict[str, Any]) -> dict[str, str]:
         """
@@ -415,6 +442,37 @@ class Banner(Region):
 
         return {"banner_palette": (self.palette or BannerPalette()).resolved(theme)}
 
+    def _text(self, facts: dict[str, Any]) -> str:
+        """
+        The masthead as plain text: the resolved headline, then the metadata.
+
+        Read off the **resolution chains**, not the fields — an email whose
+        banner renames itself says the new name in both parts, and one that
+        does not falls back to ``firm_name`` in both. Reading ``title``
+        directly would work for every email that sets it and quietly print
+        nothing for every email that does not.
+
+        The logo and the background image project to nothing: both are
+        chrome, and the logo's alt text resolves to ``firm_name``, which the
+        headline already carries.
+        """
+        title = self.resolved_title(str(facts.get("firm_name", "")))
+        meta = [str(facts.get(name, "")) for name in ("department", "date_range", "issue_label")]
+        return join_blocks(
+            underline(title, "="),
+            wrap(
+                "\n".join(
+                    filter(
+                        None,
+                        [
+                            self.resolved_subtitle(str(facts.get("campaign_name", ""))),
+                            " · ".join(filter(None, meta)),
+                        ],
+                    )
+                )
+            ),
+        )
+
     def render(self, engine: Renderer, facts: dict[str, Any]) -> str:
         """
         Every slot this region fills, in skeleton order, as one string.
@@ -553,6 +611,16 @@ class Header(BoxSurface, Region):
         super().validate()
         self.validate_box_surface(self.CONTEXT_NAME)
 
+    def _text(self, facts: dict[str, Any]) -> str:
+        """
+        The strip's copy, through #108's degrader.
+
+        ``header_disclaimer`` is a fact the email owns and one of the five
+        raw-HTML surfaces, so it arrives as markup and leaves as text. The
+        box's colours and alignment project to nothing.
+        """
+        return html_to_text(str(facts.get("header_disclaimer", "")))
+
     def theme_context(self, theme: Theme) -> dict[str, Any]:
         """
         The two colours the band actually draws, resolved.
@@ -674,6 +742,30 @@ class Footer(BoxSurface, Region):
             "footer_links": self.resolved_links(facts),
         }
         return {**super().context({}), **resolved, **facts}
+
+    def _text(self, facts: dict[str, Any]) -> str:
+        """
+        The closing block: disclaimer, copyright, then the links.
+
+        The copyright line is **degraded back to text** from
+        :meth:`resolved_copyright_html`, which is the shortest way to say why
+        the entity/character question inverts between the two parts: that
+        method emits ``&copy;`` on purpose, because a bare U+00A9 mis-decoded
+        as latin-1 is mojibake in an HTML client that guesses the charset
+        wrong. Here the MIME part declares its charset, so the character is
+        correct and the entity would be the bug — and running it back through
+        the degrader means one source of truth produces both spellings rather
+        than two branches drifting apart.
+
+        The sign-off image projects to nothing: chrome, like the masthead's
+        logo.
+        """
+        links = [link_line(link.label, link.url) for link in self.resolved_links(facts)]
+        return join_blocks(
+            wrap(html_to_text(self.disclaimer)),
+            wrap(html_to_text(self.resolved_copyright_html(facts))),
+            wrap("\n".join(links)),
+        )
 
     def resolved_copyright_html(self, facts: dict[str, Any]) -> str:
         """

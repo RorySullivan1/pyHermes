@@ -32,6 +32,7 @@ from .images import EmailImage, ImageAsset, dedupe_assets
 from .models import EmailMetadata
 from .regions import Banner, Footer, Header
 from .sizing import resolve_size_scheme
+from .textgen import join_sections
 from .theming import resolve_theme
 from .typography import resolve_font_theme
 
@@ -285,6 +286,38 @@ class Email:
 
         return html
 
+    def text(self) -> str:
+        """
+        Render the email's ``text/plain`` projection (#109).
+
+        Header → banner → sections → footer, the skeleton's own order, joined
+        by the section rhythm :mod:`svc.builder.textgen` defines.
+
+        **A second projection of the same tree, not a degradation of the
+        first.** No template is loaded and no HTML is produced anywhere on
+        this path — a test asserts it by making ``TemplateEngine.render``
+        raise — because stripping the rendered markup is exactly what would
+        turn a KPI strip and a data table into garbage, which is the failure
+        epic #53 exists to prevent.
+
+        Nothing here resolves a theme, a size scheme or a font: all three are
+        HTML concerns by construction, so the text part is identical across
+        every one of them. That orthogonality is not a coincidence to be
+        grateful for — it is what makes "one house format" possible at all.
+
+        Deterministic: no clock, no randomness, and **no ``text_override``**,
+        so derived text cannot drift from the HTML's content.
+
+        Returns:
+            The plain-text part, with no trailing newline.
+        """
+        return join_sections(
+            self._header.text(self._metadata.header_facts()),
+            self._banner.text(self._metadata.banner_facts()),
+            *(section.text() for section in self._sections),
+            self._footer.text(self._metadata.footer_facts()),
+        )
+
     def save(self, output_path: str | Path) -> Path:
         """
         Render and write to disk.
@@ -425,6 +458,10 @@ class EmailBuilder:
     def assets(self) -> list[ImageAsset]:
         """Shortcut: the built email's attachment manifest."""
         return self.build().assets()
+
+    def text(self) -> str:
+        """Terminal: build and return the plain-text projection."""
+        return self.build().text()
 
     def render(self) -> str:
         """Shortcut: build and render in one step."""
