@@ -643,7 +643,20 @@ These are not conventions to remember — each has teeth, and the teeth are name
    `letter-spacing` and `text-shadow` offsets are shape rather than density and stay literal.
    Watch the `@media` block for rule 4's reason exactly: overrides carrying their own
    literals leave an email desktop-themed and mobile-standard.
-6. **A region that carries images must declare them.** Same rule components already have,
+6. **A new template takes its faces from the `font` namespace.** The third of the same
+   rule, for the third axis: a hardcoded `font-family` is a face outside the vocabulary,
+   which is the drift epic #56 exists to end. One test fails on any `font-family`
+   declaration that is not a `{{ font.* }}` read, and there is **no exception list** — the
+   audit found none that needed one, unlike sizes' four structural px. A second test renders
+   the gallery's widest email under a sentinel `FontTheme` and asserts every role appears
+   *and* that no shipped family survives, which is what catches a token bypassed rather than
+   merely absent. **The watch-site is the `[if mso]` block**, not the `@media` one: `body,
+   td, th { font-family: … }` is Outlook's floor for everything, so a literal there renders
+   a themed email custom-faced in Gmail and Georgia in Outlook — the half-themed failure in
+   the client hardest to check. The dark-mode and `@media` blocks carry no faces today, and
+   a test asserts that too, so a future edit adding one has to tokenise it like everything
+   else.
+7. **A region that carries images must declare them.** Same rule components already have,
    and the same failure if you skip it: the bytes never reach `Email.assets()` and the
    `cid:` reference renders as a broken image. Declaring means listing the field in
    `IMAGE_FIELDS` — `Region.images()` walks it — or overriding `images()` if the bytes come

@@ -59,36 +59,33 @@ class TestTheDefaultIsPinnedToTodaysValues:
         }
 
     @pytest.mark.parametrize("stack", sorted(TODAYS_STACKS.values()))
-    def test_each_audited_stack_is_actually_drawn_today(self, stack):
+    def test_each_audited_stack_is_actually_rendered_today(self, stack):
         """
         The other direction, and the one that catches a stale audit: every
-        stack this module claims to reproduce must appear verbatim in a
-        template right now. Read off the templates, never hand-confirmed.
+        stack this module claims to reproduce must still reach the page.
 
-        Matched as the stack string rather than after a ``font-family:``
-        prefix, because the mono stack is only ever reached through the data
-        table's per-column ``{% if loop.first %}`` branch.
+        Read off the **render** rather than the templates — since #106 the
+        templates hold tokens, so a literal search there would now pass
+        vacuously. The gallery's widest email exercises all four roles.
         """
-        carriers = [p.name for p in _all_templates() if stack in p.read_text()]
-        assert carriers, f"no template renders {stack!r} — the audit has gone stale"
+        from qa.fixtures import kitchen_sink
 
-    def test_no_template_carries_a_stack_the_vocabulary_lacks(self):
+        assert stack in kitchen_sink.build().render(), (
+            f"nothing renders {stack!r} — the audit has gone stale"
+        )
+
+    def test_the_render_carries_no_stack_the_vocabulary_lacks(self):
         """
-        Completeness of the audit itself: strip whitespace and every
-        ``font-family`` value in the templates must be one of the three. A
-        fourth stack appearing later fails here rather than being silently
-        left behind by #106's migration.
+        Completeness of the audit itself: every ``font-family`` value in a
+        rendered email must be one of the three. A fourth stack appearing
+        later fails here rather than drifting in unnoticed.
         """
+        from qa.fixtures import all_fixtures
+
         seen: set[str] = set()
-        for path in _all_templates():
-            for raw in re.findall(r"font-family:\s*([^;\"]+)", path.read_text()):
-                if "{%" in raw or "{{" in raw:  # the data table's per-column branch
-                    branch = r"([A-Za-z'][^{}%]*?(?:serif|sans-serif|monospace))"
-                    seen.update(re.findall(branch, raw))
-                else:
-                    seen.add(raw)
-        canonical = {re.sub(r",\s*", ", ", s.strip()) for s in seen}
-        assert canonical == set(TODAYS_STACKS.values())
+        for build in all_fixtures().values():
+            seen.update(re.findall(r"font-family:\s*([^;\"]+)", build().render()))
+        assert {value.strip() for value in seen} == set(TODAYS_STACKS.values())
 
 
 class TestTheStackIsTheAtom:
@@ -232,40 +229,115 @@ class TestThePresetRegistry:
             resolve_font_theme("helvetica")
 
 
-class TestTheNamespaceIsBoundButUndrawn:
+#: A theme whose every role is a distinct, findable family.
+#:
+#: The sizing epic's technique: rendering under a scheme where every token is
+#: a sentinel answers "is this token actually *drawn*?", which neither the
+#: goldens nor a default-valued render can.
+SENTINEL_FONTS = FontTheme(
+    heading=FontStack("SentinelHeading", "serif"),
+    body=FontStack("SentinelBody", "serif"),
+    label=FontStack("SentinelLabel", "sans-serif"),
+    numeric=FontStack("SentinelNumeric", "monospace"),
+)
+
+
+class TestEveryRoleIsActuallyDrawn:
     """
-    #105's proof, and the inversion of the sizing epic's sentinel test.
+    #106's proof, and the third state of one test.
 
-    The tokens are now resolved once and bound on the same ``BoundEngine`` as
-    the theme and the size scheme — but no template reads them yet, so this
-    step's byte-identity is a *property* rather than a claim. #106 flips the
-    sentinel below to "every role appears".
+    It began in #104 as "nothing imports the module", became #105's "bound but
+    undrawn", and is now its final form: every role reaches the page and no
+    shipped family survives a sentinel render. A role nobody draws is a field
+    a caller can set to no effect — the failure the sizing epic named.
     """
 
-    def test_no_template_reads_the_namespace_yet(self):
-        for path in _all_templates():
-            assert "{{ font." not in path.read_text(), f"{path.name} reads the namespace early"
+    @staticmethod
+    def _sentinel_html() -> str:
+        from qa.fixtures import kitchen_sink
 
-    def test_a_sentinel_theme_changes_nothing(self):
+        email = kitchen_sink.build()
+        email.metadata.font_theme = SENTINEL_FONTS
+        return email.render()
+
+    @pytest.mark.parametrize("role", ["heading", "body", "label", "numeric"])
+    def test_the_role_reaches_the_page(self, role):
+        stack = getattr(SENTINEL_FONTS, role)
+        assert stack.css in self._sentinel_html(), f"font.{role} is bound but never drawn"
+
+    def test_no_shipped_family_survives_a_sentinel_render(self):
         """
-        Bound, and provably undrawn: a theme whose every stack is a findable
-        family must leave the render untouched, because nothing reads it.
-        The same email under the default and under the sentinel is byte-equal,
-        and no sentinel family appears anywhere.
+        The other direction, and the one that catches a bypassed token: a
+        literal left behind would keep rendering Georgia or Arial under a
+        theme that names neither.
+        """
+        html = self._sentinel_html()
+        for family in ("Georgia", "Times New Roman", "Arial", "Helvetica", "Courier"):
+            assert family not in html, f"{family!r} survived — a literal was left behind"
+
+    def test_the_default_render_is_unchanged_by_the_migration(self):
+        """
+        The goldens are the real gate; this says the same thing at one email,
+        so a failure points at the plumbing rather than at a template.
         """
         from qa.fixtures import kitchen_sink
 
-        sentinel = FontTheme(
-            heading=FontStack("SentinelHeading", "serif"),
-            body=FontStack("SentinelBody", "serif"),
-            label=FontStack("SentinelLabel", "sans-serif"),
-            numeric=FontStack("SentinelNumeric", "monospace"),
+        assert "Sentinel" not in kitchen_sink.build().render()
+
+
+class TestNoLiteralSurvives:
+    """
+    Standing rule, in the shape rules 4 and 5 already have for colours and
+    sizes: a face outside the vocabulary is a face the theme cannot move.
+    """
+
+    def test_no_template_declares_a_literal_family(self):
+        offenders = []
+        for path in _all_templates():
+            for raw in re.findall(r"font-family:[^;\"]*", path.read_text()):
+                if "{{ font." not in raw:
+                    offenders.append(f"{path.name}: {raw.strip()}")
+        assert not offenders, (
+            "every font-family must read the font namespace; found literals in "
+            + ", ".join(offenders)
         )
-        default_html = kitchen_sink.build().render()
-        email = kitchen_sink.build()
-        email.metadata.font_theme = sentinel
-        assert email.render() == default_html
-        assert "Sentinel" not in default_html
+
+    def test_no_python_default_carries_a_family(self):
+        """
+        The other half of rules 4/5: a literal hiding in a Python default is
+        just as unthemeable as one in markup.
+        """
+        for path in sorted(Path("svc").rglob("*.py")):
+            if path.name == "typography.py":  # the vocabulary is where they live
+                continue
+            source = path.read_text()
+            for family in ("Georgia", "Helvetica", "Courier New"):
+                assert family not in source, f"{path} carries a font literal"
+
+    def test_the_outlook_fallback_block_reads_the_body_token(self):
+        """
+        The one divergent copy this axis has, and the reason it is named: the
+        ``[if mso]`` ``body, td, th`` rule is Outlook's floor for *everything*.
+        Left literal, a themed email would render custom-faced in Gmail and
+        Georgia in Outlook — the half-themed failure rules 4 and 5 exist to
+        prevent, in the client hardest to check.
+        """
+        base = (TEMPLATE_DIR / "base.html").read_text()
+        mso = base[base.index("<!--[if mso]>") : base.index("<![endif]-->")]
+        assert "body, td, th { font-family: {{ font.body }}; }" in mso
+
+    def test_the_dark_mode_and_media_blocks_carry_no_faces(self):
+        """
+        Checked rather than assumed, because rules 4 and 5 both name these two
+        blocks as the drift sites. For fonts they are empty today — and a
+        future edit adding a face to either must read a token like everything
+        else, which the literal test above already enforces.
+        """
+        base = (TEMPLATE_DIR / "base.html").read_text()
+        media = base[base.index("@media only screen") : base.index("Force light rendering")]
+        dark = base[base.index("Force light rendering") : base.index("</style>")]
+        assert "font-family" not in media
+        assert "font-family" not in dark
 
     def test_the_engine_guarantees_a_font_theme_on_its_own(self):
         """

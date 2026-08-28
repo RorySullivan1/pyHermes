@@ -3,11 +3,11 @@
        style="border:1px solid {{ theme.palette.rule }}; border-radius:4px;">
   <tr>
     <td style="padding:{{ size.component.contact_pad_y }}px {{ size.component.contact_pad_x }}px;">
-      <p style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:{{ size.type.subheading }}px;
+      <p style="margin:0; font-family: {{ font.heading }}; font-size:{{ size.type.subheading }}px;
                 font-weight:bold; color:{{ theme.text.heading }}; letter-spacing:0.2px;">
         {{ contact_heading | escape_html }}
       </p>
-      <p style="margin:{{ size.component.contact_heading_gap }}px 0 {{ size.component.contact_cta_gap }}px; font-family: Arial, Helvetica, sans-serif; font-size:{{ size.type.secondary }}px;
+      <p style="margin:{{ size.component.contact_heading_gap }}px 0 {{ size.component.contact_cta_gap }}px; font-family: {{ font.label }}; font-size:{{ size.type.secondary }}px;
                 color:{{ theme.text.secondary }}; line-height:{{ size.component.contact_line | percent }};">
         {{ contact_description | escape_html }}
       </p>
@@ -16,7 +16,7 @@
         style="height:{{ size.component.cta_height }}px;v-text-anchor:middle;width:{{ size.component.cta_width }}px;" arcsize="8%"
         strokecolor="{{ theme.palette.accent }}" fillcolor="{{ theme.palette.accent }}">
         <w:anchorlock/>
-        <center style="color:{{ theme.text.on_dark }};font-family: Arial, Helvetica, sans-serif;
+        <center style="color:{{ theme.text.on_dark }};font-family: {{ font.label }};
                        font-size:{{ size.type.secondary }}px;font-weight:bold;">
           {{ contact_cta_label | escape_html }}
         </center>
@@ -25,7 +25,7 @@
       <!--[if !mso]><!-->
       <a href="{{ contact_url | escape_html }}"
          style="background-color:{{ theme.palette.accent }}; border-radius:3px; color:{{ theme.text.on_dark }};
-                display:inline-block; font-family: Arial, Helvetica, sans-serif;
+                display:inline-block; font-family: {{ font.label }};
                 font-size:{{ size.type.secondary }}px; font-weight:bold; line-height:{{ size.component.cta_height }}px;
                 text-align:center; text-decoration:none; width:{{ size.component.cta_width }}px;
                 -webkit-text-size-adjust:none;">
