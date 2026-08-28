@@ -19,6 +19,12 @@ Thumbs.db
 output/*
 !output/.gitkeep
 
+# Coverage data. `pytest-cov` is not a declared dev dependency — coverage is an
+# occasional diagnostic here, not a gate — but running it leaves this behind.
+.coverage
+.coverage.*
+htmlcov/
+
 # Ephemeral git worktrees created by Claude Code's isolated subagents. These
 # are live checkouts of this same repo, auto-removed when an agent finishes —
 # committing them would nest the repo inside itself.
