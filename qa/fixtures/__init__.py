@@ -20,6 +20,7 @@ from collections.abc import Callable
 from svc.builder import Email
 
 from . import (
+    aligned_layout,
     compact_size,
     custom_banner,
     custom_footer,
@@ -79,6 +80,7 @@ def all_fixtures() -> dict[str, FixtureBuilder]:
         "spacious_size": spacious_size.build,
         "modern_fonts": modern_fonts.build,
         "rich_table": rich_table.build,
+        "aligned_layout": aligned_layout.build,
     }
 
 

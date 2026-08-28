@@ -1,0 +1,80 @@
+For illustrative purposes. Not investment advice.
+
+
+Hermes Research
+===============
+
+aligned-layout
+Rates Strategy · Week ending 24 August · Issue 009
+
+
+Stated Nothing
+--------------
+
+This section sets no alignment, so it renders exactly as every email did
+before the epic — which is the claim three of its four commits make about the
+goldens.
+
+
+Centred, Heading And All
+------------------------
+
+The standfirst belongs to the block, not to the section
+
+The heading above and this paragraph take one declaration on two sibling
+cells. A centred section whose heading stayed left is the half-applied result
+that reads as a bug.
+
+
+Centred, With One Block Opting Out
+----------------------------------
+
+This block sets its own alignment and wins by ordinary CSS cascade — its
+declaration sits on a descendant of the cell carrying the section's, and
+inheritance is the weakest source. No Python resolves it, and no signature
+grew a parameter.
+
+
+Right-Aligned, Holding Structure
+--------------------------------
+
+S&P 500: 5,234 (+1.42%)
+UST 10Y: 4.28% (+6 bps)
+VIX: 14.32 (-2.18 pts)
+
+
+Right-Aligned, Holding A Table
+------------------------------
+
+Factor performance, gross of costs
+
+Factor       1M     YTD
+--------  -----  ------
+Value     +1.8%   +7.4%
+Momentum  -0.4%  +11.2%
+
+
+Centred Split
+-------------
+
+The left half of a centred split. Long enough to fill its column, because a
+column cell shrink-wraps to its copy (#129).
+
+The right half of the same split, written to the same width for the same
+reason. Both cells carry the declaration.
+
+
+Three Columns, One Disagreeing
+------------------------------
+
+Centred by the section, like its neighbour to the right.
+
+This middle column states left and keeps it, inside a centred split.
+
+Centred by the section, like its neighbour to the left.
+
+
+© 2026 Hermes Research
+
+Unsubscribe: https://example.com/unsubscribe
+View in browser: https://example.com/archive/009

@@ -200,6 +200,24 @@ the tag registry: whether `fr-CA` is registered is not this library's business. 
 layout is *not* included; the attribute alone would claim a support the table geometry does
 not honour.
 
+## Alignment
+
+Where a section's copy sits. Set it on the container; a block inside can disagree.
+
+```python
+FullWidth(title="Q3 Outlook", align="center", content=TextBlock("..."))
+FullWidth(align="center", content=TextBlock("...", align="left"))   # the block opts out
+```
+
+`left`, `center` or `right` — on `FullWidth`, `TwoColumn`, `ThreeColumn`, and on the five
+components that carry prose (`TextBlock`, `NumberedList`, `AuthorBlock`, `ContactBlock`,
+`ChartBlock`). A container's alignment covers its heading as well as its content.
+
+Unset means inherit, so an email that says nothing renders exactly as before. `CardGroup`
+and `DataTable` keep their own alignment inside an aligned section — a KPI cell is centred
+because it is a KPI cell, and a table column resolves from its kind. Use `Column`/`Cell` to
+align a table.
+
 ## Header
 
 The strip at the very top of the email: one band of free-form copy, above the masthead. Its
