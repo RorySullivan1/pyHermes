@@ -96,9 +96,11 @@ def _metadata() -> dict[str, Any]:
         "issue_label": "Issue 001",
         "header_disclaimer": "For illustrative purposes. Not investment advice.",
         # Named rather than omitted, so this golden pins that the string
-        # path resolves to the same bytes as the default object.
+        # path resolves to the same bytes as the default object — true of all
+        # three design-system axes.
         "theme": "classic",
         "size_theme": "standard",
+        "font_theme": "classic",
         "current_year": _YEAR,
         "unsubscribe_url": "https://example.com/unsubscribe",
         "view_in_browser_url": "https://example.com/archive/001",

@@ -17,6 +17,7 @@ from .exceptions import TemplateError
 from .filters import register_all
 from .sizing import STANDARD_SIZES
 from .theming import DEFAULT_THEME, Theme
+from .typography import DEFAULT_FONTS
 
 
 @runtime_checkable
@@ -157,6 +158,12 @@ class TemplateEngine:
             template_name: Template path relative to template_dir.
             context: Dictionary of variables passed to the template.
 
+        The three design-system namespaces are layered **under** ``context``:
+        the engine guarantees a theme, a size scheme and a set of typefaces,
+        and the email chooses which by binding its own over them
+        (:meth:`bound`). That floor is what keeps rendering a component on its
+        own a one-liner.
+
         Returns:
             Rendered HTML string.
 
@@ -172,7 +179,9 @@ class TemplateEngine:
             # The *choice* of either belongs to Email.render(), which binds
             # resolved ones — and because the caller's context is layered on
             # top here, that binding always wins over this floor.
-            return tpl.render(**{"theme": DEFAULT_THEME, "size": STANDARD_SIZES, **context})
+            return tpl.render(
+                **{"theme": DEFAULT_THEME, "size": STANDARD_SIZES, "font": DEFAULT_FONTS, **context}
+            )
         except jinja2.TemplateError as exc:
             raise TemplateError(f"Error rendering {template_name}: {exc}") from exc
 
@@ -192,7 +201,9 @@ class TemplateEngine:
         try:
             tpl = self._env.from_string(source)
             # Same theme and size floor as render(); see the note there.
-            return tpl.render(**{"theme": DEFAULT_THEME, "size": STANDARD_SIZES, **context})
+            return tpl.render(
+                **{"theme": DEFAULT_THEME, "size": STANDARD_SIZES, "font": DEFAULT_FONTS, **context}
+            )
         except jinja2.TemplateError as exc:
             raise TemplateError(f"Error rendering string template: {exc}") from exc
 

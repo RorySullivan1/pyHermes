@@ -47,8 +47,10 @@ class TestTheDefaultIsPinnedToTodaysValues:
     """
 
     def test_every_role_emits_an_audited_stack(self):
-        emitted = {spec.name: getattr(DEFAULT_FONTS, spec.name).css
-                   for spec in dataclasses.fields(DEFAULT_FONTS)}
+        emitted = {
+            spec.name: getattr(DEFAULT_FONTS, spec.name).css
+            for spec in dataclasses.fields(DEFAULT_FONTS)
+        }
         assert emitted == {
             "heading": TODAYS_STACKS["serif"],
             "body": TODAYS_STACKS["serif"],
@@ -230,22 +232,92 @@ class TestThePresetRegistry:
             resolve_font_theme("helvetica")
 
 
-class TestThisStepChangesNothingYet:
+class TestTheNamespaceIsBoundButUndrawn:
     """
-    #104 is vocabulary only. The gallery goldens are the real gate; these say
-    the same thing at the level of the module, so a failure points here rather
-    than at a template.
+    #105's proof, and the inversion of the sizing epic's sentinel test.
+
+    The tokens are now resolved once and bound on the same ``BoundEngine`` as
+    the theme and the size scheme — but no template reads them yet, so this
+    step's byte-identity is a *property* rather than a claim. #106 flips the
+    sentinel below to "every role appears".
     """
 
-    def test_no_template_reads_a_font_namespace_yet(self):
+    def test_no_template_reads_the_namespace_yet(self):
         for path in _all_templates():
             assert "{{ font." not in path.read_text(), f"{path.name} reads the namespace early"
 
-    def test_nothing_in_the_render_path_imports_typography_yet(self):
+    def test_a_sentinel_theme_changes_nothing(self):
         """
-        The binding is #105's. Until then the module is inert, which is what
-        makes this step's byte-identity a property rather than a claim.
+        Bound, and provably undrawn: a theme whose every stack is a findable
+        family must leave the render untouched, because nothing reads it.
+        The same email under the default and under the sentinel is byte-equal,
+        and no sentinel family appears anywhere.
         """
-        for module in ("email", "engine", "models", "regions"):
-            source = (Path("svc/builder") / f"{module}.py").read_text()
-            assert "typography" not in source, f"svc/builder/{module}.py binds fonts early"
+        from qa.fixtures import kitchen_sink
+
+        sentinel = FontTheme(
+            heading=FontStack("SentinelHeading", "serif"),
+            body=FontStack("SentinelBody", "serif"),
+            label=FontStack("SentinelLabel", "sans-serif"),
+            numeric=FontStack("SentinelNumeric", "monospace"),
+        )
+        default_html = kitchen_sink.build().render()
+        email = kitchen_sink.build()
+        email.metadata.font_theme = sentinel
+        assert email.render() == default_html
+        assert "Sentinel" not in default_html
+
+    def test_the_engine_guarantees_a_font_theme_on_its_own(self):
+        """
+        The floor its two siblings already have: rendering a component
+        without an ``Email`` still resolves the namespace, so a template that
+        reads it in #106 cannot trip ``StrictUndefined``.
+        """
+        rendered = TemplateEngine().render_string("{{ font.body }}|{{ font.numeric }}", {})
+        assert rendered == f"{DEFAULT_FONTS.body}|{DEFAULT_FONTS.numeric}"
+
+    def test_a_bound_theme_is_carried_on_the_shared_mapping(self):
+        """
+        The floor is the engine's; the choice is the email's. At this step the
+        binding can only be observed on the binder, because no template draws
+        it — #106 is where "the email's binding wins" becomes visible in a
+        render, and the sentinel above becomes the assertion that it does.
+        """
+        chosen = DEFAULT_FONTS.derive(body=("Verdana", "sans-serif"))
+        assert TemplateEngine().bound(font=chosen).shared["font"] is chosen
+
+    def test_email_render_resolves_the_field_to_an_object(self):
+        """
+        A name on the metadata must reach the binder as a resolved
+        ``FontTheme``, never as the string — the resolve-once rule its two
+        siblings follow.
+        """
+        from qa.fixtures import kitchen_sink
+
+        recorded: dict[str, object] = {}
+        email = kitchen_sink.build()
+        original = type(email._engine).bound
+
+        def spy(self, **shared):
+            recorded.update(shared)
+            return original(self, **shared)
+
+        type(email._engine).bound = spy  # type: ignore[method-assign]
+        try:
+            email.render()
+        finally:
+            type(email._engine).bound = original  # type: ignore[method-assign]
+
+        assert isinstance(recorded["font"], FontTheme)
+        assert recorded["font"] is DEFAULT_FONTS, "the 'classic' name must resolve to the object"
+
+    def test_it_rides_the_existing_binder_rather_than_a_second_one(self):
+        """
+        The technique both prior epics carried: one binder, three shared
+        values, and no signature in the section tree changed to carry them.
+        """
+        source = (Path("svc/builder") / "email.py").read_text()
+        bind = source[source.index("self._engine.bound(") : source.index("sections_html =")]
+        assert bind.count("bound(") == 1
+        for value in ("theme=", "size=", "font="):
+            assert value in bind, f"{value} is not on the shared binder"

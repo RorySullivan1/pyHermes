@@ -213,9 +213,7 @@ class FontTheme:
     body: FontStack = field(
         default_factory=lambda: FontStack("Georgia", "Times New Roman", "serif")
     )
-    label: FontStack = field(
-        default_factory=lambda: FontStack("Arial", "Helvetica", "sans-serif")
-    )
+    label: FontStack = field(default_factory=lambda: FontStack("Arial", "Helvetica", "sans-serif"))
     numeric: FontStack = field(
         default_factory=lambda: FontStack("Courier New", "Courier", "monospace")
     )
