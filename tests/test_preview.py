@@ -180,6 +180,38 @@ class TestTheCommand:
         expected = all_fixtures()["minimal"]().render()
         assert (tmp_path / "minimal.html").read_text(encoding="utf-8") == expected
 
+    def test_it_writes_the_text_projection_beside_the_html(self, tmp_path, capsys):
+        code = main(["minimal", "--out", str(tmp_path)])
+
+        assert code == EXIT_OK
+        written = tmp_path / "minimal.txt"
+        assert written.is_file()
+        assert str(written) in capsys.readouterr().out
+
+    def test_what_it_writes_is_what_text_produces(self, tmp_path):
+        """
+        The no-second-rendering-path rule, applied to the second projection.
+        An email has two readable parts since #109, and a CLI that produced
+        its own version of either would be worse than useless.
+        """
+        main(["minimal", "--out", str(tmp_path)])
+
+        expected = all_fixtures()["minimal"]().text()
+        assert (tmp_path / "minimal.txt").read_text(encoding="utf-8") == expected
+
+    def test_a_draft_target_gets_both_projections_too(self, tmp_path):
+        """
+        Both halves for a user's own build function, not only for a fixture.
+        A draft is never in the registry, and that asymmetry is what
+        ``capture_emails`` was created to close in the screenshot runner — so
+        it is worth pinning that this half does not reintroduce it.
+        """
+        module = write_module(tmp_path, "draft", RETURNS_EMAIL)
+
+        assert main([f"{module}:build", "--out", str(tmp_path)]) == EXIT_OK
+        assert (tmp_path / "draft-build.html").is_file()
+        assert (tmp_path / "draft-build.txt").is_file()
+
     def test_list_enumerates_the_gallery(self, capsys):
         code = main(["--list"])
 

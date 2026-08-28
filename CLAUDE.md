@@ -10,8 +10,9 @@ clients (Gmail, Outlook) — the hard part is staying under Gmail's clipping lim
 keeping the layout table-based and portable.
 
 **Scope today = build *and* send.** Composing the HTML is still the bulk of the product,
-but the chain is complete: `svc/builder/` renders and declares, `svc/delivery/` assembles a
-sendable `EmailMessage`, and `svc/gmail/` + `svc/outlook/` transmit it. Adapters own their
+but the chain is complete: `svc/builder/` renders the HTML, projects the `text/plain` part and
+declares the images; `svc/delivery/` assembles the `multipart/alternative`; `svc/gmail/` +
+`svc/outlook/` transmit it. Adapters own their
 provider's wire contract and **never** authentication, so pyHermes still depends on nothing
 but Jinja2.
 
@@ -78,6 +79,9 @@ svc/
 │   ├── sizing.py       — SizeScheme (TypeScale/SpacingScale/ComponentScale/FrameGeometry),
 │                         STANDARD/COMPACT/SPACIOUS_SIZES, SIZE_SCHEMES, resolve_size_scheme,
 │                         column_layout() — the frame arithmetic eight templates used to hold
+│   ├── textgen.py      — the plain-text projection's shared half: html_to_text() (#108's
+│                         closed-tag-set degrader) + the formatting policy — wrap, underline,
+│                         table, join_blocks/join_sections, format_link/link_line
 │   ├── filters.py      — Jinja filters (e.g. validate_hex_color)
 │   ├── exceptions.py   — EmailBuilderError hierarchy
 │   └── templates/      ← packaged with the wheel (moved here in #10)
@@ -92,7 +96,8 @@ svc/
 │       └── text/*.html              — text components (text-block, numbered-list, author-block, contact-block)
 ├── delivery/           ← transport-neutral MIME assembly (consumes the builder)
 │   ├── __init__.py     — public API: build_message, save_eml, collect_cid_references
-│   ├── message.py      — build_message() → multipart/related; to_wire_bytes(); save_eml()
+│   ├── message.py      — build_message() → multipart/alternative (text first, HTML last,
+│                         related nested); to_wire_bytes(); save_eml()
 │   ├── retry.py        — retry_with_backoff(): shared policy, per-adapter classification
 │   └── exceptions.py   — DeliveryError / MessageError / TransportError (siblings of
 │                          EmailBuilderError)
@@ -113,6 +118,7 @@ qa/                     ← QA harness (epic #54); NOT shipped in the wheel
                         minimal_footer, slate_theme, compact_size, spacious_size,
                         + all_fixtures()
     └── goldens/       — the checked-in snapshots: <name>.html + <name>.assets.txt
+                          + <name>.txt (the plain-text projection, #110)
 output/                 — generated email HTML (gitignored; not committed)
 tests/                  — pytest unit suite (validation, error paths, size limits)
 .github/workflows/      — CI: ruff, mypy, pytest
@@ -186,15 +192,20 @@ detection test perturbs a real template instead of only the compared text. It st
 ## Golden snapshots — `qa/goldens.py` + `qa/fixtures/goldens/`
 
 The byte-identity bar the migration epics (#33, #41, #42, #49) all promise to hold, made
-mechanical (#58). Two artifacts per fixture, because a render and its attachments drift
-independently:
+mechanical (#58). Three artifacts per fixture, because a render, its attachments and its
+plain-text projection all drift independently:
 
 | File | What it pins |
 |---|---|
 | `goldens/<name>.html` | The rendered HTML, byte for byte, no normalization |
 | `goldens/<name>.assets.txt` | One tab-separated record per `ImageAsset`, **in manifest order** — content-id, MIME type, byte length, filename |
+| `goldens/<name>.txt` | The plain-text projection (#110), byte for byte |
 
-Four decisions worth not re-litigating:
+**What is pinned lives in one list.** `artifacts(name, email)` returns the `(label, path,
+content)` triples, and `check_fixture()` and `write_fixture()` both walk it — so a fourth
+artifact cannot end up checked but never written, or written but never checked.
+
+Five decisions worth not re-litigating:
 
 - **The manifest stores no image bytes.** They already live in the fixture that generates them,
   and a Content-ID is `sha256(bytes)[:16]` — different bytes cannot keep the same id, so id plus
@@ -208,6 +219,13 @@ Four decisions worth not re-litigating:
   being created** — one that writes itself on first run pins whatever happened to be true that
   day. *A golden diff in a PR is a claim that the visual change is intended*, and it is reviewed
   as one.
+- **The text golden is a third file, not a section of the first.** Since #109 the text part
+  is a *second projection of the section tree* rather than a degradation of the render, so a
+  component's `text()` can change with the HTML byte-identical and vice versa — neither golden
+  can see the other's drift. A test perturbs a component's projection and asserts only the
+  `.txt` artifact moves; another perturbs a *fact* and asserts **both** do, which is the
+  stronger claim, since a fact the email owns must reach both parts or they have come to
+  disagree about what the email says.
 - **A mismatch must be diagnosable.** "Bytes differ" on a 47 KB document costs the next reader an
   hour, so the report names the fixture, the artifact, the line, the byte offset, three lines of
   context and both versions of the line that moved. That the harness *bites* is tested by
@@ -324,10 +342,15 @@ python -m qa.preview kitchen_sink --lint --screenshot
 python -m qa.preview drafts/weekly.py:build --lint --open
 ```
 
+It writes **both** projections — `output/<name>.html` and `output/<name>.txt` (#110). An email
+has two readable parts, and writing only the HTML would leave out the half no screenshot and no
+lint rule can show you.
+
 **It composes; it never reimplements.** Fixtures come from `all_fixtures()`, findings from
-`lint_html()`, images from `capture_emails()`. A test asserts the HTML it writes equals
-`Email.render()` byte for byte, because the one thing that would make this tool worse than
-useless is being a second rendering path.
+`lint_html()`, images from `capture_emails()`. Tests assert the HTML it writes equals
+`Email.render()` byte for byte **and** the text equals `Email.text()`, because the one thing
+that would make this tool worse than useless is being a second rendering path — and since
+#109 there are two projections it could be a second path for.
 
 That rule earned its keep immediately: `capture_gallery()` could only screenshot names in the
 registry, and **a user's draft never is one** — so `qa/screenshots.py` gained
@@ -671,6 +694,14 @@ These are not conventions to remember — each has teeth, and the teeth are name
    region is the only owner of its own images. The header and footer participate even though
    no shipped variant of either carries an image: a test builds a footer that does, because
    the slot has to work *before* someone writes that variant for real.
+8. **A new component must implement `text()`, and absence fails loudly.** The mirror of rule
+   7 with the **opposite default**: an absent image list is empty, an absent projection is a
+   `NotImplementedError` naming the class. A component with no visual content can exist — a
+   spacer would — but a *content* component invisible to text-mode readers is the
+   accessibility failure epic #53 exists to fix, so it fails the first email that projects it
+   rather than vanishing from the text part silently. A completeness test rides `kitchen_sink`
+   and needs no hand-list; a second holds that the projection routes through
+   `_with_subtitle`, which is what a new component would forget.
 
 ### Public API (import from `svc.builder`)
 
@@ -1229,11 +1260,67 @@ font-size or weight in this vocabulary, because those are #45's axis and #56's w
 that a face swap moves **no px**; and one theme per email, since a face is an email-level voice
 exactly as a palette and a density are.
 
+### The plain-text projection — a second walk of the same tree
+
+A production email is `multipart/alternative`: an HTML part and a `text/plain` part. Epic #53
+built the second one, and the shape of it is the whole decision — the text part is a **second
+projection of the section tree**, not a degradation of the render.
+
+```python
+html = email.render()      # the first projection
+text = email.text()        # the second — header → banner → sections → footer
+```
+
+Generating text by stripping the rendered HTML is the obvious approach and it produces garbage
+for exactly the components that matter most: a KPI strip becomes a column of orphaned numbers
+and a data table loses the alignment that is the only reason to have one. So each class
+projects itself, the same way each already renders itself and declares its own images. **A test
+monkeypatches `TemplateEngine.render` to raise and projects every gallery fixture** — the claim
+is asserted, not trusted.
+
+- **Absence fails loudly** (standing rule 8) — the `images()` rule with the opposite default.
+- **Generated, never hand-authored.** There is no `text_override`, and a test introspects every
+  exported class to keep it that way: derived text cannot drift from the HTML's content.
+- **Raw HTML degrades through one small parser.** The five blessed surfaces
+  ([textgen.py](svc/builder/textgen.py)) reach text through `html_to_text()`, whose tag set is
+  **closed** and says so in its docstring — the epic named it as the scope magnet.
+- **Regions project their *resolved* state**, never raw fields: `resolved_title()`,
+  `resolved_copyright_html()`, `resolved_links()`. An email that renames its masthead says the
+  new name in both parts. Reading `title` directly would work for every email that sets one and
+  print nothing for every email that does not.
+- **A variant that fills no slot projects nothing**, checked once in `Region.text()` — the same
+  rule `render_slots()` applies, so `EmptyHeader` omits the strip from both parts without
+  anyone remembering to make it.
+- **Chrome projects to nothing; content projects its alt text.** A logo, a masthead background
+  and a footer sign-off mark are decoration. An `ImageBlock` or `ChartBlock` is the section's
+  content, and `alt` is required at construction precisely so that projection is never empty.
+- **The `&copy;` entity inverts, from one source.** The footer degrades
+  `resolved_copyright_html()` back to text rather than branching, so the entity the HTML needs
+  against latin-1 mojibake and the character the charset-declared MIME part needs come from one
+  method that cannot drift.
+
+**The formatting policy is decided once**, in [textgen.py](svc/builder/textgen.py)'s docstring
+— 78 columns for prose, one blank line between blocks and two between sections, `=` under the
+masthead and `-` under a section title, `format_link` inline and `link_line` in a list. The
+alternative is a house format that drifts one projection at a time.
+
+**Tables do not wrap, and that is the one place the policy yields.** Column widths come from
+the widest cell; the first column is left-aligned and the rest right-aligned — not a guess
+about the data, but the convention the HTML template already encodes with `loop.first`, read
+off the same rule so the two projections cannot disagree about which column is the label. A
+table wider than 78 columns overflows the line-width policy rather than corrupting the
+alignment that is the only reason to render it.
+
+**The three design axes do not reach the text part**, and a test asserts it: colour, density and
+typeface are HTML concerns by construction, so one email projects identically under every
+preset. That is what makes "one house format" a property rather than a coincidence — and it is
+why this epic and #56 could have run in parallel, touching no surface in common.
+
 ## Architecture — `svc/delivery`
 
 The builder **declares** a CID embed; delivery **performs** it. `Email.render()` gives the
-HTML and `Email.assets()` gives the manifest; [build_message()](svc/delivery/message.py)
-turns that pair into a sendable `EmailMessage`.
+HTML, `Email.text()` the plain-text projection and `Email.assets()` the manifest;
+[build_message()](svc/delivery/message.py) turns those three into a sendable `EmailMessage`.
 
 ```python
 from svc.delivery import build_message, save_eml
@@ -1243,9 +1330,39 @@ message = build_message(email, sender="research@example.com",
 save_eml(message, "output/preview.eml")     # dry run — no transport, no credentials
 ```
 
-- **Structure**: `text/html` when the email has no CID images; `multipart/related` when it
-  does, one inline part per asset. When plain-text lands (#53) the HTML part becomes half of
-  a `multipart/alternative` and this nests inside unchanged.
+- **Structure** — every message is a `multipart/alternative` since #111:
+
+  ```
+  multipart/alternative            (an email with no CID images)
+  ├── text/plain
+  └── text/html
+
+  multipart/alternative            (an email with CID images)
+  ├── text/plain
+  └── multipart/related
+      ├── text/html
+      └── image/*  × N
+  ```
+
+  **Text first, HTML last** — RFC 2046 §5.1.4 orders an alternative by *increasing*
+  preference. Getting it backwards is silent: every graphical client still shows the HTML,
+  and only the readers who need the fallback see the wrong thing.
+
+  **The seat was reserved, not discovered.** This file and the module docstring both said the
+  HTML part would become half of an alternative and the related subtree would nest inside
+  unchanged — which is exactly what happened, byte for byte, one level deeper.
+
+  **The images relate to the HTML part, not to the alternative.** They are resources of the
+  HTML specifically; relating them one level up would attach them to the text part too, which
+  is how a text-only reader ends up with a paperclip for art they cannot see.
+
+  **A message now carries at least one random MIME boundary, and two when it has CID
+  images.** A snapshot comparison must normalise *every* one — code written against the old
+  single-boundary shape normalises the first and still differs on the second, which fails for
+  a reason that has nothing to do with what it is checking.
+- **There is no HTML-only opt-out**, deliberately. The text part is derived and costs nothing,
+  and a flag to suppress it would be a deliverability and accessibility regression a caller
+  reaches for by accident.
 - **The consumer adds the decorations.** `ImageAsset.content_id` is bare, so assembly emits
   `Content-ID: <id>` — Python's `add_related()` stores whatever it is given, and a bare id is
   an RFC-invalid header. It also passes `disposition="inline"` explicitly, because supplying
@@ -1253,7 +1370,10 @@ save_eml(message, "output/preview.eml")     # dry run — no transport, no crede
 - **The seam is now checked, not just documented** — and the two directions are deliberately
   asymmetric. Assembly cross-checks the HTML's `cid:` references against the manifest: a
   referenced-but-unattached id is a broken image the reader sees, so it raises `MessageError`;
-  an attached-but-unreferenced asset only costs message weight, so it warns. Making the second
+  an attached-but-unreferenced asset only costs message weight, so it warns. **The check is
+  scoped to the HTML part**: the text part carries URLs as text and never a `cid:` reference,
+  so copy that happens to say `cid:` — `image_matrix` titles a section "Attached (cid:)" — is
+  neither read as a reference nor able to satisfy one. Making the second
   fatal would turn any gap in reference collection into a *rejected valid email*. Collection
   covers attributes, `url(cid:…)` in CSS (including `<style>` blocks), `srcset` lists, and
   markup inside `<!--[if mso]>` conditional comments.
@@ -1319,7 +1439,6 @@ Recorded as decisions, so they are not re-litigated as oversights:
 |---|---|
 | `Date` / `Message-ID` in assembly | Transport's job; omitting them keeps assembly pure and its output comparable |
 | `Bcc` header | It travels with the message and leaks the blind-copy list — an envelope concern for adapters |
-| Plain-text alternative | Its own epic (#53); the `multipart/alternative` slot is left open for it |
 | Size re-check in assembly | `render()` already applied the 102 KB limit, and CID bytes cost *message* size, not HTML size |
 | OAuth flows in adapters | Deliberately the caller's; see rule 1 above |
 | Campaign management | No scheduling, recipient lists, batching or send-time analytics — this layer delivers one message to addressees the caller supplies |
@@ -1457,10 +1576,29 @@ Reach for these rather than improvising:
 ## Open work
 
 - Tracked in [GitHub issues](https://github.com/RorySullivan1/pyHermes/issues), organised as
-  epics with sub-issues: **#53 (a plain-text alternative) is the only remaining parent.** #38
-  (header region), #45 (size themes), #46 (colour themes), #52 (delivery), #54 (QA harness),
-  #55 (footer region), #87 (the `Header` region), #88 (banner region), #98 (the footer box)
-  and **#56 (typography)** are complete.
+  epics with sub-issues. **Every filed epic is now complete**: #38 (header region), #45 (size
+  themes), #46 (colour themes), #52 (delivery), #53 (plain text), #54 (QA harness), #55
+  (footer region), #56 (typography), #87 (the `Header` region), #88 (banner region) and #98
+  (the footer box).
+- **The plain-text epic (#53) is complete** — #108 the degrader, #109 the projections, #110 the
+  text goldens, #111 the `multipart/alternative` assembly. Four things it leaves:
+  - **A second projection beats a degradation, and the test is what says so.** Stripping the
+    render was the obvious approach and produces garbage for exactly the components that
+    matter most. `TemplateEngine.render` is monkeypatched to raise while every fixture
+    projects, so "structure, never the rendered HTML" is asserted rather than intended.
+  - **The reserved seam worked.** `message.py`'s docstring had said for two epics that the HTML
+    part would become half of an alternative and the related subtree would nest inside
+    unchanged. It did, byte for byte, one level deeper, and **the adapters changed by zero
+    lines** — both serialise through `to_wire_bytes()`. A seam named in prose and left alone is
+    worth more than one discovered late.
+  - **An orthogonal epic is one that shares no surface.** #53 touched no template and #56
+    touched only templates, which is why the same email projects identically at every colour,
+    density and font theme — a test asserts it, and it is what makes "one house format" a
+    property rather than a coincidence.
+  - **The `&copy;` question inverts between the two parts, and one method answers both.** The
+    HTML needs the entity against latin-1 mojibake; the charset-declared MIME part needs the
+    character. The footer degrades `resolved_copyright_html()` rather than branching, so the
+    two spellings cannot drift.
 - **The typography epic (#56) is complete** — #104 built the vocabulary, #105 put `font_theme`
   on the existing binder, #106 migrated the templates in two commits, #107 shipped `modern` and
   its fixture. **The design system now has all three axes**, and they are deliberately the same

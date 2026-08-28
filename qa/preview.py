@@ -1,6 +1,11 @@
 """
 The ``preview`` CLI (#61): build → save → lint → screenshot, in one command.
 
+Since #110 it writes **both** projections — ``<name>.html`` and ``<name>.txt``.
+An email has two readable parts, and this is the loop for eyeballing one, so
+writing only the HTML would leave out the half no screenshot and no lint rule
+can show you.
+
 The workflow the docs prescribed was manual — write a scratch script, build the
 email, ``.save()`` it into ``output/``, open a browser, repeat. With the gallery
 (#57), the goldens (#58), the screenshot runner (#59) and the lint pass (#60) in
@@ -198,6 +203,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         name, email = resolve(args.target)
         html = email.render()
+        text = email.text()
     except PreviewError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return EXIT_BUILD_FAILED
@@ -211,6 +217,13 @@ def main(argv: list[str] | None = None) -> int:
     destination = args.out / f"{name}.html"
     destination.write_text(html, encoding="utf-8")
     print(f"{destination}  ({len(html.encode('utf-8')) / 1024:.1f} KB)")
+
+    # Both projections, always. Since #109 an email has two readable parts and
+    # this is the loop for eyeballing one email, so writing only the HTML would
+    # leave the half that no screenshot and no lint rule can show you.
+    text_destination = args.out / f"{name}.txt"
+    text_destination.write_text(text, encoding="utf-8")
+    print(f"{text_destination}  ({len(text.encode('utf-8')) / 1024:.1f} KB)")
 
     exit_code = EXIT_OK
 

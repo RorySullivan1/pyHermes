@@ -1,0 +1,154 @@
+For illustrative purposes. Not investment advice.
+
+
+Q3 Outlook
+==========
+
+What the curve is pricing
+Rates Strategy · Week ending 24 August · Issue 001
+
+
+Market Snapshot
+---------------
+
+S&P 500: 5,234 (+1.42%)
+UST 10Y: 4.28% (+6 bps)
+Gold: 2,411 (+0.85%)
+VIX: 14.32 (-2.18 pts)
+
+
+Sector Notes
+------------
+
+Relative performance
+
+Technology: +2.1% (week)
+Semiconductor strength led the advance.
+Energy: -0.7% (week)
+Crude gave back the prior week's gain.
+
+
+Factor Returns
+--------------
+
+Long-short, gross of costs
+
+Factor       1M     YTD
+--------  -----  ------
+Value     +1.8%   +7.4%
+Momentum  -0.4%  +11.2%
+Quality   +0.9%   +5.1%
+
+Hermes Research
+24 August 2026
+
+
+Cumulative Performance
+----------------------
+
+Indexed to 100
+
+[Cumulative factor performance]
+
+Hermes Research
+
+
+Equal Columns
+-------------
+
+The left half of a 50-50 split.
+
+The right half of a 50-50 split.
+
+
+Narrow then Wide
+----------------
+
+[Thumbnail]
+
+A 30% column
+
+Commentary occupying the wider 70% column.
+
+
+Wide then Narrow
+----------------
+
+Commentary occupying the wider 70% column.
+
+A. Analyst
+Head of Research · research@example.com
+
+
+Three Equal
+-----------
+
+First third.
+
+Second third.
+
+Final third.
+
+
+Wide Left
+---------
+
+The 50% column.
+
+Quarter.
+
+Quarter.
+
+
+Wide Centre
+-----------
+
+Quarter.
+
+The 50% column.
+
+Quarter.
+
+
+Wide Right
+----------
+
+Quarter.
+
+Quarter.
+
+The 50% column.
+
+
+What We Are Watching
+--------------------
+
+Three themes into next week
+
+01. Inflation prints
+
+Core services remain sticky.
+
+02. Earnings revisions
+
+Breadth is narrowing.
+
+03. Positioning
+
+Futures length is extended.
+
+
+Questions about this note?
+
+Reach the research desk with any questions.
+
+Email the desk: https://example.com/contact
+
+
+Distributed to registered recipients only.
+
+2026 Hermes Research — all rights reserved
+
+Privacy: https://example.com/privacy
+Stop receiving this: https://example.com/unsubscribe
+Contact: mailto:research@example.com

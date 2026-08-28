@@ -1,0 +1,47 @@
+Hermes Research
+===============
+
+image-matrix
+
+
+Remote
+------
+
+[Hosted chart] (https://example.com/charts/hosted)
+
+Costs no message weight; Outlook blocks it until the reader allows images.
+
+
+Attached (cid:)
+---------------
+
+[Attached chart]
+
+Costs message size, not HTML size — renders in Outlook without a prompt.
+
+
+Inline (data URI)
+-----------------
+
+[Inline sparkline]
+
+Spends the 102 KB budget directly; Gmail strips it.
+
+
+The Same Attachment, Twice
+--------------------------
+
+[Attached chart]
+
+Second reference to the same bytes.
+
+Content-IDs are content-addressed, so this resolves to the single manifest
+entry above rather than attaching the image again.
+
+
+Distributed to registered recipients only.
+
+© 2026 Hermes Research
+
+Unsubscribe
+View in browser

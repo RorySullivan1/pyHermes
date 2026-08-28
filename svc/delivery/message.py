@@ -9,11 +9,12 @@ HTML references as ``cid:`` — this turns that pair into an
 
 Nothing here authenticates, opens a socket, or reads the clock, and nothing
 here calls ``random`` directly — but the result is not byte-identical call
-to call for every input. An email with no CID images stays ``text/html``
-and *is* byte-identical for the same input. An email with CID images
-becomes ``multipart/related``, and since nothing in this module calls
-``set_boundary``, the stdlib draws that part a fresh random MIME boundary
-the first time the message is serialised (inside
+to call. Since #111 every message is a ``multipart/alternative``, so there
+is always **at least one** random MIME boundary, and an email with CID
+images carries a **second** for the nested ``multipart/related``. Since
+nothing in this module calls ``set_boundary``, the stdlib draws each
+multipart a fresh random boundary the first time the message is serialised
+(inside
 ``email.generator.Generator``, via ``Message.set_boundary()``) — and that
 call *persists* the boundary onto the message object, so every subsequent
 ``.as_bytes()``/``.as_string()`` on the *same* ``EmailMessage`` returns the
@@ -22,26 +23,41 @@ identical boundary and therefore identical bytes. It is drawn once per
 not once per serialisation — which is exactly what lets
 :func:`to_wire_bytes` and :func:`save_eml` agree byte-for-byte on one
 message. Two separate :func:`build_message` calls on the same email
-therefore differ only in that boundary token and the ``--<token>``
-delimiter lines built from it; part order and every part's bytes are
-otherwise identical. A future snapshot test (#58) comparing multipart
-output across two such calls must normalize the boundary — e.g. replace
+therefore differ only in those boundary tokens and the ``--<token>``
+delimiter lines built from them; part order and every part's bytes are
+otherwise identical. A snapshot test comparing multipart output across two
+such calls must normalize **every** boundary — e.g. replace each
 ``boundary="..."`` and each delimiter line with a fixed placeholder —
-before asserting equality.
+before asserting equality. Note the count changed with #111: code written
+against the old single-boundary shape will normalize one and still differ
+on the other.
 
 Everything that varies per send — ``Date``, ``Message-ID``, envelope
 recipients — belongs to the adapter that sends.
 
 Structure produced::
 
-    text/html                        (an email with no CID images)
+    multipart/alternative            (an email with no CID images)
+    ├── text/plain
+    └── text/html
 
-    multipart/related                (an email with CID images)
-    ├── text/html
-    └── image/*  × N    Content-ID: <id>, Content-Disposition: inline
+    multipart/alternative            (an email with CID images)
+    ├── text/plain
+    └── multipart/related
+        ├── text/html
+        └── image/*  × N    Content-ID: <id>, Content-Disposition: inline
 
-When plain-text generation lands, the HTML part becomes one half of a
-``multipart/alternative`` and this structure nests inside it unchanged.
+**Text first, HTML last** — RFC 2046 §5.1.4 orders the parts of an
+alternative by *increasing* preference, so a client that understands HTML
+renders it and a text-mode client falls back to the part before it. Getting
+this order backwards is silent: every graphical client still shows the HTML,
+and only the readers who need the fallback see the wrong thing.
+
+The seat for this was reserved rather than discovered — the sentence that
+stood here until #111 said the HTML part would become one half of an
+alternative and this structure would nest inside unchanged, which is exactly
+what happened: the ``multipart/related`` subtree below is byte-for-byte what
+it was, one level deeper.
 """
 
 from __future__ import annotations
@@ -52,7 +68,7 @@ from collections.abc import Iterator, Sequence
 from email.message import EmailMessage
 from html.parser import HTMLParser
 from pathlib import Path
-from typing import Protocol
+from typing import Protocol, cast
 
 from svc.builder.images import ImageAsset
 
@@ -94,6 +110,8 @@ class RenderableEmail(Protocol):
     """
 
     def render(self) -> str: ...
+
+    def text(self) -> str: ...
 
     def assets(self) -> list[ImageAsset]: ...
 
@@ -358,7 +376,11 @@ def build_message(
         _reject_control_chars(reply_to, "reply_to")
 
     html = email.render()
+    text = email.text()
     assets = email.assets()
+    # Scoped to the HTML deliberately: the text part carries URLs as text and
+    # never a cid: reference, so a plain-text body that happens to mention
+    # "cid:" -- documentation copy, say -- must not be read as one.
     _verify_cid_manifest(html, assets)
 
     message = EmailMessage()
@@ -370,12 +392,27 @@ def build_message(
     if reply_to:
         message["Reply-To"] = reply_to
 
-    message.set_content(html, subtype="html")
+    # Text first, HTML second: RFC 2046 §5.1.4 orders an alternative's parts
+    # by *increasing* preference. Reversing these two is a silent bug -- every
+    # graphical client still shows the HTML, and only the readers who need the
+    # fallback ever see the wrong thing.
+    message.set_content(text)
+    message.add_alternative(html, subtype="html")
 
     if assets:
-        # Promote the html part to multipart/related, then hang each image
-        # off it. Only reached when there is something to relate to.
-        message.make_related()
+        # Promote the *html* part to multipart/related and hang each image off
+        # it -- not the top-level message, which is now the alternative. The
+        # images are resources of the HTML alternative specifically; relating
+        # them to the alternative would attach them to the text part as well,
+        # which is both wrong and how a text-only reader ends up with a
+        # paperclip for art they cannot see.
+        # ``get_payload()`` is typed as the union of every payload shape a
+        # legacy ``Message`` can hold — a string for a leaf part, a list for
+        # a multipart. This message is the multipart ``add_alternative()``
+        # just made three lines up, and its last part is the HTML: a stdlib
+        # invariant a type checker has no way to see.
+        html_part = cast(list[EmailMessage], message.get_payload())[-1]
+        html_part.make_related()
         # RFC 2387 requires 'type' to name the root part's media type, so a
         # strict client knows text/html is the thing to render and the
         # image/* parts are its resources. make_related() does not set this
@@ -383,7 +420,7 @@ def build_message(
         # root part can fall back to listing every part as an attachment,
         # which is the exact paperclip failure disposition="inline" below
         # exists to avoid.
-        message.set_param("type", "text/html")
+        html_part.set_param("type", "text/html")
         for asset in assets:
             maintype, _, subtype = asset.mime_type.partition("/")
             if not maintype or not subtype:
@@ -391,7 +428,7 @@ def build_message(
                     f"asset {asset.content_id!r} has an unusable MIME type "
                     f"{asset.mime_type!r}; expected 'type/subtype'."
                 )
-            message.add_related(
+            html_part.add_related(
                 asset.data,
                 maintype=maintype,
                 subtype=subtype,

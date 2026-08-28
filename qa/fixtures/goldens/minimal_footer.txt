@@ -1,0 +1,39 @@
+For illustrative purposes. Not investment advice.
+
+
+Hermes Research
+===============
+
+minimal-footer
+Week ending 31 August · Issue 003
+
+
+Same Email, Structured Close
+----------------------------
+
+The footer region presents the email's legal copy as plain HTML, emitted raw
+and unwrapped — a disclaimer passed as a block element renders correctly
+inside a div wrapper, never inside a p.
+
+
+Two Views
+---------
+
+The legal block below renders from a single template — the disclaimer,
+copyright line, and both links all present.
+
+Metric       Level
+-----------  -----
+Policy rate  4.25%
+Core CPI      2.8%
+
+Hermes Research
+
+
+Distributed to registered recipients only. Past performance is not indicative
+of future results.
+
+© 2026 Hermes Research
+
+Unsubscribe: https://example.com/unsubscribe
+View in browser: https://example.com/archive/003
