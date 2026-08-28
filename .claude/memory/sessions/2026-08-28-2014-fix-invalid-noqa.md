@@ -28,9 +28,9 @@
   `# noqa:` with prose reads as if it suppresses something and suppresses nothing.
 
 ## State at end
-- `main` @ `4a35861` unchanged. Two unshipped branches now exist off it:
-  `claude/review-open-issues-rr8quq` (all of epic #53) and `claude/focused-carson-3gf711`
-  (this one-line comment fix). Neither has a PR.
+- `main` @ `38a52da` (PR #113, epic #53, already merged when this branch was cut — my first
+  write of the INDEX State line inherited a stale `4a35861` and has been corrected).
+  `claude/focused-carson-3gf711` carries this fix plus the memory log; **PR #122** is open on it.
 
 ## Open threads
 - Nothing outstanding from this session. The fix is self-contained and verified.
