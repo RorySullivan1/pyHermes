@@ -36,6 +36,34 @@ def _validate_color(value: str, name: str) -> None:
         raise ValidationError(f"'{name}' must be a hex color (e.g. #4A7C59), got: {value}")
 
 
+# A language tag is subtags joined by hyphens, each alphanumeric: "en",
+# "en-GB", "zh-Hant-TW".  The *shape* is what this library can check.
+_LANGUAGE_TAG = re.compile(r"^[A-Za-z0-9]+(-[A-Za-z0-9]+)*$")
+
+
+def _validate_language(value: str, name: str) -> None:
+    """
+    Raise unless value is shaped like a language tag.
+
+    Shape, never the registry — ``_validate_url``'s philosophy applied to
+    the other attribute a reader depends on.  Whether ``fr-CA`` is a
+    registered IANA subtag is not this library's business, and a lookup
+    table shipped in a wheel goes stale between releases while a
+    hyphen in the wrong place stays wrong forever.
+
+    What the shape rules out is worth naming, because a bare character
+    class would let all of it through: an empty tag, a leading or
+    trailing hyphen, and a doubled one.  Those are the malformations a
+    caller actually produces by string-building a tag from parts.
+    """
+    _require(value, name)
+    if not _LANGUAGE_TAG.match(value):
+        raise ValidationError(
+            f"'{name}' must be a language tag such as 'en' or 'en-GB' — "
+            f"letters, digits and single separating hyphens, got: {value}"
+        )
+
+
 # Schemes safe to emit into an href/src in an HTML email.  `cid` covers
 # images embedded as MIME parts.
 _ALLOWED_URL_SCHEMES = frozenset({"http", "https", "mailto", "cid"})
@@ -146,6 +174,14 @@ class EmailMetadata:
 
     email_subject: str = ""
     preheader_text: str = ""
+    #: The language the email is written in, as a BCP 47 tag — the ``lang``
+    #: attribute on the root element.  A *fact*: what language an email is
+    #: written in is true of the email, not a way of presenting it, so it
+    #: sits beside ``firm_name`` rather than on a region.  It is what a
+    #: screen reader picks its pronunciation from, which is why the default
+    #: is a real claim rather than an absence: an unset ``lang`` leaves the
+    #: reader to guess, and a wrong one is confidently wrong.
+    language: str = "en"
     header_disclaimer: str = ""
     firm_name: str = ""
     campaign_name: str = ""
@@ -269,6 +305,8 @@ class EmailMetadata:
                 "view_in_browser_label": view_in_browser_label,
             },
         )
+
+        _validate_language(self.language, "metadata.language")
 
         # Resolve only to check: a preset name that names nothing is a typo,
         # and a typo belongs to construction, not to render. The field keeps

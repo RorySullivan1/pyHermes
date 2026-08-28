@@ -527,7 +527,7 @@ them.
 | Stays on `EmailMetadata` (facts / constraints) | Lives on the region (presentation) |
 |---|---|
 | `header_disclaimer` | `Header.align`, `background_color`, `text_color` (the shared `BoxSurface`) |
-| `email_subject`, `preheader_text` | `Banner.background_image_url` |
+| `email_subject`, `preheader_text`, `language` | `Banner.background_image_url` |
 | `firm_name`, `campaign_name` | `Banner.logo_url`, `logo_alt`, `logo_width` |
 | (the same two, as the headline's fallbacks) | `Banner.title`, `subtitle`, `resolved_title()`, `resolved_subtitle()` |
 | (the theme, as every colour's fallback) | `Banner.palette` — the masthead's own `BannerPalette` |
@@ -544,6 +544,21 @@ Two boundary calls, each made for a reason rather than by shape:
   fact was never the banner's to begin with. That is the fact/presentation rule paying for
   itself: a region change that would otherwise have been a data migration was a one-line
   reassignment.
+- **`language` is a fact, and it is the one whose default is a claim rather than a
+  blank (#115).** What language an email is written in is true of the email, like
+  `firm_name` and `department` — so it sits on the metadata, not on a region. Two
+  things about it are decisions rather than shape. It defaults to **`"en"`, not
+  empty**: every other optional field's absence is neutral, but an absent `lang`
+  makes a screen reader guess from the *recipient's* locale, so the field is
+  required and validated rather than skipped when blank. And it validates the
+  **shape, never the registry** — subtags of letters and digits joined by single
+  hyphens, `_validate_url`'s philosophy on the other attribute a reader depends
+  on. Whether `fr-CA` is a registered IANA subtag is not this library's business,
+  and a lookup table shipped in a wheel goes stale between releases while a
+  trailing hyphen stays wrong forever. **`dir` and RTL layout are deliberately not
+  here**: mirrored table geometry is an epic with its own client-testing burden,
+  and emitting the attribute without the layout would claim a support the
+  templates do not honour.
 - **The masthead's headline is presentation, and its fallbacks are facts (#91).** Until then
   the large type *was* `firm_name` and the second line *was* `campaign_name`, so an email
   leading with "Q3 Outlook" had to lie about who sent it. `Banner.title` / `subtitle` are

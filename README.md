@@ -186,6 +186,20 @@ Adding a content type is a new template file plus a `Component` subclass that se
 Column ratios and card orientation are `StrEnum`s that accept either the member or its bare
 string — `ratio=ThreeColumnRatio.WIDE_LEFT` is `ratio="50-25-25"`.
 
+## Language
+
+The `lang` attribute on the root element, which is what a screen reader picks its
+pronunciation from. It defaults to `"en"`, so an email that says nothing is unchanged.
+
+```python
+EmailBuilder().metadata({..., "language": "fr"})        # or "en-GB", "pt-BR", "zh-Hant-TW"
+```
+
+The shape is validated — subtags of letters and digits joined by single hyphens — but not
+the tag registry: whether `fr-CA` is registered is not this library's business. Right-to-left
+layout is *not* included; the attribute alone would claim a support the table geometry does
+not honour.
+
 ## Header
 
 The strip at the very top of the email: one band of free-form copy, above the masthead. Its

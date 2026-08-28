@@ -110,15 +110,47 @@ class TestSkeletonCopy:
         assert "CUSTOM-LABEL" in html
 
     def test_a_non_english_newsletter(self, valid_metadata, text_block):
+        """
+        #115 completed this: the wording travelled from #64, the language
+        declaration did not, so a French newsletter announced itself as
+        English. Both halves are asserted here because they are one claim —
+        a template fork is avoided only if *everything* language-dependent
+        is a parameter.
+        """
         html = render(
             valid_metadata,
             text_block,
+            language="fr",
             unsubscribe_label="Se désabonner",
             view_in_browser_label="Voir en ligne",
         )
-        for text in ("Se désabonner", "Voir en ligne"):
+        for text in ('lang="fr"', "Se désabonner", "Voir en ligne"):
             assert text in html
+        assert 'lang="en"' not in html
 
     def test_labels_are_escaped(self, valid_metadata, text_block):
         html = render(valid_metadata, text_block, unsubscribe_label="R&D")
         assert "R&amp;D" in html
+
+
+class TestTheLanguageDeclaration:
+    """
+    #115. The field's own shape is tested in ``tests/test_models.py``; what
+    is checked here is that it reaches the one attribute it exists for.
+    """
+
+    def test_the_default_declares_english(self, valid_metadata, text_block):
+        assert 'lang="en"' in render(valid_metadata, text_block)
+
+    def test_a_regional_tag_reaches_the_root_element(self, valid_metadata, text_block):
+        assert 'lang="en-GB"' in render(valid_metadata, text_block, language="en-GB")
+
+    def test_it_is_the_root_element_that_carries_it(self, valid_metadata, text_block):
+        """
+        Not merely *somewhere* in the document: a ``lang`` on the wrong
+        element scopes to that element, and the point of the field is that
+        the whole message is declared. The skeleton opens the root element
+        on line two, under the doctype.
+        """
+        html = render(valid_metadata, text_block, language="pt-BR")
+        assert html.splitlines()[1].startswith('<html lang="pt-BR"')
