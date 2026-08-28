@@ -121,8 +121,6 @@ from .sizing import (
     SpacingScale,
     TypeScale,
 )
-
-# Theming
 from .theming import (
     DEFAULT_THEME,
     SLATE_THEME,
@@ -136,6 +134,14 @@ from .theming import (
     Theme,
 )
 
+# Theming
+from .typography import (
+    DEFAULT_FONTS,
+    FONT_THEMES,
+    FontStack,
+    FontTheme,
+)
+
 __all__ = [
     # Engine
     "TemplateEngine",
@@ -146,6 +152,10 @@ __all__ = [
     "SemanticColors",
     "ShadowStyle",
     "Rgba",
+    "FontStack",
+    "FontTheme",
+    "DEFAULT_FONTS",
+    "FONT_THEMES",
     "BannerPalette",
     "DEFAULT_THEME",
     "SLATE_THEME",
