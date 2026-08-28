@@ -2,11 +2,13 @@
   NUMBERED LIST — Theme / item list with accent-coloured ordinals.
 
   Context:
+    align        — Optional alignment for this component's copy; empty means
+                   inherit the container's, by ordinary CSS inheritance (#127)
     subtitle — Optional sub-heading rendered above the list
     items    — List of dicts with keys: number, title, body
 #}
 {% if subtitle %}
-<p style="font-family: {{ font.body }}; font-size: {{ size.type.secondary }}px; font-style: italic; color: {{ theme.text.secondary }}; margin: 0 0 {{ size.space.subtitle_gap }}px 0; line-height: {{ size.type.secondary_line | percent }};">{{ subtitle | escape_html }}</p>
+<p{% if align %} align="{{ align | escape_html }}"{% endif %} style="font-family: {{ font.body }}; font-size: {{ size.type.secondary }}px; font-style: italic; color: {{ theme.text.secondary }}; margin: 0 0 {{ size.space.subtitle_gap }}px 0; line-height: {{ size.type.secondary_line | percent }};{% if align %} text-align:{{ align }};{% endif %}">{{ subtitle | escape_html }}</p>
 {% endif %}
 {% for item in items %}
 <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;{% if not loop.last %} margin-bottom: {{ size.space.block_gap }}px;{% endif %}">
@@ -14,7 +16,7 @@
     <td width="{{ size.component.list_ordinal_width }}" style="padding: 0 {{ size.component.list_ordinal_gap }}px 0 0; vertical-align: top;">
       <p style="font-family: {{ font.heading }}; font-size: {{ size.type.section }}px; font-weight: bold; color: {{ theme.palette.accent }}; margin: 0; line-height: {{ size.type.title_line | percent }};">{{ item.number | escape_html }}</p>
     </td>
-    <td style="padding: 0; vertical-align: top;">
+    <td{% if align %} align="{{ align | escape_html }}"{% endif %} style="padding: 0; vertical-align: top;{% if align %} text-align:{{ align }};{% endif %}">
       <p style="font-family: {{ font.heading }}; font-size: {{ size.type.item_title }}px; font-weight: bold; color: {{ theme.text.heading }}; margin: 0 0 {{ size.component.list_title_gap }}px 0; line-height: {{ size.type.heading_line | percent }};">{{ item.title | escape_html }}</p>
       <p style="font-family: {{ font.body }}; font-size: {{ size.type.body }}px; color: {{ theme.text.primary }}; margin: 0; line-height: {{ size.component.list_body_line | percent }};">{{ item.body }}</p>
     </td>

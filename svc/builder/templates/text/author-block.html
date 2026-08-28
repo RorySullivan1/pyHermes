@@ -2,17 +2,19 @@
   AUTHOR BLOCK — Byline with name, job title, and email.
 
   Context:
+    align        — Optional alignment for this component's copy; empty means
+                   inherit the container's, by ordinary CSS inheritance (#127)
     subtitle         — Optional sub-heading rendered above the byline
     author_name      — Full name
     author_job_title — Job title or role
     author_email     — Contact email
 #}
 {% if subtitle %}
-<p style="font-family: {{ font.body }}; font-size: {{ size.type.secondary }}px; font-style: italic; color: {{ theme.text.secondary }}; margin: 0 0 {{ size.space.subtitle_gap }}px 0; line-height: {{ size.type.secondary_line | percent }};">{{ subtitle | escape_html }}</p>
+<p{% if align %} align="{{ align | escape_html }}"{% endif %} style="font-family: {{ font.body }}; font-size: {{ size.type.secondary }}px; font-style: italic; color: {{ theme.text.secondary }}; margin: 0 0 {{ size.space.subtitle_gap }}px 0; line-height: {{ size.type.secondary_line | percent }};{% if align %} text-align:{{ align }};{% endif %}">{{ subtitle | escape_html }}</p>
 {% endif %}
 <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border-top: 1px solid {{ theme.palette.rule_subtle }}; padding-top: {{ size.component.author_rule_gap }}px; margin-top: 0;">
   <tr>
-    <td style="padding-top: {{ size.component.author_rule_gap }}px; padding-bottom: 0;">
+    <td{% if align %} align="{{ align | escape_html }}"{% endif %} style="padding-top: {{ size.component.author_rule_gap }}px; padding-bottom: 0;{% if align %} text-align:{{ align }};{% endif %}">
       <p style="font-family: {{ font.heading }}; font-size: {{ size.type.body }}px; font-weight: bold; color: {{ theme.text.heading }}; margin: 0 0 {{ size.component.author_name_gap }}px 0; line-height: {{ size.type.heading_line | percent }};">{{ author_name | escape_html }}</p>
 {% if author_job_title or author_email %}
       <p style="font-family: {{ font.label }}; font-size: {{ size.type.small }}px; color: {{ theme.text.secondary }}; margin: 0; line-height: {{ size.type.secondary_line | percent }};">{{ author_job_title | escape_html }}{% if author_job_title and author_email %} <span style="margin: 0 {{ size.component.author_sep_gap }}px;">&middot;</span> {% endif %}{{ author_email | escape_html }}</p>

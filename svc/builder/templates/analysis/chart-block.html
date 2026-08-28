@@ -2,6 +2,8 @@
   CHART BLOCK — Image/chart with source attribution.
 
   Context:
+    align        — Optional alignment for this component's copy; empty means
+                   inherit the container's, by ordinary CSS inheritance (#127)
     subtitle          — Optional sub-heading rendered above the chart
     chart_image_url   — Resolved src (hosted URL, cid: reference, or data: URI)
     chart_alt_text    — Alt text for accessibility
@@ -11,11 +13,11 @@
     chart_source      — Attribution string (optional)
 #}
 {% if subtitle %}
-<p style="font-family: {{ font.body }}; font-size: {{ size.type.secondary }}px; font-style: italic; color: {{ theme.text.secondary }}; margin: 0 0 {{ size.space.subtitle_gap }}px 0; line-height: {{ size.type.secondary_line | percent }};">{{ subtitle | escape_html }}</p>
+<p{% if align %} align="{{ align | escape_html }}"{% endif %} style="font-family: {{ font.body }}; font-size: {{ size.type.secondary }}px; font-style: italic; color: {{ theme.text.secondary }}; margin: 0 0 {{ size.space.subtitle_gap }}px 0; line-height: {{ size.type.secondary_line | percent }};{% if align %} text-align:{{ align }};{% endif %}">{{ subtitle | escape_html }}</p>
 {% endif %}
 <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
   <tr>
-    <td style="padding: 0;">
+    <td{% if align %} align="{{ align | escape_html }}"{% endif %} style="padding: 0;{% if align %} text-align:{{ align }};{% endif %}">
       <img src="{{ chart_image_url | escape_html }}" alt="{{ chart_alt_text | escape_html }}"
            {% if chart_image_width %}width="{{ chart_image_width }}"{% else %}width="100%"{% endif %}
            style="display: block; max-width: 100%; height: auto; border: 1px solid {{ theme.palette.rule }}; margin: 0;">
@@ -23,5 +25,5 @@
   </tr>
 </table>
 {% if chart_source %}
-<p style="font-family: {{ font.label }}; font-size: {{ size.type.micro }}px; color: {{ theme.text.light }}; font-style: italic; margin: {{ size.space.caption_gap }}px 0 0 0; line-height: {{ size.type.body_line | percent }};">{{ chart_source | escape_html }}</p>
+<p{% if align %} align="{{ align | escape_html }}"{% endif %} style="font-family: {{ font.label }}; font-size: {{ size.type.micro }}px; color: {{ theme.text.light }}; font-style: italic; margin: {{ size.space.caption_gap }}px 0 0 0; line-height: {{ size.type.body_line | percent }};{% if align %} text-align:{{ align }};{% endif %}">{{ chart_source | escape_html }}</p>
 {% endif %}

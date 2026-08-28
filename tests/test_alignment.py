@@ -14,22 +14,31 @@ in every browser and every screenshot, so nothing else would notice.
 
 from __future__ import annotations
 
+import dataclasses
 import re
 from html.parser import HTMLParser
 from pathlib import Path
+from typing import NamedTuple
 
 import pytest
 
 from qa.fixtures import all_fixtures
 from svc.builder import (
+    AuthorBlock,
     CardGroup,
+    ChartBlock,
+    Component,
+    ContactBlock,
     DataTable,
     EmailBuilder,
     FullWidth,
+    NumberedList,
     TextBlock,
     TwoColumn,
+    ValidationError,
 )
-from svc.builder.models import Card, TableRow
+from svc.builder.components import CopyAlignment
+from svc.builder.models import Card, NumberedItem, TableRow
 
 TEMPLATE_DIR = Path("svc/builder/templates")
 
@@ -96,6 +105,16 @@ def _tag_text(source: str, start: int) -> str:
     return source[start:]
 
 
+class Aligned(NamedTuple):
+    """One element that states an alignment, and how it states it."""
+
+    tag: str
+    css_class: str
+    attribute: str | None
+    declared: str | None
+    style: str
+
+
 class _AlignmentAudit(HTMLParser):
     """
     Every element in a rendered email that says anything about alignment.
@@ -109,7 +128,7 @@ class _AlignmentAudit(HTMLParser):
         super().__init__(convert_charrefs=True)
         self.with_class = with_class
         self.found: list[tuple[str, str | None, str | None]] = []
-        self.classed: list[tuple[str, str, str | None, str | None]] = []
+        self.classed: list[Aligned] = []
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         attributes = dict(attrs)
@@ -119,16 +138,19 @@ class _AlignmentAudit(HTMLParser):
         declared = match.group(1) if match else None
         if attribute or declared:
             self.found.append((tag, attribute, declared))
-            self.classed.append((tag, attributes.get("class") or "", attribute, declared))
+            self.classed.append(
+                Aligned(tag, attributes.get("class") or "", attribute, declared, style)
+            )
 
 
-def _aligned_elements(html: str) -> list[tuple[str, str, str | None, str | None]]:
+def _aligned_elements(html: str) -> list[Aligned]:
     """
-    ``(tag, class, align attribute, text-align value)`` for every element
-    in a render that states an alignment. The class comes along because it
-    is what tells a container's cells apart from a component's — the
-    content cell is ``mobile-pad``, a KPI cell is ``kpi-cell``, and a
-    section title cell carries none.
+    Every element in a render that states an alignment.
+
+    The class and the style come along because they are what tell one
+    aligned element from another: a container's content cell is
+    ``mobile-pad``, a KPI cell is ``kpi-cell``, a section title cell
+    carries neither, and a component's subtitle is the italic paragraph.
     """
     parser = _AlignmentAudit(with_class=True)
     parser.feed(html)
@@ -320,12 +342,12 @@ class TestContainerAlign:
         """
         html = self._render(FullWidth(title="Heading", align=align, content=TextBlock("<p>x</p>")))
         aligned = [
-            (tag, cls)
-            for tag, cls, attribute, declared in _aligned_elements(html)
-            if attribute == align and declared == align
+            element
+            for element in _aligned_elements(html)
+            if element.attribute == align and element.declared == align
         ]
-        assert any(cls == "" for tag, cls in aligned), "the title cell did not take the alignment"
-        assert any("mobile-pad" in cls for tag, cls in aligned), "the content cell did not"
+        assert any(e.css_class == "" for e in aligned), "the title cell did not take the alignment"
+        assert any("mobile-pad" in e.css_class for e in aligned), "the content cell did not"
 
     @pytest.mark.parametrize("align", ["left", "center", "right"])
     def test_a_split_aligns_its_title_and_every_column(self, align):
@@ -347,17 +369,16 @@ class TestContainerAlign:
             )
         )
         columns = [
-            cls
-            for tag, cls, attribute, declared in _aligned_elements(html)
-            if "mobile-pad" in cls and attribute == align and declared == align
+            e
+            for e in _aligned_elements(html)
+            if "mobile-pad" in e.css_class and e.attribute == align and e.declared == align
         ]
         assert len(columns) == 2, f"expected both column cells aligned, got {len(columns)}"
 
     def test_a_section_without_a_title_still_aligns_its_content(self):
         html = self._render(FullWidth(align="right", content=TextBlock("<p>x</p>")))
         assert any(
-            "mobile-pad" in cls and attribute == "right"
-            for _, cls, attribute, _ in _aligned_elements(html)
+            "mobile-pad" in e.css_class and e.attribute == "right" for e in _aligned_elements(html)
         )
 
     def test_both_spellings_travel_together_here_too(self):
@@ -367,12 +388,12 @@ class TestContainerAlign:
             TwoColumn(ratio="30-70", align="right", title="U", left=TextBlock("<p>L</p>")),
         )
         unpaired = 0
-        for tag, _, attribute, declared in _aligned_elements(html):
-            if attribute and declared is None:
+        for element in _aligned_elements(html):
+            if element.attribute and element.declared is None:
                 unpaired += 1  # base.html's block-aligning cell
                 continue
-            assert attribute and declared and attribute == declared, (
-                f"{tag} states its alignment only one way, or two ways that disagree"
+            assert element.attribute and element.declared == element.attribute, (
+                f"{element.tag} states its alignment only one way, or two that disagree"
             )
         assert unpaired == BLOCK_ALIGNING_CELLS_PER_EMAIL
 
@@ -406,9 +427,7 @@ class TestTheBoundaryHolds:
             )
         )
         kpi = [
-            (attribute, declared)
-            for _, cls, attribute, declared in _aligned_elements(html)
-            if "kpi-cell" in cls
+            (e.attribute, e.declared) for e in _aligned_elements(html) if "kpi-cell" in e.css_class
         ]
         assert kpi, "the fixture rendered no KPI cells"
         assert all(a == "center" and d == "center" for a, d in kpi), (
@@ -432,12 +451,257 @@ class TestTheBoundaryHolds:
             )
         )
         table = [
-            (tag, attribute, declared)
-            for tag, cls, attribute, declared in _aligned_elements(html)
-            if tag in ("th", "td") and not cls
+            (e.tag, e.attribute, e.declared)
+            for e in _aligned_elements(html)
+            if e.tag in ("th", "td") and not e.css_class
         ]
         # The label column resolves left and the numeric column right; a
         # leak would make every one of them centre.
         assert {"left", "right"} <= {a for _, a, _ in table}, (
             f"the table lost its own column alignment: {table}"
         )
+
+
+PROSE_COMPONENTS = (TextBlock, NumberedList, AuthorBlock, ContactBlock, ChartBlock)
+
+#: Components that deliberately do **not** take an ``align``, each with the
+#: reason, because an exclusion whose justification lives only in an issue
+#: is one somebody deletes for looking like an oversight.
+STRUCTURALLY_ALIGNED = {
+    "CardGroup": "a KPI cell is centred because it is a KPI cell",
+    "KpiStrip": "the deprecated alias of CardGroup",
+    "DataTable": "columns and cells resolve their own alignment (#117, #118)",
+    "ImageBlock": "already has an align, and that one places a block (ImageAlign)",
+}
+
+
+class TestOnlyProseComponentsTakeAnAlignment:
+    """
+    Which components take an ``align`` is **structural**, not a convention.
+
+    ``BoxSurface``'s shape and ``TestTheTwoBoxesShareOneSurface``'s
+    reasoning: a claim with an enforcing test is a rule, one without is a
+    wish. This reads the class hierarchy rather than a hand-written list,
+    so a component added later is covered without anyone remembering.
+    """
+
+    def test_every_prose_component_mixes_the_alignment_in(self):
+        for component in PROSE_COMPONENTS:
+            assert issubclass(component, CopyAlignment), (
+                f"{component.__name__} carries prose but does not take an align"
+            )
+
+    def test_the_structural_components_deliberately_do_not(self):
+        import svc.builder as api
+
+        for name, reason in STRUCTURALLY_ALIGNED.items():
+            component = getattr(api, name)
+            assert not issubclass(component, CopyAlignment), (
+                f"{name} grew an align, but {reason}. If that is intended, the "
+                "reasoning on CopyAlignment needs revisiting first — the two "
+                "answers to 'where does this cell's text sit' would compete."
+            )
+
+    def test_the_split_is_exhaustive(self):
+        """
+        Every public component is on exactly one side. A component that is
+        neither prose nor named as structural is one nobody has decided
+        about, which is how a field silently goes missing.
+        """
+        import svc.builder as api
+
+        public = {
+            name
+            for name in api.__all__
+            if isinstance(getattr(api, name), type)
+            and issubclass(getattr(api, name), Component)
+            and getattr(api, name) is not Component
+        }
+        decided = {c.__name__ for c in PROSE_COMPONENTS} | set(STRUCTURALLY_ALIGNED)
+        assert public == decided, (
+            f"undecided components: {sorted(public - decided)}; "
+            f"named but not public: {sorted(decided - public)}"
+        )
+
+    def test_the_reason_for_each_exclusion_is_written_down(self):
+        """
+        In the code, not only here — ``CopyAlignment``'s docstring is what
+        the next reader meets.
+        """
+        doc = CopyAlignment.__doc__ or ""
+        for name in ("CardGroup", "DataTable", "ImageBlock"):
+            assert name in doc, f"{name}'s exclusion is undocumented on CopyAlignment"
+
+
+class TestComponentAlign:
+    META = {"email_subject": "Aligned", "firm_name": "F", "campaign_name": "c"}
+
+    def _render(self, component, **container) -> str:
+        return (
+            EmailBuilder()
+            .metadata(dict(self.META))
+            .section(FullWidth(content=component, **container))
+            .render()
+        )
+
+    @pytest.mark.parametrize("align", ["left", "center", "right"])
+    def test_a_component_declares_its_own_alignment(self, align):
+        html = self._render(TextBlock("<p>x</p>", align=align))
+        body = [
+            (e.attribute, e.declared) for e in _aligned_elements(html) if "body-text" in e.css_class
+        ]
+        assert body == [(align, align)], body
+
+    def test_unset_emits_nothing(self):
+        html = self._render(TextBlock("<p>x</p>"))
+        assert not [e for e in _aligned_elements(html) if "body-text" in e.css_class], (
+            "an unset component declared an alignment"
+        )
+
+    def test_a_component_overrides_its_container(self):
+        """
+        By ordinary CSS cascade — the component's declaration sits on a
+        descendant of the cell carrying the container's, and inheritance is
+        the weakest source. No Python resolves this.
+        """
+        html = self._render(TextBlock("<p>x</p>", align="right"), align="center")
+        body = [
+            (e.attribute, e.declared) for e in _aligned_elements(html) if "body-text" in e.css_class
+        ]
+        assert body == [("right", "right")], body
+
+    @pytest.mark.parametrize(
+        "component",
+        [
+            TextBlock("<p>x</p>", subtitle="Standfirst", align="center"),
+            NumberedList([NumberedItem("01", "T", "b")], subtitle="S", align="center"),
+            AuthorBlock("A. Analyst", subtitle="S", align="center"),
+            ChartBlock("https://example.com/c.png", alt_text="C", subtitle="S", align="center"),
+        ],
+        ids=["text", "numbered", "author", "chart"],
+    )
+    def test_the_subtitle_takes_the_component_s_alignment(self, component):
+        """
+        The subtitle is part of the component's prose. A centred block with
+        a left-aligned italic standfirst above it is the half-applied
+        result that makes a feature look broken.
+        """
+        html = self._render(component)
+        subtitles = [
+            element
+            for element in _aligned_elements(html)
+            if element.tag == "p" and "font-style: italic" in element.style
+        ]
+        assert subtitles, "the component rendered no aligned subtitle"
+        for element in subtitles:
+            assert (element.attribute, element.declared) == ("center", "center"), element
+
+    def test_every_prose_component_accepts_the_parameter(self):
+        """A per-class smoke test, so none is wired in name only."""
+        built = [
+            TextBlock("<p>x</p>", align="right"),
+            NumberedList([NumberedItem("01", "T", "b")], align="right"),
+            AuthorBlock("A", align="right"),
+            ContactBlock("H", cta_url="https://example.com", align="right"),
+            ChartBlock("https://example.com/c.png", alt_text="C", align="right"),
+        ]
+        for component in built:
+            assert component.align == "right"
+            html = self._render(component)
+            assert 'align="right"' in html, f"{type(component).__name__} did not emit it"
+
+    @pytest.mark.parametrize(
+        "component",
+        [TextBlock, NumberedList, AuthorBlock, ContactBlock, ChartBlock],
+    )
+    def test_a_bad_alignment_raises_naming_the_component(self, component):
+        arguments = {
+            TextBlock: {"content": "<p>x</p>"},
+            NumberedList: {"items": [NumberedItem("01", "T", "b")]},
+            AuthorBlock: {"name": "A"},
+            ContactBlock: {"heading": "H", "cta_url": "https://example.com"},
+            ChartBlock: {"image_url": "https://example.com/c.png"},
+        }[component]
+        with pytest.raises(ValidationError, match=component.__name__.lower()):
+            component(**arguments, align="middle")
+
+
+class TestAlignmentIsGeometryNotADesignAxis:
+    """
+    The epic's conceptual claim, pinned so nobody has to re-derive it.
+
+    Colour, density and typeface each became an email-level *theme* with
+    no per-call-site knob, because a ``font_size=`` or a ``title_color=``
+    would dissolve the design system one component at a time. Alignment is
+    not of that kind: it is layout geometry, the same category as
+    ``TwoColumn(ratio=...)`` and ``CardGroup(orientation=...)``, which have
+    always been per-call-site parameters. So there is no ``align_theme``,
+    no entry in the closed colour list, and nothing to widen in
+    ``TestTheCallerFacingSurfaceStaysClosed``.
+    """
+
+    def test_alignment_sits_beside_ratio_and_orientation(self):
+        import inspect
+
+        geometry = {
+            "TwoColumn": "ratio",
+            "ThreeColumn": "ratio",
+            "CardGroup": "orientation",
+            "FullWidth": "align",
+            "TextBlock": "align",
+        }
+        import svc.builder as api
+
+        for name, parameter in geometry.items():
+            parameters = inspect.signature(getattr(api, name)).parameters
+            assert parameter in parameters, f"{name} lost its {parameter} parameter"
+
+    def test_there_is_no_alignment_theme(self):
+        """
+        The failure mode this guards against is someone adding a fourth
+        shared value to the bound engine for something that is not an
+        email-level voice. A section's alignment varies *per section* —
+        that is the whole point — so it can never be one.
+        """
+        from svc.builder.models import EmailMetadata
+
+        fields = {f.name for f in dataclasses.fields(EmailMetadata)}
+        assert not {name for name in fields if "align" in name}, (
+            "an alignment reached EmailMetadata. Alignment is per-section geometry, "
+            "not an email-level theme like colour, density and typeface."
+        )
+
+
+class TestTheKnownLimitation:
+    """
+    #130, pinned here so the boundary of #127's claim is explicit rather
+    than discovered by the next person who wonders why their centred
+    paragraph did not move.
+    """
+
+    META = {"email_subject": "Aligned", "firm_name": "F", "campaign_name": "c"}
+
+    def _body_paragraph_classes(self, content: str) -> list[str]:
+        html = (
+            EmailBuilder()
+            .metadata(dict(self.META))
+            .section(FullWidth(content=TextBlock(content, align="right")))
+            .render()
+        )
+        return [e.css_class for e in _aligned_elements(html) if e.tag == "p"]
+
+    def test_plain_and_inline_content_takes_the_alignment(self):
+        for content in ("Prose with no markup.", "Prose with <strong>emphasis</strong>."):
+            assert "body-text" in self._body_paragraph_classes(content), content
+
+    def test_paragraph_wrapped_content_does_not_yet(self):
+        """
+        Asserted as a *limitation*, not as correct behaviour. When #130
+        lands this test should fail — and the failure is the signal to
+        delete it, not to widen it.
+        """
+        classes = self._body_paragraph_classes("<p>Prose the caller wrapped.</p>")
+        assert "body-text" in classes, "the styled element is still emitted"
+        # ...but the caller's own paragraph, which is what the reader sees,
+        # is a sibling of it and carries no alignment of its own.
+        assert classes.count("body-text") == 1
