@@ -79,6 +79,27 @@ message = build_message(
 save_eml(message, "output/preview.eml")   # dry run: no credentials, no network
 ```
 
+Every message is a `multipart/alternative` — pyHermes generates the `text/plain` part from the
+same section tree it renders the HTML from, so there is nothing extra to write and no way for
+the two to say different things:
+
+```
+multipart/alternative            (an email with no CID images)
+├── text/plain
+└── text/html
+
+multipart/alternative            (an email with CID images)
+├── text/plain
+└── multipart/related
+    ├── text/html
+    └── image/*  × N
+```
+
+Text first, HTML last, per RFC 2046's order of increasing preference: a graphical client
+renders the HTML, a text-mode client falls back to the part before it. `email.text()` gives you
+that part on its own if you want to look at it. There is no opt-out — it is derived and costs
+nothing, and suppressing it would hurt both deliverability and the readers who rely on it.
+
 That `.eml` is a faithful preview, not an approximation — `save_eml()` and both adapters
 serialise through the same `to_wire_bytes()`, and each adapter asserts the bytes it transmits
 equal the bytes written to disk.
@@ -537,8 +558,7 @@ Microsoft Graph.
 
 **Out, deliberately:** OAuth flows (the caller's, by design); campaign management — no
 scheduling, recipient lists, batching or send-time analytics; open tracking and link
-rewriting. A plain-text alternative is not implemented yet — the `multipart/alternative` slot
-is left open for it in [#53](https://github.com/RorySullivan1/pyHermes/issues/53).
+rewriting.
 
 ## Layout
 

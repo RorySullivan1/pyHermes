@@ -67,8 +67,41 @@ The lesson worth keeping: **a closed-set converter needs a smoke pass over
 realistic input before its tests are written**, or the tests inherit the
 author's assumptions instead of checking them.
 
+## #109, #110, #111 — the rest of the epic
+
+**#109 (`8c0f607`)** — the projections. `Container.text()` needed writing
+**once, on the base**: `components()` already returns occupied slots in reading
+order, so a split collapses to sequential blocks for free. "A variant that
+fills no slot projects nothing" went in `Region.text()` for the same reason —
+it is the rule `render_slots()` already applies, not a per-variant override.
+A fourth field claim in the issue was wrong: `ContactBlock` has no `subtitle`,
+so it is nine of ten components, not ten.
+
+**#110 (`7be6a9b`)** — the text goldens. The interesting part was a test I had
+to **strengthen rather than narrow**: the existing fixture-drift test changed
+`issue_label` and asserted only the HTML moved. It now moves the text too, and
+asserting *both* is the stronger claim — a fact the email owns must reach both
+parts or they have come to disagree. `artifacts()` became the one list
+`check_fixture` and `write_fixture` both walk.
+
+**#111** — the `multipart/alternative`. **The adapters changed by zero lines**,
+exactly as the issue predicted, because both serialise through
+`to_wire_bytes()`. Two things worth keeping:
+
+- **The reserved seam worked.** `message.py`'s docstring had said for two epics
+  that the HTML part would become half of an alternative and the related
+  subtree would nest inside unchanged. It did — byte for byte, one level
+  deeper. A seam named in prose and left alone is worth more than one
+  discovered late.
+- **The boundary count doubled, and the old test helper fell into the trap its
+  own docstring warned about.** `_normalize_boundary` replaced only the *first*
+  random MIME boundary. Every message is now an alternative, and one with CID
+  images carries a second — so the helper is generalised to positional tokens,
+  and a test asserts the count is two. Normalising one and differing on the
+  other fails for a reason that has nothing to do with what is being checked.
+
 ## State at end
 
-1474 tests with a browser, 4 skipping even then. ruff / `ruff format --check` /
-mypy clean. **No golden moved** — #108 is a pure module, which is what its
-acceptance criteria required. Next: #109.
+1561 tests with a browser, 4 skipping even then. ruff / `ruff format --check` /
+mypy clean. **Every filed epic in the repo is complete.** No PR open on the
+branch.

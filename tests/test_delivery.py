@@ -33,24 +33,29 @@ ENVELOPE = {
 _BOUNDARY_RE = re.compile(rb'boundary="([^"]+)"')
 
 
-def _normalize_boundary(raw: bytes) -> bytes:
-    """Replace a message's random MIME boundary with a fixed token.
+def _normalize_boundaries(raw: bytes) -> bytes:
+    """Replace every random MIME boundary with a fixed, positional token.
 
-    ``EmailMessage.make_related()`` leaves the boundary unset, so the
-    stdlib generator draws a fresh one from ``random.randrange()`` the
-    first time a given message is serialised — one draw per
+    The stdlib leaves a boundary unset until serialisation, then draws one
+    from ``random.randrange()`` — one draw per multipart per
     ``build_message()`` call, since each call builds a fresh
-    ``EmailMessage`` — see the module docstring on
-    ``svc/delivery/message.py``. That token appears both in the
-    ``Content-Type`` header and in every ``--<token>`` delimiter line, and
-    is the *only* thing that varies between two assemblies of the same
-    input, so replacing every occurrence of it isolates that one axis for
-    a determinism check.
+    ``EmailMessage``. See the module docstring on
+    ``svc/delivery/message.py``.
+
+    **Every**, not the first: since #111 a message is always a
+    ``multipart/alternative``, and one with CID images carries a second
+    boundary for the nested ``multipart/related``. Normalising only the
+    first is the exact trap that docstring warns about — the comparison
+    then still differs on the other and the test fails for a reason that
+    has nothing to do with what it is checking.
+
+    Each token appears in a ``Content-Type`` header and in every
+    ``--<token>`` delimiter line built from it, and is the *only* thing
+    that varies between two assemblies of the same input.
     """
-    match = _BOUNDARY_RE.search(raw)
-    if match is None:
-        return raw
-    return raw.replace(match.group(1), b"BOUNDARY")
+    for index, match in enumerate(_BOUNDARY_RE.finditer(raw)):
+        raw = raw.replace(match.group(1), b"BOUNDARY-%d" % index)
+    return raw
 
 
 @pytest.fixture
@@ -76,12 +81,16 @@ def cid_email(valid_metadata, png_bytes, other_png_bytes) -> Email:
 class _StubEmail:
     """A RenderableEmail whose HTML and manifest can be made to disagree."""
 
-    def __init__(self, html: str, assets: list[ImageAsset]):
+    def __init__(self, html: str, assets: list[ImageAsset], text: str = "stub text"):
         self._html = html
         self._assets = assets
+        self._text = text
 
     def render(self) -> str:
         return self._html
+
+    def text(self) -> str:
+        return self._text
 
     def assets(self) -> list[ImageAsset]:
         return list(self._assets)
@@ -269,43 +278,103 @@ class TestHeaders:
         assert message["Date"] is None
         assert message["Message-ID"] is None
 
-    def test_assembly_is_deterministic(self, plain_email):
-        # No CID images, so no multipart/related and no MIME boundary —
-        # this path is byte-identical outright.
-        first = build_message(plain_email, **ENVELOPE).as_bytes()
-        second = build_message(plain_email, **ENVELOPE).as_bytes()
-        assert first == second
+    @pytest.mark.parametrize("fixture", ["plain_email", "cid_email"])
+    def test_assembly_is_deterministic_modulo_mime_boundaries(self, fixture, request):
+        """
+        Assembly is pure — no clock, no network, no ``random`` of its own —
+        so two builds of one input differ *only* in the boundaries the
+        stdlib draws at serialisation.
 
-    def test_multipart_assembly_is_deterministic_modulo_mime_boundary(self, cid_email):
-        # An email with CID images becomes multipart/related, and
-        # EmailMessage.make_related() never sets a boundary, so the stdlib
-        # generator draws a fresh random one per build_message() call (each
-        # call constructs a fresh EmailMessage) — that is the one axis on
-        # which two assemblies of the same input are allowed to differ (see
-        # svc/delivery/message.py's docstring).
-        first = build_message(cid_email, **ENVELOPE).as_bytes()
-        second = build_message(cid_email, **ENVELOPE).as_bytes()
+        Both paths carry at least one now: #111 made every message a
+        ``multipart/alternative``, so the no-images case is no longer
+        byte-identical outright, and the images case carries a second.
+        """
+        email = request.getfixturevalue(fixture)
+        first = build_message(email, **ENVELOPE).as_bytes()
+        second = build_message(email, **ENVELOPE).as_bytes()
 
         # The non-determinism is real, not a hypothetical — assert it so
         # this test cannot pass vacuously if a future stdlib pins the
         # boundary and the claim below becomes trivially true.
         assert first != second
 
-        assert _normalize_boundary(first) == _normalize_boundary(second)
+        assert _normalize_boundaries(first) == _normalize_boundaries(second)
+
+    def test_an_email_with_images_carries_two_boundaries(self, cid_email):
+        """
+        The count the module docstring now names, asserted — because code
+        written against the old single-boundary shape normalises one and
+        still differs on the other, and that failure is confusing rather
+        than informative.
+        """
+        raw = build_message(cid_email, **ENVELOPE).as_bytes()
+        assert len(_BOUNDARY_RE.findall(raw)) == 2
+
+
+def _structure(message) -> list[tuple[int, str]]:
+    """(depth, content-type) for every part, in document order."""
+
+    def walk(part, depth=0):
+        yield depth, part.get_content_type()
+        if part.is_multipart():
+            for child in part.get_payload():
+                yield from walk(child, depth + 1)
+
+    return list(walk(message))
 
 
 class TestStructure:
-    def test_email_without_images_is_not_multipart(self, plain_email):
+    def test_an_email_without_images_is_text_then_html(self, plain_email):
         message = build_message(plain_email, **ENVELOPE)
-        assert message.get_content_type() == "text/html"
-        assert not message.is_multipart()
+        assert _structure(message) == [
+            (0, "multipart/alternative"),
+            (1, "text/plain"),
+            (1, "text/html"),
+        ]
 
-    def test_email_with_images_is_multipart_related(self, cid_email):
+    def test_an_email_with_images_nests_the_related_subtree(self, cid_email):
+        """
+        The reserved structure, exactly as the module docstring promised it
+        before #111: the ``multipart/related`` subtree is what it always was,
+        one level deeper.
+        """
         message = build_message(cid_email, **ENVELOPE)
-        assert message.get_content_type() == "multipart/related"
-        types = [part.get_content_type() for part in message.walk()]
-        assert types.count("text/html") == 1
-        assert types.count("image/png") == 2
+        assert _structure(message) == [
+            (0, "multipart/alternative"),
+            (1, "text/plain"),
+            (1, "multipart/related"),
+            (2, "text/html"),
+            (2, "image/png"),
+            (2, "image/png"),
+        ]
+
+    def test_the_text_part_comes_first(self, plain_email):
+        """
+        RFC 2046 §5.1.4 orders an alternative by *increasing* preference, so
+        the fallback goes first. Reversing them is silent: every graphical
+        client still shows the HTML, and only the readers who need the
+        fallback see the wrong thing.
+        """
+        parts = build_message(plain_email, **ENVELOPE).get_payload()
+        assert [p.get_content_type() for p in parts] == ["text/plain", "text/html"]
+
+    def test_the_text_part_is_what_the_builder_projected(self, plain_email):
+        message = build_message(plain_email, **ENVELOPE)
+        part = message.get_payload()[0]
+        assert part.get_content().rstrip("\n") == plain_email.text()
+
+    def test_the_images_relate_to_the_html_not_to_the_alternative(self, cid_email):
+        """
+        They are resources of the HTML alternative specifically. Relating
+        them to the alternative would attach them to the text part too —
+        which is how a text-only reader ends up with a paperclip for art
+        they cannot see.
+        """
+        message = build_message(cid_email, **ENVELOPE)
+        text_part, related = message.get_payload()
+        assert text_part.get_content_type() == "text/plain"
+        assert not text_part.is_multipart()
+        assert [p.get_content_maintype() for p in related.get_payload()[1:]] == ["image", "image"]
 
     def test_image_parts_are_inline_with_bracketed_content_ids(self, cid_email):
         message = build_message(cid_email, **ENVELOPE)
@@ -321,9 +390,11 @@ class TestStructure:
     def test_multipart_related_names_the_root_part_type(self, cid_email):
         # RFC 2387: multipart/related needs a 'type' param naming the root
         # part's media type, or a strict client has no defined way to pick
-        # text/html out of the image/* parts sitting alongside it.
-        message = build_message(cid_email, **ENVELOPE)
-        assert message.get_param("type") == "text/html"
+        # text/html out of the image/* parts sitting alongside it. Since #111
+        # that param belongs to the nested related part, not the top level.
+        related = build_message(cid_email, **ENVELOPE).get_payload()[-1]
+        assert related.get_content_type() == "multipart/related"
+        assert related.get_param("type") == "text/html"
 
     def test_content_id_header_matches_the_html_cid_reference_exactly(self, cid_email):
         # Deliberately bare, not "<id@domain>": the HTML the builder already
@@ -369,11 +440,38 @@ class TestManifestVerification:
         stub = _StubEmail("<p>no images here</p>", [_asset("orphan1", png_bytes)])
         with pytest.warns(UserWarning, match="orphan1"):
             message = build_message(stub, **ENVELOPE)
-        assert message.get_content_type() == "multipart/related"
+        assert _structure(message) == [
+            (0, "multipart/alternative"),
+            (1, "text/plain"),
+            (1, "multipart/related"),
+            (2, "text/html"),
+            (2, "image/png"),
+        ]
 
     def test_matching_manifest_assembles(self, png_bytes):
         stub = _StubEmail('<img src="cid:ok1">', [_asset("ok1", png_bytes)])
-        assert build_message(stub, **ENVELOPE).get_content_type() == "multipart/related"
+        assert build_message(stub, **ENVELOPE).get_payload()[-1].get_content_type() == (
+            "multipart/related"
+        )
+
+    def test_a_text_part_mentioning_cid_does_not_trip_the_check(self, png_bytes):
+        """
+        The cross-check is scoped to the HTML deliberately: the text part
+        carries URLs as text and never a ``cid:`` reference, so documentation
+        copy that happens to say ``cid:`` must not be read as one — nor
+        satisfy a reference the HTML makes.
+        """
+        stub = _StubEmail(
+            "<p>no images here</p>",
+            [],
+            text="Attached images use cid:missing1 references.",
+        )
+        message = build_message(stub, **ENVELOPE)
+        assert _structure(message) == [
+            (0, "multipart/alternative"),
+            (1, "text/plain"),
+            (1, "text/html"),
+        ]
 
     def test_unusable_mime_type_is_rejected(self, png_bytes):
         broken = ImageAsset(
@@ -385,6 +483,9 @@ class TestManifestVerification:
 
     def test_builder_errors_are_not_swallowed(self, valid_metadata):
         class _Exploding:
+            def text(self) -> str:
+                return "text"
+
             def render(self) -> str:
                 raise EmailBuilderError("bad template")
 
@@ -415,7 +516,14 @@ class TestDryRun:
         path = save_eml(build_message(cid_email, **ENVELOPE), tmp_path / "m.eml")
         reparsed = message_from_bytes(path.read_bytes(), _class=EmailMessage)
         assert reparsed["Subject"] == ENVELOPE["subject"]
-        assert reparsed.get_content_type() == "multipart/related"
+        assert _structure(reparsed) == [
+            (0, "multipart/alternative"),
+            (1, "text/plain"),
+            (1, "multipart/related"),
+            (2, "text/html"),
+            (2, "image/png"),
+            (2, "image/png"),
+        ]
 
 
 class TestCidSeamEndToEnd:
