@@ -1,0 +1,31 @@
+For illustrative purposes. Not investment advice.
+
+
+Hermes Research
+===============
+
+custom-footer
+Week ending 24 August · Issue 006
+
+
+Market Snapshot
+---------------
+
+S&P 500: 5,234 (+1.42%)
+UST 10Y: 4.28% (+6 bps)
+
+
+Same Body, Different Close
+--------------------------
+
+The box below is the footer's half of the shared surface; the strip above
+renders on the theme's own tokens.
+
+
+Distributed to registered recipients only.
+
+2026 Hermes Research — all rights reserved
+
+Privacy: https://example.com/privacy
+Stop receiving this: https://example.com/unsubscribe
+Contact the desk: mailto:research@example.com

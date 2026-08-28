@@ -25,14 +25,16 @@ import pytest
 
 from qa.fixtures import all_fixtures
 from qa.goldens import (
+    GOLDEN_DIR,
     GoldenMismatch,
+    artifacts,
     check_fixture,
     html_path,
-    manifest_path,
     render_manifest,
+    text_path,
     write_fixture,
 )
-from svc.builder import Email, FullWidth, TextBlock
+from svc.builder import AuthorBlock, Email, FullWidth, TextBlock
 from svc.builder.engine import TemplateEngine
 
 FIXTURE_NAMES = sorted(all_fixtures())
@@ -65,7 +67,7 @@ def _line_of(text: str, needle: str) -> int:
 
 
 class TestEveryFixtureMatchesItsGolden:
-    def test_html_and_manifest_are_unchanged(self, fixture_name, request):
+    def test_every_artifact_is_unchanged(self, fixture_name, request):
         """
         The drift gate. With ``--update-goldens`` this rewrites instead of
         asserting — the only regeneration path there is.
@@ -77,13 +79,18 @@ class TestEveryFixtureMatchesItsGolden:
         mismatches = check_fixture(fixture_name, email)
         assert not mismatches, "\n\n".join(str(m) for m in mismatches)
 
-    def test_both_goldens_are_checked_in(self, fixture_name):
+    def test_every_golden_is_checked_in(self, fixture_name):
         """
         A fixture with no golden is a fixture nobody is watching. Named
         separately from the comparison so the failure says which of the two
         situations it is.
+
+        Read off :func:`qa.goldens.artifacts` rather than a list of paths, so
+        a fourth artifact is covered the day it is added rather than the day
+        somebody remembers this test.
         """
-        for path in (html_path(fixture_name), manifest_path(fixture_name)):
+        email = all_fixtures()[fixture_name]()
+        for _, path, _ in artifacts(fixture_name, email):
             assert path.is_file(), f"{path} is missing; run `pytest --update-goldens`."
 
 
@@ -125,6 +132,12 @@ class TestTheHarnessDetectsDrift:
         """
         The other direction: the templates are untouched and a metadata value
         moved. Same report, located at the line the value renders on.
+
+        Since #110 this moves **two** artifacts, and that is the stronger
+        claim: ``issue_label`` is a fact the email owns, so both projections
+        carry it and both must notice. A change that moved only one of them
+        would mean the two parts had come to disagree about what the email
+        says.
         """
         from qa.fixtures import kitchen_sink
 
@@ -134,9 +147,10 @@ class TestTheHarnessDetectsDrift:
 
         mismatches = check_fixture("kitchen_sink", kitchen_sink.build())
 
-        assert [m.artifact for m in mismatches] == ["rendered HTML"]
-        golden = html_path("kitchen_sink").read_text(encoding="utf-8")
-        assert f"line {_line_of(golden, 'Issue 001')}," in mismatches[0].report
+        assert [m.artifact for m in mismatches] == ["rendered HTML", "plain text"]
+        for mismatch, path in zip(mismatches, (html_path, text_path), strict=True):
+            golden = path("kitchen_sink").read_text(encoding="utf-8")
+            assert f"line {_line_of(golden, 'Issue 001')}," in mismatch.report
 
     def test_the_report_shows_both_versions_of_the_line(self, tmp_path):
         """
@@ -230,6 +244,52 @@ class TestTheManifestSnapshotDetectsDrift:
         assert render_manifest(all_fixtures()["minimal"]()) == ""
 
 
+class TestTheTextGoldenDetectsDrift:
+    """
+    The harness must *bite* on the new artifact, tested the way the HTML side
+    already is rather than assumed.
+
+    The perturbation here is deliberately a **component's projection** rather
+    than a fact: since #109 the text part is a second projection of the tree,
+    so a ``text()`` can change with the HTML byte-identical. That is precisely
+    the drift no other golden in the gallery can see, and the reason this is a
+    third file rather than a section of the first.
+    """
+
+    def test_a_changed_projection_moves_only_the_text_golden(self, monkeypatch):
+        monkeypatch.setattr(AuthorBlock, "text", lambda self: "PERTURBED BYLINE")
+
+        mismatches = check_fixture("kitchen_sink", all_fixtures()["kitchen_sink"]())
+
+        assert [m.artifact for m in mismatches] == ["plain text"]
+
+    def test_it_is_located_at_the_line_that_moved(self, monkeypatch):
+        monkeypatch.setattr(AuthorBlock, "text", lambda self: "PERTURBED BYLINE")
+
+        mismatch = check_fixture("kitchen_sink", all_fixtures()["kitchen_sink"]())[0]
+
+        golden = text_path("kitchen_sink").read_text(encoding="utf-8")
+        assert f"line {_line_of(golden, 'A. Analyst')}," in mismatch.report
+        assert "PERTURBED BYLINE" in mismatch.report
+        assert "--update-goldens" in mismatch.report
+
+    def test_a_deleted_text_golden_fails_rather_than_recreating_itself(self, monkeypatch, tmp_path):
+        """
+        The same rule the other two artifacts carry, and worth pinning for
+        this one separately: a golden that writes itself on first run pins
+        whatever happened to be true that day.
+        """
+        shutil.copytree(GOLDEN_DIR, tmp_path / "goldens")
+        monkeypatch.setattr("qa.goldens.GOLDEN_DIR", tmp_path / "goldens")
+        (tmp_path / "goldens" / "minimal.txt").unlink()
+
+        mismatches = check_fixture("minimal", all_fixtures()["minimal"]())
+
+        assert [m.artifact for m in mismatches] == ["plain text"]
+        assert "no plain text golden is checked in" in mismatches[0].report
+        assert not (tmp_path / "goldens" / "minimal.txt").exists()
+
+
 class TestAMissingGoldenFails:
     """
     A golden is never created implicitly. One that writes itself on first run
@@ -249,12 +309,14 @@ class TestAMissingGoldenFails:
 
         mismatches = check_fixture("unpinned", email)
 
-        assert len(mismatches) == 2
+        assert [m.artifact for m in mismatches] == [a for a, _, _ in artifacts("unpinned", email)]
         assert all(isinstance(m, GoldenMismatch) for m in mismatches)
         assert all("--update-goldens" in m.report for m in mismatches)
 
     def test_write_fixture_creates_the_directory(self, monkeypatch, tmp_path):
         target = tmp_path / "nested" / "goldens"
         monkeypatch.setattr("qa.goldens.GOLDEN_DIR", target)
-        written = write_fixture("minimal", all_fixtures()["minimal"]())
-        assert [p.is_file() for p in written] == [True, True]
+        email = all_fixtures()["minimal"]()
+        written = write_fixture("minimal", email)
+        assert written == [path for _, path, _ in artifacts("minimal", email)]
+        assert all(path.is_file() for path in written)

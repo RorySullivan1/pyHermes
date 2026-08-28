@@ -1,0 +1,37 @@
+For illustrative purposes. Not investment advice.
+
+
+Q3 Outlook
+==========
+
+What the curve is pricing
+Rates Strategy · Week ending 24 August · Issue 004
+
+
+Market Snapshot
+---------------
+
+UST 2Y: 4.61% (+8 bps)
+UST 10Y: 4.28% (+6 bps)
+2s10s: -33 bps (+2 bps)
+
+
+Curve and Carry
+---------------
+
+The front end repriced on the payrolls beat while the long end barely moved,
+leaving the curve flatter into month-end.
+
+Tenor    Δ 1W
+-----  ------
+2Y     +8 bps
+10Y    +6 bps
+30Y     +1 bp
+
+
+Distributed to registered recipients only.
+
+© 2026 Hermes Research
+
+Unsubscribe: https://example.com/unsubscribe
+View in browser: https://example.com/archive/004

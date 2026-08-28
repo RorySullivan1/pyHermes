@@ -113,6 +113,7 @@ qa/                     ← QA harness (epic #54); NOT shipped in the wheel
                         minimal_footer, slate_theme, compact_size, spacious_size,
                         + all_fixtures()
     └── goldens/       — the checked-in snapshots: <name>.html + <name>.assets.txt
+                          + <name>.txt (the plain-text projection, #110)
 output/                 — generated email HTML (gitignored; not committed)
 tests/                  — pytest unit suite (validation, error paths, size limits)
 .github/workflows/      — CI: ruff, mypy, pytest
@@ -186,15 +187,20 @@ detection test perturbs a real template instead of only the compared text. It st
 ## Golden snapshots — `qa/goldens.py` + `qa/fixtures/goldens/`
 
 The byte-identity bar the migration epics (#33, #41, #42, #49) all promise to hold, made
-mechanical (#58). Two artifacts per fixture, because a render and its attachments drift
-independently:
+mechanical (#58). Three artifacts per fixture, because a render, its attachments and its
+plain-text projection all drift independently:
 
 | File | What it pins |
 |---|---|
 | `goldens/<name>.html` | The rendered HTML, byte for byte, no normalization |
 | `goldens/<name>.assets.txt` | One tab-separated record per `ImageAsset`, **in manifest order** — content-id, MIME type, byte length, filename |
+| `goldens/<name>.txt` | The plain-text projection (#110), byte for byte |
 
-Four decisions worth not re-litigating:
+**What is pinned lives in one list.** `artifacts(name, email)` returns the `(label, path,
+content)` triples, and `check_fixture()` and `write_fixture()` both walk it — so a fourth
+artifact cannot end up checked but never written, or written but never checked.
+
+Five decisions worth not re-litigating:
 
 - **The manifest stores no image bytes.** They already live in the fixture that generates them,
   and a Content-ID is `sha256(bytes)[:16]` — different bytes cannot keep the same id, so id plus
@@ -208,6 +214,13 @@ Four decisions worth not re-litigating:
   being created** — one that writes itself on first run pins whatever happened to be true that
   day. *A golden diff in a PR is a claim that the visual change is intended*, and it is reviewed
   as one.
+- **The text golden is a third file, not a section of the first.** Since #109 the text part
+  is a *second projection of the section tree* rather than a degradation of the render, so a
+  component's `text()` can change with the HTML byte-identical and vice versa — neither golden
+  can see the other's drift. A test perturbs a component's projection and asserts only the
+  `.txt` artifact moves; another perturbs a *fact* and asserts **both** do, which is the
+  stronger claim, since a fact the email owns must reach both parts or they have come to
+  disagree about what the email says.
 - **A mismatch must be diagnosable.** "Bytes differ" on a 47 KB document costs the next reader an
   hour, so the report names the fixture, the artifact, the line, the byte offset, three lines of
   context and both versions of the line that moved. That the harness *bites* is tested by
@@ -324,10 +337,15 @@ python -m qa.preview kitchen_sink --lint --screenshot
 python -m qa.preview drafts/weekly.py:build --lint --open
 ```
 
+It writes **both** projections — `output/<name>.html` and `output/<name>.txt` (#110). An email
+has two readable parts, and writing only the HTML would leave out the half no screenshot and no
+lint rule can show you.
+
 **It composes; it never reimplements.** Fixtures come from `all_fixtures()`, findings from
-`lint_html()`, images from `capture_emails()`. A test asserts the HTML it writes equals
-`Email.render()` byte for byte, because the one thing that would make this tool worse than
-useless is being a second rendering path.
+`lint_html()`, images from `capture_emails()`. Tests assert the HTML it writes equals
+`Email.render()` byte for byte **and** the text equals `Email.text()`, because the one thing
+that would make this tool worse than useless is being a second rendering path — and since
+#109 there are two projections it could be a second path for.
 
 That rule earned its keep immediately: `capture_gallery()` could only screenshot names in the
 registry, and **a user's draft never is one** — so `qa/screenshots.py` gained

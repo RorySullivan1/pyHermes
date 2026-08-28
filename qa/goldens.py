@@ -1,8 +1,8 @@
 """
 Golden snapshots over the fixture gallery (#58) — and #32's characterization test.
 
-Two artifacts are pinned per fixture, because a render and its attachments can
-drift independently:
+Three artifacts are pinned per fixture, because a render, its attachments and
+its plain-text projection all drift independently:
 
 ``goldens/<name>.html``
     The rendered HTML, byte for byte, with no normalization. This is the
@@ -19,6 +19,16 @@ drift independently:
     cannot keep the same id. Order is preserved rather than sorted, so a
     reordering of ``Email.assets()`` is a failure, which is what #32 asked
     for: image aggregation moves between classes during the header epic.
+
+``goldens/<name>.txt``
+    The plain-text projection (#110), byte for byte. It is a *separate*
+    artifact for the same reason the manifest is: since #109 the text part is
+    a second projection of the section tree rather than a degradation of the
+    render, so a component's ``text()`` can change with the HTML byte-identical
+    and vice versa. Neither golden can see the other's drift.
+
+    Its first regeneration is reviewed as what it is — the initial pin of the
+    house format, where the diff *is* the feature.
 
 **One harness, not two.** #58 required that this and #32 resolve to a single
 mechanism. #32 had not started, so it is satisfied here: ``kitchen_sink`` is
@@ -69,6 +79,11 @@ def manifest_path(name: str) -> Path:
     return GOLDEN_DIR / f"{name}.assets.txt"
 
 
+def text_path(name: str) -> Path:
+    """Path to a fixture's plain-text golden."""
+    return GOLDEN_DIR / f"{name}.txt"
+
+
 def render_manifest(email: Email) -> str:
     """
     Serialise an email's asset manifest to the checked-in text form.
@@ -109,37 +124,47 @@ class GoldenMismatch:
         return self.report
 
 
+def artifacts(name: str, email: Email) -> list[tuple[str, Path, str]]:
+    """
+    Every artifact pinned for one fixture: ``(label, path, content)``.
+
+    The single list :func:`check_fixture` and :func:`write_fixture` both walk,
+    so checking and regenerating cannot come to disagree about what is pinned
+    — which is how a fourth artifact would otherwise be checked but never
+    written, or written but never checked.
+    """
+    return [
+        ("rendered HTML", html_path(name), email.render()),
+        ("asset manifest", manifest_path(name), render_manifest(email)),
+        ("plain text", text_path(name), email.text()),
+    ]
+
+
 def check_fixture(name: str, email: Email) -> list[GoldenMismatch]:
     """
-    Compare a built email against both of its goldens.
+    Compare a built email against every one of its goldens.
 
     Returns:
-        A list of mismatches, empty when the fixture matches. Both artifacts
-        are always checked, so one run reports HTML *and* manifest drift
-        rather than hiding the second behind the first.
+        A list of mismatches, empty when the fixture matches. Every artifact
+        is always checked, so one run reports HTML *and* manifest *and* text
+        drift rather than hiding the later ones behind the first.
     """
     return [
         mismatch
-        for artifact, path, actual in (
-            ("rendered HTML", html_path(name), email.render()),
-            ("asset manifest", manifest_path(name), render_manifest(email)),
-        )
+        for artifact, path, actual in artifacts(name, email)
         if (mismatch := _compare(name, artifact, path, actual)) is not None
     ]
 
 
 def write_fixture(name: str, email: Email) -> list[Path]:
     """
-    Rewrite both goldens for one fixture. The ``--update-goldens`` path.
+    Rewrite every golden for one fixture. The ``--update-goldens`` path.
 
     Returns the paths written, so a caller can report what it touched.
     """
     GOLDEN_DIR.mkdir(parents=True, exist_ok=True)
     written = []
-    for path, content in (
-        (html_path(name), email.render()),
-        (manifest_path(name), render_manifest(email)),
-    ):
+    for _, path, content in artifacts(name, email):
         path.write_text(content, encoding="utf-8")
         written.append(path)
     return written
@@ -252,9 +277,11 @@ __all__ = [
     "GOLDEN_DIR",
     "UPDATE_FLAG",
     "GoldenMismatch",
+    "artifacts",
     "check_fixture",
     "html_path",
     "manifest_path",
     "render_manifest",
+    "text_path",
     "write_fixture",
 ]

@@ -1,0 +1,63 @@
+For illustrative purposes. Not investment advice.
+
+
+Hermes Research
+===============
+
+slate-preset
+Week ending 7 September · Issue 004
+
+
+A Palette Is One Argument
+-------------------------
+
+Choosing a theme is a single metadata field. Every surface, rule, text tone
+and shadow in this email follows from it — including the ones only Outlook and
+dark-mode clients see.
+
+
+Highlighted Band
+----------------
+
+S&P 500: 5,234 (+1.42%)
+Coverage: 128 names
+
+
+Table And Prose
+---------------
+
+1. Rates
+
+Front end steady.
+
+2. Credit
+
+Spreads firm.
+
+Metric        Level  Change
+------------  -----  ------
+Policy rate   4.25%    unch
+Core CPI       2.8%    -0.1
+Unemployment   4.1%    +0.1
+
+Hermes Research
+7 September 2026
+
+
+Left.
+
+Centre.
+
+Right.
+
+
+A. Analyst
+Head of Research · research@example.com
+
+
+Distributed to registered recipients only.
+
+© 2026 Hermes Research
+
+Unsubscribe: https://example.com/unsubscribe
+View in browser: https://example.com/archive/004

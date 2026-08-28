@@ -1,0 +1,30 @@
+For illustrative purposes. Not investment advice.
+
+
+Hermes Research
+===============
+
+minimal-header
+Week ending 24 August · Issue 002
+
+
+Same Body, Different Masthead
+-----------------------------
+
+The body is untouched by the choice of header region — selecting one is an
+argument, not a template fork.
+
+
+Market Snapshot
+---------------
+
+S&P 500: 5,234 (+1.42%)
+UST 10Y: 4.28% (+6 bps)
+
+
+Distributed to registered recipients only.
+
+© 2026 Hermes Research
+
+Unsubscribe: https://example.com/unsubscribe
+View in browser: https://example.com/archive/002
