@@ -128,7 +128,7 @@ tests/                  — pytest unit suite (validation, error paths, size lim
 ## The fixture gallery — `qa/fixtures`
 
 The shared set of representative emails every later QA tool consumes (#57, the first step of
-epic #54). Twelve fixtures, each a `build()` returning a built `Email`, enumerated through
+epic #54). Thirteen fixtures, each a `build()` returning a built `Email`, enumerated through
 `all_fixtures()` so a consumer never imports them one by one:
 
 | Fixture | What it is for |
@@ -143,6 +143,7 @@ epic #54). Twelve fixtures, each a `build()` returning a built `Email`, enumerat
 | `no_header` | The `EmptyHeader` variant (#96) — a region that fills **no** slot, so the strip is genuinely absent rather than blank. Differs from `minimal` in one argument, and pairs the **default** banner on purpose (`minimal_footer`'s reasoning: two region choices swapped at once could not say which moved a byte). Its `header_disclaimer` is *set*, which is the point — an empty one would leave the strip absent either way, and the golden could not tell "the variant omitted it" from "there was nothing to render" |
 | `custom_footer` | Both footer axes at once (#101), closing epic #98 — the coloured box surface (`align`, `background_color`, `text_color`) and a custom `LinkRow` with a link set that is neither the default pair nor the same length. Paired with the **default header** on purpose, so the two boxes are independent in the diff and their contrast is visible in a screenshot; it also carries the only `mailto:` link in the gallery, since a scheme check must keep passing what it allows and not only reject what it does not |
 | `modern_fonts` | The `modern` preset (#107), the third axis's A/B. Renders **`kitchen_sink`'s own content** at one non-default `font_theme`, the `compact_size` shape exactly. It is the first artifact that can show `heading` and `body` are separate **roles**: they share a stack in the default, so until a preset moved one and held the other, nothing could tell them apart. It also pins that the `[if mso]` fallback moves with the rest — a literal there would leave an email custom-faced in Gmail and Georgia in Outlook, the half-themed failure in the client hardest to check. Its diff against `kitchen_sink` is *only* `font-family` values, and a test asserts that by stripping them and comparing the rest byte for byte |
+| `rich_table` | Every `DataTable` axis at once (#121), closing epic #116 — a caption, a second **text** column, a **centred** column, per-cell colours *and* backgrounds, an alignment override, `subhead` groupings and a `total`. **Two tables on purpose**: the second has a **numeric first column**, which is the only way a golden can show that the row-header rule keys on the column's resolved *kind* rather than on position — with one table, "the first cell is a row header" and "a text first column is a row header" pin identically. Its body is short for `custom_banner`'s reason, and its theme, size and font stay default so no preset moves alongside a table axis |
 | `minimal_footer` | A minimal-footer build (#66), the same argument at the other end. Paired with the **default** header on purpose: the two region choices are independent, and swapping both at once could not say which one moved a byte |
 
 **Determinism is the rule the gallery rests on**, and it is not a style preference: Content-IDs
@@ -711,7 +712,15 @@ These are not conventions to remember — each has teeth, and the teeth are name
    renders identically and simply announces itself to a screen reader as a data table with
    dimensions, once per table. The gallery emits 68 tables for one email, so this is the
    difference between an email a screen-reader user can read and one they cannot.
-9. **A new component must implement `text()`, and absence fails loudly.** The mirror of rule
+9. **A new *property* on a component joins the gallery, at a non-default value.** Rule 1
+   covers a new component *class*; this covers its fields, which had no rule at all until
+   epic #116 added seven of them. `TestComponentFieldsAreExercised` introspects
+   `DataTable`, `Column`, `Cell` and `TableRow` and fails when a field is never set to
+   anything but its default — because a field at its default is one the golden cannot pin.
+   It is scoped to the table objects today and is **a first instance, not a special case**:
+   the next component to grow a vocabulary should widen it rather than let its fields go
+   unpinned for the same reason these did.
+10. **A new component must implement `text()`, and absence fails loudly.** The mirror of rule
    7 with the **opposite default**: an absent image list is empty, an absent projection is a
    `NotImplementedError` naming the class. A component with no visual content can exist — a
    spacer would — but a *content* component invisible to text-mode readers is the
@@ -1411,7 +1420,7 @@ projects itself, the same way each already renders itself and declares its own i
 monkeypatches `TemplateEngine.render` to raise and projects every gallery fixture** — the claim
 is asserted, not trusted.
 
-- **Absence fails loudly** (standing rule 9) — the `images()` rule with the opposite default.
+- **Absence fails loudly** (standing rule 10) — the `images()` rule with the opposite default.
 - **Generated, never hand-authored.** There is no `text_override`, and a test introspects every
   exported class to keep it that way: derived text cannot drift from the HTML's content.
 - **Raw HTML degrades through one small parser.** The five blessed surfaces
@@ -1709,10 +1718,31 @@ Reach for these rather than improvising:
 ## Open work
 
 - Tracked in [GitHub issues](https://github.com/RorySullivan1/pyHermes/issues), organised as
-  epics with sub-issues. **Every filed epic is now complete**: #38 (header region), #45 (size
+  epics with sub-issues. **Every filed epic is complete**: #38 (header region), #45 (size
   themes), #46 (colour themes), #52 (delivery), #53 (plain text), #54 (QA harness), #55
-  (footer region), #56 (typography), #87 (the `Header` region), #88 (banner region) and #98
-  (the footer box).
+  (footer region), #56 (typography), #87 (the `Header` region), #88 (banner region), #98
+  (the footer box) and **#116 (the expressive `DataTable`)**. #115 (a `language` field) is
+  the one open issue.
+- **The DataTable epic (#116) is complete** — #117 columns, #118 cells, #119 row kinds, #120
+  the caption and row headers, #121 the fixture and these docs. Four things it leaves:
+  - **A convention doing four jobs is a convention waiting to break.** `loop.first` decided
+    alignment, typeface and weight in the template *and* the column alignment in
+    `textgen.table()`. It was correct and compact; the tell that it could not be extended was
+    that a **fifth reader in another module** had to re-derive it so the two projections would
+    agree.
+  - **An escape hatch survives on its justification, not its shape.** `Cell.color` and
+    `Cell.background` are the fourth entry in the closed colour list and a *different kind* of
+    entry: the first three name a ground the caller supplies, this one supplies none and is
+    admitted as **data**. The same fields justified as "the caller wants control" would
+    dissolve the palette exactly as a `title_color=` would — so the argument is written next
+    to them, and a test asserts the docstring still carries it.
+  - **Component fields had no completeness rule** until this epic needed one, while metadata
+    fields, region fields and component *classes* all did. Worth asking, when the next axis
+    lands, which of its parts is unwatched.
+  - **A tag swap can be a visual change.** #120's diff is three things, not two: `th` is bold
+    by default in browsers *and* the Word engine, so every label cell had to start emitting
+    `font-weight: normal` or a semantic change would have bolded a column in every shipped
+    email.
 - **The plain-text epic (#53) is complete** — #108 the degrader, #109 the projections, #110 the
   text goldens, #111 the `multipart/alternative` assembly. Four things it leaves:
   - **A second projection beats a degradation, and the test is what says so.** Stripping the

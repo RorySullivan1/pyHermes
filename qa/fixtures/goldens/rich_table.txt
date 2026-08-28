@@ -1,0 +1,52 @@
+For illustrative purposes. Not investment advice.
+
+
+Hermes Research
+===============
+
+rich-table
+Portfolio Analytics · Week ending 24 August · Issue 007
+
+
+Sleeve Performance
+------------------
+
+Grouped by asset class
+
+Sleeve performance, gross of fees
+
+Sleeve            Manager   Weight     1M     YTD
+----------------  --------  ------  -----  ------
+Equities
+Global core       Ashford    18%    +1.8%   +7.4%
+Emerging markets  Kestrel     6%    -0.4%  +11.2%
+Fixed income
+Sovereign         In-house   41%    +0.3%   +1.9%
+Credit            Marlow     35%    -0.2%   +3.6%
+----------------  --------  ------  -----  ------
+Total                        100%   +0.6%   +4.1%
+
+Hermes Research
+24 August 2026
+
+
+Contribution Ranking
+--------------------
+
+Top contributors by rank
+
+Rank  Sleeve       bps
+----  -----------  ---
+   1  Sovereign    +42
+   2  Global core  +31
+   3  Credit        -8
+
+
+Weights are as of the close on the as-of date. A shaded cell marks a stale
+valuation.
+
+
+© 2026 Hermes Research
+
+Unsubscribe: https://example.com/unsubscribe
+View in browser: https://example.com/archive/007

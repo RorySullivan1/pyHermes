@@ -145,8 +145,39 @@ Two existing tests needed updating for **shape, not claim**:
 `count("<th") == count(scope="col")` became *every* `th` is scoped either
 way, and a `split("<td")` index shifted now that the first cell is a `th`.
 
+## #121, as shipped — the epic closes
+
+`rich_table` (thirteenth fixture), the field-completeness test, and the docs.
+
+**The completeness test is the durable part, and it closes a gap the epic
+*found* rather than created.** Metadata fields, region fields and component
+*classes* all had completeness rules; component **fields** had none — so
+seven new `DataTable` properties would have been added, never exercised, and
+silently rotted. `TestComponentFieldsAreExercised` introspects `DataTable`,
+`Column`, `Cell` and `TableRow`.
+
+**Proved to fail, not assumed to work**: temporarily adding `Cell.tooltip`
+and `Column.width` fails both checks, naming the field. A completeness test
+nobody has seen fail is a completeness test nobody knows works.
+
+**The fixture carries two tables on purpose.** The second has a numeric first
+column, which is the only way a golden can show the row-header rule keys on
+the column's resolved *kind* rather than on position — with one table, "the
+first cell is a row header" and "a text first column is a row header" pin
+identically.
+
+**One pre-existing test needed widening for a real reason.** The theme
+audit's `caller_data` set knew about `KpiItem.color` and `TableRow.colors`
+but not `Cell.background`, so a legitimate caller colour read as an
+unaudited *theme* colour. Widened with a comment saying why those four sit
+outside the audit: they are claims about a figure, and the palette's
+authority is over surfaces the theme owns.
+
+Only `rich_table`'s own three artifacts are new; no existing golden moved.
+
 ## State at end
 
-1658 tests with a browser, 4 skipping even then. ruff / `ruff format --check` /
-mypy clean. Only **#121** left in the epic: the `rich_table` fixture, the
-field-completeness test that closes the introspection gap, and the docs.
+1674 tests with a browser, 4 skipping even then. ruff / `ruff format --check` /
+mypy clean. **Epic #116 is closed, and with it every filed epic.** #115 (a
+`language` field) is the one open issue. Branch carries #114 and #117–#121,
+unshipped — no PR open.

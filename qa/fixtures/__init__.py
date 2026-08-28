@@ -30,6 +30,7 @@ from . import (
     minimal_footer,
     modern_fonts,
     no_header,
+    rich_table,
     slate_theme,
     spacious_size,
 )
@@ -77,6 +78,7 @@ def all_fixtures() -> dict[str, FixtureBuilder]:
         "compact_size": compact_size.build,
         "spacious_size": spacious_size.build,
         "modern_fonts": modern_fonts.build,
+        "rich_table": rich_table.build,
     }
 
 
