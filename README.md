@@ -317,6 +317,32 @@ limit, Outlook's Word engine and the mobile collapse all at once, so a scheme no
 rendered in a real client is a compatibility claim nobody has tested. There is no per-email
 or per-component size override: you pick a theme, never a px.
 
+## Typeface
+
+The third axis, and the same shape as the other two:
+
+```python
+from svc.builder import DEFAULT_FONTS, EmailBuilder, FontStack
+
+EmailBuilder().metadata({..., "font_theme": "modern"})              # or "classic"
+EmailBuilder().metadata({..., "font_theme": DEFAULT_FONTS.derive(   # or your own
+    heading=FontStack("Publico", "Georgia", "serif"))})
+```
+
+Four roles — `heading`, `body`, `label`, `numeric` — named by the job a face does rather than
+by the face doing it, so a theme can move the titling without touching the reading copy or the
+figures. That is what `modern` is: a sans display and sans chrome over the default serif body,
+with the data table's mono held so its columns still align.
+
+Every stack must end in a generic family (`serif`, `sans-serif`, `monospace`). Email clients
+give no webfont guarantee and Outlook substitutes silently, so the terminal is what decides
+what a reader actually sees. There are no webfonts here for the same reason: a font-CDN
+`<link>` is the external stylesheet the lint pass denies outright, and an `@font-face` block
+fetches a font file the major clients strip or ignore.
+
+A face swap moves no px — sizes belong to `size_theme` — but rendered line lengths do move with
+the metrics, which is what the screenshots are for.
+
 ## What it enforces
 
 These are the failures that are invisible until a reader reports them, so they are checked

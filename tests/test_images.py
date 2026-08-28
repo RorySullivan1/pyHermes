@@ -316,6 +316,7 @@ class TestHeaderImages:
             "footer",
             "theme",
             "size_theme",
+            "font_theme",
         }
 
 

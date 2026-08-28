@@ -17,6 +17,7 @@ if TYPE_CHECKING:  # pragma: no cover - import cycle: images/regions import from
     from .images import EmailImage
     from .regions import Banner, Footer, Header
     from .theming import Theme
+    from .typography import FontTheme
 
 # ──────────────────────────────────────────────────────────────────────
 # Helpers
@@ -92,6 +93,13 @@ def _default_footer() -> "Footer":
     from .regions import Footer
 
     return Footer()
+
+
+def _default_fonts() -> "FontTheme":
+    """The shipped typefaces. Lazy, for the same cycle reason as below."""
+    from .typography import DEFAULT_FONTS
+
+    return DEFAULT_FONTS
 
 
 def _default_theme() -> "Theme":
@@ -180,6 +188,18 @@ class EmailMetadata:
     #: differ: callers pick a density, never a px.
     size_theme: "SizeTheme | str" = SizeTheme.STANDARD
 
+    #: Every typeface the email renders with. A
+    #: :class:`~svc.builder.typography.FontTheme` instance or the name of a
+    #: curated preset — ``theme``'s width rather than ``size_theme``'s
+    #: narrowness, and the asymmetry argument runs the *other way* here.
+    #: Density is names-only because an untested scheme interacts with the
+    #: clipping limit, the Word engine and the mobile collapse at once;
+    #: a custom ``FontTheme`` is safe **by construction**, because the
+    #: terminal-generic rule means Outlook always walks a chain the caller
+    #: curated down to a websafe floor. A house brand face with fallbacks is
+    #: the axis's core use case. See :mod:`svc.builder.typography`.
+    font_theme: "FontTheme | str" = field(default_factory=_default_fonts)
+
     # Back-compatible region keywords. InitVars, so they are constructor
     # arguments only: they never become attributes and never appear in
     # ``fields()``, ``repr`` or ``==`` — the region is the single owner.
@@ -229,6 +249,7 @@ class EmailMetadata:
         from .regions import Banner, Footer
         from .sizing import resolve_size_scheme
         from .theming import resolve_theme
+        from .typography import resolve_font_theme
 
         self.banner = self._hydrate(
             Banner,
@@ -255,6 +276,7 @@ class EmailMetadata:
         # point that turns it into a concrete Theme.
         resolve_theme(self.theme)
         resolve_size_scheme(self.size_theme)
+        resolve_font_theme(self.font_theme)
 
     def _hydrate(self, region_cls: type, attr: str, legacy: dict[str, Any]) -> Any:
         """
@@ -306,10 +328,11 @@ class EmailMetadata:
         arrives in the skeleton as the slot strings it fills. ``theme`` is
         excluded for the mirror-image reason: it reaches every template
         through the bound engine, so carrying it here too would give one
-        value two sources — and ``size_theme`` is excluded for exactly the
-        same reason, since the resolved scheme rides the same binder.
+        value two sources — and ``size_theme`` and ``font_theme`` are excluded
+        for exactly the same reason, since the resolved scheme and the
+        resolved typefaces ride the same binder.
         """
-        skip = {"header", "banner", "footer", "theme", "size_theme"}
+        skip = {"header", "banner", "footer", "theme", "size_theme", "font_theme"}
         return {f.name: getattr(self, f.name) for f in fields(self) if f.name not in skip}
 
 

@@ -73,6 +73,8 @@ svc/
 │   ├── enums.py        — StrEnum vocab: TwoColumnRatio, ThreeColumnRatio, CardOrientation, EmbedStrategy, ImageAlign, SizeTheme
 │   ├── theming.py      — Theme (Palette/TextColors/SemanticColors/ShadowStyle),
 │                         DEFAULT_THEME, SLATE_THEME, THEMES, resolve_theme
+│   ├── typography.py   — FontStack, FontTheme (heading/body/label/numeric),
+│                         DEFAULT_FONTS, MODERN_FONTS, FONT_THEMES, resolve_font_theme
 │   ├── sizing.py       — SizeScheme (TypeScale/SpacingScale/ComponentScale/FrameGeometry),
 │                         STANDARD/COMPACT/SPACIOUS_SIZES, SIZE_SCHEMES, resolve_size_scheme,
 │                         column_layout() — the frame arithmetic eight templates used to hold
@@ -120,7 +122,7 @@ tests/                  — pytest unit suite (validation, error paths, size lim
 ## The fixture gallery — `qa/fixtures`
 
 The shared set of representative emails every later QA tool consumes (#57, the first step of
-epic #54). Eleven fixtures, each a `build()` returning a built `Email`, enumerated through
+epic #54). Twelve fixtures, each a `build()` returning a built `Email`, enumerated through
 `all_fixtures()` so a consumer never imports them one by one:
 
 | Fixture | What it is for |
@@ -134,6 +136,7 @@ epic #54). Eleven fixtures, each a `build()` returning a built `Email`, enumerat
 | `custom_banner` | Every banner axis at once (#94), which is what closes epic #88 — free-form `title`/`subtitle`, a `department`, an **attached** background image and a `BannerPalette` tuned to it. The one fixture a *cross-axis* regression shows up in, since no per-axis test can see an interaction. It also covers the only embed path the gallery otherwise lacked: a `cid:` background, reaching the manifest through `Banner.images()`' walk of `IMAGE_FIELDS` and appearing in both the CSS `background-image` and the VML `v:fill`. Its body is short on purpose — `kitchen_sink` exercises the component library, and a fat body here would make this golden noisy for reasons unrelated to the masthead |
 | `no_header` | The `EmptyHeader` variant (#96) — a region that fills **no** slot, so the strip is genuinely absent rather than blank. Differs from `minimal` in one argument, and pairs the **default** banner on purpose (`minimal_footer`'s reasoning: two region choices swapped at once could not say which moved a byte). Its `header_disclaimer` is *set*, which is the point — an empty one would leave the strip absent either way, and the golden could not tell "the variant omitted it" from "there was nothing to render" |
 | `custom_footer` | Both footer axes at once (#101), closing epic #98 — the coloured box surface (`align`, `background_color`, `text_color`) and a custom `LinkRow` with a link set that is neither the default pair nor the same length. Paired with the **default header** on purpose, so the two boxes are independent in the diff and their contrast is visible in a screenshot; it also carries the only `mailto:` link in the gallery, since a scheme check must keep passing what it allows and not only reject what it does not |
+| `modern_fonts` | The `modern` preset (#107), the third axis's A/B. Renders **`kitchen_sink`'s own content** at one non-default `font_theme`, the `compact_size` shape exactly. It is the first artifact that can show `heading` and `body` are separate **roles**: they share a stack in the default, so until a preset moved one and held the other, nothing could tell them apart. It also pins that the `[if mso]` fallback moves with the rest — a literal there would leave an email custom-faced in Gmail and Georgia in Outlook, the half-themed failure in the client hardest to check. Its diff against `kitchen_sink` is *only* `font-family` values, and a test asserts that by stripping them and comparing the rest byte for byte |
 | `minimal_footer` | A minimal-footer build (#66), the same argument at the other end. Paired with the **default** header on purpose: the two region choices are independent, and swapping both at once could not say which one moved a byte |
 
 **Determinism is the rule the gallery rests on**, and it is not a style preference: Content-IDs
@@ -163,7 +166,11 @@ underneath it. Only exemptions are named, in `DEPRECATED_COMPONENTS` (today: `Kp
 markup duplicates a section already in the gallery and which warns on construction), plus
 `EmailMetadata.banner` and `EmailMetadata.footer` themselves — `kitchen_sink` builds both
 regions **explicitly**, so their own fields are pinned by the per-region test rather than by
-the metadata one. The flat, pre-split banner keywords used to be pinned by this fixture's
+the metadata one — plus `ANCHORED_TO_THE_DEFAULT`, today `size_theme` and `font_theme`. Those
+two are the one case where holding the default is the *point*: this fixture is what every
+migration's byte-identity claim is measured against, so its density and its faces have to be
+the ones the claim is about. Their non-default paths are pinned by `compact_size` /
+`spacious_size` and `modern_fonts`, which render this same email one field apart. The flat, pre-split banner keywords used to be pinned by this fixture's
 golden and are no longer: #91 gave the banner two fields with no flat spelling (the keywords
 exist for a pre-split call site, and a field added after the split has none), so the coverage
 moved to `TestTheFlatKeywordsStillWork` — where it is *stronger*, because a golden pins each
@@ -643,7 +650,20 @@ These are not conventions to remember — each has teeth, and the teeth are name
    `letter-spacing` and `text-shadow` offsets are shape rather than density and stay literal.
    Watch the `@media` block for rule 4's reason exactly: overrides carrying their own
    literals leave an email desktop-themed and mobile-standard.
-6. **A region that carries images must declare them.** Same rule components already have,
+6. **A new template takes its faces from the `font` namespace.** The third of the same
+   rule, for the third axis: a hardcoded `font-family` is a face outside the vocabulary,
+   which is the drift epic #56 exists to end. One test fails on any `font-family`
+   declaration that is not a `{{ font.* }}` read, and there is **no exception list** — the
+   audit found none that needed one, unlike sizes' four structural px. A second test renders
+   the gallery's widest email under a sentinel `FontTheme` and asserts every role appears
+   *and* that no shipped family survives, which is what catches a token bypassed rather than
+   merely absent. **The watch-site is the `[if mso]` block**, not the `@media` one: `body,
+   td, th { font-family: … }` is Outlook's floor for everything, so a literal there renders
+   a themed email custom-faced in Gmail and Georgia in Outlook — the half-themed failure in
+   the client hardest to check. The dark-mode and `@media` blocks carry no faces today, and
+   a test asserts that too, so a future edit adding one has to tokenise it like everything
+   else.
+7. **A region that carries images must declare them.** Same rule components already have,
    and the same failure if you skip it: the bytes never reach `Email.assets()` and the
    `cid:` reference renders as a broken image. Declaring means listing the field in
    `IMAGE_FIELDS` — `Region.images()` walks it — or overriding `images()` if the bytes come
@@ -660,6 +680,7 @@ from svc.builder import EmailBuilder, Email, \
     DEFAULT_THEME, SLATE_THEME, THEMES, \
     SizeScheme, TypeScale, SpacingScale, ComponentScale, FrameGeometry, \
     STANDARD_SIZES, COMPACT_SIZES, SPACIOUS_SIZES, SIZE_SCHEMES, \
+    FontStack, FontTheme, DEFAULT_FONTS, MODERN_FONTS, FONT_THEMES, \
     Region, Header, EmptyHeader, Banner, MinimalBanner, Footer, \
     FullWidth, TwoColumn, ThreeColumn, \
     CardGroup, DataTable, ChartBlock, ImageBlock, TextBlock, NumberedList, AuthorBlock, ContactBlock
@@ -874,13 +895,17 @@ reproduces today's output — so an existing email renders unchanged unless it o
 - **Density is a parameter — but the atom is the whole `SizeScheme`, and only by name.**
   `EmailMetadata(size_theme="compact")` is the entire caller-facing sizing surface. See
   *Sizing* below.
-- **Not parameters, deliberately**: fonts, and any individual px anywhere. Padding and the
-  680px frame are no longer *fixed* — a theme moves both — but they are still not something
-  a caller sets per email or per component. That distinction is the whole of the rule:
-  **callers pick a theme, never a px.** A `font_size=` on a call site would dissolve the
-  design system one component at a time, exactly as a `title_color=` would dissolve the
-  palette, and a template that stops surviving Outlook is how it would show up. A test
-  introspects every exported class and fails if such a parameter ever appears.
+- **The typeface is a parameter — but the atom is the whole `FontTheme`.**
+  `EmailMetadata(font_theme="modern")`, or a `FontTheme` object, is the entire caller-facing
+  typography surface. See *Typography* below.
+- **Not parameters, deliberately**: any individual px anywhere, and any individual face at a
+  call site. Padding, the 680px frame and the faces are no longer *fixed* — a theme moves all
+  three — but none of them is something a caller sets per email or per component. That
+  distinction is the whole of the rule: **callers pick a theme, never a px and never a
+  family.** A `font_size=` or a `font_family=` on a call site would dissolve the design system
+  one component at a time, exactly as a `title_color=` would dissolve the palette, and a
+  template that stops surviving Outlook is how it would show up. A test introspects every
+  exported class and fails if such a parameter ever appears.
 
 ### Validation philosophy
 
@@ -1029,8 +1054,7 @@ that is legal and will render, and no `ValidationError` will tell you. Judge it 
 `python -m qa.preview <fixture> --screenshot`, remembering that Chromium's colour handling
 is not Outlook's.
 
-**Non-goals, as decisions**: no font theming (its own client-testing burden); no dark theme —
-the skeleton still forces light rendering and the migration tokenised that block without
+**Non-goals, as decisions**: no dark theme — the skeleton still forces light rendering and the migration tokenised that block without
 changing what it does; no contrast or taste policing; **one theme per email** — a palette is
 an email-level voice, so there is no per-section mixing.
 
@@ -1124,7 +1148,86 @@ treat a KPI number as ordinary body copy. Tests assert all three.
 **no narrow-frame theme** — all three keep the 680px frame, and #42 made width *derivable* so
 that shipping a different one becomes a deliberate act with its own client-testing burden and
 its own interplay with image `width=` attributes, rather than a side effect; one theme per
-email, since density is an email-level voice; and no font theming, which stays #56's.
+email, since density is an email-level voice; and no font theming — which stopped being a
+non-goal when #56 landed, and is the axis below.
+
+### Typography — the face is one selected vocabulary
+
+Faces were the last hardcoded axis. Colour became a resolved `Theme` in #46 and density a
+resolved `SizeScheme` in #45, but `font-family` stacks stayed baked into the templates: 49
+declarations of three stacks across 15 files, unnamed and unvariable, so a newsletter wanting
+its own house face forked templates. Epic #56 replaced them with
+[svc/builder/typography.py](svc/builder/typography.py).
+
+```python
+from svc.builder import DEFAULT_FONTS, FontStack
+
+EmailBuilder().metadata({..., "font_theme": "modern"})           # a curated preset
+EmailBuilder().metadata({..., "font_theme": DEFAULT_FONTS.derive(  # or your own
+    heading=FontStack("Publico", "Georgia", "serif"))})
+```
+
+`EmailMetadata.font_theme` → resolved **once** in `Email.render()` → four roles
+(`heading`, `body`, `label`, `numeric`) → templates read `{{ font.body }}`.
+
+- **The atom is the `FontTheme`, and the surface accepts an object** — like `theme`, unlike
+  `size_theme`. The asymmetry is the same one, read the other way: density interacts with the
+  clipping limit, the Word engine and the mobile collapse at once, so an unrendered scheme is
+  an untested compatibility claim; a *face* fails visibly and locally, and every stack ends in
+  a generic family, so the worst case of a caller's own house font is the reader's default
+  serif. A house face is exactly the kind of thing a house has.
+- **A stack must end in a generic family** (`serif` / `sans-serif` / `monospace`), and a bare
+  generic alone is rejected as an empty decision. This is the one rule that makes the point
+  above true: email clients have no webfont guarantee and Outlook substitutes silently, so a
+  chain with no terminal is a chain whose last resort is whatever the client felt like.
+- **Roles are named by the job a face does, not by the face doing it** — the third repetition
+  of the vocabulary lesson, and the axis where it was hardest to see: `heading` and `body`
+  share one stack in the default, so a value-keyed migration would have merged them and been
+  byte-identical. `modern_fonts` is what proves the cut was in the right place, because it
+  moves one and holds the other.
+- **`FontStack.css` is byte-exact, and families are stored unquoted.** A caller passes
+  `FontStack("Courier New", "Courier", "monospace")`; the quoting rule (single quotes iff the
+  name contains a space), the `", "` separator and the absence of a trailing separator all
+  live in one property, for `Rgba.css`'s reason — an inline `style=` attribute is not a place
+  to hand-write escaping, and a family carrying a quote, a semicolon or an angle bracket is
+  rejected at construction rather than emitted into one.
+- **The migration was two commits, and had to be.** The templates spelled the same stack two
+  ways — `Georgia, 'Times New Roman', serif` in 26 declarations and the unspaced form in the
+  rest — so tokenising in one step could not be byte-identical, and a golden diff mixing "the
+  spelling changed" with "the mechanism changed" is a diff nobody can review. The first commit
+  normalised the spellings **as literals** (250 golden lines moved, script-verified to be
+  whitespace-only inside `font-family` values); the second tokenised and moved **nothing**.
+- **The watch-site is the `[if mso]` block, not the `@media` one.** `body, td, th {
+  font-family: … }` is Outlook's floor for the entire message, so a literal there renders a
+  themed email custom-faced in Gmail and Georgia in Outlook — a half-theming that only shows up
+  in the client hardest to check. The dark-mode and `@media` blocks carry no faces today, and a
+  test asserts that too, so an edit adding one has to tokenise it like everything else.
+
+**How the tokens are proved drawn.** The gallery's widest email is rendered under a
+`SENTINEL_FONTS` theme whose four roles are four findable families, and the test asserts each
+role reaches the page **and** that no shipped family survives. That second half is what earned
+its keep: `data-table.html` spelled its mono branch as `{% if loop.first %}Arial…{% endif %}`,
+so the literal did not sit behind a `font-family: ` prefix and the migration skipped it. The
+goldens could not see that — the render was correct, because the literal was correct — and the
+sentinel test failed immediately.
+
+**Adding a preset**: curate, do not permute. Add the `FontTheme` to `FONT_THEMES`, and **land
+it with a gallery fixture**, as `modern_fonts` does. Write it as an explicit theme or a
+`derive()`, so the roles it *decides* are the literal content of its definition, and add the
+pair of tests `modern` carries: that it moves only the roles it claims, and that its render
+differs from the default's in `font-family` values and in nothing else. `MODERN_FONTS` is the
+worked example — a display swap (`heading` and `label` to a sans, `body` and `numeric` held),
+not a wholesale reface, because a newsletter is read in a serif and a data table aligns in a
+mono.
+
+**Non-goals, as decisions**: no per-component or per-call-site `font_family=` (the theme is the
+whole surface, for the reason a `title_color=` would dissolve the palette); **no webfonts** —
+a `<link>` to a font CDN is exactly what the linter's `no-external-css` rule denies, and an
+`@font-face` block fetches a font file the major clients strip or ignore, which is why the
+terminal-generic rule is the guarantee instead; no
+font-size or weight in this vocabulary, because those are #45's axis and #56's whole claim is
+that a face swap moves **no px**; and one theme per email, since a face is an email-level voice
+exactly as a palette and a density are.
 
 ## Architecture — `svc/delivery`
 
@@ -1354,10 +1457,29 @@ Reach for these rather than improvising:
 ## Open work
 
 - Tracked in [GitHub issues](https://github.com/RorySullivan1/pyHermes/issues), organised as
-  epics with sub-issues: **#87 (the strip becomes its own `Header` region), #53 plain-text and
-  #56 typography are the remaining parents.** #38 (header region), #45 (size themes), #46
-  (colour themes), #52 (delivery), #54 (QA harness), #55 (footer region) and **#88 (banner
-  region)** are complete.
+  epics with sub-issues: **#53 (a plain-text alternative) is the only remaining parent.** #38
+  (header region), #45 (size themes), #46 (colour themes), #52 (delivery), #54 (QA harness),
+  #55 (footer region), #87 (the `Header` region), #88 (banner region), #98 (the footer box)
+  and **#56 (typography)** are complete.
+- **The typography epic (#56) is complete** — #104 built the vocabulary, #105 put `font_theme`
+  on the existing binder, #106 migrated the templates in two commits, #107 shipped `modern` and
+  its fixture. **The design system now has all three axes**, and they are deliberately the same
+  shape: one email-level field, resolved once in `render()`, bound as a shared value, read as a
+  namespace in every template, with a preset registry and a gallery fixture per preset. Three
+  things it leaves:
+  - **Ride the binder; there is still only one.** `TemplateEngine.bound(theme=…, size=…,
+    font=…)` now carries three values and no container, component or region has ever changed
+    signature to accept any of them. A fourth email-level value should be the fourth keyword,
+    not a fourth mechanism.
+  - **A vocabulary migration normalises before it tokenises.** The two spellings of one stack
+    are the general case: an axis's literals accumulate variants that are equal to a browser
+    and different to a golden. Splitting the commit is what lets the reviewer read "the
+    spelling moved, 250 lines" and "the mechanism moved, 0 lines" separately.
+  - **A sentinel render catches what a golden structurally cannot.** The goldens are
+    byte-identity, so a literal left behind is *correct output* to them. Rendering under a
+    theme whose every token is a findable sentinel, and asserting no shipped value survives,
+    is the check that found the one declaration #106's migration missed — and it is the
+    technique to reuse on any axis that claims to have tokenised everything.
 - **The banner epic (#88) is complete** — #89 split the masthead from the strip, #90 renamed
   `Header` → `Banner`, #91 gave the headline free-form copy with resolution chains, #92 added
   the department, #93 added `BannerPalette`, #94 landed `custom_banner` and these docs. Three
@@ -1386,9 +1508,9 @@ Reach for these rather than improvising:
     email's ratios never exercise no longer slips through. Both theme epics discharged their
     claim this way: #46 moved one comment and nothing else; #45 moved nothing at all.
   - **A theme lands with a fixture.** Epic #54 anticipated "one per theme as themes land",
-    and all four now exist — `slate_theme` for the palette, `compact_size` / `spacious_size`
-    for the two densities, with `minimal_banner` the worked example of a fixture that pins one
-    region variant. #88 added the other kind: `custom_banner` pins a *combination* rather than
+    and all five now exist — `slate_theme` for the palette, `compact_size` / `spacious_size`
+    for the two densities, `modern_fonts` for the faces, with `minimal_banner` the worked
+    example of a fixture that pins one region variant. #88 added the other kind: `custom_banner` pins a *combination* rather than
     a variant, because each of its four axes has its own tests and none of them can see an
     interaction.
 - **The region model is complete (#38 header, #55 footer)**, and between them `base.html`
@@ -1396,10 +1518,10 @@ Reach for these rather than improvising:
   - **The mechanism is generalised, not duplicated.** `Region` owns validation, the image
     walk, the facts-over-presentation layering and `render_slots()`; a region declares its
     slots, its templates and its fields. A future region-like idea should start there.
-    #87 is the next one and is the mechanism's own test: the strip already renders from a
-    template of its own into a slot of its own, so promoting it should be a change of
-    *owner*, not of markup. The preheader stays skeleton plumbing regardless — that one is a
-    decision, not a gap.
+    #87 was the mechanism's own test and it passed: the strip already rendered from a
+    template of its own into a slot of its own, so promoting it was a change of *owner*, not
+    of markup, and the skeleton's slot set never moved. The preheader stays skeleton plumbing
+    regardless — that one is a decision, not a gap.
   - **`EmailMetadata` is facts only.** A new field belongs there if it is *true of the
     email* and on a region if it is *how something looks*. The flat-keyword `InitVar` pattern
     is how a field moves off the metadata without breaking an existing call site.

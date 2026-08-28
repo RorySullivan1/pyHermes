@@ -6,6 +6,6 @@
     text_content — Paragraph HTML or plain text
 #}
 {% if subtitle %}
-<p style="font-family: Georgia, 'Times New Roman', serif; font-size: {{ size.type.secondary }}px; font-style: italic; color: {{ theme.text.secondary }}; margin: 0 0 {{ size.space.subtitle_gap }}px 0; line-height: {{ size.type.secondary_line | percent }};">{{ subtitle | escape_html }}</p>
+<p style="font-family: {{ font.body }}; font-size: {{ size.type.secondary }}px; font-style: italic; color: {{ theme.text.secondary }}; margin: 0 0 {{ size.space.subtitle_gap }}px 0; line-height: {{ size.type.secondary_line | percent }};">{{ subtitle | escape_html }}</p>
 {% endif %}
-<p class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: {{ size.type.body }}px; color: {{ theme.text.primary }}; line-height: {{ size.type.body_line | percent }}; margin: 0 0 {{ size.space.block_gap }}px 0;">{{ text_content }}</p>
+<p class="body-text" style="font-family: {{ font.body }}; font-size: {{ size.type.body }}px; color: {{ theme.text.primary }}; line-height: {{ size.type.body_line | percent }}; margin: 0 0 {{ size.space.block_gap }}px 0;">{{ text_content }}</p>

@@ -33,6 +33,7 @@ from .models import EmailMetadata
 from .regions import Banner, Footer, Header
 from .sizing import resolve_size_scheme
 from .theming import resolve_theme
+from .typography import resolve_font_theme
 
 # The shipped defaults, kept as module constants because they read as the
 # thresholds themselves at a call site. The live values come from
@@ -262,6 +263,7 @@ class Email:
         engine = self._engine.bound(
             theme=resolve_theme(self._metadata.theme),
             size=resolve_size_scheme(self._metadata.size_theme),
+            font=resolve_font_theme(self._metadata.font_theme),
         )
 
         sections_html = "\n".join(section.render(engine) for section in self._sections)

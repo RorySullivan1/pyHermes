@@ -40,7 +40,7 @@
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                   <tr>
                     <td width="100%" valign="bottom" style="padding:{{ size.space.masthead_top }}px 0 {{ size.space.masthead_title_bottom }}px {{ size.frame.pad_x }}px;">
-                      <p style="margin:0; font-family:Georgia,'Times New Roman',serif; font-size:{{ size.type.title }}px;
+                      <p style="margin:0; font-family: {{ font.heading }}; font-size:{{ size.type.title }}px;
                                 font-weight:bold; color:{{ banner_palette.title }}; line-height:{{ size.type.title_line | percent }}; letter-spacing:0.3px;
                                 text-shadow:0 1px 3px {{ banner_palette.title_shadow }};"
                          class="mobile-title">
@@ -59,7 +59,7 @@
                   </tr>
                   <tr>
                     <td valign="middle" style="padding:0 0 {{ size.space.masthead_campaign_bottom }}px {{ size.frame.pad_x }}px;">
-                      <p style="margin:0; font-family:Arial,Helvetica,sans-serif; font-size:{{ size.type.secondary }}px;
+                      <p style="margin:0; font-family: {{ font.label }}; font-size:{{ size.type.secondary }}px;
                                 font-weight:400; color:{{ banner_palette.subtitle }}; line-height:{{ size.type.heading_line | percent }};
                                 text-shadow:0 1px 2px {{ banner_palette.subtitle_shadow }};">
                         {{ banner_subtitle | escape_html }}
@@ -67,7 +67,7 @@
                     </td>
                     <td valign="middle" align="right" style="padding:0 {{ size.frame.pad_x }}px {{ size.space.masthead_campaign_bottom }}px {{ size.space.gutter }}px;">
                       {% if department %}
-                      <p style="margin:0; font-family:Arial,Helvetica,sans-serif; font-size:{{ size.type.small }}px;
+                      <p style="margin:0; font-family: {{ font.label }}; font-size:{{ size.type.small }}px;
                                 color:{{ banner_palette.meta }}; letter-spacing:0.6px; text-transform:uppercase;">
                         {{ department | escape_html }}
                       </p>
@@ -93,11 +93,11 @@
                     <td style="padding:{{ size.space.masthead_meta_top }}px {{ size.frame.pad_x }}px {{ size.space.masthead_meta_bottom }}px;">
                       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                         <tr>
-                          <td style="font-family:Arial,Helvetica,sans-serif; font-size:{{ size.type.small }}px;
+                          <td style="font-family: {{ font.label }}; font-size:{{ size.type.small }}px;
                                      color:{{ banner_palette.meta }}; letter-spacing:0.6px; text-transform:uppercase;">
                             {{ date_range | escape_html }}
                           </td>
-                          <td align="right" style="font-family:Arial,Helvetica,sans-serif; font-size:{{ size.type.small }}px;
+                          <td align="right" style="font-family: {{ font.label }}; font-size:{{ size.type.small }}px;
                                                     color:{{ banner_palette.meta }}; letter-spacing:0.6px; text-transform:uppercase;">
                             {{ issue_label | escape_html }}
                           </td>
