@@ -128,7 +128,7 @@ tests/                  — pytest unit suite (validation, error paths, size lim
 ## The fixture gallery — `qa/fixtures`
 
 The shared set of representative emails every later QA tool consumes (#57, the first step of
-epic #54). Twelve fixtures, each a `build()` returning a built `Email`, enumerated through
+epic #54). Thirteen fixtures, each a `build()` returning a built `Email`, enumerated through
 `all_fixtures()` so a consumer never imports them one by one:
 
 | Fixture | What it is for |
@@ -143,6 +143,7 @@ epic #54). Twelve fixtures, each a `build()` returning a built `Email`, enumerat
 | `no_header` | The `EmptyHeader` variant (#96) — a region that fills **no** slot, so the strip is genuinely absent rather than blank. Differs from `minimal` in one argument, and pairs the **default** banner on purpose (`minimal_footer`'s reasoning: two region choices swapped at once could not say which moved a byte). Its `header_disclaimer` is *set*, which is the point — an empty one would leave the strip absent either way, and the golden could not tell "the variant omitted it" from "there was nothing to render" |
 | `custom_footer` | Both footer axes at once (#101), closing epic #98 — the coloured box surface (`align`, `background_color`, `text_color`) and a custom `LinkRow` with a link set that is neither the default pair nor the same length. Paired with the **default header** on purpose, so the two boxes are independent in the diff and their contrast is visible in a screenshot; it also carries the only `mailto:` link in the gallery, since a scheme check must keep passing what it allows and not only reject what it does not |
 | `modern_fonts` | The `modern` preset (#107), the third axis's A/B. Renders **`kitchen_sink`'s own content** at one non-default `font_theme`, the `compact_size` shape exactly. It is the first artifact that can show `heading` and `body` are separate **roles**: they share a stack in the default, so until a preset moved one and held the other, nothing could tell them apart. It also pins that the `[if mso]` fallback moves with the rest — a literal there would leave an email custom-faced in Gmail and Georgia in Outlook, the half-themed failure in the client hardest to check. Its diff against `kitchen_sink` is *only* `font-family` values, and a test asserts that by stripping them and comparing the rest byte for byte |
+| `rich_table` | Every `DataTable` axis at once (#121), closing epic #116 — a caption, a second **text** column, a **centred** column, per-cell colours *and* backgrounds, an alignment override, `subhead` groupings and a `total`. **Two tables on purpose**: the second has a **numeric first column**, which is the only way a golden can show that the row-header rule keys on the column's resolved *kind* rather than on position — with one table, "the first cell is a row header" and "a text first column is a row header" pin identically. Its body is short for `custom_banner`'s reason, and its theme, size and font stay default so no preset moves alongside a table axis |
 | `minimal_footer` | A minimal-footer build (#66), the same argument at the other end. Paired with the **default** header on purpose: the two region choices are independent, and swapping both at once could not say which one moved a byte |
 
 **Determinism is the rule the gallery rests on**, and it is not a style preference: Content-IDs
@@ -289,10 +290,20 @@ test (#60). `lint_html(html)` returns `Finding(rule_id, severity, location, mess
 | `outlook-line-height` | error | A **unitless** `line-height`; Outlook Classic ignores it. `0` is allowed |
 | `outlook-transparent-background` | error | `background-color` carrying an alpha channel — Outlook demotes it to a background image |
 | `empty-url` | error | `url()` with nothing in it; a client may resolve it against the message body |
+| `table-role` | error | A layout table with no `role`, **and** a data table carrying one (#114) |
 | `size-budget` | warn/error | The 90/102 KB thresholds, **attributing the bytes to section-marker regions** |
 
-Six decisions worth not re-litigating:
+Seven decisions worth not re-litigating:
 
+- **`table-role` fires in both directions, and that is what makes it a rule rather than a
+  chore.** A check that only demanded `role="presentation"` would be satisfied by marking
+  *every* table — which strips the semantics from the one table a screen reader should
+  actually navigate. So an unmarked layout table is an error and a marked *data* table is an
+  error, and `th` is the discriminator: it distinguishes the two kinds in this codebase
+  exactly, and it is the same signal a reader uses. The check runs at the **closing** tag,
+  because that is when the verdict is known, but reports the opening one, because that is
+  where a reader has to go. The open tables are a stack: the gallery's one real data table
+  renders inside two layout tables, and a flat flag would mark all three as data.
 - **It parses, it never greps.** The repo learned this the expensive way — a `grep` for
   `Contact Us` matched inside a section-marker comment and produced a confident, wrong
   answer. `html.parser.HTMLParser` is stdlib, so the check costs no dependency.
@@ -694,7 +705,22 @@ These are not conventions to remember — each has teeth, and the teeth are name
    region is the only owner of its own images. The header and footer participate even though
    no shipped variant of either carries an image: a test builds a footer that does, because
    the slot has to work *before* someone writes that variant for real.
-8. **A new component must implement `text()`, and absence fails loudly.** The mirror of rule
+8. **A new template's tables declare what kind they are.** A layout table takes
+   `role="presentation"`; a real data table takes none and gives its header cells
+   `scope="col"` (#114). Both directions are enforced by the `table-role` lint rule, because
+   the failure is invisible in every browser and every screenshot — an unmarked layout table
+   renders identically and simply announces itself to a screen reader as a data table with
+   dimensions, once per table. The gallery emits 68 tables for one email, so this is the
+   difference between an email a screen-reader user can read and one they cannot.
+9. **A new *property* on a component joins the gallery, at a non-default value.** Rule 1
+   covers a new component *class*; this covers its fields, which had no rule at all until
+   epic #116 added seven of them. `TestComponentFieldsAreExercised` introspects
+   `DataTable`, `Column`, `Cell` and `TableRow` and fails when a field is never set to
+   anything but its default — because a field at its default is one the golden cannot pin.
+   It is scoped to the table objects today and is **a first instance, not a special case**:
+   the next component to grow a vocabulary should widen it rather than let its fields go
+   unpinned for the same reason these did.
+10. **A new component must implement `text()`, and absence fails loudly.** The mirror of rule
    7 with the **opposite default**: an absent image list is empty, an absent projection is a
    `NotImplementedError` naming the class. A component with no visual content can exist — a
    spacer would — but a *content* component invisible to text-mode readers is the
@@ -715,10 +741,10 @@ from svc.builder import EmailBuilder, Email, \
     Region, Header, EmptyHeader, Banner, MinimalBanner, Footer, \
     FullWidth, TwoColumn, ThreeColumn, \
     CardGroup, DataTable, ChartBlock, ImageBlock, TextBlock, NumberedList, AuthorBlock, ContactBlock
-from svc.builder.models import Card, KpiItem, TableRow, NumberedItem, EmailMetadata, \
+from svc.builder.models import Card, KpiItem, TableRow, Cell, Column, NumberedItem, EmailMetadata, \
     SectionConfig, LinkRow, FooterLink
 from svc.builder.enums import TwoColumnRatio, ThreeColumnRatio, CardOrientation, \
-    EmbedStrategy, ImageAlign, SizeTheme
+    EmbedStrategy, ImageAlign, SizeTheme, ColumnAlign, ColumnKind, RowKind
 from svc.builder.images import EmailImage, ImageAsset
 ```
 
@@ -769,6 +795,112 @@ Two deliberate shapes here, both chosen over adding more types:
   per row — which is also what the horizontal strip collapses to on mobile, via the
   `.kpi-cell` rule in `base.html`. `KpiStrip` survives as a **deprecated alias** for the
   horizontal case and warns.
+
+### The data table's columns
+
+`DataTable(headers=…)` takes bare strings **or** [Column](svc/builder/models.py) objects, mixed
+freely (#117). A string coerces to a `Column` whose presentation resolves from its position —
+`coerce_image`'s union-coercion, for `coerce_image`'s reason: a new capability should not cost
+every existing call site a rewrite.
+
+- **One convention was doing four jobs.** `loop.first` decided alignment, typeface and weight
+  in `data-table.html` *and* the column alignment in `textgen.table()`. It was correct and
+  compact; what it could not be was extended, and the tell was that a **fifth reader in
+  another module** had to re-derive it so the two projections would agree.
+- **The chain is cell → row → column → position**, and it runs through `kind` rather than
+  straight to the position: an unset `kind` is `text` for the first column and `numeric` for
+  the rest, and an unset `align` follows the *resolved kind*. So `Column("Desk", kind="text")`
+  on the third column gets left alignment without saying so, which is the point of naming the
+  kind at all. Unset everywhere, this reproduces `loop.first` exactly — every golden was
+  byte-identical across the migration.
+- **`resolved_columns()` is the single source both projections read.** The template reads the
+  resolved `align` and `kind`; `textgen.table()` is *handed* the alignments rather than
+  re-deriving them. Computing it twice is precisely how the HTML and the plain-text part would
+  come to disagree about which column is the label — the failure epic #53 spent four issues
+  preventing. A test asserts both readers against the resolution rather than against each
+  other, so it cannot pass by both being wrong the same way.
+- **A grep test keeps the convention from creeping back.** Re-introducing `loop.first` would
+  render correctly today and quietly make `Column` unreachable, which is the failure mode a
+  golden cannot see.
+
+**Column widths are deliberately not here.** They interact with the 680px frame arithmetic
+`sizing.py` owns and with the mobile collapse, so they are a separate decision with their own
+client-testing burden rather than a field to slip in.
+
+### The data table's cells
+
+`TableRow(cells=…)` takes bare strings **or** [Cell](svc/builder/models.py) objects, mixed
+freely (#118) — `text`, `align`, `color`, `background`. The chain completes: **cell → column →
+position**, so a cell's `align` overrides what its column resolved and an unset one inherits.
+
+- **Two index-aligned lists became one object.** `cells` and `colors` were held in step by a
+  validator, which is the shape an object replaces — `LinkRow`'s reason exactly.
+- **`colors` survives as the flat spelling**, as an `InitVar`: constructor-only, absent from
+  `fields()`, `repr` and `==`, so the `Cell` is the single owner and the two spellings cannot
+  drift. A test asserts they **converge** rather than pinning each separately. Passing both
+  `colors` and a `Cell` carrying a `color` raises rather than silently picking one.
+- **`Cell.color` and `Cell.background` are the fourth bounded colour exception**, and they are
+  admitted as **semantic data**: the caller's claim about a *figure* — *breached its limit*,
+  *stale mark*, *estimate* — of the same kind `TableRow.colors` already made. They are **not**
+  a styling surface: there is no cell font, size, border or padding, and a test over
+  `dataclasses.fields(Cell)` keeps it that way. A colour parameter whose justification
+  evaporated would be a `title_color=` with more steps.
+- **An explicit colour wins over the column's kind**, in either direction — the caller said
+  something about that figure, and the theme is only the fallback behind it.
+- **A cell background leaves the row's striping alone.** Marking one figure must not cost the
+  caller the alternating tint on every other cell in the row.
+- **Marking a cell costs zero bytes.** The template always emitted a `color` and a
+  `background-color` declaration; a caller's hex simply replaces the theme's, and both are
+  seven characters. The size worry the epic recorded turned out to be free.
+
+### The data table's row kinds
+
+`TableRow(kind=…)` says what a row *is* (#119): `data`, `total` or `subhead`
+([RowKind](svc/builder/enums.py)). A total is ruled off above and bold across; a subhead is a
+tinted label band.
+
+- **A row's kind is chrome; a cell's colour is data.** The two land next to each other and are
+  easy to conflate. A kind draws from theme tokens and takes **nothing** from the caller but
+  the word, which is why it is not a fifth colour exception. They compose rather than compete:
+  the row says *this is a summary*, a cell inside it still says *this figure is down*.
+- **Striping counts data rows, not row indices.** A subhead in the middle of a table must not
+  invert the tint of everything beneath it — the bug a naive `i % 2` ships, and a test pins the
+  row *below* a subhead specifically.
+- **A subhead is padded to the table's width.** One cell is the honest way to write a heading;
+  making the caller spell out the empties would be ceremony. Between one and the full width is
+  still a mistake and still raises. **There is no colspan** — Outlook's Word engine handles it
+  poorly, and a merged cell has no honest plain-text projection.
+- **Both kinds project in text**, which is the half most likely to be forgotten: a total gets
+  a rule above it matching the header's, and a subhead gets its label alone on its own line,
+  unpadded. A total indistinguishable from a data row in the text part is a total only half
+  the readers can find.
+- **At the default theme a subhead's tint equals `row_alt`**, because `highlight_tint` and
+  `row_alt` share a value today. So a subhead reads by its weight and heading colour rather
+  than by its band. That is a *theme* affordance, not a template limitation — the two tokens
+  are separate precisely so a theme can pull them apart, and a house style that wants a
+  stronger band does it there rather than here.
+
+### The data table's accessible name and row headers
+
+`DataTable(caption=…)` renders a `caption` element, and each row's label cell renders as
+`th scope="row"` (#120) — finishing what #114 started with `scope="col"`.
+
+- **A caption is the table's *name*, not a standfirst**, which is why it is a field of its own
+  rather than the existing `subtitle` reused. A subtitle is copy that happens to sit above the
+  table; a caption is attached to it in the markup and is what a screen reader announces on
+  reaching it. Rendering the subtitle *as* the caption would have been fewer fields, moved
+  every existing golden, and made shipped emails announce a standfirst where a name belongs.
+  An email with several tables is where it earns its keep.
+- **It is not visually hidden.** `display:none` removes it from screen readers too, defeating
+  the point, and the clip-rect idiom is unreliable across email clients. It renders, and a
+  caller who wants none sets none.
+- **`scope="row"` follows the column's resolved `kind`, not the position.** A table whose
+  first column is genuinely numeric — a rank — does not claim to head its row, which is only
+  expressible because #117 made the kind a resolved value.
+- **The weight had to become explicit**, and this is the one thing that would have turned a
+  semantic change into a visual one: `th` is bold by default in browsers *and* in Outlook's
+  Word engine, so a label cell that previously emitted no `font-weight` now emits `normal`.
+  That is the third thing in #120's golden diff, and it is there to keep the render identical.
 
 [Card](svc/builder/models.py) is the unit: `label` (required), `value`, `color`,
 `sublabel`, and an optional `body` for prose. Either `value` or `body` must be present.
@@ -993,6 +1125,7 @@ EmailBuilder().metadata({..., "theme": DEFAULT_THEME.derive(  # or your own
   | `Container.background_color` | pre-existing | a section band — the original escape hatch, neither removed nor extended |
   | `Banner.palette` (`BannerPalette`) | #93 | a **photograph**: `background_image_url` is an image the palette has never seen, so white-on-navy tokens over a pale one are a guess |
   | `Header` / `Footer` `background_color` + `text_color` (`BoxSurface`) | #95, #99 | the two outer **boxes**, the same reason at the size those boxes need |
+  | `Cell.color` + `Cell.background` | #118 | **not a ground at all — the other kind of exception.** Admitted as *semantic data*: the caller's claim about a **figure**, which is why `TableRow.colors` was never a breach either. See below |
 
   Everything else renders on surfaces the theme owns and gets nothing — every component, and
   every region's structural chrome. What the rule protects survives in all three, which is why
@@ -1000,8 +1133,17 @@ EmailBuilder().metadata({..., "theme": DEFAULT_THEME.derive(  # or your own
   (a whole `BannerPalette`, or a background *with* the type that has to be legible on it),
   never a lone colour at a call site.
 
+  **The fourth entry is a different kind of exception, and saying so is what keeps the rule
+  alive.** `Cell.color` and `Cell.background` supply no ground — they are *data*. The clause
+  that admits them is the one immediately below: `KpiItem.color` and `TableRow.colors` were
+  always the caller's statement about the number, not a styling choice, so a cell background
+  saying *breached its limit* or *stale mark* is the same claim in another channel. Read as
+  "the caller controls cell appearance" it would be a `title_color=` with more steps; read as
+  what it is, it never touches the palette's authority over surfaces the *theme* owns.
+
   **The list being closed is the point.** "Now every region gets a palette" is the failure
-  mode, not the roadmap; a fourth exception has to name a ground the caller supplies. The
+  mode, not the roadmap; a fifth exception has to name a ground the caller supplies, or be
+  data in the sense the fourth is. The
   scoping is enforced rather than described: `BannerPalette` covers the *banner slot* only, so
   the strip in the same region keeps the theme's tokens even though the two share a class, and
   a test asserts it. **And the colour pair never ships alone** — a background without the text
@@ -1278,7 +1420,7 @@ projects itself, the same way each already renders itself and declares its own i
 monkeypatches `TemplateEngine.render` to raise and projects every gallery fixture** — the claim
 is asserted, not trusted.
 
-- **Absence fails loudly** (standing rule 8) — the `images()` rule with the opposite default.
+- **Absence fails loudly** (standing rule 10) — the `images()` rule with the opposite default.
 - **Generated, never hand-authored.** There is no `text_override`, and a test introspects every
   exported class to keep it that way: derived text cannot drift from the HTML's content.
 - **Raw HTML degrades through one small parser.** The five blessed surfaces
@@ -1576,10 +1718,31 @@ Reach for these rather than improvising:
 ## Open work
 
 - Tracked in [GitHub issues](https://github.com/RorySullivan1/pyHermes/issues), organised as
-  epics with sub-issues. **Every filed epic is now complete**: #38 (header region), #45 (size
+  epics with sub-issues. **Every filed epic is complete**: #38 (header region), #45 (size
   themes), #46 (colour themes), #52 (delivery), #53 (plain text), #54 (QA harness), #55
-  (footer region), #56 (typography), #87 (the `Header` region), #88 (banner region) and #98
-  (the footer box).
+  (footer region), #56 (typography), #87 (the `Header` region), #88 (banner region), #98
+  (the footer box) and **#116 (the expressive `DataTable`)**. #115 (a `language` field) is
+  the one open issue.
+- **The DataTable epic (#116) is complete** — #117 columns, #118 cells, #119 row kinds, #120
+  the caption and row headers, #121 the fixture and these docs. Four things it leaves:
+  - **A convention doing four jobs is a convention waiting to break.** `loop.first` decided
+    alignment, typeface and weight in the template *and* the column alignment in
+    `textgen.table()`. It was correct and compact; the tell that it could not be extended was
+    that a **fifth reader in another module** had to re-derive it so the two projections would
+    agree.
+  - **An escape hatch survives on its justification, not its shape.** `Cell.color` and
+    `Cell.background` are the fourth entry in the closed colour list and a *different kind* of
+    entry: the first three name a ground the caller supplies, this one supplies none and is
+    admitted as **data**. The same fields justified as "the caller wants control" would
+    dissolve the palette exactly as a `title_color=` would — so the argument is written next
+    to them, and a test asserts the docstring still carries it.
+  - **Component fields had no completeness rule** until this epic needed one, while metadata
+    fields, region fields and component *classes* all did. Worth asking, when the next axis
+    lands, which of its parts is unwatched.
+  - **A tag swap can be a visual change.** #120's diff is three things, not two: `th` is bold
+    by default in browsers *and* the Word engine, so every label cell had to start emitting
+    `font-weight: normal` or a semantic change would have bolded a column in every shipped
+    email.
 - **The plain-text epic (#53) is complete** — #108 the degrader, #109 the projections, #110 the
   text goldens, #111 the `multipart/alternative` assembly. Four things it leaves:
   - **A second projection beats a degradation, and the test is what says so.** Stripping the

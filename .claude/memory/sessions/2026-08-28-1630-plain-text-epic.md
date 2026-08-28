@@ -103,5 +103,13 @@ exactly as the issue predicted, because both serialise through
 ## State at end
 
 1561 tests with a browser, 4 skipping even then. ruff / `ruff format --check` /
-mypy clean. **Every filed epic in the repo is complete.** No PR open on the
-branch.
+mypy clean. **Every filed epic in the repo is complete.**
+
+**PR #113 merged** (`38a52da`) — four commits, all four CI jobs green on the
+first push, no review comments. The branch is level with `main` and nothing is
+in flight.
+
+**What the next session inherits: an empty epic backlog.** Every parent issue
+the repo has filed is closed. New work therefore starts by *deciding what is
+worth doing*, not by picking the next sub-issue off a list — the first such
+moment since the roadmap was set.

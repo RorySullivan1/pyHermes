@@ -10,7 +10,7 @@ import re
 from dataclasses import InitVar, dataclass, field, fields
 from typing import TYPE_CHECKING, Any
 
-from .enums import SizeTheme
+from .enums import ColumnAlign, ColumnKind, RowKind, SizeTheme
 from .exceptions import ValidationError
 
 if TYPE_CHECKING:  # pragma: no cover - import cycle: images/regions import from here
@@ -471,24 +471,240 @@ class KpiItem(Card):
 
 
 @dataclass
-class TableRow:
-    """A single row in a data table."""
+class Column:
+    """
+    One column of a :class:`~svc.builder.components.DataTable`.
 
-    cells: list[str] = field(default_factory=list)
-    colors: list[str] = field(default_factory=list)
+    Replaces the bare header string, and with it the ``loop.first``
+    convention that used to decide four things at once — alignment, typeface,
+    weight, and (in another module entirely) the plain-text column alignment.
+    That convention was correct and compact; what it could not be was
+    *extended*, and the tell was that a fifth reader in
+    :mod:`svc.builder.textgen` had to re-derive it to keep the two
+    projections agreeing.
+
+    Both presentation fields default to empty, meaning **resolve** — and the
+    resolution reproduces the old convention exactly, so a table built from
+    plain strings renders byte-identically to one built before this class
+    existed.
+
+    Attributes:
+        header: The column's heading. Plain text, escaped on the way out.
+        align:  ``left`` / ``center`` / ``right``. Empty resolves from
+                :attr:`kind`.
+        kind:   ``text`` or ``numeric``. Empty resolves from the column's
+                *position*: the first column is text, the rest are numeric —
+                which is what ``loop.first`` meant.
+    """
+
+    header: str
+    align: str = ""
+    kind: str = ""
 
     def validate(self) -> None:
-        # colors is index-aligned with cells; the template indexes it directly
-        # (row.colors[loop.index0]), so a short list raises under StrictUndefined.
-        # Empty means "no colors" and is allowed.
-        if self.colors and len(self.colors) != len(self.cells):
+        _require(self.header, "column.header")
+        if self.align and self.align not in tuple(ColumnAlign):
             raise ValidationError(
-                f"'table_row.colors' must be empty or the same length as 'cells' "
-                f"({len(self.cells)}), got {len(self.colors)}."
+                f"'column.align' must be one of {[a.value for a in ColumnAlign]}, "
+                f"got: {self.align!r}"
             )
-        for c in self.colors:
-            if c:
-                _validate_color(c, "table_row.color")
+        if self.kind and self.kind not in tuple(ColumnKind):
+            raise ValidationError(
+                f"'column.kind' must be one of {[k.value for k in ColumnKind]}, got: {self.kind!r}"
+            )
+
+    def resolved_kind(self, index: int) -> ColumnKind:
+        """
+        What this column holds, falling back to its position.
+
+        The position rule *is* the old ``loop.first``: column zero labels the
+        row, everything after it carries figures.
+        """
+        if self.kind:
+            return ColumnKind(self.kind)
+        return ColumnKind.TEXT if index == 0 else ColumnKind.NUMERIC
+
+    def resolved_align(self, index: int) -> ColumnAlign:
+        """
+        How this column's text sits, falling back to what it holds.
+
+        Note the chain runs through :meth:`resolved_kind` rather than
+        straight to the position: a caller who says ``kind="text"`` on the
+        third column gets left alignment without also having to say so, which
+        is the point of naming the kind at all.
+        """
+        if self.align:
+            return ColumnAlign(self.align)
+        return (
+            ColumnAlign.LEFT if self.resolved_kind(index) is ColumnKind.TEXT else ColumnAlign.RIGHT
+        )
+
+    def resolved(self, index: int) -> "Column":
+        """This column with both presentation fields filled in."""
+        return Column(
+            header=self.header,
+            align=self.resolved_align(index),
+            kind=self.resolved_kind(index),
+        )
+
+
+def coerce_column(value: "str | Column", field_name: str = "column") -> Column:
+    """
+    Accept either a :class:`Column` or a bare header string.
+
+    Lets ``DataTable(headers=["Factor", "1M"])`` keep working untouched while
+    accepting a full column spec — the same union-coercion
+    :func:`~svc.builder.images.coerce_image` applies to images, and for the
+    same reason: a new capability should not cost every existing call site a
+    rewrite.
+    """
+    if isinstance(value, Column):
+        value.validate()
+        return value
+    if not isinstance(value, str):
+        raise ValidationError(
+            f"{field_name!r} must be a Column or a header string, got: {type(value).__name__}"
+        )
+    column = Column(header=value)
+    column.validate()
+    return column
+
+
+@dataclass
+class Cell:
+    """
+    One cell of a :class:`TableRow`.
+
+    Replaces the bare string, and with it the two index-aligned lists
+    (``cells`` and ``colors``) that a validator had to hold in step. That
+    shape is what an object exists to replace, for :class:`LinkRow`'s reason:
+    **the row has a variable-length part, and variable length is what fields
+    cannot express.**
+
+    **On the two colours — they are the caller's claim about a figure, not
+    control over appearance.** ``color`` is the field
+    ``TableRow.colors`` already set, and CLAUDE.md justifies it as *"the
+    caller's statement about the number ('this is down'), not a styling
+    choice"*. ``background`` is admitted on exactly that footing: a shaded
+    cell in a financial table says *breached its limit*, *stale mark*,
+    *estimate* — a claim about the figure, of the same kind its text colour
+    already makes. That is what makes this the **fourth** bounded exception
+    to the closed colour rule rather than a hole in the palette.
+
+    What it is deliberately **not**: a styling surface. There is no cell
+    font, no cell size, no border control, and no per-cell override of
+    anything the theme owns for structural reasons. If these fields ever read
+    as *"the caller styles cells"*, the closed list has opened and the rule
+    is dead — a ``title_color=`` with more steps.
+
+    The theme remains the fallback: an unset colour takes the token the
+    column's kind implies, and an unset background leaves the row's
+    alternating tint alone.
+
+    Attributes:
+        text:       The cell's contents. Plain text, escaped on the way out.
+        align:      Overrides the column's resolved alignment. Empty inherits.
+        color:      Text colour, ``#RRGGBB``. Empty takes the theme's token.
+        background: Cell background, ``#RRGGBB``. Empty leaves the row's
+                    alternating tint in place.
+    """
+
+    text: str = ""
+    align: str = ""
+    color: str = ""
+    background: str = ""
+
+    def validate(self) -> None:
+        if self.align and self.align not in tuple(ColumnAlign):
+            raise ValidationError(
+                f"'cell.align' must be one of {[a.value for a in ColumnAlign]}, got: {self.align!r}"
+            )
+        if self.color:
+            _validate_color(self.color, "cell.color")
+        if self.background:
+            _validate_color(self.background, "cell.background")
+
+    def resolved_align(self, column_align: str) -> str:
+        """This cell's alignment, falling back to its column's resolved one."""
+        return self.align or column_align
+
+
+def coerce_cell(value: "str | Cell", field_name: str = "cell") -> Cell:
+    """
+    Accept either a :class:`Cell` or a bare string.
+
+    ``TableRow(cells=["Value", "+1.8%"])`` keeps working untouched — the same
+    union-coercion :func:`coerce_column` and
+    :func:`~svc.builder.images.coerce_image` apply, for the same reason.
+    """
+    if isinstance(value, Cell):
+        value.validate()
+        return value
+    if not isinstance(value, str):
+        raise ValidationError(
+            f"{field_name!r} must be a Cell or a string, got: {type(value).__name__}"
+        )
+    return Cell(text=value)
+
+
+@dataclass
+class TableRow:
+    """
+    A single row in a data table.
+
+    ``cells`` accepts bare strings or :class:`Cell` objects, mixed freely,
+    and coerces at construction — so ``row.cells`` is always a list of
+    ``Cell``.
+
+    ``colors`` survives as the **flat spelling**: the index-aligned list this
+    row took before :class:`Cell` existed, kept working because it is the
+    common call path. It is an ``InitVar`` — a constructor argument only,
+    absent from ``fields()``, ``repr`` and ``==`` — so the ``Cell`` is the
+    single owner of a cell's colour and the two spellings cannot drift.
+    Passing ``colors`` *and* a ``Cell`` that carries its own ``color`` raises
+    rather than silently picking one, exactly as ``EmailMetadata`` does for
+    its flat region keywords.
+
+    ``kind`` says what the row *is* — see :class:`~svc.builder.enums.RowKind`.
+    It is chrome rather than data: a total is ruled and bolded from theme
+    tokens, and unlike a cell's colour it takes nothing from the caller but
+    the word. A ``subhead`` may be given a single cell and is padded to the
+    table's width, because a merged cell has no honest plain-text projection
+    and making the caller write the empty ones would be ceremony.
+    """
+
+    cells: list[Any] = field(default_factory=list)
+    colors: InitVar[list[str] | None] = None
+    kind: str = RowKind.DATA
+
+    def __post_init__(self, colors: list[str] | None) -> None:
+        if self.kind not in tuple(RowKind):
+            raise ValidationError(
+                f"'table_row.kind' must be one of {[k.value for k in RowKind]}, got: {self.kind!r}"
+            )
+        self.cells = [
+            coerce_cell(cell, f"table_row.cells[{i}]") for i, cell in enumerate(self.cells)
+        ]
+        if colors:
+            if len(colors) != len(self.cells):
+                raise ValidationError(
+                    f"'table_row.colors' must be empty or the same length as 'cells' "
+                    f"({len(self.cells)}), got {len(colors)}."
+                )
+            for cell, color in zip(self.cells, colors, strict=True):
+                if color and cell.color:
+                    raise ValidationError(
+                        "'table_row.colors' and a Cell's own 'color' both set for the same "
+                        "cell; pass one or the other, not both."
+                    )
+                if color:
+                    _validate_color(color, "table_row.color")
+                    cell.color = color
+
+    def validate(self) -> None:
+        """Re-check every cell. Coercion already validated at construction."""
+        for cell in self.cells:
+            cell.validate()
 
 
 @dataclass

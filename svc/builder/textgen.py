@@ -344,27 +344,47 @@ def join_sections(*sections: str) -> str:
     return "\n\n\n".join(section for section in sections if section)
 
 
-def table(headers: list[str], rows: list[list[str]]) -> str:
+def table(
+    headers: list[str],
+    rows: list[list[str]],
+    aligns: list[str] | None = None,
+    kinds: list[str] | None = None,
+) -> str:
     """
     Aligned monospace columns: the epic's named fiddly spot.
 
     Three decisions, and the third is the one worth stating:
 
     * **Width comes from the widest cell in each column**, header included.
-    * **The first column is left-aligned and the rest are right-aligned.**
-      That is not a guess about the data — it is the convention the HTML
-      template already encodes, where ``loop.first`` picks the label face for
-      column one and the numeric face for the others. Reading the alignment
-      off the same rule is what keeps the two projections agreeing.
+    * **Alignment is handed in, not guessed** (#117). ``aligns`` carries one
+      of ``left`` / ``center`` / ``right`` per column, resolved by
+      :meth:`~svc.builder.components.DataTable.resolved_columns` — the *same*
+      call the markup reads, which is what keeps the two projections from
+      disagreeing about which column is the label. Omitted, it falls back to
+      the pre-#117 convention (first column left, the rest right), so a
+      caller composing a table by hand still gets sensible output.
     * **Nothing wraps inside a cell.** A table wider than
       :data:`LINE_WIDTH` overflows the line-width policy rather than
       corrupting its own alignment — a wrapped cell destroys the column that
       is the entire reason to render a table as text at all. The policy
       yields to the alignment here, deliberately, and this is where it says so.
 
+    A row's **kind** shows here too (#119), because a total that is
+    indistinguishable from a data row in the text part is a total only half
+    the readers can find:
+
+    * ``total`` — a rule above it, matching the header's, so it is findable
+      without counting rows.
+    * ``subhead`` — its label alone on its own line, unpadded. Plain text has
+      no merged cell to give it, and padding a heading into columns would
+      read as a data row with two empty fields.
+
     Args:
         headers: One label per column.
         rows:    Cells per row, each row the same length as ``headers``.
+        aligns:  One alignment per column, or ``None`` for the default.
+        kinds:   One :class:`~svc.builder.enums.RowKind` per row, or ``None``
+                 to treat every row as data.
 
     Returns:
         The header row, a rule, and one line per row. Empty if there are no
@@ -372,20 +392,30 @@ def table(headers: list[str], rows: list[list[str]]) -> str:
     """
     if not headers:
         return ""
+    if aligns is None:
+        aligns = ["left" if i == 0 else "right" for i in range(len(headers))]
     widths = [
         max(len(headers[i]), *(len(row[i]) for row in rows)) if rows else len(headers[i])
         for i in range(len(headers))
     ]
+    pad = {"left": str.ljust, "center": str.center, "right": str.rjust}
 
     def line(cells: list[str]) -> str:
-        first, *rest = (
-            cell.ljust(widths[i]) if i == 0 else cell.rjust(widths[i])
-            for i, cell in enumerate(cells)
-        )
-        return "  ".join([first, *rest]).rstrip()
+        return "  ".join(pad[aligns[i]](cell, widths[i]) for i, cell in enumerate(cells)).rstrip()
 
     rule = "  ".join("-" * width for width in widths)
-    return "\n".join([line(headers), rule, *(line(row) for row in rows)])
+    if kinds is None:
+        kinds = ["data"] * len(rows)
+
+    body: list[str] = []
+    for cells, kind in zip(rows, kinds, strict=True):
+        if kind == "subhead":
+            body.append(next((cell for cell in cells if cell), ""))
+            continue
+        if kind == "total":
+            body.append(rule)
+        body.append(line(cells))
+    return "\n".join([line(headers), rule, *body])
 
 
 __all__ = [

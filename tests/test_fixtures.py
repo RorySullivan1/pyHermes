@@ -23,8 +23,8 @@ import svc.builder as builder_api
 from qa.fixtures import DEPRECATED_COMPONENTS, all_fixtures
 from qa.fixtures import kitchen_sink as kitchen_sink_module
 from qa.fixtures._png import solid_png
-from svc.builder.components import Component
-from svc.builder.models import EmailMetadata
+from svc.builder.components import Component, DataTable
+from svc.builder.models import Cell, Column, EmailMetadata, TableRow
 from svc.delivery import collect_cid_references
 
 FIXTURE_NAMES = sorted(all_fixtures())
@@ -94,6 +94,105 @@ class TestGalleryRegistry:
 #: reference too. ``modern_fonts`` is where the non-default path gets its
 #: golden, on the ``compact_size`` / ``spacious_size`` model.
 ANCHORED_TO_THE_DEFAULT = {"size_theme", "font_theme"}
+
+
+#: The objects whose fields the gallery must exercise (#121).
+#:
+#: ``DataTable`` is not a dataclass, so its surface is read off ``__init__``;
+#: one parameter is stored under another name, which the alias map records
+#: rather than the test silently skipping it.
+TABLE_OBJECTS = ("DataTable", "Column", "Cell", "TableRow")
+TABLE_ATTRIBUTE_ALIASES = {"headers": "columns"}
+
+
+def _tables_in_gallery():
+    """Every DataTable the gallery builds, with its rows, columns and cells."""
+    from svc.builder.components import DataTable
+
+    for build in all_fixtures().values():
+        email = build()
+        for section in email._sections:
+            for component in section.components():
+                if isinstance(component, DataTable):
+                    yield component
+
+
+class TestComponentFieldsAreExercised:
+    """
+    The gap this epic found on its way past: **nothing introspected component
+    *fields*.**
+
+    Every public ``Component`` *subclass* has a completeness rule, and so does
+    every ``EmailMetadata`` and region *field* — but a new field on
+    ``DataTable`` tripped nothing at all. Epic #116 added seven of them, which
+    is exactly enough for the absence to be expensive.
+
+    Scoped to the table objects rather than every component, which is honest
+    and shippable. **It is a first instance, not a special case**: the next
+    component to grow a vocabulary should widen this rather than let its
+    fields go unpinned for the same reason these did.
+    """
+
+    @staticmethod
+    def _observed(instances, name, default):
+        """Whether any instance sets this field to something other than its default."""
+        attribute = TABLE_ATTRIBUTE_ALIASES.get(name, name)
+        return any(getattr(instance, attribute, default) != default for instance in instances)
+
+    def test_every_column_field_is_exercised(self):
+        columns = [column for table in _tables_in_gallery() for column in table.columns]
+        assert columns, "the gallery renders no data table"
+        for spec in dataclasses.fields(Column):
+            assert self._observed(columns, spec.name, spec.default), (
+                f"no gallery column sets Column.{spec.name}; a field left at its default "
+                "is one the golden cannot pin"
+            )
+
+    def test_every_cell_field_is_exercised(self):
+        cells = [cell for table in _tables_in_gallery() for row in table.rows for cell in row.cells]
+        assert cells
+        for spec in dataclasses.fields(Cell):
+            assert self._observed(cells, spec.name, spec.default), (
+                f"no gallery cell sets Cell.{spec.name}"
+            )
+
+    def test_every_row_field_is_exercised(self):
+        rows = [row for table in _tables_in_gallery() for row in table.rows]
+        assert rows
+        for spec in dataclasses.fields(TableRow):
+            default = spec.default if spec.default is not dataclasses.MISSING else None
+            assert self._observed(rows, spec.name, default), (
+                f"no gallery row sets TableRow.{spec.name}"
+            )
+
+    def test_every_data_table_argument_is_exercised(self):
+        tables = list(_tables_in_gallery())
+        assert tables
+        parameters = inspect.signature(DataTable.__init__).parameters
+        for name, parameter in parameters.items():
+            if name == "self":
+                continue
+            default = None if parameter.default is inspect.Parameter.empty else parameter.default
+            assert self._observed(tables, name, default), (
+                f"no gallery table sets DataTable({name}=…)"
+            )
+
+    def test_the_flat_colors_spelling_is_exercised(self):
+        """
+        ``TableRow.colors`` is an ``InitVar``, so it is absent from
+        ``fields()`` and the field walk above cannot see it — but it is the
+        common call path and a golden should pin it. Checked by its effect:
+        some cell carries a colour that arrived through the flat spelling.
+        """
+        import pathlib as _pathlib
+
+        sources = [
+            _pathlib.Path(module).read_text()
+            for module in _pathlib.Path("qa/fixtures").glob("*.py")
+        ]
+        assert any("colors=" in source for source in sources), (
+            "no fixture uses the flat colors spelling"
+        )
 
 
 class TestKitchenSinkCompleteness:

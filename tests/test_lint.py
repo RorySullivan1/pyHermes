@@ -13,6 +13,8 @@ Two halves, and both matter:
 
 from __future__ import annotations
 
+import re
+
 import pytest
 
 from qa.fixtures import all_fixtures
@@ -127,7 +129,9 @@ class TestOutlookUnsupportedCss:
         it would fire on correct code. A noisy rule gets switched off, which is
         worse than no rule; img-width-attr covers what actually matters.
         """
-        assert not lint_html('<table style="max-width:680px"><tr><td>x</td></tr></table>')
+        markup = '<table role="presentation" style="max-width:680px"><tr><td>x</td></tr></table>'
+        assert "outlook-unsupported-css" not in rule_ids(lint_html(markup))
+        assert not lint_html(markup)
 
     def test_ordinary_table_styling_passes(self):
         assert not lint_html('<td style="padding:16px 12px; background-color:#FFFFFF;">x</td>')
@@ -204,6 +208,110 @@ class TestEmptyUrl:
         used to render ``url('')``.
         """
         assert "url('')" not in all_fixtures()["minimal"]().render()
+
+
+class TestTableRole:
+    """
+    The rule fires **both ways**, which is the whole point: a check that only
+    demanded the presentational role would be satisfied by marking every
+    table, stripping the semantics from the one table a reader should
+    actually navigate.
+    """
+
+    def test_a_layout_table_with_no_role_fires(self):
+        html = "<table><tr><td>Copy</td></tr></table>"
+        assert "table-role" in rule_ids(lint_html(html))
+
+    def test_a_marked_layout_table_passes(self):
+        html = '<table role="presentation"><tr><td>Copy</td></tr></table>'
+        assert not lint_html(html)
+
+    def test_role_none_is_accepted_as_the_synonym_it_is(self):
+        html = '<table role="none"><tr><td>Copy</td></tr></table>'
+        assert not lint_html(html)
+
+    def test_a_data_table_passes_unmarked(self):
+        html = "<table><tr><th>Factor</th></tr><tr><td>Value</td></tr></table>"
+        assert not lint_html(html)
+
+    def test_a_data_table_marked_presentational_fires(self):
+        """
+        The mirror case, and the one a naive fix introduces: the role strips
+        exactly the semantics a screen reader needs to associate each cell
+        with its column.
+        """
+        html = '<table role="presentation"><tr><th>Factor</th></tr></table>'
+        findings = [f for f in lint_html(html) if f.rule_id == "table-role"]
+        assert findings
+        assert "data table" in findings[0].message
+
+    def test_a_data_table_nested_in_layout_tables_classifies_each_correctly(self):
+        """
+        Not hypothetical — it is exactly how the gallery renders. A flat flag
+        would let the inner table's ``th`` mark its ancestors as data too, and
+        the whole document would pass while every layout table stayed unmarked.
+        """
+        html = (
+            '<table role="presentation"><tr><td>'
+            '<table role="presentation"><tr><td>'
+            "<table><tr><th>Factor</th></tr></table>"
+            "</td></tr></table>"
+            "</td></tr></table>"
+        )
+        assert not lint_html(html)
+
+    def test_the_outer_layout_table_still_fires_when_it_is_the_unmarked_one(self):
+        html = "<table><tr><td><table><tr><th>Factor</th></tr></table></td></tr></table>"
+        findings = [f for f in lint_html(html) if f.rule_id == "table-role"]
+        assert len(findings) == 1, "only the outer layout table should fire"
+
+    def test_it_reports_the_opening_tag_not_the_closing_one(self):
+        """
+        The parser only knows the verdict at the close tag, but a reader
+        needs the line the table *starts* on to find it.
+        """
+        html = "<p>one</p>\n<p>two</p>\n<table>\n<tr><td>x</td></tr>\n</table>"
+        findings = [f for f in lint_html(html) if f.rule_id == "table-role"]
+        assert "line 3" in findings[0].location
+
+    def test_an_unclosed_table_does_not_crash_the_pass(self):
+        assert isinstance(lint_html("<table><tr><td>never closed"), list)
+
+
+class TestTheTemplatesAreAnnotated:
+    """
+    The render side of #114, which the raw-HTML tests above cannot see: every
+    layout table the gallery actually emits is marked, and the data table is
+    not. Riding the fixtures means a new template is covered without anyone
+    extending a list.
+    """
+
+    def test_no_gallery_fixture_renders_an_unannotated_table(self):
+        for name, build in all_fixtures().items():
+            findings = [f for f in lint_email(build()) if f.rule_id == "table-role"]
+            assert not findings, f"{name}: {[f.message for f in findings]}"
+
+    def test_the_data_table_is_still_a_data_table(self):
+        """
+        The asymmetry, asserted positively rather than inferred from the
+        absence of a finding: marking everything would pass the test above.
+        """
+        html = all_fixtures()["kitchen_sink"]().render()
+        unmarked = [t for t in re.findall(r"<table[^>]*?>", html, re.S) if "role=" not in t]
+        assert len(unmarked) == 1, "exactly one table should be left with data semantics"
+        assert "<th" in html
+
+    def test_every_header_cell_is_scoped(self):
+        """
+        Without ``scope``, a screen reader has no defined association even
+        once the table is correctly exposed as data. Both directions since
+        #120: ``col`` on the heading row, ``row`` on the label column.
+        """
+        html = all_fixtures()["kitchen_sink"]().render()
+        scoped = html.count('scope="col"') + html.count('scope="row"')
+        assert html.count("<th") == scoped
+        assert html.count('scope="col"'), "the heading row"
+        assert html.count('scope="row"'), "the label column"
 
 
 class TestMarkupOutlookCannotSee:

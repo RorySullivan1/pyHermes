@@ -17,10 +17,10 @@ import warnings
 from typing import Any
 
 from .engine import Renderer
-from .enums import CardOrientation, ImageAlign
+from .enums import CardOrientation, ColumnKind, ImageAlign, RowKind
 from .exceptions import ValidationError
 from .images import EmailImage, ImageAsset, coerce_image
-from .models import Card, NumberedItem, TableRow, _validate_url
+from .models import Card, Cell, Column, NumberedItem, TableRow, _validate_url, coerce_column
 from .textgen import format_link, html_to_text, join_blocks, link_line, table, wrap
 
 
@@ -225,61 +225,150 @@ class DataTable(Component):
     colour-coded numeric cells.
 
     Args:
-        headers:  List of column header strings.
+        headers:  Column headers. Either bare strings or :class:`Column`
+                  instances, mixed freely — a string is coerced to a
+                  ``Column`` whose presentation resolves from its position,
+                  which is what the old ``loop.first`` convention meant.
         rows:     List of TableRow instances.
         source:   Attribution string (e.g. "Source: Bloomberg").
         as_of:    Date string (e.g. "March 28, 2026").
         subtitle: Optional sub-heading rendered above the table.
+        caption:  Optional table caption (#120). Renders as a ``caption``
+                  element — the table's own accessible **name**, which is
+                  what a screen reader announces when it reaches the table.
+
+    **``caption`` and ``subtitle`` are separate on purpose**, even when a
+    caller would write the same words in both. ``subtitle`` is presentation
+    copy that happens to sit above the table; ``caption`` is the table's
+    name, attached to it in the markup. Rendering the subtitle *as* the
+    caption would have been fewer fields and would have moved every existing
+    golden — changing what shipped emails announce, to say a standfirst where
+    a name belongs. A separate field is byte-identical and reversible.
+
+    An email with several tables is where this earns its keep: without a
+    caption a reader hears "table" each time, with nothing to tell them
+    apart.
+
+    **Alignment resolves in Python, once, and both projections read it**
+    (#117). The template no longer decides alignment or face from a column's
+    position, and :func:`~svc.builder.textgen.table` is handed the resolved
+    alignments rather than re-deriving them — which is what stops the HTML
+    and the plain-text part disagreeing about the same table.
     """
 
     template_path = "analysis/data-table.html"
 
     def __init__(
         self,
-        headers: list[str],
+        headers: list[str | Column],
         rows: list[TableRow],
         source: str = "",
         as_of: str = "",
         subtitle: str | None = None,
+        caption: str = "",
     ):
         if not headers:
             raise ValidationError("DataTable requires at least one header.")
         if not rows:
             raise ValidationError("DataTable requires at least one row.")
+        columns = [coerce_column(h, f"data_table.headers[{i}]") for i, h in enumerate(headers)]
         for i, row in enumerate(rows):
             row.validate()
-            if len(row.cells) != len(headers):
+            # A subhead labels the rows beneath it, so one cell is the honest
+            # way to write one — it is padded to the table's width here rather
+            # than making the caller spell out the empties. Anything between
+            # one and the full width is still a mistake worth catching.
+            if row.kind == RowKind.SUBHEAD and len(row.cells) == 1 < len(columns):
+                row.cells = row.cells + [Cell() for _ in range(len(columns) - 1)]
+            if len(row.cells) != len(columns):
                 raise ValidationError(
                     f"DataTable row {i} has {len(row.cells)} cells but there are "
-                    f"{len(headers)} headers; the table would render misaligned."
+                    f"{len(columns)} headers; the table would render misaligned."
                 )
-        self.headers = headers
+        self.columns = columns
         self.rows = rows
         self.source = source
         self.as_of = as_of
         self.subtitle = subtitle
+        self.caption = caption
+
+    @property
+    def headers(self) -> list[str]:
+        """The column headings, as the plain strings the caller may have passed."""
+        return [column.header for column in self.columns]
+
+    def resolved_columns(self) -> list[Column]:
+        """
+        Every column with its alignment and kind filled in.
+
+        **The single source both projections read.** Computing this twice —
+        once for the markup and once for the text — is exactly how the two
+        parts would come to disagree about which column is the label, which
+        is the failure this method exists to make impossible.
+        """
+        return [column.resolved(index) for index, column in enumerate(self.columns)]
 
     def text(self) -> str:
         """Aligned columns, then the attribution lines."""
         return self._with_subtitle(
-            table(self.headers, [row.cells for row in self.rows]),
+            wrap(self.caption),
+            table(
+                self.headers,
+                [[cell.text for cell in row.cells] for row in self.rows],
+                aligns=[column.align for column in self.resolved_columns()],
+                kinds=[row.kind for row in self.rows],
+            ),
             wrap("\n".join(filter(None, (self.source, self.as_of)))),
         )
 
+    def _striping(self) -> dict[int, bool]:
+        """Which rows take the alternating tint, counting data rows only."""
+        alt: dict[int, bool] = {}
+        seen = 0
+        for row in self.rows:
+            if row.kind == RowKind.DATA:
+                alt[id(row)] = seen % 2 == 1
+                seen += 1
+            else:
+                alt[id(row)] = False
+        return alt
+
     def context(self) -> dict[str, Any]:
+        columns = self.resolved_columns()
+        alt_by_row = self._striping()
         return {
-            "headers": self.headers,
+            "columns": [{"header": c.header, "align": c.align, "kind": c.kind} for c in columns],
             "rows": [
                 {
-                    "cells": r.cells,
-                    "colors": r.colors,
-                    "alt": i % 2 == 1,  # alternating row background
+                    "kind": r.kind,
+                    "cells": [
+                        {
+                            "text": cell.text,
+                            # The chain completes here: cell → column → position.
+                            "align": cell.resolved_align(column.align),
+                            "color": cell.color,
+                            "background": cell.background,
+                            "is_text": column.kind == ColumnKind.TEXT,
+                            # A row header, not a data cell: the first column
+                            # labels the figures beside it, so it is the `th`
+                            # a reader navigates by. Keyed on the resolved
+                            # kind rather than the position, so a table whose
+                            # first column is genuinely numeric — a rank —
+                            # does not claim to head its row.
+                            "row_header": index == 0 and column.kind == ColumnKind.TEXT,
+                        }
+                        for index, (cell, column) in enumerate(zip(r.cells, columns, strict=True))
+                    ],
+                    # Striping counts *data* rows: a subhead in the middle of a
+                    # table must not invert the tint of everything beneath it.
+                    "alt": alt_by_row[id(r)],
                 }
-                for i, r in enumerate(self.rows)
+                for r in self.rows
             ],
             "source": self.source,
             "as_of": self.as_of,
             "subtitle": self.subtitle,
+            "caption": self.caption,
         }
 
 

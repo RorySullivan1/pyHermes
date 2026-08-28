@@ -364,6 +364,39 @@ fetches a font file the major clients strip or ignore.
 A face swap moves no px — sizes belong to `size_theme` — but rendered line lengths do move with
 the metrics, which is what the screenshots are for.
 
+## Data tables
+
+The one component with real structure, and the only table in the email that carries table
+semantics — every other table is layout scaffolding marked `role="presentation"`.
+
+```python
+DataTable(
+    caption="Sleeve performance, gross of fees",
+    headers=["Sleeve", Column("Manager", kind="text"), Column("Weight", align="center"), "1M"],
+    rows=[
+        TableRow(["Equities"], kind="subhead"),
+        TableRow(["Global core", "Ashford", "18%", Cell("+1.8%", color="#4A7C59")]),
+        TableRow(["Total", "", "100%", "+0.6%"], kind="total"),
+    ],
+)
+```
+
+Headers take bare strings or `Column` objects and cells take bare strings or `Cell` objects,
+mixed freely — so every table written before these existed keeps working unchanged.
+
+- **Columns** carry an `align` and a `kind` (`text` or `numeric`). Unset, they resolve from
+  position — first column text and left, the rest numeric and right — which is what the
+  library did before they were expressible.
+- **Cells** carry an `align`, a `color` and a `background`. The two colours are the caller's
+  claim about a *figure* — *this is down*, *this mark is stale* — not a styling surface;
+  there is no cell font, size or border, deliberately.
+- **Rows** carry a `kind`: `data`, `total` or `subhead`. A total is ruled off and bold; a
+  subhead is a label band. Unlike a cell's colour, a row's kind draws only from the theme.
+- **Alignment is resolved once and read by both projections**, so the HTML and the plain-text
+  part can never disagree about which column is the label.
+- **The table is named and navigable**: the caption is its accessible name, the heading row is
+  `scope="col"` and the label column is `scope="row"`.
+
 ## What it enforces
 
 These are the failures that are invisible until a reader reports them, so they are checked
@@ -380,6 +413,12 @@ rather than documented:
 - **Colors are `#RRGGBB`**, checked in Python and again in the templates.
 - **Alt text is required** on every image — it is what the reader sees whenever images are
   blocked, which for Outlook desktop is the default state.
+- **Layout tables say they are layout.** Table-based layout is mandatory in email, so every
+  structural table carries `role="presentation"` and the one real data table carries `scope`
+  on its headers instead. Without that a screen reader announces each layout table's
+  dimensions before any content — 68 times in a full-length email. The lint pass checks both
+  directions, since marking *every* table would strip the semantics from the one that needs
+  them.
 
 **Autoescape is off, and escaping is split by field kind.** HTML email needs raw output, so
 it is explicit: plain-text fields (titles, KPI labels, table cells, author names) are escaped

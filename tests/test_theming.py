@@ -240,7 +240,11 @@ class TestTheAuditIsTrue:
         } | {DEFAULT_THEME.shadow.scrim.color, SLATE_THEME.shadow.scrim.color}
         # The fixtures pass their own KpiItem/TableRow colours — caller data
         # about the numbers, which the theme deliberately does not own.
-        caller_data = {"#4A7C59", "#B85450", "#8B6F47", "#2E5F7F"}
+        # Caller data, not theme tokens: a KpiItem/Card colour, a cell's text
+        # colour, and — since #118 — a cell background. All four say something
+        # about a *figure*; the palette's authority is over surfaces the theme
+        # owns, which is why these sit outside the audit rather than in it.
+        caller_data = {"#4A7C59", "#B85450", "#8B6F47", "#2E5F7F", "#FBF3E2"}
         assert used - known - caller_data - _region_colours() == set()
 
     def test_the_stale_palette_comment_is_gone(self):
