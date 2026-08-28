@@ -760,7 +760,7 @@ class TestTheCustomThemeApi:
             shadow=ShadowStyle(scrim=Rgba("#101820", 0.7)),
         )
         email = kitchen_sink.build()
-        email.metadata.theme = scratch  # noqa: attribute set before render, deliberately
+        email.metadata.theme = scratch  # attribute set before render, deliberately
         # The fixture carries a BannerPalette (#93), and the question here is
         # whether the *theme* reaches every site — an override answering for
         # the scrim would make this test pass while proving nothing.
