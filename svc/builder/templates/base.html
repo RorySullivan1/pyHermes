@@ -73,7 +73,17 @@
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
          style="background-color:{{ theme.palette.wrapper_bg }};" bgcolor="{{ theme.palette.wrapper_bg }}">
     <tr>
-      <td align="center" style="padding:{{ size.frame.outer_pad_y }}px 0; text-align:center;">
+      {# ATTRIBUTE ONLY, and #125's pairing deliberately does not apply here.
+         This cell's `align` is not text alignment: its job is to centre the
+         680px email-container table — a BLOCK — within the viewport. A
+         browser maps the attribute to `-webkit-center`, which centres block
+         children; the literal `text-align:center` is a different value that
+         centres inline content only. Pairing them therefore did two wrong
+         things at once: it un-centred the email in the window, and it
+         inherited into every paragraph and heading below, centring the copy
+         of every email in the gallery. Measured, not reasoned about — see
+         tests/test_screenshots.py, because no golden can see it. #}
+      <td align="center" style="padding:{{ size.frame.outer_pad_y }}px 0;">
 
         <!-- ============================================ -->
         <!-- MAIN CONTAINER — {{ size.frame.width }}px                       -->

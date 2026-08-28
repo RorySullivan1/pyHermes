@@ -504,3 +504,87 @@ class TestCapture:
         assert stored["device_scale_factor"] == DEVICE_SCALE_FACTOR
         assert set(stored["viewports"]) == set(VIEWPORTS)
         assert "Outlook" in stored["note"], "the fidelity caveat travels with the images"
+
+
+# ──────────────────────────────────────────────────────────────────────
+# The alignment default, measured (#126)
+# ──────────────────────────────────────────────────────────────────────
+
+_ALIGNMENT_PROBE = """() => {
+  const frame = document.querySelector('table.email-container');
+  const heading = document.querySelector('h2');
+  const prose = document.querySelector('p.body-text');
+  const read = el => el ? getComputedStyle(el).textAlign : null;
+  return {
+    frame_x: frame ? Math.round(frame.getBoundingClientRect().x) : null,
+    frame_w: frame ? Math.round(frame.getBoundingClientRect().width) : null,
+    heading: read(heading),
+    prose: read(prose),
+  };
+}"""
+
+
+@pytest.fixture(scope="module")
+def alignment_defaults():
+    """Every fixture's default alignment geometry, in one browser session."""
+    if not available():
+        pytest.skip('no browser; screenshots are the optional "[qa]" extra')
+
+    measured = {}
+    with _load_playwright()() as playwright:
+        browser = _launch(playwright)
+        for name in FIXTURE_NAMES:
+            page = browser.new_page(viewport={"width": 1000, "height": 900})
+            page.route("**/*", lambda route: route.abort())
+            page.set_content(all_fixtures()[name]().render())
+            measured[name] = page.evaluate(_ALIGNMENT_PROBE)
+            page.close()
+        browser.close()
+    return measured
+
+
+@requires_browser
+class TestTheDefaultAlignmentIsUnchanged:
+    """
+    The regression #125 actually shipped, caught here because nothing else
+    could see it.
+
+    Pairing ``base.html``'s outer cell — ``align="center"`` — with a
+    ``text-align:center`` style looked like the same tidying applied to
+    fifteen other cells, and the golden diff was verified to be *only*
+    alignment declarations. Both were true. The render still moved, in
+    every email, twice over: a browser maps that attribute to
+    ``-webkit-center``, which centres the email table as a **block**, while
+    the literal ``center`` centres inline content only — so the email
+    un-centred in the window, and the style then inherited into every
+    heading and paragraph beneath it.
+
+    #76 established that layout regressions live with the screenshots. This
+    is the second, and the lesson is sharper: a byte-verified diff is not a
+    verified render.
+    """
+
+    def test_the_email_frame_stays_centred_in_the_viewport(self, alignment_defaults):
+        for name, measured in alignment_defaults.items():
+            expected = (1000 - measured["frame_w"]) // 2
+            assert abs(measured["frame_x"] - expected) <= 1, (
+                f"{name}: the email frame sits at x={measured['frame_x']}, not centred "
+                f"at {expected}. base.html's outer cell centres a block — check that its "
+                "align attribute has not been paired with a text-align style."
+            )
+
+    def test_copy_is_left_aligned_unless_a_section_says_otherwise(self, alignment_defaults):
+        """
+        No gallery fixture states an alignment, so every heading and every
+        paragraph must resolve to the initial value. ``start`` is what
+        Chromium reports for it in a left-to-right document.
+        """
+        for name, measured in alignment_defaults.items():
+            for role in ("heading", "prose"):
+                value = measured[role]
+                if value is None:
+                    continue
+                assert value == "start", (
+                    f"{name}: the default {role} alignment is {value!r}, not 'start'. "
+                    "Something above it is declaring an alignment that inherits."
+                )

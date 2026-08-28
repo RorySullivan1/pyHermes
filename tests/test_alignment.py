@@ -21,6 +21,15 @@ from pathlib import Path
 import pytest
 
 from qa.fixtures import all_fixtures
+from svc.builder import (
+    CardGroup,
+    DataTable,
+    EmailBuilder,
+    FullWidth,
+    TextBlock,
+    TwoColumn,
+)
+from svc.builder.models import Card, TableRow
 
 TEMPLATE_DIR = Path("svc/builder/templates")
 
@@ -33,6 +42,19 @@ TEMPLATE_DIR = Path("svc/builder/templates")
 #: rather than leave the render alone. ``a`` has no ``align`` attribute in
 #: any HTML specification.
 STYLE_ONLY_ELEMENTS = frozenset({"caption", "a"})
+
+#: The one place the pairing runs the *other* way — an ``align`` attribute
+#: with no style beside it. ``base.html``'s outer cell centres the
+#: email-container table as a **block**, which a browser expresses as
+#: ``-webkit-center``; the literal ``text-align:center`` is a different
+#: value that centres inline content only. #125 paired them, which
+#: un-centred the email in the window *and* inherited into every heading
+#: and paragraph in every email — a change no golden could see, so the
+#: guard that would have caught it lives in ``tests/test_screenshots.py``.
+#: Exactly one such cell exists per rendered email; if a second appears,
+#: decide whether it is really doing block alignment or has simply been
+#: left half-done.
+BLOCK_ALIGNING_CELLS_PER_EMAIL = 1
 
 _ALIGNMENTS = frozenset({"left", "center", "right"})
 _TEXT_ALIGN = re.compile(r"text-align:\s*([a-z]+)")
@@ -83,9 +105,11 @@ class _AlignmentAudit(HTMLParser):
     inside comments and copy and answers confidently wrong.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, with_class: bool = False) -> None:
         super().__init__(convert_charrefs=True)
+        self.with_class = with_class
         self.found: list[tuple[str, str | None, str | None]] = []
+        self.classed: list[tuple[str, str, str | None, str | None]] = []
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         attributes = dict(attrs)
@@ -95,6 +119,20 @@ class _AlignmentAudit(HTMLParser):
         declared = match.group(1) if match else None
         if attribute or declared:
             self.found.append((tag, attribute, declared))
+            self.classed.append((tag, attributes.get("class") or "", attribute, declared))
+
+
+def _aligned_elements(html: str) -> list[tuple[str, str, str | None, str | None]]:
+    """
+    ``(tag, class, align attribute, text-align value)`` for every element
+    in a render that states an alignment. The class comes along because it
+    is what tells a container's cells apart from a component's — the
+    content cell is ``mobile-pad``, a KPI cell is ``kpi-cell``, and a
+    section title cell carries none.
+    """
+    parser = _AlignmentAudit(with_class=True)
+    parser.feed(html)
+    return parser.classed
 
 
 def _audit(html: str) -> list[tuple[str, str | None, str | None]]:
@@ -122,12 +160,24 @@ class TestTheTwoSpellingsTravelTogether:
         """
         lonely: dict[str, set[str]] = {}
         for name, html in gallery.items():
+            block_aligned = 0
             for tag, attribute, declared in _audit(html):
                 if tag in STYLE_ONLY_ELEMENTS:
                     continue
+                if attribute and declared is None:
+                    # The block-aligning cell, allowed once — see the note
+                    # on BLOCK_ALIGNING_CELLS_PER_EMAIL.
+                    block_aligned += 1
+                    if block_aligned <= BLOCK_ALIGNING_CELLS_PER_EMAIL:
+                        continue
                 if attribute is None or declared is None:
                     missing = "the style" if declared is None else "the attribute"
                     lonely.setdefault(name, set()).add(f"{tag} is missing {missing}")
+            if block_aligned != BLOCK_ALIGNING_CELLS_PER_EMAIL:
+                lonely.setdefault(name, set()).add(
+                    f"{block_aligned} attribute-only cells, expected "
+                    f"{BLOCK_ALIGNING_CELLS_PER_EMAIL}"
+                )
         assert not lonely, (
             f"alignment stated only one way: { {k: sorted(v) for k, v in lonely.items()} }. "
             "Every td/th/p/div that aligns must carry align= and text-align: together."
@@ -227,4 +277,167 @@ class TestNoTemplateStatesAnAlignmentAlone:
         assert not offenders, (
             f"text-align with no align attribute beside it: {offenders}. "
             "See #125 — both spellings, from one value."
+        )
+
+
+class TestContainerAlign:
+    """
+    #126: a section says where its copy sits.
+
+    The mechanism is the CSS cascade, not a Python resolution chain —
+    ``text-align`` is an inherited property, so a declaration on the
+    container's cell reaches the prose inside it without anything being
+    threaded down. See #124 for why that differs from the table's
+    ``Column``/``Cell`` chain, which needs a *computed* value because
+    ``textgen.table()`` reads it too.
+    """
+
+    META = {"email_subject": "Aligned", "firm_name": "F", "campaign_name": "c"}
+
+    def _render(self, *sections) -> str:
+        builder = EmailBuilder().metadata(dict(self.META))
+        for section in sections:
+            builder = builder.section(section)
+        return builder.render()
+
+    def test_unset_emits_nothing(self):
+        """
+        The whole byte-identity claim, at its smallest. Checked here as
+        well as in the goldens because this is the assertion that says
+        *why* the goldens did not move.
+        """
+        html = self._render(FullWidth(title="T", content=TextBlock("<p>x</p>")))
+        assert 'class="mobile-pad" style=' in html, "no align attribute on an unset container"
+        assert "text-align" not in html.split('class="mobile-pad"')[1].split(">")[0]
+
+    @pytest.mark.parametrize("align", ["left", "center", "right"])
+    def test_a_full_width_section_aligns_both_of_its_cells(self, align):
+        """
+        Both, not one. The title and the content are **sibling tables** in
+        ``full-width.html``, not parent and child, so a declaration on the
+        content cell alone leaves the heading where it was — which is what
+        the prototype for #124 showed, and reads as a bug.
+        """
+        html = self._render(FullWidth(title="Heading", align=align, content=TextBlock("<p>x</p>")))
+        aligned = [
+            (tag, cls)
+            for tag, cls, attribute, declared in _aligned_elements(html)
+            if attribute == align and declared == align
+        ]
+        assert any(cls == "" for tag, cls in aligned), "the title cell did not take the alignment"
+        assert any("mobile-pad" in cls for tag, cls in aligned), "the content cell did not"
+
+    @pytest.mark.parametrize("align", ["left", "center", "right"])
+    def test_a_split_aligns_its_title_and_every_column(self, align):
+        """
+        Asserts the *declaration* reaches every column cell, which is what
+        this step delivers. It cannot assert the text visibly moves: a
+        column cell shrink-wraps to its content rather than filling its
+        column, so the alignment has no room to show whenever the copy is
+        narrower than the column. That is pre-existing geometry — see the
+        note on ``Container`` — and is filed as #129.
+        """
+        html = self._render(
+            TwoColumn(
+                ratio="50-50",
+                title="Heading",
+                align=align,
+                left=TextBlock("<p>L</p>"),
+                right=TextBlock("<p>R</p>"),
+            )
+        )
+        columns = [
+            cls
+            for tag, cls, attribute, declared in _aligned_elements(html)
+            if "mobile-pad" in cls and attribute == align and declared == align
+        ]
+        assert len(columns) == 2, f"expected both column cells aligned, got {len(columns)}"
+
+    def test_a_section_without_a_title_still_aligns_its_content(self):
+        html = self._render(FullWidth(align="right", content=TextBlock("<p>x</p>")))
+        assert any(
+            "mobile-pad" in cls and attribute == "right"
+            for _, cls, attribute, _ in _aligned_elements(html)
+        )
+
+    def test_both_spellings_travel_together_here_too(self):
+        """#125's invariant, applied to the declarations #126 adds."""
+        html = self._render(
+            FullWidth(title="T", align="center", content=TextBlock("<p>x</p>")),
+            TwoColumn(ratio="30-70", align="right", title="U", left=TextBlock("<p>L</p>")),
+        )
+        unpaired = 0
+        for tag, _, attribute, declared in _aligned_elements(html):
+            if attribute and declared is None:
+                unpaired += 1  # base.html's block-aligning cell
+                continue
+            assert attribute and declared and attribute == declared, (
+                f"{tag} states its alignment only one way, or two ways that disagree"
+            )
+        assert unpaired == BLOCK_ALIGNING_CELLS_PER_EMAIL
+
+
+class TestTheBoundaryHolds:
+    """
+    A container's alignment reaches its prose and stops at any component
+    that declares its own. That is not arranged — it is what CSS
+    inheritance does, and it works because every structural component
+    already declares an alignment. These tests exist because a future
+    template edit removing one of those declarations would silently let a
+    section's alignment leak into a KPI strip or a data table.
+    """
+
+    META = {"email_subject": "Aligned", "firm_name": "F", "campaign_name": "c"}
+
+    def _render(self, section) -> str:
+        return EmailBuilder().metadata(dict(self.META)).section(section).render()
+
+    def test_a_kpi_strip_keeps_its_own_centre(self):
+        """
+        The container is aligned **right** on purpose: a centred one could
+        not tell "the KPI strip kept its own alignment" from "the KPI strip
+        inherited the container's".
+        """
+        html = self._render(
+            FullWidth(
+                title="Snapshot",
+                align="right",
+                content=CardGroup([Card("A", "1"), Card("B", "2")], orientation="horizontal"),
+            )
+        )
+        kpi = [
+            (attribute, declared)
+            for _, cls, attribute, declared in _aligned_elements(html)
+            if "kpi-cell" in cls
+        ]
+        assert kpi, "the fixture rendered no KPI cells"
+        assert all(a == "center" and d == "center" for a, d in kpi), (
+            f"a right-aligned section leaked into the KPI strip: {kpi}"
+        )
+
+    def test_a_data_table_keeps_its_column_resolution(self):
+        """
+        Same shape for the other structural component. The table resolves
+        its own alignment per column through ``kind`` (#117), which a
+        section-level declaration must not override.
+        """
+        html = self._render(
+            FullWidth(
+                title="Factors",
+                align="center",
+                content=DataTable(
+                    headers=["Factor", "1M"],
+                    rows=[TableRow(["Value", "+1.8%"])],
+                ),
+            )
+        )
+        table = [
+            (tag, attribute, declared)
+            for tag, cls, attribute, declared in _aligned_elements(html)
+            if tag in ("th", "td") and not cls
+        ]
+        # The label column resolves left and the numeric column right; a
+        # leak would make every one of them centre.
+        assert {"left", "right"} <= {a for _, a, _ in table}, (
+            f"the table lost its own column alignment: {table}"
         )

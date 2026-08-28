@@ -114,6 +114,30 @@ class ColumnAlign(StrEnum):
     RIGHT = "right"
 
 
+class TextAlign(StrEnum):
+    """
+    Horizontal alignment of a *band of copy* — a region's box, a section.
+
+    A third alignment vocabulary rather than a shared one, which is the
+    convention :class:`ColumnAlign` already set and explained: alignments
+    that agree today stop agreeing the moment one grows a member the other
+    has no meaning for. What distinguishes this one is the thing being
+    aligned. :class:`ImageAlign` places a *block* within its container and
+    :class:`ColumnAlign` aligns *text within table cells*; this aligns the
+    prose of a whole band, and it is genuinely one concept across the two
+    places that band appears — the header and footer boxes (through
+    ``BoxSurface``) and the body's containers (#126), which both read it
+    from here.
+
+    ``justify`` is absent deliberately: it does nothing to a single short
+    line, and the rest of the CSS vocabulary is inline-level.
+    """
+
+    LEFT = "left"
+    CENTER = "center"
+    RIGHT = "right"
+
+
 class ColumnKind(StrEnum):
     """
     What a table column holds, which decides how it is set.

@@ -22,10 +22,10 @@ from __future__ import annotations
 
 from .components import Component
 from .engine import Renderer
-from .enums import ThreeColumnRatio, TwoColumnRatio
+from .enums import TextAlign, ThreeColumnRatio, TwoColumnRatio
 from .exceptions import ValidationError
 from .images import ImageAsset
-from .models import _validate_color
+from .models import _validate_align, _validate_color
 from .sizing import STANDARD_SIZES, SizeScheme, column_layout
 from .textgen import join_blocks, underline
 
@@ -35,8 +35,46 @@ class Container:
     Abstract base for all layout containers.
 
     Subclasses set ``template_path`` and implement ``context()``.
-    Every container may optionally have a section title and
-    background-color override.
+    Every container may optionally have a section title, a
+    background-color override and an ``align`` for its copy.
+
+    **Alignment is inherited, not resolved (#126).** ``align`` is declared
+    on this container's *cells* and reaches the prose inside by ordinary
+    CSS inheritance — there is deliberately no ``resolved_align()`` and
+    nothing is threaded into the components, so ``Component.render()``
+    still takes one argument. That differs from ``Column``/``Cell``
+    (#117, #118), which need a *computed* value because
+    :func:`~svc.builder.textgen.table` reads it too; prose alignment has
+    one reader and projects to nothing.
+
+    Two things make that mechanism sound rather than hopeful:
+
+    * **Every structural component already declares its own alignment**,
+      so inheritance stops where it should. A KPI cell is centred and a
+      table column resolves from its ``kind`` whatever the section says.
+      Nothing arranges this; ``TestTheBoundaryHolds`` is what keeps a
+      future template edit from removing one of those declarations and
+      letting a section leak in.
+    * **The declaration is doubled.** ``text-align`` is an inherited
+      property — [MS-CSS21] section 16.2 records it as ``Inherited: yes``
+      for Microsoft's own engine, and lists no deviation from that (only
+      that the ``inherit`` *keyword* is unsupported in Quirks and IE7
+      modes, which this package never writes). Outlook Classic's Word
+      engine is a different renderer from the one that document
+      specifies, so #125 also put the ``align`` **attribute** on these
+      same cells; the attribute aligns a cell's content directly and needs
+      no inheritance at all. That is why #125 was ordered first — the
+      belt-and-braces was in place before anything depended on it.
+
+    **Known limitation on a split.** A column's content cell shrink-wraps
+    to its text rather than filling its column — 76 of the gallery's 83
+    column cells do, measured — so a split's ``align`` reaches the cell
+    correctly and is simply invisible whenever the copy is narrower than
+    the column. This predates #126 (identical before and after, measured)
+    and is filed as #129: it is a real geometry change with its own
+    Outlook and mobile-collapse burden, and folding it in here would have
+    made this step's golden diff about something other than alignment.
+    A full-width section is unaffected — its content cell fills the frame.
 
     Raises:
         ValidationError: If ``background_color`` is not a ``#RRGGBB`` hex color.
@@ -49,12 +87,15 @@ class Container:
         title: str | None = None,
         background_color: str | None = None,
         highlight: bool = False,
+        align: str | TextAlign | None = None,
     ):
         if background_color:
             _validate_color(background_color, "container.background_color")
+        _validate_align(align or "", "container.align")
         self.title = title
         self.background_color = background_color
         self.highlight = highlight
+        self.align = align
 
     def _base_context(self, engine: Renderer) -> dict:
         """
@@ -72,6 +113,10 @@ class Container:
         ctx: dict = {"section_title": self.title or "", "highlight": self.highlight}
         if self.background_color:
             ctx["background_color"] = self.background_color
+        # Always injected, empty when unset: the templates gate on it with
+        # ``{% if %}``, and under StrictUndefined an *undefined* name raises
+        # rather than testing falsey — ``section_title``'s reasoning exactly.
+        ctx["section_align"] = self.align or ""
         return ctx
 
     def components(self) -> list[Component]:
@@ -200,8 +245,9 @@ class FullWidth(Container):
         title: str | None = None,
         background_color: str | None = None,
         highlight: bool = False,
+        align: str | TextAlign | None = None,
     ):
-        super().__init__(title, background_color, highlight)
+        super().__init__(title, background_color, highlight, align)
         self.content = content
 
     def components(self) -> list[Component]:
@@ -253,8 +299,9 @@ class TwoColumn(_SplitContainer):
         title: str | None = None,
         background_color: str | None = None,
         highlight: bool = False,
+        align: str | TextAlign | None = None,
     ):
-        super().__init__(title, background_color, highlight)
+        super().__init__(title, background_color, highlight, align)
         self._check_ratio(ratio)
         if left is None and right is None:
             raise ValidationError("TwoColumn requires at least one of 'left' or 'right'.")
@@ -319,8 +366,9 @@ class ThreeColumn(_SplitContainer):
         title: str | None = None,
         background_color: str | None = None,
         highlight: bool = False,
+        align: str | TextAlign | None = None,
     ):
-        super().__init__(title, background_color, highlight)
+        super().__init__(title, background_color, highlight, align)
         self._check_ratio(ratio)
         if left is None and center is None and right is None:
             raise ValidationError(

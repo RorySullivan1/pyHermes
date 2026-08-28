@@ -55,6 +55,7 @@ from __future__ import annotations
 from dataclasses import dataclass, fields
 from typing import TYPE_CHECKING, Any, ClassVar
 
+from .enums import TextAlign
 from .exceptions import ValidationError
 from .models import FooterLink, LinkRow, _validate_color, _validate_url
 from .textgen import html_to_text, join_blocks, link_line, underline, wrap
@@ -300,10 +301,13 @@ class BoxSurface:
                           reasoning at the size these boxes need.
     """
 
-    #: The alignments that make sense for a band of copy. Not the full CSS
-    #: vocabulary: ``justify`` does nothing to a single short line, and the
-    #: rest are inline-level values.
-    ALIGNMENTS: ClassVar[frozenset[str]] = frozenset({"left", "center", "right"})
+    #: The alignments that make sense for a band of copy — read off
+    #: :class:`~svc.builder.enums.TextAlign`, which is the same vocabulary
+    #: the body's containers take (#126). One source rather than two copies
+    #: of the same three strings: a box and a section align the same thing,
+    #: and the moment they disagree an email's header and its first section
+    #: mean different things by the same word.
+    ALIGNMENTS: ClassVar[frozenset[str]] = frozenset(TextAlign)
 
     align: str = "center"
     background_color: str = ""

@@ -64,6 +64,25 @@ def _validate_language(value: str, name: str) -> None:
         )
 
 
+def _validate_align(value: str, name: str) -> None:
+    """
+    Raise unless value is one of the three alignments a band of copy takes.
+
+    Shared by the region boxes and the body's containers, because they
+    align the same thing — see :class:`~svc.builder.enums.TextAlign` for
+    why that is one vocabulary and the table's is another.  Empty is
+    allowed and means *unset*: a container that states no alignment emits
+    no declaration, which is what keeps every pre-existing render
+    byte-identical.
+    """
+    from .enums import TextAlign
+
+    if value and value not in tuple(TextAlign):
+        raise ValidationError(
+            f"'{name}' must be one of {sorted(a.value for a in TextAlign)}, got: {value!r}"
+        )
+
+
 # Schemes safe to emit into an href/src in an HTML email.  `cid` covers
 # images embedded as MIME parts.
 _ALLOWED_URL_SCHEMES = frozenset({"http", "https", "mailto", "cid"})
