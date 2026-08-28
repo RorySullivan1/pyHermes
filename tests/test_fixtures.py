@@ -87,11 +87,12 @@ class TestGalleryRegistry:
 #: ``spacious_size``, which render *this same email* one field apart — the
 #: same shape ``slate_theme`` uses for the palette, and a true A/B because
 #: they reuse the content rather than restating it.
-#: ``font_theme`` is here for a related but distinct reason: #105 binds the
-#: namespace while no template yet reads it, so *every* value renders
-#: identically at this step and a distinctive one would pin nothing. #107's
-#: preset fixture is where the non-default path gets its golden, on the
-#: ``compact_size`` / ``spacious_size`` model.
+#: ``font_theme`` is here for the same reason, arrived at one step later:
+#: #105 bound the namespace before any template read it, so a distinctive
+#: value would have pinned nothing at that step — and once #106 made it
+#: legible, this fixture had already become the *faces'* byte-identity
+#: reference too. ``modern_fonts`` is where the non-default path gets its
+#: golden, on the ``compact_size`` / ``spacious_size`` model.
 ANCHORED_TO_THE_DEFAULT = {"size_theme", "font_theme"}
 
 
