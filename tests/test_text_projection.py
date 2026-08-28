@@ -417,7 +417,7 @@ class TestEmailText:
             if isinstance(component, DataTable):
                 for row in component.rows:
                     for cell in row.cells:
-                        assert cell in text
+                        assert cell.text in text
 
     def test_every_content_url_the_html_carries_reaches_the_text(self):
         email = kitchen_sink.build()

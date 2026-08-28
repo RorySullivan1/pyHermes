@@ -18,7 +18,7 @@ from svc.builder import DataTable
 from svc.builder.engine import TemplateEngine
 from svc.builder.enums import ColumnAlign, ColumnKind
 from svc.builder.exceptions import ValidationError
-from svc.builder.models import Column, TableRow, coerce_column
+from svc.builder.models import Cell, Column, TableRow, coerce_cell, coerce_column
 from svc.builder.textgen import table as text_table
 
 TEMPLATE = TemplateEngine().template_dir / "analysis" / "data-table.html"
@@ -212,5 +212,171 @@ class TestTheConventionCannotCreepBack:
 
     def test_the_template_reads_the_resolved_keys(self):
         source = TEMPLATE.read_text()
-        assert "column.align" in source
-        assert 'column.kind == "text"' in source
+        assert "column.align" in source, "the header row reads the resolved column alignment"
+        assert "cell.align" in source, "each body cell reads its own resolved alignment (#118)"
+        assert "cell.is_text" in source, "the face follows the resolved kind, not a position"
+
+
+class TestTheCellIsTheUnit:
+    """
+    #118. Two index-aligned lists held in step by a validator is the shape an
+    object replaces — `LinkRow`'s reason: the row has a variable-length part,
+    and variable length is what fields cannot express.
+    """
+
+    def test_strings_coerce_to_cells(self):
+        assert TableRow(["a", "b"]).cells == [Cell(text="a"), Cell(text="b")]
+
+    def test_strings_and_cells_mix_freely(self):
+        row = TableRow(["a", Cell("b", color="#00FF00")])
+        assert row.cells[0].text == "a"
+        assert row.cells[1].color == "#00FF00"
+
+    def test_a_non_string_non_cell_raises_naming_where_it_came_from(self):
+        with pytest.raises(ValidationError, match=r"cells\[1\]"):
+            TableRow(["a", 7])
+
+    def test_a_bare_string_is_accepted(self):
+        assert coerce_cell("x") == Cell(text="x")
+
+
+class TestTheFlatColorSpelling:
+    """
+    `colors` is kept because it is the common call path — the same
+    flat-keyword pattern `EmailMetadata` uses for its region fields.
+    """
+
+    def test_the_two_spellings_converge(self):
+        """
+        Asserted as *convergence*, not by pinning each separately: two
+        spellings pinned apart can drift; two asserted equal cannot.
+        """
+        flat = DataTable(["A", "B"], [TableRow(["x", "1"], colors=["", "#00FF00"])])
+        explicit = DataTable(["A", "B"], [TableRow([Cell("x"), Cell("1", color="#00FF00")])])
+        assert _html(flat) == _html(explicit)
+        assert flat.text() == explicit.text()
+
+    def test_colors_is_an_initvar_so_the_cell_is_the_single_owner(self):
+        """
+        Constructor-only: absent from `fields()`, `repr` and `==`, so there is
+        no second place a cell's colour can live and go stale.
+
+        Note `getattr(row, "colors")` still answers `None` — an `InitVar`
+        with a default leaves that default on the *class*. `EmailMetadata`'s
+        flat region keywords behave identically, so this is the established
+        shape rather than a wrinkle in this row.
+        """
+        import dataclasses
+
+        row = TableRow(["a"], colors=["#00FF00"])
+        assert "colors" not in {f.name for f in dataclasses.fields(TableRow)}
+        assert "colors" not in repr(row)
+        assert row == TableRow([Cell("a", color="#00FF00")])
+
+    def test_both_spellings_at_once_raises_rather_than_picking_one(self):
+        with pytest.raises(ValidationError, match="both set"):
+            TableRow([Cell("x", color="#00FF00")], colors=["#FF0000"])
+
+    def test_a_mismatched_length_still_raises(self):
+        with pytest.raises(ValidationError, match="same length"):
+            TableRow(["a", "b"], colors=["#00FF00"])
+
+    def test_a_malformed_flat_colour_raises(self):
+        with pytest.raises(ValidationError, match="table_row.color"):
+            TableRow(["a"], colors=["nope"])
+
+
+class TestTheChainCompletesAtTheCell:
+    def test_a_cell_align_overrides_its_column(self):
+        component = DataTable(
+            ["Factor", "1M"],
+            [TableRow(["Value", Cell("+1.8%", align="left")])],
+        )
+        assert _html_aligns(_html(component)) == ["left", "left"]
+
+    def test_an_unset_cell_inherits_the_column(self):
+        component = DataTable([Column("Mid", align="center"), "1M"], [TableRow(["x", "1"])])
+        assert _html_aligns(_html(component))[0] == "center"
+
+    def test_the_override_reaches_the_html_only(self):
+        """
+        A cell-level override is a property of one cell, so the plain-text
+        projection — whose columns are aligned as columns — is unmoved. The
+        two parts still agree about the *column*, which is what #117's rule
+        is about.
+        """
+        plain = DataTable(["A", "B"], [TableRow(["x", "1"])])
+        nudged = DataTable(["A", "B"], [TableRow(["x", Cell("1", align="left")])])
+        assert plain.text() == nudged.text()
+        assert _html(plain) != _html(nudged)
+
+
+class TestCellColoursAreSemanticData:
+    def test_a_background_renders_on_that_cell_only(self):
+        component = DataTable(
+            ["A", "B"],
+            [TableRow([Cell("x", background="#FFF3CD"), "1"])],
+        )
+        row = _html(component).split("<tr")[2]
+        assert row.count("#FFF3CD") == 1
+
+    def test_a_background_leaves_the_rows_striping_intact(self):
+        """
+        A caller marking one figure must not have to restate the striping.
+        """
+        component = DataTable(
+            ["A", "B"],
+            [TableRow(["x", "1"]), TableRow([Cell("y", background="#FFF3CD"), "2"])],
+        )
+        alt_row = _html(component).split("<tr")[3]
+        assert "#FFF3CD" in alt_row
+        # the untouched cell in the same row still takes the alternating tint
+        assert alt_row.count("background-color") == 2
+        assert "#FFF3CD" not in alt_row.split("<td")[2]
+
+    def test_an_explicit_colour_wins_over_the_kind(self):
+        """
+        The caller said something about this figure; the theme is only the
+        fallback behind it. That holds for a text column too — a colour set
+        on a label is not silently discarded.
+        """
+        component = DataTable(["A", "B"], [TableRow([Cell("x", color="#B85450"), "1"])])
+        assert "#B85450" in _html(component).split("<tr")[2]
+
+    def test_an_unset_colour_takes_the_theme(self):
+        html = _html(DataTable(["A", "B"], [TableRow(["x", "1"])]))
+        assert "#" in html.split("<tr")[2]
+
+    @pytest.mark.parametrize("field", ["color", "background"])
+    def test_a_malformed_colour_raises_naming_the_field(self, field):
+        with pytest.raises(ValidationError, match=f"cell.{field}"):
+            coerce_cell(Cell("x", **{field: "red"}))
+
+    def test_an_unknown_cell_align_raises_naming_the_field(self):
+        with pytest.raises(ValidationError, match="cell.align"):
+            coerce_cell(Cell("x", align="middle"))
+
+    def test_the_docstring_states_the_boundary(self):
+        """
+        The fourth bounded exception survives on its *justification*. A
+        docstring that stopped saying why would leave a colour parameter with
+        no argument behind it — which is how a closed list quietly opens.
+        """
+        assert Cell.__doc__ is not None
+        doc = " ".join(Cell.__doc__.split())
+        assert "not control over appearance" in doc
+        assert "fourth** bounded exception" in doc
+        assert "not**: a styling surface" in doc
+
+
+class TestThereIsNoStylingSurface:
+    @pytest.mark.parametrize("forbidden", ["font", "size", "border", "padding", "weight"])
+    def test_the_cell_takes_no_presentation_beyond_the_two_colours(self, forbidden):
+        """
+        The boundary, enforced rather than promised: colour is admitted as
+        data about a figure, and nothing else follows it in.
+        """
+        import dataclasses
+
+        names = {f.name for f in dataclasses.fields(Cell)}
+        assert not [n for n in names if forbidden in n], names

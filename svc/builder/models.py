@@ -571,24 +571,128 @@ def coerce_column(value: "str | Column", field_name: str = "column") -> Column:
 
 
 @dataclass
-class TableRow:
-    """A single row in a data table."""
+class Cell:
+    """
+    One cell of a :class:`TableRow`.
 
-    cells: list[str] = field(default_factory=list)
-    colors: list[str] = field(default_factory=list)
+    Replaces the bare string, and with it the two index-aligned lists
+    (``cells`` and ``colors``) that a validator had to hold in step. That
+    shape is what an object exists to replace, for :class:`LinkRow`'s reason:
+    **the row has a variable-length part, and variable length is what fields
+    cannot express.**
+
+    **On the two colours — they are the caller's claim about a figure, not
+    control over appearance.** ``color`` is the field
+    ``TableRow.colors`` already set, and CLAUDE.md justifies it as *"the
+    caller's statement about the number ('this is down'), not a styling
+    choice"*. ``background`` is admitted on exactly that footing: a shaded
+    cell in a financial table says *breached its limit*, *stale mark*,
+    *estimate* — a claim about the figure, of the same kind its text colour
+    already makes. That is what makes this the **fourth** bounded exception
+    to the closed colour rule rather than a hole in the palette.
+
+    What it is deliberately **not**: a styling surface. There is no cell
+    font, no cell size, no border control, and no per-cell override of
+    anything the theme owns for structural reasons. If these fields ever read
+    as *"the caller styles cells"*, the closed list has opened and the rule
+    is dead — a ``title_color=`` with more steps.
+
+    The theme remains the fallback: an unset colour takes the token the
+    column's kind implies, and an unset background leaves the row's
+    alternating tint alone.
+
+    Attributes:
+        text:       The cell's contents. Plain text, escaped on the way out.
+        align:      Overrides the column's resolved alignment. Empty inherits.
+        color:      Text colour, ``#RRGGBB``. Empty takes the theme's token.
+        background: Cell background, ``#RRGGBB``. Empty leaves the row's
+                    alternating tint in place.
+    """
+
+    text: str = ""
+    align: str = ""
+    color: str = ""
+    background: str = ""
 
     def validate(self) -> None:
-        # colors is index-aligned with cells; the template indexes it directly
-        # (row.colors[loop.index0]), so a short list raises under StrictUndefined.
-        # Empty means "no colors" and is allowed.
-        if self.colors and len(self.colors) != len(self.cells):
+        if self.align and self.align not in tuple(ColumnAlign):
             raise ValidationError(
-                f"'table_row.colors' must be empty or the same length as 'cells' "
-                f"({len(self.cells)}), got {len(self.colors)}."
+                f"'cell.align' must be one of {[a.value for a in ColumnAlign]}, got: {self.align!r}"
             )
-        for c in self.colors:
-            if c:
-                _validate_color(c, "table_row.color")
+        if self.color:
+            _validate_color(self.color, "cell.color")
+        if self.background:
+            _validate_color(self.background, "cell.background")
+
+    def resolved_align(self, column_align: str) -> str:
+        """This cell's alignment, falling back to its column's resolved one."""
+        return self.align or column_align
+
+
+def coerce_cell(value: "str | Cell", field_name: str = "cell") -> Cell:
+    """
+    Accept either a :class:`Cell` or a bare string.
+
+    ``TableRow(cells=["Value", "+1.8%"])`` keeps working untouched — the same
+    union-coercion :func:`coerce_column` and
+    :func:`~svc.builder.images.coerce_image` apply, for the same reason.
+    """
+    if isinstance(value, Cell):
+        value.validate()
+        return value
+    if not isinstance(value, str):
+        raise ValidationError(
+            f"{field_name!r} must be a Cell or a string, got: {type(value).__name__}"
+        )
+    return Cell(text=value)
+
+
+@dataclass
+class TableRow:
+    """
+    A single row in a data table.
+
+    ``cells`` accepts bare strings or :class:`Cell` objects, mixed freely,
+    and coerces at construction — so ``row.cells`` is always a list of
+    ``Cell``.
+
+    ``colors`` survives as the **flat spelling**: the index-aligned list this
+    row took before :class:`Cell` existed, kept working because it is the
+    common call path. It is an ``InitVar`` — a constructor argument only,
+    absent from ``fields()``, ``repr`` and ``==`` — so the ``Cell`` is the
+    single owner of a cell's colour and the two spellings cannot drift.
+    Passing ``colors`` *and* a ``Cell`` that carries its own ``color`` raises
+    rather than silently picking one, exactly as ``EmailMetadata`` does for
+    its flat region keywords.
+    """
+
+    cells: list[Any] = field(default_factory=list)
+    colors: InitVar[list[str] | None] = None
+
+    def __post_init__(self, colors: list[str] | None) -> None:
+        self.cells = [
+            coerce_cell(cell, f"table_row.cells[{i}]") for i, cell in enumerate(self.cells)
+        ]
+        if colors:
+            if len(colors) != len(self.cells):
+                raise ValidationError(
+                    f"'table_row.colors' must be empty or the same length as 'cells' "
+                    f"({len(self.cells)}), got {len(colors)}."
+                )
+            for cell, color in zip(self.cells, colors, strict=True):
+                if color and cell.color:
+                    raise ValidationError(
+                        "'table_row.colors' and a Cell's own 'color' both set for the same "
+                        "cell; pass one or the other, not both."
+                    )
+                if color:
+                    _validate_color(color, "table_row.color")
+                    cell.color = color
+
+    def validate(self) -> None:
+        """Re-check every cell. Coercion already validated at construction."""
+        for cell in self.cells:
+            cell.validate()
 
 
 @dataclass

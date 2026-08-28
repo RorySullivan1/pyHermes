@@ -93,6 +93,7 @@ from .images import (
 # Models
 from .models import (
     Card,
+    Cell,
     Column,
     EmailMetadata,
     KpiItem,
@@ -189,6 +190,7 @@ __all__ = [
     "KpiItem",
     "TableRow",
     "Column",
+    "Cell",
     "NumberedItem",
     "SectionConfig",
     # Components

@@ -732,7 +732,7 @@ from svc.builder import EmailBuilder, Email, \
     Region, Header, EmptyHeader, Banner, MinimalBanner, Footer, \
     FullWidth, TwoColumn, ThreeColumn, \
     CardGroup, DataTable, ChartBlock, ImageBlock, TextBlock, NumberedList, AuthorBlock, ContactBlock
-from svc.builder.models import Card, KpiItem, TableRow, Column, NumberedItem, EmailMetadata, \
+from svc.builder.models import Card, KpiItem, TableRow, Cell, Column, NumberedItem, EmailMetadata, \
     SectionConfig, LinkRow, FooterLink
 from svc.builder.enums import TwoColumnRatio, ThreeColumnRatio, CardOrientation, \
     EmbedStrategy, ImageAlign, SizeTheme, ColumnAlign, ColumnKind
@@ -817,6 +817,32 @@ every existing call site a rewrite.
 **Column widths are deliberately not here.** They interact with the 680px frame arithmetic
 `sizing.py` owns and with the mobile collapse, so they are a separate decision with their own
 client-testing burden rather than a field to slip in.
+
+### The data table's cells
+
+`TableRow(cells=…)` takes bare strings **or** [Cell](svc/builder/models.py) objects, mixed
+freely (#118) — `text`, `align`, `color`, `background`. The chain completes: **cell → column →
+position**, so a cell's `align` overrides what its column resolved and an unset one inherits.
+
+- **Two index-aligned lists became one object.** `cells` and `colors` were held in step by a
+  validator, which is the shape an object replaces — `LinkRow`'s reason exactly.
+- **`colors` survives as the flat spelling**, as an `InitVar`: constructor-only, absent from
+  `fields()`, `repr` and `==`, so the `Cell` is the single owner and the two spellings cannot
+  drift. A test asserts they **converge** rather than pinning each separately. Passing both
+  `colors` and a `Cell` carrying a `color` raises rather than silently picking one.
+- **`Cell.color` and `Cell.background` are the fourth bounded colour exception**, and they are
+  admitted as **semantic data**: the caller's claim about a *figure* — *breached its limit*,
+  *stale mark*, *estimate* — of the same kind `TableRow.colors` already made. They are **not**
+  a styling surface: there is no cell font, size, border or padding, and a test over
+  `dataclasses.fields(Cell)` keeps it that way. A colour parameter whose justification
+  evaporated would be a `title_color=` with more steps.
+- **An explicit colour wins over the column's kind**, in either direction — the caller said
+  something about that figure, and the theme is only the fallback behind it.
+- **A cell background leaves the row's striping alone.** Marking one figure must not cost the
+  caller the alternating tint on every other cell in the row.
+- **Marking a cell costs zero bytes.** The template always emitted a `color` and a
+  `background-color` declaration; a caller's hex simply replaces the theme's, and both are
+  seven characters. The size worry the epic recorded turned out to be free.
 
 [Card](svc/builder/models.py) is the unit: `label` (required), `value`, `color`,
 `sublabel`, and an optional `body` for prose. Either `value` or `body` must be present.
@@ -1041,6 +1067,7 @@ EmailBuilder().metadata({..., "theme": DEFAULT_THEME.derive(  # or your own
   | `Container.background_color` | pre-existing | a section band — the original escape hatch, neither removed nor extended |
   | `Banner.palette` (`BannerPalette`) | #93 | a **photograph**: `background_image_url` is an image the palette has never seen, so white-on-navy tokens over a pale one are a guess |
   | `Header` / `Footer` `background_color` + `text_color` (`BoxSurface`) | #95, #99 | the two outer **boxes**, the same reason at the size those boxes need |
+  | `Cell.color` + `Cell.background` | #118 | **not a ground at all — the other kind of exception.** Admitted as *semantic data*: the caller's claim about a **figure**, which is why `TableRow.colors` was never a breach either. See below |
 
   Everything else renders on surfaces the theme owns and gets nothing — every component, and
   every region's structural chrome. What the rule protects survives in all three, which is why
@@ -1048,8 +1075,17 @@ EmailBuilder().metadata({..., "theme": DEFAULT_THEME.derive(  # or your own
   (a whole `BannerPalette`, or a background *with* the type that has to be legible on it),
   never a lone colour at a call site.
 
+  **The fourth entry is a different kind of exception, and saying so is what keeps the rule
+  alive.** `Cell.color` and `Cell.background` supply no ground — they are *data*. The clause
+  that admits them is the one immediately below: `KpiItem.color` and `TableRow.colors` were
+  always the caller's statement about the number, not a styling choice, so a cell background
+  saying *breached its limit* or *stale mark* is the same claim in another channel. Read as
+  "the caller controls cell appearance" it would be a `title_color=` with more steps; read as
+  what it is, it never touches the palette's authority over surfaces the *theme* owns.
+
   **The list being closed is the point.** "Now every region gets a palette" is the failure
-  mode, not the roadmap; a fourth exception has to name a ground the caller supplies. The
+  mode, not the roadmap; a fifth exception has to name a ground the caller supplies, or be
+  data in the sense the fourth is. The
   scoping is enforced rather than described: `BannerPalette` covers the *banner slot* only, so
   the strip in the same region keeps the theme's tokens even though the two share a class, and
   a test asserts it. **And the colour pair never ships alone** — a background without the text

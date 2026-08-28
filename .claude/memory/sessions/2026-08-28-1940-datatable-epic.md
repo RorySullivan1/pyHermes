@@ -59,8 +59,38 @@ rather than asserted.
 re-introducing it would render correctly today and quietly make `Column`
 unreachable, which is the failure mode a golden structurally cannot see.
 
+## #118, as shipped
+
+`Cell(text, align, color, background)` + `coerce_cell`; `TableRow.cells`
+coerces; `colors` becomes an `InitVar`.
+
+**The colour decision landed as a fourth entry of a *different kind*.** The
+first three exceptions in CLAUDE.md's closed list each name a **ground the
+caller supplies** — a section band, a photograph, the two outer boxes. This
+one supplies no ground at all: it is admitted as **data**, the caller's claim
+about a figure, which is the same clause that always justified
+`TableRow.colors`. Writing that distinction into the list is what keeps the
+rule a rule; a fourth entry arriving without its argument would turn it into
+a list of exceptions, which is how such rules die.
+
+**The size worry was free.** The epic recorded per-cell colour as a size risk
+(inline styles, uncompressed gate). Measured: **zero bytes**. The template
+always emitted a `color` and a `background-color` declaration — a caller's hex
+simply replaces the theme's, and every hex is seven characters. Worth
+remembering before pricing an inline-style feature again: the cost is in
+*adding declarations*, not in changing their values.
+
+**A dataclass detail worth not rediscovering:** an `InitVar` with a default
+leaves that default on the **class**, so `getattr(row, "colors")` answers
+`None` rather than raising. `EmailMetadata`'s flat region keywords behave
+identically — so the test asserts what the pattern actually guarantees
+(absent from `fields()`, `repr` and `==`) rather than what it looks like it
+should.
+
+Every golden byte-identical, again.
+
 ## State at end
 
-1601 tests with a browser, 4 skipping even then. ruff / `ruff format --check` /
-mypy clean. Next: #118 (`Cell`), which carries the colour decision. #120
-(caption + `scope="row"`) is independent and could ship first.
+1626 tests with a browser, 4 skipping even then. ruff / `ruff format --check` /
+mypy clean. Next: #119 (row kinds). #120 (caption + `scope="row"`) is
+independent and could ship first.

@@ -17,7 +17,7 @@ import warnings
 from typing import Any
 
 from .engine import Renderer
-from .enums import CardOrientation, ImageAlign
+from .enums import CardOrientation, ColumnKind, ImageAlign
 from .exceptions import ValidationError
 from .images import EmailImage, ImageAsset, coerce_image
 from .models import Card, Column, NumberedItem, TableRow, _validate_url, coerce_column
@@ -290,22 +290,29 @@ class DataTable(Component):
         return self._with_subtitle(
             table(
                 self.headers,
-                [row.cells for row in self.rows],
+                [[cell.text for cell in row.cells] for row in self.rows],
                 aligns=[column.align for column in self.resolved_columns()],
             ),
             wrap("\n".join(filter(None, (self.source, self.as_of)))),
         )
 
     def context(self) -> dict[str, Any]:
+        columns = self.resolved_columns()
         return {
-            "columns": [
-                {"header": c.header, "align": c.align, "kind": c.kind}
-                for c in self.resolved_columns()
-            ],
+            "columns": [{"header": c.header, "align": c.align, "kind": c.kind} for c in columns],
             "rows": [
                 {
-                    "cells": r.cells,
-                    "colors": r.colors,
+                    "cells": [
+                        {
+                            "text": cell.text,
+                            # The chain completes here: cell → column → position.
+                            "align": cell.resolved_align(column.align),
+                            "color": cell.color,
+                            "background": cell.background,
+                            "is_text": column.kind == ColumnKind.TEXT,
+                        }
+                        for cell, column in zip(r.cells, columns, strict=True)
+                    ],
                     "alt": i % 2 == 1,  # alternating row background
                 }
                 for i, r in enumerate(self.rows)
