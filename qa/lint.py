@@ -57,6 +57,16 @@ SOURCES: dict[str, str] = {
         "for Outlook desktop is the default state (svc/builder/images.py). "
         "EmailImage requires it at construction; this checks the render."
     ),
+    "table-role": (
+        "A table with no role is exposed to assistive technology as a data "
+        "table, so a screen reader announces its dimensions before any "
+        "content. Table-based layout is mandatory in email — this repo's own "
+        "outlook-unsupported-css rule denies the alternatives — so the markup "
+        'is right and only the annotation is missing. role="presentation" '
+        "removes the table semantics without changing a pixel; the mirror "
+        "case is a real data table, which must NOT carry it. W3C WAI, "
+        "Tables Tutorial: Layout Tables. w3.org/WAI/tutorials/tables/layout"
+    ),
     "no-external-css": (
         "Microsoft, on Outlook Classic: styles that are not fully inline "
         "'may be stripped or misapplied'. learn.microsoft.com/troubleshoot/"
@@ -119,6 +129,7 @@ UNSUPPORTED_DECLARATIONS: dict[str, frozenset[str]] = {
     "position": frozenset({"absolute", "fixed"}),
 }
 
+
 #: The rules that are claims about Outlook specifically. They are suppressed
 #: inside a downlevel-revealed conditional (``<!--[if !mso]><!-->``), because
 #: markup Outlook cannot see cannot be a problem for Outlook. Named rather
@@ -126,6 +137,22 @@ UNSUPPORTED_DECLARATIONS: dict[str, frozenset[str]] = {
 #: rather than a naming coincidence — ``img-width-attr`` is motivated by
 #: Outlook too, and deliberately keeps firing there: a width attribute is good
 #: practice in every client.
+@dataclass
+class _OpenTable:
+    """One ``table`` the parser is currently inside.
+
+    Held on a stack because the discriminator — does this table contain a
+    header cell? — is only known once the closing tag is reached, and because
+    a ``th`` belongs to the innermost open table. That nesting is not
+    hypothetical: the gallery's one real data table renders inside two layout
+    tables, and a flat flag would mark all three as data.
+    """
+
+    where: str
+    role: str
+    has_header: bool = False
+
+
 _OUTLOOK_ONLY_RULES = frozenset(
     {"outlook-line-height", "outlook-transparent-background", "outlook-unsupported-css"}
 )
@@ -203,6 +230,7 @@ class _Linter(HTMLParser):
         self.findings: list[Finding] = []
         self._in_style = False
         self._hidden_from_outlook = False
+        self._tables: list[_OpenTable] = []
 
     # -- helpers ------------------------------------------------------
 
@@ -229,6 +257,16 @@ class _Linter(HTMLParser):
 
         if tag == "style":
             self._in_style = True
+        if tag == "table":
+            self._tables.append(
+                _OpenTable(where=self._where(), role=attributes.get("role", "").strip().lower())
+            )
+        if tag in ("th", "td") and self._tables:
+            # A header cell belongs to the *innermost* open table, which is
+            # what makes a data table nested inside layout tables classify
+            # correctly rather than marking its ancestors as data too.
+            if tag == "th":
+                self._tables[-1].has_header = True
         if tag == "img":
             self._check_image(attributes)
         if tag == "link":
@@ -244,6 +282,8 @@ class _Linter(HTMLParser):
     def handle_endtag(self, tag: str) -> None:
         if tag == "style":
             self._in_style = False
+        if tag == "table" and self._tables:
+            self._check_table(self._tables.pop())
 
     def handle_data(self, data: str) -> None:
         if self._in_style:
@@ -263,6 +303,49 @@ class _Linter(HTMLParser):
         self._check_at_import(data)
 
     # -- rules --------------------------------------------------------
+
+    def _check_table(self, table: _OpenTable) -> None:
+        """
+        A layout table must be presentational; a data table must not be.
+
+        Both directions, because only checking the first would be satisfied
+        by marking *every* table — which silently strips the semantics from
+        the one table a screen reader should actually navigate.
+
+        ``th`` is the discriminator. It is what distinguishes the two kinds
+        in this codebase exactly today, and it is the same signal a screen
+        reader itself uses: a table whose cells are all ``td`` announces
+        dimensions and nothing else, which is precisely the noise the
+        presentational role removes.
+        """
+        presentational = table.role in ("presentation", "none")
+
+        if table.has_header and presentational:
+            self.findings.append(
+                Finding(
+                    rule_id="table-role",
+                    severity=Severity.ERROR,
+                    location=table.where,
+                    message=(
+                        f'<table role="{table.role}"> contains <th> header cells, so it is '
+                        "a data table; the presentational role strips the semantics a "
+                        "screen reader needs to associate each cell with its column."
+                    ),
+                )
+            )
+        elif not table.has_header and not presentational:
+            self.findings.append(
+                Finding(
+                    rule_id="table-role",
+                    severity=Severity.ERROR,
+                    location=table.where,
+                    message=(
+                        "<table> has no header cells and no role, so assistive technology "
+                        "announces this layout scaffolding as a data table. Add "
+                        'role="presentation".'
+                    ),
+                )
+            )
 
     def _check_image(self, attributes: dict[str, str]) -> None:
         source = attributes.get("src", "")[:60]

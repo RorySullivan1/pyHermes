@@ -380,6 +380,12 @@ rather than documented:
 - **Colors are `#RRGGBB`**, checked in Python and again in the templates.
 - **Alt text is required** on every image — it is what the reader sees whenever images are
   blocked, which for Outlook desktop is the default state.
+- **Layout tables say they are layout.** Table-based layout is mandatory in email, so every
+  structural table carries `role="presentation"` and the one real data table carries `scope`
+  on its headers instead. Without that a screen reader announces each layout table's
+  dimensions before any content — 68 times in a full-length email. The lint pass checks both
+  directions, since marking *every* table would strip the semantics from the one that needs
+  them.
 
 **Autoescape is off, and escaping is split by field kind.** HTML email needs raw output, so
 it is explicit: plain-text fields (titles, KPI labels, table cells, author names) are escaped

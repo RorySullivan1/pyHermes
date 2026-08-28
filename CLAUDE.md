@@ -289,10 +289,20 @@ test (#60). `lint_html(html)` returns `Finding(rule_id, severity, location, mess
 | `outlook-line-height` | error | A **unitless** `line-height`; Outlook Classic ignores it. `0` is allowed |
 | `outlook-transparent-background` | error | `background-color` carrying an alpha channel — Outlook demotes it to a background image |
 | `empty-url` | error | `url()` with nothing in it; a client may resolve it against the message body |
+| `table-role` | error | A layout table with no `role`, **and** a data table carrying one (#114) |
 | `size-budget` | warn/error | The 90/102 KB thresholds, **attributing the bytes to section-marker regions** |
 
-Six decisions worth not re-litigating:
+Seven decisions worth not re-litigating:
 
+- **`table-role` fires in both directions, and that is what makes it a rule rather than a
+  chore.** A check that only demanded `role="presentation"` would be satisfied by marking
+  *every* table — which strips the semantics from the one table a screen reader should
+  actually navigate. So an unmarked layout table is an error and a marked *data* table is an
+  error, and `th` is the discriminator: it distinguishes the two kinds in this codebase
+  exactly, and it is the same signal a reader uses. The check runs at the **closing** tag,
+  because that is when the verdict is known, but reports the opening one, because that is
+  where a reader has to go. The open tables are a stack: the gallery's one real data table
+  renders inside two layout tables, and a flat flag would mark all three as data.
 - **It parses, it never greps.** The repo learned this the expensive way — a `grep` for
   `Contact Us` matched inside a section-marker comment and produced a confident, wrong
   answer. `html.parser.HTMLParser` is stdlib, so the check costs no dependency.
@@ -694,7 +704,14 @@ These are not conventions to remember — each has teeth, and the teeth are name
    region is the only owner of its own images. The header and footer participate even though
    no shipped variant of either carries an image: a test builds a footer that does, because
    the slot has to work *before* someone writes that variant for real.
-8. **A new component must implement `text()`, and absence fails loudly.** The mirror of rule
+8. **A new template's tables declare what kind they are.** A layout table takes
+   `role="presentation"`; a real data table takes none and gives its header cells
+   `scope="col"` (#114). Both directions are enforced by the `table-role` lint rule, because
+   the failure is invisible in every browser and every screenshot — an unmarked layout table
+   renders identically and simply announces itself to a screen reader as a data table with
+   dimensions, once per table. The gallery emits 68 tables for one email, so this is the
+   difference between an email a screen-reader user can read and one they cannot.
+9. **A new component must implement `text()`, and absence fails loudly.** The mirror of rule
    7 with the **opposite default**: an absent image list is empty, an absent projection is a
    `NotImplementedError` naming the class. A component with no visual content can exist — a
    spacer would — but a *content* component invisible to text-mode readers is the
@@ -1278,7 +1295,7 @@ projects itself, the same way each already renders itself and declares its own i
 monkeypatches `TemplateEngine.render` to raise and projects every gallery fixture** — the claim
 is asserted, not trusted.
 
-- **Absence fails loudly** (standing rule 8) — the `images()` rule with the opposite default.
+- **Absence fails loudly** (standing rule 9) — the `images()` rule with the opposite default.
 - **Generated, never hand-authored.** There is no `text_override`, and a test introspects every
   exported class to keep it that way: derived text cannot drift from the HTML's content.
 - **Raw HTML degrades through one small parser.** The five blessed surfaces

@@ -15,7 +15,7 @@
   {# Header row #}
   <tr style="border-top: 1px solid {{ theme.palette.rule }}; border-bottom: 2px solid {{ theme.palette.rule_dark }};">
 {% for header in headers %}
-    <th style="font-family: {{ font.label }}; font-size: {{ size.type.label }}px; font-weight: bold; color: {{ theme.semantic.neutral }}; text-transform: uppercase; line-height: {{ size.type.body_line | percent }}; text-align: {% if loop.first %}left{% else %}right{% endif %}; padding: {{ size.component.table_cell_pad }}px; letter-spacing: 0.5px;">{{ header | escape_html }}</th>
+    <th scope="col" style="font-family: {{ font.label }}; font-size: {{ size.type.label }}px; font-weight: bold; color: {{ theme.semantic.neutral }}; text-transform: uppercase; line-height: {{ size.type.body_line | percent }}; text-align: {% if loop.first %}left{% else %}right{% endif %}; padding: {{ size.component.table_cell_pad }}px; letter-spacing: 0.5px;">{{ header | escape_html }}</th>
 {% endfor %}
   </tr>
   {# Data rows #}
