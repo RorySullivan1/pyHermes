@@ -28,6 +28,7 @@ from . import (
     minimal,
     minimal_banner,
     minimal_footer,
+    modern_fonts,
     no_header,
     slate_theme,
     spacious_size,
@@ -75,6 +76,7 @@ def all_fixtures() -> dict[str, FixtureBuilder]:
         "slate_theme": slate_theme.build,
         "compact_size": compact_size.build,
         "spacious_size": spacious_size.build,
+        "modern_fonts": modern_fonts.build,
     }
 
 

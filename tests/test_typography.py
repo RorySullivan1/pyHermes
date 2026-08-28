@@ -15,7 +15,7 @@ from pathlib import Path
 
 import pytest
 
-from svc.builder import DEFAULT_FONTS, FONT_THEMES, FontStack, FontTheme
+from svc.builder import DEFAULT_FONTS, FONT_THEMES, MODERN_FONTS, FontStack, FontTheme
 from svc.builder.engine import TemplateEngine
 from svc.builder.exceptions import ValidationError
 from svc.builder.typography import GENERIC_FAMILIES, resolve_font_theme
@@ -36,6 +36,15 @@ TODAYS_STACKS = {
 
 def _all_templates() -> list[Path]:
     return sorted(TEMPLATE_DIR.rglob("*.html"))
+
+
+#: One rendered ``font-family`` declaration, value included.
+_FAMILY = re.compile(r"font-family:\s*[^;\"]+")
+
+
+def _families(html: str) -> set[str]:
+    """Every distinct stack a rendered email actually carries."""
+    return {value.strip() for value in re.findall(r"font-family:\s*([^;\"]+)", html)}
 
 
 class TestTheDefaultIsPinnedToTodaysValues:
@@ -74,18 +83,34 @@ class TestTheDefaultIsPinnedToTodaysValues:
             f"nothing renders {stack!r} — the audit has gone stale"
         )
 
-    def test_the_render_carries_no_stack_the_vocabulary_lacks(self):
+    def test_the_default_render_carries_exactly_the_audited_three(self):
         """
-        Completeness of the audit itself: every ``font-family`` value in a
-        rendered email must be one of the three. A fourth stack appearing
-        later fails here rather than drifting in unnoticed.
+        The audit pins the *default*: an email that chooses nothing renders
+        the three stacks this module was built to reproduce, and no fourth.
+        """
+        from qa.fixtures import kitchen_sink
+
+        assert _families(kitchen_sink.build().render()) == set(TODAYS_STACKS.values())
+
+    def test_no_fixture_renders_a_stack_no_preset_declares(self):
+        """
+        Completeness across the gallery, and the claim had to widen when the
+        second preset landed: a rendered face must come from the *vocabulary*
+        — some registered preset — rather than from the audit's three. A
+        literal sneaking back into a template fails here, because no preset
+        declares it.
         """
         from qa.fixtures import all_fixtures
 
+        declared = {
+            getattr(theme, spec.name).css
+            for theme in FONT_THEMES.values()
+            for spec in dataclasses.fields(theme)
+        }
         seen: set[str] = set()
         for build in all_fixtures().values():
-            seen.update(re.findall(r"font-family:\s*([^;\"]+)", build().render()))
-        assert {value.strip() for value in seen} == set(TODAYS_STACKS.values())
+            seen |= _families(build().render())
+        assert seen <= declared, f"undeclared stack(s) rendered: {sorted(seen - declared)}"
 
 
 class TestTheStackIsTheAtom:
@@ -227,6 +252,42 @@ class TestThePresetRegistry:
     def test_an_unknown_name_raises_listing_what_exists(self):
         with pytest.raises(ValidationError, match="unknown font theme"):
             resolve_font_theme("helvetica")
+
+    def test_modern_moves_only_the_roles_it_claims(self):
+        """
+        A preset is a curation, so what it leaves *alone* is as much of the
+        decision as what it changes — and a shared role that had drifted
+        would be invisible in a golden, which only says "these bytes moved".
+
+        ``modern`` is a display swap: the two roles that carry titling and
+        chrome move to the sans; the two that carry reading copy and figures
+        are held at the default deliberately, because a newsletter is read in
+        a serif and a table aligns in a mono.
+        """
+        moved = {"heading", "label"}
+        held = {"body", "numeric"}
+        assert moved | held == {spec.name for spec in dataclasses.fields(FontTheme)}
+
+        for role in held:
+            assert getattr(MODERN_FONTS, role) == getattr(DEFAULT_FONTS, role), role
+        for role in moved:
+            assert getattr(MODERN_FONTS, role) != getattr(DEFAULT_FONTS, role), role
+
+    def test_the_two_presets_differ_in_face_and_in_nothing_else(self):
+        """
+        The A/B the ``modern_fonts`` golden rests on: every byte between the
+        two renders is a typeface. Anything else moving would make that
+        fixture's diff unreadable — which is the whole reason it reuses
+        ``kitchen_sink``'s content rather than restating it — and it is also
+        the epic's orthogonality claim, since a font swap moves no px.
+        """
+        from qa.fixtures import kitchen_sink, modern_fonts
+
+        classic = kitchen_sink.build().render()
+        modern = modern_fonts.build().render()
+
+        assert _families(classic) != _families(modern)
+        assert _FAMILY.sub("font-family:", classic) == _FAMILY.sub("font-family:", modern)
 
 
 #: A theme whose every role is a distinct, findable family.

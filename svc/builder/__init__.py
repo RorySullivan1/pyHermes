@@ -138,6 +138,7 @@ from .theming import (
 from .typography import (
     DEFAULT_FONTS,
     FONT_THEMES,
+    MODERN_FONTS,
     FontStack,
     FontTheme,
 )
@@ -155,6 +156,7 @@ __all__ = [
     "FontStack",
     "FontTheme",
     "DEFAULT_FONTS",
+    "MODERN_FONTS",
     "FONT_THEMES",
     "BannerPalette",
     "DEFAULT_THEME",

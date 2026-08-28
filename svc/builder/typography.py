@@ -255,10 +255,40 @@ class FontTheme:
 #: in the module docstring.
 DEFAULT_FONTS = FontTheme()
 
+#: A sans-display counterpart to ``classic``'s all-serif voice.
+#:
+#: Curated, not computed — the ``SLATE_THEME`` bar: a face nobody has
+#: rendered in a real client is a compatibility claim nobody has tested, so
+#: every entry here is websafe and every chain is walked down to a floor.
+#:
+#: **The design is the inversion, not the substitution.** ``classic`` sets
+#: structure and reading copy in one serif; this sets structure and chrome in
+#: a sans and *keeps the serif for prose*, which is the standard editorial
+#: pairing and the reason the role vocabulary was cut where it was: ``heading``
+#: and ``body`` share a stack in the default and are separate roles anyway, and
+#: this preset is where that separation becomes visible. ``numeric`` does not
+#: move — figures align in a monospace or they do not align.
+#:
+#: Tahoma leads because a research masthead wants neutral authority rather
+#: than character: Verdana is wider than a 28px title wants, and Trebuchet is
+#: friendlier than the subject matter. Verdana is Tahoma's near-metric
+#: relative and effectively universal, so the second entry degrades by width
+#: rather than by voice; Geneva covers older Macs before the generic floor.
+#:
+#: The name is about the design, not the type-historical "modern" (Didone) —
+#: a caller reading ``font_theme="modern"`` should expect a contemporary
+#: sans-over-serif newsletter, and that is what they get.
+MODERN_FONTS = FontTheme(
+    heading=FontStack("Tahoma", "Verdana", "Geneva", "sans-serif"),
+    body=DEFAULT_FONTS.body,
+    label=FontStack("Tahoma", "Verdana", "Geneva", "sans-serif"),
+    numeric=DEFAULT_FONTS.numeric,
+)
+
 #: Curated presets, repo-owned. A caller's own theme is passed as an object,
 #: never registered here — the registry is a set of design decisions, not a
 #: namespace, and nothing mutates it at runtime.
-FONT_THEMES: dict[str, FontTheme] = {"classic": DEFAULT_FONTS}
+FONT_THEMES: dict[str, FontTheme] = {"classic": DEFAULT_FONTS, "modern": MODERN_FONTS}
 
 
 def resolve_font_theme(value: FontTheme | str) -> FontTheme:
@@ -287,6 +317,7 @@ def resolve_font_theme(value: FontTheme | str) -> FontTheme:
 
 __all__ = [
     "DEFAULT_FONTS",
+    "MODERN_FONTS",
     "FONT_THEMES",
     "GENERIC_FAMILIES",
     "FontStack",
