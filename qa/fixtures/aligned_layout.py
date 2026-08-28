@@ -40,14 +40,13 @@ had never been set by any fixture at all, so nothing pinned how a
 caller-supplied band colour renders. A brand-new fixture is the cheapest
 place to close that, since no existing golden has to move for it.
 
-**One thing this fixture cannot show, and it is recorded rather than hidden**
-(#129): a column's content cell shrink-wraps to its text instead of filling
-its column, so the split's alignment reaches every cell correctly and has no
-room to display unless the copy is wide enough. The two columns here are
-therefore written long enough to fill their width — not to flatter the
-render, but so the golden pins the alignment actually arriving somewhere it
-can be seen. When #129 lands, this fixture's golden moves, and that movement
-is the fix working.
+This fixture shipped one commit ahead of #129, when a column's content cell
+still shrink-wrapped to its copy instead of filling its column — so a
+split's alignment reached every cell correctly and had nowhere to show. Its
+docstring predicted that fixing #129 would move this golden, and it did, by
+five lines. The two columns are still written long enough to fill their
+width: that was a workaround then and is honest content now, and shortening
+them would only make the golden pin less.
 """
 
 from __future__ import annotations
@@ -178,8 +177,8 @@ def build(template_dir: Path | None = None) -> Email:
                 # existing golden moves to accommodate it.
                 background_color="#F4F1EC",
                 left=TextBlock(
-                    "The left half of a centred split. Long enough to fill its column, "
-                    "because a column cell shrink-wraps to its copy (#129)."
+                    "The left half of a centred split, written wide enough that the "
+                    "section's centring has room to be visible in a screenshot."
                 ),
                 right=TextBlock(
                     "The right half of the same split, written to the same width for "

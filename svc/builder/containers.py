@@ -66,15 +66,12 @@ class Container:
       no inheritance at all. That is why #125 was ordered first — the
       belt-and-braces was in place before anything depended on it.
 
-    **Known limitation on a split.** A column's content cell shrink-wraps
-    to its text rather than filling its column — 76 of the gallery's 83
-    column cells do, measured — so a split's ``align`` reaches the cell
-    correctly and is simply invisible whenever the copy is narrower than
-    the column. This predates #126 (identical before and after, measured)
-    and is filed as #129: it is a real geometry change with its own
-    Outlook and mobile-collapse burden, and folding it in here would have
-    made this step's golden diff about something other than alignment.
-    A full-width section is unaffected — its content cell fills the frame.
+    **A split's cells fill their columns since #129.** They did not when
+    ``align`` first landed: ``display:inline-block`` on the column stopped
+    it being a table box, so the cell inside shrink-wrapped to its own copy
+    and a split's alignment had no room to show. ``inline-table`` fixed it,
+    and a browser test holds it — see ``columns.html`` for why the obvious
+    ``width="100%"`` does not work.
 
     Raises:
         ValidationError: If ``background_color`` is not a ``#RRGGBB`` hex color.

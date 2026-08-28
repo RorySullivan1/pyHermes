@@ -30,6 +30,26 @@
                        or its highlight tint when highlighted
     highlight        — When true, tints the band and adds hairline rules top and bottom
 #}
+{# `inline-table`, NOT `inline-block`, and the difference is #129. With
+   `inline-block` the element stops being a table box: the tr and td get an
+   anonymous table around them which shrink-wraps to its content, so the
+   width specified here applied to the outer box and the cell inside stayed
+   as narrow as its copy — 76 of the gallery's 88 column cells did. Anything
+   that then depended on the cell's width had no room to show: #126's
+   alignment reached every cell correctly and was invisible.
+
+   Measured, not reasoned about, in #76's tradition — the obvious fix does
+   NOT work. `width="100%"` on the cell (attribute, style, or both) changes
+   nothing at all, because it resolves against an anonymous table that is
+   itself shrink-wrapping; a fixed px width does fill on desktop but then
+   constrains the copy at the mobile breakpoint, where `.stack-column`
+   overrides the table's width and the cell's px value goes stale.
+
+   Outlook never sees this: its Word engine ignores both display values and
+   lays the columns out from the MSO ghost table above. The residual risk is
+   a client that implements `inline-block` but not `inline-table`, which
+   would stack the columns — the same graceful degradation a client
+   supporting neither already gets. #}
 {# A highlighted band spends 1px a side on its hairline frame, so every
    horizontal inset inside it gives that pixel back. Content then starts at
    frame.pad_x from the frame edge whether the band is highlighted or not —
@@ -66,7 +86,7 @@
         <td width="{{ columns[0].width }}" valign="top" style="width:{{ columns[0].width }}px; padding:0;">
     <![endif]-->
 {% for col in columns %}
-    <table role="presentation" width="{{ col.width }}" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:{{ col.width }}px;{% if not loop.last %} margin-right:{{ size.space.gutter }}px;{% endif %} background-color:{{ background_color | default(theme.palette.highlight_tint if highlight else theme.palette.surface) }};">
+    <table role="presentation" width="{{ col.width }}" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:{{ col.width }}px;{% if not loop.last %} margin-right:{{ size.space.gutter }}px;{% endif %} background-color:{{ background_color | default(theme.palette.highlight_tint if highlight else theme.palette.surface) }};">
       <tr>
         <td class="mobile-pad"{% if section_align %} align="{{ section_align | escape_html }}"{% endif %} style="padding:{{ size.space.column_top }}px {{ col.pad_right }}px {{ size.space.column_bottom }}px {{ col.pad_left }}px; font-family: {{ font.label }}; font-size:{{ size.type.body }}px; color:{{ theme.text.primary }}; line-height:{{ size.type.body_line | percent }};{% if section_align %} text-align:{{ section_align }};{% endif %}">
           {{ col.content }}

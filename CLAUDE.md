@@ -1418,7 +1418,8 @@ diff was script-verified to contain only alignment declarations, and was still a
 regression in every email. #76 established that layout regressions live with the
 screenshots; alignment produced three more findings that no golden could see — the
 `base.html` regression above, the column cells that shrink-wrap instead of filling their
-column (#129, still open), and body copy escaping its own styling element (#130, fixed).
+column (#129 — ``inline-block`` stopped it being a table box), and body copy escaping its
+own styling element (#130). All three are fixed; each needed a browser to see.
 Screenshot the change.
 
 **Non-goals, as decisions**: no `align_theme` (see above); **no vertical alignment** —
@@ -1825,10 +1826,12 @@ Reach for these rather than improvising:
   themes), #46 (colour themes), #52 (delivery), #53 (plain text), #54 (QA harness), #55
   (footer region), #56 (typography), #87 (the `Header` region), #88 (banner region), #98
   (the footer box), #116 (the expressive `DataTable`) and **#124 (alignment)**. #115 (the
-  `language` field) is done too. The one thing still open is **#129** — a column's content
-  cell shrink-wraps to its copy instead of filling its column, found by #126 and filed
-  rather than folded in, since fixing it moves geometry and interacts with both the mobile
-  collapse and the Outlook ghost table.
+  `language` field) is done too, and so is **#129**. The one thing still open is **#132** —
+  a five-column `DataTable` overflows a 375px viewport by 24px, found by widening #76's
+  regression test from three fixtures to the whole gallery. A data table has no mobile
+  collapse and should not get one by default, so it needs a decision rather than a width
+  nudge; it is listed in `KNOWN_MOBILE_OVERFLOW` on `qa/lint.py`'s `DEFERRED_RULES`
+  pattern, with a second test asserting the exemption still applies.
 - **The alignment epic (#124) is complete** — #125 normalised the two spellings, #126 gave
   containers an `align`, #127 gave the five prose components one, #128 landed
   `aligned_layout` and these docs. See *Alignment — geometry, not a fourth design axis*
@@ -1843,6 +1846,15 @@ Reach for these rather than improvising:
     #130's body copy escaping its own styling element — the last of which had shipped
     since the beginning, rendering prose in `font.label` and silently falsifying #56's
     claim that `body` is a separate role.
+  - **The obvious fix is worth measuring before believing.** #129's issue proposed
+    `width="100%"` on the cell; it changes nothing, because the cell resolves that width
+    against an anonymous table that is itself shrink-wrapping. A fixed px width fills on
+    desktop and then constrains the copy at the mobile breakpoint. Only `inline-table` —
+    keeping the column a table box — actually works, and it was the fourth thing tried.
+    #76 taught this once already.
+  - **A regression test scoped to the fixtures that had the bug is how the next instance
+    hides.** #76's viewport check watched three fixtures; widening it to the gallery in
+    #129 immediately found `rich_table` overflowing a phone by 24px, unnoticed since #121.
   - **A guard that only works when the code is correct is not a guard.** #130's first probe
     selected `div.body-text`; reverting the tag made it match nothing and pass green.
     Perturb the code and watch the test fail, every time — it selects by class now.

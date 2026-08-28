@@ -400,19 +400,34 @@ class TestTheMastheadPairsItsLines:
         assert box["title_left"] == box["sub_left"]
 
 
+#: Fixtures known to overflow their mobile viewport, each with the issue that
+#: tracks it. Named rather than silently excluded, and the mechanism is
+#: ``qa.lint``'s ``DEFERRED_RULES``: a check that arrives red teaches everyone
+#: to ignore it, so a finding is *filed* and listed here instead.
+#:
+#: ``rich_table`` is a five-column ``DataTable``, and a data table has no
+#: mobile collapse — stacking its columns would destroy the alignment that is
+#: the only reason to render one. That is a real design question with its own
+#: client-testing burden, not a width to nudge.
+KNOWN_MOBILE_OVERFLOW = {"rich_table": "#132"}
+
+
 @pytest.fixture(scope="module")
 def kpi_shots(tmp_path_factory):
     """
-    The three fixtures carrying a horizontal ``CardGroup``, at every density.
+    **The whole gallery**, at every viewport.
 
-    That group is what #76 was about, and the densities are what made it
-    interesting: the overflow was its own padding, so it scaled with the
-    theme (383 / 387 / 395 px at a 375px viewport).
+    It was three fixtures until #129 — ``kitchen_sink``, ``compact_size`` and
+    ``spacious_size``, the ones carrying the horizontal ``CardGroup`` that
+    #76 was about. Scoping a regression test to the fixtures that had the bug
+    is how the *next* instance goes unnoticed, and one had: ``rich_table``
+    overflows its mobile viewport by 24px and nothing was watching. Widened
+    here, with that finding filed rather than ignored.
     """
     if not available():
         pytest.skip('no browser; screenshots are the optional "[qa]" extra')
     out = tmp_path_factory.mktemp("kpi")
-    shots, _ = capture_gallery(["kitchen_sink", "compact_size", "spacious_size"], out)
+    shots, _ = capture_gallery(sorted(all_fixtures()), out)
     return shots
 
 
@@ -430,8 +445,23 @@ class TestNothingOverflowsItsViewport:
             f"{shot.path.name}: {shot.width} > {VIEWPORTS[shot.viewport][0]}"
             for shot in kpi_shots
             if shot.width != VIEWPORTS[shot.viewport][0]
+            and not any(name in shot.path.name for name in KNOWN_MOBILE_OVERFLOW)
         ]
         assert not offenders, "a reader would scroll sideways: " + ", ".join(offenders)
+
+    def test_each_known_overflow_still_overflows(self, kpi_shots):
+        """
+        The other half of the ``DEFERRED_RULES`` mechanism: an exemption that
+        outlives its reason is worse than no exemption, because it hides the
+        next instance. When the issue is fixed this fails, and the entry
+        should be deleted rather than the test loosened.
+        """
+        for name in KNOWN_MOBILE_OVERFLOW:
+            shots = [s for s in kpi_shots if name in s.path.name]
+            assert shots, f"{name} is exempted but the gallery no longer renders it"
+            assert any(s.width != VIEWPORTS[s.viewport][0] for s in shots), (
+                f"{name} no longer overflows — delete its KNOWN_MOBILE_OVERFLOW entry"
+            )
 
     def test_the_mobile_rule_keeps_its_padding_inside(self):
         """
@@ -719,3 +749,69 @@ class TestBodyCopyKeepsItsOwnStyling:
                 f"body copy computes {family!r} under a sentinel theme whose body role "
                 "is SentinelBody. The copy is not inheriting from its own wrapper."
             )
+
+
+# ──────────────────────────────────────────────────────────────────────
+# A column cell fills its column (#129)
+# ──────────────────────────────────────────────────────────────────────
+
+_COLUMN_FILL_PROBE = """() => Array.from(document.querySelectorAll('table.stack-column'))
+  .map(table => {
+    const cell = table.querySelector('td');
+    return [Math.round(table.getBoundingClientRect().width),
+            Math.round(cell.getBoundingClientRect().width)];
+  })"""
+
+
+@pytest.fixture(scope="module")
+def column_fill():
+    """Every gallery column, as (column width, cell width), in one session."""
+    if not available():
+        pytest.skip('no browser; screenshots are the optional "[qa]" extra')
+
+    measured = {}
+    with _load_playwright()() as playwright:
+        browser = _launch(playwright)
+        for name in FIXTURE_NAMES:
+            page = browser.new_page(viewport={"width": 1000, "height": 900})
+            page.route("**/*", lambda route: route.abort())
+            page.set_content(all_fixtures()[name]().render())
+            measured[name] = page.evaluate(_COLUMN_FILL_PROBE)
+            page.close()
+        browser.close()
+    return measured
+
+
+@requires_browser
+class TestEveryColumnCellFillsItsColumn:
+    """
+    #129, and it is here rather than in the goldens for the usual reason:
+    the HTML was byte-stable and correct-looking the whole time 76 of the
+    gallery's 88 column cells were as narrow as their own copy.
+
+    With ``display:inline-block`` the column stops being a table box — the
+    rows and cells get an anonymous table around them, and that shrink-wraps.
+    ``inline-table`` keeps it a table, so the specified width reaches the
+    cell. Anything depending on the cell's width had no room until then, and
+    #126's alignment was the first thing to notice.
+    """
+
+    def test_no_cell_is_narrower_than_its_column(self, column_fill):
+        narrow = {
+            name: [(column, cell) for column, cell in rows if cell < column - 1]
+            for name, rows in column_fill.items()
+        }
+        offenders = {name: rows for name, rows in narrow.items() if rows}
+        assert not offenders, (
+            f"column cells shrink-wrapped instead of filling: {offenders}. "
+            "Check that columns.html still says display:inline-table — see #129."
+        )
+
+    def test_the_gallery_actually_renders_columns(self, column_fill):
+        """
+        Guards the guard. Every assertion above passes vacuously on an email
+        with no splits, and #130's first probe already showed how easily a
+        selector stops matching.
+        """
+        total = sum(len(rows) for rows in column_fill.values())
+        assert total >= 80, f"only {total} column cells measured; the probe is not matching"

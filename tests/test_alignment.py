@@ -352,12 +352,10 @@ class TestContainerAlign:
     @pytest.mark.parametrize("align", ["left", "center", "right"])
     def test_a_split_aligns_its_title_and_every_column(self, align):
         """
-        Asserts the *declaration* reaches every column cell, which is what
-        this step delivers. It cannot assert the text visibly moves: a
-        column cell shrink-wraps to its content rather than filling its
-        column, so the alignment has no room to show whenever the copy is
-        narrower than the column. That is pre-existing geometry — see the
-        note on ``Container`` — and is filed as #129.
+        Asserts the *declaration* reaches every column cell. That the cell
+        is then wide enough for the alignment to show is #129's business
+        and is measured in ``tests/test_screenshots.py`` — a width is not
+        something markup can assert.
         """
         html = self._render(
             TwoColumn(

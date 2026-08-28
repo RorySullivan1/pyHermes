@@ -57,8 +57,8 @@ Momentum  -0.4%  +11.2%
 Centred Split
 -------------
 
-The left half of a centred split. Long enough to fill its column, because a
-column cell shrink-wraps to its copy (#129).
+The left half of a centred split, written wide enough that the section's
+centring has room to be visible in a screenshot.
 
 The right half of the same split, written to the same width for the same
 reason. Both cells carry the declaration.
