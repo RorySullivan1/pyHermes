@@ -955,6 +955,17 @@ non-fluent `Email` class works identically.
     passing markup. So `Header`'s docstring states it, and a test asserts the docstring still
     does — a region whose text is raw HTML is a footgun, and a warning that lives only in a
     commit message is how it stays one.
+  - **A raw-HTML field is emitted inside a `div`, never a `p` (#130).** Five surfaces
+    carry caller markup, and the documented shape of the first two is the caller's own
+    paragraph tags — so a `p` wrapper is auto-closed the moment their content opens, the
+    copy becomes the wrapper's *sibling*, and everything that wrapper was styling escapes.
+    That shipped: for the whole life of the package, `TextBlock` prose inherited the
+    containing cell's `font.label` instead of its own `font.body`, and a `NumberedItem`
+    body took the cell's leading instead of `list_body_line`. **No golden could see it** —
+    the HTML was byte-stable and looked correct; only a parser resolving the nesting
+    reveals it, which is why the guard lives with the screenshots. `Card.body` and
+    `Footer.disclaimer` were already `div`s; the other three joined them. A test asserts
+    all five, so a sixth cannot be added wrongly.
   - **Attributes** (`src`, `href`, `alt`, `<title>`) are always escaped, quotes included,
     so a value cannot break out of the attribute it sits in.
 

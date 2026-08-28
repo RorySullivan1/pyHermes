@@ -588,3 +588,134 @@ class TestTheDefaultAlignmentIsUnchanged:
                     f"{name}: the default {role} alignment is {value!r}, not 'start'. "
                     "Something above it is declaring an alignment that inherits."
                 )
+
+
+# ──────────────────────────────────────────────────────────────────────
+# Caller-wrapped copy keeps its component's styling (#130)
+# ──────────────────────────────────────────────────────────────────────
+
+_INHERITANCE_PROBE = """() => {
+  const out = [];
+  // Selected by CLASS, never by tag. Keying on 'div.body-text' would make
+  // this whole check vacuous the moment someone turned the wrapper back
+  // into a paragraph — the exact regression it exists to catch.
+  document.querySelectorAll('.body-text').forEach(wrapper => {
+    const wanted = getComputedStyle(wrapper).fontFamily;
+    // Every leaf that actually shows text inside this wrapper.
+    const leaves = wrapper.querySelectorAll('*');
+    const nodes = leaves.length ? Array.from(leaves) : [wrapper];
+    nodes.forEach(el => {
+      const text = el.textContent.replace(/\\s+/g, ' ').trim();
+      if (!text || el.children.length) return;
+      out.push([text.slice(0, 40), wanted, getComputedStyle(el).fontFamily]);
+    });
+    if (!wrapper.textContent.trim()) out.push(['(EMPTY WRAPPER)', wanted, wanted]);
+  });
+  return out;
+}"""
+
+
+@pytest.fixture(scope="module")
+def copy_inheritance():
+    """What each fixture's body copy actually computes to, in one session."""
+    if not available():
+        pytest.skip('no browser; screenshots are the optional "[qa]" extra')
+
+    measured = {}
+    with _load_playwright()() as playwright:
+        browser = _launch(playwright)
+        for name in FIXTURE_NAMES:
+            page = browser.new_page(viewport={"width": 1000, "height": 900})
+            page.route("**/*", lambda route: route.abort())
+            page.set_content(all_fixtures()[name]().render())
+            measured[name] = page.evaluate(_INHERITANCE_PROBE)
+            page.close()
+        browser.close()
+    return measured
+
+
+@requires_browser
+class TestBodyCopyKeepsItsOwnStyling:
+    """
+    #130. A ``p`` cannot contain a ``p``, and ``TextBlock.content`` is a
+    raw-HTML field whose documented shape is the caller's own paragraph
+    tags — so while the styling wrapper was a paragraph, every fixture's
+    body copy escaped it and rendered in the *label* typeface.
+
+    No golden could see it: the HTML was byte-stable and looked correct.
+    Only a parser resolving the nesting reveals it, which is why the guard
+    lives here beside the other layout invariants.
+    """
+
+    def test_no_styling_wrapper_is_left_empty(self, copy_inheritance):
+        """
+        The cheapest form of the check, and the one that would have caught
+        this years earlier: if the element carrying the component's font
+        holds no text, the text is somewhere else.
+        """
+        for name, rows in copy_inheritance.items():
+            empty = [row for row in rows if row[0] == "(EMPTY WRAPPER)"]
+            assert not empty, (
+                f"{name}: {len(empty)} body-text wrapper(s) are empty — the copy has "
+                "escaped the element that styles it. See #130."
+            )
+
+    def test_the_copy_computes_the_wrapper_s_typeface(self, copy_inheritance):
+        """
+        The claim epic #56 makes and could not previously keep: the body
+        role reaches the body copy.
+        """
+        for name, rows in copy_inheritance.items():
+            for text, wanted, actual in rows:
+                assert actual == wanted, (
+                    f"{name}: {text!r} renders in {actual} but its component "
+                    f"styles it {wanted}. See #130."
+                )
+
+    def test_the_body_role_reaches_the_body_copy(self):
+        """
+        #56's sentinel render, extended from the markup to what a browser
+        *computes* — which is the acceptance criterion #130 added, because
+        the markup half already passed while the render was wrong.
+
+        The sentinel theme names four findable families, so the copy
+        resolving to anything but the ``body`` one means the wrapper is not
+        an ancestor of the copy after all.
+        """
+        from qa.fixtures import kitchen_sink
+        from svc.builder.typography import FontStack, FontTheme
+
+        sentinel = FontTheme(
+            heading=FontStack("SentinelHeading", "serif"),
+            body=FontStack("SentinelBody", "serif"),
+            label=FontStack("SentinelLabel", "sans-serif"),
+            numeric=FontStack("SentinelNumeric", "monospace"),
+        )
+        email = kitchen_sink.build()
+        email.metadata.font_theme = sentinel
+
+        with _load_playwright()() as playwright:
+            browser = _launch(playwright)
+            page = browser.new_page(viewport={"width": 1000, "height": 900})
+            page.route("**/*", lambda route: route.abort())
+            page.set_content(email.render())
+            families = page.evaluate("""() => {
+                const out = [];
+                document.querySelectorAll('.body-text').forEach(wrapper => {
+                    const leaves = wrapper.querySelectorAll('*');
+                    (leaves.length ? Array.from(leaves) : [wrapper]).forEach(el => {
+                        if (!el.textContent.trim() || el.children.length) return;
+                        out.push(getComputedStyle(el).fontFamily);
+                    });
+                });
+                return out;
+            }""")
+            page.close()
+            browser.close()
+
+        assert families, "the sentinel render produced no body copy to measure"
+        for family in families:
+            assert family.startswith("SentinelBody"), (
+                f"body copy computes {family!r} under a sentinel theme whose body role "
+                "is SentinelBody. The copy is not inheriting from its own wrapper."
+            )

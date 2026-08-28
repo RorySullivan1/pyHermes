@@ -672,36 +672,77 @@ class TestAlignmentIsGeometryNotADesignAxis:
         )
 
 
-class TestTheKnownLimitation:
+class TestCallerWrappedContentIsStyledToo:
     """
-    #130, pinned here so the boundary of #127's claim is explicit rather
-    than discovered by the next person who wonders why their centred
-    paragraph did not move.
+    #130, which #127 surfaced and this replaces.
+
+    ``TextBlock.content`` is a raw-HTML field whose documented shape is the
+    caller's own paragraph tags. A ``p`` cannot contain a ``p``, so while
+    the styling wrapper *was* a paragraph the parser auto-closed it, the
+    copy became its sibling, and it inherited from the containing cell —
+    the label typeface, not the body one, and no alignment. The wrapper is
+    a ``div`` now, as ``Card.body`` and ``Footer.disclaimer`` already were.
+
+    The class this used to assert as a *limitation* is gone: its docstring
+    said the fix should make it fail and that the failure was the signal to
+    delete it rather than widen it. It failed, and it is deleted.
     """
 
     META = {"email_subject": "Aligned", "firm_name": "F", "campaign_name": "c"}
 
-    def _body_paragraph_classes(self, content: str) -> list[str]:
-        html = (
-            EmailBuilder()
-            .metadata(dict(self.META))
-            .section(FullWidth(content=TextBlock(content, align="right")))
-            .render()
+    def _render(self, component) -> str:
+        return (
+            EmailBuilder().metadata(dict(self.META)).section(FullWidth(content=component)).render()
         )
-        return [e.css_class for e in _aligned_elements(html) if e.tag == "p"]
 
-    def test_plain_and_inline_content_takes_the_alignment(self):
-        for content in ("Prose with no markup.", "Prose with <strong>emphasis</strong>."):
-            assert "body-text" in self._body_paragraph_classes(content), content
+    @pytest.mark.parametrize(
+        "content",
+        [
+            "Prose with no markup.",
+            "Prose with <strong>emphasis</strong>.",
+            "<p>Prose the caller wrapped.</p>",
+            "<p>First paragraph.</p><p>Second paragraph.</p>",
+        ],
+        ids=["plain", "inline", "wrapped", "two-paragraphs"],
+    )
+    def test_the_styling_wrapper_is_an_ancestor_of_the_copy(self, content):
+        """
+        The structural claim, checkable without a browser: whatever the
+        caller passed must sit *inside* the element carrying the
+        component's styling, not beside it.
+        """
+        html = self._render(TextBlock(content, align="right"))
+        wrapper = html[html.index('<div class="body-text"') :]
+        wrapper = wrapper[: wrapper.index("</div>")]
+        assert "Prose" in wrapper or "First paragraph" in wrapper, (
+            "the caller's copy is not inside the styled wrapper"
+        )
 
-    def test_paragraph_wrapped_content_does_not_yet(self):
+    def test_every_raw_html_surface_lands_in_a_div(self):
         """
-        Asserted as a *limitation*, not as correct behaviour. When #130
-        lands this test should fail — and the failure is the signal to
-        delete it, not to widen it.
+        All five, named and checked structurally. ``Card.body`` and
+        ``Footer.disclaimer`` were already right; #130 brought the other
+        three into line, and this is what keeps a sixth from being added
+        wrongly.
+
+        The rule is worth stating plainly, because it is the cheap
+        invariant that would have caught #130 at the time: **a raw-HTML
+        field may not be emitted inside a p.** Whatever the caller passes,
+        a paragraph inside a paragraph is auto-closed, and everything the
+        wrapper was styling escapes.
         """
-        classes = self._body_paragraph_classes("<p>Prose the caller wrapped.</p>")
-        assert "body-text" in classes, "the styled element is still emitted"
-        # ...but the caller's own paragraph, which is what the reader sees,
-        # is a sibling of it and carries no alignment of its own.
-        assert classes.count("body-text") == 1
+        surfaces = {
+            "text/text-block.html": "{{ text_content }}",
+            "text/numbered-list.html": "{{ item.body }}",
+            "regions/header-bar.html": "{{header_disclaimer}}",
+            "analysis/card-group.html": "{{ card.body }}",
+            "regions/footer.html": "{{ disclaimer }}",
+        }
+        for name, expression in surfaces.items():
+            source = (TEMPLATE_DIR / name).read_text(encoding="utf-8")
+            before = source[: source.index(expression)]
+            tag = before[before.rindex("<") :].split()[0].split(">")[0]
+            assert tag == "<div", (
+                f"{name}: the raw-HTML field {expression} sits directly in {tag}, not a div. "
+                "A p cannot contain a p — see #130."
+            )
