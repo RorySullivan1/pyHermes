@@ -130,8 +130,9 @@ class TestKitchenSinkCompleteness:
         fixture actually supplies. Introspected from the dataclass, so a field
         added later fails here instead of going quietly unpinned.
 
-        ``banner`` and ``footer`` are excluded because the fixture builds
-        both regions explicitly rather than through the metadata. Their own
+        ``header``, ``banner`` and ``footer`` are excluded because the
+        fixture builds all three regions explicitly rather than through the
+        metadata. Their own
         fields are checked below, distinctively, by the per-region test. The
         flat pre-split keywords are covered elsewhere and by a stronger
         assertion than a golden — see ``TestTheFlatKeywordsStillWork``.
@@ -142,14 +143,15 @@ class TestKitchenSinkCompleteness:
         pins a genuinely different palette.
         """
         supplied = set(kitchen_sink_module._metadata())
-        declared = {f.name for f in dataclasses.fields(EmailMetadata)} - {"banner", "footer"}
+        declared = {f.name for f in dataclasses.fields(EmailMetadata)}
+        declared -= {"header", "banner", "footer"}
         missing = declared - supplied
         assert not missing, (
             f"kitchen_sink()'s metadata never sets {sorted(missing)}. A field the "
             "fixture leaves at its default is a field the golden cannot pin."
         )
 
-    @pytest.mark.parametrize("region_name", ["banner", "footer"])
+    @pytest.mark.parametrize("region_name", ["header", "banner", "footer"])
     def test_every_region_field_is_set_distinctively(self, region_name):
         """
         The same rule for each region: a field the fixture leaves at its

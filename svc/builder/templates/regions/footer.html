@@ -7,32 +7,60 @@
   copyright + links line always renders. Square corners: Outlook ignores
   border-radius, so the box is a plain solid border.
 
-  Context: background_color, border, border_color, image, image_alt,
-  image_width, disclaimer, unsubscribe_label, view_in_browser_label (region);
-  firm_name, current_year, unsubscribe_url, view_in_browser_url (facts).
+  The box's colours arrive RESOLVED, from Footer.theme_context() — an unset
+  field and the theme's token reach the markup by the same path, so there is
+  no fallback logic here and no second source to drift. text_color collapses
+  the disclaimer's and the copyright row's two tokens into one when set; see
+  that method for why that is the right coarseness. Link colour stays the
+  theme's accent: the links are anchors, not box text.
+
+  The band is a 680px card carrying class="email-container", so a custom
+  background lands on a surface aligned with the body — not a full-bleed
+  wrapper band (measured, #99; the epic had flagged the opposite as a risk).
+
+  Leaving the links on the accent was checked rather than assumed: on a dark
+  caller-supplied ground the accent reads at 3.87:1, slightly BETTER than the
+  3.35:1 it has on the theme's own wrapper. So the non-goal holds — no
+  per-link colour field is needed. (Neither figure clears 4.5:1; that is a
+  pre-existing property of the shipped palette, and contrast is a
+  recommendation here, not a validated rule.)
+
+  The copyright row is a LinkRow (#100), resolved in Footer.context(): one
+  key for the copyright (already HTML — the default keeps the &copy; ENTITY,
+  since a bare U+00A9 mis-decoded as latin-1 renders as a mojibake pair) and
+  a list for the links, so a footer can add or drop one without forking this
+  file. An empty list renders the copyright with no separator after it.
+
+  Context: align, border, image, image_alt, image_width, disclaimer,
+  unsubscribe_label, view_in_browser_label (region); footer_background,
+  footer_text, footer_text_muted, footer_border (resolved); firm_name,
+  current_year, unsubscribe_url, view_in_browser_url (facts).
 #}
         <!-- FOOTER: copyright, links and optional disclaimer -->
         <table role="presentation" width="{{ size.frame.width }}" cellpadding="0" cellspacing="0" border="0"
-               style="max-width:{{ size.frame.width }}px; background-color:{{ background_color | default(theme.palette.wrapper_bg, true) }};" bgcolor="{{ background_color | default(theme.palette.wrapper_bg, true) }}" class="email-container">
+               style="max-width:{{ size.frame.width }}px; background-color:{{ footer_background }};" bgcolor="{{ footer_background }}" class="email-container">
           <tr>
-            <td style="padding:{{ size.space.footer_legal_top }}px {{ size.frame.pad_x }}px {{ size.space.footer_copyright_bottom }}px;{% if border %} border:1px solid {{ border_color | default(theme.palette.rule, true) }};{% endif %} background-color:{{ background_color | default(theme.palette.wrapper_bg, true) }};" bgcolor="{{ background_color | default(theme.palette.wrapper_bg, true) }}">
+            <td style="padding:{{ size.space.footer_legal_top }}px {{ size.frame.pad_x }}px {{ size.space.footer_copyright_bottom }}px;{% if border %} border:1px solid {{ footer_border }};{% endif %} background-color:{{ footer_background }};" bgcolor="{{ footer_background }}">
 {% if image %}
-              <p style="margin:0 0 {{ size.space.footer_legal_top }}px; text-align:center;">
+              <p style="margin:0 0 {{ size.space.footer_legal_top }}px; text-align:{{ align }};">
                 <img src="{{ image | escape_html }}" alt="{{ image_alt | escape_html }}" width="{{ image_width }}" style="display:inline-block; border:0; height:auto;">
               </p>
 {% endif %}
 {% if disclaimer %}
               <div style="font-family:Arial,Helvetica,sans-serif; font-size:{{ size.type.micro }}px;
-                          color:{{ theme.text.fine_print }}; line-height:{{ size.component.legal_line | percent }}; text-align:center;">
+                          color:{{ footer_text }}; line-height:{{ size.component.legal_line | percent }}; text-align:{{ align }};">
                 {{ disclaimer }}
               </div>
 {% endif %}
               <p style="margin:{{ size.space.footer_copyright_top }}px 0 0; font-family:Arial,Helvetica,sans-serif; font-size:{{ size.type.micro }}px;
-                        color:{{ theme.text.light }}; text-align:center;">
-                &copy; {{ current_year | escape_html }} {{ firm_name | escape_html }} &nbsp;&middot;&nbsp;
-                <a href="{{ unsubscribe_url | escape_html }}" style="color:{{ theme.palette.accent }}; text-decoration:underline;">{{ unsubscribe_label | escape_html }}</a>
+                        color:{{ footer_text_muted }}; text-align:{{ align }};">
+                {{ copyright_html }}{% if footer_links %} &nbsp;&middot;&nbsp;{% endif +%}
+{% for link in footer_links %}
+                <a href="{{ link.url | escape_html }}" style="color:{{ theme.palette.accent }}; text-decoration:underline;">{{ link.label | escape_html }}</a>
+{% if not loop.last %}
                 &nbsp;&middot;&nbsp;
-                <a href="{{ view_in_browser_url | escape_html }}" style="color:{{ theme.palette.accent }}; text-decoration:underline;">{{ view_in_browser_label | escape_html }}</a>
+{% endif %}
+{% endfor %}
               </p>
             </td>
           </tr>

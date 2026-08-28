@@ -112,18 +112,19 @@ fixtures to drift.
 ## The composition model
 
 Every email is **skeleton ← regions ← containers ← components**, and the regions are
-`header | body | footer`:
+`header | banner | body | footer`:
 
 | Layer | What it owns | Where |
 |---|---|---|
 | **Skeleton** | the whole page — head, preheader, wrapper — with four holes: `{{ header_bar_html }}`, `{{ banner_html }}`, `{{ sections_html }}`, `{{ footer_html }}` | `svc/builder/templates/base.html` |
-| **Regions** | the masthead (`Banner`, `MinimalBanner`) and the close (`Footer`). (The *body* region is the ordered section list — not a class) | `svc/builder/regions.py` |
+| **Regions** | the strip (`Header`, `EmptyHeader`), the masthead (`Banner`, `MinimalBanner`) and the close (`Footer`). (The *body* region is the ordered section list — not a class) | `svc/builder/regions.py` |
 | **Containers** | layout geometry only: `FullWidth`, `TwoColumn`, `ThreeColumn` | `svc/builder/containers.py` |
 | **Components** | content: `CardGroup`, `DataTable`, `ChartBlock`, `ImageBlock`, `TextBlock`, `NumberedList`, `AuthorBlock`, `ContactBlock` | `svc/builder/components.py` |
 
 A container holds components, renders each, and embeds the fragments into its own `<tr>`
-block sized to the 680px outer table. Each region renders into its slot — both the header
-and the footer fill one slot each — and `Email` drops all of it into the skeleton.
+block sized to the 680px outer table. Each region renders into exactly one slot, and `Email`
+drops all of it into the skeleton. A region that fills *no* slot renders nothing — which is
+how `EmptyHeader` omits the strip without the skeleton needing a conditional.
 
 **Facts about the email live on `EmailMetadata`; how a region presents them lives on the
 region.** The firm name, campaign name, dates and outbound URLs are handed *down* at render
@@ -139,9 +140,8 @@ from svc.builder import EmailBuilder, MinimalBanner
     .section(...))
 ```
 
-The footer's copyright, Unsubscribe and View-in-browser line always renders. The
-`Footer.disclaimer` field is optional free-form HTML for legal copy. For a contact
-call-to-action, add a `ContactBlock` body section instead of putting it in the footer:
+The footer always renders its closing block — see **Footer** below for what goes in it. For a
+contact call-to-action, add a `ContactBlock` body section instead of putting it in the footer:
 
 ```python
 from svc.builder import EmailBuilder, FullWidth, ContactBlock
@@ -164,6 +164,32 @@ Adding a content type is a new template file plus a `Component` subclass that se
 
 Column ratios and card orientation are `StrEnum`s that accept either the member or its bare
 string — `ratio=ThreeColumnRatio.WIDE_LEFT` is `ratio="50-25-25"`.
+
+## Header
+
+The strip at the very top of the email: one band of free-form copy, above the masthead. Its
+text is an email-level fact; the region owns how the box presents it.
+
+```python
+from svc.builder import EmptyHeader, Header
+
+EmailBuilder().metadata({..., "header_disclaimer": "For illustrative purposes."})
+    .header(Header(align="left", background_color="#EEF2F5", text_color="#1B1B1B"))
+
+EmailBuilder().metadata({...}).header(EmptyHeader())   # no strip at all
+```
+
+Three fields, and the footer's box takes the same three, so you learn one surface for the
+email's two outer boxes. Unset colours are the theme's. The pair ships together rather than
+the background alone: a ground you chose makes the theme's text colour a guess.
+
+`EmptyHeader` renders nothing — no band, no empty row. An empty `header_disclaimer` on a plain
+`Header` still renders the band, deliberately: "I have no copy" and "I don't want this box"
+are different statements, and the variant is the second one.
+
+**`header_disclaimer` is emitted as raw HTML**, as it always has been — escaping untrusted
+text in it is your job, with `escape_html()`. It is the same contract as `TextBlock.content`
+and `Footer.disclaimer`, and it is worth saying twice for a box this easy to reuse.
 
 ## Banner
 
@@ -211,6 +237,47 @@ Every role you leave out takes the theme's own token, so this stays an override 
 colours rather than a second palette to maintain. It is still an *atom* — validated, frozen,
 picked as a set — and it is bounded to the masthead: no other region has one, because no
 other region renders on a surface you supplied.
+
+## Footer
+
+The closing block, and the header's counterpart: it takes the **same three box fields**, so
+the email's two outer boxes cost one API to learn.
+
+```python
+from svc.builder import Footer
+from svc.builder.models import FooterLink, LinkRow
+
+Footer(
+    align="left",                      # the shared surface, as on Header
+    background_color="#1B2A38",
+    text_color="#D6E0E8",
+    border=True,                       # the footer's own
+    disclaimer="<p>Distributed to registered recipients only.</p>",
+    link_row=LinkRow(                  # omit it and the default row is built for you
+        copyright="2026 Hermes Research — all rights reserved",
+        links=[
+            FooterLink("Privacy", "https://example.com/privacy"),
+            FooterLink("Unsubscribe", "https://example.com/unsubscribe"),
+        ],
+    ),
+)
+```
+
+The copyright row is a `LinkRow`, not a template: pass one to add a link, drop one, or reword
+the copyright. Leave `link_row` unset and it is built from the email's own facts —
+`© {current_year} {firm_name}` plus your two URLs, worded by `unsubscribe_label` and
+`view_in_browser_label`.
+
+**pyHermes does not decide what your email must say.** Disclaimer language, unsubscribe links
+and every other compliance question are your judgement — the library cannot know whether this
+is a commercial newsletter, an internal note or a receipt. So `LinkRow(links=[])` renders a
+link-free row and an empty `disclaimer` renders no fine print, and both are valid. What it does
+guarantee is that a region *variant* will not silently drop content you supplied, and that what
+renders is shape- and safety-valid: hex colours, and URL schemes checked so a `javascript:`
+never lands in an `href`.
+
+`Footer.disclaimer` is raw HTML, like the header's — escaping untrusted text in it is your job.
+The box stacks **sign-off image → disclaimer → copyright row**, each independently optional.
 
 ## Colour
 

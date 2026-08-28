@@ -15,7 +15,7 @@ from .exceptions import ValidationError
 
 if TYPE_CHECKING:  # pragma: no cover - import cycle: images/regions import from here
     from .images import EmailImage
-    from .regions import Banner, Footer
+    from .regions import Banner, Footer, Header
     from .theming import Theme
 
 # ──────────────────────────────────────────────────────────────────────
@@ -66,6 +66,13 @@ def _validate_url(value: str, name: str) -> None:
 # ──────────────────────────────────────────────────────────────────────
 # Email-level metadata
 # ──────────────────────────────────────────────────────────────────────
+
+
+def _default_header() -> "Header":
+    """A default strip. Imported lazily for the same cycle reason as below."""
+    from .regions import Header
+
+    return Header()
 
 
 def _default_banner() -> "Banner":
@@ -146,6 +153,11 @@ class EmailMetadata:
     unsubscribe_url: str = ""
     view_in_browser_url: str = ""
 
+    #: How the strip at the top of the email presents its copy. Defaults to
+    #: the centred band on the theme's own colours; ``Email(header=...)``
+    #: overrides it for one email.
+    header: "Header" = field(default_factory=_default_header)
+
     #: How the masthead presents the facts above. Defaults to a blank header;
     #: ``Email(banner=...)`` overrides it for one email.
     banner: "Banner" = field(default_factory=_default_banner)
@@ -178,10 +190,15 @@ class EmailMetadata:
     unsubscribe_label: InitVar["str | None"] = None
     view_in_browser_label: InitVar["str | None"] = None
 
-    #: Email-level facts the header region renders. Passed *down* to it; the
-    #: header layers them over its own context, so it cannot shadow one.
+    #: Email-level facts the strip renders. One today, and it stays a fact
+    #: rather than moving onto the region with the box's presentation: it is
+    #: legal copy that belongs to the *email*, the same call the footer's
+    #: two URLs get.
+    HEADER_FACTS = ("header_disclaimer",)
+
+    #: Email-level facts the masthead renders. Passed *down* to it; the
+    #: banner layers them over its own context, so it cannot shadow one.
     BANNER_FACTS = (
-        "header_disclaimer",
         "firm_name",
         "campaign_name",
         "department",
@@ -269,8 +286,12 @@ class EmailMetadata:
         for fname in ("unsubscribe_url", "view_in_browser_url"):
             _validate_url(getattr(self, fname), f"metadata.{fname}")
 
+    def header_facts(self) -> dict[str, Any]:
+        """The email-level facts the strip renders."""
+        return {name: getattr(self, name) for name in self.HEADER_FACTS}
+
     def banner_facts(self) -> dict[str, Any]:
-        """The email-level facts a header region renders."""
+        """The email-level facts a masthead region renders."""
         return {name: getattr(self, name) for name in self.BANNER_FACTS}
 
     def footer_facts(self) -> dict[str, Any]:
@@ -288,13 +309,83 @@ class EmailMetadata:
         value two sources — and ``size_theme`` is excluded for exactly the
         same reason, since the resolved scheme rides the same binder.
         """
-        skip = {"banner", "footer", "theme", "size_theme"}
+        skip = {"header", "banner", "footer", "theme", "size_theme"}
         return {f.name: getattr(self, f.name) for f in fields(self) if f.name not in skip}
 
 
 # ──────────────────────────────────────────────────────────────────────
 # Component data models
 # ──────────────────────────────────────────────────────────────────────
+
+
+@dataclass
+class FooterLink:
+    """
+    One link in the footer's copyright row.
+
+    A pair, because a link is a pair — the label and where it goes. The URL
+    passes the same scheme check every URL here does, which is a **safety**
+    rule (no ``javascript:`` in an ``href``) rather than a content one: the
+    library has opinions about what a link may *do*, never about which links
+    an email must carry.
+
+    Both are plain text and escaped on the way out.
+    """
+
+    label: str
+    url: str
+
+    def __post_init__(self) -> None:
+        _require(self.label, "footer_link.label")
+        _validate_url(self.url, "footer_link.url")
+
+
+@dataclass
+class LinkRow:
+    """
+    The footer's copyright and link line, as data rather than a template.
+
+    ``© {year} {firm} · Unsubscribe · View in browser`` was a fixed
+    structure: #64 made the *labels* fields, but the *set* stayed the
+    template's, so a footer could not add a "Privacy" link or drop
+    "View in browser" without forking the markup. This is the object the
+    epic's requirement asked for, and the trigger is the one that made
+    :class:`Card` and :class:`TableRow` objects — **the row has a
+    variable-length part, and variable length is what fields cannot
+    express.**
+
+    **The library does not decide what an email must say.** pyHermes cannot
+    know whether a given email is a commercial newsletter, an internal
+    research note or a transactional receipt, and each answers that question
+    differently — so ``links=[]`` is valid and renders a link-free row, a row
+    omitting the unsubscribe destination is valid and renders what the caller
+    composed, and an empty ``copyright`` is valid too. What is still
+    guaranteed is narrower and worth keeping: a region *variant* may not
+    silently drop what the caller supplied. That is a rule about structure,
+    not about content.
+
+    Attributes:
+        copyright: Free-form **plain text**, escaped on output. Empty means
+                   *resolve to* ``© {current_year} {firm_name}`` from the
+                   email's own facts, which is what makes an unset row
+                   byte-identical to the pre-#100 render.
+        links:     ``None`` means *build the default pair* from the metadata's
+                   two URLs and the footer's labels — so ``link_row=None``
+                   changes nothing. An explicit list, including an empty one,
+                   is taken exactly as given.
+    """
+
+    copyright: str = ""
+    links: list[FooterLink] | None = None
+
+    def __post_init__(self) -> None:
+        if self.links is None:
+            return
+        for index, link in enumerate(self.links):
+            if not isinstance(link, FooterLink):
+                raise ValidationError(
+                    f"'link_row.links[{index}]' must be a FooterLink, got: {type(link).__name__}"
+                )
 
 
 @dataclass

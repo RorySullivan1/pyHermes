@@ -56,12 +56,12 @@ from dataclasses import dataclass, fields
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from .exceptions import ValidationError
-from .models import _validate_color, _validate_url
+from .models import FooterLink, LinkRow, _validate_color, _validate_url
 
 if TYPE_CHECKING:  # pragma: no cover - import cycle: images imports _validate_url
     from .engine import Renderer
     from .images import EmailImage, ImageAsset
-    from .theming import BannerPalette
+    from .theming import BannerPalette, Theme
 
 
 @dataclass
@@ -94,8 +94,19 @@ class Region:
     #: Slot → template. A variant may omit a slot, which then renders empty.
     TEMPLATE_PATHS: ClassVar[dict[str, str]] = {}
 
-    #: Slots a variant may **not** leave unfilled. Empty for a region with
-    #: nothing to protect; the footer uses it as a compliance floor.
+    #: Slots a variant may **not** leave unfilled. Empty for a region whose
+    #: whole box is optional (the header); named by one whose block is
+    #: structural (the footer).
+    #:
+    #: **This is a rule about variants, never about callers.** It says a
+    #: subclass may not silently drop a block the region is *made of*; it
+    #: says nothing about what a caller must put in one. pyHermes does not
+    #: require disclaimer language, an unsubscribe link, or any other
+    #: content — it cannot know whether an email is a commercial newsletter,
+    #: an internal note or a receipt, and each answers that differently. The
+    #: two are easy to conflate, and this attribute was described as a
+    #: "compliance floor" until #100, which over-claimed in exactly that
+    #: direction.
     REQUIRED_SLOTS: ClassVar[tuple[str, ...]] = ()
 
     #: Fields that may hold an EmailImage instead of a bare URL.
@@ -190,6 +201,29 @@ class Region:
         }
         return {**presentation, **facts}
 
+    def theme_context(self, theme: Theme) -> dict[str, Any]:
+        """
+        Keys this region resolves against the email's theme. Empty by default.
+
+        The hook a region overrides when one of its presentation fields means
+        *"the theme's token, unless I say otherwise"*. It exists because the
+        theme is neither a fact nor a field: it reaches the templates through
+        the bound engine, and a region only has it at render time — so
+        resolving in :meth:`context`, which has no engine, is impossible.
+
+        What comes back is layered **with the facts**, over the region's own
+        keys, so a resolved value cannot be shadowed by the raw field it was
+        resolved from. That is why a resolved key takes a *different name*
+        than the field: ``Header.background_color`` is what the caller set
+        (possibly nothing), ``header_background`` is what actually renders,
+        and the template reads only the second.
+
+        Generalised rather than duplicated: the banner needed it first for
+        its :class:`~svc.builder.theming.BannerPalette`, the header for its
+        colour pair, and #98's footer box for the same two tokens.
+        """
+        return {}
+
     def render_slots(self, engine: Renderer, facts: dict[str, Any]) -> dict[str, str]:
         """
         Render this region into the skeleton variables it fills.
@@ -201,13 +235,64 @@ class Region:
         as the empty string — that is what makes dropping a block an
         omission rather than a conditional in the template.
         """
-        ctx = self.context(facts)
+        ctx = self.context({**facts, **self.theme_context(engine.theme)})
         return {
             f"{slot}_html": (
                 engine.render(self.TEMPLATE_PATHS[slot], ctx) if slot in self.TEMPLATE_PATHS else ""
             )
             for slot in self.SLOTS
         }
+
+
+@dataclass
+class BoxSurface:
+    """
+    The three fields the email's two outer boxes share.
+
+    The header strip and the footer's legal block are the customisable boxes
+    that bracket the body, and the requirement behind them is that they be
+    *similar*: two boxes that behave alike should cost one API to learn, not
+    two. So the surface is declared once and mixed into both, which makes the
+    parity structural rather than a convention a test has to keep catching
+    after the fact. (The test exists anyway — it is what stops a third region
+    redeclaring these by hand instead of inheriting them.)
+
+    A region mixes this in beside :class:`Region` and keeps its own
+    :meth:`Region.theme_context`: the *fields* are shared, the tokens they
+    fall back to are not. The footer's box draws type in two theme tokens and
+    the header's in one, and pretending otherwise would be parity as
+    costume.
+
+    Attributes:
+        align:            ``left``, ``center`` or ``right``.
+        background_color: Hex; unset means the region's own theme token.
+        text_color:       Hex; unset means the region's own theme token. It
+                          ships with the background rather than alone,
+                          because a ground the caller chose makes the theme's
+                          type on it a guess — :class:`BannerPalette`'s
+                          reasoning at the size these boxes need.
+    """
+
+    #: The alignments that make sense for a band of copy. Not the full CSS
+    #: vocabulary: ``justify`` does nothing to a single short line, and the
+    #: rest are inline-level values.
+    ALIGNMENTS: ClassVar[frozenset[str]] = frozenset({"left", "center", "right"})
+
+    align: str = "center"
+    background_color: str = ""
+    text_color: str = ""
+
+    def validate_box_surface(self, context_name: str) -> None:
+        """Validate the three shared fields, naming the owning region."""
+        if self.align not in self.ALIGNMENTS:
+            raise ValidationError(
+                f"'{context_name}.align' must be one of {sorted(self.ALIGNMENTS)}, "
+                f"got: {self.align!r}"
+            )
+        for name in ("background_color", "text_color"):
+            value = getattr(self, name)
+            if value:
+                _validate_color(value, f"{context_name}.{name}")
 
 
 @dataclass
@@ -262,17 +347,14 @@ class Banner(Region):
 
     CONTEXT_NAME: ClassVar[str] = "banner"
 
-    #: Two slots, not one. The strip at the top of the email and the masthead
-    #: below it are separate blocks with separate owners — different content,
-    #: different reasons to change — and they shared a template only by
-    #: accident of file layout. #87 gives the strip its own region; this
-    #: region fills both until then.
-    SLOTS: ClassVar[tuple[str, ...]] = ("header_bar", "banner")
+    #: One slot. The strip at the top of the email lived here between #89 and
+    #: #95 — separate template, separate slot, but rendered by this class —
+    #: and #95 gave it :class:`Header`. The skeleton's slot set never changed
+    #: across either step, which is what made the split a change of *owner*
+    #: rather than of markup.
+    SLOTS: ClassVar[tuple[str, ...]] = ("banner",)
 
-    TEMPLATE_PATHS: ClassVar[dict[str, str]] = {
-        "header_bar": "regions/header-bar.html",
-        "banner": "regions/banner.html",
-    }
+    TEMPLATE_PATHS: ClassVar[dict[str, str]] = {"banner": "regions/banner.html"}
 
     #: Fields that may hold an EmailImage instead of a bare URL.
     IMAGE_FIELDS: ClassVar[tuple[str, ...]] = ("logo_url", "background_image_url")
@@ -320,26 +402,18 @@ class Banner(Region):
         }
         return {**super().context({}), **resolved, **facts}
 
-    def render_slots(self, engine: Renderer, facts: dict[str, Any]) -> dict[str, str]:
+    def theme_context(self, theme: Theme) -> dict[str, Any]:
         """
-        As the base, with this region's colours resolved against the theme.
+        A **total** :class:`~svc.builder.theming.BannerPalette`, as
+        ``banner_palette``.
 
-        The resolution happens *here* rather than in :meth:`context` because
-        the theme is not a fact and not a field — it reaches the templates
-        through the bound engine, and the engine is only in hand at render
-        time. What lands in the context is a **total**
-        :class:`~svc.builder.theming.BannerPalette` under ``banner_palette``,
-        so the template reads one object for every colour it draws and an
-        override is indistinguishable from an inherited token by the time the
-        markup sees it.
+        Total by construction, so the template reads one object for every
+        colour it draws and an override is indistinguishable from an
+        inherited token by the time the markup sees it.
         """
-        return super().render_slots(engine, {**facts, "banner_palette": self._palette(engine)})
-
-    def _palette(self, engine: Renderer) -> BannerPalette:
-        """This banner's colours, filled in from whatever theme is bound."""
         from .theming import BannerPalette
 
-        return (self.palette or BannerPalette()).resolved(engine.theme)
+        return {"banner_palette": (self.palette or BannerPalette()).resolved(theme)}
 
     def render(self, engine: Renderer, facts: dict[str, Any]) -> str:
         """
@@ -347,9 +421,7 @@ class Banner(Region):
 
         A convenience over :meth:`render_slots`, and deliberately a
         delegation rather than a second call to ``engine`` — one rendering
-        path is the whole point. Joining on a newline reproduces what the
-        single pre-split template rendered byte for byte, because the strip
-        already ends with one and the skeleton supplies the other.
+        path is the whole point.
         """
         slots = self.render_slots(engine, facts)
         return "\n".join(slots[f"{slot}_html"] for slot in self.SLOTS)
@@ -418,11 +490,11 @@ class MinimalBanner(Banner):
     rejected at construction rather than silently ignored.
     """
 
-    #: Composed rather than restated: the variant differs in the *banner*
-    #: only, so it inherits the strip's path instead of carrying a second
-    #: copy of it. A full replacement would let the two drift the moment one
-    #: path changed — which is exactly what the duplicated strip template did
-    #: before #89 removed it.
+    #: Composed rather than restated. It reads as a no-op today, because #95
+    #: left the banner one slot and the variant differs in that one — but the
+    #: form is the point: a variant that overrides only what it changes
+    #: cannot drift from the parent on a slot they share, and the duplicated
+    #: strip template #89 removed is what that drift looked like.
     TEMPLATE_PATHS: ClassVar[dict[str, str]] = {
         **Banner.TEMPLATE_PATHS,
         "banner": "regions/banner-minimal.html",
@@ -439,7 +511,105 @@ class MinimalBanner(Banner):
 
 
 @dataclass
-class Footer(Region):
+class Header(BoxSurface, Region):
+    """
+    The strip at the very top of the email: one band of centred copy.
+
+    The email's outermost box above the body, and deliberately symmetric with
+    :class:`Footer` below it — the two are the customisable boxes that bracket
+    the sections, and #98 gives the footer's box these same three field names,
+    so a caller learns one surface rather than two.
+
+    **The name meant the masthead until #95.** ``Header`` was renamed to
+    :class:`Banner` in #90 precisely so it could be reused here, with no
+    deprecated alias in between: an old-style ``Header(logo_url=…)`` now fails
+    at construction, because this class has no such field. That is loud, at the
+    call site, which is the point — a name that quietly changed meaning would
+    keep running and be wrong.
+
+    **Its copy is raw HTML, and that is a footgun nobody has been warned
+    about.** ``header_disclaimer`` is emitted unescaped, as it always has
+    been, and as the other disclaimers are: escaping it now would break every
+    caller passing markup. So the contract is kept and stated instead —
+    **escaping untrusted text in it is the caller's job**, with
+    :func:`~svc.builder.filters.escape_html` the tool. The copy itself stays
+    on :class:`~svc.builder.models.EmailMetadata`: it is legal wording that
+    belongs to the *email*, and this region only decides how the box presents
+    it.
+
+    Its presentation is :class:`BoxSurface` — ``align``, ``background_color``
+    and ``text_color``, shared with the footer's box so the two cost one API
+    to learn. Unset, the background is the theme's band
+    (``palette.header_bg``) and the text its ``text.on_dark_muted``.
+
+    Validates at construction, like every model here.
+    """
+
+    CONTEXT_NAME: ClassVar[str] = "header"
+    SLOTS: ClassVar[tuple[str, ...]] = ("header_bar",)
+    TEMPLATE_PATHS: ClassVar[dict[str, str]] = {"header_bar": "regions/header-bar.html"}
+
+    def validate(self) -> None:
+        super().validate()
+        self.validate_box_surface(self.CONTEXT_NAME)
+
+    def theme_context(self, theme: Theme) -> dict[str, Any]:
+        """
+        The two colours the band actually draws, resolved.
+
+        Under names of their own — ``header_background``, ``header_text`` —
+        rather than in place, so the template reads what *renders* and never
+        the raw field, which is empty for the caller who set nothing. Same
+        shape as ``banner_palette``, at the size this box needs.
+        """
+        return {
+            "header_background": self.background_color or theme.palette.header_bg,
+            "header_text": self.text_color or theme.text.on_dark_muted,
+        }
+
+
+@dataclass
+class EmptyHeader(Header):
+    """
+    A header that renders nothing at all — no band, no empty ``<tr>``.
+
+    Not every email carries a strip, and the slot mechanism already supports
+    true omission: an unfilled slot renders as the empty string, so the
+    skeleton needs no conditional. This gives that a name. A class rather
+    than a flag (``Header(visible=False)``) because variants are classes
+    here, and a class is what an introspecting test can find.
+
+    **An empty ``header_disclaimer`` on a plain ``Header`` still renders the
+    band, and that is deliberate.** It is tempting to auto-collapse — but the
+    presence of the *box* would then depend on a fact the email owns rather
+    than on the region, which inverts the rule the whole layer rests on: a
+    region decides how it renders and whether it renders; a fact is only its
+    content. The footer already draws the line in the same place, with
+    ``Footer.disclaimer`` empty omitting the fine-print *line* while the
+    footer itself still renders. "I have no copy" and "I do not want this
+    box" are different statements, and this class is the second one.
+
+    What a blank default actually looks like is worth knowing before
+    reaching for it: on the theme's own colours the band is `#2C3E50` sitting
+    directly above the masthead's identical `#2C3E50`, so it is invisible —
+    14px of extra navy. It only reads as a mistake once #95 let the header
+    carry a background of its own, and a caller who colours a box they put
+    nothing in wants this class.
+
+    **The asymmetry with `Footer` is not a lower standard.**
+    :attr:`Region.REQUIRED_SLOTS` is a rule about *variants not silently
+    dropping structure*, never about a caller supplying content — pyHermes
+    does not require disclaimer language, and whether an email needs one is
+    the sender's judgement. ``Footer`` names its slot required because a
+    footer that renders nothing is a footer that failed; ``Header`` names
+    none because its whole box is genuinely optional.
+    """
+
+    TEMPLATE_PATHS: ClassVar[dict[str, str]] = {}
+
+
+@dataclass
+class Footer(BoxSurface, Region):
     """
     The closing region: a structured, partially-flexible block.
 
@@ -450,12 +620,20 @@ class Footer(Region):
     :meth:`context`. The disclaimer is optional — an empty one omits the
     fine-print line; the copyright + links line always renders.
 
+    Its box presentation is :class:`BoxSurface` — ``align``,
+    ``background_color`` and ``text_color``, the same three the header strip
+    takes, so the email's two outer boxes cost one API to learn rather than
+    two. Everything below is the footer's own.
+
     Attributes:
-        background_color: Hex override; empty falls back to the theme surface.
         border:           Draw a full box around the footer.
         border_color:     Hex; empty falls back to the theme rule colour.
-        image:            Optional sign-off mark (URL or EmailImage), rendered
-                          above the copyright line.
+        image:            Optional sign-off mark (URL or EmailImage). The box
+                          stacks **image → disclaimer → copyright row**, so
+                          this sits above the disclaimer, not in place of it.
+                          All three are independently optional and each
+                          collapses when unset, closing the gap rather than
+                          leaving one.
         image_alt:        Alt text; falls back to the EmailImage's own alt.
         image_width:      Display width in px; falls back to the EmailImage's
                           own width, then to :data:`DEFAULT_IMAGE_WIDTH`.
@@ -470,7 +648,6 @@ class Footer(Region):
     IMAGE_FIELDS: ClassVar[tuple[str, ...]] = ("image",)
     DEFAULT_IMAGE_WIDTH: ClassVar[int] = 120
 
-    background_color: str = ""
     border: bool = False
     border_color: str = ""
     image: str | EmailImage = ""
@@ -479,13 +656,13 @@ class Footer(Region):
     disclaimer: str = ""
     unsubscribe_label: str = "Unsubscribe"
     view_in_browser_label: str = "View in browser"
+    link_row: LinkRow | None = None
 
     def validate(self) -> None:
         super().validate()
-        for name in ("background_color", "border_color"):
-            value = getattr(self, name)
-            if value:
-                _validate_color(value, f"footer.{name}")
+        self.validate_box_surface(self.CONTEXT_NAME)
+        if self.border_color:
+            _validate_color(self.border_color, "footer.border_color")
         if self.image_width is not None and self.image_width <= 0:
             raise ValidationError(f"'footer.image_width' must be positive, got: {self.image_width}")
 
@@ -493,8 +670,79 @@ class Footer(Region):
         resolved = {
             "image_alt": self.resolved_image_alt(),
             "image_width": self.resolved_image_width(),
+            "copyright_html": self.resolved_copyright_html(facts),
+            "footer_links": self.resolved_links(facts),
         }
         return {**super().context({}), **resolved, **facts}
+
+    def resolved_copyright_html(self, facts: dict[str, Any]) -> str:
+        """
+        The copyright line, as HTML the builder produced.
+
+        Two paths, one key, because the alternative is a conditional in the
+        markup and therefore two rendering paths. The default keeps the
+        ``&copy;`` **entity** — deliberately, not by inertia: this is an
+        email library, and a bare ``©`` (U+00A9) mis-decoded as latin-1
+        renders as ``Â©`` in a client that guesses the charset wrong, which
+        is exactly the class of failure the whole package exists to avoid.
+        A caller's own line is plain text and escaped here, so the key is
+        named ``_html`` because it *is* HTML by the time the template sees
+        it — produced by the builder, never by the caller.
+        """
+        from .filters import escape_html
+
+        row = self.link_row or LinkRow()
+        if row.copyright:
+            return escape_html(row.copyright)
+        year = escape_html(str(facts.get("current_year", "")))
+        firm = escape_html(str(facts.get("firm_name", "")))
+        return f"&copy; {year} {firm}"
+
+    def resolved_links(self, facts: dict[str, Any]) -> list[FooterLink]:
+        """
+        The links the row actually renders.
+
+        ``link_row=None`` and ``LinkRow(links=None)`` both mean *the default
+        pair*, built from the email's two URL facts and this footer's own
+        labels — which is what keeps #64's label parameters working and an
+        unset row byte-identical. An explicit list is taken exactly as given,
+        **including an empty one**: which links an email carries is the
+        caller's judgement, not this library's.
+        """
+        row = self.link_row or LinkRow()
+        if row.links is not None:
+            return list(row.links)
+        pairs = (
+            (self.unsubscribe_label, facts.get("unsubscribe_url", "")),
+            (self.view_in_browser_label, facts.get("view_in_browser_url", "")),
+        )
+        return [FooterLink(label, str(url)) for label, url in pairs]
+
+    def theme_context(self, theme: Theme) -> dict[str, Any]:
+        """
+        The box's colours, resolved — the same mechanism the header uses.
+
+        The fallbacks are this region's own, which is why the mixin shares
+        the *fields* and not this: the box draws type in **two** theme
+        tokens, ``text.fine_print`` for the disclaimer and the lighter
+        ``text.light`` for the copyright row, and the header's box draws it
+        in one.
+
+        **``text_color`` is deliberately coarser than the theme**: set, it
+        collapses those two into one. That is the right trade rather than a
+        shortcut — a caller sets it *because* they set a background, and a
+        knob that recoloured only one of the two rows would leave the other
+        illegible on the new ground. Unset, the two stay distinct.
+
+        Link colour stays ``palette.accent``: the links are anchors, not box
+        text, and per-link colour is an explicit non-goal.
+        """
+        return {
+            "footer_background": self.background_color or theme.palette.wrapper_bg,
+            "footer_text": self.text_color or theme.text.fine_print,
+            "footer_text_muted": self.text_color or theme.text.light,
+            "footer_border": self.border_color or theme.palette.rule,
+        }
 
     def resolved_image_alt(self) -> str:
         from .images import EmailImage
