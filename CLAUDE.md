@@ -871,6 +871,28 @@ tinted label band.
   are separate precisely so a theme can pull them apart, and a house style that wants a
   stronger band does it there rather than here.
 
+### The data table's accessible name and row headers
+
+`DataTable(caption=…)` renders a `caption` element, and each row's label cell renders as
+`th scope="row"` (#120) — finishing what #114 started with `scope="col"`.
+
+- **A caption is the table's *name*, not a standfirst**, which is why it is a field of its own
+  rather than the existing `subtitle` reused. A subtitle is copy that happens to sit above the
+  table; a caption is attached to it in the markup and is what a screen reader announces on
+  reaching it. Rendering the subtitle *as* the caption would have been fewer fields, moved
+  every existing golden, and made shipped emails announce a standfirst where a name belongs.
+  An email with several tables is where it earns its keep.
+- **It is not visually hidden.** `display:none` removes it from screen readers too, defeating
+  the point, and the clip-rect idiom is unreliable across email clients. It renders, and a
+  caller who wants none sets none.
+- **`scope="row"` follows the column's resolved `kind`, not the position.** A table whose
+  first column is genuinely numeric — a rank — does not claim to head its row, which is only
+  expressible because #117 made the kind a resolved value.
+- **The weight had to become explicit**, and this is the one thing that would have turned a
+  semantic change into a visual one: `th` is bold by default in browsers *and* in Outlook's
+  Word engine, so a label cell that previously emitted no `font-weight` now emits `normal`.
+  That is the third thing in #120's golden diff, and it is there to keep the render identical.
+
 [Card](svc/builder/models.py) is the unit: `label` (required), `value`, `color`,
 `sublabel`, and an optional `body` for prose. Either `value` or `body` must be present.
 `KpiItem` is a `Card` subclass that adds no fields but keeps the stricter rule — a KPI

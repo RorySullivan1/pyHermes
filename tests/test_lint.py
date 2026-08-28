@@ -301,13 +301,17 @@ class TestTheTemplatesAreAnnotated:
         assert len(unmarked) == 1, "exactly one table should be left with data semantics"
         assert "<th" in html
 
-    def test_the_data_table_headers_are_scoped(self):
+    def test_every_header_cell_is_scoped(self):
         """
-        Without ``scope``, a screen reader has no defined column association
-        even once the table is correctly exposed as data.
+        Without ``scope``, a screen reader has no defined association even
+        once the table is correctly exposed as data. Both directions since
+        #120: ``col`` on the heading row, ``row`` on the label column.
         """
         html = all_fixtures()["kitchen_sink"]().render()
-        assert html.count("<th") == html.count('scope="col"')
+        scoped = html.count('scope="col"') + html.count('scope="row"')
+        assert html.count("<th") == scoped
+        assert html.count('scope="col"'), "the heading row"
+        assert html.count('scope="row"'), "the label column"
 
 
 class TestMarkupOutlookCannotSee:

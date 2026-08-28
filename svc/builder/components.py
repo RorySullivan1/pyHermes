@@ -233,6 +233,21 @@ class DataTable(Component):
         source:   Attribution string (e.g. "Source: Bloomberg").
         as_of:    Date string (e.g. "March 28, 2026").
         subtitle: Optional sub-heading rendered above the table.
+        caption:  Optional table caption (#120). Renders as a ``caption``
+                  element — the table's own accessible **name**, which is
+                  what a screen reader announces when it reaches the table.
+
+    **``caption`` and ``subtitle`` are separate on purpose**, even when a
+    caller would write the same words in both. ``subtitle`` is presentation
+    copy that happens to sit above the table; ``caption`` is the table's
+    name, attached to it in the markup. Rendering the subtitle *as* the
+    caption would have been fewer fields and would have moved every existing
+    golden — changing what shipped emails announce, to say a standfirst where
+    a name belongs. A separate field is byte-identical and reversible.
+
+    An email with several tables is where this earns its keep: without a
+    caption a reader hears "table" each time, with nothing to tell them
+    apart.
 
     **Alignment resolves in Python, once, and both projections read it**
     (#117). The template no longer decides alignment or face from a column's
@@ -250,6 +265,7 @@ class DataTable(Component):
         source: str = "",
         as_of: str = "",
         subtitle: str | None = None,
+        caption: str = "",
     ):
         if not headers:
             raise ValidationError("DataTable requires at least one header.")
@@ -274,6 +290,7 @@ class DataTable(Component):
         self.source = source
         self.as_of = as_of
         self.subtitle = subtitle
+        self.caption = caption
 
     @property
     def headers(self) -> list[str]:
@@ -294,6 +311,7 @@ class DataTable(Component):
     def text(self) -> str:
         """Aligned columns, then the attribution lines."""
         return self._with_subtitle(
+            wrap(self.caption),
             table(
                 self.headers,
                 [[cell.text for cell in row.cells] for row in self.rows],
@@ -331,8 +349,15 @@ class DataTable(Component):
                             "color": cell.color,
                             "background": cell.background,
                             "is_text": column.kind == ColumnKind.TEXT,
+                            # A row header, not a data cell: the first column
+                            # labels the figures beside it, so it is the `th`
+                            # a reader navigates by. Keyed on the resolved
+                            # kind rather than the position, so a table whose
+                            # first column is genuinely numeric — a rank —
+                            # does not claim to head its row.
+                            "row_header": index == 0 and column.kind == ColumnKind.TEXT,
                         }
-                        for cell, column in zip(r.cells, columns, strict=True)
+                        for index, (cell, column) in enumerate(zip(r.cells, columns, strict=True))
                     ],
                     # Striping counts *data* rows: a subhead in the middle of a
                     # table must not invert the tint of everything beneath it.
@@ -343,6 +368,7 @@ class DataTable(Component):
             "source": self.source,
             "as_of": self.as_of,
             "subtitle": self.subtitle,
+            "caption": self.caption,
         }
 
 

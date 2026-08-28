@@ -332,7 +332,7 @@ class TestCellColoursAreSemanticData:
         assert "#FFF3CD" in alt_row
         # the untouched cell in the same row still takes the alternating tint
         assert alt_row.count("background-color") == 2
-        assert "#FFF3CD" not in alt_row.split("<td")[2]
+        assert "#FFF3CD" not in alt_row.split("<td")[1], "the second cell keeps the tint"
 
     def test_an_explicit_colour_wins_over_the_kind(self):
         """
@@ -542,3 +542,123 @@ class TestARowKindIsChromeNotData:
             [TableRow(["Total", Cell("-1.2%", color="#B85450")], kind="total")],
         )
         assert "#B85450" in _rows_html(component)[0]
+
+
+class TestTheTableHasAName:
+    """
+    #120, finishing what #114 started. A `caption` is the table's accessible
+    *name* — what a screen reader announces on reaching it. An email with
+    several tables is where it earns its keep: without one, a reader hears
+    "table" each time with nothing to tell them apart.
+    """
+
+    def test_no_caption_renders_none(self):
+        assert "<caption" not in _html(DataTable(["A"], [TableRow(["x"])]))
+
+    def test_a_caption_renders_as_the_tables_first_child(self):
+        html = _html(DataTable(["A"], [TableRow(["x"])], caption="Factor returns"))
+        after_table = html.split("<table", 1)[1]
+        assert after_table.lstrip().split(">", 1)[1].lstrip().startswith("<caption")
+
+    def test_the_caption_is_escaped(self):
+        html = _html(DataTable(["A"], [TableRow(["x"])], caption="Risk & return"))
+        assert "Risk &amp; return" in html
+
+    def test_it_is_not_visually_hidden(self):
+        """
+        `display:none` would remove it from screen readers too, defeating
+        the point, and the clip-rect idiom is unreliable across email
+        clients. It renders visibly, and a caller who wants none sets none.
+        """
+        html = _html(DataTable(["A"], [TableRow(["x"])], caption="Name"))
+        caption = html.split("<caption", 1)[1].split(">", 1)[0]
+        assert "display: none" not in caption
+        assert "display:none" not in caption
+
+    def test_the_caption_projects_in_text(self):
+        """A table's name is content, and #53's rule is that content projects."""
+        component = DataTable(["A"], [TableRow(["x"])], caption="Factor returns")
+        assert "Factor returns" in component.text()
+
+    def test_it_is_a_separate_field_from_the_subtitle(self):
+        """
+        Recorded as a decision, not merely chosen in code: a subtitle is copy
+        that sits above the table, a caption is the table's name. Rendering
+        the subtitle *as* the caption would have moved every existing golden
+        and changed what shipped emails announce.
+        """
+        doc = " ".join(DataTable.__doc__.split())
+        assert "separate on purpose" in doc
+        component = DataTable(["A"], [TableRow(["x"])], subtitle="Sub", caption="Name")
+        html = _html(component)
+        assert "Sub" in html and "Name" in html
+
+
+class TestTheLabelColumnIsARowHeader:
+    def test_the_first_cell_is_a_scoped_header(self):
+        html = _html(DataTable(["Factor", "1M"], [TableRow(["Value", "+1.8%"])]))
+        body = html.split("<tr")[2]
+        assert '<th scope="row"' in body
+        assert body.count("<td") == 1
+
+    def test_it_follows_the_resolved_kind_not_the_position(self):
+        """
+        A table whose first column is genuinely numeric — a rank — does not
+        claim to head its row. #117's resolution is what makes that
+        expressible.
+        """
+        html = _html(
+            DataTable(
+                [Column("Rank", kind="numeric"), Column("Name", kind="text")],
+                [TableRow(["1", "Value"])],
+            )
+        )
+        assert 'scope="row"' not in html.split("<tr")[2]
+
+    def test_the_header_row_is_still_scoped_by_column(self):
+        html = _html(DataTable(["A", "B"], [TableRow(["x", "1"])]))
+        assert html.count('scope="col"') == 2
+
+    def test_every_row_kind_gets_its_row_header(self):
+        component = DataTable(
+            ["A", "B"],
+            [
+                TableRow(["x", "1"]),
+                TableRow(["Group"], kind="subhead"),
+                TableRow(["Total", "1"], kind="total"),
+            ],
+        )
+        assert _html(component).count('scope="row"') == 3
+
+    def test_the_weight_is_explicit_so_th_does_not_inherit_bold(self):
+        """
+        The one thing that would have made this a *visual* change rather than
+        a semantic one: `th` is bold by default in browsers and in Outlook's
+        Word engine, so a label cell that used to emit no weight had to start
+        emitting `normal`.
+        """
+        body = _html(DataTable(["A", "B"], [TableRow(["x", "1"])])).split("<tr")[2]
+        header_cell = body.split("<th", 1)[1].split(">", 1)[0]
+        assert "font-weight: normal" in header_cell
+
+    def test_a_total_row_header_is_still_bold(self):
+        body = _html(DataTable(["A", "B"], [TableRow(["Total", "1"], kind="total")])).split("<tr")[
+            2
+        ]
+        assert "font-weight: bold" in body.split("<th", 1)[1].split(">", 1)[0]
+
+
+class TestTheLintRuleStillClassifiesTheTable:
+    def test_the_data_table_is_still_data_with_the_extra_header_cells(self):
+        """
+        #114's `table-role` rule discriminates on the presence of `th`.
+        Adding one per row does not change the verdict — but it sees many
+        more header cells than it did, so it is worth confirming rather than
+        assuming.
+        """
+        from qa.lint import lint_html
+
+        html = _html(
+            DataTable(["A", "B"], [TableRow(["x", "1"]), TableRow(["y", "2"])], caption="N")
+        )
+        assert not [f for f in lint_html(html) if f.rule_id == "table-role"]

@@ -117,8 +117,36 @@ as a **theme affordance** rather than patched in the template: the two tokens
 are separate precisely so a house style can pull them apart, and CLAUDE.md
 already noted that distinction had been lost once before.
 
+## #120, as shipped
+
+A `caption` element and `th scope="row"` on the label column.
+
+**The first step in this epic whose goldens move** — 20 lines across 7
+fixtures — and the diff is *three* things, not the two the issue predicted:
+the `th`/`td` swap, the `scope` attribute, **and an explicit
+`font-weight: normal`**. That third one is the whole reason this could have
+gone wrong: `th` is bold by default in browsers *and* in Outlook's Word
+engine, so a label cell that previously emitted no weight had to start
+emitting one, or a semantic change would have been a visual one. Verified by
+script in #106's pattern.
+
+**The caption-vs-subtitle question resolved to a separate field.** Reusing
+`subtitle` as the caption would have been fewer fields, but it would have
+moved every existing golden and made shipped emails announce a *standfirst*
+where a *name* belongs. A caption is the table's name; a subtitle is copy
+that happens to sit above it.
+
+**`scope="row"` follows the column's resolved `kind`, not the position** — a
+table whose first column is a rank does not claim to head its row. Only
+expressible because #117 made the kind a resolved value, which is the epic
+paying for its own ordering.
+
+Two existing tests needed updating for **shape, not claim**:
+`count("<th") == count(scope="col")` became *every* `th` is scoped either
+way, and a `split("<td")` index shifted now that the first cell is a `th`.
+
 ## State at end
 
-1645 tests with a browser, 4 skipping even then. ruff / `ruff format --check` /
-mypy clean. Every golden byte-identical across all three steps so far. Next:
-#120 (caption + `scope="row"`), then #121 closes the epic.
+1658 tests with a browser, 4 skipping even then. ruff / `ruff format --check` /
+mypy clean. Only **#121** left in the epic: the `rich_table` fixture, the
+field-completeness test that closes the introspection gap, and the docs.
