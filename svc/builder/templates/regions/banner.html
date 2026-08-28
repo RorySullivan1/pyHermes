@@ -47,7 +47,7 @@
                         {{ banner_title | escape_html }}
                       </p>
                     </td>
-                    <td valign="bottom" align="right" style="padding:{{ size.space.masthead_top }}px {{ size.frame.pad_x }}px {{ size.space.masthead_title_bottom }}px {{ size.space.gutter }}px;">
+                    <td valign="bottom" align="right" style="text-align:right; padding:{{ size.space.masthead_top }}px {{ size.frame.pad_x }}px {{ size.space.masthead_title_bottom }}px {{ size.space.gutter }}px;">
                       <!--[if mso]>
                       <img src="{{ logo_url | escape_html }}" width="{{ logo_width }}" alt="{{ logo_alt | escape_html }}" style="display:block;">
                       <![endif]-->
@@ -65,7 +65,7 @@
                         {{ banner_subtitle | escape_html }}
                       </p>
                     </td>
-                    <td valign="middle" align="right" style="padding:0 {{ size.frame.pad_x }}px {{ size.space.masthead_campaign_bottom }}px {{ size.space.gutter }}px;">
+                    <td valign="middle" align="right" style="text-align:right; padding:0 {{ size.frame.pad_x }}px {{ size.space.masthead_campaign_bottom }}px {{ size.space.gutter }}px;">
                       {% if department %}
                       <p style="margin:0; font-family: {{ font.label }}; font-size:{{ size.type.small }}px;
                                 color:{{ banner_palette.meta }}; letter-spacing:0.6px; text-transform:uppercase;">
@@ -97,7 +97,7 @@
                                      color:{{ banner_palette.meta }}; letter-spacing:0.6px; text-transform:uppercase;">
                             {{ date_range | escape_html }}
                           </td>
-                          <td align="right" style="font-family: {{ font.label }}; font-size:{{ size.type.small }}px;
+                          <td align="right" style="text-align:right; font-family: {{ font.label }}; font-size:{{ size.type.small }}px;
                                                     color:{{ banner_palette.meta }}; letter-spacing:0.6px; text-transform:uppercase;">
                             {{ issue_label | escape_html }}
                           </td>

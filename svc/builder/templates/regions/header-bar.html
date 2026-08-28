@@ -2,7 +2,7 @@
           <!-- HEADER: Disclaimer bar                    -->
           <!-- ══════════════════════════════════════════ -->
           <tr>
-            <td style="background-color:{{ header_background }}; padding:{{ size.space.masthead_bar_y }}px {{ size.frame.pad_x }}px; text-align:{{ align }};" bgcolor="{{ header_background }}">
+            <td align="{{ align | escape_html }}" style="background-color:{{ header_background }}; padding:{{ size.space.masthead_bar_y }}px {{ size.frame.pad_x }}px; text-align:{{ align }};" bgcolor="{{ header_background }}">
               <p style="margin:0; font-family: {{ font.label }}; font-size:{{ size.type.micro }}px;
                         font-weight:300; color:{{ header_text }}; letter-spacing:0.3px; line-height:{{ size.type.secondary_line | percent }};">
                 {{header_disclaimer}}

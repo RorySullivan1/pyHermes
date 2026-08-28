@@ -111,6 +111,12 @@ class TestTheHarnessDetectsDrift:
         ``base.html`` with no width literal to perturb — every one of them
         now reads ``size.frame.width``. The rendered side still checks a
         number, since that is what the golden holds.
+
+        The needle carries **both** spellings of the alignment since #125,
+        which paired every ``align`` attribute with a ``text-align`` style.
+        Perturbing only the attribute is still a genuine template edit and
+        still the edit this test is about — it simply no longer describes
+        the whole of what that element says about its alignment.
         """
         templates = _perturbed_templates(tmp_path, 'align="center"', 'align="left"')
         email = all_fixtures()["minimal"](template_dir=templates)
@@ -123,7 +129,7 @@ class TestTheHarnessDetectsDrift:
         assert mismatch.artifact == "rendered HTML"
         expected_line = _line_of(
             html_path("minimal").read_text(encoding="utf-8"),
-            '<td align="center" style="padding:28px 0;">',
+            '<td align="center" style="padding:28px 0; text-align:center;">',
         )
         assert f"line {expected_line}," in mismatch.report
         assert 'align="left"' in mismatch.report
