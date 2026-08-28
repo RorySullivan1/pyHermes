@@ -20,7 +20,7 @@ from .engine import Renderer
 from .enums import CardOrientation, ImageAlign
 from .exceptions import ValidationError
 from .images import EmailImage, ImageAsset, coerce_image
-from .models import Card, NumberedItem, TableRow, _validate_url
+from .models import Card, Column, NumberedItem, TableRow, _validate_url, coerce_column
 from .textgen import format_link, html_to_text, join_blocks, link_line, table, wrap
 
 
@@ -225,18 +225,27 @@ class DataTable(Component):
     colour-coded numeric cells.
 
     Args:
-        headers:  List of column header strings.
+        headers:  Column headers. Either bare strings or :class:`Column`
+                  instances, mixed freely — a string is coerced to a
+                  ``Column`` whose presentation resolves from its position,
+                  which is what the old ``loop.first`` convention meant.
         rows:     List of TableRow instances.
         source:   Attribution string (e.g. "Source: Bloomberg").
         as_of:    Date string (e.g. "March 28, 2026").
         subtitle: Optional sub-heading rendered above the table.
+
+    **Alignment resolves in Python, once, and both projections read it**
+    (#117). The template no longer decides alignment or face from a column's
+    position, and :func:`~svc.builder.textgen.table` is handed the resolved
+    alignments rather than re-deriving them — which is what stops the HTML
+    and the plain-text part disagreeing about the same table.
     """
 
     template_path = "analysis/data-table.html"
 
     def __init__(
         self,
-        headers: list[str],
+        headers: list[str | Column],
         rows: list[TableRow],
         source: str = "",
         as_of: str = "",
@@ -246,29 +255,53 @@ class DataTable(Component):
             raise ValidationError("DataTable requires at least one header.")
         if not rows:
             raise ValidationError("DataTable requires at least one row.")
+        columns = [coerce_column(h, f"data_table.headers[{i}]") for i, h in enumerate(headers)]
         for i, row in enumerate(rows):
             row.validate()
-            if len(row.cells) != len(headers):
+            if len(row.cells) != len(columns):
                 raise ValidationError(
                     f"DataTable row {i} has {len(row.cells)} cells but there are "
-                    f"{len(headers)} headers; the table would render misaligned."
+                    f"{len(columns)} headers; the table would render misaligned."
                 )
-        self.headers = headers
+        self.columns = columns
         self.rows = rows
         self.source = source
         self.as_of = as_of
         self.subtitle = subtitle
 
+    @property
+    def headers(self) -> list[str]:
+        """The column headings, as the plain strings the caller may have passed."""
+        return [column.header for column in self.columns]
+
+    def resolved_columns(self) -> list[Column]:
+        """
+        Every column with its alignment and kind filled in.
+
+        **The single source both projections read.** Computing this twice —
+        once for the markup and once for the text — is exactly how the two
+        parts would come to disagree about which column is the label, which
+        is the failure this method exists to make impossible.
+        """
+        return [column.resolved(index) for index, column in enumerate(self.columns)]
+
     def text(self) -> str:
         """Aligned columns, then the attribution lines."""
         return self._with_subtitle(
-            table(self.headers, [row.cells for row in self.rows]),
+            table(
+                self.headers,
+                [row.cells for row in self.rows],
+                aligns=[column.align for column in self.resolved_columns()],
+            ),
             wrap("\n".join(filter(None, (self.source, self.as_of)))),
         )
 
     def context(self) -> dict[str, Any]:
         return {
-            "headers": self.headers,
+            "columns": [
+                {"header": c.header, "align": c.align, "kind": c.kind}
+                for c in self.resolved_columns()
+            ],
             "rows": [
                 {
                     "cells": r.cells,

@@ -732,10 +732,10 @@ from svc.builder import EmailBuilder, Email, \
     Region, Header, EmptyHeader, Banner, MinimalBanner, Footer, \
     FullWidth, TwoColumn, ThreeColumn, \
     CardGroup, DataTable, ChartBlock, ImageBlock, TextBlock, NumberedList, AuthorBlock, ContactBlock
-from svc.builder.models import Card, KpiItem, TableRow, NumberedItem, EmailMetadata, \
+from svc.builder.models import Card, KpiItem, TableRow, Column, NumberedItem, EmailMetadata, \
     SectionConfig, LinkRow, FooterLink
 from svc.builder.enums import TwoColumnRatio, ThreeColumnRatio, CardOrientation, \
-    EmbedStrategy, ImageAlign, SizeTheme
+    EmbedStrategy, ImageAlign, SizeTheme, ColumnAlign, ColumnKind
 from svc.builder.images import EmailImage, ImageAsset
 ```
 
@@ -786,6 +786,37 @@ Two deliberate shapes here, both chosen over adding more types:
   per row — which is also what the horizontal strip collapses to on mobile, via the
   `.kpi-cell` rule in `base.html`. `KpiStrip` survives as a **deprecated alias** for the
   horizontal case and warns.
+
+### The data table's columns
+
+`DataTable(headers=…)` takes bare strings **or** [Column](svc/builder/models.py) objects, mixed
+freely (#117). A string coerces to a `Column` whose presentation resolves from its position —
+`coerce_image`'s union-coercion, for `coerce_image`'s reason: a new capability should not cost
+every existing call site a rewrite.
+
+- **One convention was doing four jobs.** `loop.first` decided alignment, typeface and weight
+  in `data-table.html` *and* the column alignment in `textgen.table()`. It was correct and
+  compact; what it could not be was extended, and the tell was that a **fifth reader in
+  another module** had to re-derive it so the two projections would agree.
+- **The chain is cell → row → column → position**, and it runs through `kind` rather than
+  straight to the position: an unset `kind` is `text` for the first column and `numeric` for
+  the rest, and an unset `align` follows the *resolved kind*. So `Column("Desk", kind="text")`
+  on the third column gets left alignment without saying so, which is the point of naming the
+  kind at all. Unset everywhere, this reproduces `loop.first` exactly — every golden was
+  byte-identical across the migration.
+- **`resolved_columns()` is the single source both projections read.** The template reads the
+  resolved `align` and `kind`; `textgen.table()` is *handed* the alignments rather than
+  re-deriving them. Computing it twice is precisely how the HTML and the plain-text part would
+  come to disagree about which column is the label — the failure epic #53 spent four issues
+  preventing. A test asserts both readers against the resolution rather than against each
+  other, so it cannot pass by both being wrong the same way.
+- **A grep test keeps the convention from creeping back.** Re-introducing `loop.first` would
+  render correctly today and quietly make `Column` unreachable, which is the failure mode a
+  golden cannot see.
+
+**Column widths are deliberately not here.** They interact with the 680px frame arithmetic
+`sizing.py` owns and with the mobile collapse, so they are a separate decision with their own
+client-testing burden rather than a field to slip in.
 
 [Card](svc/builder/models.py) is the unit: `label` (required), `value`, `color`,
 `sublabel`, and an optional `body` for prose. Either `value` or `body` must be present.

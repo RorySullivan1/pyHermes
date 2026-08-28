@@ -67,6 +67,8 @@ from .engine import TemplateEngine
 # Enums
 from .enums import (
     CardOrientation,
+    ColumnAlign,
+    ColumnKind,
     EmbedStrategy,
     ImageAlign,
     SizeTheme,
@@ -91,6 +93,7 @@ from .images import (
 # Models
 from .models import (
     Card,
+    Column,
     EmailMetadata,
     KpiItem,
     NumberedItem,
@@ -185,6 +188,7 @@ __all__ = [
     "Card",
     "KpiItem",
     "TableRow",
+    "Column",
     "NumberedItem",
     "SectionConfig",
     # Components
@@ -206,6 +210,8 @@ __all__ = [
     # Enums
     "TwoColumnRatio",
     "ThreeColumnRatio",
+    "ColumnAlign",
+    "ColumnKind",
     "CardOrientation",
     "EmbedStrategy",
     "ImageAlign",

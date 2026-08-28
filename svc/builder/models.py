@@ -10,7 +10,7 @@ import re
 from dataclasses import InitVar, dataclass, field, fields
 from typing import TYPE_CHECKING, Any
 
-from .enums import SizeTheme
+from .enums import ColumnAlign, ColumnKind, SizeTheme
 from .exceptions import ValidationError
 
 if TYPE_CHECKING:  # pragma: no cover - import cycle: images/regions import from here
@@ -468,6 +468,106 @@ class KpiItem(Card):
         _require(self.value, "kpi.value")
         if self.color:
             _validate_color(self.color, "kpi.color")
+
+
+@dataclass
+class Column:
+    """
+    One column of a :class:`~svc.builder.components.DataTable`.
+
+    Replaces the bare header string, and with it the ``loop.first``
+    convention that used to decide four things at once — alignment, typeface,
+    weight, and (in another module entirely) the plain-text column alignment.
+    That convention was correct and compact; what it could not be was
+    *extended*, and the tell was that a fifth reader in
+    :mod:`svc.builder.textgen` had to re-derive it to keep the two
+    projections agreeing.
+
+    Both presentation fields default to empty, meaning **resolve** — and the
+    resolution reproduces the old convention exactly, so a table built from
+    plain strings renders byte-identically to one built before this class
+    existed.
+
+    Attributes:
+        header: The column's heading. Plain text, escaped on the way out.
+        align:  ``left`` / ``center`` / ``right``. Empty resolves from
+                :attr:`kind`.
+        kind:   ``text`` or ``numeric``. Empty resolves from the column's
+                *position*: the first column is text, the rest are numeric —
+                which is what ``loop.first`` meant.
+    """
+
+    header: str
+    align: str = ""
+    kind: str = ""
+
+    def validate(self) -> None:
+        _require(self.header, "column.header")
+        if self.align and self.align not in tuple(ColumnAlign):
+            raise ValidationError(
+                f"'column.align' must be one of {[a.value for a in ColumnAlign]}, "
+                f"got: {self.align!r}"
+            )
+        if self.kind and self.kind not in tuple(ColumnKind):
+            raise ValidationError(
+                f"'column.kind' must be one of {[k.value for k in ColumnKind]}, got: {self.kind!r}"
+            )
+
+    def resolved_kind(self, index: int) -> ColumnKind:
+        """
+        What this column holds, falling back to its position.
+
+        The position rule *is* the old ``loop.first``: column zero labels the
+        row, everything after it carries figures.
+        """
+        if self.kind:
+            return ColumnKind(self.kind)
+        return ColumnKind.TEXT if index == 0 else ColumnKind.NUMERIC
+
+    def resolved_align(self, index: int) -> ColumnAlign:
+        """
+        How this column's text sits, falling back to what it holds.
+
+        Note the chain runs through :meth:`resolved_kind` rather than
+        straight to the position: a caller who says ``kind="text"`` on the
+        third column gets left alignment without also having to say so, which
+        is the point of naming the kind at all.
+        """
+        if self.align:
+            return ColumnAlign(self.align)
+        return (
+            ColumnAlign.LEFT if self.resolved_kind(index) is ColumnKind.TEXT else ColumnAlign.RIGHT
+        )
+
+    def resolved(self, index: int) -> "Column":
+        """This column with both presentation fields filled in."""
+        return Column(
+            header=self.header,
+            align=self.resolved_align(index),
+            kind=self.resolved_kind(index),
+        )
+
+
+def coerce_column(value: "str | Column", field_name: str = "column") -> Column:
+    """
+    Accept either a :class:`Column` or a bare header string.
+
+    Lets ``DataTable(headers=["Factor", "1M"])`` keep working untouched while
+    accepting a full column spec — the same union-coercion
+    :func:`~svc.builder.images.coerce_image` applies to images, and for the
+    same reason: a new capability should not cost every existing call site a
+    rewrite.
+    """
+    if isinstance(value, Column):
+        value.validate()
+        return value
+    if not isinstance(value, str):
+        raise ValidationError(
+            f"{field_name!r} must be a Column or a header string, got: {type(value).__name__}"
+        )
+    column = Column(header=value)
+    column.validate()
+    return column
 
 
 @dataclass

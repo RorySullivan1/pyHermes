@@ -344,18 +344,24 @@ def join_sections(*sections: str) -> str:
     return "\n\n\n".join(section for section in sections if section)
 
 
-def table(headers: list[str], rows: list[list[str]]) -> str:
+def table(
+    headers: list[str],
+    rows: list[list[str]],
+    aligns: list[str] | None = None,
+) -> str:
     """
     Aligned monospace columns: the epic's named fiddly spot.
 
     Three decisions, and the third is the one worth stating:
 
     * **Width comes from the widest cell in each column**, header included.
-    * **The first column is left-aligned and the rest are right-aligned.**
-      That is not a guess about the data — it is the convention the HTML
-      template already encodes, where ``loop.first`` picks the label face for
-      column one and the numeric face for the others. Reading the alignment
-      off the same rule is what keeps the two projections agreeing.
+    * **Alignment is handed in, not guessed** (#117). ``aligns`` carries one
+      of ``left`` / ``center`` / ``right`` per column, resolved by
+      :meth:`~svc.builder.components.DataTable.resolved_columns` — the *same*
+      call the markup reads, which is what keeps the two projections from
+      disagreeing about which column is the label. Omitted, it falls back to
+      the pre-#117 convention (first column left, the rest right), so a
+      caller composing a table by hand still gets sensible output.
     * **Nothing wraps inside a cell.** A table wider than
       :data:`LINE_WIDTH` overflows the line-width policy rather than
       corrupting its own alignment — a wrapped cell destroys the column that
@@ -365,6 +371,7 @@ def table(headers: list[str], rows: list[list[str]]) -> str:
     Args:
         headers: One label per column.
         rows:    Cells per row, each row the same length as ``headers``.
+        aligns:  One alignment per column, or ``None`` for the default.
 
     Returns:
         The header row, a rule, and one line per row. Empty if there are no
@@ -372,17 +379,16 @@ def table(headers: list[str], rows: list[list[str]]) -> str:
     """
     if not headers:
         return ""
+    if aligns is None:
+        aligns = ["left" if i == 0 else "right" for i in range(len(headers))]
     widths = [
         max(len(headers[i]), *(len(row[i]) for row in rows)) if rows else len(headers[i])
         for i in range(len(headers))
     ]
+    pad = {"left": str.ljust, "center": str.center, "right": str.rjust}
 
     def line(cells: list[str]) -> str:
-        first, *rest = (
-            cell.ljust(widths[i]) if i == 0 else cell.rjust(widths[i])
-            for i, cell in enumerate(cells)
-        )
-        return "  ".join([first, *rest]).rstrip()
+        return "  ".join(pad[aligns[i]](cell, widths[i]) for i, cell in enumerate(cells)).rstrip()
 
     rule = "  ".join("-" * width for width in widths)
     return "\n".join([line(headers), rule, *(line(row) for row in rows)])

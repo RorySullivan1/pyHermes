@@ -96,3 +96,35 @@ class ImageAlign(StrEnum):
     LEFT = "left"
     CENTER = "center"
     RIGHT = "right"
+
+
+class ColumnAlign(StrEnum):
+    """
+    Horizontal text alignment inside a :class:`~svc.builder.models.Column`.
+
+    Deliberately separate from :class:`ImageAlign` despite sharing member
+    names: that one places a *block* within its container, this one aligns
+    *text* within cells. Two concepts that happen to agree today, and would
+    stop agreeing the moment either grew a member the other has no meaning
+    for.
+    """
+
+    LEFT = "left"
+    CENTER = "center"
+    RIGHT = "right"
+
+
+class ColumnKind(StrEnum):
+    """
+    What a table column holds, which decides how it is set.
+
+    The vocabulary that replaces ``loop.first`` (#117). A column's kind
+    drives its typeface, its weight and — unless the caller says otherwise —
+    its alignment, so one word carries what four separate template
+    conditionals used to.
+    """
+
+    #: Labels and prose. Set in the label face, unemphasised, aligned left.
+    TEXT = "text"
+    #: Figures. Set in the numeric face, bold, aligned right.
+    NUMERIC = "numeric"
