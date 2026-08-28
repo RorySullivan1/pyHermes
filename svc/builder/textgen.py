@@ -348,6 +348,7 @@ def table(
     headers: list[str],
     rows: list[list[str]],
     aligns: list[str] | None = None,
+    kinds: list[str] | None = None,
 ) -> str:
     """
     Aligned monospace columns: the epic's named fiddly spot.
@@ -368,10 +369,22 @@ def table(
       is the entire reason to render a table as text at all. The policy
       yields to the alignment here, deliberately, and this is where it says so.
 
+    A row's **kind** shows here too (#119), because a total that is
+    indistinguishable from a data row in the text part is a total only half
+    the readers can find:
+
+    * ``total`` — a rule above it, matching the header's, so it is findable
+      without counting rows.
+    * ``subhead`` — its label alone on its own line, unpadded. Plain text has
+      no merged cell to give it, and padding a heading into columns would
+      read as a data row with two empty fields.
+
     Args:
         headers: One label per column.
         rows:    Cells per row, each row the same length as ``headers``.
         aligns:  One alignment per column, or ``None`` for the default.
+        kinds:   One :class:`~svc.builder.enums.RowKind` per row, or ``None``
+                 to treat every row as data.
 
     Returns:
         The header row, a rule, and one line per row. Empty if there are no
@@ -391,7 +404,18 @@ def table(
         return "  ".join(pad[aligns[i]](cell, widths[i]) for i, cell in enumerate(cells)).rstrip()
 
     rule = "  ".join("-" * width for width in widths)
-    return "\n".join([line(headers), rule, *(line(row) for row in rows)])
+    if kinds is None:
+        kinds = ["data"] * len(rows)
+
+    body: list[str] = []
+    for cells, kind in zip(rows, kinds, strict=True):
+        if kind == "subhead":
+            body.append(next((cell for cell in cells if cell), ""))
+            continue
+        if kind == "total":
+            body.append(rule)
+        body.append(line(cells))
+    return "\n".join([line(headers), rule, *body])
 
 
 __all__ = [

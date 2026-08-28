@@ -735,7 +735,7 @@ from svc.builder import EmailBuilder, Email, \
 from svc.builder.models import Card, KpiItem, TableRow, Cell, Column, NumberedItem, EmailMetadata, \
     SectionConfig, LinkRow, FooterLink
 from svc.builder.enums import TwoColumnRatio, ThreeColumnRatio, CardOrientation, \
-    EmbedStrategy, ImageAlign, SizeTheme, ColumnAlign, ColumnKind
+    EmbedStrategy, ImageAlign, SizeTheme, ColumnAlign, ColumnKind, RowKind
 from svc.builder.images import EmailImage, ImageAsset
 ```
 
@@ -843,6 +843,33 @@ position**, so a cell's `align` overrides what its column resolved and an unset 
 - **Marking a cell costs zero bytes.** The template always emitted a `color` and a
   `background-color` declaration; a caller's hex simply replaces the theme's, and both are
   seven characters. The size worry the epic recorded turned out to be free.
+
+### The data table's row kinds
+
+`TableRow(kind=…)` says what a row *is* (#119): `data`, `total` or `subhead`
+([RowKind](svc/builder/enums.py)). A total is ruled off above and bold across; a subhead is a
+tinted label band.
+
+- **A row's kind is chrome; a cell's colour is data.** The two land next to each other and are
+  easy to conflate. A kind draws from theme tokens and takes **nothing** from the caller but
+  the word, which is why it is not a fifth colour exception. They compose rather than compete:
+  the row says *this is a summary*, a cell inside it still says *this figure is down*.
+- **Striping counts data rows, not row indices.** A subhead in the middle of a table must not
+  invert the tint of everything beneath it — the bug a naive `i % 2` ships, and a test pins the
+  row *below* a subhead specifically.
+- **A subhead is padded to the table's width.** One cell is the honest way to write a heading;
+  making the caller spell out the empties would be ceremony. Between one and the full width is
+  still a mistake and still raises. **There is no colspan** — Outlook's Word engine handles it
+  poorly, and a merged cell has no honest plain-text projection.
+- **Both kinds project in text**, which is the half most likely to be forgotten: a total gets
+  a rule above it matching the header's, and a subhead gets its label alone on its own line,
+  unpadded. A total indistinguishable from a data row in the text part is a total only half
+  the readers can find.
+- **At the default theme a subhead's tint equals `row_alt`**, because `highlight_tint` and
+  `row_alt` share a value today. So a subhead reads by its weight and heading colour rather
+  than by its band. That is a *theme* affordance, not a template limitation — the two tokens
+  are separate precisely so a theme can pull them apart, and a house style that wants a
+  stronger band does it there rather than here.
 
 [Card](svc/builder/models.py) is the unit: `label` (required), `value`, `color`,
 `sublabel`, and an optional `body` for prose. Either `value` or `body` must be present.

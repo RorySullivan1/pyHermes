@@ -89,8 +89,36 @@ should.
 
 Every golden byte-identical, again.
 
+## #119, as shipped
+
+`RowKind` (`data` / `total` / `subhead`) on `TableRow`.
+
+**The line that keeps the epic coherent: a row's kind is *chrome*, a cell's
+colour is *data*.** #118 and #119 land next to each other and are easy to
+conflate. A kind draws from theme tokens and takes nothing from the caller
+but the word — which is why it is not a fifth colour exception, and why the
+two axes compose rather than compete (the row says *this is a summary*, a
+cell inside it still says *this figure is down*).
+
+**The bug a naive implementation ships is index-parity striping.** `i % 2`
+means a subhead mid-table inverts the tint of every row beneath it. Parity
+counts *data* rows, and the test pins the row **below** a subhead
+specifically — the assertion that would have caught it.
+
+**A subhead given one cell is padded to the table's width.** One cell is the
+honest way to write a heading; making the caller spell out the empties would
+be ceremony. Between one and the full width still raises, so a genuine
+miscount is still caught.
+
+**Found while building:** at the default theme `highlight_tint` and `row_alt`
+are the *same value*, so a subhead's band is indistinguishable from an
+alternating row — it reads by weight and heading colour instead. Documented
+as a **theme affordance** rather than patched in the template: the two tokens
+are separate precisely so a house style can pull them apart, and CLAUDE.md
+already noted that distinction had been lost once before.
+
 ## State at end
 
-1626 tests with a browser, 4 skipping even then. ruff / `ruff format --check` /
-mypy clean. Next: #119 (row kinds). #120 (caption + `scope="row"`) is
-independent and could ship first.
+1645 tests with a browser, 4 skipping even then. ruff / `ruff format --check` /
+mypy clean. Every golden byte-identical across all three steps so far. Next:
+#120 (caption + `scope="row"`), then #121 closes the epic.

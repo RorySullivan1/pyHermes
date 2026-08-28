@@ -16,7 +16,7 @@ import pytest
 
 from svc.builder import DataTable
 from svc.builder.engine import TemplateEngine
-from svc.builder.enums import ColumnAlign, ColumnKind
+from svc.builder.enums import ColumnAlign, ColumnKind, RowKind
 from svc.builder.exceptions import ValidationError
 from svc.builder.models import Cell, Column, TableRow, coerce_cell, coerce_column
 from svc.builder.textgen import table as text_table
@@ -380,3 +380,165 @@ class TestThereIsNoStylingSurface:
 
         names = {f.name for f in dataclasses.fields(Cell)}
         assert not [n for n in names if forbidden in n], names
+
+
+def _rows_html(component: DataTable) -> list[str]:
+    return _html(component).split("<tr")[2:]
+
+
+class TestRowKinds:
+    """
+    #119. A row's kind is **chrome** — it renders from theme tokens and takes
+    no caller colours, unlike a cell's colour, which is data. The two land
+    close together and are easy to conflate.
+    """
+
+    @staticmethod
+    def build() -> DataTable:
+        return DataTable(
+            ["Sleeve", "1M"],
+            [
+                TableRow(["Global", "1"]),
+                TableRow(["Fixed income"], kind="subhead"),
+                TableRow(["Sovereign", "2"]),
+                TableRow(["Credit", "3"]),
+                TableRow(["Total", "6"], kind=RowKind.TOTAL),
+            ],
+        )
+
+    def test_a_plain_row_is_unchanged(self):
+        """Every pre-existing table renders byte-identically."""
+        plain = DataTable(["A", "B"], [TableRow(["x", "1"])])
+        explicit = DataTable(["A", "B"], [TableRow(["x", "1"], kind="data")])
+        assert _html(plain) == _html(explicit)
+        assert plain.text() == explicit.text()
+
+    def test_a_total_is_ruled_off_above(self):
+        assert "border-top" in _rows_html(self.build())[4]
+
+    def test_only_the_total_is_ruled(self):
+        ruled = [i for i, r in enumerate(_rows_html(self.build())) if "border-top" in r]
+        assert ruled == [4]
+
+    def test_a_total_is_bold_across_the_row(self):
+        assert _rows_html(self.build())[4].count("font-weight: bold") == 2
+
+    def test_a_total_is_never_striped(self):
+        component = DataTable(
+            ["A", "B"],
+            [TableRow(["x", "1"]), TableRow(["Total", "1"], kind="total")],
+        )
+        # The total sits where an alternating tint would otherwise fall.
+        assert "#F8F7F5" not in _rows_html(component)[1]
+
+    def test_a_subhead_carries_its_label_in_the_label_face(self):
+        row = _rows_html(self.build())[1]
+        assert "Fixed income" in row
+        assert row.count("font-weight: bold") == 2
+
+    def test_a_subhead_takes_the_highlight_tint(self):
+        assert "#F8F7F5" in _rows_html(self.build())[1]
+
+    def test_a_subhead_is_padded_to_the_tables_width(self):
+        """
+        One cell is the honest way to write a heading; the caller should not
+        have to spell out the empties for a band that spans the table.
+        """
+        component = self.build()
+        assert len(component.rows[1].cells) == 2
+        assert component.rows[1].cells[1].text == ""
+
+    def test_a_subhead_may_still_be_written_out_in_full(self):
+        one = DataTable(["A", "B"], [TableRow(["Group"], kind="subhead")])
+        full = DataTable(["A", "B"], [TableRow(["Group", ""], kind="subhead")])
+        assert _html(one) == _html(full)
+
+    def test_a_wrong_length_row_is_still_a_mistake(self):
+        with pytest.raises(ValidationError, match="row 0 has 2 cells"):
+            DataTable(["A", "B", "C"], [TableRow(["Group", "stray"], kind="subhead")])
+
+    def test_an_unknown_kind_raises_listing_the_vocabulary(self):
+        with pytest.raises(ValidationError, match="table_row.kind"):
+            TableRow(["a"], kind="footer")
+
+
+class TestStripingCountsDataRows:
+    def test_a_subhead_does_not_invert_the_rows_beneath_it(self):
+        """
+        The bug a naive index-parity implementation ships: everything below
+        the first subhead stripes the wrong way.
+        """
+        component = TestRowKinds.build()
+        tinted = ["#F8F7F5" in row for row in _rows_html(component)]
+        # data rows are indices 0, 2, 3 → the second data row is the tinted one
+        assert tinted[0] is False
+        assert tinted[2] is True
+        assert tinted[3] is False
+
+    def test_a_total_does_not_consume_a_stripe(self):
+        component = DataTable(
+            ["A", "B"],
+            [
+                TableRow(["x", "1"]),
+                TableRow(["Sub", "1"], kind="total"),
+                TableRow(["y", "2"]),
+            ],
+        )
+        rows = _rows_html(component)
+        assert "#F8F7F5" not in rows[0]
+        assert "#F8F7F5" in rows[2], "the next data row is still the alternating one"
+
+
+class TestRowKindsProjectInText:
+    """
+    The half most likely to be forgotten: a total indistinguishable from a
+    data row in the text part is a total only half the readers can find.
+    """
+
+    def test_a_total_is_ruled_off_above(self):
+        lines = TestRowKinds.build().text().splitlines()
+        assert lines[-2].startswith("---")
+        assert lines[-1].startswith("Total")
+
+    def test_the_rule_matches_the_headers(self):
+        lines = TestRowKinds.build().text().splitlines()
+        assert lines[-2] == lines[1]
+
+    def test_a_subhead_is_a_bare_label_on_its_own_line(self):
+        """
+        Unpadded: plain text has no merged cell, and padding a heading into
+        columns would read as a data row with an empty field.
+        """
+        assert "Fixed income" in TestRowKinds.build().text().splitlines()
+
+    def test_a_subhead_line_carries_no_column_padding(self):
+        line = next(
+            row for row in TestRowKinds.build().text().splitlines() if "Fixed income" in row
+        )
+        assert line == "Fixed income"
+
+
+class TestARowKindIsChromeNotData:
+    def test_it_takes_no_caller_colours(self):
+        """
+        The distinction #118 and #119 are easy to conflate on: a cell's
+        colour is the caller's claim about a figure, a row's kind is a
+        statement about the row's role — so it renders from theme tokens and
+        the vocabulary is a closed set of three words.
+        """
+        import dataclasses
+
+        assert {k.value for k in RowKind} == {"data", "total", "subhead"}
+        names = {f.name for f in dataclasses.fields(TableRow)}
+        assert not [n for n in names if "color" in n or "background" in n], names
+
+    def test_a_cell_colour_still_wins_inside_a_total(self):
+        """
+        The two axes compose: the row says *this is a summary*, the cell says
+        *this figure is down*. Neither erases the other.
+        """
+        component = DataTable(
+            ["A", "B"],
+            [TableRow(["Total", Cell("-1.2%", color="#B85450")], kind="total")],
+        )
+        assert "#B85450" in _rows_html(component)[0]

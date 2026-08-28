@@ -10,7 +10,7 @@ import re
 from dataclasses import InitVar, dataclass, field, fields
 from typing import TYPE_CHECKING, Any
 
-from .enums import ColumnAlign, ColumnKind, SizeTheme
+from .enums import ColumnAlign, ColumnKind, RowKind, SizeTheme
 from .exceptions import ValidationError
 
 if TYPE_CHECKING:  # pragma: no cover - import cycle: images/regions import from here
@@ -664,12 +664,24 @@ class TableRow:
     Passing ``colors`` *and* a ``Cell`` that carries its own ``color`` raises
     rather than silently picking one, exactly as ``EmailMetadata`` does for
     its flat region keywords.
+
+    ``kind`` says what the row *is* — see :class:`~svc.builder.enums.RowKind`.
+    It is chrome rather than data: a total is ruled and bolded from theme
+    tokens, and unlike a cell's colour it takes nothing from the caller but
+    the word. A ``subhead`` may be given a single cell and is padded to the
+    table's width, because a merged cell has no honest plain-text projection
+    and making the caller write the empty ones would be ceremony.
     """
 
     cells: list[Any] = field(default_factory=list)
     colors: InitVar[list[str] | None] = None
+    kind: str = RowKind.DATA
 
     def __post_init__(self, colors: list[str] | None) -> None:
+        if self.kind not in tuple(RowKind):
+            raise ValidationError(
+                f"'table_row.kind' must be one of {[k.value for k in RowKind]}, got: {self.kind!r}"
+            )
         self.cells = [
             coerce_cell(cell, f"table_row.cells[{i}]") for i, cell in enumerate(self.cells)
         ]

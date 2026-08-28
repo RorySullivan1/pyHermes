@@ -7,7 +7,10 @@
                resolved (#117), so this template decides neither. A column's
                position means nothing here; its `kind` carries the face and
                its `align` the alignment.
-    rows     — List of dicts with keys: cells (list), alt (bool). Each cell
+    rows     — List of dicts with keys: kind, cells (list), alt (bool). A
+               `total` is ruled off above and bold across; a `subhead` is a
+               tinted label band. Both draw from theme tokens only — a row's
+               kind is chrome, unlike a cell's colour, which is data. Each cell
                carries text, align, color, background and is_text — all
                resolved (#118), so this template chooses none of them. An
                empty color or background means "the theme's".
@@ -26,9 +29,10 @@
   </tr>
   {# Data rows #}
 {% for row in rows %}
-  <tr style="border-bottom: 1px solid {% if loop.last %}{{ theme.palette.rule }}{% else %}{{ theme.palette.rule_subtle }}{% endif %};">
+  <tr style="border-bottom: 1px solid {% if loop.last %}{{ theme.palette.rule }}{% else %}{{ theme.palette.rule_subtle }}{% endif %};{% if row.kind == "total" %} border-top: 2px solid {{ theme.palette.rule_dark }};{% endif %}">
 {% for cell in row.cells %}
-    <td style="font-family: {% if cell.is_text %}{{ font.label }}{% else %}{{ font.numeric }}{% endif %}; font-size: {{ size.type.secondary }}px;{% if not cell.is_text %} font-weight: bold;{% endif %} line-height: {{ size.type.body_line | percent }}; color: {% if cell.color %}{{ cell.color | validate_hex_color }}{% elif cell.is_text %}{{ theme.text.primary }}{% else %}{{ theme.semantic.neutral }}{% endif %}; text-align: {{ cell.align }}; padding: {{ size.component.table_cell_pad }}px; background-color: {% if cell.background %}{{ cell.background | validate_hex_color }}{% elif row.alt %}{{ theme.palette.row_alt }}{% else %}{{ theme.palette.surface }}{% endif %};">{{ cell.text | escape_html }}</td>
+{% set subhead = row.kind == "subhead" %}
+    <td style="font-family: {% if subhead or cell.is_text %}{{ font.label }}{% else %}{{ font.numeric }}{% endif %}; font-size: {{ size.type.secondary }}px;{% if subhead or row.kind == "total" or not cell.is_text %} font-weight: bold;{% endif %} line-height: {{ size.type.body_line | percent }}; color: {% if subhead %}{{ theme.text.heading }}{% elif cell.color %}{{ cell.color | validate_hex_color }}{% elif cell.is_text %}{{ theme.text.primary }}{% else %}{{ theme.semantic.neutral }}{% endif %}; text-align: {{ cell.align }}; padding: {{ size.component.table_cell_pad }}px; background-color: {% if subhead %}{{ theme.palette.highlight_tint }}{% elif cell.background %}{{ cell.background | validate_hex_color }}{% elif row.alt %}{{ theme.palette.row_alt }}{% else %}{{ theme.palette.surface }}{% endif %};">{{ cell.text | escape_html }}</td>
 {% endfor %}
   </tr>
 {% endfor %}

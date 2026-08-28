@@ -17,10 +17,10 @@ import warnings
 from typing import Any
 
 from .engine import Renderer
-from .enums import CardOrientation, ColumnKind, ImageAlign
+from .enums import CardOrientation, ColumnKind, ImageAlign, RowKind
 from .exceptions import ValidationError
 from .images import EmailImage, ImageAsset, coerce_image
-from .models import Card, Column, NumberedItem, TableRow, _validate_url, coerce_column
+from .models import Card, Cell, Column, NumberedItem, TableRow, _validate_url, coerce_column
 from .textgen import format_link, html_to_text, join_blocks, link_line, table, wrap
 
 
@@ -258,6 +258,12 @@ class DataTable(Component):
         columns = [coerce_column(h, f"data_table.headers[{i}]") for i, h in enumerate(headers)]
         for i, row in enumerate(rows):
             row.validate()
+            # A subhead labels the rows beneath it, so one cell is the honest
+            # way to write one — it is padded to the table's width here rather
+            # than making the caller spell out the empties. Anything between
+            # one and the full width is still a mistake worth catching.
+            if row.kind == RowKind.SUBHEAD and len(row.cells) == 1 < len(columns):
+                row.cells = row.cells + [Cell() for _ in range(len(columns) - 1)]
             if len(row.cells) != len(columns):
                 raise ValidationError(
                     f"DataTable row {i} has {len(row.cells)} cells but there are "
@@ -292,16 +298,31 @@ class DataTable(Component):
                 self.headers,
                 [[cell.text for cell in row.cells] for row in self.rows],
                 aligns=[column.align for column in self.resolved_columns()],
+                kinds=[row.kind for row in self.rows],
             ),
             wrap("\n".join(filter(None, (self.source, self.as_of)))),
         )
 
+    def _striping(self) -> dict[int, bool]:
+        """Which rows take the alternating tint, counting data rows only."""
+        alt: dict[int, bool] = {}
+        seen = 0
+        for row in self.rows:
+            if row.kind == RowKind.DATA:
+                alt[id(row)] = seen % 2 == 1
+                seen += 1
+            else:
+                alt[id(row)] = False
+        return alt
+
     def context(self) -> dict[str, Any]:
         columns = self.resolved_columns()
+        alt_by_row = self._striping()
         return {
             "columns": [{"header": c.header, "align": c.align, "kind": c.kind} for c in columns],
             "rows": [
                 {
+                    "kind": r.kind,
                     "cells": [
                         {
                             "text": cell.text,
@@ -313,9 +334,11 @@ class DataTable(Component):
                         }
                         for cell, column in zip(r.cells, columns, strict=True)
                     ],
-                    "alt": i % 2 == 1,  # alternating row background
+                    # Striping counts *data* rows: a subhead in the middle of a
+                    # table must not invert the tint of everything beneath it.
+                    "alt": alt_by_row[id(r)],
                 }
-                for i, r in enumerate(self.rows)
+                for r in self.rows
             ],
             "source": self.source,
             "as_of": self.as_of,

@@ -128,3 +128,29 @@ class ColumnKind(StrEnum):
     TEXT = "text"
     #: Figures. Set in the numeric face, bold, aligned right.
     NUMERIC = "numeric"
+
+
+class RowKind(StrEnum):
+    """
+    What a row of a :class:`~svc.builder.components.DataTable` *is*.
+
+    A financial table is rarely uniform: it carries figures, the subtotals
+    that summarise them, and the headings that group them. Before #119 all
+    three rendered identically and the only way to signal a total was to put
+    the word in a cell and hope.
+
+    This is deliberately **not** the same axis as a cell's colour. A cell's
+    colour is the caller's claim about a *figure*; a row's kind is a
+    statement about the row's role in the table, so it renders from theme
+    tokens and takes no caller colours at all.
+    """
+
+    #: An ordinary row of figures. Stripes with its neighbours.
+    DATA = "data"
+    #: A total or subtotal. Ruled off above, bold across, and never striped —
+    #: a reader should find it without counting rows.
+    TOTAL = "total"
+    #: A heading that groups the rows beneath it. Its first cell carries the
+    #: label; the rest render empty, because a merged cell has no honest
+    #: plain-text projection.
+    SUBHEAD = "subhead"
