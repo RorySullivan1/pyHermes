@@ -1335,6 +1335,17 @@ carrying arithmetic nobody had done in Python. `TwoColumn` and `ThreeColumn` sha
 fails if a `col-*.html` ever comes back. The attribute width and the CSS width come from one
 computed value, asserted per column at frames the email has never shipped at.
 
+**A data table tightens its cells at the breakpoint, and cannot do more (#132).**
+`table_cell_pad_mobile` is the only lever a narrow viewport has on a table: a `CardGroup`
+collapses because a KPI strip *becomes* the vertical card layout, but stacking a table's
+columns would destroy the alignment that is the only reason to render one — the same
+reasoning that refuses `colspan`. Tightening the cells buys a measured 24px on a
+five-column table, which is enough for the 375px viewport the harness asserts and not
+enough for 320. **It is a mitigation with a measured headroom, not a guarantee**: a wide
+enough table still overflows, and that limit is the caller's to design around. The rule
+selects on the table rather than on every cell — one class per table against ~19 bytes per
+cell, which the clipping budget notices.
+
 **`.kpi-cell` reads `card_pad_*` on purpose.** On a phone a horizontal KPI strip *becomes*
 the vertical card layout, so it is padded like one rather than from a second pair of tokens.
 That is what stops a compact email rendering airier on a phone than on a desktop, and a test
@@ -1826,12 +1837,12 @@ Reach for these rather than improvising:
   themes), #46 (colour themes), #52 (delivery), #53 (plain text), #54 (QA harness), #55
   (footer region), #56 (typography), #87 (the `Header` region), #88 (banner region), #98
   (the footer box), #116 (the expressive `DataTable`) and **#124 (alignment)**. #115 (the
-  `language` field) is done too, and so is **#129**. The one thing still open is **#132** —
-  a five-column `DataTable` overflows a 375px viewport by 24px, found by widening #76's
-  regression test from three fixtures to the whole gallery. A data table has no mobile
-  collapse and should not get one by default, so it needs a decision rather than a width
-  nudge; it is listed in `KNOWN_MOBILE_OVERFLOW` on `qa/lint.py`'s `DEFERRED_RULES`
-  pattern, with a second test asserting the exemption still applies.
+  `language` field) is done too, and so are **#129** and **#132**. The one thing still open
+  is **#133** — the `spacious` masthead overflows a *360px* viewport by 6px, measured while
+  fixing #132 and pre-existing. It is really a scope question the repo has never answered:
+  `qa/screenshots.py` claims two viewports, 1000 and 375, and 360 is a common Android width
+  that is neither asserted nor disclaimed. `KNOWN_MOBILE_OVERFLOW` is **empty** again, and
+  the mechanism stays for the next such finding.
 - **The alignment epic (#124) is complete** — #125 normalised the two spellings, #126 gave
   containers an `align`, #127 gave the five prose components one, #128 landed
   `aligned_layout` and these docs. See *Alignment — geometry, not a fourth design axis*

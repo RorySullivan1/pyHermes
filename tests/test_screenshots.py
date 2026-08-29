@@ -405,11 +405,13 @@ class TestTheMastheadPairsItsLines:
 #: ``qa.lint``'s ``DEFERRED_RULES``: a check that arrives red teaches everyone
 #: to ignore it, so a finding is *filed* and listed here instead.
 #:
-#: ``rich_table`` is a five-column ``DataTable``, and a data table has no
-#: mobile collapse — stacking its columns would destroy the alignment that is
-#: the only reason to render one. That is a real design question with its own
-#: client-testing burden, not a width to nudge.
-KNOWN_MOBILE_OVERFLOW = {"rich_table": "#132"}
+#: **Empty, and that is the point.** ``rich_table`` was the one entry, added
+#: by #129 when widening this test from three fixtures to the gallery found
+#: it overflowing by 24px; #132 gave the data table a tighter cell padding at
+#: the breakpoint and the entry came out. The mechanism stays for the next
+#: such finding, which belongs here rather than shipped red or quietly
+#: dropped.
+KNOWN_MOBILE_OVERFLOW: dict[str, str] = {}
 
 
 @pytest.fixture(scope="module")

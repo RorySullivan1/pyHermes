@@ -36,6 +36,10 @@
          block, so the property it lacks costs Outlook nothing. */
       .kpi-cell { display:block !important; width:100% !important; box-sizing:border-box !important; border-right:none !important; border-bottom:1px solid #D6D2CB !important; padding:14px 16px !important; }
       .kpi-cell-last { border-bottom:none !important; }
+      /* A data table cannot collapse — stacking its columns would destroy the
+         alignment that is the only reason to render one — so padding is what
+         gives a narrow viewport its room back. See #132. */
+      .data-table th, .data-table td { padding:6px !important; }
     }
     /* Force light rendering in all dark mode contexts */
     :root { color-scheme: light only; }

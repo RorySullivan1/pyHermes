@@ -36,6 +36,10 @@
          block, so the property it lacks costs Outlook nothing. */
       .kpi-cell { display:block !important; width:100% !important; box-sizing:border-box !important; border-right:none !important; border-bottom:1px solid #D6D2CB !important; padding:14px 16px !important; }
       .kpi-cell-last { border-bottom:none !important; }
+      /* A data table cannot collapse — stacking its columns would destroy the
+         alignment that is the only reason to render one — so padding is what
+         gives a narrow viewport its room back. See #132. */
+      .data-table th, .data-table td { padding:6px !important; }
     }
     /* Force light rendering in all dark mode contexts */
     :root { color-scheme: light only; }
@@ -294,7 +298,7 @@ background-color:#3A2B3F; background-size:cover;
       <tr>
         <td class="mobile-pad" style="padding:16px 32px 14px 32px; font-family: Arial, Helvetica, sans-serif; font-size:14px; color:#3B3B3B; line-height:172%;">
           <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; font-style: italic; color: #7A7A72; margin: 0 0 12px 0; line-height: 140%;">Long-short, gross of costs</p>
-<table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
+<table class="data-table" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
   <tr style="border-top: 1px solid #D6D2CB; border-bottom: 2px solid #2C3E50;">
     <th scope="col" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 172%; text-align: left; padding: 12px; letter-spacing: 0.5px;">Factor</th>
     <th scope="col" align="right" style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 172%; text-align: right; padding: 12px; letter-spacing: 0.5px;">1M</th>
