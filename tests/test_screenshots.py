@@ -22,6 +22,7 @@ import pytest
 from qa.fixtures import all_fixtures
 from qa.screenshots import (
     DEVICE_SCALE_FACTOR,
+    SUPPORTED_WIDTHS,
     VIEWPORTS,
     ScreenshotError,
     _launch,
@@ -817,3 +818,70 @@ class TestEveryColumnCellFillsItsColumn:
         """
         total = sum(len(rows) for rows in column_fill.values())
         assert total >= 80, f"only {total} column cells measured; the probe is not matching"
+
+
+# ──────────────────────────────────────────────────────────────────────
+# The supported viewport range (#133)
+# ──────────────────────────────────────────────────────────────────────
+
+
+@pytest.fixture(scope="module")
+def widths_measured():
+    """Every fixture's document width at every supported viewport."""
+    if not available():
+        pytest.skip('no browser; screenshots are the optional "[qa]" extra')
+
+    measured = {}
+    with _load_playwright()() as playwright:
+        browser = _launch(playwright)
+        for name in FIXTURE_NAMES:
+            html = all_fixtures()[name]().render()
+            for width in SUPPORTED_WIDTHS:
+                page = browser.new_page(viewport={"width": width, "height": 900})
+                page.route("**/*", lambda route: route.abort())
+                page.set_content(html)
+                measured[(name, width)] = page.evaluate(
+                    "() => Math.round(document.documentElement.scrollWidth)"
+                )
+                page.close()
+        browser.close()
+    return measured
+
+
+@requires_browser
+class TestTheSupportedViewportsAreHonoured:
+    """
+    #133 asked which viewports pyHermes claims, and this is the answer made
+    checkable: ``SUPPORTED_WIDTHS`` is the claim, and no gallery email may
+    exceed any width in it.
+
+    Separate from ``TestNothingOverflowsItsViewport``, which measures the
+    captured *screenshots*. That one asks "is the review artifact sane"; this
+    one asks "does the package keep its promise", and the two would drift the
+    moment a supported width stopped being a captured one.
+    """
+
+    def test_no_fixture_exceeds_a_supported_width(self, widths_measured):
+        offenders = [
+            f"{name} at {width}px: {got}"
+            for (name, width), got in widths_measured.items()
+            if got > width
+        ]
+        assert not offenders, (
+            "a reader would scroll sideways at a width the package claims to "
+            f"support: {offenders}. Either fix the email or change the claim in "
+            "SUPPORTED_WIDTHS — and if the claim changes, say so in the docs."
+        )
+
+    def test_every_captured_viewport_is_a_supported_one(self):
+        """
+        The two lists are allowed to differ — a width can be asserted without
+        being screenshotted — but not in this direction: capturing a viewport
+        the package does not claim would put an overflowing image in front of
+        a reviewer with nothing failing.
+        """
+        captured = {width for width, _ in VIEWPORTS.values()}
+        assert captured <= set(SUPPORTED_WIDTHS), (
+            f"captured viewports {sorted(captured - set(SUPPORTED_WIDTHS))} are not in "
+            "SUPPORTED_WIDTHS"
+        )

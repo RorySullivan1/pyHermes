@@ -200,6 +200,16 @@ the tag registry: whether `fr-CA` is registered is not this library's business. 
 layout is *not* included; the attribute alone would claim a support the table geometry does
 not honour.
 
+## Viewports
+
+Emails are built for a **680px frame on desktop and a 375px floor on mobile** — the two
+widths the QA harness screenshots and asserts. Below 375 an email may scroll sideways: a
+wide `DataTable` and an image sized for the desktop column are the first things to overflow.
+
+If you need a narrower floor, measure it — `python -m qa.preview <fixture> --screenshot`
+captures both viewports, and `SUPPORTED_WIDTHS` in `qa/screenshots.py` is where the claim
+lives.
+
 ## Alignment
 
 Where a section's copy sits. Set it on the container; a block inside can disagree.

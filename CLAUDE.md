@@ -258,6 +258,16 @@ is ever wanted (an explicit non-goal of #54's first cut), that recording is what
 whether two sets are even comparable, and pinning becomes a deliberate act rather than one
 inherited by accident.
 
+- **375px is the supported floor, and #133 is where that was decided rather than
+  implied.** `SUPPORTED_WIDTHS` is the claim; a test asserts no gallery email exceeds any
+  width in it, separately from the one that measures the captured screenshots — the two
+  would drift the moment a supported width stopped being a captured one. Measured when the
+  floor was set: 360px fails for `spacious_size` alone, by 6px, and 320px for five fixtures
+  by 19–46px. **The obvious global fix is disqualified, not deferred**: adding
+  `img { width:auto; max-width:100% }` under the breakpoint clears 360 outright, and with
+  images blocked — Outlook desktop's default — it collapses every image to its alt-text box
+  (128px to 63, 320 to 339, 80 to 165), destroying the display width `img-width-attr`
+  exists as an *error* to enforce. A narrower floor needs per-image work, not one rule.
 - **`cid:` is rewritten to a data URI for the screenshot only.** A browser has no MIME
   message, so every attached image would otherwise be a broken-image icon and the screenshot
   could not do its one job. The bytes come from `Email.assets()`, so the substitution is
@@ -1837,12 +1847,12 @@ Reach for these rather than improvising:
   themes), #46 (colour themes), #52 (delivery), #53 (plain text), #54 (QA harness), #55
   (footer region), #56 (typography), #87 (the `Header` region), #88 (banner region), #98
   (the footer box), #116 (the expressive `DataTable`) and **#124 (alignment)**. #115 (the
-  `language` field) is done too, and so are **#129** and **#132**. The one thing still open
-  is **#133** — the `spacious` masthead overflows a *360px* viewport by 6px, measured while
-  fixing #132 and pre-existing. It is really a scope question the repo has never answered:
-  `qa/screenshots.py` claims two viewports, 1000 and 375, and 360 is a common Android width
-  that is neither asserted nor disclaimed. `KNOWN_MOBILE_OVERFLOW` is **empty** again, and
-  the mechanism stays for the next such finding.
+  `language` field) is done too, and so are **#129**, **#132** and **#133**. **Every filed
+  issue is now closed.** #133 answered the scope question it raised — 375px is the
+  supported floor, `SUPPORTED_WIDTHS` states it and a test keeps it — and corrected its own
+  diagnosis on the way: the 360px overflow is a chart image four pixels too wide for
+  `spacious`'s mobile content box, not the masthead the issue named.
+  `KNOWN_MOBILE_OVERFLOW` is **empty**, and the mechanism stays for the next such finding.
 - **The alignment epic (#124) is complete** — #125 normalised the two spellings, #126 gave
   containers an `align`, #127 gave the five prose components one, #128 landed
   `aligned_layout` and these docs. See *Alignment — geometry, not a fourth design axis*
