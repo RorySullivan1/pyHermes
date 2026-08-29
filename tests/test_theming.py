@@ -245,7 +245,7 @@ class TestTheAuditIsTrue:
         # about a *figure*; the palette's authority is over surfaces the theme
         # owns, which is why these sit outside the audit rather than in it.
         caller_data = {"#4A7C59", "#B85450", "#8B6F47", "#2E5F7F", "#FBF3E2"}
-        assert used - known - caller_data - _region_colours() == set()
+        assert used - known - caller_data - _region_colours() - _container_colours() == set()
 
     def test_the_stale_palette_comment_is_gone(self):
         """
@@ -359,6 +359,32 @@ def _theme_resolving_regions() -> list[type]:
 
 
 _HEX = re.compile(r"^#[0-9A-Fa-f]{6}$")
+
+
+def _container_colours() -> set[str]:
+    """
+    Every hex a gallery fixture's *containers* put on the page themselves.
+
+    The fourth legitimate source, and the oldest: ``Container.background_color``
+    is the **original** entry in the closed colour list — the section band whose
+    ground the caller supplies. It went unaudited until #128, for the plain
+    reason that no fixture had ever set it, so no rendered colour needed
+    accounting for.
+
+    Walked off the built sections rather than hand-listed, for
+    :func:`_region_colours`'s reason: a list of allowed colours maintained by
+    hand is the thing that drifted in the first place, and a fixture that
+    tints a band later is covered without anyone remembering to widen this.
+    """
+    from qa.fixtures import all_fixtures
+
+    found: set[str] = set()
+    for build in all_fixtures().values():
+        for section in build()._sections:
+            colour = getattr(section, "background_color", None)
+            if isinstance(colour, str) and _HEX.match(colour):
+                found.add(colour)
+    return found
 
 
 def _region_colours() -> set[str]:

@@ -20,8 +20,73 @@ from .engine import Renderer
 from .enums import CardOrientation, ColumnKind, ImageAlign, RowKind
 from .exceptions import ValidationError
 from .images import EmailImage, ImageAsset, coerce_image
-from .models import Card, Cell, Column, NumberedItem, TableRow, _validate_url, coerce_column
+from .models import (
+    Card,
+    Cell,
+    Column,
+    NumberedItem,
+    TableRow,
+    _validate_align,
+    _validate_url,
+    coerce_column,
+)
 from .textgen import format_link, html_to_text, join_blocks, link_line, table, wrap
+
+
+class CopyAlignment:
+    """
+    The ``align`` a prose component takes — declared once, mixed into five.
+
+    ``BoxSurface``'s shape, for ``BoxSurface``'s reason: which components
+    take an alignment is then **structural** rather than a convention
+    somebody has to keep re-checking, and
+    ``TestOnlyProseComponentsTakeAnAlignment`` reads the class hierarchy
+    rather than a hand-written list.
+
+    **Three components deliberately do not mix this in.**
+    :class:`CardGroup` and :class:`DataTable` align *structurally* — a KPI
+    cell is centred because it is a KPI cell, and a table column resolves
+    from its ``kind`` (#117, #118). A second, coarser knob would be a
+    competing answer to a question already answered, and it could only
+    either override the column resolution (silently discarding
+    ``Column.align``) or be ignored by it (a parameter that does nothing).
+    :class:`ImageBlock` is excluded for the plain reason that it already
+    has an ``align``, and that one places a *block* rather than aligning
+    text — see :class:`~svc.builder.enums.ImageAlign`.
+
+    Unset means *inherit*: the component emits no declaration and takes
+    whatever its container said, by ordinary CSS inheritance. There is no
+    ``resolved_align()`` here on purpose — see :class:`Container` for why
+    prose differs from a table cell.
+
+    **Known limitation, filed as #130.** A component's declaration lands on
+    the element the template emits. Where a caller wraps their content in
+    their own paragraph tags — the documented pattern for
+    :attr:`TextBlock.content` and :attr:`NumberedItem.body` — a ``p``
+    cannot contain a ``p``, so the parser auto-closes the styled element
+    and the copy becomes its *sibling*, inheriting from the container's
+    cell instead. That predates this field and costs the body copy its
+    ``font-family`` too; alignment is merely the first property whose
+    fallback differs visibly. Plain text and inline markup are unaffected.
+    """
+
+    #: What the caller set, or ``""`` for *inherit from the container*.
+    align: str = ""
+
+    def validate_alignment(self, align: str | None) -> str:
+        """Validate and normalise this component's alignment."""
+        _validate_align(align or "", f"{type(self).__name__.lower()}.align")
+        return align or ""
+
+    def alignment_context(self) -> dict[str, Any]:
+        """
+        The alignment key every prose template reads.
+
+        Always present, empty when unset: the templates gate on it with
+        ``{% if align %}``, and under ``StrictUndefined`` an *undefined*
+        name raises rather than testing falsey.
+        """
+        return {"align": self.align}
 
 
 class Component:
@@ -372,7 +437,7 @@ class DataTable(Component):
         }
 
 
-class ChartBlock(Component):
+class ChartBlock(CopyAlignment, Component):
     """
     A chart image, bordered, with source attribution.
 
@@ -403,9 +468,11 @@ class ChartBlock(Component):
         source: str = "",
         subtitle: str | None = None,
         width: int | None = None,
+        align: str | None = None,
     ):
         if not image_url:
             raise ValidationError("ChartBlock requires an image_url.")
+        self.align = self.validate_alignment(align)
         self.image = coerce_image(
             image_url, alt=alt_text, field_name="chart.image_url", width=width
         )
@@ -441,6 +508,7 @@ class ChartBlock(Component):
             "chart_image_width": self.image.width or "",
             "chart_source": self.source,
             "subtitle": self.subtitle,
+            **self.alignment_context(),
         }
 
 
@@ -528,7 +596,7 @@ class ImageBlock(Component):
 # ──────────────────────────────────────────────────────────────────────
 
 
-class TextBlock(Component):
+class TextBlock(CopyAlignment, Component):
     """
     Simple narrative prose block.
 
@@ -540,9 +608,10 @@ class TextBlock(Component):
 
     template_path = "text/text-block.html"
 
-    def __init__(self, content: str, subtitle: str | None = None):
+    def __init__(self, content: str, subtitle: str | None = None, align: str | None = None):
         if not content:
             raise ValidationError("TextBlock requires content.")
+        self.align = self.validate_alignment(align)
         self.content = content
         self.subtitle = subtitle
 
@@ -554,10 +623,11 @@ class TextBlock(Component):
         return {
             "text_content": self.content,
             "subtitle": self.subtitle,
+            **self.alignment_context(),
         }
 
 
-class ContactBlock(Component):
+class ContactBlock(CopyAlignment, Component):
     """
     A contact call-to-action card: heading, blurb, and a button.
 
@@ -575,9 +645,11 @@ class ContactBlock(Component):
         description: str = "",
         cta_label: str = "Contact Us",
         cta_url: str = "",
+        align: str | None = None,
     ):
         if not heading:
             raise ValidationError("ContactBlock requires a heading.")
+        self.align = self.validate_alignment(align)
         if not cta_url:
             raise ValidationError("ContactBlock requires a cta_url.")
         _validate_url(cta_url, "ContactBlock.cta_url")
@@ -607,10 +679,11 @@ class ContactBlock(Component):
             "contact_description": self.description,
             "contact_cta_label": self.cta_label,
             "contact_url": self.cta_url,
+            **self.alignment_context(),
         }
 
 
-class NumberedList(Component):
+class NumberedList(CopyAlignment, Component):
     """
     Numbered theme / item list (e.g. "Key Themes" section).
 
@@ -621,9 +694,15 @@ class NumberedList(Component):
 
     template_path = "text/numbered-list.html"
 
-    def __init__(self, items: list[NumberedItem], subtitle: str | None = None):
+    def __init__(
+        self,
+        items: list[NumberedItem],
+        subtitle: str | None = None,
+        align: str | None = None,
+    ):
         if not items:
             raise ValidationError("NumberedList requires at least one item.")
+        self.align = self.validate_alignment(align)
         for item in items:
             item.validate()
         self.items = items
@@ -649,18 +728,14 @@ class NumberedList(Component):
     def context(self) -> dict[str, Any]:
         return {
             "items": [
-                {
-                    "number": it.number,
-                    "title": it.title,
-                    "body": it.body,
-                }
-                for it in self.items
+                {"number": it.number, "title": it.title, "body": it.body} for it in self.items
             ],
             "subtitle": self.subtitle,
+            **self.alignment_context(),
         }
 
 
-class AuthorBlock(Component):
+class AuthorBlock(CopyAlignment, Component):
     """
     Author attribution byline.
 
@@ -679,9 +754,11 @@ class AuthorBlock(Component):
         job_title: str = "",
         email: str = "",
         subtitle: str | None = None,
+        align: str | None = None,
     ):
         if not name:
             raise ValidationError("AuthorBlock requires a name.")
+        self.align = self.validate_alignment(align)
         self.name = name
         self.job_title = job_title
         self.email = email
@@ -698,4 +775,5 @@ class AuthorBlock(Component):
             "author_job_title": self.job_title,
             "author_email": self.email,
             "subtitle": self.subtitle,
+            **self.alignment_context(),
         }

@@ -128,7 +128,7 @@ tests/                  — pytest unit suite (validation, error paths, size lim
 ## The fixture gallery — `qa/fixtures`
 
 The shared set of representative emails every later QA tool consumes (#57, the first step of
-epic #54). Thirteen fixtures, each a `build()` returning a built `Email`, enumerated through
+epic #54). Fourteen fixtures, each a `build()` returning a built `Email`, enumerated through
 `all_fixtures()` so a consumer never imports them one by one:
 
 | Fixture | What it is for |
@@ -144,6 +144,7 @@ epic #54). Thirteen fixtures, each a `build()` returning a built `Email`, enumer
 | `custom_footer` | Both footer axes at once (#101), closing epic #98 — the coloured box surface (`align`, `background_color`, `text_color`) and a custom `LinkRow` with a link set that is neither the default pair nor the same length. Paired with the **default header** on purpose, so the two boxes are independent in the diff and their contrast is visible in a screenshot; it also carries the only `mailto:` link in the gallery, since a scheme check must keep passing what it allows and not only reject what it does not |
 | `modern_fonts` | The `modern` preset (#107), the third axis's A/B. Renders **`kitchen_sink`'s own content** at one non-default `font_theme`, the `compact_size` shape exactly. It is the first artifact that can show `heading` and `body` are separate **roles**: they share a stack in the default, so until a preset moved one and held the other, nothing could tell them apart. It also pins that the `[if mso]` fallback moves with the rest — a literal there would leave an email custom-faced in Gmail and Georgia in Outlook, the half-themed failure in the client hardest to check. Its diff against `kitchen_sink` is *only* `font-family` values, and a test asserts that by stripping them and comparing the rest byte for byte |
 | `rich_table` | Every `DataTable` axis at once (#121), closing epic #116 — a caption, a second **text** column, a **centred** column, per-cell colours *and* backgrounds, an alignment override, `subhead` groupings and a `total`. **Two tables on purpose**: the second has a **numeric first column**, which is the only way a golden can show that the row-header rule keys on the column's resolved *kind* rather than on position — with one table, "the first cell is a row header" and "a text first column is a row header" pin identically. Its body is short for `custom_banner`'s reason, and its theme, size and font stay default so no preset moves alongside a table axis |
+| `aligned_layout` | Every alignment axis at once (#128), closing epic #124 — a centred section whose **title follows**, a component **overriding** its container, a **right-aligned** band holding a `CardGroup` and a `DataTable` that do not move, and aligned two- and three-column splits. The band is right-aligned on purpose: a centred one could not tell "the KPI strip kept its own alignment" from "it inherited the section's". Body short, theme/size/font default, for `rich_table`'s reasons. It also carries the gallery's only explicit `Container.background_color` — widening the field-completeness rule to containers found that the **original** entry in the closed colour list had never been set by any fixture |
 | `minimal_footer` | A minimal-footer build (#66), the same argument at the other end. Paired with the **default** header on purpose: the two region choices are independent, and swapping both at once could not say which one moved a byte |
 
 **Determinism is the rule the gallery rests on**, and it is not a style preference: Content-IDs
@@ -257,6 +258,16 @@ is ever wanted (an explicit non-goal of #54's first cut), that recording is what
 whether two sets are even comparable, and pinning becomes a deliberate act rather than one
 inherited by accident.
 
+- **375px is the supported floor, and #133 is where that was decided rather than
+  implied.** `SUPPORTED_WIDTHS` is the claim; a test asserts no gallery email exceeds any
+  width in it, separately from the one that measures the captured screenshots — the two
+  would drift the moment a supported width stopped being a captured one. Measured when the
+  floor was set: 360px fails for `spacious_size` alone, by 6px, and 320px for five fixtures
+  by 19–46px. **The obvious global fix is disqualified, not deferred**: adding
+  `img { width:auto; max-width:100% }` under the breakpoint clears 360 outright, and with
+  images blocked — Outlook desktop's default — it collapses every image to its alt-text box
+  (128px to 63, 320 to 339, 80 to 165), destroying the display width `img-width-attr`
+  exists as an *error* to enforce. A narrower floor needs per-image work, not one rule.
 - **`cid:` is rewritten to a data URI for the screenshot only.** A browser has no MIME
   message, so every attached image would otherwise be a broken-image icon and the screenshot
   could not do its one job. The bytes come from `Email.assets()`, so the substitution is
@@ -527,7 +538,7 @@ them.
 | Stays on `EmailMetadata` (facts / constraints) | Lives on the region (presentation) |
 |---|---|
 | `header_disclaimer` | `Header.align`, `background_color`, `text_color` (the shared `BoxSurface`) |
-| `email_subject`, `preheader_text` | `Banner.background_image_url` |
+| `email_subject`, `preheader_text`, `language` | `Banner.background_image_url` |
 | `firm_name`, `campaign_name` | `Banner.logo_url`, `logo_alt`, `logo_width` |
 | (the same two, as the headline's fallbacks) | `Banner.title`, `subtitle`, `resolved_title()`, `resolved_subtitle()` |
 | (the theme, as every colour's fallback) | `Banner.palette` — the masthead's own `BannerPalette` |
@@ -544,6 +555,21 @@ Two boundary calls, each made for a reason rather than by shape:
   fact was never the banner's to begin with. That is the fact/presentation rule paying for
   itself: a region change that would otherwise have been a data migration was a one-line
   reassignment.
+- **`language` is a fact, and it is the one whose default is a claim rather than a
+  blank (#115).** What language an email is written in is true of the email, like
+  `firm_name` and `department` — so it sits on the metadata, not on a region. Two
+  things about it are decisions rather than shape. It defaults to **`"en"`, not
+  empty**: every other optional field's absence is neutral, but an absent `lang`
+  makes a screen reader guess from the *recipient's* locale, so the field is
+  required and validated rather than skipped when blank. And it validates the
+  **shape, never the registry** — subtags of letters and digits joined by single
+  hyphens, `_validate_url`'s philosophy on the other attribute a reader depends
+  on. Whether `fr-CA` is a registered IANA subtag is not this library's business,
+  and a lookup table shipped in a wheel goes stale between releases while a
+  trailing hyphen stays wrong forever. **`dir` and RTL layout are deliberately not
+  here**: mirrored table geometry is an epic with its own client-testing burden,
+  and emitting the attribute without the layout would claim a support the
+  templates do not honour.
 - **The masthead's headline is presentation, and its fallbacks are facts (#91).** Until then
   the large type *was* `firm_name` and the second line *was* `campaign_name`, so an email
   leading with "Q3 Outlook" had to lie about who sent it. `Banner.title` / `subtitle` are
@@ -712,14 +738,19 @@ These are not conventions to remember — each has teeth, and the teeth are name
    renders identically and simply announces itself to a screen reader as a data table with
    dimensions, once per table. The gallery emits 68 tables for one email, so this is the
    difference between an email a screen-reader user can read and one they cannot.
-9. **A new *property* on a component joins the gallery, at a non-default value.** Rule 1
+9. **A new *property* on a component or a container joins the gallery, at a non-default
+   value.** Rule 1
    covers a new component *class*; this covers its fields, which had no rule at all until
    epic #116 added seven of them. `TestComponentFieldsAreExercised` introspects
-   `DataTable`, `Column`, `Cell` and `TableRow` and fails when a field is never set to
-   anything but its default — because a field at its default is one the golden cannot pin.
-   It is scoped to the table objects today and is **a first instance, not a special case**:
-   the next component to grow a vocabulary should widen it rather than let its fields go
-   unpinned for the same reason these did.
+   `DataTable`, `Column`, `Cell` and `TableRow`, the five prose components' `align`, and
+   every `Container` field, failing when one is never set to anything but its default —
+   because a field at its default is one the golden cannot pin. #121 recorded it as **a
+   first instance, not a special case**, and #128 cashed that: epic #124 was the next axis,
+   so the rule widened rather than letting eight new fields go unpinned. **Containers had
+   never been covered at all**, and widening to them immediately found that
+   `Container.background_color` — the *original* entry in the closed colour list — had
+   never been set by any fixture in the gallery's life. That is the shape to expect: the
+   rule pays for itself on the layer nobody thought to check.
 10. **A new component must implement `text()`, and absence fails loudly.** The mirror of rule
    7 with the **opposite default**: an absent image list is empty, an absent projection is a
    `NotImplementedError` naming the class. A component with no visual content can exist — a
@@ -940,6 +971,17 @@ non-fluent `Email` class works identically.
     passing markup. So `Header`'s docstring states it, and a test asserts the docstring still
     does — a region whose text is raw HTML is a footgun, and a warning that lives only in a
     commit message is how it stays one.
+  - **A raw-HTML field is emitted inside a `div`, never a `p` (#130).** Five surfaces
+    carry caller markup, and the documented shape of the first two is the caller's own
+    paragraph tags — so a `p` wrapper is auto-closed the moment their content opens, the
+    copy becomes the wrapper's *sibling*, and everything that wrapper was styling escapes.
+    That shipped: for the whole life of the package, `TextBlock` prose inherited the
+    containing cell's `font.label` instead of its own `font.body`, and a `NumberedItem`
+    body took the cell's leading instead of `list_body_line`. **No golden could see it** —
+    the HTML was byte-stable and looked correct; only a parser resolving the nesting
+    reveals it, which is why the guard lives with the screenshots. `Card.body` and
+    `Footer.disclaimer` were already `div`s; the other three joined them. A test asserts
+    all five, so a sixth cannot be added wrongly.
   - **Attributes** (`src`, `href`, `alt`, `<title>`) are always escaped, quotes included,
     so a value cannot break out of the attribute it sits in.
 
@@ -1303,6 +1345,17 @@ carrying arithmetic nobody had done in Python. `TwoColumn` and `ThreeColumn` sha
 fails if a `col-*.html` ever comes back. The attribute width and the CSS width come from one
 computed value, asserted per column at frames the email has never shipped at.
 
+**A data table tightens its cells at the breakpoint, and cannot do more (#132).**
+`table_cell_pad_mobile` is the only lever a narrow viewport has on a table: a `CardGroup`
+collapses because a KPI strip *becomes* the vertical card layout, but stacking a table's
+columns would destroy the alignment that is the only reason to render one — the same
+reasoning that refuses `colspan`. Tightening the cells buys a measured 24px on a
+five-column table, which is enough for the 375px viewport the harness asserts and not
+enough for 320. **It is a mitigation with a measured headroom, not a guarantee**: a wide
+enough table still overflows, and that limit is the caller's to design around. The rule
+selects on the table rather than on every cell — one class per table against ~19 bytes per
+cell, which the clipping budget notices.
+
 **`.kpi-cell` reads `card_pad_*` on purpose.** On a phone a horizontal KPI strip *becomes*
 the vertical card layout, so it is padded like one rather than from a second pair of tokens.
 That is what stops a compact email rendering airier on a phone than on a desktop, and a test
@@ -1323,6 +1376,78 @@ that shipping a different one becomes a deliberate act with its own client-testi
 its own interplay with image `width=` attributes, rather than a side effect; one theme per
 email, since density is an email-level voice; and no font theming — which stopped being a
 non-goal when #56 landed, and is the axis below.
+
+### Alignment — geometry, not a fourth design axis
+
+Colour, density and typeface each became an email-level *theme*. Alignment did not, and
+saying why is the first thing to keep: it is **layout geometry**, the same category as
+`TwoColumn(ratio=…)` and `CardGroup(orientation=…)`, which have always been per-call-site
+parameters. A section's alignment varies *per section* — that is the point of it — so it can
+never be an email-level voice. There is no `align_theme`, no fourth shared value on the
+binder, no entry in the closed colour list, and nothing to widen in the no-per-call-site-
+parameter test. Two tests pin exactly that, including one forbidding any alignment field on
+`EmailMetadata`.
+
+```python
+FullWidth(title="Q3 Outlook", align="center", content=TextBlock("…"))
+FullWidth(align="center", content=TextBlock("…", align="left"))   # the block opts out
+```
+
+`Container.align` (#126) and `Component.align` (#127) both take a `TextAlign` member or its
+bare string, default to unset, and validate at construction. Unset emits nothing, which is
+why every pre-existing golden is byte-identical.
+
+- **Alignment is *inherited*, not resolved — and that is the epic's central decision.**
+  `text-align` is an inherited CSS property, so a declaration on the container's cells
+  reaches the prose inside without anything being threaded down. There is deliberately no
+  `resolved_align()`: `Component.render()` still takes one argument and `context()` still
+  takes none. This is **not** what `Column`/`Cell` do (#117, #118), and the difference is
+  the reason: a table cell's alignment has a *second reader* — `textgen.table()` pads the
+  plain-text columns with it — so it must be computed. Prose alignment has one reader and
+  projects to nothing. Re-deriving in Python what the cascade does for free would
+  reintroduce exactly the multi-reader convention #117 was filed to remove.
+- **The boundary is free, and a test keeps it that way.** Every structural component
+  already declares its own alignment, so inheritance stops where it should — a KPI cell
+  stays centred and a table column keeps resolving from its `kind` inside a right-aligned
+  section. Nothing arranges that; `TestTheBoundaryHolds` exists because a template edit
+  removing one of those declarations would let a section leak in silently.
+- **Which components take an `align` is structural.** `CopyAlignment` is a mixin in
+  `BoxSurface`'s shape, so the answer is readable off the class hierarchy rather than a
+  hand-maintained list, and a test asserts the split is **exhaustive**: every public
+  component is either prose or named as structural. `CardGroup` and `DataTable` are
+  excluded because their alignment *is* structural and a coarser knob could only override
+  the column resolution or be ignored by it; `ImageBlock` because its `align` places a
+  block. The reasons live on the class, and a test asserts the docstring still carries them.
+- **A container's alignment lands on *two* cells.** The title and the content are sibling
+  tables in `full-width.html`, not parent and child, so a declaration on the content cell
+  alone leaves the heading where it was. Non-obvious, easy for a future template edit to
+  undo, and the specific thing the epic's prototype showed does not happen by itself.
+- **Both spellings travel together** (#125): the `align` attribute for Outlook's Word
+  engine, the `text-align` style because an attribute is not inherited by descendants and
+  inheritance is the whole mechanism. `tests/test_alignment.py` holds that as an invariant
+  — present, agreeing, and inside the three-value vocabulary — because the pairing is
+  invisible in every browser and every screenshot.
+- **Three elements are exceptions, and each is a different kind.** A `caption`'s `align`
+  attribute means *placement*, not text alignment, so pairing it would move the element;
+  an `a` has no `align` attribute at all; and `base.html`'s outer cell is **attribute
+  only**, because its job is centring the email table as a *block* — a browser maps that
+  attribute to `-webkit-center`, and the literal `text-align:center` is a different value.
+  Pairing that one un-centred every email *and* centred every paragraph in it.
+
+**The epic's real lesson: a byte-verified diff is not a verified render.** #125's golden
+diff was script-verified to contain only alignment declarations, and was still a visual
+regression in every email. #76 established that layout regressions live with the
+screenshots; alignment produced three more findings that no golden could see — the
+`base.html` regression above, the column cells that shrink-wrap instead of filling their
+column (#129 — ``inline-block`` stopped it being a table box), and body copy escaping its
+own styling element (#130). All three are fixed; each needed a browser to see.
+Screenshot the change.
+
+**Non-goals, as decisions**: no `align_theme` (see above); **no vertical alignment** —
+`columns.html` hardcodes `valign="top"`, and unequal-height columns aligning middle or
+bottom is the cross axis, with no inheritance story and its own client-testing burden; and
+no `justify`, which does nothing to a single short line and whose absence `TextAlign`
+records.
 
 ### Typography — the face is one selected vocabulary
 
@@ -1721,8 +1846,42 @@ Reach for these rather than improvising:
   epics with sub-issues. **Every filed epic is complete**: #38 (header region), #45 (size
   themes), #46 (colour themes), #52 (delivery), #53 (plain text), #54 (QA harness), #55
   (footer region), #56 (typography), #87 (the `Header` region), #88 (banner region), #98
-  (the footer box) and **#116 (the expressive `DataTable`)**. #115 (a `language` field) is
-  the one open issue.
+  (the footer box), #116 (the expressive `DataTable`) and **#124 (alignment)**. #115 (the
+  `language` field) is done too, and so are **#129**, **#132** and **#133**. **Every filed
+  issue is now closed.** #133 answered the scope question it raised — 375px is the
+  supported floor, `SUPPORTED_WIDTHS` states it and a test keeps it — and corrected its own
+  diagnosis on the way: the 360px overflow is a chart image four pixels too wide for
+  `spacious`'s mobile content box, not the masthead the issue named.
+  `KNOWN_MOBILE_OVERFLOW` is **empty**, and the mechanism stays for the next such finding.
+- **The alignment epic (#124) is complete** — #125 normalised the two spellings, #126 gave
+  containers an `align`, #127 gave the five prose components one, #128 landed
+  `aligned_layout` and these docs. See *Alignment — geometry, not a fourth design axis*
+  above for the model. Four things it leaves:
+  - **A byte-verified diff is not a verified render.** #125's golden diff was
+    script-verified to contain only alignment declarations and was *still* a visual
+    regression in every email: pairing `base.html`'s outer cell with a `text-align` style
+    un-centred the email frame **and** centred every paragraph, because that attribute is
+    doing block alignment. #126 fixed it and added the browser guard. Screenshot the change.
+  - **The epic found three defects no golden could see**, which is the strongest evidence
+    yet for standing rule 3: that regression, #129's shrink-wrapping column cells, and
+    #130's body copy escaping its own styling element — the last of which had shipped
+    since the beginning, rendering prose in `font.label` and silently falsifying #56's
+    claim that `body` is a separate role.
+  - **The obvious fix is worth measuring before believing.** #129's issue proposed
+    `width="100%"` on the cell; it changes nothing, because the cell resolves that width
+    against an anonymous table that is itself shrink-wrapping. A fixed px width fills on
+    desktop and then constrains the copy at the mobile breakpoint. Only `inline-table` —
+    keeping the column a table box — actually works, and it was the fourth thing tried.
+    #76 taught this once already.
+  - **A regression test scoped to the fixtures that had the bug is how the next instance
+    hides.** #76's viewport check watched three fixtures; widening it to the gallery in
+    #129 immediately found `rich_table` overflowing a phone by 24px, unnoticed since #121.
+  - **A guard that only works when the code is correct is not a guard.** #130's first probe
+    selected `div.body-text`; reverting the tag made it match nothing and pass green.
+    Perturb the code and watch the test fail, every time — it selects by class now.
+  - **A completeness rule pays for itself on the layer nobody checked.** Widening standing
+    rule 9 to containers immediately found that `Container.background_color` — the
+    *original* entry in the closed colour list — had never been set by any fixture.
 - **The DataTable epic (#116) is complete** — #117 columns, #118 cells, #119 row kinds, #120
   the caption and row headers, #121 the fixture and these docs. Four things it leaves:
   - **A convention doing four jobs is a convention waiting to break.** `loop.first` decided

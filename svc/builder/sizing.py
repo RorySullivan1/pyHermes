@@ -109,6 +109,7 @@ frame's horizontal padding is what makes the content 616 wide::
     card_value_gap         4    below the card value
     card_body_line       1.6    card prose
     table_cell_pad        12    analysis/data-table <th> and <td>
+    table_cell_pad_mobile  6    the same cells under the mobile breakpoint (#132)
     list_ordinal_width    22    the ordinal column
     list_ordinal_gap      12    between ordinal and item body
     list_title_gap         6    below a list item's title
@@ -319,6 +320,13 @@ class ComponentScale:
     card_body_line: int | float = 1.6
 
     table_cell_pad: int | float = 12
+    #: The same cell at the mobile breakpoint (#132). A data table has no
+    #: collapse — stacking its columns would destroy the alignment that is
+    #: the only reason to render one — so the one thing that can give a
+    #: narrow viewport room back is the padding. Curated, not halved: the
+    #: frame's own mobile tightening is 18px against 32, and these follow
+    #: that ratio rather than a multiplier.
+    table_cell_pad_mobile: int | float = 6
 
     list_ordinal_width: int | float = 22
     list_ordinal_gap: int | float = 12
@@ -528,6 +536,7 @@ COMPACT_SIZES = SizeScheme().derive(
         "card_value_gap": 3,
         "card_body_line": 1.5,
         "table_cell_pad": 8,
+        "table_cell_pad_mobile": 4,
         "list_ordinal_width": 20,
         "list_ordinal_gap": 10,
         "list_title_gap": 4,
@@ -621,6 +630,7 @@ SPACIOUS_SIZES = SizeScheme().derive(
         "card_value_gap": 6,
         "card_body_line": 1.75,
         "table_cell_pad": 16,
+        "table_cell_pad_mobile": 8,
         "list_ordinal_width": 26,
         "list_ordinal_gap": 16,
         "list_title_gap": 8,

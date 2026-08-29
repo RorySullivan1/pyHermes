@@ -36,6 +36,10 @@
          block, so the property it lacks costs Outlook nothing. */
       .kpi-cell { display:block !important; width:100% !important; box-sizing:border-box !important; border-right:none !important; border-bottom:1px solid #D6D2CB !important; padding:14px 16px !important; }
       .kpi-cell-last { border-bottom:none !important; }
+      /* A data table cannot collapse — stacking its columns would destroy the
+         alignment that is the only reason to render one — so padding is what
+         gives a narrow viewport its room back. See #132. */
+      .data-table th, .data-table td { padding:6px !important; }
     }
     /* Force light rendering in all dark mode contexts */
     :root { color-scheme: light only; }
@@ -85,11 +89,11 @@
           <!-- HEADER: Disclaimer bar                    -->
           <!-- ══════════════════════════════════════════ -->
           <tr>
-            <td style="background-color:#2C3E50; padding:7px 32px; text-align:center;" bgcolor="#2C3E50">
-              <p style="margin:0; font-family: Arial, Helvetica, sans-serif; font-size:9.5px;
+            <td align="center" style="background-color:#2C3E50; padding:7px 32px; text-align:center;" bgcolor="#2C3E50">
+              <div style="margin:0; font-family: Arial, Helvetica, sans-serif; font-size:9.5px;
                         font-weight:300; color:#90A4AE; letter-spacing:0.3px; line-height:140%;">
                 For illustrative purposes. Not investment advice.
-              </p>
+              </div>
             </td>
           </tr>
 
@@ -125,7 +129,7 @@ background-color:#123A3E; background-size:cover;
                         Q3 Outlook
                       </p>
                     </td>
-                    <td valign="bottom" align="right" style="padding:18px 32px 6px 16px;">
+                    <td valign="bottom" align="right" style="text-align:right; padding:18px 32px 6px 16px;">
                       <!--[if mso]>
                       <img src="cid:b98e6767b5a5eae1" width="118" alt="Hermes Research" style="display:block;">
                       <![endif]-->
@@ -143,7 +147,7 @@ background-color:#123A3E; background-size:cover;
                         What the curve is pricing
                       </p>
                     </td>
-                    <td valign="middle" align="right" style="padding:0 32px 8px 16px;">
+                    <td valign="middle" align="right" style="text-align:right; padding:0 32px 8px 16px;">
                       <p style="margin:0; font-family: Arial, Helvetica, sans-serif; font-size:11px;
                                 color:#8FAEA9; letter-spacing:0.6px; text-transform:uppercase;">
                         Rates Strategy
@@ -173,7 +177,7 @@ background-color:#123A3E; background-size:cover;
                                      color:#8FAEA9; letter-spacing:0.6px; text-transform:uppercase;">
                             Week ending 24 August
                           </td>
-                          <td align="right" style="font-family: Arial, Helvetica, sans-serif; font-size:11px;
+                          <td align="right" style="text-align:right; font-family: Arial, Helvetica, sans-serif; font-size:11px;
                                                     color:#8FAEA9; letter-spacing:0.6px; text-transform:uppercase;">
                             Issue 004
                           </td>
@@ -210,17 +214,17 @@ background-color:#123A3E; background-size:cover;
         <td class="mobile-pad" style="padding:16px 31px 14px 31px; font-family: Arial, Helvetica, sans-serif; font-size:14px; color:#3B3B3B; line-height:172%;">
           <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border: 1px solid #D6D2CB;">
   <tr>
-    <td class="kpi-cell" style="width: 33.33%; border-right: 1px solid #D6D2CB; padding: 16px 12px; text-align: center; background-color: #FFFFFF;">
+    <td class="kpi-cell" align="center" style="width: 33.33%; border-right: 1px solid #D6D2CB; padding: 16px 12px; text-align: center; background-color: #FFFFFF;">
       <p style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #7A7A72; text-transform: uppercase; margin: 0 0 6px 0; line-height: 172%; letter-spacing: 0.5px; font-weight: bold;">UST 2Y</p>
       <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 21px; font-weight: bold; color: #B85450; margin: 0 0 4px 0; line-height: 120%;">4.61%</p>
       <p style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #A09E97; margin: 0; line-height: 140%;">+8 bps</p>
     </td>
-    <td class="kpi-cell" style="width: 33.33%; border-right: 1px solid #D6D2CB; padding: 16px 12px; text-align: center; background-color: #FFFFFF;">
+    <td class="kpi-cell" align="center" style="width: 33.33%; border-right: 1px solid #D6D2CB; padding: 16px 12px; text-align: center; background-color: #FFFFFF;">
       <p style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #7A7A72; text-transform: uppercase; margin: 0 0 6px 0; line-height: 172%; letter-spacing: 0.5px; font-weight: bold;">UST 10Y</p>
       <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 21px; font-weight: bold; color: #B85450; margin: 0 0 4px 0; line-height: 120%;">4.28%</p>
       <p style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #A09E97; margin: 0; line-height: 140%;">+6 bps</p>
     </td>
-    <td class="kpi-cell kpi-cell-last" style="width: 33.33%; padding: 16px 12px; text-align: center; background-color: #FFFFFF;">
+    <td class="kpi-cell kpi-cell-last" align="center" style="width: 33.33%; padding: 16px 12px; text-align: center; background-color: #FFFFFF;">
       <p style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #7A7A72; text-transform: uppercase; margin: 0 0 6px 0; line-height: 172%; letter-spacing: 0.5px; font-weight: bold;">2s10s</p>
       <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 21px; font-weight: bold; color: #4A7C59; margin: 0 0 4px 0; line-height: 120%;">-33 bps</p>
       <p style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #A09E97; margin: 0; line-height: 140%;">+2 bps</p>
@@ -253,10 +257,10 @@ background-color:#123A3E; background-size:cover;
       <tr>
         <td width="420" valign="top" style="width:420px; padding:0;">
     <![endif]-->
-    <table role="presentation" width="420" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:420px; margin-right:16px; background-color:#FFFFFF;">
+    <table role="presentation" width="420" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:420px; margin-right:16px; background-color:#FFFFFF;">
       <tr>
         <td class="mobile-pad" style="padding:2px 20px 26px 0px; font-family: Arial, Helvetica, sans-serif; font-size:14px; color:#3B3B3B; line-height:172%;">
-          <p class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: #3B3B3B; line-height: 172%; margin: 0 0 16px 0;"><p>The front end repriced on the payrolls beat while the long end barely moved, leaving the curve flatter into month-end.</p></p>
+          <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: #3B3B3B; line-height: 172%; margin: 0 0 16px 0;"><p>The front end repriced on the payrolls beat while the long end barely moved, leaving the curve flatter into month-end.</p></div>
 
         </td>
       </tr>
@@ -265,25 +269,25 @@ background-color:#123A3E; background-size:cover;
         </td>
         <td width="180" valign="top" style="width:180px; padding:0;">
     <![endif]-->
-    <table role="presentation" width="180" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:180px; background-color:#FFFFFF;">
+    <table role="presentation" width="180" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:180px; background-color:#FFFFFF;">
       <tr>
         <td class="mobile-pad" style="padding:2px 0px 26px 16px; font-family: Arial, Helvetica, sans-serif; font-size:14px; color:#3B3B3B; line-height:172%;">
-          <table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
+          <table class="data-table" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
   <tr style="border-top: 1px solid #D6D2CB; border-bottom: 2px solid #2C3E50;">
-    <th scope="col" style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 172%; text-align: left; padding: 12px; letter-spacing: 0.5px;">Tenor</th>
-    <th scope="col" style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 172%; text-align: right; padding: 12px; letter-spacing: 0.5px;">Δ 1W</th>
+    <th scope="col" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 172%; text-align: left; padding: 12px; letter-spacing: 0.5px;">Tenor</th>
+    <th scope="col" align="right" style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 172%; text-align: right; padding: 12px; letter-spacing: 0.5px;">Δ 1W</th>
   </tr>
   <tr style="border-bottom: 1px solid #EAE8E4;">
-    <th scope="row" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: normal; line-height: 172%; color: #3B3B3B; text-align: left; padding: 12px; background-color: #FFFFFF;">2Y</th>
-    <td style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #B85450; text-align: right; padding: 12px; background-color: #FFFFFF;">+8 bps</td>
+    <th scope="row" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: normal; line-height: 172%; color: #3B3B3B; text-align: left; padding: 12px; background-color: #FFFFFF;">2Y</th>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #B85450; text-align: right; padding: 12px; background-color: #FFFFFF;">+8 bps</td>
   </tr>
   <tr style="border-bottom: 1px solid #EAE8E4;">
-    <th scope="row" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: normal; line-height: 172%; color: #3B3B3B; text-align: left; padding: 12px; background-color: #F8F7F5;">10Y</th>
-    <td style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #B85450; text-align: right; padding: 12px; background-color: #F8F7F5;">+6 bps</td>
+    <th scope="row" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: normal; line-height: 172%; color: #3B3B3B; text-align: left; padding: 12px; background-color: #F8F7F5;">10Y</th>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #B85450; text-align: right; padding: 12px; background-color: #F8F7F5;">+6 bps</td>
   </tr>
   <tr style="border-bottom: 1px solid #D6D2CB;">
-    <th scope="row" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: normal; line-height: 172%; color: #3B3B3B; text-align: left; padding: 12px; background-color: #FFFFFF;">30Y</th>
-    <td style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #4A7C59; text-align: right; padding: 12px; background-color: #FFFFFF;">+1 bp</td>
+    <th scope="row" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: normal; line-height: 172%; color: #3B3B3B; text-align: left; padding: 12px; background-color: #FFFFFF;">30Y</th>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #4A7C59; text-align: right; padding: 12px; background-color: #FFFFFF;">+1 bp</td>
   </tr>
 </table>
 
@@ -310,11 +314,11 @@ background-color:#123A3E; background-size:cover;
                style="max-width:680px; background-color:#F2F1EE;" bgcolor="#F2F1EE" class="email-container">
           <tr>
             <td style="padding:20px 32px 24px; background-color:#F2F1EE;" bgcolor="#F2F1EE">
-              <div style="font-family: Arial, Helvetica, sans-serif; font-size:9.5px;
+              <div align="center" style="font-family: Arial, Helvetica, sans-serif; font-size:9.5px;
                           color:#8A8880; line-height:160%; text-align:center;">
                 <p>Distributed to registered recipients only.</p>
               </div>
-              <p style="margin:6px 0 0; font-family: Arial, Helvetica, sans-serif; font-size:9.5px;
+              <p align="center" style="margin:6px 0 0; font-family: Arial, Helvetica, sans-serif; font-size:9.5px;
                         color:#A09E97; text-align:center;">
                 &copy; 2026 Hermes Research &nbsp;&middot;&nbsp;
                 <a href="https://example.com/unsubscribe" style="color:#5B8A9A; text-decoration:underline;">Unsubscribe</a>

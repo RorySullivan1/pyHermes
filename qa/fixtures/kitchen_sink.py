@@ -89,6 +89,11 @@ def _metadata() -> dict[str, Any]:
     return {
         "email_subject": "Kitchen Sink — every component, every geometry",
         "preheader_text": "One fixture exercising the whole component library.",
+        # A real, honest non-default: this fixture's copy is British English
+        # ("Week ending 24 August"). A fixture claiming "fr" would pin the
+        # mechanism while making the golden say something untrue about the
+        # email it renders.
+        "language": "en-GB",
         "firm_name": "Hermes Research",
         "campaign_name": "kitchen-sink",
         "department": "Rates Strategy",

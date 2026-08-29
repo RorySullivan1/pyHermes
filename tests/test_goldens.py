@@ -111,6 +111,10 @@ class TestTheHarnessDetectsDrift:
         ``base.html`` with no width literal to perturb — every one of them
         now reads ``size.frame.width``. The rendered side still checks a
         number, since that is what the golden holds.
+
+        The needle is one of the few ``align`` attributes #125 left
+        *unpaired*: this cell centres the email-container table as a block,
+        which a ``text-align`` style does not express. See ``base.html``.
         """
         templates = _perturbed_templates(tmp_path, 'align="center"', 'align="left"')
         email = all_fixtures()["minimal"](template_dir=templates)

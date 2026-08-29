@@ -36,6 +36,10 @@
          block, so the property it lacks costs Outlook nothing. */
       .kpi-cell { display:block !important; width:100% !important; box-sizing:border-box !important; border-right:none !important; border-bottom:1px solid #D6D2CB !important; padding:14px 16px !important; }
       .kpi-cell-last { border-bottom:none !important; }
+      /* A data table cannot collapse — stacking its columns would destroy the
+         alignment that is the only reason to render one — so padding is what
+         gives a narrow viewport its room back. See #132. */
+      .data-table th, .data-table td { padding:6px !important; }
     }
     /* Force light rendering in all dark mode contexts */
     :root { color-scheme: light only; }
@@ -85,11 +89,11 @@
           <!-- HEADER: Disclaimer bar                    -->
           <!-- ══════════════════════════════════════════ -->
           <tr>
-            <td style="background-color:#2C3E50; padding:7px 32px; text-align:center;" bgcolor="#2C3E50">
-              <p style="margin:0; font-family: Arial, Helvetica, sans-serif; font-size:9.5px;
+            <td align="center" style="background-color:#2C3E50; padding:7px 32px; text-align:center;" bgcolor="#2C3E50">
+              <div style="margin:0; font-family: Arial, Helvetica, sans-serif; font-size:9.5px;
                         font-weight:300; color:#90A4AE; letter-spacing:0.3px; line-height:140%;">
                 For illustrative purposes. Not investment advice.
-              </p>
+              </div>
             </td>
           </tr>
 
@@ -124,7 +128,7 @@
                         Hermes Research
                       </p>
                     </td>
-                    <td valign="bottom" align="right" style="padding:18px 32px 6px 16px;">
+                    <td valign="bottom" align="right" style="text-align:right; padding:18px 32px 6px 16px;">
                       <!--[if mso]>
                       <img src="" width="90" alt="Hermes Research" style="display:block;">
                       <![endif]-->
@@ -142,7 +146,7 @@
                         minimal-footer
                       </p>
                     </td>
-                    <td valign="middle" align="right" style="padding:0 32px 8px 16px;">
+                    <td valign="middle" align="right" style="text-align:right; padding:0 32px 8px 16px;">
                     </td>
                   </tr>
                 </table>
@@ -168,7 +172,7 @@
                                      color:#90A4AE; letter-spacing:0.6px; text-transform:uppercase;">
                             Week ending 31 August
                           </td>
-                          <td align="right" style="font-family: Arial, Helvetica, sans-serif; font-size:11px;
+                          <td align="right" style="text-align:right; font-family: Arial, Helvetica, sans-serif; font-size:11px;
                                                     color:#90A4AE; letter-spacing:0.6px; text-transform:uppercase;">
                             Issue 003
                           </td>
@@ -203,7 +207,7 @@
     <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
       <tr>
         <td class="mobile-pad" style="padding:16px 32px 14px 32px; font-family: Arial, Helvetica, sans-serif; font-size:14px; color:#3B3B3B; line-height:172%;">
-          <p class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: #3B3B3B; line-height: 172%; margin: 0 0 16px 0;"><p>The footer region presents the email's legal copy as plain HTML, emitted raw and unwrapped — a disclaimer passed as a block element renders correctly inside a div wrapper, never inside a p.</p></p>
+          <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: #3B3B3B; line-height: 172%; margin: 0 0 16px 0;"><p>The footer region presents the email's legal copy as plain HTML, emitted raw and unwrapped — a disclaimer passed as a block element renders correctly inside a div wrapper, never inside a p.</p></div>
 
         </td>
       </tr>
@@ -230,10 +234,10 @@
       <tr>
         <td width="300" valign="top" style="width:300px; padding:0;">
     <![endif]-->
-    <table role="presentation" width="300" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:300px; margin-right:16px; background-color:#FFFFFF;">
+    <table role="presentation" width="300" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:300px; margin-right:16px; background-color:#FFFFFF;">
       <tr>
         <td class="mobile-pad" style="padding:2px 20px 26px 0px; font-family: Arial, Helvetica, sans-serif; font-size:14px; color:#3B3B3B; line-height:172%;">
-          <p class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: #3B3B3B; line-height: 172%; margin: 0 0 16px 0;"><p>The legal block below renders from a single template — the disclaimer, copyright line, and both links all present.</p></p>
+          <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: #3B3B3B; line-height: 172%; margin: 0 0 16px 0;"><p>The legal block below renders from a single template — the disclaimer, copyright line, and both links all present.</p></div>
 
         </td>
       </tr>
@@ -242,21 +246,21 @@
         </td>
         <td width="300" valign="top" style="width:300px; padding:0;">
     <![endif]-->
-    <table role="presentation" width="300" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:300px; background-color:#FFFFFF;">
+    <table role="presentation" width="300" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:300px; background-color:#FFFFFF;">
       <tr>
         <td class="mobile-pad" style="padding:2px 0px 26px 20px; font-family: Arial, Helvetica, sans-serif; font-size:14px; color:#3B3B3B; line-height:172%;">
-          <table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
+          <table class="data-table" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
   <tr style="border-top: 1px solid #D6D2CB; border-bottom: 2px solid #2C3E50;">
-    <th scope="col" style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 172%; text-align: left; padding: 12px; letter-spacing: 0.5px;">Metric</th>
-    <th scope="col" style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 172%; text-align: right; padding: 12px; letter-spacing: 0.5px;">Level</th>
+    <th scope="col" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 172%; text-align: left; padding: 12px; letter-spacing: 0.5px;">Metric</th>
+    <th scope="col" align="right" style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 172%; text-align: right; padding: 12px; letter-spacing: 0.5px;">Level</th>
   </tr>
   <tr style="border-bottom: 1px solid #EAE8E4;">
-    <th scope="row" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: normal; line-height: 172%; color: #3B3B3B; text-align: left; padding: 12px; background-color: #FFFFFF;">Policy rate</th>
-    <td style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #FFFFFF;">4.25%</td>
+    <th scope="row" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: normal; line-height: 172%; color: #3B3B3B; text-align: left; padding: 12px; background-color: #FFFFFF;">Policy rate</th>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #FFFFFF;">4.25%</td>
   </tr>
   <tr style="border-bottom: 1px solid #D6D2CB;">
-    <th scope="row" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: normal; line-height: 172%; color: #3B3B3B; text-align: left; padding: 12px; background-color: #F8F7F5;">Core CPI</th>
-    <td style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #F8F7F5;">2.8%</td>
+    <th scope="row" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: normal; line-height: 172%; color: #3B3B3B; text-align: left; padding: 12px; background-color: #F8F7F5;">Core CPI</th>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #F8F7F5;">2.8%</td>
   </tr>
 </table>
 <p style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #A09E97; font-style: italic; margin: 8px 0 0 0; line-height: 172%;">Hermes Research</p>
@@ -284,14 +288,14 @@
                style="max-width:680px; background-color:#F2F1EE;" bgcolor="#F2F1EE" class="email-container">
           <tr>
             <td style="padding:20px 32px 24px; border:1px solid #D6D2CB; background-color:#F2F1EE;" bgcolor="#F2F1EE">
-              <p style="margin:0 0 20px; text-align:center;">
+              <p align="center" style="margin:0 0 20px; text-align:center;">
                 <img src="cid:9644ef8a139469bc" alt="Sign-off" width="96" style="display:inline-block; border:0; height:auto;">
               </p>
-              <div style="font-family: Arial, Helvetica, sans-serif; font-size:9.5px;
+              <div align="center" style="font-family: Arial, Helvetica, sans-serif; font-size:9.5px;
                           color:#8A8880; line-height:160%; text-align:center;">
                 <p>Distributed to registered recipients only. Past performance is not indicative of future results.</p>
               </div>
-              <p style="margin:6px 0 0; font-family: Arial, Helvetica, sans-serif; font-size:9.5px;
+              <p align="center" style="margin:6px 0 0; font-family: Arial, Helvetica, sans-serif; font-size:9.5px;
                         color:#A09E97; text-align:center;">
                 &copy; 2026 Hermes Research &nbsp;&middot;&nbsp;
                 <a href="https://example.com/unsubscribe" style="color:#5B8A9A; text-decoration:underline;">Unsubscribe</a>

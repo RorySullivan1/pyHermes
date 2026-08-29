@@ -73,6 +73,7 @@ from .enums import (
     ImageAlign,
     RowKind,
     SizeTheme,
+    TextAlign,
     ThreeColumnRatio,
     TwoColumnRatio,
 )
@@ -220,6 +221,7 @@ __all__ = [
     "EmbedStrategy",
     "ImageAlign",
     "SizeTheme",
+    "TextAlign",
     # Images
     "EmailImage",
     "ImageAsset",

@@ -42,17 +42,17 @@
           <tr>
             <td style="padding:{{ size.space.footer_legal_top }}px {{ size.frame.pad_x }}px {{ size.space.footer_copyright_bottom }}px;{% if border %} border:1px solid {{ footer_border }};{% endif %} background-color:{{ footer_background }};" bgcolor="{{ footer_background }}">
 {% if image %}
-              <p style="margin:0 0 {{ size.space.footer_legal_top }}px; text-align:{{ align }};">
+              <p align="{{ align | escape_html }}" style="margin:0 0 {{ size.space.footer_legal_top }}px; text-align:{{ align }};">
                 <img src="{{ image | escape_html }}" alt="{{ image_alt | escape_html }}" width="{{ image_width }}" style="display:inline-block; border:0; height:auto;">
               </p>
 {% endif %}
 {% if disclaimer %}
-              <div style="font-family: {{ font.label }}; font-size:{{ size.type.micro }}px;
+              <div align="{{ align | escape_html }}" style="font-family: {{ font.label }}; font-size:{{ size.type.micro }}px;
                           color:{{ footer_text }}; line-height:{{ size.component.legal_line | percent }}; text-align:{{ align }};">
                 {{ disclaimer }}
               </div>
 {% endif %}
-              <p style="margin:{{ size.space.footer_copyright_top }}px 0 0; font-family: {{ font.label }}; font-size:{{ size.type.micro }}px;
+              <p align="{{ align | escape_html }}" style="margin:{{ size.space.footer_copyright_top }}px 0 0; font-family: {{ font.label }}; font-size:{{ size.type.micro }}px;
                         color:{{ footer_text_muted }}; text-align:{{ align }};">
                 {{ copyright_html }}{% if footer_links %} &nbsp;&middot;&nbsp;{% endif +%}
 {% for link in footer_links %}

@@ -186,6 +186,48 @@ Adding a content type is a new template file plus a `Component` subclass that se
 Column ratios and card orientation are `StrEnum`s that accept either the member or its bare
 string — `ratio=ThreeColumnRatio.WIDE_LEFT` is `ratio="50-25-25"`.
 
+## Language
+
+The `lang` attribute on the root element, which is what a screen reader picks its
+pronunciation from. It defaults to `"en"`, so an email that says nothing is unchanged.
+
+```python
+EmailBuilder().metadata({..., "language": "fr"})        # or "en-GB", "pt-BR", "zh-Hant-TW"
+```
+
+The shape is validated — subtags of letters and digits joined by single hyphens — but not
+the tag registry: whether `fr-CA` is registered is not this library's business. Right-to-left
+layout is *not* included; the attribute alone would claim a support the table geometry does
+not honour.
+
+## Viewports
+
+Emails are built for a **680px frame on desktop and a 375px floor on mobile** — the two
+widths the QA harness screenshots and asserts. Below 375 an email may scroll sideways: a
+wide `DataTable` and an image sized for the desktop column are the first things to overflow.
+
+If you need a narrower floor, measure it — `python -m qa.preview <fixture> --screenshot`
+captures both viewports, and `SUPPORTED_WIDTHS` in `qa/screenshots.py` is where the claim
+lives.
+
+## Alignment
+
+Where a section's copy sits. Set it on the container; a block inside can disagree.
+
+```python
+FullWidth(title="Q3 Outlook", align="center", content=TextBlock("..."))
+FullWidth(align="center", content=TextBlock("...", align="left"))   # the block opts out
+```
+
+`left`, `center` or `right` — on `FullWidth`, `TwoColumn`, `ThreeColumn`, and on the five
+components that carry prose (`TextBlock`, `NumberedList`, `AuthorBlock`, `ContactBlock`,
+`ChartBlock`). A container's alignment covers its heading as well as its content.
+
+Unset means inherit, so an email that says nothing renders exactly as before. `CardGroup`
+and `DataTable` keep their own alignment inside an aligned section — a KPI cell is centred
+because it is a KPI cell, and a table column resolves from its kind. Use `Column`/`Cell` to
+align a table.
+
 ## Header
 
 The strip at the very top of the email: one band of free-form copy, above the masthead. Its

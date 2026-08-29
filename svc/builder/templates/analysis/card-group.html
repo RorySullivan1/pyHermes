@@ -17,7 +17,7 @@
 <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border: 1px solid {{ theme.palette.rule }};">
 {% for card in cards %}
   <tr>
-    <td style="padding: {{ size.component.card_pad_y }}px {{ size.component.card_pad_x }}px; text-align: left; background-color: {{ theme.palette.surface }};{% if not loop.last %} border-bottom: 1px solid {{ theme.palette.rule }};{% endif %}">
+    <td align="left" style="padding: {{ size.component.card_pad_y }}px {{ size.component.card_pad_x }}px; text-align: left; background-color: {{ theme.palette.surface }};{% if not loop.last %} border-bottom: 1px solid {{ theme.palette.rule }};{% endif %}">
       <p style="font-family: {{ font.label }}; font-size: {{ size.type.micro }}px; color: {{ theme.text.secondary }}; text-transform: uppercase; margin: 0 0 {{ size.component.card_label_gap }}px 0; line-height: {{ size.type.body_line | percent }}; letter-spacing: 0.5px; font-weight: bold;">{{ card.label | escape_html }}</p>
 {% if card.value %}
       <p style="font-family: {{ font.body }}; font-size: {{ size.component.kpi_value }}px; font-weight: bold; color: {{ card.color | default_color(theme.semantic.neutral) }}; margin: 0 0 {{ size.component.card_value_gap }}px 0; line-height: {{ size.type.title_line | percent }};">{{ card.value | escape_html }}</p>
@@ -37,7 +37,7 @@
 <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border: 1px solid {{ theme.palette.rule }};">
   <tr>
 {% for card in cards %}
-    <td class="kpi-cell{% if loop.last %} kpi-cell-last{% endif %}" style="width: {{ col_width }}%;{% if not loop.last %} border-right: 1px solid {{ theme.palette.rule }};{% endif %} padding: {{ size.component.kpi_pad_y }}px {{ size.component.kpi_pad_x }}px; text-align: center; background-color: {{ theme.palette.surface }};">
+    <td class="kpi-cell{% if loop.last %} kpi-cell-last{% endif %}" align="center" style="width: {{ col_width }}%;{% if not loop.last %} border-right: 1px solid {{ theme.palette.rule }};{% endif %} padding: {{ size.component.kpi_pad_y }}px {{ size.component.kpi_pad_x }}px; text-align: center; background-color: {{ theme.palette.surface }};">
       <p style="font-family: {{ font.label }}; font-size: {{ size.type.micro }}px; color: {{ theme.text.secondary }}; text-transform: uppercase; margin: 0 0 {{ size.component.card_label_gap }}px 0; line-height: {{ size.type.body_line | percent }}; letter-spacing: 0.5px; font-weight: bold;">{{ card.label | escape_html }}</p>
       <p style="font-family: {{ font.body }}; font-size: {{ size.component.kpi_value }}px; font-weight: bold; color: {{ card.color | default_color(theme.semantic.neutral) }}; margin: 0 0 {{ size.component.card_value_gap }}px 0; line-height: {{ size.type.title_line | percent }};">{{ card.value | escape_html }}</p>
       <p style="font-family: {{ font.label }}; font-size: {{ size.type.micro }}px; color: {{ theme.text.light }}; margin: 0; line-height: {{ size.type.secondary_line | percent }};">{{ card.sublabel | escape_html }}</p>

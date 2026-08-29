@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" xmlns="http://www.w3.org/1999/xhtml"
+<html lang="{{ language | escape_html }}" xmlns="http://www.w3.org/1999/xhtml"
       xmlns:v="urn:schemas-microsoft-com:vml"
       xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
@@ -36,6 +36,10 @@
          block, so the property it lacks costs Outlook nothing. */
       .kpi-cell { display:block !important; width:100% !important; box-sizing:border-box !important; border-right:none !important; border-bottom:1px solid {{ theme.palette.rule }} !important; padding:{{ size.component.card_pad_y }}px {{ size.component.card_pad_x }}px !important; }
       .kpi-cell-last { border-bottom:none !important; }
+      /* A data table cannot collapse — stacking its columns would destroy the
+         alignment that is the only reason to render one — so padding is what
+         gives a narrow viewport its room back. See #132. */
+      .data-table th, .data-table td { padding:{{ size.component.table_cell_pad_mobile }}px !important; }
     }
     /* Force light rendering in all dark mode contexts */
     :root { color-scheme: light only; }
@@ -73,6 +77,16 @@
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
          style="background-color:{{ theme.palette.wrapper_bg }};" bgcolor="{{ theme.palette.wrapper_bg }}">
     <tr>
+      {# ATTRIBUTE ONLY, and #125's pairing deliberately does not apply here.
+         This cell's `align` is not text alignment: its job is to centre the
+         680px email-container table — a BLOCK — within the viewport. A
+         browser maps the attribute to `-webkit-center`, which centres block
+         children; the literal `text-align:center` is a different value that
+         centres inline content only. Pairing them therefore did two wrong
+         things at once: it un-centred the email in the window, and it
+         inherited into every paragraph and heading below, centring the copy
+         of every email in the gallery. Measured, not reasoned about — see
+         tests/test_screenshots.py, because no golden can see it. #}
       <td align="center" style="padding:{{ size.frame.outer_pad_y }}px 0;">
 
         <!-- ============================================ -->

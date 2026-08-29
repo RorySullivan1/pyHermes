@@ -130,3 +130,53 @@ def test_validation_errors_are_catchable_as_the_base_class():
     # CLAUDE.md: "catch the base class for anything the builder rejected".
     with pytest.raises(EmailBuilderError):
         KpiItem(label="", value="V").validate()
+
+
+class TestTheLanguageFact:
+    """
+    #115: the document language is a fact the caller can state.
+
+    The default is ``"en"`` rather than empty for a reason worth keeping:
+    every pre-existing email renders byte-identically, and an *absent*
+    ``lang`` is worse for the reader than a stated one — a screen reader
+    with nothing to go on guesses from the client's locale, which is the
+    recipient's language, not the email's.
+    """
+
+    def test_it_defaults_to_english(self):
+        assert EmailMetadata().language == "en"
+
+    @pytest.mark.parametrize("tag", ["en", "fr", "en-GB", "zh-Hant-TW", "de-DE-1996"])
+    def test_a_well_shaped_tag_is_accepted(self, valid_metadata, tag):
+        assert EmailMetadata(**valid_metadata, language=tag).language == tag
+
+    @pytest.mark.parametrize(
+        "tag",
+        [
+            "",  # the field is required, unlike every optional URL
+            "   ",
+            "en_GB",  # underscore is the POSIX locale spelling, not BCP 47
+            "en-",  # the three malformations string-building actually
+            "-en",  # produces, and the three a bare character class
+            "en--GB",  # would wave through
+            "en GB",
+            "en;charset=utf-8",
+        ],
+    )
+    def test_a_malformed_tag_raises_naming_the_field(self, valid_metadata, tag):
+        with pytest.raises(ValidationError, match="metadata.language"):
+            EmailMetadata(**valid_metadata, language=tag)
+
+    def test_it_is_rejected_at_construction_not_at_validate(self, valid_metadata):
+        """
+        The repo's philosophy, and the direction #91 already moved the
+        masthead's URLs: by the time ``render()`` runs, the shape is known
+        good. A check that only ran in ``validate()`` would let a bad tag
+        live in an object for as long as the caller held it.
+        """
+        with pytest.raises(ValidationError):
+            EmailMetadata(**valid_metadata, language="en_GB")
+
+    def test_it_reaches_the_skeleton(self, valid_metadata):
+        """It travels by ``to_dict()`` like every other fact — no plumbing."""
+        assert EmailMetadata(**valid_metadata, language="fr-CA").to_dict()["language"] == "fr-CA"

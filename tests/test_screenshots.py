@@ -22,6 +22,7 @@ import pytest
 from qa.fixtures import all_fixtures
 from qa.screenshots import (
     DEVICE_SCALE_FACTOR,
+    SUPPORTED_WIDTHS,
     VIEWPORTS,
     ScreenshotError,
     _launch,
@@ -400,19 +401,36 @@ class TestTheMastheadPairsItsLines:
         assert box["title_left"] == box["sub_left"]
 
 
+#: Fixtures known to overflow their mobile viewport, each with the issue that
+#: tracks it. Named rather than silently excluded, and the mechanism is
+#: ``qa.lint``'s ``DEFERRED_RULES``: a check that arrives red teaches everyone
+#: to ignore it, so a finding is *filed* and listed here instead.
+#:
+#: **Empty, and that is the point.** ``rich_table`` was the one entry, added
+#: by #129 when widening this test from three fixtures to the gallery found
+#: it overflowing by 24px; #132 gave the data table a tighter cell padding at
+#: the breakpoint and the entry came out. The mechanism stays for the next
+#: such finding, which belongs here rather than shipped red or quietly
+#: dropped.
+KNOWN_MOBILE_OVERFLOW: dict[str, str] = {}
+
+
 @pytest.fixture(scope="module")
 def kpi_shots(tmp_path_factory):
     """
-    The three fixtures carrying a horizontal ``CardGroup``, at every density.
+    **The whole gallery**, at every viewport.
 
-    That group is what #76 was about, and the densities are what made it
-    interesting: the overflow was its own padding, so it scaled with the
-    theme (383 / 387 / 395 px at a 375px viewport).
+    It was three fixtures until #129 — ``kitchen_sink``, ``compact_size`` and
+    ``spacious_size``, the ones carrying the horizontal ``CardGroup`` that
+    #76 was about. Scoping a regression test to the fixtures that had the bug
+    is how the *next* instance goes unnoticed, and one had: ``rich_table``
+    overflows its mobile viewport by 24px and nothing was watching. Widened
+    here, with that finding filed rather than ignored.
     """
     if not available():
         pytest.skip('no browser; screenshots are the optional "[qa]" extra')
     out = tmp_path_factory.mktemp("kpi")
-    shots, _ = capture_gallery(["kitchen_sink", "compact_size", "spacious_size"], out)
+    shots, _ = capture_gallery(sorted(all_fixtures()), out)
     return shots
 
 
@@ -430,8 +448,23 @@ class TestNothingOverflowsItsViewport:
             f"{shot.path.name}: {shot.width} > {VIEWPORTS[shot.viewport][0]}"
             for shot in kpi_shots
             if shot.width != VIEWPORTS[shot.viewport][0]
+            and not any(name in shot.path.name for name in KNOWN_MOBILE_OVERFLOW)
         ]
         assert not offenders, "a reader would scroll sideways: " + ", ".join(offenders)
+
+    def test_each_known_overflow_still_overflows(self, kpi_shots):
+        """
+        The other half of the ``DEFERRED_RULES`` mechanism: an exemption that
+        outlives its reason is worse than no exemption, because it hides the
+        next instance. When the issue is fixed this fails, and the entry
+        should be deleted rather than the test loosened.
+        """
+        for name in KNOWN_MOBILE_OVERFLOW:
+            shots = [s for s in kpi_shots if name in s.path.name]
+            assert shots, f"{name} is exempted but the gallery no longer renders it"
+            assert any(s.width != VIEWPORTS[s.viewport][0] for s in shots), (
+                f"{name} no longer overflows — delete its KNOWN_MOBILE_OVERFLOW entry"
+            )
 
     def test_the_mobile_rule_keeps_its_padding_inside(self):
         """
@@ -504,3 +537,351 @@ class TestCapture:
         assert stored["device_scale_factor"] == DEVICE_SCALE_FACTOR
         assert set(stored["viewports"]) == set(VIEWPORTS)
         assert "Outlook" in stored["note"], "the fidelity caveat travels with the images"
+
+
+# ──────────────────────────────────────────────────────────────────────
+# The alignment default, measured (#126)
+# ──────────────────────────────────────────────────────────────────────
+
+_ALIGNMENT_PROBE = """() => {
+  const frame = document.querySelector('table.email-container');
+  const heading = document.querySelector('h2');
+  const prose = document.querySelector('p.body-text');
+  const read = el => el ? getComputedStyle(el).textAlign : null;
+  return {
+    frame_x: frame ? Math.round(frame.getBoundingClientRect().x) : null,
+    frame_w: frame ? Math.round(frame.getBoundingClientRect().width) : null,
+    heading: read(heading),
+    prose: read(prose),
+  };
+}"""
+
+
+@pytest.fixture(scope="module")
+def alignment_defaults():
+    """Every fixture's default alignment geometry, in one browser session."""
+    if not available():
+        pytest.skip('no browser; screenshots are the optional "[qa]" extra')
+
+    measured = {}
+    with _load_playwright()() as playwright:
+        browser = _launch(playwright)
+        for name in FIXTURE_NAMES:
+            page = browser.new_page(viewport={"width": 1000, "height": 900})
+            page.route("**/*", lambda route: route.abort())
+            page.set_content(all_fixtures()[name]().render())
+            measured[name] = page.evaluate(_ALIGNMENT_PROBE)
+            page.close()
+        browser.close()
+    return measured
+
+
+@requires_browser
+class TestTheDefaultAlignmentIsUnchanged:
+    """
+    The regression #125 actually shipped, caught here because nothing else
+    could see it.
+
+    Pairing ``base.html``'s outer cell — ``align="center"`` — with a
+    ``text-align:center`` style looked like the same tidying applied to
+    fifteen other cells, and the golden diff was verified to be *only*
+    alignment declarations. Both were true. The render still moved, in
+    every email, twice over: a browser maps that attribute to
+    ``-webkit-center``, which centres the email table as a **block**, while
+    the literal ``center`` centres inline content only — so the email
+    un-centred in the window, and the style then inherited into every
+    heading and paragraph beneath it.
+
+    #76 established that layout regressions live with the screenshots. This
+    is the second, and the lesson is sharper: a byte-verified diff is not a
+    verified render.
+    """
+
+    def test_the_email_frame_stays_centred_in_the_viewport(self, alignment_defaults):
+        for name, measured in alignment_defaults.items():
+            expected = (1000 - measured["frame_w"]) // 2
+            assert abs(measured["frame_x"] - expected) <= 1, (
+                f"{name}: the email frame sits at x={measured['frame_x']}, not centred "
+                f"at {expected}. base.html's outer cell centres a block — check that its "
+                "align attribute has not been paired with a text-align style."
+            )
+
+    def test_copy_is_left_aligned_unless_a_section_says_otherwise(self, alignment_defaults):
+        """
+        No gallery fixture states an alignment, so every heading and every
+        paragraph must resolve to the initial value. ``start`` is what
+        Chromium reports for it in a left-to-right document.
+        """
+        for name, measured in alignment_defaults.items():
+            for role in ("heading", "prose"):
+                value = measured[role]
+                if value is None:
+                    continue
+                assert value == "start", (
+                    f"{name}: the default {role} alignment is {value!r}, not 'start'. "
+                    "Something above it is declaring an alignment that inherits."
+                )
+
+
+# ──────────────────────────────────────────────────────────────────────
+# Caller-wrapped copy keeps its component's styling (#130)
+# ──────────────────────────────────────────────────────────────────────
+
+_INHERITANCE_PROBE = """() => {
+  const out = [];
+  // Selected by CLASS, never by tag. Keying on 'div.body-text' would make
+  // this whole check vacuous the moment someone turned the wrapper back
+  // into a paragraph — the exact regression it exists to catch.
+  document.querySelectorAll('.body-text').forEach(wrapper => {
+    const wanted = getComputedStyle(wrapper).fontFamily;
+    // Every leaf that actually shows text inside this wrapper.
+    const leaves = wrapper.querySelectorAll('*');
+    const nodes = leaves.length ? Array.from(leaves) : [wrapper];
+    nodes.forEach(el => {
+      const text = el.textContent.replace(/\\s+/g, ' ').trim();
+      if (!text || el.children.length) return;
+      out.push([text.slice(0, 40), wanted, getComputedStyle(el).fontFamily]);
+    });
+    if (!wrapper.textContent.trim()) out.push(['(EMPTY WRAPPER)', wanted, wanted]);
+  });
+  return out;
+}"""
+
+
+@pytest.fixture(scope="module")
+def copy_inheritance():
+    """What each fixture's body copy actually computes to, in one session."""
+    if not available():
+        pytest.skip('no browser; screenshots are the optional "[qa]" extra')
+
+    measured = {}
+    with _load_playwright()() as playwright:
+        browser = _launch(playwright)
+        for name in FIXTURE_NAMES:
+            page = browser.new_page(viewport={"width": 1000, "height": 900})
+            page.route("**/*", lambda route: route.abort())
+            page.set_content(all_fixtures()[name]().render())
+            measured[name] = page.evaluate(_INHERITANCE_PROBE)
+            page.close()
+        browser.close()
+    return measured
+
+
+@requires_browser
+class TestBodyCopyKeepsItsOwnStyling:
+    """
+    #130. A ``p`` cannot contain a ``p``, and ``TextBlock.content`` is a
+    raw-HTML field whose documented shape is the caller's own paragraph
+    tags — so while the styling wrapper was a paragraph, every fixture's
+    body copy escaped it and rendered in the *label* typeface.
+
+    No golden could see it: the HTML was byte-stable and looked correct.
+    Only a parser resolving the nesting reveals it, which is why the guard
+    lives here beside the other layout invariants.
+    """
+
+    def test_no_styling_wrapper_is_left_empty(self, copy_inheritance):
+        """
+        The cheapest form of the check, and the one that would have caught
+        this years earlier: if the element carrying the component's font
+        holds no text, the text is somewhere else.
+        """
+        for name, rows in copy_inheritance.items():
+            empty = [row for row in rows if row[0] == "(EMPTY WRAPPER)"]
+            assert not empty, (
+                f"{name}: {len(empty)} body-text wrapper(s) are empty — the copy has "
+                "escaped the element that styles it. See #130."
+            )
+
+    def test_the_copy_computes_the_wrapper_s_typeface(self, copy_inheritance):
+        """
+        The claim epic #56 makes and could not previously keep: the body
+        role reaches the body copy.
+        """
+        for name, rows in copy_inheritance.items():
+            for text, wanted, actual in rows:
+                assert actual == wanted, (
+                    f"{name}: {text!r} renders in {actual} but its component "
+                    f"styles it {wanted}. See #130."
+                )
+
+    def test_the_body_role_reaches_the_body_copy(self):
+        """
+        #56's sentinel render, extended from the markup to what a browser
+        *computes* — which is the acceptance criterion #130 added, because
+        the markup half already passed while the render was wrong.
+
+        The sentinel theme names four findable families, so the copy
+        resolving to anything but the ``body`` one means the wrapper is not
+        an ancestor of the copy after all.
+        """
+        from qa.fixtures import kitchen_sink
+        from svc.builder.typography import FontStack, FontTheme
+
+        sentinel = FontTheme(
+            heading=FontStack("SentinelHeading", "serif"),
+            body=FontStack("SentinelBody", "serif"),
+            label=FontStack("SentinelLabel", "sans-serif"),
+            numeric=FontStack("SentinelNumeric", "monospace"),
+        )
+        email = kitchen_sink.build()
+        email.metadata.font_theme = sentinel
+
+        with _load_playwright()() as playwright:
+            browser = _launch(playwright)
+            page = browser.new_page(viewport={"width": 1000, "height": 900})
+            page.route("**/*", lambda route: route.abort())
+            page.set_content(email.render())
+            families = page.evaluate("""() => {
+                const out = [];
+                document.querySelectorAll('.body-text').forEach(wrapper => {
+                    const leaves = wrapper.querySelectorAll('*');
+                    (leaves.length ? Array.from(leaves) : [wrapper]).forEach(el => {
+                        if (!el.textContent.trim() || el.children.length) return;
+                        out.push(getComputedStyle(el).fontFamily);
+                    });
+                });
+                return out;
+            }""")
+            page.close()
+            browser.close()
+
+        assert families, "the sentinel render produced no body copy to measure"
+        for family in families:
+            assert family.startswith("SentinelBody"), (
+                f"body copy computes {family!r} under a sentinel theme whose body role "
+                "is SentinelBody. The copy is not inheriting from its own wrapper."
+            )
+
+
+# ──────────────────────────────────────────────────────────────────────
+# A column cell fills its column (#129)
+# ──────────────────────────────────────────────────────────────────────
+
+_COLUMN_FILL_PROBE = """() => Array.from(document.querySelectorAll('table.stack-column'))
+  .map(table => {
+    const cell = table.querySelector('td');
+    return [Math.round(table.getBoundingClientRect().width),
+            Math.round(cell.getBoundingClientRect().width)];
+  })"""
+
+
+@pytest.fixture(scope="module")
+def column_fill():
+    """Every gallery column, as (column width, cell width), in one session."""
+    if not available():
+        pytest.skip('no browser; screenshots are the optional "[qa]" extra')
+
+    measured = {}
+    with _load_playwright()() as playwright:
+        browser = _launch(playwright)
+        for name in FIXTURE_NAMES:
+            page = browser.new_page(viewport={"width": 1000, "height": 900})
+            page.route("**/*", lambda route: route.abort())
+            page.set_content(all_fixtures()[name]().render())
+            measured[name] = page.evaluate(_COLUMN_FILL_PROBE)
+            page.close()
+        browser.close()
+    return measured
+
+
+@requires_browser
+class TestEveryColumnCellFillsItsColumn:
+    """
+    #129, and it is here rather than in the goldens for the usual reason:
+    the HTML was byte-stable and correct-looking the whole time 76 of the
+    gallery's 88 column cells were as narrow as their own copy.
+
+    With ``display:inline-block`` the column stops being a table box — the
+    rows and cells get an anonymous table around them, and that shrink-wraps.
+    ``inline-table`` keeps it a table, so the specified width reaches the
+    cell. Anything depending on the cell's width had no room until then, and
+    #126's alignment was the first thing to notice.
+    """
+
+    def test_no_cell_is_narrower_than_its_column(self, column_fill):
+        narrow = {
+            name: [(column, cell) for column, cell in rows if cell < column - 1]
+            for name, rows in column_fill.items()
+        }
+        offenders = {name: rows for name, rows in narrow.items() if rows}
+        assert not offenders, (
+            f"column cells shrink-wrapped instead of filling: {offenders}. "
+            "Check that columns.html still says display:inline-table — see #129."
+        )
+
+    def test_the_gallery_actually_renders_columns(self, column_fill):
+        """
+        Guards the guard. Every assertion above passes vacuously on an email
+        with no splits, and #130's first probe already showed how easily a
+        selector stops matching.
+        """
+        total = sum(len(rows) for rows in column_fill.values())
+        assert total >= 80, f"only {total} column cells measured; the probe is not matching"
+
+
+# ──────────────────────────────────────────────────────────────────────
+# The supported viewport range (#133)
+# ──────────────────────────────────────────────────────────────────────
+
+
+@pytest.fixture(scope="module")
+def widths_measured():
+    """Every fixture's document width at every supported viewport."""
+    if not available():
+        pytest.skip('no browser; screenshots are the optional "[qa]" extra')
+
+    measured = {}
+    with _load_playwright()() as playwright:
+        browser = _launch(playwright)
+        for name in FIXTURE_NAMES:
+            html = all_fixtures()[name]().render()
+            for width in SUPPORTED_WIDTHS:
+                page = browser.new_page(viewport={"width": width, "height": 900})
+                page.route("**/*", lambda route: route.abort())
+                page.set_content(html)
+                measured[(name, width)] = page.evaluate(
+                    "() => Math.round(document.documentElement.scrollWidth)"
+                )
+                page.close()
+        browser.close()
+    return measured
+
+
+@requires_browser
+class TestTheSupportedViewportsAreHonoured:
+    """
+    #133 asked which viewports pyHermes claims, and this is the answer made
+    checkable: ``SUPPORTED_WIDTHS`` is the claim, and no gallery email may
+    exceed any width in it.
+
+    Separate from ``TestNothingOverflowsItsViewport``, which measures the
+    captured *screenshots*. That one asks "is the review artifact sane"; this
+    one asks "does the package keep its promise", and the two would drift the
+    moment a supported width stopped being a captured one.
+    """
+
+    def test_no_fixture_exceeds_a_supported_width(self, widths_measured):
+        offenders = [
+            f"{name} at {width}px: {got}"
+            for (name, width), got in widths_measured.items()
+            if got > width
+        ]
+        assert not offenders, (
+            "a reader would scroll sideways at a width the package claims to "
+            f"support: {offenders}. Either fix the email or change the claim in "
+            "SUPPORTED_WIDTHS — and if the claim changes, say so in the docs."
+        )
+
+    def test_every_captured_viewport_is_a_supported_one(self):
+        """
+        The two lists are allowed to differ — a width can be asserted without
+        being screenshotted — but not in this direction: capturing a viewport
+        the package does not claim would put an overflowing image in front of
+        a reviewer with nothing failing.
+        """
+        captured = {width for width, _ in VIEWPORTS.values()}
+        assert captured <= set(SUPPORTED_WIDTHS), (
+            f"captured viewports {sorted(captured - set(SUPPORTED_WIDTHS))} are not in "
+            "SUPPORTED_WIDTHS"
+        )

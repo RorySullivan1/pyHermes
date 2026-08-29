@@ -105,6 +105,19 @@ TABLE_OBJECTS = ("DataTable", "Column", "Cell", "TableRow")
 TABLE_ATTRIBUTE_ALIASES = {"headers": "columns"}
 
 
+def _gallery_sections():
+    """
+    Every container the gallery builds.
+
+    Reads ``_sections`` for ``_tables_in_gallery``'s reason: the section list
+    is deliberately not a public accessor (the body region is the list, not a
+    class), and a test that walks the tree is the one caller entitled to
+    reach for it.
+    """
+    for build in all_fixtures().values():
+        yield from build()._sections
+
+
 def _tables_in_gallery():
     """Every DataTable the gallery builds, with its rows, columns and cells."""
     from svc.builder.components import DataTable
@@ -127,10 +140,18 @@ class TestComponentFieldsAreExercised:
     ``DataTable`` tripped nothing at all. Epic #116 added seven of them, which
     is exactly enough for the absence to be expensive.
 
-    Scoped to the table objects rather than every component, which is honest
-    and shippable. **It is a first instance, not a special case**: the next
-    component to grow a vocabulary should widen this rather than let its
-    fields go unpinned for the same reason these did.
+    #121 scoped it to the table objects and recorded that as **a first
+    instance, not a special case**: the next component to grow a vocabulary
+    should widen it rather than let its fields go unpinned for the same
+    reason these did. Epic #124 was that next axis — five prose components
+    and three containers grew an ``align`` this rule could not see — so the
+    widening below is the earlier note being cashed rather than a new idea.
+
+    Containers were never covered at all, which is why ``title``,
+    ``background_color`` and ``highlight`` are checked here too: the gap
+    #121 found in components existed one layer up as well, and closing it
+    only for the field that prompted the question would leave the same trap
+    for whoever adds the next container property.
     """
 
     @staticmethod
@@ -176,6 +197,40 @@ class TestComponentFieldsAreExercised:
             assert self._observed(tables, name, default), (
                 f"no gallery table sets DataTable({name}=…)"
             )
+
+    def test_every_prose_component_exercises_its_alignment(self):
+        """
+        #124's axis. ``align`` is unset by default on all five, and an unset
+        field is one the golden cannot pin — the render would not move if
+        the default changed underneath it.
+        """
+        from svc.builder.components import CopyAlignment
+
+        aligned = [
+            component
+            for section in _gallery_sections()
+            for component in section.components()
+            if isinstance(component, CopyAlignment)
+        ]
+        assert aligned, "the gallery builds no component that takes an alignment"
+        assert any(component.align for component in aligned), (
+            "no gallery component sets its own align; the override is unpinned"
+        )
+
+    @pytest.mark.parametrize("field_name", ["title", "background_color", "highlight", "align"])
+    def test_every_container_field_is_exercised(self, field_name):
+        """
+        Containers had **no** completeness rule before #128 — the same gap
+        #121 found in components, one layer up and unnoticed because no
+        container field had been added since.
+        """
+        sections = list(_gallery_sections())
+        assert sections, "the gallery builds no sections"
+        defaults = {"title": None, "background_color": None, "highlight": False, "align": None}
+        assert any(
+            getattr(section, field_name, defaults[field_name]) != defaults[field_name]
+            for section in sections
+        ), f"no gallery container sets {field_name}; a field at its default cannot be pinned"
 
     def test_the_flat_colors_spelling_is_exercised(self):
         """

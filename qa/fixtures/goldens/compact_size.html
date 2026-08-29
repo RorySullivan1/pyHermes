@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" xmlns="http://www.w3.org/1999/xhtml"
+<html lang="en-GB" xmlns="http://www.w3.org/1999/xhtml"
       xmlns:v="urn:schemas-microsoft-com:vml"
       xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
@@ -36,6 +36,10 @@
          block, so the property it lacks costs Outlook nothing. */
       .kpi-cell { display:block !important; width:100% !important; box-sizing:border-box !important; border-right:none !important; border-bottom:1px solid #D6D2CB !important; padding:10px 12px !important; }
       .kpi-cell-last { border-bottom:none !important; }
+      /* A data table cannot collapse — stacking its columns would destroy the
+         alignment that is the only reason to render one — so padding is what
+         gives a narrow viewport its room back. See #132. */
+      .data-table th, .data-table td { padding:4px !important; }
     }
     /* Force light rendering in all dark mode contexts */
     :root { color-scheme: light only; }
@@ -85,11 +89,11 @@
           <!-- HEADER: Disclaimer bar                    -->
           <!-- ══════════════════════════════════════════ -->
           <tr>
-            <td style="background-color:#1E2B38; padding:5px 24px; text-align:left;" bgcolor="#1E2B38">
-              <p style="margin:0; font-family: Arial, Helvetica, sans-serif; font-size:9.5px;
+            <td align="left" style="background-color:#1E2B38; padding:5px 24px; text-align:left;" bgcolor="#1E2B38">
+              <div style="margin:0; font-family: Arial, Helvetica, sans-serif; font-size:9.5px;
                         font-weight:300; color:#B8C6CE; letter-spacing:0.3px; line-height:135%;">
                 For illustrative purposes. Not investment advice.
-              </p>
+              </div>
             </td>
           </tr>
 
@@ -125,7 +129,7 @@ background-color:#3A2B3F; background-size:cover;
                         Q3 Outlook
                       </p>
                     </td>
-                    <td valign="bottom" align="right" style="padding:12px 24px 4px 12px;">
+                    <td valign="bottom" align="right" style="text-align:right; padding:12px 24px 4px 12px;">
                       <!--[if mso]>
                       <img src="https://cdn.example.com/hermes-logo.png" width="128" alt="Hermes Research — weekly research letter" style="display:block;">
                       <![endif]-->
@@ -143,7 +147,7 @@ background-color:#3A2B3F; background-size:cover;
                         What the curve is pricing
                       </p>
                     </td>
-                    <td valign="middle" align="right" style="padding:0 24px 6px 12px;">
+                    <td valign="middle" align="right" style="text-align:right; padding:0 24px 6px 12px;">
                       <p style="margin:0; font-family: Arial, Helvetica, sans-serif; font-size:10px;
                                 color:#A8909B; letter-spacing:0.6px; text-transform:uppercase;">
                         Rates Strategy
@@ -173,7 +177,7 @@ background-color:#3A2B3F; background-size:cover;
                                      color:#A8909B; letter-spacing:0.6px; text-transform:uppercase;">
                             Week ending 24 August
                           </td>
-                          <td align="right" style="font-family: Arial, Helvetica, sans-serif; font-size:10px;
+                          <td align="right" style="text-align:right; font-family: Arial, Helvetica, sans-serif; font-size:10px;
                                                     color:#A8909B; letter-spacing:0.6px; text-transform:uppercase;">
                             Issue 001
                           </td>
@@ -210,22 +214,22 @@ background-color:#3A2B3F; background-size:cover;
         <td class="mobile-pad" style="padding:12px 23px 10px 23px; font-family: Arial, Helvetica, sans-serif; font-size:13px; color:#3B3B3B; line-height:160%;">
           <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border: 1px solid #D6D2CB;">
   <tr>
-    <td class="kpi-cell" style="width: 25.0%; border-right: 1px solid #D6D2CB; padding: 12px 10px; text-align: center; background-color: #FFFFFF;">
+    <td class="kpi-cell" align="center" style="width: 25.0%; border-right: 1px solid #D6D2CB; padding: 12px 10px; text-align: center; background-color: #FFFFFF;">
       <p style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #7A7A72; text-transform: uppercase; margin: 0 0 4px 0; line-height: 160%; letter-spacing: 0.5px; font-weight: bold;">S&amp;P 500</p>
       <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 19px; font-weight: bold; color: #4A7C59; margin: 0 0 3px 0; line-height: 115%;">5,234</p>
       <p style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #A09E97; margin: 0; line-height: 135%;">+1.42%</p>
     </td>
-    <td class="kpi-cell" style="width: 25.0%; border-right: 1px solid #D6D2CB; padding: 12px 10px; text-align: center; background-color: #FFFFFF;">
+    <td class="kpi-cell" align="center" style="width: 25.0%; border-right: 1px solid #D6D2CB; padding: 12px 10px; text-align: center; background-color: #FFFFFF;">
       <p style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #7A7A72; text-transform: uppercase; margin: 0 0 4px 0; line-height: 160%; letter-spacing: 0.5px; font-weight: bold;">UST 10Y</p>
       <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 19px; font-weight: bold; color: #B85450; margin: 0 0 3px 0; line-height: 115%;">4.28%</p>
       <p style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #A09E97; margin: 0; line-height: 135%;">+6 bps</p>
     </td>
-    <td class="kpi-cell" style="width: 25.0%; border-right: 1px solid #D6D2CB; padding: 12px 10px; text-align: center; background-color: #FFFFFF;">
+    <td class="kpi-cell" align="center" style="width: 25.0%; border-right: 1px solid #D6D2CB; padding: 12px 10px; text-align: center; background-color: #FFFFFF;">
       <p style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #7A7A72; text-transform: uppercase; margin: 0 0 4px 0; line-height: 160%; letter-spacing: 0.5px; font-weight: bold;">Gold</p>
       <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 19px; font-weight: bold; color: #4A7C59; margin: 0 0 3px 0; line-height: 115%;">2,411</p>
       <p style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #A09E97; margin: 0; line-height: 135%;">+0.85%</p>
     </td>
-    <td class="kpi-cell kpi-cell-last" style="width: 25.0%; padding: 12px 10px; text-align: center; background-color: #FFFFFF;">
+    <td class="kpi-cell kpi-cell-last" align="center" style="width: 25.0%; padding: 12px 10px; text-align: center; background-color: #FFFFFF;">
       <p style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #7A7A72; text-transform: uppercase; margin: 0 0 4px 0; line-height: 160%; letter-spacing: 0.5px; font-weight: bold;">VIX</p>
       <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 19px; font-weight: bold; color: #4A7C59; margin: 0 0 3px 0; line-height: 115%;">14.32</p>
       <p style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #A09E97; margin: 0; line-height: 135%;">-2.18 pts</p>
@@ -256,7 +260,7 @@ background-color:#3A2B3F; background-size:cover;
           <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 12px; font-style: italic; color: #7A7A72; margin: 0 0 8px 0; line-height: 135%;">Relative performance</p>
 <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border: 1px solid #D6D2CB;">
   <tr>
-    <td style="padding: 10px 12px; text-align: left; background-color: #FFFFFF; border-bottom: 1px solid #D6D2CB;">
+    <td align="left" style="padding: 10px 12px; text-align: left; background-color: #FFFFFF; border-bottom: 1px solid #D6D2CB;">
       <p style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #7A7A72; text-transform: uppercase; margin: 0 0 4px 0; line-height: 160%; letter-spacing: 0.5px; font-weight: bold;">Technology</p>
       <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 19px; font-weight: bold; color: #4A7C59; margin: 0 0 3px 0; line-height: 115%;">+2.1%</p>
       <p style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #A09E97; margin: 0; line-height: 135%;">week</p>
@@ -264,7 +268,7 @@ background-color:#3A2B3F; background-size:cover;
     </td>
   </tr>
   <tr>
-    <td style="padding: 10px 12px; text-align: left; background-color: #FFFFFF;">
+    <td align="left" style="padding: 10px 12px; text-align: left; background-color: #FFFFFF;">
       <p style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #7A7A72; text-transform: uppercase; margin: 0 0 4px 0; line-height: 160%; letter-spacing: 0.5px; font-weight: bold;">Energy</p>
       <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 19px; font-weight: bold; color: #B85450; margin: 0 0 3px 0; line-height: 115%;">-0.7%</p>
       <p style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #A09E97; margin: 0; line-height: 135%;">week</p>
@@ -294,26 +298,26 @@ background-color:#3A2B3F; background-size:cover;
       <tr>
         <td class="mobile-pad" style="padding:12px 24px 10px 24px; font-family: Arial, Helvetica, sans-serif; font-size:13px; color:#3B3B3B; line-height:160%;">
           <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 12px; font-style: italic; color: #7A7A72; margin: 0 0 8px 0; line-height: 135%;">Long-short, gross of costs</p>
-<table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
+<table class="data-table" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
   <tr style="border-top: 1px solid #D6D2CB; border-bottom: 2px solid #2C3E50;">
-    <th scope="col" style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 160%; text-align: left; padding: 8px; letter-spacing: 0.5px;">Factor</th>
-    <th scope="col" style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 160%; text-align: right; padding: 8px; letter-spacing: 0.5px;">1M</th>
-    <th scope="col" style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 160%; text-align: right; padding: 8px; letter-spacing: 0.5px;">YTD</th>
+    <th scope="col" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 160%; text-align: left; padding: 8px; letter-spacing: 0.5px;">Factor</th>
+    <th scope="col" align="right" style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 160%; text-align: right; padding: 8px; letter-spacing: 0.5px;">1M</th>
+    <th scope="col" align="right" style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 160%; text-align: right; padding: 8px; letter-spacing: 0.5px;">YTD</th>
   </tr>
   <tr style="border-bottom: 1px solid #EAE8E4;">
-    <th scope="row" style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; font-weight: normal; line-height: 160%; color: #3B3B3B; text-align: left; padding: 8px; background-color: #FFFFFF;">Value</th>
-    <td style="font-family: 'Courier New', Courier, monospace; font-size: 12px; font-weight: bold; line-height: 160%; color: #4A7C59; text-align: right; padding: 8px; background-color: #FFFFFF;">+1.8%</td>
-    <td style="font-family: 'Courier New', Courier, monospace; font-size: 12px; font-weight: bold; line-height: 160%; color: #4A7C59; text-align: right; padding: 8px; background-color: #FFFFFF;">+7.4%</td>
+    <th scope="row" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; font-weight: normal; line-height: 160%; color: #3B3B3B; text-align: left; padding: 8px; background-color: #FFFFFF;">Value</th>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 12px; font-weight: bold; line-height: 160%; color: #4A7C59; text-align: right; padding: 8px; background-color: #FFFFFF;">+1.8%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 12px; font-weight: bold; line-height: 160%; color: #4A7C59; text-align: right; padding: 8px; background-color: #FFFFFF;">+7.4%</td>
   </tr>
   <tr style="border-bottom: 1px solid #EAE8E4;">
-    <th scope="row" style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; font-weight: normal; line-height: 160%; color: #3B3B3B; text-align: left; padding: 8px; background-color: #F8F7F5;">Momentum</th>
-    <td style="font-family: 'Courier New', Courier, monospace; font-size: 12px; font-weight: bold; line-height: 160%; color: #B85450; text-align: right; padding: 8px; background-color: #F8F7F5;">-0.4%</td>
-    <td style="font-family: 'Courier New', Courier, monospace; font-size: 12px; font-weight: bold; line-height: 160%; color: #4A7C59; text-align: right; padding: 8px; background-color: #F8F7F5;">+11.2%</td>
+    <th scope="row" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; font-weight: normal; line-height: 160%; color: #3B3B3B; text-align: left; padding: 8px; background-color: #F8F7F5;">Momentum</th>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 12px; font-weight: bold; line-height: 160%; color: #B85450; text-align: right; padding: 8px; background-color: #F8F7F5;">-0.4%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 12px; font-weight: bold; line-height: 160%; color: #4A7C59; text-align: right; padding: 8px; background-color: #F8F7F5;">+11.2%</td>
   </tr>
   <tr style="border-bottom: 1px solid #D6D2CB;">
-    <th scope="row" style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; font-weight: normal; line-height: 160%; color: #3B3B3B; text-align: left; padding: 8px; background-color: #FFFFFF;">Quality</th>
-    <td style="font-family: 'Courier New', Courier, monospace; font-size: 12px; font-weight: bold; line-height: 160%; color: #4A7C59; text-align: right; padding: 8px; background-color: #FFFFFF;">+0.9%</td>
-    <td style="font-family: 'Courier New', Courier, monospace; font-size: 12px; font-weight: bold; line-height: 160%; color: #4A7C59; text-align: right; padding: 8px; background-color: #FFFFFF;">+5.1%</td>
+    <th scope="row" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; font-weight: normal; line-height: 160%; color: #3B3B3B; text-align: left; padding: 8px; background-color: #FFFFFF;">Quality</th>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 12px; font-weight: bold; line-height: 160%; color: #4A7C59; text-align: right; padding: 8px; background-color: #FFFFFF;">+0.9%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 12px; font-weight: bold; line-height: 160%; color: #4A7C59; text-align: right; padding: 8px; background-color: #FFFFFF;">+5.1%</td>
   </tr>
 </table>
 <p style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #A09E97; font-style: italic; margin: 6px 0 0 0; line-height: 160%;">Hermes Research as of 24 August 2026</p>
@@ -374,10 +378,10 @@ width="320"           style="display: block; max-width: 100%; height: auto; bord
       <tr>
         <td width="310" valign="top" style="width:310px; padding:0;">
     <![endif]-->
-    <table role="presentation" width="310" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:310px; margin-right:12px; background-color:#FFFFFF;">
+    <table role="presentation" width="310" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:310px; margin-right:12px; background-color:#FFFFFF;">
       <tr>
         <td class="mobile-pad" style="padding:2px 16px 18px 0px; font-family: Arial, Helvetica, sans-serif; font-size:13px; color:#3B3B3B; line-height:160%;">
-          <p class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; color: #3B3B3B; line-height: 160%; margin: 0 0 12px 0;"><p>The left half of a 50-50 split.</p></p>
+          <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; color: #3B3B3B; line-height: 160%; margin: 0 0 12px 0;"><p>The left half of a 50-50 split.</p></div>
 
         </td>
       </tr>
@@ -386,10 +390,10 @@ width="320"           style="display: block; max-width: 100%; height: auto; bord
         </td>
         <td width="310" valign="top" style="width:310px; padding:0;">
     <![endif]-->
-    <table role="presentation" width="310" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:310px; background-color:#FFFFFF;">
+    <table role="presentation" width="310" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:310px; background-color:#FFFFFF;">
       <tr>
         <td class="mobile-pad" style="padding:2px 0px 18px 16px; font-family: Arial, Helvetica, sans-serif; font-size:13px; color:#3B3B3B; line-height:160%;">
-          <p class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; color: #3B3B3B; line-height: 160%; margin: 0 0 12px 0;"><p>The right half of a 50-50 split.</p></p>
+          <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; color: #3B3B3B; line-height: 160%; margin: 0 0 12px 0;"><p>The right half of a 50-50 split.</p></div>
 
         </td>
       </tr>
@@ -424,12 +428,12 @@ width="320"           style="display: block; max-width: 100%; height: auto; bord
       <tr>
         <td width="186" valign="top" style="width:186px; padding:0;">
     <![endif]-->
-    <table role="presentation" width="186" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:186px; margin-right:12px; background-color:#F8F7F5;">
+    <table role="presentation" width="186" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:186px; margin-right:12px; background-color:#F8F7F5;">
       <tr>
         <td class="mobile-pad" style="padding:2px 12px 18px 0px; font-family: Arial, Helvetica, sans-serif; font-size:13px; color:#3B3B3B; line-height:160%;">
           <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
   <tr>
-    <td align="left" style="padding: 0;">
+    <td align="left" style="padding: 0; text-align: left;">
       <img src="cid:2900c6494e08b7f0" alt="Thumbnail"
 width="96"           style="display: block; border: 0; outline: none; text-decoration: none; max-width: 100%; height: auto;">
       <p style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #A09E97; font-style: italic; margin: 6px 0 0 0; line-height: 160%;">A 30% column</p>
@@ -444,10 +448,10 @@ width="96"           style="display: block; border: 0; outline: none; text-decor
         </td>
         <td width="434" valign="top" style="width:434px; padding:0;">
     <![endif]-->
-    <table role="presentation" width="434" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:434px; background-color:#F8F7F5;">
+    <table role="presentation" width="434" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:434px; background-color:#F8F7F5;">
       <tr>
         <td class="mobile-pad" style="padding:2px 0px 18px 16px; font-family: Arial, Helvetica, sans-serif; font-size:13px; color:#3B3B3B; line-height:160%;">
-          <p class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; color: #3B3B3B; line-height: 160%; margin: 0 0 12px 0;"><p>Commentary occupying the wider 70% column.</p></p>
+          <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; color: #3B3B3B; line-height: 160%; margin: 0 0 12px 0;"><p>Commentary occupying the wider 70% column.</p></div>
 
         </td>
       </tr>
@@ -482,10 +486,10 @@ width="96"           style="display: block; border: 0; outline: none; text-decor
       <tr>
         <td width="434" valign="top" style="width:434px; padding:0;">
     <![endif]-->
-    <table role="presentation" width="434" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:434px; margin-right:12px; background-color:#FFFFFF;">
+    <table role="presentation" width="434" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:434px; margin-right:12px; background-color:#FFFFFF;">
       <tr>
         <td class="mobile-pad" style="padding:2px 16px 18px 0px; font-family: Arial, Helvetica, sans-serif; font-size:13px; color:#3B3B3B; line-height:160%;">
-          <p class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; color: #3B3B3B; line-height: 160%; margin: 0 0 12px 0;"><p>Commentary occupying the wider 70% column.</p></p>
+          <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; color: #3B3B3B; line-height: 160%; margin: 0 0 12px 0;"><p>Commentary occupying the wider 70% column.</p></div>
 
         </td>
       </tr>
@@ -494,7 +498,7 @@ width="96"           style="display: block; border: 0; outline: none; text-decor
         </td>
         <td width="186" valign="top" style="width:186px; padding:0;">
     <![endif]-->
-    <table role="presentation" width="186" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:186px; background-color:#FFFFFF;">
+    <table role="presentation" width="186" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:186px; background-color:#FFFFFF;">
       <tr>
         <td class="mobile-pad" style="padding:2px 0px 18px 12px; font-family: Arial, Helvetica, sans-serif; font-size:13px; color:#3B3B3B; line-height:160%;">
           <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border-top: 1px solid #EAE8E4; padding-top: 10px; margin-top: 0;">
@@ -539,10 +543,10 @@ width="96"           style="display: block; border: 0; outline: none; text-decor
       <tr>
         <td width="203" valign="top" style="width:203px; padding:0;">
     <![endif]-->
-    <table role="presentation" width="203" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:203px; margin-right:12px; background-color:#FFFFFF;">
+    <table role="presentation" width="203" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:203px; margin-right:12px; background-color:#FFFFFF;">
       <tr>
         <td class="mobile-pad" style="padding:2px 12px 18px 0px; font-family: Arial, Helvetica, sans-serif; font-size:13px; color:#3B3B3B; line-height:160%;">
-          <p class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; color: #3B3B3B; line-height: 160%; margin: 0 0 12px 0;"><p>First third.</p></p>
+          <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; color: #3B3B3B; line-height: 160%; margin: 0 0 12px 0;"><p>First third.</p></div>
 
         </td>
       </tr>
@@ -551,10 +555,10 @@ width="96"           style="display: block; border: 0; outline: none; text-decor
         </td>
         <td width="202" valign="top" style="width:202px; padding:0;">
     <![endif]-->
-    <table role="presentation" width="202" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:202px; margin-right:12px; background-color:#FFFFFF;">
+    <table role="presentation" width="202" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:202px; margin-right:12px; background-color:#FFFFFF;">
       <tr>
         <td class="mobile-pad" style="padding:2px 12px 18px 12px; font-family: Arial, Helvetica, sans-serif; font-size:13px; color:#3B3B3B; line-height:160%;">
-          <p class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; color: #3B3B3B; line-height: 160%; margin: 0 0 12px 0;"><p>Second third.</p></p>
+          <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; color: #3B3B3B; line-height: 160%; margin: 0 0 12px 0;"><p>Second third.</p></div>
 
         </td>
       </tr>
@@ -563,10 +567,10 @@ width="96"           style="display: block; border: 0; outline: none; text-decor
         </td>
         <td width="203" valign="top" style="width:203px; padding:0;">
     <![endif]-->
-    <table role="presentation" width="203" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:203px; background-color:#FFFFFF;">
+    <table role="presentation" width="203" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:203px; background-color:#FFFFFF;">
       <tr>
         <td class="mobile-pad" style="padding:2px 0px 18px 12px; font-family: Arial, Helvetica, sans-serif; font-size:13px; color:#3B3B3B; line-height:160%;">
-          <p class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; color: #3B3B3B; line-height: 160%; margin: 0 0 12px 0;"><p>Final third.</p></p>
+          <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; color: #3B3B3B; line-height: 160%; margin: 0 0 12px 0;"><p>Final third.</p></div>
 
         </td>
       </tr>
@@ -601,10 +605,10 @@ width="96"           style="display: block; border: 0; outline: none; text-decor
       <tr>
         <td width="304" valign="top" style="width:304px; padding:0;">
     <![endif]-->
-    <table role="presentation" width="304" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:304px; margin-right:12px; background-color:#FFFFFF;">
+    <table role="presentation" width="304" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:304px; margin-right:12px; background-color:#FFFFFF;">
       <tr>
         <td class="mobile-pad" style="padding:2px 16px 18px 0px; font-family: Arial, Helvetica, sans-serif; font-size:13px; color:#3B3B3B; line-height:160%;">
-          <p class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; color: #3B3B3B; line-height: 160%; margin: 0 0 12px 0;"><p>The 50% column.</p></p>
+          <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; color: #3B3B3B; line-height: 160%; margin: 0 0 12px 0;"><p>The 50% column.</p></div>
 
         </td>
       </tr>
@@ -613,10 +617,10 @@ width="96"           style="display: block; border: 0; outline: none; text-decor
         </td>
         <td width="152" valign="top" style="width:152px; padding:0;">
     <![endif]-->
-    <table role="presentation" width="152" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:152px; margin-right:12px; background-color:#FFFFFF;">
+    <table role="presentation" width="152" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:152px; margin-right:12px; background-color:#FFFFFF;">
       <tr>
         <td class="mobile-pad" style="padding:2px 12px 18px 12px; font-family: Arial, Helvetica, sans-serif; font-size:13px; color:#3B3B3B; line-height:160%;">
-          <p class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; color: #3B3B3B; line-height: 160%; margin: 0 0 12px 0;"><p>Quarter.</p></p>
+          <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; color: #3B3B3B; line-height: 160%; margin: 0 0 12px 0;"><p>Quarter.</p></div>
 
         </td>
       </tr>
@@ -625,10 +629,10 @@ width="96"           style="display: block; border: 0; outline: none; text-decor
         </td>
         <td width="152" valign="top" style="width:152px; padding:0;">
     <![endif]-->
-    <table role="presentation" width="152" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:152px; background-color:#FFFFFF;">
+    <table role="presentation" width="152" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:152px; background-color:#FFFFFF;">
       <tr>
         <td class="mobile-pad" style="padding:2px 0px 18px 12px; font-family: Arial, Helvetica, sans-serif; font-size:13px; color:#3B3B3B; line-height:160%;">
-          <p class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; color: #3B3B3B; line-height: 160%; margin: 0 0 12px 0;"><p>Quarter.</p></p>
+          <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; color: #3B3B3B; line-height: 160%; margin: 0 0 12px 0;"><p>Quarter.</p></div>
 
         </td>
       </tr>
@@ -663,10 +667,10 @@ width="96"           style="display: block; border: 0; outline: none; text-decor
       <tr>
         <td width="152" valign="top" style="width:152px; padding:0;">
     <![endif]-->
-    <table role="presentation" width="152" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:152px; margin-right:12px; background-color:#FFFFFF;">
+    <table role="presentation" width="152" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:152px; margin-right:12px; background-color:#FFFFFF;">
       <tr>
         <td class="mobile-pad" style="padding:2px 12px 18px 0px; font-family: Arial, Helvetica, sans-serif; font-size:13px; color:#3B3B3B; line-height:160%;">
-          <p class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; color: #3B3B3B; line-height: 160%; margin: 0 0 12px 0;"><p>Quarter.</p></p>
+          <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; color: #3B3B3B; line-height: 160%; margin: 0 0 12px 0;"><p>Quarter.</p></div>
 
         </td>
       </tr>
@@ -675,10 +679,10 @@ width="96"           style="display: block; border: 0; outline: none; text-decor
         </td>
         <td width="304" valign="top" style="width:304px; padding:0;">
     <![endif]-->
-    <table role="presentation" width="304" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:304px; margin-right:12px; background-color:#FFFFFF;">
+    <table role="presentation" width="304" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:304px; margin-right:12px; background-color:#FFFFFF;">
       <tr>
         <td class="mobile-pad" style="padding:2px 16px 18px 16px; font-family: Arial, Helvetica, sans-serif; font-size:13px; color:#3B3B3B; line-height:160%;">
-          <p class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; color: #3B3B3B; line-height: 160%; margin: 0 0 12px 0;"><p>The 50% column.</p></p>
+          <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; color: #3B3B3B; line-height: 160%; margin: 0 0 12px 0;"><p>The 50% column.</p></div>
 
         </td>
       </tr>
@@ -687,10 +691,10 @@ width="96"           style="display: block; border: 0; outline: none; text-decor
         </td>
         <td width="152" valign="top" style="width:152px; padding:0;">
     <![endif]-->
-    <table role="presentation" width="152" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:152px; background-color:#FFFFFF;">
+    <table role="presentation" width="152" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:152px; background-color:#FFFFFF;">
       <tr>
         <td class="mobile-pad" style="padding:2px 0px 18px 12px; font-family: Arial, Helvetica, sans-serif; font-size:13px; color:#3B3B3B; line-height:160%;">
-          <p class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; color: #3B3B3B; line-height: 160%; margin: 0 0 12px 0;"><p>Quarter.</p></p>
+          <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; color: #3B3B3B; line-height: 160%; margin: 0 0 12px 0;"><p>Quarter.</p></div>
 
         </td>
       </tr>
@@ -725,10 +729,10 @@ width="96"           style="display: block; border: 0; outline: none; text-decor
       <tr>
         <td width="152" valign="top" style="width:152px; padding:0;">
     <![endif]-->
-    <table role="presentation" width="152" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:152px; margin-right:12px; background-color:#FFFFFF;">
+    <table role="presentation" width="152" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:152px; margin-right:12px; background-color:#FFFFFF;">
       <tr>
         <td class="mobile-pad" style="padding:2px 12px 18px 0px; font-family: Arial, Helvetica, sans-serif; font-size:13px; color:#3B3B3B; line-height:160%;">
-          <p class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; color: #3B3B3B; line-height: 160%; margin: 0 0 12px 0;"><p>Quarter.</p></p>
+          <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; color: #3B3B3B; line-height: 160%; margin: 0 0 12px 0;"><p>Quarter.</p></div>
 
         </td>
       </tr>
@@ -737,10 +741,10 @@ width="96"           style="display: block; border: 0; outline: none; text-decor
         </td>
         <td width="152" valign="top" style="width:152px; padding:0;">
     <![endif]-->
-    <table role="presentation" width="152" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:152px; margin-right:12px; background-color:#FFFFFF;">
+    <table role="presentation" width="152" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:152px; margin-right:12px; background-color:#FFFFFF;">
       <tr>
         <td class="mobile-pad" style="padding:2px 12px 18px 12px; font-family: Arial, Helvetica, sans-serif; font-size:13px; color:#3B3B3B; line-height:160%;">
-          <p class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; color: #3B3B3B; line-height: 160%; margin: 0 0 12px 0;"><p>Quarter.</p></p>
+          <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; color: #3B3B3B; line-height: 160%; margin: 0 0 12px 0;"><p>Quarter.</p></div>
 
         </td>
       </tr>
@@ -749,10 +753,10 @@ width="96"           style="display: block; border: 0; outline: none; text-decor
         </td>
         <td width="304" valign="top" style="width:304px; padding:0;">
     <![endif]-->
-    <table role="presentation" width="304" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-block; vertical-align:top; width:304px; background-color:#FFFFFF;">
+    <table role="presentation" width="304" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:304px; background-color:#FFFFFF;">
       <tr>
         <td class="mobile-pad" style="padding:2px 0px 18px 16px; font-family: Arial, Helvetica, sans-serif; font-size:13px; color:#3B3B3B; line-height:160%;">
-          <p class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; color: #3B3B3B; line-height: 160%; margin: 0 0 12px 0;"><p>The 50% column.</p></p>
+          <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; color: #3B3B3B; line-height: 160%; margin: 0 0 12px 0;"><p>The 50% column.</p></div>
 
         </td>
       </tr>
@@ -790,7 +794,7 @@ width="96"           style="display: block; border: 0; outline: none; text-decor
     </td>
     <td style="padding: 0; vertical-align: top;">
       <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; font-weight: bold; color: #2C3E50; margin: 0 0 4px 0; line-height: 125%;">Inflation prints</p>
-      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; color: #3B3B3B; margin: 0; line-height: 155%;"><p>Core services remain sticky.</p></p>
+      <div style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; color: #3B3B3B; margin: 0; line-height: 155%;"><p>Core services remain sticky.</p></div>
     </td>
   </tr>
 </table>
@@ -801,7 +805,7 @@ width="96"           style="display: block; border: 0; outline: none; text-decor
     </td>
     <td style="padding: 0; vertical-align: top;">
       <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; font-weight: bold; color: #2C3E50; margin: 0 0 4px 0; line-height: 125%;">Earnings revisions</p>
-      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; color: #3B3B3B; margin: 0; line-height: 155%;"><p>Breadth is narrowing.</p></p>
+      <div style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; color: #3B3B3B; margin: 0; line-height: 155%;"><p>Breadth is narrowing.</p></div>
     </td>
   </tr>
 </table>
@@ -812,7 +816,7 @@ width="96"           style="display: block; border: 0; outline: none; text-decor
     </td>
     <td style="padding: 0; vertical-align: top;">
       <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; font-weight: bold; color: #2C3E50; margin: 0 0 4px 0; line-height: 125%;">Positioning</p>
-      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; color: #3B3B3B; margin: 0; line-height: 155%;"><p>Futures length is extended.</p></p>
+      <div style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; color: #3B3B3B; margin: 0; line-height: 155%;"><p>Futures length is extended.</p></div>
     </td>
   </tr>
 </table>
@@ -880,14 +884,14 @@ width="96"           style="display: block; border: 0; outline: none; text-decor
                style="max-width:680px; background-color:#F2F1EE;" bgcolor="#F2F1EE" class="email-container">
           <tr>
             <td style="padding:14px 24px 16px; border:1px solid #D6D2CB; background-color:#F2F1EE;" bgcolor="#F2F1EE">
-              <p style="margin:0 0 14px; text-align:left;">
+              <p align="left" style="margin:0 0 14px; text-align:left;">
                 <img src="https://cdn.example.com/hermes-mark.png" alt="Hermes Research mark" width="80" style="display:inline-block; border:0; height:auto;">
               </p>
-              <div style="font-family: Arial, Helvetica, sans-serif; font-size:9.5px;
+              <div align="left" style="font-family: Arial, Helvetica, sans-serif; font-size:9.5px;
                           color:#5C574E; line-height:150%; text-align:left;">
                 <p>Distributed to registered recipients only.</p>
               </div>
-              <p style="margin:4px 0 0; font-family: Arial, Helvetica, sans-serif; font-size:9.5px;
+              <p align="left" style="margin:4px 0 0; font-family: Arial, Helvetica, sans-serif; font-size:9.5px;
                         color:#5C574E; text-align:left;">
                 2026 Hermes Research — all rights reserved &nbsp;&middot;&nbsp;
                 <a href="https://example.com/privacy" style="color:#5B8A9A; text-decoration:underline;">Privacy</a>

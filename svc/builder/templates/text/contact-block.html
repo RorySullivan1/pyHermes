@@ -2,7 +2,7 @@
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
        style="border:1px solid {{ theme.palette.rule }}; border-radius:4px;">
   <tr>
-    <td style="padding:{{ size.component.contact_pad_y }}px {{ size.component.contact_pad_x }}px;">
+    <td{% if align %} align="{{ align | escape_html }}"{% endif %} style="padding:{{ size.component.contact_pad_y }}px {{ size.component.contact_pad_x }}px;{% if align %} text-align:{{ align }};{% endif %}">
       <p style="margin:0; font-family: {{ font.heading }}; font-size:{{ size.type.subheading }}px;
                 font-weight:bold; color:{{ theme.text.heading }}; letter-spacing:0.2px;">
         {{ contact_heading | escape_html }}
@@ -23,6 +23,10 @@
       </v:roundrect>
       <![endif]-->
       <!--[if !mso]><!-->
+      {# The style carries the alignment alone: `a` has no `align`
+         attribute in any HTML spec, so #125's attribute-plus-style pairing
+         does not apply here. See the caption in `analysis/data-table.html`
+         for the other element the pairing skips, and why. #}
       <a href="{{ contact_url | escape_html }}"
          style="background-color:{{ theme.palette.accent }}; border-radius:3px; color:{{ theme.text.on_dark }};
                 display:inline-block; font-family: {{ font.label }};

@@ -70,6 +70,39 @@ VIEWPORTS: dict[str, tuple[int, int]] = {
     "mobile": (375, 800),
 }
 
+#: The viewport widths pyHermes claims to render without a horizontal
+#: scrollbar. **375 is the floor**, and #133 is where that was decided rather
+#: than left implied — the harness had asserted 375 for as long as it had
+#: existed, and nothing said whether anything narrower was supported.
+#:
+#: Measured across the gallery at the time of that decision:
+#:
+#: ===== ==========================================================
+#: width fixtures overflowing
+#: ===== ==========================================================
+#: 1000  none
+#: 375   none
+#: 360   ``spacious_size`` by 6px
+#: 320   five, by 19–46px
+#: ===== ==========================================================
+#:
+#: The 360px failure is one image four pixels too wide for that density's
+#: mobile content box — ``kitchen_sink``'s chart is 320px inside a 316px
+#: box once ``spacious`` has taken its 22px of padding a side. It is not a
+#: structural limit, and it is *not* the masthead, which is what the first
+#: diagnosis assumed before the element was isolated by removal.
+#:
+#: **The obvious fix is disqualified, not merely deferred.** Adding
+#: ``img { width:auto !important; max-width:100% !important; }`` under the
+#: breakpoint clears 360 outright and 320 for everything but a five-column
+#: table (#132). It also destroys the display width: with images blocked —
+#: Outlook desktop's default, and this harness's state — every image
+#: collapses to its alt-text box, measured at 128px to 63, 320 to 339, 80 to
+#: 165. The ``width`` attribute is the one thing ``img-width-attr`` exists as
+#: an *error* to enforce, because the Word engine ignores ``max-width``. A
+#: narrower floor therefore needs per-image work, not a global rule.
+SUPPORTED_WIDTHS: tuple[int, ...] = (1000, 375)
+
 #: Pinned: a scale factor of 2 would double every dimension and make two runs
 #: incomparable for no gain at this fidelity.
 DEVICE_SCALE_FACTOR = 1

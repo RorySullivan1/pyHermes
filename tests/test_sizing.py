@@ -104,6 +104,7 @@ AUDIT: dict[str, dict[str, int | float]] = {
         "card_value_gap": 4,
         "card_body_line": 1.6,
         "table_cell_pad": 12,
+        "table_cell_pad_mobile": 6,
         "list_ordinal_width": 22,
         "list_ordinal_gap": 12,
         "list_title_gap": 6,

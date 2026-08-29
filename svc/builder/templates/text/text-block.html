@@ -2,10 +2,22 @@
   TEXT BLOCK — Simple narrative prose.
 
   Context:
+    align        — Optional alignment for this component's copy; empty means
+                   inherit the container's, by ordinary CSS inheritance (#127)
     subtitle     — Optional sub-heading rendered above the prose
     text_content — Paragraph HTML or plain text
 #}
 {% if subtitle %}
-<p style="font-family: {{ font.body }}; font-size: {{ size.type.secondary }}px; font-style: italic; color: {{ theme.text.secondary }}; margin: 0 0 {{ size.space.subtitle_gap }}px 0; line-height: {{ size.type.secondary_line | percent }};">{{ subtitle | escape_html }}</p>
+<p{% if align %} align="{{ align | escape_html }}"{% endif %} style="font-family: {{ font.body }}; font-size: {{ size.type.secondary }}px; font-style: italic; color: {{ theme.text.secondary }}; margin: 0 0 {{ size.space.subtitle_gap }}px 0; line-height: {{ size.type.secondary_line | percent }};{% if align %} text-align:{{ align }};{% endif %}">{{ subtitle | escape_html }}</p>
 {% endif %}
-<p class="body-text" style="font-family: {{ font.body }}; font-size: {{ size.type.body }}px; color: {{ theme.text.primary }}; line-height: {{ size.type.body_line | percent }}; margin: 0 0 {{ size.space.block_gap }}px 0;">{{ text_content }}</p>
+{# A DIV, not a p, and that is the fix for #130. This element carries the
+   component's own font, size, colour, leading and alignment, and the field
+   inside it is raw HTML whose documented shape is the caller's own
+   paragraph tags. A p cannot contain a p: the parser auto-closes this one
+   the moment the caller's opens, the copy becomes its SIBLING, and it
+   inherits from the containing cell instead — which is the label typeface,
+   not the body one. A div may legally contain paragraphs, so the styling
+   element becomes a real ancestor. `Card.body` and `Footer.disclaimer`
+   were already divs; this brings the last three raw-HTML surfaces into
+   line with them. #}
+<div class="body-text"{% if align %} align="{{ align | escape_html }}"{% endif %} style="font-family: {{ font.body }}; font-size: {{ size.type.body }}px; color: {{ theme.text.primary }}; line-height: {{ size.type.body_line | percent }}; margin: 0 0 {{ size.space.block_gap }}px 0;{% if align %} text-align:{{ align }};{% endif %}">{{ text_content }}</div>
