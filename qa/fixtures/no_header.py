@@ -1,23 +1,10 @@
 """
-An email with no strip at all — the ``EmptyHeader`` variant, in the gallery.
+An email with no disclaimer strip — the ``EmptyHeader`` variant.
 
-The variant that proves the seam, and a seam with one implementation is a
-refactor. This differs from ``minimal`` in exactly one argument —
-``EmailBuilder.header(EmptyHeader())`` — so its golden pins that a region
-which fills *no* slot renders genuinely nothing: no band, no empty ``<tr>``,
-no trace of the strip's markup at all.
-
-Two deliberate pairings:
-
-* **The default banner**, per ``minimal_footer``'s worked reasoning. The two
-  region choices are independent, and an email swapping both at once could
-  not say which one moved a byte. So the masthead below is byte-identical to
-  the way a default ``Header`` renders it.
-* **A `header_disclaimer` that is set.** ``minimal`` already covers the empty
-  one, and an empty one here would prove nothing — the strip would be
-  absent either way, and the golden could not tell "the variant omitted it"
-  from "there was nothing to render". Copy the email owns, and a region that
-  declines to display it, is the whole distinction.
+A region that renders *nothing* is the case a four-region model most easily
+gets wrong: the slot must be filled with emptiness rather than left undefined,
+or the skeleton raises under ``StrictUndefined``. This golden is the proof it
+does not.
 """
 
 from __future__ import annotations

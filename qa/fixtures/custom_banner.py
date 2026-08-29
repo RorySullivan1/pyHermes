@@ -1,34 +1,13 @@
 """
-Every banner axis at once — the fixture that closes epic #88.
+Every banner axis at once (#88), so a cross-axis regression is visible.
 
-Each axis landed with its own tests, but the epic's promise is the
-*combination*, and a per-axis test cannot see an interaction. This is the
-email a cross-axis regression shows up in:
+Holds a free-form title and subtitle, the ``department`` fact, and a
+``BannerPalette`` deviating on every role it defines — the closed colour
+list's single named exception, scoped to the banner slot. A regression here
+means either the resolution chain or the palette scoping broke.
 
-* **free-form copy** (#91) — a ``title`` and ``subtitle`` that are neither
-  ``firm_name`` nor ``campaign_name``, so the golden pins that the masthead
-  says one thing while every other site still says the other;
-* **a department** (#92) — sharing the subtitle's row, which is what the 2x2
-  masthead exists for;
-* **an attached background image** — a ``cid:`` reference in a CSS
-  ``background-image`` *and* in the VML ``v:fill``, which is the one embed
-  path no other fixture covers. ``image_matrix`` pins that ``assets()``
-  matches the HTML's references and ``minimal_banner`` pins a CID *logo*;
-  nothing until now attached a CID **background**, and it reaches the
-  manifest through ``Banner.images()``' walk of ``IMAGE_FIELDS`` rather than
-  through a component;
-* **a `BannerPalette`** (#93) — all eight roles, chosen *for the image
-  underneath them* rather than as arbitrary distinctive values, because the
-  whole reason the exception exists is a backdrop the theme cannot see.
-
-The body is deliberately short. Its job is to put the masthead in a real
-email rather than to re-exercise the component library — ``kitchen_sink``
-already does that, and a fat body here would make this golden noisy for
-reasons that have nothing to do with the banner.
-
-**The theme stays ``classic``.** A preset *and* a palette moving at once
-would leave a golden diff nobody can attribute, and ``slate_theme`` already
-pins the preset path.
+Body kept short on purpose: ``kitchen_sink`` exercises the component library,
+and a fat body would make this golden noisy for unrelated reasons.
 """
 
 from __future__ import annotations

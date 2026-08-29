@@ -12,8 +12,7 @@ behaviour, it makes the code wrong.
     with config_override(retry_max_attempts=1): ...
 
 Nothing reads the environment on import, and consumers call ``get_config()``
-at use time so a later override is seen. `.claude/rules/config.md` carries
-the rest of the rules and why each holds.
+at use time so a later override is seen. `.claude/rules/config.md` has the rest.
 """
 
 from __future__ import annotations

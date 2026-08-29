@@ -1,52 +1,18 @@
 """
-Every alignment axis at once — the fixture that closes epic #124.
+Every alignment axis at once (#124), so a cross-axis regression is visible.
 
-#125 normalised the two spellings, #126 gave a container an ``align`` and
-#127 gave five prose components one. Each landed with its own tests, and each
-is invisible in a golden until an email actually uses it — so this is the
-email a *cross-axis* regression shows up in, the way ``custom_banner`` is for
-the masthead and ``rich_table`` for the table.
+Four situations, because no fewer carry the epic: a **centred section whose
+title follows** (the declaration lands on two sibling cells, and a centred
+section with a left heading reads as a bug); a **component overriding its
+container**, which shows the cascade *as* a cascade; a **right-aligned band
+holding a CardGroup and a DataTable**, sitting unmoved — the epic's boundary
+as an image, right-aligned so "kept its own alignment" is distinguishable
+from "inherited the section's"; and an **aligned split**, where the
+declaration lands per column cell.
 
-Four situations, because no fewer can carry the epic honestly:
-
-* **a centred section whose title follows** — the specific thing #126 showed
-  does not happen by itself. The heading and the content are sibling tables
-  in ``full-width.html``, not parent and child, so the declaration has to
-  land twice; a centred section with a left heading reads as a bug, and only
-  this fixture makes it visible at a glance;
-* **a component overriding its container** — a right-aligned block inside a
-  centred section, which is what shows the cascade *as* a cascade rather
-  than as a single setting. Nothing in Python resolves it: the component's
-  declaration sits on a descendant of the cell carrying the container's, and
-  inheritance is the weakest source;
-* **a structural component inside an aligned section** — a ``CardGroup``
-  and a ``DataTable`` in a **right**-aligned band, sitting unmoved. This is
-  the epic's boundary rendered as an image, and the band is right-aligned on
-  purpose: a centred one could not tell "the KPI strip kept its own
-  alignment" from "the KPI strip inherited the section's";
-* **an aligned split** — ``columns.html`` applies the declaration per column
-  cell, which is a different shape from a centred full-width band.
-
-The body is short for ``custom_banner``'s reason: ``kitchen_sink`` exercises
-the component library, and a fat body here would make this golden noisy for
-reasons unrelated to alignment. Theme, size and font stay **default** — a
-preset moving alongside an alignment axis would leave a golden diff nobody
-can attribute.
-
-It also carries one thing that is **not** an alignment axis: an explicit
-``Container.background_color``. Widening the field-completeness rule to
-containers found that field — the original entry in the closed colour list —
-had never been set by any fixture at all, so nothing pinned how a
-caller-supplied band colour renders. A brand-new fixture is the cheapest
-place to close that, since no existing golden has to move for it.
-
-This fixture shipped one commit ahead of #129, when a column's content cell
-still shrink-wrapped to its copy instead of filling its column — so a
-split's alignment reached every cell correctly and had nowhere to show. Its
-docstring predicted that fixing #129 would move this golden, and it did, by
-five lines. The two columns are still written long enough to fill their
-width: that was a workaround then and is honest content now, and shortening
-them would only make the golden pin less.
+Theme, size and font stay default: a preset moving alongside an alignment
+axis would leave a golden diff nobody can attribute. It also carries the
+gallery's only explicit ``Container.background_color`` (#128).
 """
 
 from __future__ import annotations

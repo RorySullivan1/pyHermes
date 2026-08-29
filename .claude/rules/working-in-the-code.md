@@ -194,3 +194,38 @@ Usage::
     from svc.delivery import build_message, save_eml
     from svc.gmail import GoogleApiTransport, send_message
 ```
+
+11. **Prose is bounded, and the bound is checked.** A file states its purpose; a class may
+   argue its design; a function states its contract; a comment marks a trap. Added by epic
+   #134, and the teeth are `tests/test_prose_budget.py` reading
+   `.claude/hooks/prose_budget.py` — the *same* measurer as the edit-time advisory hook, so
+   a CI failure and an in-session notice cannot disagree about the rule. The caps are in
+   `.claude/prose-budget.json`, the exemptions in `qa/prose_baseline.json`, and a second
+   test asserts every exemption **still violates**, so one cannot outlive its reason.
+   **The baseline may only shrink.** A decision that leaves a docstring is *moved* — to a
+   rules file, or to the code it concerns — never deleted; `knowledge-router` decides which.
+
+## Epic #134 — what the prose clean-up found
+
+Two findings outlive the epic, and both are about mechanisms rather than taste.
+
+**Comments ship.** 5.2% of a rendered email was commentary — 1,828 bytes in every
+message, 14.8% of the smallest fixture. The 102 KB clipping limit this whole package is
+organised around was being spent on prose no recipient reads. A Jinja comment costs
+nothing and reaches the only audience that wants it; an HTML comment is downloaded by
+everyone. #137 cut the shipped bytes by 79% with no rendered geometry moving.
+
+**The mechanism existed and was bypassed.** `.claude/context/` was created for exactly
+the split #136 performed, and `CLAUDE.md` grew to 2,045 lines instead — while
+`.claude/memory/INDEX.md` opened with "keep at most 80 lines" at 256 lines long. A
+structure nobody is *required* to use is a structure that decays. That is why the epic
+ends with a check rather than a convention, and why the check is advisory at edit time
+but a gate in CI: an advisory that blocks gets deleted, and a convention that never fails
+gets ignored.
+
+A third, smaller, worth keeping because it cost real time: **a measurer can be wrong about
+scope.** 64% of the flagged comment blocks were `#:` attribute docs — the documented way
+to describe a public constant. Making the code fit that measurement would have deleted
+correct API documentation; the fix was a new scope in the measurer (#138). When a check
+fires on code that looks right, check the check.
+

@@ -1,37 +1,18 @@
 """
-Screenshot runner: render the gallery through headless Chromium (#59).
+Screenshot runner: the gallery through headless Chromium (#59).
 
-Reviewing a visual change should not require checking out the branch, building
-an email by hand and opening it in a browser. This renders every fixture in the
-gallery at two viewports and writes PNGs, so a reviewer sees the change without
-leaving the pull request.
-
-Usage::
+Renders every fixture at both supported viewports and writes PNGs, so a
+reviewer sees a visual change without checking out the branch::
 
     python -m qa.screenshots                    # the whole gallery
     python -m qa.screenshots kitchen_sink       # named fixtures only
-    python -m qa.screenshots --out /tmp/shots
 
-**What is pinned, and what is merely recorded.** Viewport sizes, the device
-scale factor and the full-page capture mode are pinned here, so a rerun on the
-same machine is comparable. The *browser build* is deliberately **not** pinned:
-these screenshots are checks a human looks at, never artifacts that get diffed
-or committed, so buying reproducibility with a pinned container image would cost
-more than the guarantee is worth. Instead every run records exactly what
-produced it — Chromium's build string, Playwright's version, the platform — in
-``run.json`` beside the images. If pixel-diff gating is ever wanted (an explicit
-non-goal of epic #54's first cut), that recording is what tells you whether two
-sets are even comparable, and pinning becomes a decision made on purpose rather
-than inherited by accident.
+**Pinned**: the viewports, the device scale factor, the ``cid:``-to-data-URI
+substitution. **Recorded, not pinned**: the browser build, in ``run.json`` —
+a screenshot is a review artifact, and pinning Chromium would make it a gate.
 
-**Fidelity, stated honestly.** The files are named ``chromium-desktop`` and
-``chromium-mobile`` rather than "gmail" or "outlook" because that is all they
-are. Chromium approximates Gmail-in-a-browser at best; it says nothing about
-Outlook's Word engine, which is the client most likely to break a layout. Client
-compatibility belongs to the lint pass (#60), not to these images.
-
-Playwright is an optional extra (``pip install -e ".[qa]"``), so the core
-install and the unit suite stay browser-free.
+Optional by design: `[dev]` has no browser, and the tests skip rather than
+fail, which is what proves `[qa]` stays optional.
 """
 
 from __future__ import annotations
@@ -71,36 +52,11 @@ VIEWPORTS: dict[str, tuple[int, int]] = {
 }
 
 #: The viewport widths pyHermes claims to render without a horizontal
-#: scrollbar. **375 is the floor**, and #133 is where that was decided rather
-#: than left implied — the harness had asserted 375 for as long as it had
-#: existed, and nothing said whether anything narrower was supported.
-#:
-#: Measured across the gallery at the time of that decision:
-#:
-#: ===== ==========================================================
-#: width fixtures overflowing
-#: ===== ==========================================================
-#: 1000  none
-#: 375   none
-#: 360   ``spacious_size`` by 6px
-#: 320   five, by 19–46px
-#: ===== ==========================================================
-#:
-#: The 360px failure is one image four pixels too wide for that density's
-#: mobile content box — ``kitchen_sink``'s chart is 320px inside a 316px
-#: box once ``spacious`` has taken its 22px of padding a side. It is not a
-#: structural limit, and it is *not* the masthead, which is what the first
-#: diagnosis assumed before the element was isolated by removal.
-#:
-#: **The obvious fix is disqualified, not merely deferred.** Adding
-#: ``img { width:auto !important; max-width:100% !important; }`` under the
-#: breakpoint clears 360 outright and 320 for everything but a five-column
-#: table (#132). It also destroys the display width: with images blocked —
-#: Outlook desktop's default, and this harness's state — every image
-#: collapses to its alt-text box, measured at 128px to 63, 320 to 339, 80 to
-#: 165. The ``width`` attribute is the one thing ``img-width-attr`` exists as
-#: an *error* to enforce, because the Word engine ignores ``max-width``. A
-#: narrower floor therefore needs per-image work, not a global rule.
+#: scrollbar. **375 is the floor**, decided in #133 rather than left implied.
+#: 360 and 320 are *not* supported: the global `img { width:auto }` that would
+#: clear them collapses every image to its alt-text box when images are
+#: blocked, destroying the display width `img-width-attr` exists to enforce.
+#: `.claude/rules/qa-harness.md` carries the measurements.
 SUPPORTED_WIDTHS: tuple[int, ...] = (1000, 375)
 
 #: Pinned: a scale factor of 2 would double every dimension and make two runs

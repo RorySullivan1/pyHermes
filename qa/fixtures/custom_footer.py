@@ -1,31 +1,10 @@
 """
-Both footer axes at once — the fixture that closes epic #98.
+Both footer axes at once (#98), so a cross-axis regression is visible.
 
-#99 gave the footer's box the shared surface and #100 made its copyright row
-an object; each landed with its own tests, but the epic's promise is the
-*combination*, and a per-axis test cannot see an interaction. This is the
-email a cross-axis regression shows up in:
-
-* **the box surface** — ``align``, ``background_color`` and ``text_color``,
-  the same three fields the header strip takes, so this golden is the one
-  place both boxes are visible at once and the parity is legible rather than
-  merely asserted;
-* **a custom `LinkRow`** — its own copyright wording and a link set that is
-  neither the default pair nor the same length, which is the whole reason the
-  row became an object;
-* **a `mailto:` link**, because the scheme check is a safety rule that must
-  keep passing the schemes it allows, not only rejecting the ones it does
-  not.
-
-Paired with the **default header** on purpose, per ``minimal_footer``'s
-worked reasoning: the two boxes are independent, and an email that recoloured
-both at once could not say which one moved a byte. The strip above therefore
-renders on the theme's own tokens, which is also what makes the contrast
-between the two boxes visible in a screenshot.
-
-The theme stays ``classic``. A preset and a box override moving together
-would leave a golden diff nobody can attribute; ``slate_theme`` already pins
-the preset path.
+Holds a caller-supplied ``LinkRow`` and the footer box's own surface —
+``align``, ``background_color``, ``text_color`` — which is the *same*
+``BoxSurface`` the header mixes in. A regression here means the two boxes
+have stopped sharing one API, which is the claim the epic ships.
 """
 
 from __future__ import annotations

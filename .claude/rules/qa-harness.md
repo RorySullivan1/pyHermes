@@ -359,3 +359,553 @@ interface. This is the placement decision #61 said to inherit.
     — a unitless value is inherited as a number and recomputed per element, a percentage as
     the computed px — which is why the nine elements that inherited their leading now state
     it explicitly, and why the change is pixel-neutral rather than merely legal.
+
+## The golden harness — the three artifacts and why each is pinned separately
+
+Moved out of `qa/goldens.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
+
+```
+Golden snapshots over the fixture gallery (#58) — and #32's characterization test.
+
+Three artifacts are pinned per fixture, because a render, its attachments and
+its plain-text projection all drift independently:
+
+``goldens/<name>.html``
+    The rendered HTML, byte for byte, with no normalization. This is the
+    byte-identity bar every migration epic promises to hold (#33, #41, #42,
+    #49 all say "golden test unchanged").
+
+``goldens/<name>.assets.txt``
+    The asset manifest: one tab-separated record per ``ImageAsset``, in
+    manifest order — ``content_id``, ``mime_type``, byte length, filename.
+    The *bytes* are deliberately absent: they already live in the fixture that
+    generates them, and storing them twice would double the repo's image
+    weight to catch nothing extra. Length plus the content-addressed id is
+    enough, since a Content-ID is ``sha256(bytes)[:16]`` — different bytes
+    cannot keep the same id. Order is preserved rather than sorted, so a
+    reordering of ``Email.assets()`` is a failure, which is what #32 asked
+    for: image aggregation moves between classes during the header epic.
+
+``goldens/<name>.txt``
+    The plain-text projection (#110), byte for byte. It is a *separate*
+    artifact for the same reason the manifest is: since #109 the text part is
+    a second projection of the section tree rather than a degradation of the
+    render, so a component's ``text()`` can change with the HTML byte-identical
+    and vice versa. Neither golden can see the other's drift.
+
+    Its first regeneration is reviewed as what it is — the initial pin of the
+    house format, where the diff *is* the feature.
+
+**One harness, not two.** #58 required that this and #32 resolve to a single
+mechanism. #32 had not started, so it is satisfied here: ``kitchen_sink`` is
+the representative email it specified, exhaustive over ``EmailMetadata`` for
+exactly that reason.
+
+**Regeneration is opt-in and reviewed.** ``pytest --update-goldens`` is the
+only path — nothing regenerates automatically, and a missing golden fails
+rather than being silently created, because a golden that writes itself on
+first run pins whatever happened to be true that day. *A golden diff in a pull
+request is a claim that the change is intended*, and the reviewer reads it as
+one.
+
+This module is deliberately free of pytest: the gallery's later tools (#61's
+``preview`` CLI in particular) can check goldens without importing a test
+framework.
+```
+
+## The preview CLI — the manual loop it replaced
+
+Moved out of `qa/preview.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
+
+```
+The ``preview`` CLI (#61): build → save → lint → screenshot, in one command.
+
+Since #110 it writes **both** projections — ``<name>.html`` and ``<name>.txt``.
+An email has two readable parts, and this is the loop for eyeballing one, so
+writing only the HTML would leave out the half no screenshot and no lint rule
+can show you.
+
+The workflow the docs prescribed was manual — write a scratch script, build the
+email, ``.save()`` it into ``output/``, open a browser, repeat. With the gallery
+(#57), the goldens (#58), the screenshot runner (#59) and the lint pass (#60) in
+place, that loop gets one entry point, and it serves a real newsletter draft as
+readily as a fixture::
+
+    python -m qa.preview --list
+    python -m qa.preview kitchen_sink --lint --screenshot
+    python -m qa.preview drafts/weekly.py:build --lint --open
+
+**It composes; it does not reimplement.** Fixtures come from
+:func:`qa.fixtures.all_fixtures`, findings from :func:`qa.lint.lint_html`,
+images from :func:`qa.screenshots.capture_emails`. Anything it needed that they
+did not expose was a gap fixed *in them* — that rule is what produced
+``capture_emails``, since ``capture_gallery`` could only ever screenshot things
+already in the registry, and a user's draft never is.
+
+**No console script**, deliberately. #57 put ``qa/`` outside the wheel because
+the gallery is test data; a ``preview`` entry point on the installed package
+would contradict that, so the module form is the interface.
+
+Exit codes, so the command composes in a shell:
+
+===  ====================================================================
+0    the email built, and nothing asked for was refused
+1    ``--lint`` found errors (warnings alone do not fail)
+2    the email could not be built, or the target could not be resolved
+===  ====================================================================
+
+A missing browser is **not** a failure: ``--screenshot`` says so and carries on,
+because the ``[qa]`` extra is optional by design.
+```
+
+## The lint pass — the rules, their sources, and the deferred-rule mechanism
+
+Moved out of `qa/lint.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
+
+```
+Email-client lint pass (#60): portability checks over rendered HTML.
+
+The constraints that actually break emails are documented prose, not checks.
+Outlook's Word engine ignores ``max-width``, so every ``<img>`` needs a
+``width=`` attribute — a rule :mod:`svc.builder.images` follows and nothing
+verified end to end. ``alt`` is required at construction, but nothing asserted
+it survived into the markup. This module turns those into findings.
+
+Usage::
+
+    from qa.lint import lint_html, lint_email
+
+    findings = lint_email(email)                 # rules + the size breakdown
+    errors = [f for f in findings if f.severity is Severity.ERROR]
+
+Four commitments shape it:
+
+**It parses, it does not grep.** The repo learned this the expensive way: a
+``grep`` for ``Contact Us`` matched inside an HTML section-marker comment and
+produced a confident, wrong answer. :class:`html.parser.HTMLParser` is stdlib,
+so the check costs no dependency.
+
+**It observes, it never patches.** Findings fail or warn; nothing rewrites
+HTML. Epic #54's first principle.
+
+**Every rule carries its source.** An unsourced rule does not ship — see
+``SOURCES`` below. A rule asserting something about a mail client that nobody
+can trace is indistinguishable from a rule asserting a preference.
+
+**It lands green.** A linter that arrives red teaches everyone to ignore it, so
+a rule whose finding cannot be fixed today is *filed and deferred*, never
+downgraded into a permanent warning. See ``DEFERRED_RULES``.
+```
+
+## The screenshot runner — what is pinned versus merely recorded
+
+Moved out of `qa/screenshots.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
+
+```
+Screenshot runner: render the gallery through headless Chromium (#59).
+
+Reviewing a visual change should not require checking out the branch, building
+an email by hand and opening it in a browser. This renders every fixture in the
+gallery at two viewports and writes PNGs, so a reviewer sees the change without
+leaving the pull request.
+
+Usage::
+
+    python -m qa.screenshots                    # the whole gallery
+    python -m qa.screenshots kitchen_sink       # named fixtures only
+    python -m qa.screenshots --out /tmp/shots
+
+**What is pinned, and what is merely recorded.** Viewport sizes, the device
+scale factor and the full-page capture mode are pinned here, so a rerun on the
+same machine is comparable. The *browser build* is deliberately **not** pinned:
+these screenshots are checks a human looks at, never artifacts that get diffed
+or committed, so buying reproducibility with a pinned container image would cost
+more than the guarantee is worth. Instead every run records exactly what
+produced it — Chromium's build string, Playwright's version, the platform — in
+``run.json`` beside the images. If pixel-diff gating is ever wanted (an explicit
+non-goal of epic #54's first cut), that recording is what tells you whether two
+sets are even comparable, and pinning becomes a decision made on purpose rather
+than inherited by accident.
+
+**Fidelity, stated honestly.** The files are named ``chromium-desktop`` and
+``chromium-mobile`` rather than "gmail" or "outlook" because that is all they
+are. Chromium approximates Gmail-in-a-browser at best; it says nothing about
+Outlook's Word engine, which is the client most likely to break a layout. Client
+compatibility belongs to the lint pass (#60), not to these images.
+
+Playwright is an optional extra (``pip install -e ".[qa]"``), so the core
+install and the unit suite stay browser-free.
+```
+
+## Why 375px is the supported floor — #133's measurements
+
+Moved out of `qa/screenshots.py`'s `SUPPORTED_WIDTHS` note by #139: the constant states the rule, the measurement that established it lives here.
+
+```
+#: The viewport widths pyHermes claims to render without a horizontal
+#: scrollbar. **375 is the floor**, and #133 is where that was decided rather
+#: than left implied — the harness had asserted 375 for as long as it had
+#: existed, and nothing said whether anything narrower was supported.
+#:
+#: Measured across the gallery at the time of that decision:
+#:
+#: ===== ==========================================================
+#: width fixtures overflowing
+#: ===== ==========================================================
+#: 1000  none
+#: 375   none
+#: 360   ``spacious_size`` by 6px
+#: 320   five, by 19–46px
+#: ===== ==========================================================
+#:
+#: The 360px failure is one image four pixels too wide for that density's
+#: mobile content box — ``kitchen_sink``'s chart is 320px inside a 316px
+#: box once ``spacious`` has taken its 22px of padding a side. It is not a
+#: structural limit, and it is *not* the masthead, which is what the first
+#: diagnosis assumed before the element was isolated by removal.
+#:
+#: **The obvious fix is disqualified, not merely deferred.** Adding
+#: ``img { width:auto !important; max-width:100% !important; }`` under the
+#: breakpoint clears 360 outright and 320 for everything but a five-column
+#: table (#132). It also destroys the display width: with images blocked —
+#: Outlook desktop's default, and this harness's state — every image
+#: collapses to its alt-text box, measured at 128px to 63, 320 to 339, 80 to
+#: 165. The ``width`` attribute is the one thing ``img-width-attr`` exists as
+#: an *error* to enforce, because the Word engine ignores ``max-width``. A
+#: narrower floor therefore needs per-image work, not a global rule.
+```
+
+## The alignment fixture — the four situations it was built to hold
+
+Moved out of `qa/fixtures/aligned_layout.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
+
+```
+Every alignment axis at once — the fixture that closes epic #124.
+
+#125 normalised the two spellings, #126 gave a container an ``align`` and
+#127 gave five prose components one. Each landed with its own tests, and each
+is invisible in a golden until an email actually uses it — so this is the
+email a *cross-axis* regression shows up in, the way ``custom_banner`` is for
+the masthead and ``rich_table`` for the table.
+
+Four situations, because no fewer can carry the epic honestly:
+
+* **a centred section whose title follows** — the specific thing #126 showed
+  does not happen by itself. The heading and the content are sibling tables
+  in ``full-width.html``, not parent and child, so the declaration has to
+  land twice; a centred section with a left heading reads as a bug, and only
+  this fixture makes it visible at a glance;
+* **a component overriding its container** — a right-aligned block inside a
+  centred section, which is what shows the cascade *as* a cascade rather
+  than as a single setting. Nothing in Python resolves it: the component's
+  declaration sits on a descendant of the cell carrying the container's, and
+  inheritance is the weakest source;
+* **a structural component inside an aligned section** — a ``CardGroup``
+  and a ``DataTable`` in a **right**-aligned band, sitting unmoved. This is
+  the epic's boundary rendered as an image, and the band is right-aligned on
+  purpose: a centred one could not tell "the KPI strip kept its own
+  alignment" from "the KPI strip inherited the section's";
+* **an aligned split** — ``columns.html`` applies the declaration per column
+  cell, which is a different shape from a centred full-width band.
+
+The body is short for ``custom_banner``'s reason: ``kitchen_sink`` exercises
+the component library, and a fat body here would make this golden noisy for
+reasons unrelated to alignment. Theme, size and font stay **default** — a
+preset moving alongside an alignment axis would leave a golden diff nobody
+can attribute.
+
+It also carries one thing that is **not** an alignment axis: an explicit
+``Container.background_color``. Widening the field-completeness rule to
+containers found that field — the original entry in the closed colour list —
+had never been set by any fixture at all, so nothing pinned how a
+caller-supplied band colour renders. A brand-new fixture is the cheapest
+place to close that, since no existing golden has to move for it.
+
+This fixture shipped one commit ahead of #129, when a column's content cell
+still shrink-wrapped to its copy instead of filling its column — so a
+split's alignment reached every cell correctly and had nowhere to show. Its
+docstring predicted that fixing #129 would move this golden, and it did, by
+five lines. The two columns are still written long enough to fill their
+width: that was a workaround then and is honest content now, and shortening
+them would only make the golden pin less.
+```
+
+## The banner fixture — what each axis pins
+
+Moved out of `qa/fixtures/custom_banner.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
+
+```
+Every banner axis at once — the fixture that closes epic #88.
+
+Each axis landed with its own tests, but the epic's promise is the
+*combination*, and a per-axis test cannot see an interaction. This is the
+email a cross-axis regression shows up in:
+
+* **free-form copy** (#91) — a ``title`` and ``subtitle`` that are neither
+  ``firm_name`` nor ``campaign_name``, so the golden pins that the masthead
+  says one thing while every other site still says the other;
+* **a department** (#92) — sharing the subtitle's row, which is what the 2x2
+  masthead exists for;
+* **an attached background image** — a ``cid:`` reference in a CSS
+  ``background-image`` *and* in the VML ``v:fill``, which is the one embed
+  path no other fixture covers. ``image_matrix`` pins that ``assets()``
+  matches the HTML's references and ``minimal_banner`` pins a CID *logo*;
+  nothing until now attached a CID **background**, and it reaches the
+  manifest through ``Banner.images()``' walk of ``IMAGE_FIELDS`` rather than
+  through a component;
+* **a `BannerPalette`** (#93) — all eight roles, chosen *for the image
+  underneath them* rather than as arbitrary distinctive values, because the
+  whole reason the exception exists is a backdrop the theme cannot see.
+
+The body is deliberately short. Its job is to put the masthead in a real
+email rather than to re-exercise the component library — ``kitchen_sink``
+already does that, and a fat body here would make this golden noisy for
+reasons that have nothing to do with the banner.
+
+**The theme stays ``classic``.** A preset *and* a palette moving at once
+would leave a golden diff nobody can attribute, and ``slate_theme`` already
+pins the preset path.
+```
+
+## The footer fixture — the two axes and the shared surface
+
+Moved out of `qa/fixtures/custom_footer.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
+
+```
+Both footer axes at once — the fixture that closes epic #98.
+
+#99 gave the footer's box the shared surface and #100 made its copyright row
+an object; each landed with its own tests, but the epic's promise is the
+*combination*, and a per-axis test cannot see an interaction. This is the
+email a cross-axis regression shows up in:
+
+* **the box surface** — ``align``, ``background_color`` and ``text_color``,
+  the same three fields the header strip takes, so this golden is the one
+  place both boxes are visible at once and the parity is legible rather than
+  merely asserted;
+* **a custom `LinkRow`** — its own copyright wording and a link set that is
+  neither the default pair nor the same length, which is the whole reason the
+  row became an object;
+* **a `mailto:` link**, because the scheme check is a safety rule that must
+  keep passing the schemes it allows, not only rejecting the ones it does
+  not.
+
+Paired with the **default header** on purpose, per ``minimal_footer``'s
+worked reasoning: the two boxes are independent, and an email that recoloured
+both at once could not say which one moved a byte. The strip above therefore
+renders on the theme's own tokens, which is also what makes the contrast
+between the two boxes visible in a screenshot.
+
+The theme stays ``classic``. A preset and a box override moving together
+would leave a golden diff nobody can attribute; ``slate_theme`` already pins
+the preset path.
+```
+
+## The typography A/B — why one preset needs a second fixture
+
+Moved out of `qa/fixtures/modern_fonts.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
+
+```
+``kitchen_sink`` at the ``modern`` font theme — the axis's A/B.
+
+The third design-system axis gets the proof its two siblings already have: a
+preset nobody can compare against is a refactor, not a seam. This fixture
+differs from ``kitchen_sink`` in exactly one metadata field — ``font_theme``
+— and reuses its content rather than restating it, exactly as
+``compact_size`` and ``slate_theme`` do, so the two goldens diff as a pure
+A/B where **every difference is a typeface**.
+
+What this one pins that no other golden can:
+
+* **the role vocabulary was cut in the right place.** ``heading`` and
+  ``body`` share a stack in the default, so nothing until now could show
+  they are separate roles. Here the masthead title, the ``<h2>`` section
+  titles, the item titles, the list ordinals, the contact heading and the
+  author name all move to the sans while the prose, the standfirsts and the
+  KPI values stay serif — which is only expressible because the roles are
+  named by the job a face does rather than by which face does it;
+* **the `[if mso]` fallback moves with everything else**, so the email is
+  not custom-faced in Gmail and Georgia in Outlook — the half-themed
+  failure the axis's standing rule exists to prevent, in the client hardest
+  to check;
+* **``numeric`` holds**, so the data table's figure columns still align.
+
+Sizes do not move: a font swap changes no px, which is the epic's
+orthogonality principle. Rendered line *lengths* do move with the metrics,
+and that is what the screenshots judge rather than the golden.
+```
+
+## The DataTable fixture — why two tables
+
+Moved out of `qa/fixtures/rich_table.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
+
+```
+Every ``DataTable`` axis at once — the fixture that closes epic #116.
+
+#117 gave columns an alignment and a kind, #118 gave cells a colour, a
+background and an override, #119 gave rows a kind, and #120 gave the table a
+name and row headers. Each landed with its own tests, and each is invisible
+in a golden until an email actually uses it — so this is the email a
+*cross-axis* regression shows up in, and the one that stops these properties
+being added, never exercised, and quietly rotting.
+
+Two tables, because one cannot carry the whole surface honestly:
+
+* **the sleeve table** — a caption, a second **text** column (unreachable
+  before #117 at any argument), a **centred** column, per-cell colours *and*
+  backgrounds, `subhead` groupings and a `total`. Its first column is text,
+  so every row gets a ``th scope="row"``;
+* **the ranking table** — a **numeric first column**, which is the only way
+  a golden can show that the row-header rule keys on the column's resolved
+  *kind* rather than on position. Without it, "the first cell is a row
+  header" and "a text first column is a row header" pin identically.
+
+**The body is short on purpose.** ``kitchen_sink`` exercises the component
+library; a fat body here would make this golden noisy for reasons unrelated
+to the table, which is ``custom_banner``'s reasoning and applies unchanged.
+
+Theme, size and font stay at their defaults for the same reason: a preset
+moving alongside a table axis would leave a diff nobody can attribute, and
+the three design axes already have fixtures of their own.
+```
+
+## The compact-density fixture
+
+Moved out of `qa/fixtures/compact_size.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
+
+```
+``kitchen_sink`` at the ``compact`` density.
+
+Denser: smaller type from the top of the scale down, tighter leading,
+and — where most of the density actually comes from — less padding
+everywhere. ``label`` and ``micro`` do not move: 9.5px fine print is the
+readability floor, and a compact theme that made a disclaimer unreadable
+would be broken rather than dense.
+
+The fixture differs from ``kitchen_sink`` in exactly one metadata field —
+``size_theme`` — and reuses its content rather than restating it, so the
+two goldens diff as a pure A/B. What this one pins that no other golden
+can:
+
+* every layer of the scheme is live at once: type, spacing, the
+  component sizes that do not follow the global scale, and the frame
+  padding that every column width is computed from;
+* ``base.html``'s ``@media`` block moves with the rest, so the email is
+  not desktop-compact and mobile-standard;
+* the columns still fill the content width to the pixel at a frame whose
+  padding is not 32.
+
+It also retires an exemption: ``kitchen_sink`` holds ``size_theme`` at its
+default on purpose — it is the epic's byte-identity reference — so the
+distinctive value has to live here. Same shape as ``slate_theme``.
+```
+
+## The spacious-density fixture
+
+Moved out of `qa/fixtures/spacious_size.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
+
+```
+``kitchen_sink`` at the ``spacious`` density.
+
+Airier: type grows across the whole scale, leading opens further than
+type does, and the frame gives up 8px of side padding on each edge. The
+gutter widens to 24px, which is what pushes a two-up split just under
+300px — and is why this theme is the only one that moves
+``frame.narrow_column``, down rather than up.
+
+The fixture differs from ``kitchen_sink`` in exactly one metadata field —
+``size_theme`` — and reuses its content rather than restating it, so the
+two goldens diff as a pure A/B. What this one pins that no other golden
+can:
+
+* every layer of the scheme is live at once: type, spacing, the
+  component sizes that do not follow the global scale, and the frame
+  padding that every column width is computed from;
+* ``base.html``'s ``@media`` block moves with the rest, so the email is
+  not desktop-spacious and mobile-standard;
+* the columns still fill the content width to the pixel at a frame whose
+  padding is not 32.
+
+It also retires an exemption: ``kitchen_sink`` holds ``size_theme`` at its
+default on purpose — it is the epic's byte-identity reference — so the
+distinctive value has to live here. Same shape as ``slate_theme``.
+```
+
+## The slate-preset fixture
+
+Moved out of `qa/fixtures/slate_theme.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
+
+```
+The ``slate`` preset, in the gallery.
+
+The colour epic's counterpart to ``minimal_banner`` / ``minimal_footer``: a
+fixture that exists to pin one *choice*. It differs from ``kitchen_sink`` in
+exactly one metadata field — ``theme`` — and its golden is what proves the
+palette is live in every corner of a rendered email rather than only in the
+inline styles a spot-check would look at.
+
+What this golden pins that no other one can:
+
+* the second preset renders at all, and renders *completely*: no token
+  falls back to a classic value anywhere, including inside the dark-mode
+  forcing block and the mobile media query, which used to carry their own
+  hardcoded copies of surface and text colours;
+* both halves of the Outlook scrim move together — the CSS ``rgba()`` and
+  the VML ``color``/``opacity`` attribute pair;
+* an unset ``Card.color`` resolves against *this* theme's neutral, while a
+  caller's explicit colour survives untouched — the semantic-vs-presentation
+  boundary, in one email.
+
+It also retires an exemption: ``kitchen_sink`` could not set ``theme`` to a
+distinctive value while only one preset existed, so the metadata
+completeness test skipped the field. This fixture is what makes it real.
+```
+
+## The omitted-header fixture
+
+Moved out of `qa/fixtures/no_header.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
+
+```
+An email with no strip at all — the ``EmptyHeader`` variant, in the gallery.
+
+The variant that proves the seam, and a seam with one implementation is a
+refactor. This differs from ``minimal`` in exactly one argument —
+``EmailBuilder.header(EmptyHeader())`` — so its golden pins that a region
+which fills *no* slot renders genuinely nothing: no band, no empty ``<tr>``,
+no trace of the strip's markup at all.
+
+Two deliberate pairings:
+
+* **The default banner**, per ``minimal_footer``'s worked reasoning. The two
+  region choices are independent, and an email swapping both at once could
+  not say which one moved a byte. So the masthead below is byte-identical to
+  the way a default ``Header`` renders it.
+* **A `header_disclaimer` that is set.** ``minimal`` already covers the empty
+  one, and an empty one here would prove nothing — the strip would be
+  absent either way, and the golden could not tell "the variant omitted it"
+  from "there was nothing to render". Copy the email owns, and a region that
+  declines to display it, is the whole distinction.
+```
+
+## The minimal-banner fixture
+
+Moved out of `qa/fixtures/minimal_banner.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
+
+```
+The ``MinimalBanner`` variant, in the gallery.
+
+The proof that a region is a seam and not a refactor: this email differs from
+the others in exactly one argument — ``EmailBuilder.banner(MinimalBanner(...))``
+— and nothing about the skeleton, the body, or the email's own facts moves
+with it.
+
+What the golden on this fixture pins that no other one can:
+
+* the variant renders **no** ``v:rect``/``v:fill``/``v:textbox`` and no
+  ``background-image``, which is the whole reason it exists;
+* the email-level facts still flow down — firm name, campaign name, date
+  range, issue label and the header disclaimer all appear, from
+  ``EmailMetadata``, exactly as they do under the default header;
+* a **CID logo** on a variant reaches ``assets()`` once, through the region's
+  own ``images()`` rather than through the metadata.
+```

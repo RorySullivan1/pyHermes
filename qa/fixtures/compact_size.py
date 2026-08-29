@@ -1,28 +1,9 @@
 """
-``kitchen_sink`` at the ``compact`` density.
+``kitchen_sink`` at the ``compact`` density — the size axis's A/B.
 
-Denser: smaller type from the top of the scale down, tighter leading,
-and — where most of the density actually comes from — less padding
-everywhere. ``label`` and ``micro`` do not move: 9.5px fine print is the
-readability floor, and a compact theme that made a disclaimer unreadable
-would be broken rather than dense.
-
-The fixture differs from ``kitchen_sink`` in exactly one metadata field —
-``size_theme`` — and reuses its content rather than restating it, so the
-two goldens diff as a pure A/B. What this one pins that no other golden
-can:
-
-* every layer of the scheme is live at once: type, spacing, the
-  component sizes that do not follow the global scale, and the frame
-  padding that every column width is computed from;
-* ``base.html``'s ``@media`` block moves with the rest, so the email is
-  not desktop-compact and mobile-standard;
-* the columns still fill the content width to the pixel at a frame whose
-  padding is not 32.
-
-It also retires an exemption: ``kitchen_sink`` holds ``size_theme`` at its
-default on purpose — it is the epic's byte-identity reference — so the
-distinctive value has to live here. Same shape as ``slate_theme``.
+Identical in every other respect, so the golden diff against ``kitchen_sink``
+is the density and nothing else. A px literal that failed to tokenise shows
+here as a value that did not move.
 """
 
 from __future__ import annotations

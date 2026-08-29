@@ -12,9 +12,7 @@ manifest of the images that HTML references::
 
 ``metadata()`` takes the email's facts and must precede ``section()``; only
 ``email_subject``, ``firm_name`` and ``campaign_name`` are required.
-
-`.claude/rules/builder-architecture.md` carries the four-layer model and the
-public API in full.
+`.claude/rules/builder-architecture.md` carries the four-layer model.
 """
 
 # Components

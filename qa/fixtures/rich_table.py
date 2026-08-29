@@ -1,31 +1,10 @@
 """
-Every ``DataTable`` axis at once — the fixture that closes epic #116.
+Every ``DataTable`` axis at once (#116), so a cross-axis regression is visible.
 
-#117 gave columns an alignment and a kind, #118 gave cells a colour, a
-background and an override, #119 gave rows a kind, and #120 gave the table a
-name and row headers. Each landed with its own tests, and each is invisible
-in a golden until an email actually uses it — so this is the email a
-*cross-axis* regression shows up in, and the one that stops these properties
-being added, never exercised, and quietly rotting.
-
-Two tables, because one cannot carry the whole surface honestly:
-
-* **the sleeve table** — a caption, a second **text** column (unreachable
-  before #117 at any argument), a **centred** column, per-cell colours *and*
-  backgrounds, `subhead` groupings and a `total`. Its first column is text,
-  so every row gets a ``th scope="row"``;
-* **the ranking table** — a **numeric first column**, which is the only way
-  a golden can show that the row-header rule keys on the column's resolved
-  *kind* rather than on position. Without it, "the first cell is a row
-  header" and "a text first column is a row header" pin identically.
-
-**The body is short on purpose.** ``kitchen_sink`` exercises the component
-library; a fat body here would make this golden noisy for reasons unrelated
-to the table, which is ``custom_banner``'s reasoning and applies unchanged.
-
-Theme, size and font stay at their defaults for the same reason: a preset
-moving alongside a table axis would leave a diff nobody can attribute, and
-the three design axes already have fixtures of their own.
+**Two tables on purpose.** One carries the expressive surface — per-column
+``kind`` and ``align``, per-cell colour and background, row kinds, a caption
+and row headers. The other is a plain table of bare strings, which is what
+pins that none of the new machinery changed the default rendering.
 """
 
 from __future__ import annotations

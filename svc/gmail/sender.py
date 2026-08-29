@@ -5,9 +5,9 @@ Owns Gmail's *wire contract* — the base64url ``raw`` encoding, the
 ``users.messages.send`` shape, which failures are worth retrying, and how
 they map onto this package's exceptions.
 
-**Owns no authentication.** It takes an already authorized transport and
-calls it, so nothing here imports Google's libraries, no credential touches
-this package, and a fake transport exercises the whole send path in CI::
+**Owns no authentication.** It takes an authorized transport and calls it, so
+nothing here imports Google's libraries and a fake transport exercises the
+whole send path in CI::
 
     service = build("gmail", "v1", credentials=creds)   # caller authenticates
     message = build_message(email, subject=..., sender=..., to=[...])

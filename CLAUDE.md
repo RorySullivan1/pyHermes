@@ -105,6 +105,10 @@ that enforces each, is in `working-in-the-code.md`.
 9. **A new property on a component or container joins the gallery at a non-default value.**
 10. **A new component must implement `text()`**, and absence fails loudly — the mirror of
     rule 7 with the opposite default.
+11. **Prose is bounded, and the bound is checked.** A file states its purpose; a class may
+    argue its design; a function states its contract; a comment marks a trap. The check
+    ships with a baseline that **may only shrink**, and a decision is *moved* to the docs
+    rather than deleted.
 
 ## Prose discipline
 

@@ -1,10 +1,10 @@
 """
 The HTML-subset degrader (#108): the builder's blessed raw HTML, as plain text.
 
-Five surfaces are raw caller HTML by documented contract —
-``TextBlock.content``, ``Card.body``, ``NumberedItem.body``,
-``Footer.disclaimer``, ``header_disclaimer``. Everything else reaches a
-template through ``escape_html``, so this converter exists for those five::
+Five surfaces are raw caller HTML by contract — ``TextBlock.content``,
+``Card.body``, ``NumberedItem.body``, ``Footer.disclaimer``,
+``header_disclaimer``. Everything else is escaped by the templates, so this
+converter exists for those five and no others::
 
     html_to_text("<p>Past performance is <strong>not</strong> a guide.</p>")
     # 'Past performance is not a guide.'
