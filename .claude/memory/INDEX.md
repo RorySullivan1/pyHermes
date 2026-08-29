@@ -3,11 +3,10 @@
 ## State            (rewrite in place — current truth only, ≤ ~10 lines)
 - pyHermes builds and sends: `svc/builder` → `svc/delivery` → `svc/gmail` / `svc/outlook`.
   Architecture and rationale live in CLAUDE.md — do not restate them here.
-- `main` @ `e56d214` (PR #131, epic #124 + #129/#130/#132/#133). Working branch
-  `claude/review-open-issues-rr8quq`, no PR open yet.
+- `main` @ `e5c587a` — **PR #146 merged**, closing epics #134 and #140 (twelve issues).
+  No branch open; the issue backlog is empty.
 - Every epic filed before 2026-08-29 is complete and every issue up to #133 is closed.
-- **Epic #140 is COMPLETE** (#141–#145). Open: epic #134 (#136–#139), the rewrite itself.
-  #135 (its ruler) is done.
+- **Epics #134 and #140 are COMPLETE.** Every issue up to #146 is closed.
 - The prose budget is live: caps in `.claude/prose-budget.json`, 110 baselined locations in
   `qa/prose_baseline.json`, gate in `tests/test_prose_budget.py`.
 
@@ -30,8 +29,8 @@
   sessions/2026-08-29-1628-asset-self-restriction.md.
 
 ## Threads          (open items; remove when closed)
-- **Epic #134** — prose discipline. #135 done (caps, baseline, gate). Next: #136 split
-  CLAUDE.md, #137 stop shipping comments in the email, #138 rewrite `svc/`, #139 `qa/`.
+- **CLAUDE.md is a router**; the detail is in path-scoped `.claude/rules/*.md`, which load
+  only when a matching file is read. Add reasoning there, not back into the router.
 - **Factory hand-off for #140 is in `.claude/README.md`** — what claudeBrain should take,
   and the four rules worth inheriting.
 - **The baseline may only shrink.** #138 and #139 empty it; nothing may be added.
@@ -46,3 +45,4 @@
 - [2026-08-28 21:30] datatable-epic — shipped **#121**, closing **epic #116**. The field-completeness test is the durable part: it closes a gap the … — sessions/2026-08-28-1940-datatable-epic.md
 - [2026-08-28 22:00] datatable-epic — opened **PR #123** for #114 + epic #116, then merged `main` into it after **PR #122** landed underneath …
 - [2026-08-29 16:28] asset-self-restriction — **epic #140 complete** (#141–#145) plus #135; the library now bounds the prose it was teaching — sessions/2026-08-29-1628-asset-self-restriction.md
+- [2026-08-29 20:30] prose-discipline — **epic #134 complete** (#136–#139) and **PR #146 merged** at `e5c587a`: CLAUDE.md 2,045 -> 160, 2,049 comment bytes off every email, baseline 110 -> 48 — sessions/2026-08-29-1628-asset-self-restriction.md
