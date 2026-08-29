@@ -1,0 +1,8 @@
+{
+  "module": 16,
+  "class": 28,
+  "function": 18,
+  "comment_run": 4,
+  "include": ["svc", "qa"],
+  "baseline": "qa/prose_baseline.json"
+}
