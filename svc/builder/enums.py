@@ -1,25 +1,17 @@
 """
-Centralized enum vocabulary for the email builder.
+The closed string vocabularies the builder accepts, in one place.
 
-A single home for the small closed sets of string options the builder
-accepts — column ratios, card orientation — so the allowed values live in
-one place instead of being scattered as bare string literals across the
-container and component classes.
+Column ratios, card orientation, embed strategy, image and text alignment,
+row kind, and the theme names — so the allowed values live here rather than
+as bare literals across containers and components.
 
-Every enum here is a :class:`~enum.StrEnum`: each member *is* its wire
-string (``TwoColumnRatio.EQUAL == "50-50"`` and hashes the same), so a
-caller may pass either the enum member or the plain string interchangeably.
-That keeps the enums a purely additive, backward-compatible convenience —
-existing ``ratio="50-50"`` / ``orientation="horizontal"`` calls are
-unaffected. Note the containers/components may now *store* the value as an
-enum member (e.g. from the default), but a member is-a ``str``
-(``isinstance(TwoColumnRatio.EQUAL, str)`` is ``True``), so attribute reads
-and ``==`` comparisons behave exactly as with the plain string.
+Every enum is a :class:`~enum.StrEnum`, so a member *is* its wire string and
+a caller may pass either interchangeably. That keeps them purely additive:
+existing ``ratio="50-50"`` calls are unaffected even where a container now
+stores the member.
 
-Note these enums hold only the *vocabulary*. The mapping from a ratio to
-its template file stays with the container that owns it (``_ratio_map`` in
-``containers.py``), because a template path is a rendering detail, not part
-of the type.
+**Vocabulary only.** A ratio's template path stays with the container that
+owns it — a template path is a rendering detail, not part of the type.
 """
 
 from __future__ import annotations

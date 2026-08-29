@@ -1,91 +1,21 @@
 """
 The HTML-subset degrader (#108): the builder's blessed raw HTML, as plain text.
 
-Five surfaces in this package are raw caller HTML by documented contract —
+Five surfaces are raw caller HTML by documented contract —
 ``TextBlock.content``, ``Card.body``, ``NumberedItem.body``,
-``Footer.disclaimer`` and ``header_disclaimer``. Every other value reaches a
-template through ``escape_html``. The plain-text part (#53) therefore needs
-exactly one converter, and only for those five::
-
-    from svc.builder.textgen import html_to_text
+``Footer.disclaimer``, ``header_disclaimer``. Everything else reaches a
+template through ``escape_html``, so this converter exists for those five::
 
     html_to_text("<p>Past performance is <strong>not</strong> a guide.</p>")
     # 'Past performance is not a guide.'
 
-**It parses; it never greps.** ``qa/lint.py`` records what a regex costs here:
-a ``grep`` for ``Contact Us`` matched inside an HTML comment and produced a
-confident, wrong answer. :class:`html.parser.HTMLParser` is stdlib, so the
-conversion costs no dependency — the same foundation and the same reason.
+**The blessed set is closed, and refuses to grow.** Epic #53 named this
+converter as its scope magnet: an unknown element contributes its text and
+drops its markup rather than earning a rule. The module also owns the shared
+formatting policy — wrap width, underlines, tables, link spelling.
 
-**The blessed set is closed, and that is a decision rather than a to-do.**
-Epic #53 names this converter as its scope magnet, so the set is written down
-here and refuses to grow:
-
-===================  =========================================================
-element              projection
-===================  =========================================================
-``p``                a paragraph break
-``br``               a line break
-``a``                carries its URL — see ``format_link``
-``strong`` ``b``     markers **dropped**; plain text has no emphasis, and
-``em`` ``i``         ``*stars*`` are a Markdown affectation, not house style
-``ul`` ``ol`` ``li`` one ``- `` item per line
-===================  =========================================================
-
-An element outside that set **contributes its text and vanishes as markup**.
-So a table pasted into a disclaimer degrades to its cell text run together —
-imperfect, acceptable, and documented. The two exceptions are ``script`` and
-``style``, whose content is dropped whole: a browser renders no text for
-either, so keeping it would be *less* faithful rather than more, and a script
-body reaching a plain-text reader is a defect rather than a degradation.
-
-The alternative to a closed set is a converter that grows one caller's tag at
-a time until it is a second rendering engine, which is the failure the set
-exists to prevent. The one surface that *does*
-carry ordinals — ``NumberedList`` — never routes through here: it holds them
-as data and projects them itself (#109), which is why ``ol`` can take the same
-``- `` as ``ul`` without losing anything a caller expressed.
-
-**Character references decode to the characters themselves**, and this is
-#100's decision deliberately inverted. That issue kept ``&copy;`` as an entity
-in the HTML because U+00A9 mis-decoded as latin-1 renders as a mojibake pair.
-The text part travels as a MIME part whose charset ``EmailMessage`` declares,
-so the real character is correct there — and an undecoded ``&copy;`` reaching
-a plain-text reader would be the actual bug. ``convert_charrefs=True`` does
-this in the parser, before any of this module's logic sees the text.
-
-**Output is deterministic**, byte for byte, for identical input. #110's text
-goldens depend on it, and so does the whole golden discipline behind them.
-
-The formatting policy
----------------------
-
-Decided **once, here** (#109), rather than per component — the alternative is
-a house format that drifts one projection at a time. Every ``text()`` in the
-package composes these helpers instead of spelling their decisions itself:
-
-``LINE_WIDTH = 78``
-    Prose wraps here, one column under RFC 5322's 78-character soft limit for
-    a line of a message. **Tables never wrap** — see :func:`table`.
-
-*One* blank line between blocks, *two* between sections
-    :func:`join_blocks` and :func:`join_sections`. The rhythm is what gives a
-    plain-text email its structure, since it has no other typography.
-
-Links: :func:`format_link` inline, :func:`link_line` on a line of its own
-    Parentheses read better inside a sentence, a colon better in a list of
-    destinations. A link with no URL emits its label alone, because an email
-    is free to carry none.
-
-A section title sits over a rule of its own length
-    :func:`underline` — ``-`` for a section, ``=`` for the masthead, so the
-    email's one top-level heading reads as one. Nothing else is decorated.
-
-Chrome images project to nothing; content images project their alt text
-    A logo, a masthead background and a footer sign-off mark are decoration a
-    text reader loses nothing by missing. An ``ImageBlock`` or a
-    ``ChartBlock`` is the section's *content*, and its ``alt`` is required at
-    construction precisely so this projection is never empty.
+Stdlib only; it imports nothing from the builder and an AST test holds that.
+`.claude/rules/plain-text.md` carries the element table and the policy.
 """
 
 from __future__ import annotations
@@ -351,44 +281,27 @@ def table(
     kinds: list[str] | None = None,
 ) -> str:
     """
-    Aligned monospace columns: the epic's named fiddly spot.
+    Aligned monospace columns.
 
-    Three decisions, and the third is the one worth stating:
+    Column width comes from the widest cell, header included. **Alignment is
+    handed in, not guessed** (#117) — ``aligns`` is resolved by the *same*
+    :meth:`DataTable.resolved_columns` call the markup reads, so the two
+    projections cannot disagree. **Nothing wraps inside a cell**: a table wider
+    than :data:`LINE_WIDTH` overflows rather than corrupting the alignment that
+    is the whole reason to render a table as text.
 
-    * **Width comes from the widest cell in each column**, header included.
-    * **Alignment is handed in, not guessed** (#117). ``aligns`` carries one
-      of ``left`` / ``center`` / ``right`` per column, resolved by
-      :meth:`~svc.builder.components.DataTable.resolved_columns` — the *same*
-      call the markup reads, which is what keeps the two projections from
-      disagreeing about which column is the label. Omitted, it falls back to
-      the pre-#117 convention (first column left, the rest right), so a
-      caller composing a table by hand still gets sensible output.
-    * **Nothing wraps inside a cell.** A table wider than
-      :data:`LINE_WIDTH` overflows the line-width policy rather than
-      corrupting its own alignment — a wrapped cell destroys the column that
-      is the entire reason to render a table as text at all. The policy
-      yields to the alignment here, deliberately, and this is where it says so.
-
-    A row's **kind** shows here too (#119), because a total that is
-    indistinguishable from a data row in the text part is a total only half
-    the readers can find:
-
-    * ``total`` — a rule above it, matching the header's, so it is findable
-      without counting rows.
-    * ``subhead`` — its label alone on its own line, unpadded. Plain text has
-      no merged cell to give it, and padding a heading into columns would
-      read as a data row with two empty fields.
+    A row's kind shows here too (#119): a ``total`` gets a rule above it, a
+    ``subhead`` its label alone on its own line, unpadded.
 
     Args:
         headers: One label per column.
-        rows:    Cells per row, each row the same length as ``headers``.
-        aligns:  One alignment per column, or ``None`` for the default.
-        kinds:   One :class:`~svc.builder.enums.RowKind` per row, or ``None``
-                 to treat every row as data.
+        rows:    Cells per row, each the same length as ``headers``.
+        aligns:  One alignment per column, or ``None`` for the pre-#117 default
+                 (first column left, the rest right).
+        kinds:   One :class:`~svc.builder.enums.RowKind` per row, or ``None``.
 
     Returns:
-        The header row, a rule, and one line per row. Empty if there are no
-        headers.
+        The header row, a rule, and one line per row. Empty without headers.
     """
     if not headers:
         return ""

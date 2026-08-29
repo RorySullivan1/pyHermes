@@ -1,50 +1,18 @@
 """
 Image sources and embed strategies for HTML email.
 
-An image in an email carries two independent facts: **where the bytes live**
-(a hosted URL, a file on disk, bytes in memory) and **how they reach the
-reader**.  This module owns both, and is the generic foundation the
-per-service delivery layers build on.
+An image carries two independent facts: **where the bytes live** (a URL, a
+file, bytes in memory) and **how they reach the reader** (hosted, attached by
+``cid:``, or inlined as a data URI). This module owns both.
 
-The builder can decide the strategy and emit the correct ``src``, but it
-cannot *perform* a CID embed — attaching a MIME part is a transport act
-belonging to a delivery service (``svc/gmail``, ``svc/outlook``).  So the
-builder emits two things instead of one: the HTML, and an **asset
-manifest** of the :class:`ImageAsset` parts the delivery layer must attach.
-Reach the manifest via :meth:`Email.assets <svc.builder.email.Email.assets>`.
+The builder decides the strategy and emits the correct ``src``, but it cannot
+*perform* a CID embed — attaching a MIME part is a transport act. So it
+**declares**: :meth:`Email.assets` returns the manifest, and
+:mod:`svc.delivery` turns it into parts.
 
-The three strategies, and why all three exist:
-
-==============  ===========================  =====================  ==========================
-Strategy        Size cost                    Gmail                  Outlook desktop
-==============  ===========================  =====================  ==========================
-``REMOTE``      none                         proxied and cached     blocked until "download
-                                                                    images"
-``CID``         *message* size, not HTML     renders; may show a    renders immediately, no
-                size — does not count        paperclip              prompt
-                against the 102 KB limit
-``DATA_URI``    +33% base64, straight into   **stripped entirely**  Word engine will not
-                the 102 KB budget                                   render it
-==============  ===========================  =====================  ==========================
-
-``REMOTE`` is the default because it is the only one that is universally
-*safe*, and ``CID`` is the one that actually renders everywhere — pick it
-when the reader must see the image without clicking anything.  ``DATA_URI``
-looks the most like "embedding" and works the least; it is supported for
-browser preview and non-Gmail channels, guarded by a hard size check, and
-is never a default.
-
-Usage::
-
-    from svc.builder.images import EmailImage
-
-    hosted   = EmailImage.hosted("https://cdn.example.com/chart.png", alt="Factor returns")
-    attached = EmailImage.attached("charts/factor.png", alt="Factor returns", width=616)
-    inline   = EmailImage.inline(png_bytes, alt="Sparkline", width=120)
-
-Format support is deliberately narrow: PNG, JPEG and GIF are the three
-raster formats every mail client renders.  WebP and SVG are recognised only
-so the rejection can say why.
+A component that carries images must declare them in ``IMAGE_FIELDS`` or by
+overriding ``images()``, or the bytes never reach the manifest.
+`.claude/rules/builder-architecture.md` carries the strategy table.
 """
 
 from __future__ import annotations

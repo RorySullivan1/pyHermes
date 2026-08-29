@@ -24,6 +24,7 @@ from __future__ import annotations
 import ast
 import io
 import json
+import re
 import os
 import sys
 import tokenize
@@ -33,7 +34,8 @@ from pathlib import Path
 #: Shipped defaults. Loose on purpose — they encode the *ordering* the standard states
 #: (a class may be verbose, a function may not) rather than a recommended number, since
 #: a cap that fits one codebase is wrong for the next. A project tunes them down.
-DEFAULT_BUDGETS = {"module": 20, "class": 30, "function": 15, "comment_run": 5}
+DEFAULT_BUDGETS = {"module": 20, "class": 30, "function": 15, "comment_run": 5,
+                   "attribute": 30}
 
 CONFIG_NAME = "prose-budget.json"
 MAX_FINDINGS = 8
@@ -81,12 +83,14 @@ class Budgets:
     cls: int = DEFAULT_BUDGETS["class"]
     function: int = DEFAULT_BUDGETS["function"]
     comment_run: int = DEFAULT_BUDGETS["comment_run"]
+    attribute: int = DEFAULT_BUDGETS["attribute"]
     baseline: frozenset[str] = frozenset()
     include: tuple[str, ...] = ()
 
     def cap(self, scope: str) -> int:
         return {"module": self.module, "class": self.cls,
-                "function": self.function, "comment_run": self.comment_run}[scope]
+                "function": self.function, "comment_run": self.comment_run,
+                "attribute": self.attribute}[scope]
 
 
 def project_root() -> Path:
@@ -110,7 +114,8 @@ def load_budgets(root: Path | None = None) -> Budgets | None:
 
     budgets = Budgets()
     for key, field in (("module", "module"), ("class", "cls"),
-                       ("function", "function"), ("comment_run", "comment_run")):
+                       ("function", "function"), ("comment_run", "comment_run"),
+                       ("attribute", "attribute")):
         value = raw.get(key)
         if isinstance(value, int) and value > 0:
             budgets = replace(budgets, **{field: value})
@@ -188,18 +193,40 @@ def _comment_runs(source: str, scopes: list[tuple[str, str, ast.AST]]) -> list[t
         if token.type == tokenize.COMMENT and not source.splitlines()[token.start[0] - 1][:token.start[1]].strip():
             own_line.append(token.start[0])
 
+    text = source.splitlines()
     runs: list[tuple[str, int, int]] = []
     start = previous = None
+
+    def close(a: int, b: int) -> None:
+        runs.append((_enclosing(scopes, a), a, b - a + 1))
+
     for line in own_line:
         if previous is not None and line == previous + 1:
             previous = line
             continue
         if start is not None:
-            runs.append((_enclosing(scopes, start), start, previous - start + 1))
+            close(start, previous)
         start = previous = line
     if start is not None:
-        runs.append((_enclosing(scopes, start), start, previous - start + 1))
+        close(start, previous)
     return runs
+
+
+def _is_attribute_doc(source: str, line: int, length: int) -> str | None:
+    """The name a ``#:`` run documents, or None when it is an ordinary comment block.
+
+    ``#:`` before an assignment is Sphinx's way of documenting a module constant —
+    API documentation, not inline prose, and measuring it as a comment block would
+    force correct documentation to be deleted. Its name is also a stabler baseline
+    key than an ordinal, for `Finding.location`'s reason.
+    """
+    lines = source.splitlines()
+    block = lines[line - 1 : line - 1 + length]
+    if not block or not all(l.strip().startswith("#:") for l in block if l.strip()):
+        return None
+    following = next((l for l in lines[line - 1 + length :] if l.strip()), "")
+    name = re.match(r"\s*([A-Za-z_][A-Za-z0-9_]*)\s*[:=]", following)
+    return name.group(1) if name else None
 
 
 def scan_python(source: str, path: str, budgets: Budgets) -> list[Finding]:
@@ -219,10 +246,15 @@ def scan_python(source: str, path: str, budgets: Budgets) -> list[Finding]:
 
     ordinals: dict[str, int] = {}
     for enclosing, line, length in _comment_runs(source, scopes):
-        ordinals[enclosing] = ordinals.get(enclosing, 0) + 1
-        if length > budgets.cap("comment_run"):
-            findings.append(Finding(path, "comment_run", f"{enclosing}#{ordinals[enclosing]}",
-                                    line, length, budgets.cap("comment_run")))
+        attribute = _is_attribute_doc(source, line, length)
+        scope = "attribute" if attribute else "comment_run"
+        if attribute:
+            name = attribute
+        else:
+            ordinals[enclosing] = ordinals.get(enclosing, 0) + 1
+            name = f"{enclosing}#{ordinals[enclosing]}"
+        if length > budgets.cap(scope):
+            findings.append(Finding(path, scope, name, line, length, budgets.cap(scope)))
 
     return [f for f in findings if f.location not in budgets.baseline]
 

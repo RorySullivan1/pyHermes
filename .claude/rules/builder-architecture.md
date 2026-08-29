@@ -495,3 +495,256 @@ data.
     which slots it fills — it composes `TEMPLATE_PATHS` rather than replacing it, so the two
     cannot drift on the slot they share; it has a gallery fixture and a golden.
     A seam with one implementation is a refactor.
+
+## The region layer — the two rules that give it its shape
+
+Moved out of `svc/builder/regions.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
+
+```
+Regions — the layer between the skeleton and the containers.
+
+The composition model is ``skeleton ← regions (header | banner | body | footer) ←
+containers ← components``. A *region* is a named area of the email that
+renders itself from its own template(s) and declares its own images, the way
+a :class:`~svc.builder.components.Component` already does for a content
+block.
+
+Two rules give the layer its shape:
+
+**Facts flow down.** The firm's name, the campaign, the dates, the
+disclaimers and the outbound URLs are facts about the *email*; they live on
+:class:`~svc.builder.models.EmailMetadata` and are passed into the region at
+render time. A region presents them — it cannot own or contradict them,
+which :meth:`Region.context` enforces by layering the facts *over* its own
+keys rather than under them.
+
+**The design system is not a parameter.** Fonts, palette, padding and the
+680px geometry stay in the templates, exactly as for containers and
+components. A region varies the *structure* of the masthead, not its look.
+
+**A region fills one or more named slots.** The banner fills two since #89 —
+``{{ header_bar_html }}`` for the strip at the top of the email and
+``{{ banner_html }}`` for the masthead below it, which shared a template only
+by accident of file layout; the footer fills one (``{{ footer_html }}``),
+rendered as a self-contained sibling table below the body.
+:meth:`Region.render_slots` is the contract the skeleton consumes, and a
+slot a variant leaves unfilled renders empty, which is how a variant
+*omits* a block rather than conditionalising it away.
+
+**``Banner`` was called ``Header`` until #90, and there is no alias.** The
+name is being reused: #87 gives the strip at the top of the email a region of
+its own, and *that* becomes ``Header``. A deprecated warn-and-forward shim —
+the courtesy ``KpiStrip`` extends to ``CardGroup`` — would collide with the
+new class rather than ease the migration, so the break is clean and loud on
+purpose. Between #90 and #87, ``from svc.builder import Header`` raises
+``ImportError``; afterwards an old-style ``Header(logo_url=…)`` fails at
+construction, because the class that answers to the name has no such field.
+Both failures happen at the call site, immediately, which is the point: a
+name that quietly changed meaning would keep running and be wrong. The flat
+keywords (``logo_url``, ``logo_alt``, ``logo_width``, ``header_bg_image_url``
+on :class:`~svc.builder.models.EmailMetadata`) are unaffected and still build
+the region — they are the common call path, and they never named the class.
+
+The body region is deliberately not a class: it *is* the email's ordered
+section list, and wrapping that in an object would add a layer with no
+behaviour. The preheader stays skeleton plumbing for the same reason. The
+strip the banner still renders becomes a region of its own in #87; until
+then the banner owns both of its slots.
+```
+
+## Images — the strategies, the manifest, and why the builder cannot embed
+
+Moved out of `svc/builder/images.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
+
+```
+Image sources and embed strategies for HTML email.
+
+An image in an email carries two independent facts: **where the bytes live**
+(a hosted URL, a file on disk, bytes in memory) and **how they reach the
+reader**.  This module owns both, and is the generic foundation the
+per-service delivery layers build on.
+
+The builder can decide the strategy and emit the correct ``src``, but it
+cannot *perform* a CID embed — attaching a MIME part is a transport act
+belonging to a delivery service (``svc/gmail``, ``svc/outlook``).  So the
+builder emits two things instead of one: the HTML, and an **asset
+manifest** of the :class:`ImageAsset` parts the delivery layer must attach.
+Reach the manifest via :meth:`Email.assets <svc.builder.email.Email.assets>`.
+
+The three strategies, and why all three exist:
+
+==============  ===========================  =====================  ==========================
+Strategy        Size cost                    Gmail                  Outlook desktop
+==============  ===========================  =====================  ==========================
+``REMOTE``      none                         proxied and cached     blocked until "download
+                                                                    images"
+``CID``         *message* size, not HTML     renders; may show a    renders immediately, no
+                size — does not count        paperclip              prompt
+                against the 102 KB limit
+``DATA_URI``    +33% base64, straight into   **stripped entirely**  Word engine will not
+                the 102 KB budget                                   render it
+==============  ===========================  =====================  ==========================
+
+``REMOTE`` is the default because it is the only one that is universally
+*safe*, and ``CID`` is the one that actually renders everywhere — pick it
+when the reader must see the image without clicking anything.  ``DATA_URI``
+looks the most like "embedding" and works the least; it is supported for
+browser preview and non-Gmail channels, guarded by a hard size check, and
+is never a default.
+
+Usage::
+
+    from svc.builder.images import EmailImage
+
+    hosted   = EmailImage.hosted("https://cdn.example.com/chart.png", alt="Factor returns")
+    attached = EmailImage.attached("charts/factor.png", alt="Factor returns", width=616)
+    inline   = EmailImage.inline(png_bytes, alt="Sparkline", width=120)
+
+Format support is deliberately narrow: PNG, JPEG and GIF are the three
+raster formats every mail client renders.  WebP and SVG are recognised only
+so the rejection can say why.
+```
+
+## The builder package's front-door example, in full
+
+Moved out of `svc/builder/__init__.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
+
+```
+pyHermes Email Builder Service
+==============================
+
+Object-oriented email assembly using Jinja2 templates.
+
+Quick start::
+
+    from pathlib import Path
+
+    from svc.builder import CardGroup, EmailBuilder, FullWidth, TextBlock
+    from svc.builder.models import KpiItem
+
+    # email_subject, firm_name and campaign_name are required; the rest of
+    # EmailMetadata is optional.  metadata() must be called before section().
+    email = (EmailBuilder()
+        .metadata({
+            "email_subject": "Weekly Market Wrap",
+            "firm_name": "Research & Strategy",
+            "campaign_name": "weekly-wrap",
+        })
+        .section(FullWidth(
+            content=CardGroup([
+                KpiItem("S&P 500", "5,234", "#4A7C59", "+1.42%"),
+                KpiItem("UST 10Y", "4.28%", "#B85450", "+6 bps"),
+                KpiItem("VIX", "14.32", "#4A7C59", "-2.18 pts"),
+            ]),
+            title="Market Snapshot",
+            highlight=True,
+        ))
+        .section(FullWidth(
+            content=TextBlock("Equity markets advanced..."),
+            title="Week in Review",
+        ))
+        .build()
+    )
+
+    email.save(Path("output.html"))
+```
+
+## The enum vocabulary — why StrEnum, and what stays out of it
+
+Moved out of `svc/builder/enums.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
+
+```
+Centralized enum vocabulary for the email builder.
+
+A single home for the small closed sets of string options the builder
+accepts — column ratios, card orientation — so the allowed values live in
+one place instead of being scattered as bare string literals across the
+container and component classes.
+
+Every enum here is a :class:`~enum.StrEnum`: each member *is* its wire
+string (``TwoColumnRatio.EQUAL == "50-50"`` and hashes the same), so a
+caller may pass either the enum member or the plain string interchangeably.
+That keeps the enums a purely additive, backward-compatible convenience —
+existing ``ratio="50-50"`` / ``orientation="horizontal"`` calls are
+unaffected. Note the containers/components may now *store* the value as an
+enum member (e.g. from the default), but a member is-a ``str``
+(``isinstance(TwoColumnRatio.EQUAL, str)`` is ``True``), so attribute reads
+and ``==`` comparisons behave exactly as with the plain string.
+
+Note these enums hold only the *vocabulary*. The mapping from a ratio to
+its template file stays with the container that owns it (``_ratio_map`` in
+``containers.py``), because a template path is a rendering detail, not part
+of the type.
+```
+
+## The three-way escaping split, stated in full
+
+Moved out of `svc/builder/filters.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
+
+```
+Custom Jinja2 filters and tests for the email builder.
+
+**Escaping contract.** Jinja2 ``autoescape`` is OFF — HTML emails need raw
+output, and rich fields are meant to carry markup.  Escaping is therefore
+explicit, and split by field kind:
+
+* **Plain-text fields** (section titles, subtitles, KPI labels/values, table
+  headers and cells, chart alt text and sources, author details, and the
+  plain metadata fields) are escaped **by the builder**, in the templates,
+  via the ``escape_html`` filter.  Pass these as raw text — do *not*
+  pre-escape them, or they will be double-escaped.
+* **HTML fields** (``TextBlock.content``, ``NumberedItem.body``, and the
+  metadata disclaimers) are emitted raw, because callers deliberately pass
+  markup.  **The caller is responsible for escaping anything untrusted in
+  them** — use :func:`escape_html` for that.
+* **Attributes** (``src``, ``href``, ``alt``, ``<title>``) are always escaped
+  by the builder, including quotes, so a value can never break out of the
+  attribute it sits in.
+```
+
+## Containers — the computed-width rule in full
+
+Moved out of `svc/builder/containers.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
+
+```
+Container classes for the email builder.
+
+A container defines the layout geometry for a section of the email —
+single column, two-column split, highlight band, etc.  Each container
+wraps one or more rendered component HTML fragments and produces a
+``<tr>`` block that drops into the main email body table.
+
+Column widths are **computed, never written down**: the ratio's own name
+is its weights, and :func:`~svc.builder.sizing.column_layout` splits the
+active scheme's content width by them. That is why one template serves
+every split — see #42 in :mod:`svc.builder.sizing`.
+
+Usage:
+    engine  = TemplateEngine()
+    kpi     = KpiStrip(items=[...])
+    section = FullWidth(content=kpi, title="Market Snapshot")
+    html    = section.render(engine)
+```
+
+## Email and EmailBuilder — the two construction patterns
+
+Moved out of `svc/builder/email.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
+
+```
+Email builder — the main orchestrator.
+
+Provides two usage patterns:
+
+1. Direct construction::
+
+    email = Email(metadata={...})
+    email.add_section(FullWidth(content=TextBlock("Hello"), title="Intro"))
+    email.save(Path("out.html"))
+
+2. Fluent builder::
+
+    html = (EmailBuilder()
+        .metadata({...})
+        .section(FullWidth(content=TextBlock("Hello"), title="Intro"))
+        .render())
+```

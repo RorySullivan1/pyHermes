@@ -1,34 +1,19 @@
 """
 Gmail send adapter: puts an assembled message on the wire.
 
-What this module owns is Gmail's *wire contract* — the base64url ``raw``
-encoding, the ``users.messages.send`` shape, which of Gmail's failures are
-worth retrying, and how they map onto this package's exception hierarchy.
+Owns Gmail's *wire contract* — the base64url ``raw`` encoding, the
+``users.messages.send`` shape, which failures are worth retrying, and how
+they map onto this package's exceptions.
 
-What it deliberately does **not** own is authentication. It takes an already
-authorized transport and calls it. That boundary buys three things:
-
-1. **pyHermes gains no dependency.** Nothing here imports Google's client
-   libraries — the transport is a structural type, so a real
-   ``googleapiclient`` service, a stub, or anything else with the right
-   method all satisfy it. The project's only runtime dependency stays Jinja2.
-2. **No credential ever touches this package.** Token acquisition, storage,
-   refresh and revocation stay with the caller, which is where an
-   application's secret handling already lives. OAuth token lifecycle is
-   where naive adapters rot, and the cheapest way not to rot is not to own it.
-3. **Tests need no mailbox.** A fake transport is a class with one method, so
-   the whole send path — including the retry ladder — is exercised in CI with
-   no account, no network, and no recorded fixtures to drift.
-
-Usage::
-
-    from googleapiclient.discovery import build      # caller's dependency
-    from svc.delivery import build_message
-    from svc.gmail import GoogleApiTransport, send_message
+**Owns no authentication.** It takes an already authorized transport and
+calls it, so nothing here imports Google's libraries, no credential touches
+this package, and a fake transport exercises the whole send path in CI::
 
     service = build("gmail", "v1", credentials=creds)   # caller authenticates
     message = build_message(email, subject=..., sender=..., to=[...])
     message_id = send_message(message, transport=GoogleApiTransport(service))
+
+`.claude/rules/delivery.md` carries what that boundary buys.
 """
 
 from __future__ import annotations

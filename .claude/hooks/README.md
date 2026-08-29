@@ -86,7 +86,7 @@ so a plain `ls` pays one fast Python startup, not three. To add a git guard, giv
 
 `prose_budget.py` is also a **library**, and that is the point of its shape: `scan_source()` and `scan_tree()` return `Finding`s, so a project's CI gate measures with the same code the edit-time note uses. An advisory hook cannot be a gate — it must never block — and a second measurer written for the gate is how the two come to disagree about what the rule is.
 
-It reads `.claude/prose-budget.json`, and **that file is the adoption marker**: absent, every entry point returns nothing. Keys are `module`, `class`, `function` and `comment_run` (line caps), `include` (roots to scan), and `baseline` (a path to a location-to-reason mapping whose entries are exempt). Baseline keys are qualified names rather than line numbers, so an edit above a docstring does not invalidate an entry and fail the gate for an unrelated reason.
+It reads `.claude/prose-budget.json`, and **that file is the adoption marker**: absent, every entry point returns nothing. Keys are `module`, `class`, `function`, `attribute` and `comment_run` (line caps), `include` (roots to scan), and `baseline` (a path to a location-to-reason mapping whose entries are exempt). Baseline keys are qualified names rather than line numbers, so an edit above a docstring does not invalidate an entry and fail the gate for an unrelated reason.
 
 Python only, via `ast` and `tokenize`. `_SCANNERS` is the extension point; a language with no entry is skipped rather than guessed at.
 

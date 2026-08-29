@@ -1,20 +1,17 @@
 """
-Email builder — the main orchestrator.
+``Email`` — the orchestrator that owns the section tree and renders it.
 
-Provides two usage patterns:
+Two construction patterns, the fluent one preferred::
 
-1. Direct construction::
-
-    email = Email(metadata={...})
-    email.add_section(FullWidth(content=TextBlock("Hello"), title="Intro"))
-    email.save(Path("out.html"))
-
-2. Fluent builder::
-
-    html = (EmailBuilder()
+    email = (EmailBuilder()
         .metadata({...})
         .section(FullWidth(content=TextBlock("Hello"), title="Intro"))
-        .render())
+        .build())
+
+``render()`` resolves the theme, size scheme and fonts once, renders the four
+regions and every section, and validates the composed document against the
+102 KB Gmail limit. ``assets()`` and ``text()`` are the other two
+projections of the same tree.
 """
 
 from __future__ import annotations

@@ -422,6 +422,7 @@ a function:
 | **Class** | May be verbose. This is where a design decision belongs |
 | **Function** | Limited but descriptive: what it does, its contract, its surprises |
 | **Inline** | The non-obvious only — a notice, a trap, a *why* the code cannot say |
+| **A documented constant** | Its own scope, not inline prose. A language that has a form for documenting a public constant (Python's `#:`, a doc comment) is asking for a docstring, and it is budgeted like one |
 | **Emitted output** | An HTML template, a CSS bundle, a generated header: its comments reach the consumer and cost bytes there. A higher bar, not the same one. What the build *compiles away* is free; what it *emits* is not |
 
 The test is **contract, not history**. The Python example above runs twelve lines and

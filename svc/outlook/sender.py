@@ -1,67 +1,13 @@
 """
 Outlook send adapter, over Microsoft Graph.
 
-Transport choice
-----------------
-Outlook has three plausible transports, and picking by default is how a
-delivery layer rots. This adapter uses **Microsoft Graph**:
+Takes the message :mod:`svc.delivery` assembled and puts it on the wire.
+Owns Graph's wire contract and its error semantics; **owns no credentials** —
+the caller supplies an authorized transport, so this package imports nothing
+from Microsoft and pyHermes gains no dependency.
 
-- **Microsoft Graph** *(chosen)*. OAuth2, works for any Microsoft 365 tenant,
-  needs nothing installed locally — and, decisively, ``sendMail`` accepts a
-  whole RFC 822 message as base64 rather than making the caller decompose it
-  into Graph's JSON ``message`` schema. That keeps the bytes we send
-  identical to the bytes :func:`svc.delivery.save_eml` writes, so inline CID
-  images and every header survive exactly as assembled. Re-encoding through
-  a JSON schema would put that equality — and the dry run's usefulness —
-  at risk.
-- **SMTP.** Needs no SDK, but it is not *Outlook*: it is a generic protocol
-  that happens to reach Microsoft 365, and Microsoft has been retiring basic
-  auth for it. A generic SMTP adapter is a reasonable thing to want, and it
-  could reuse :func:`~svc.delivery.retry.retry_with_backoff` unchanged — it
-  is simply not this module.
-- **``win32com`` / local Outlook automation.** Windows-only and requires a
-  running Outlook install. Wrong for a library, ruled out.
-
-*What would change the answer:* if pyHermes ever needed to send from a
-desktop Outlook profile rather than a tenant identity, or a caller could not
-obtain Graph ``Mail.Send`` permission, the SMTP path would be worth building
-alongside this one rather than replacing it.
-
-Where Graph differs from Gmail
-------------------------------
-Named here rather than quietly diverged from, because the two adapters look
-alike and the differences bite:
-
-1. **Standard base64, not URL-safe.** Gmail's ``raw`` field wants the
-   URL-safe alphabet; Graph wants ordinary base64 and rejects the message
-   with ``ErrorMimeContentInvalidBase64String`` otherwise.
-2. **No message id comes back.** ``sendMail`` answers ``202 Accepted`` with
-   an empty body, so :func:`send_message` returns ``None`` where the Gmail
-   adapter returns an id. There is nothing to return, and inventing one
-   would be a lie.
-3. **202 means *accepted*, not *delivered*.** Microsoft is explicit that the
-   status does not indicate processing has completed. A caller that needs
-   proof of delivery must look elsewhere; this function returning cleanly is
-   not it.
-4. **``Retry-After`` is authoritative.** Microsoft's guidance is that
-   throttled requests keep accruing against the quota, so ignoring the hint
-   and guessing a backoff actively *prolongs* the throttling. This adapter
-   reads the header and lets it override the computed ladder.
-
-Authentication is not this module's job — see :mod:`svc.gmail.sender` for the
-same boundary and the reasoning behind it. Bring an authorized session.
-
-Usage::
-
-    import requests                             # the caller's dependency
-    from svc.delivery import build_message
-    from svc.outlook import GraphApiTransport, send_message
-
-    session = requests.Session()                # caller authenticates
-    session.headers["Authorization"] = f"Bearer {token}"
-
-    message = build_message(email, subject=..., sender=..., to=[...])
-    send_message(message, transport=GraphApiTransport(session))
+`.claude/rules/delivery.md` carries why Graph was chosen over SMTP and COM,
+and the four ways Graph differs from Gmail.
 """
 
 from __future__ import annotations

@@ -3,61 +3,15 @@ Transport-neutral MIME assembly for a built email.
 
 The builder composes and *declares*; this module assembles.
 :meth:`~svc.builder.email.Email.render` gives the HTML and
-:meth:`~svc.builder.email.Email.assets` gives the manifest of images that
-HTML references as ``cid:`` — this turns that pair into an
+:meth:`~svc.builder.email.Email.assets` the manifest of images that HTML
+references as ``cid:``. This turns that pair into an
 :class:`~email.message.EmailMessage` an adapter can hand to a transport.
 
-Nothing here authenticates, opens a socket, or reads the clock, and nothing
-here calls ``random`` directly — but the result is not byte-identical call
-to call. Since #111 every message is a ``multipart/alternative``, so there
-is always **at least one** random MIME boundary, and an email with CID
-images carries a **second** for the nested ``multipart/related``. Since
-nothing in this module calls ``set_boundary``, the stdlib draws each
-multipart a fresh random boundary the first time the message is serialised
-(inside
-``email.generator.Generator``, via ``Message.set_boundary()``) — and that
-call *persists* the boundary onto the message object, so every subsequent
-``.as_bytes()``/``.as_string()`` on the *same* ``EmailMessage`` returns the
-identical boundary and therefore identical bytes. It is drawn once per
-:func:`build_message` call (each call constructs a fresh ``EmailMessage``),
-not once per serialisation — which is exactly what lets
-:func:`to_wire_bytes` and :func:`save_eml` agree byte-for-byte on one
-message. Two separate :func:`build_message` calls on the same email
-therefore differ only in those boundary tokens and the ``--<token>``
-delimiter lines built from them; part order and every part's bytes are
-otherwise identical. A snapshot test comparing multipart output across two
-such calls must normalize **every** boundary — e.g. replace each
-``boundary="..."`` and each delimiter line with a fixed placeholder —
-before asserting equality. Note the count changed with #111: code written
-against the old single-boundary shape will normalize one and still differ
-on the other.
+Nothing here authenticates, opens a socket, or reads the clock. The result is
+**not** byte-identical between calls, because the stdlib generates a random
+MIME boundary per part — normalise every one before comparing.
 
-Everything that varies per send — ``Date``, ``Message-ID``, envelope
-recipients — belongs to the adapter that sends.
-
-Structure produced::
-
-    multipart/alternative            (an email with no CID images)
-    ├── text/plain
-    └── text/html
-
-    multipart/alternative            (an email with CID images)
-    ├── text/plain
-    └── multipart/related
-        ├── text/html
-        └── image/*  × N    Content-ID: <id>, Content-Disposition: inline
-
-**Text first, HTML last** — RFC 2046 §5.1.4 orders the parts of an
-alternative by *increasing* preference, so a client that understands HTML
-renders it and a text-mode client falls back to the part before it. Getting
-this order backwards is silent: every graphical client still shows the HTML,
-and only the readers who need the fallback see the wrong thing.
-
-The seat for this was reserved rather than discovered — the sentence that
-stood here until #111 said the HTML part would become one half of an
-alternative and this structure would nest inside unchanged, which is exactly
-what happened: the ``multipart/related`` subtree below is byte-for-byte what
-it was, one level deeper.
+`.claude/rules/delivery.md` carries the part ordering and its reasons.
 """
 
 from __future__ import annotations
@@ -303,51 +257,27 @@ def build_message(
     Assemble a built email into a sendable MIME message.
 
     Args:
-        email:    Anything with ``render()`` and ``assets()`` — an ``Email``
-            or an ``EmailBuilder``.
-        subject:  Subject header. Optional: when omitted it falls back to the
-            email's own ``email_subject`` via :attr:`Email.metadata`, which
-            ``validate()`` already requires to be non-empty. Pass it
-            explicitly to send under a subject that differs from the one the
-            email renders into its ``<title>``.
+        email:    Anything with ``render()`` and ``assets()``.
+        subject:  ``Subject``. Omitted, falls back to the email's own
+            ``email_subject``, which ``validate()`` already requires.
         sender:   ``From`` header.
         to:       One recipient address or a sequence of them.
         cc:       Optional carbon-copy recipients.
         reply_to: Optional ``Reply-To`` header.
 
     Returns:
-        An :class:`~email.message.EmailMessage`: ``text/html`` when the email
-        has no CID images, ``multipart/related`` when it does.
+        An :class:`~email.message.EmailMessage`: ``text/html`` with no CID
+        images, ``multipart/related`` with them.
 
     Raises:
-        MessageError: On a missing subject, sender or recipient; on a
-            control character (CR or LF) in any envelope field; on an asset
-            with an unusable MIME type; or when the HTML's ``cid:``
-            references and the asset manifest disagree.
-        EmailBuilderError: Propagated unchanged from ``render()`` — a build
-            failure is not a delivery failure.
+        MessageError: On a missing subject, sender or recipient; a control
+            character in an envelope field; an asset with an unusable MIME
+            type; or ``cid:`` references disagreeing with the manifest.
+        EmailBuilderError: Propagated unchanged — a build failure is not a
+            delivery failure.
 
-    Note:
-        No ``Date`` or ``Message-ID`` is stamped — the transport adds them.
-        ``Bcc`` is deliberately not accepted — a ``Bcc`` header travels with
-        the message and leaks the blind-copy list, so blind copy is an
-        envelope concern for adapters.
-
-        Output is deterministic for a given input **except** the MIME
-        boundary on a ``multipart/related`` result (an email with CID
-        images): the stdlib draws it a fresh random token per
-        :func:`build_message` call (it then persists on that
-        ``EmailMessage``, which is why repeated serialisation of the *same*
-        message is still byte-identical). See the module docstring for
-        exactly what that means for a byte comparison across two calls.
-
-    Example::
-
-        message = build_message(
-            email, subject="Weekly Market Wrap",
-            sender="research@example.com", to=["reader@example.com"],
-        )
-        save_eml(message, "output/preview.eml")
+    ``Bcc`` is deliberately not accepted, and the MIME boundary is random per
+    call; see the module docstring.
     """
     recipients = _as_list(to)
     cc_recipients = _as_list(cc)
@@ -432,22 +362,11 @@ def build_message(
                 asset.data,
                 maintype=maintype,
                 subtype=subtype,
-                # Brackets are this consumer's job: ImageAsset.content_id is
-                # bare, and add_related() stores whatever it is given, so a
-                # bare id would emit an RFC-invalid Content-ID header.
-                #
-                # Deliberately NOT qualified with "@domain": RFC 2392 defines
-                # a cid: URL as the Content-ID with the brackets stripped,
-                # and the builder has already written src="cid:<bare-id>"
-                # into the HTML by the time this module sees it (and that
-                # cid: reference is what the seam-check above and every test
-                # compare against). Qualifying only the header here would
-                # leave the HTML pointing at an id the header no longer
-                # matches -- breaking every embedded image, which is worse
-                # than the RFC 5322 msg-id syntax gap a bare id leaves open.
-                # (svc/builder/images.py's docstring claims delivery adds the
-                # "@"; given this constraint that claim is wrong and belongs
-                # to a builder-side fix, not a workaround here.)
+                # Brackets are this consumer's job -- ImageAsset.content_id is
+                # bare and add_related() stores what it is given -- but the id
+                # is deliberately NOT qualified with "@domain": the builder has
+                # already written src="cid:<bare-id>" into the HTML, so
+                # qualifying only the header would break every embedded image.
                 cid=f"<{asset.content_id}>",
                 filename=asset.filename,
                 # Without this, supplying a filename yields

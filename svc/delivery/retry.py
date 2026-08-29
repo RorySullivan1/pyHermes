@@ -1,20 +1,15 @@
 """
-Bounded retry with exponential backoff, shared by every send adapter.
+The shared retry ladder: policy here, classification with the adapter.
 
-The split here is deliberate and is what lets the second adapter reuse the
-first one's work:
+**Policy** — how many attempts and how long to wait — is transport-neutral
+and lives here. **Classification** — which failures are worth retrying at all
+— is supplied by the caller, because only an adapter knows what its own
+provider's rate-limit error looks like.
 
-- The **policy** — how many attempts, how long to wait between them — is
-  transport-neutral and lives here.
-- The **classification** — which failures are worth retrying at all — is
-  transport-specific and is supplied by the caller, because only the adapter
-  knows what its own provider's rate-limit error looks like.
-
-Retrying a *permanent* failure is not merely useless, it is harmful: it turns
-a fast, clear error (a revoked credential) into a slow one, and on a send
-path a blind retry risks delivering the same message twice. So the default is
-to give up, and only a failure the adapter positively identifies as transient
-is retried.
+The default is to give up. Retrying a *permanent* failure is not merely
+useless but harmful: it turns a fast, clear error (a revoked credential) into
+a slow one, and on a send path a blind retry risks delivering twice. Only a
+failure the adapter positively identifies as transient is retried.
 """
 
 from __future__ import annotations
@@ -47,48 +42,30 @@ def retry_with_backoff(
 
     Args:
         operation:      The zero-argument call to attempt.
-        is_transient:   Predicate deciding whether a raised exception is
-            worth retrying. Anything it rejects propagates immediately.
-        max_attempts:   Total attempts including the first. ``1`` disables
-            retrying without needing a separate code path. ``None`` --
-            like every numeric argument here -- takes the value from
-            :func:`svc.config.get_config`, so the ladder is tunable
-            without editing this module.
+        is_transient:   Predicate deciding whether a raised exception is worth
+            retrying. Anything it rejects propagates immediately.
+        max_attempts:   Total attempts including the first; ``1`` disables
+            retrying. ``None`` — like every numeric argument here — takes the
+            value from :func:`svc.config.get_config`.
         initial_delay:  Seconds to wait after the first failure.
         backoff_factor: Multiplier applied to the delay after each failure.
-        max_delay:      Ceiling on a *computed* wait — the client's own
-            backoff guess — so a long retry chain cannot stall a caller
-            indefinitely.
-        delay_hint:     Optional reader that extracts a server-specified wait
-            from the exception — a ``Retry-After`` header, typically. When it
-            returns a value, that wins over the computed backoff, because a
-            server saying *how long* to wait knows better than a client
-            guessing. Some providers count ignored — or under-honoured —
-            hints against a quota, so guessing short is not merely impolite,
-            it prolongs the throttling. A hint is clamped by
-            ``max_hint_delay``, not ``max_delay``: real providers routinely
-            ask for more than a client's own backoff ceiling (Microsoft Graph
-            commonly hints 60 seconds or more), so honouring it needs the
-            larger bound.
-        max_hint_delay: Ceiling on a *hinted* wait specifically. Deliberately
-            far above ``max_delay`` so a legitimate hint is always honoured
-            in full, but still finite: the hint comes from response data the
-            caller does not control, and an unbounded wait on a malformed or
-            hostile value would hang the caller indefinitely.
-        sleep:          Injected so tests can run the real backoff sequence
-            without spending the wall-clock time it describes. Pass a
-            recorder to assert the delays.
+        max_delay:      Ceiling on a *computed* wait.
+        delay_hint:     Optional reader extracting a server-specified wait (a
+            ``Retry-After``). A hint wins over the computed backoff and is
+            clamped by ``max_hint_delay``, not ``max_delay``.
+        max_hint_delay: Ceiling on a *hinted* wait, far above ``max_delay`` so a
+            legitimate hint is honoured in full but never unbounded.
+        sleep:          Injected so tests run the real sequence without the
+            wall-clock time; pass a recorder to assert the delays.
 
     Returns:
         Whatever ``operation`` returns on its first success.
 
     Raises:
-        ValueError: If ``max_attempts`` is below 1 — a programming error in
-            the call, not rejected data, so it is not a ``DeliveryError``.
-        BaseException: The last exception raised by ``operation``, re-raised
-            unchanged once attempts are exhausted or the failure is not
-            transient. Wrapping it is the adapter's job, which has the
-            context to say what it means.
+        ValueError: If ``max_attempts`` is below 1 — a programming error, so
+            not a ``DeliveryError``.
+        BaseException: The last exception from ``operation``, re-raised
+            unchanged. Wrapping it is the adapter's job.
     """
     # Every numeric knob defaults to the active configuration rather than a
     # literal, so a deployment can retune the ladder without editing the

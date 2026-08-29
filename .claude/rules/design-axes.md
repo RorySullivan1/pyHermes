@@ -487,3 +487,367 @@ exactly as a palette and a density are.
     PR was exactly the intended change and nothing else. #45 went one better and needed no
     diff at all: every one of its four migration steps left all six pre-existing goldens
     untouched, and the only new files are the two fixtures it shipped.
+
+## The sizing audit — how the token values were established
+
+Moved out of `svc/builder/sizing.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
+
+```
+The email's size vocabulary — one validated object per density.
+
+Sizes were 57 ``font-size`` declarations, 50 ``line-height`` values and
+roughly 90 padding/margin literals spread across 20 template files, plus the
+680px frame arithmetic written out twice per column in eight container
+templates. An implied scale clearly existed; nothing named it, nothing owned
+it, and nothing could vary it. This module is that owner.
+
+::
+
+    EmailMetadata.size_theme        ("compact" | "standard" | "spacious")
+            |  resolved ONCE in Email.render()
+            v
+    SizeScheme                      (frozen, validated at construction)
+    +-- type       TypeScale        font sizes + the shared line-heights
+    +-- space      SpacingScale     section, column, region and rhythm spacing
+    +-- component  ComponentScale   sizes that do not follow the global scale
+    +-- frame      FrameGeometry    outer width and padding; column widths
+                                    are arithmetic over this, not literals
+            |  bound onto the engine as one namespace
+            v
+    templates read {{ size.type.body }}, {{ size.space.gutter }}, ...
+
+**Callers pick a theme, never a px.** ``size_theme`` accepts a
+:class:`~svc.builder.enums.SizeTheme` member or its bare string and nothing
+else — deliberately narrower than ``theme``, which also accepts a custom
+:class:`~svc.builder.theming.Theme`. The asymmetry is the point: a palette is
+an email's voice and a house style may legitimately need its own, whereas
+density interacts with the 102 KB clipping limit, Outlook's Word engine and
+the mobile collapse all at once. A scheme nobody has rendered in a real
+client is a compatibility claim nobody has tested. Widening this later is
+additive; narrowing it would not be.
+
+
+The audit — token, value, and the sites each one covers
+-------------------------------------------------------
+
+Every number below was read out of the templates before anything moved, and
+``STANDARD`` reproduces each one exactly. ``r/`` is ``regions/``, ``c/`` is
+``common/containers/``.
+
+**type** — font sizes (px) and the line-heights shared across components::
+
+    title            28    r/header, r/header-minimal (firm name)
+    title_mobile     22    base.html .mobile-title override
+    section          17    the <h2> in every container; numbered-list ordinal
+    subheading       16    r/footer-contact heading
+    item_title       15    text/numbered-list item title
+    body             14    container cell default, text/text-block prose,
+                           text/numbered-list body, text/author-block name
+    secondary        13    every component subtitle, masthead campaign name,
+                           analysis/data-table cell, card body,
+                           r/footer-contact description and CTA label
+    small            11    masthead date/issue bar, author job title + email
+    label            10    analysis/data-table column header
+    micro            9.5   card label and sublabel, chart/table source,
+                           image caption, masthead disclaimer bar,
+                           r/footer-legal disclaimer and copyright
+
+    title_line       1.2   title, section <h2>, card value, list ordinal
+    heading_line     1.3   campaign name, list item title, author name
+    body_line        1.72  container cell, text-block prose
+    secondary_line   1.4   subtitles, card sublabel, disclaimer bar,
+                           author job title
+
+**space** — spacing, in px. ``pad_x`` (32) lives on the frame, since the
+frame's horizontal padding is what makes the content 616 wide::
+
+    gutter                    16   between columns (margin-right + ghost table)
+    section_title_top         22   section <h2> cell, top (full-width and split alike)
+    section_title_bottom      12   section <h2> cell, bottom
+    content_top               16   c/full-width content cell, top
+    content_bottom            14   c/full-width content cell, bottom
+    column_top                 2   a column cell, top
+    column_bottom             26   a column cell, bottom
+    column_pad_x              20   a column at least frame.narrow_column wide
+    column_pad_x_narrow       16   a column narrower than that
+    mobile_pad_y / _x       20/18  base.html .mobile-pad override
+    block_gap                 16   text-block paragraph, between list items
+    subtitle_gap              12   below any component subtitle
+    caption_gap                8   above a source, caption, or card body
+    masthead_bar_y             7   disclaimer bar
+    masthead_top              18   the masthead block, above the title/logo
+                                   row
+    masthead_title_bottom      6   between the title/logo row and the
+                                   subtitle/department row
+    masthead_campaign_bottom   8   below the subtitle/department row
+    masthead_meta_top         10   date/issue bar, top
+    masthead_meta_bottom      18   date/issue bar, bottom
+    masthead_vml_height      180   the v:rect box Outlook draws instead of
+                                   the CSS background image; see the note
+                                   below — it is not a bound on the content
+    footer_contact_top         8   contact band, top
+    footer_contact_bottom     30   contact band, bottom
+    footer_legal_top          20   disclaimer band, top
+    footer_legal_bottom        8   disclaimer band, bottom
+    footer_copyright_top       6   copyright band, top
+    footer_copyright_bottom   24   copyright band, bottom
+
+**component** — what does not follow the global scale::
+
+    kpi_value             21    card value font-size
+    card_pad_y / _x     14/16   a vertical card's cell — and, deliberately,
+                                base.html's .kpi-cell mobile override, since
+                                the collapse *is* the vertical layout
+    kpi_pad_y / _x      16/12   a horizontal KPI cell
+    card_label_gap         6    below the card label
+    card_value_gap         4    below the card value
+    card_body_line       1.6    card prose
+    table_cell_pad        12    analysis/data-table <th> and <td>
+    table_cell_pad_mobile  6    the same cells under the mobile breakpoint (#132)
+    list_ordinal_width    22    the ordinal column
+    list_ordinal_gap      12    between ordinal and item body
+    list_title_gap         6    below a list item's title
+    list_body_line       1.68   list item prose
+    author_name_gap        4    below the author's name
+    author_sep_gap         4    around the middot between title and email
+    author_rule_gap       14    above the byline, both halves of the rule
+    cta_width            150    contact button, VML and CSS alike
+    cta_height            38    ditto (VML height == CSS line-height)
+    contact_pad_y / _x  22/24   inside the contact card
+    contact_heading_gap    6    below the contact heading
+    contact_cta_gap       16    above the contact button
+    contact_line         1.55   contact description
+    legal_line           1.6    footer disclaimer
+
+**frame** — the geometry every column width is derived from::
+
+    width              680   the outer email table
+    pad_x               32   its horizontal padding, so inner == 616
+    outer_pad_y         28   the wrapper band above and below the email
+    mobile_breakpoint  700   the @media max-width that collapses columns
+    narrow_column      300   at or above this, a column takes the wider
+                             horizontal cell padding; below it, the narrower
+
+Four line-heights say the same thing
+------------------------------------
+
+``body_line`` 1.72, ``list_body_line`` 1.68, ``card_body_line`` 1.6 and
+``legal_line`` 1.6 / ``contact_line`` 1.55 are five spellings of "roomy"
+that differ only because they were typed in five files. The audit records
+that rather than fixing it: collapsing them changes rendered output, and
+this epic's whole claim is that ``STANDARD`` does not move. They are named
+by site so a later PR can collapse them deliberately, with a golden diff
+that is the point rather than the problem.
+
+Deliberate literals — sizes that stay hardcoded
+-----------------------------------------------
+
+A px value in a template is a bug *unless* it is one of these, each of which
+is structural rather than scale-participating:
+
+* ``font-size:1px`` on the preheader — a hider, not type.
+* ``font-size:0; line-height:0`` on the accent rule's spacer cell, with
+  ``height="1"`` — a 1px rule drawn with a border, not a line of text.
+* ``padding:1px 1px 1px 1px`` on a highlighted container — the hairline
+  frame itself.
+* ``border-width`` (1px, 2px), ``border-radius`` (3px, 4px) and
+  ``arcsize="8%"`` — shape, not density.
+* ``letter-spacing`` (0.2–0.6px) — optical correction for uppercase micro
+  type; it tracks the typeface, not the scale.
+* ``text-shadow`` offsets and ``max-width:{{ logo_width }}px`` — the latter
+  is the caller's own number.
+
+Validation
+----------
+
+Every token is a positive ``int`` or a **non-integral** ``float``. That
+second half is not fussiness: a scheme storing ``14.0`` would render
+``font-size:14.0px``, which is legal CSS and a byte-identity failure, and
+the one genuinely fractional size in the email (``micro`` = 9.5) means the
+rule cannot simply be "ints only". Line-heights obey the same rule, so
+``1.72`` is fine and ``2.0`` is rejected in favour of ``2``.
+```
+
+## The colour audit — how the palette's roles and values were established
+
+Moved out of `svc/builder/theming.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
+
+```
+Theming — every colour and shadow in the email, as one validated object.
+
+Colour used to be 18 distinct hex values in 245 occurrences across all 20
+template files, plus three ``rgba()`` literals and three Python-side
+fallbacks. A palette *comment* in ``base.html`` named 13 roles, but it was
+dead text: it could not be read by anything, and it had already drifted (see
+the audit below). This module is what replaces it — a named home for every
+value, frozen and validated, so a caller can re-skin the newsletter from one
+field instead of forking 20 templates.
+
+**The theme is the unit of customisation, never a single colour at a call
+site.** Coherence survives because the whole theme is the atom: the layers
+are frozen, no token field is optional, and every value is validated at
+construction. There is no way to build a ``Theme`` that later fails a render
+under ``StrictUndefined`` — completeness is structural, not remembered.
+
+Four layers, because they answer different questions:
+
+============== ==================================================
+:class:`Palette`        surfaces and structure — what the email is made of
+:class:`TextColors`     the type, on light grounds and on the navy masthead
+:class:`SemanticColors` what a *number* means; defaults and fallbacks only
+:class:`ShadowStyle`    the three composed ``rgba()`` values
+============== ==================================================
+
+``SemanticColors`` deserves its own note. ``KpiItem.color`` and
+``TableRow.colors`` are the caller's statement about the **data** ("this
+number is down"), not a styling choice — they stay caller-supplied. The
+theme provides only what is used when the caller says nothing.
+
+The audit
+---------
+
+Every default below is exactly what the templates hardcode today. Occurrence
+counts are over ``svc/builder/templates/``; the palette comment's own 13
+lines are excluded from "renders in".
+
+Palette
+    ``wrapper_bg``     ``#F2F1EE``  13×  base, footer-legal — the warm stone padding,
+                                         and the preheader text hidden against it
+    ``surface``        ``#FFFFFF``  63×  everywhere — the white email body
+    ``header_bg``      ``#2C3E50``   9×  the masthead band — soft navy
+    ``accent``         ``#5B8A9A``   9×  links, the CTA button, rules — muted teal
+    ``rule``           ``#D6D2CB``  33×  the standard hairline, all 8 containers
+    ``rule_subtle``    ``#EAE8E4``   2×  data-table row separators, author-block top
+    ``rule_dark``      ``#2C3E50``   1×  the section-title underline
+    ``highlight_tint`` ``#F8F7F5``  27×  ``highlight=True`` in all 8 containers
+    ``row_alt``        ``#F8F7F5``   9×  data-table alternating rows
+
+TextColors
+    ``primary``        ``#3B3B3B``  26×  body copy
+    ``secondary``      ``#7A7A72``  12×  captions, sources, sublabels
+    ``light``          ``#A09E97``   6×  as-of lines, the copyright line
+    ``heading``        ``#2C3E50``  11×  section titles, table headers, author name
+    ``fine_print``     ``#8A8880``   1×  the footer disclaimer
+    ``on_dark``        ``#FFFFFF``   2×  the firm name over navy
+    ``on_dark_secondary`` ``#CFD8DC``  2×  the campaign name over navy
+    ``on_dark_muted``  ``#90A4AE``   6×  header disclaimer, date range, issue label
+    ``on_accent``      ``#FFFFFF``   2×  the contact CTA's label, on the accent fill
+
+SemanticColors
+    ``positive``       ``#4A7C59``   0×  **no render site today** — see below
+    ``negative``       ``#B85450``   0×  **no render site today** — see below
+    ``neutral``        ``#5A5A5A``   2×  the data-table header row and its cell
+                                         fallback; also what an unset
+                                         ``Card.color`` resolves to
+
+ShadowStyle
+    ``scrim``          ``#141E2C`` @ 0.65  the header hero's legibility overlay
+    ``title``          ``#000000`` @ 0.4   ``text-shadow`` on the firm name
+    ``subtitle``       ``#000000`` @ 0.3   ``text-shadow`` on the campaign name
+
+Four things the audit found, recorded rather than quietly fixed
+---------------------------------------------------------------
+
+* **The palette comment was wrong, not merely incomplete.** It named "Row alt
+  ``#F5F4F1``", but ``data-table.html`` alternates rows with ``#F8F7F5`` — the
+  same value as the highlight tint. ``#F5F4F1`` appears nowhere else in the
+  repo. The *role* was real; the value the comment claimed was not, which is
+  precisely the failure mode a comment nothing can read is prone to.
+
+* **``row_alt`` and ``highlight_tint`` are separate tokens that happen to
+  share a value.** Collapsing them would make the coincidence permanent and
+  deny a theme author the distinction the comment itself drew.
+
+* **``rule_dark`` is ``header_bg``'s value by design, and stays a distinct
+  token** for the same reason — a section heading's underline matching the
+  masthead is a decision a theme may want to keep or break.
+
+* **``default_color`` and ``validate_hex_color`` were registered filters that
+  no template called.** ``default_color``'s ``#5A5A5A`` was therefore a
+  literal in a code path nothing exercised. The migration puts the filter to
+  work — ``{{ card.color | default_color(theme.semantic.neutral) }}`` — which
+  removes the literal, resolves an unset ``Card.color`` against the live
+  theme, and validates an explicit one on the way through.
+
+* **``positive`` and ``negative`` render nowhere by default.** They live in
+  the docstring examples and in callers' own ``KpiItem`` data. They are
+  tokens here because they are the vocabulary the palette comment published
+  and callers already use — but tokenising them changes no byte, and nothing
+  in the templates reads them.
+```
+
+## The typeface axis — how the font roles and stacks were chosen
+
+Moved out of `svc/builder/typography.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
+
+```
+The email's typeface vocabulary — one validated object per house voice.
+
+Faces were the last hardcoded axis of the design system. Colour became a
+resolved :class:`~svc.builder.theming.Theme` in #46 and density a resolved
+:class:`~svc.builder.sizing.SizeScheme` in #45, but ``font-family`` stacks
+stayed baked into the templates: repeated per declaration, unnamed,
+unvariable. A newsletter wanting a different house face forked templates.
+This module is that owner.
+
+::
+
+    EmailMetadata.font_theme        (a preset name, or a FontTheme)
+            |  resolved ONCE in Email.render()
+            v
+    FontTheme                       (frozen, validated at construction)
+    +-- heading    FontStack        masthead title, section titles, item titles
+    +-- body       FontStack        prose, the page default, KPI values
+    +-- label      FontStack        meta, captions, table text, footer, chrome
+    +-- numeric    FontStack        the data table's figure columns
+
+**The audit this module is pinned to** — every ``font-family`` declaration in
+``svc/builder/templates/``, 2026-08-28. Three stacks, 49 declarations:
+
+===========================================  =====  ==============================
+stack                                        count  drawn at
+===========================================  =====  ==============================
+``Georgia, 'Times New Roman', serif``           21  the page default (``<body>``
+                                                    inline **and** the ``[if mso]``
+                                                    ``body, td, th`` fallback),
+                                                    masthead title, section titles,
+                                                    italic subtitles, item titles,
+                                                    list ordinals, prose body, and
+                                                    the **KPI values**
+``Arial, Helvetica, sans-serif``                27  the strip, masthead subtitle /
+                                                    meta / department, card labels
+                                                    and sublabels, table headers and
+                                                    cells, captions, contact copy,
+                                                    the footer
+``'Courier New', Courier, monospace``            1  the data table's non-first
+                                                    columns, via ``{% if
+                                                    loop.first %}`` — the figures
+===========================================  =====  ==============================
+
+**Four roles, not three, and the difference is the whole point.** Naming them
+after the values — ``serif`` and ``sans`` — is the mistake the colour and size
+audits each existed to avoid, and here it would also be *wrong*: the serif is
+not "headings", it is the editorial voice, and it sets the KPI numerals as
+readily as the masthead. A preset that wants a sans masthead over a serif body
+— the motivating variant — needs ``heading`` and ``body`` separately
+addressable, so the vocabulary is cut by the job a face does rather than by
+which face happens to do it today. That ``heading`` and ``body`` are the same
+stack in the default is a fact about the default, not about the roles.
+
+**A stack is the atom, never a face.** Every :class:`FontStack` must end in a
+CSS generic family, because in email the fallback chain *is* the rendering:
+Outlook's Word engine walks the chain and lands wherever it lands, so the
+generic is the floor that makes a custom face safe rather than a gamble. That
+rule is checkable without maintaining a list of "websafe" names that would rot,
+and it is what lets ``font_theme`` accept a caller's own object where
+``size_theme`` accepts only a preset name.
+
+**Weights, italics and letter-spacing stay literal, and that is a decision.**
+The audit found ``font-weight`` at ``bold`` (16), ``400`` (2) and ``300`` (1),
+plus ``font-style:italic`` (10). These are structural emphasis riding the role
+sites — the same call ``border-width`` and ``letter-spacing`` got in #45: shape
+rather than voice. Numeric weights beyond 400/700 are also unreliable in the
+Word engine, which synthesises what a face does not supply. A theme that wants
+a lighter voice picks a lighter *face*, in the stack, where the fallback chain
+can be reasoned about.
+```

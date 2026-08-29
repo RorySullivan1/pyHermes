@@ -1,41 +1,20 @@
 """
-pyHermes Email Builder Service
-==============================
+The pyHermes email builder: object-oriented assembly over Jinja2 templates.
 
-Object-oriented email assembly using Jinja2 templates.
+Compose an :class:`Email` from sections, then render it to HTML and a
+manifest of the images that HTML references::
 
-Quick start::
-
-    from pathlib import Path
-
-    from svc.builder import CardGroup, EmailBuilder, FullWidth, TextBlock
-    from svc.builder.models import KpiItem
-
-    # email_subject, firm_name and campaign_name are required; the rest of
-    # EmailMetadata is optional.  metadata() must be called before section().
     email = (EmailBuilder()
-        .metadata({
-            "email_subject": "Weekly Market Wrap",
-            "firm_name": "Research & Strategy",
-            "campaign_name": "weekly-wrap",
-        })
-        .section(FullWidth(
-            content=CardGroup([
-                KpiItem("S&P 500", "5,234", "#4A7C59", "+1.42%"),
-                KpiItem("UST 10Y", "4.28%", "#B85450", "+6 bps"),
-                KpiItem("VIX", "14.32", "#4A7C59", "-2.18 pts"),
-            ]),
-            title="Market Snapshot",
-            highlight=True,
-        ))
-        .section(FullWidth(
-            content=TextBlock("Equity markets advanced..."),
-            title="Week in Review",
-        ))
-        .build()
-    )
+        .metadata({"email_subject": ..., "firm_name": ..., "campaign_name": ...})
+        .section(FullWidth(title="Market Snapshot", content=CardGroup([...])))
+        .build())
+    html, assets, text = email.render(), email.assets(), email.text()
 
-    email.save(Path("output.html"))
+``metadata()`` takes the email's facts and must precede ``section()``; only
+``email_subject``, ``firm_name`` and ``campaign_name`` are required.
+
+`.claude/rules/builder-architecture.md` carries the four-layer model and the
+public API in full.
 """
 
 # Components

@@ -1,177 +1,18 @@
 """
-The email's size vocabulary — one validated object per density.
+Every size in the email, as one validated object per density.
 
-Sizes were 57 ``font-size`` declarations, 50 ``line-height`` values and
-roughly 90 padding/margin literals spread across 20 template files, plus the
-680px frame arithmetic written out twice per column in eight container
-templates. An implied scale clearly existed; nothing named it, nothing owned
-it, and nothing could vary it. This module is that owner.
+A ``SizeScheme`` is four frozen scales — ``type`` (font sizes and
+line-heights), ``space`` (section, column and region spacing), ``component``
+(sizes that do not follow the global scale) and ``frame`` (outer width and
+padding, from which column widths are computed rather than written down).
 
-::
+``EmailMetadata.size_theme`` names one; :meth:`Email.render` resolves it once
+and binds it as the ``size`` namespace, so templates read
+``{{ size.type.body }}`` and never a px literal.
 
-    EmailMetadata.size_theme        ("compact" | "standard" | "spacious")
-            |  resolved ONCE in Email.render()
-            v
-    SizeScheme                      (frozen, validated at construction)
-    +-- type       TypeScale        font sizes + the shared line-heights
-    +-- space      SpacingScale     section, column, region and rhythm spacing
-    +-- component  ComponentScale   sizes that do not follow the global scale
-    +-- frame      FrameGeometry    outer width and padding; column widths
-                                    are arithmetic over this, not literals
-            |  bound onto the engine as one namespace
-            v
-    templates read {{ size.type.body }}, {{ size.space.gutter }}, ...
-
-**Callers pick a theme, never a px.** ``size_theme`` accepts a
-:class:`~svc.builder.enums.SizeTheme` member or its bare string and nothing
-else — deliberately narrower than ``theme``, which also accepts a custom
-:class:`~svc.builder.theming.Theme`. The asymmetry is the point: a palette is
-an email's voice and a house style may legitimately need its own, whereas
-density interacts with the 102 KB clipping limit, Outlook's Word engine and
-the mobile collapse all at once. A scheme nobody has rendered in a real
-client is a compatibility claim nobody has tested. Widening this later is
-additive; narrowing it would not be.
-
-
-The audit — token, value, and the sites each one covers
--------------------------------------------------------
-
-Every number below was read out of the templates before anything moved, and
-``STANDARD`` reproduces each one exactly. ``r/`` is ``regions/``, ``c/`` is
-``common/containers/``.
-
-**type** — font sizes (px) and the line-heights shared across components::
-
-    title            28    r/header, r/header-minimal (firm name)
-    title_mobile     22    base.html .mobile-title override
-    section          17    the <h2> in every container; numbered-list ordinal
-    subheading       16    r/footer-contact heading
-    item_title       15    text/numbered-list item title
-    body             14    container cell default, text/text-block prose,
-                           text/numbered-list body, text/author-block name
-    secondary        13    every component subtitle, masthead campaign name,
-                           analysis/data-table cell, card body,
-                           r/footer-contact description and CTA label
-    small            11    masthead date/issue bar, author job title + email
-    label            10    analysis/data-table column header
-    micro            9.5   card label and sublabel, chart/table source,
-                           image caption, masthead disclaimer bar,
-                           r/footer-legal disclaimer and copyright
-
-    title_line       1.2   title, section <h2>, card value, list ordinal
-    heading_line     1.3   campaign name, list item title, author name
-    body_line        1.72  container cell, text-block prose
-    secondary_line   1.4   subtitles, card sublabel, disclaimer bar,
-                           author job title
-
-**space** — spacing, in px. ``pad_x`` (32) lives on the frame, since the
-frame's horizontal padding is what makes the content 616 wide::
-
-    gutter                    16   between columns (margin-right + ghost table)
-    section_title_top         22   section <h2> cell, top (full-width and split alike)
-    section_title_bottom      12   section <h2> cell, bottom
-    content_top               16   c/full-width content cell, top
-    content_bottom            14   c/full-width content cell, bottom
-    column_top                 2   a column cell, top
-    column_bottom             26   a column cell, bottom
-    column_pad_x              20   a column at least frame.narrow_column wide
-    column_pad_x_narrow       16   a column narrower than that
-    mobile_pad_y / _x       20/18  base.html .mobile-pad override
-    block_gap                 16   text-block paragraph, between list items
-    subtitle_gap              12   below any component subtitle
-    caption_gap                8   above a source, caption, or card body
-    masthead_bar_y             7   disclaimer bar
-    masthead_top              18   the masthead block, above the title/logo
-                                   row
-    masthead_title_bottom      6   between the title/logo row and the
-                                   subtitle/department row
-    masthead_campaign_bottom   8   below the subtitle/department row
-    masthead_meta_top         10   date/issue bar, top
-    masthead_meta_bottom      18   date/issue bar, bottom
-    masthead_vml_height      180   the v:rect box Outlook draws instead of
-                                   the CSS background image; see the note
-                                   below — it is not a bound on the content
-    footer_contact_top         8   contact band, top
-    footer_contact_bottom     30   contact band, bottom
-    footer_legal_top          20   disclaimer band, top
-    footer_legal_bottom        8   disclaimer band, bottom
-    footer_copyright_top       6   copyright band, top
-    footer_copyright_bottom   24   copyright band, bottom
-
-**component** — what does not follow the global scale::
-
-    kpi_value             21    card value font-size
-    card_pad_y / _x     14/16   a vertical card's cell — and, deliberately,
-                                base.html's .kpi-cell mobile override, since
-                                the collapse *is* the vertical layout
-    kpi_pad_y / _x      16/12   a horizontal KPI cell
-    card_label_gap         6    below the card label
-    card_value_gap         4    below the card value
-    card_body_line       1.6    card prose
-    table_cell_pad        12    analysis/data-table <th> and <td>
-    table_cell_pad_mobile  6    the same cells under the mobile breakpoint (#132)
-    list_ordinal_width    22    the ordinal column
-    list_ordinal_gap      12    between ordinal and item body
-    list_title_gap         6    below a list item's title
-    list_body_line       1.68   list item prose
-    author_name_gap        4    below the author's name
-    author_sep_gap         4    around the middot between title and email
-    author_rule_gap       14    above the byline, both halves of the rule
-    cta_width            150    contact button, VML and CSS alike
-    cta_height            38    ditto (VML height == CSS line-height)
-    contact_pad_y / _x  22/24   inside the contact card
-    contact_heading_gap    6    below the contact heading
-    contact_cta_gap       16    above the contact button
-    contact_line         1.55   contact description
-    legal_line           1.6    footer disclaimer
-
-**frame** — the geometry every column width is derived from::
-
-    width              680   the outer email table
-    pad_x               32   its horizontal padding, so inner == 616
-    outer_pad_y         28   the wrapper band above and below the email
-    mobile_breakpoint  700   the @media max-width that collapses columns
-    narrow_column      300   at or above this, a column takes the wider
-                             horizontal cell padding; below it, the narrower
-
-Four line-heights say the same thing
-------------------------------------
-
-``body_line`` 1.72, ``list_body_line`` 1.68, ``card_body_line`` 1.6 and
-``legal_line`` 1.6 / ``contact_line`` 1.55 are five spellings of "roomy"
-that differ only because they were typed in five files. The audit records
-that rather than fixing it: collapsing them changes rendered output, and
-this epic's whole claim is that ``STANDARD`` does not move. They are named
-by site so a later PR can collapse them deliberately, with a golden diff
-that is the point rather than the problem.
-
-Deliberate literals — sizes that stay hardcoded
------------------------------------------------
-
-A px value in a template is a bug *unless* it is one of these, each of which
-is structural rather than scale-participating:
-
-* ``font-size:1px`` on the preheader — a hider, not type.
-* ``font-size:0; line-height:0`` on the accent rule's spacer cell, with
-  ``height="1"`` — a 1px rule drawn with a border, not a line of text.
-* ``padding:1px 1px 1px 1px`` on a highlighted container — the hairline
-  frame itself.
-* ``border-width`` (1px, 2px), ``border-radius`` (3px, 4px) and
-  ``arcsize="8%"`` — shape, not density.
-* ``letter-spacing`` (0.2–0.6px) — optical correction for uppercase micro
-  type; it tracks the typeface, not the scale.
-* ``text-shadow`` offsets and ``max-width:{{ logo_width }}px`` — the latter
-  is the caller's own number.
-
-Validation
-----------
-
-Every token is a positive ``int`` or a **non-integral** ``float``. That
-second half is not fussiness: a scheme storing ``14.0`` would render
-``font-size:14.0px``, which is legal CSS and a byte-identity failure, and
-the one genuinely fractional size in the email (``micro`` = 9.5) means the
-rule cannot simply be "ints only". Line-heights obey the same rule, so
-``1.72`` is fine and ``2.0`` is rejected in favour of ``2``.
+Callers pick a theme, never a px — and only a preset, unlike ``theme``, which
+also accepts a custom object. `.claude/rules/design-axes.md` carries why, the
+token audit, and the four structural px literals a template may still use.
 """
 
 from __future__ import annotations
