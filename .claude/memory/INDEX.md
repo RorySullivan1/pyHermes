@@ -45,4 +45,6 @@
 - [2026-08-28 21:30] datatable-epic — shipped **#121**, closing **epic #116**. The field-completeness test is the durable part: it closes a gap the … — sessions/2026-08-28-1940-datatable-epic.md
 - [2026-08-28 22:00] datatable-epic — opened **PR #123** for #114 + epic #116, then merged `main` into it after **PR #122** landed underneath …
 - [2026-08-29 16:28] asset-self-restriction — **epic #140 complete** (#141–#145) plus #135; the library now bounds the prose it was teaching — sessions/2026-08-29-1628-asset-self-restriction.md
-- [2026-08-29 20:30] prose-discipline — **epic #134 complete** (#136–#139) and **PR #146 merged** at `e5c587a`: CLAUDE.md 2,045 -> 160, 2,049 comment bytes off every email, baseline 110 -> 48 — sessions/2026-08-29-1628-asset-self-restriction.md
+- [2026-08-29 20:30] prose-discipline — **epic #134 complete** and **PR #146 merged** at
+  `e5c587a`: CLAUDE.md 2,045 -> 160, 2,049 comment bytes off every email, baseline
+  110 -> 48 — sessions/2026-08-29-1628-asset-self-restriction.md
