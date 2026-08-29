@@ -1,42 +1,15 @@
 """
-The ``preview`` CLI (#61): build → save → lint → screenshot, in one command.
+The ``preview`` CLI (#61): build, save, lint and screenshot in one command.
 
-Since #110 it writes **both** projections — ``<name>.html`` and ``<name>.txt``.
-An email has two readable parts, and this is the loop for eyeballing one, so
-writing only the HTML would leave out the half no screenshot and no lint rule
-can show you.
+    python -m qa.preview kitchen_sink --lint --screenshot --open
+    python -m qa.preview drafts/weekly.py:build --lint
 
-The workflow the docs prescribed was manual — write a scratch script, build the
-email, ``.save()`` it into ``output/``, open a browser, repeat. With the gallery
-(#57), the goldens (#58), the screenshot runner (#59) and the lint pass (#60) in
-place, that loop gets one entry point, and it serves a real newsletter draft as
-readily as a fixture::
+Writes **both** projections — ``<name>.html`` and ``<name>.txt`` — because an
+email has two readable parts and no screenshot or lint rule can show the
+second one.
 
-    python -m qa.preview --list
-    python -m qa.preview kitchen_sink --lint --screenshot
-    python -m qa.preview drafts/weekly.py:build --lint --open
-
-**It composes; it does not reimplement.** Fixtures come from
-:func:`qa.fixtures.all_fixtures`, findings from :func:`qa.lint.lint_html`,
-images from :func:`qa.screenshots.capture_emails`. Anything it needed that they
-did not expose was a gap fixed *in them* — that rule is what produced
-``capture_emails``, since ``capture_gallery`` could only ever screenshot things
-already in the registry, and a user's draft never is.
-
-**No console script**, deliberately. #57 put ``qa/`` outside the wheel because
-the gallery is test data; a ``preview`` entry point on the installed package
-would contradict that, so the module form is the interface.
-
-Exit codes, so the command composes in a shell:
-
-===  ====================================================================
-0    the email built, and nothing asked for was refused
-1    ``--lint`` found errors (warnings alone do not fail)
-2    the email could not be built, or the target could not be resolved
-===  ====================================================================
-
-A missing browser is **not** a failure: ``--screenshot`` says so and carries on,
-because the ``[qa]`` extra is optional by design.
+Takes a gallery fixture by name or any ``path.py:callable`` returning an
+``Email``, so a draft outside the gallery uses the same loop.
 """
 
 from __future__ import annotations

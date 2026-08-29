@@ -1,21 +1,17 @@
 """
-Container classes for the email builder.
+Containers — the layout geometry of one section.
 
-A container defines the layout geometry for a section of the email —
-single column, two-column split, highlight band, etc.  Each container
-wraps one or more rendered component HTML fragments and produces a
-``<tr>`` block that drops into the main email body table.
+A container wraps rendered component fragments and produces the ``<tr>``
+block that drops into the body table: full width, a two- or three-column
+split, optionally a highlight band.
 
-Column widths are **computed, never written down**: the ratio's own name
-is its weights, and :func:`~svc.builder.sizing.column_layout` splits the
-active scheme's content width by them. That is why one template serves
-every split — see #42 in :mod:`svc.builder.sizing`.
+**Column widths are computed, never written down.** A ratio's own name is its
+weights, and :func:`~svc.builder.sizing.column_layout` splits the active
+scheme's content width by them — which is why one template serves every
+split::
 
-Usage:
-    engine  = TemplateEngine()
-    kpi     = KpiStrip(items=[...])
-    section = FullWidth(content=kpi, title="Market Snapshot")
-    html    = section.render(engine)
+    section = FullWidth(content=CardGroup([...]), title="Market Snapshot")
+    html = section.render(engine)
 """
 
 from __future__ import annotations

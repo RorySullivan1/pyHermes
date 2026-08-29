@@ -82,6 +82,13 @@ so a plain `ls` pays one fast Python startup, not three. To add a git guard, giv
 | `pre-tool-use-git-guards.json` | `PreToolUse` (Bash) | `git_guards.py` → `version_guard` + `asset_integrity` | On `git commit`/`push`: reports `.claude/` asset defects (skill folder ≠ `name:`, missing `name:`/`description:`, a cited `references/` file that's absent, broken symlinks); warns when `.meta/version` lacks a label/goals. (The roadmap-drift guard was omitted — the `.meta/roadmap` system wasn't brought into this project.) |
 | `pre-tool-use-read-guard.json` | `PreToolUse` (Read) | `pre_read_guard.py` | Stops an accidental whole-file slurp of a very large file. |
 | `post-tool-use-bash-filter.json` | `PostToolUse` (Bash) | `post_bash_filter.py` | Keeps verbose command output out of the main context. |
+| `post-tool-use-prose-budget.json` | `PostToolUse` (Edit/Write/MultiEdit) | `prose_budget.py` | Reports commentary over the per-scope budget in the `coding-standards` skill. |
+
+`prose_budget.py` is also a **library**, and that is the point of its shape: `scan_source()` and `scan_tree()` return `Finding`s, so a project's CI gate measures with the same code the edit-time note uses. An advisory hook cannot be a gate — it must never block — and a second measurer written for the gate is how the two come to disagree about what the rule is.
+
+It reads `.claude/prose-budget.json`, and **that file is the adoption marker**: absent, every entry point returns nothing. Keys are `module`, `class`, `function`, `attribute` and `comment_run` (line caps), `include` (roots to scan), and `baseline` (a path to a location-to-reason mapping whose entries are exempt). Baseline keys are qualified names rather than line numbers, so an edit above a docstring does not invalidate an entry and fail the gate for an unrelated reason.
+
+Python only, via `ast` and `tokenize`. `_SCANNERS` is the extension point; a language with no entry is skipped rather than guessed at.
 
 ## Self-maintaining (the drift guard)
 

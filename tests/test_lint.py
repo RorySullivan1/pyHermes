@@ -495,3 +495,73 @@ class TestEveryRuleIsSourced:
         ):
             assert rule_id in SOURCES, f"{rule_id} was dropped rather than shipped"
             assert rule_id not in DEFERRED_RULES
+
+
+class TestCommentaryDoesNotShipToTheReader:
+    """#137. A comment inside rendered HTML is downloaded by every recipient and
+    counts against the 102 KB clipping limit. Build-time reasoning belongs in a
+    Jinja comment, which costs nothing; only short named markers ship.
+    """
+
+    #: Ceiling on non-conditional comment bytes in one rendered email. Today's
+    #: worst fixture is 391 — the named section markers and nothing else. The
+    #: headroom is for a genuinely new region, not for prose.
+    MAX_COMMENT_BYTES = 450
+
+    #: A marker is what `_MARKER` will match, so the cap is `_MARKER`'s own.
+    MAX_MARKER_CHARS = 60
+
+    @staticmethod
+    def _shipped(html: str) -> list[str]:
+        conditional = re.compile(r"<!--\s*\[if\s|<!\[endif\]", re.IGNORECASE)
+        return [c for c in re.findall(r"<!--.*?-->", html, re.S) if not conditional.search(c)]
+
+    def test_no_email_ships_more_than_its_markers(self) -> None:
+        for name, build in sorted(all_fixtures().items()):
+            html = build().render()
+            shipped = sum(len(c) for c in self._shipped(html))
+            assert shipped <= self.MAX_COMMENT_BYTES, (
+                f"{name} ships {shipped} bytes of commentary. Move the reasoning to a "
+                f"Jinja comment — it reaches a template author and not a recipient."
+            )
+
+    def test_every_shipped_comment_is_a_short_named_marker(self) -> None:
+        html = all_fixtures()["kitchen_sink"]().render()
+        for comment in self._shipped(html):
+            assert len(comment) <= self.MAX_MARKER_CHARS + 10, (
+                f"shipped comment is prose, not a marker: {comment[:70]!r}"
+            )
+            assert re.search(r"[A-Za-z]", comment), (
+                f"a decorative rule ships bytes and names no region: {comment!r}"
+            )
+
+
+class TestTheSizeBudgetStillNamesItsRegions:
+    """`size_report` degrades *silently*: strip the markers and it reports one
+    anonymous blob, still passing every other test. #137 removed comments next to
+    those markers, so the attribution needs an assertion of its own.
+    """
+
+    EXPECTED = (
+        "Preheader",
+        "Outer wrapper",
+        "HEADER: Disclaimer bar",
+        "HEADER: Background image + text overlay",
+        "Accent rule",
+        "Date / Issue bar",
+        "SECTIONS: Insert containers here",
+        "FOOTER: copyright, links and optional disclaimer",
+    )
+
+    def test_the_named_regions_survive(self) -> None:
+        report = size_report(all_fixtures()["kitchen_sink"]().render())
+        names = {region.name for region in report.regions}
+        missing = [name for name in self.EXPECTED if name not in names]
+        assert not missing, f"section markers lost, byte attribution degraded: {missing}"
+
+    def test_the_body_is_still_attributed_to_the_sections_marker(self) -> None:
+        report = size_report(all_fixtures()["kitchen_sink"]().render())
+        heaviest = report.heaviest(1)[0]
+        assert heaviest.name == "SECTIONS: Insert containers here", (
+            f"the heaviest region is {heaviest.name!r} — attribution has drifted"
+        )

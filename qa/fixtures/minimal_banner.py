@@ -1,20 +1,10 @@
 """
-The ``MinimalBanner`` variant, in the gallery.
+The ``MinimalBanner`` variant — a flat band with no VML.
 
-The proof that a region is a seam and not a refactor: this email differs from
-the others in exactly one argument — ``EmailBuilder.banner(MinimalBanner(...))``
-— and nothing about the skeleton, the body, or the email's own facts moves
-with it.
-
-What the golden on this fixture pins that no other one can:
-
-* the variant renders **no** ``v:rect``/``v:fill``/``v:textbox`` and no
-  ``background-image``, which is the whole reason it exists;
-* the email-level facts still flow down — firm name, campaign name, date
-  range, issue label and the header disclaimer all appear, from
-  ``EmailMetadata``, exactly as they do under the default header;
-* a **CID logo** on a variant reaches ``assets()`` once, through the region's
-  own ``images()`` rather than through the metadata.
+The masthead's background image and its Outlook ``v:rect`` fallback are the
+most fragile markup in the package, so the variant that omits both needs its
+own golden: it is what shows the flat path still renders when the VML path
+changes.
 """
 
 from __future__ import annotations

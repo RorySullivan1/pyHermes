@@ -1,36 +1,16 @@
 """
 Email-client lint pass (#60): portability checks over rendered HTML.
 
-The constraints that actually break emails are documented prose, not checks.
-Outlook's Word engine ignores ``max-width``, so every ``<img>`` needs a
-``width=`` attribute — a rule :mod:`svc.builder.images` follows and nothing
-verified end to end. ``alt`` is required at construction, but nothing asserted
-it survived into the markup. This module turns those into findings.
+The constraints that break emails were documented prose, not checks —
+Outlook's Word engine ignores ``max-width`` so every ``img`` needs a
+``width=`` attribute; ``alt`` was required at construction but nothing
+asserted it survived into the markup. This turns those into findings::
 
-Usage::
-
-    from qa.lint import lint_html, lint_email
-
-    findings = lint_email(email)                 # rules + the size breakdown
+    findings = lint_email(email)     # the rules, plus the size breakdown
     errors = [f for f in findings if f.severity is Severity.ERROR]
 
-Four commitments shape it:
-
-**It parses, it does not grep.** The repo learned this the expensive way: a
-``grep`` for ``Contact Us`` matched inside an HTML section-marker comment and
-produced a confident, wrong answer. :class:`html.parser.HTMLParser` is stdlib,
-so the check costs no dependency.
-
-**It observes, it never patches.** Findings fail or warn; nothing rewrites
-HTML. Epic #54's first principle.
-
-**Every rule carries its source.** An unsourced rule does not ship — see
-``SOURCES`` below. A rule asserting something about a mail client that nobody
-can trace is indistinguishable from a rule asserting a preference.
-
-**It lands green.** A linter that arrives red teaches everyone to ignore it, so
-a rule whose finding cannot be fixed today is *filed and deferred*, never
-downgraded into a permanent warning. See ``DEFERRED_RULES``.
+Every rule cites its source in ``SOURCES``; ``DEFERRED_RULES`` names any that
+are real but not yet shipped. `.claude/rules/qa-harness.md` carries both.
 """
 
 from __future__ import annotations

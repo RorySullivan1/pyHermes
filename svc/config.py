@@ -1,53 +1,18 @@
 """
-Tunable limits and policy for pyHermes, in one place.
+Tunable limits and policy for pyHermes, in one frozen dataclass.
 
-Every number here was once a literal buried in the module that used it.
-Most were judgment calls — a cap chosen as "about half the budget", a
-timeout chosen as "long enough for a slow upload" — and a judgment call
-that cannot be revisited without editing the library is a bad default
-wearing a constant's clothes. They are gathered here so a caller can
-change them, see them all at once, and tell which ones are actually
-negotiable.
+Each field is a **judgment call** rather than a fact about the world: a cap
+chosen as "about half the budget", a timeout as "long enough for a slow
+upload". Facts — Graph's ``ACCEPTED = 202``, the transient status families —
+stay literals where they are used, because changing one does not tune
+behaviour, it makes the code wrong.
 
-Two kinds of number live in this codebase, and only one kind is here:
+    get_config().inline_image_limit_kb     # what is in force
+    set_config(Config.from_env())          # or read PYHERMES_*
+    with config_override(retry_max_attempts=1): ...
 
-- **Judgment calls** — the inline-image cap, the retry ladder, the request
-  timeout. Someone picked them. They are configurable.
-- **Facts about the world** — Gmail's 102 KB clipping limit, Graph's
-  ``202 Accepted``, the transient HTTP status families. Changing those does
-  not tune behaviour, it makes the code wrong about its environment.
-
-``size_limit_kb`` sits awkwardly across that line and is included
-deliberately: 102 KB is a real Gmail limit, not taste, but an email bound
-for a non-Gmail channel is legitimately not subject to it. It is
-configurable *and* documented as a fact, so raising it stays a conscious
-act rather than a knob someone turns to make a test pass.
-
-Usage::
-
-    from svc.config import Config, get_config, set_config
-
-    get_config().inline_image_limit_kb          # read the active value
-    set_config(Config(inline_image_limit_kb=64))  # process-wide override
-    set_config(Config.from_env())                 # or take it from the env
-
-**Nothing here reads the environment on import.** ``from_env()`` is
-explicit because a library whose behaviour changes with ambient state is a
-library you cannot reason about — and the delivery layer's purity, which
-its byte-for-byte dry-run guarantee depends on, would be the first
-casualty.
-
-### Deliberately not configurable
-
-Recorded so they are not re-litigated as oversights:
-
-- **The 680 px frame and every column width derived from it.** That is the
-  design system, and it belongs to the size-themes epic (#45), which makes
-  it a *theme* rather than a free-form number.
-- **``ACCEPTED = 202``, ``TRANSIENT_STATUSES``.** These describe what a
-  provider does, not what this library prefers.
-- **The Content-ID character set and length bound.** Loosening it produces
-  ids that break the ``cid:`` reference they exist to serve.
+Nothing reads the environment on import, and consumers call ``get_config()``
+at use time so a later override is seen. `.claude/rules/config.md` has the rest.
 """
 
 from __future__ import annotations

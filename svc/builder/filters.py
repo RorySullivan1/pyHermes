@@ -1,22 +1,16 @@
 """
-Custom Jinja2 filters and tests for the email builder.
+The Jinja filters, and the escaping contract they implement.
 
-**Escaping contract.** Jinja2 ``autoescape`` is OFF — HTML emails need raw
-output, and rich fields are meant to carry markup.  Escaping is therefore
-explicit, and split by field kind:
+Autoescape is **off**, so escaping is explicit and splits three ways:
 
-* **Plain-text fields** (section titles, subtitles, KPI labels/values, table
-  headers and cells, chart alt text and sources, author details, and the
-  plain metadata fields) are escaped **by the builder**, in the templates,
-  via the ``escape_html`` filter.  Pass these as raw text — do *not*
-  pre-escape them, or they will be double-escaped.
-* **HTML fields** (``TextBlock.content``, ``NumberedItem.body``, and the
-  metadata disclaimers) are emitted raw, because callers deliberately pass
-  markup.  **The caller is responsible for escaping anything untrusted in
-  them** — use :func:`escape_html` for that.
-* **Attributes** (``src``, ``href``, ``alt``, ``<title>``) are always escaped
-  by the builder, including quotes, so a value can never break out of the
-  attribute it sits in.
+* **Plain-text fields** are escaped by the templates through ``escape_html``.
+  Pass them raw — pre-escaping double-escapes them.
+* **HTML fields** (``TextBlock.content``, ``NumberedItem.body``, ``Card.body``,
+  ``Footer.disclaimer``, ``header_disclaimer``) are emitted raw because
+  callers deliberately pass markup. **Escaping anything untrusted in them is
+  the caller's job** — :func:`escape_html` is exported for that.
+* **Attributes** are always escaped by the builder, quotes included, so a
+  value can never break out of the attribute it sits in.
 """
 
 import html

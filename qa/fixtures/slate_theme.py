@@ -1,27 +1,9 @@
 """
-The ``slate`` preset, in the gallery.
+``kitchen_sink`` at the ``slate`` preset — the colour axis's A/B.
 
-The colour epic's counterpart to ``minimal_banner`` / ``minimal_footer``: a
-fixture that exists to pin one *choice*. It differs from ``kitchen_sink`` in
-exactly one metadata field — ``theme`` — and its golden is what proves the
-palette is live in every corner of a rendered email rather than only in the
-inline styles a spot-check would look at.
-
-What this golden pins that no other one can:
-
-* the second preset renders at all, and renders *completely*: no token
-  falls back to a classic value anywhere, including inside the dark-mode
-  forcing block and the mobile media query, which used to carry their own
-  hardcoded copies of surface and text colours;
-* both halves of the Outlook scrim move together — the CSS ``rgba()`` and
-  the VML ``color``/``opacity`` attribute pair;
-* an unset ``Card.color`` resolves against *this* theme's neutral, while a
-  caller's explicit colour survives untouched — the semantic-vs-presentation
-  boundary, in one email.
-
-It also retires an exemption: ``kitchen_sink`` could not set ``theme`` to a
-distinctive value while only one preset existed, so the metadata
-completeness test skipped the field. This fixture is what makes it real.
+A preset is *curated, never computed*: a test asserts every ``slate`` token
+differs from ``classic``'s, so a hue rotation could not have produced it. This
+golden is what pins that the whole palette moved, not just the surfaces.
 """
 
 from __future__ import annotations

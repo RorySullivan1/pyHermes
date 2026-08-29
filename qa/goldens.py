@@ -1,50 +1,18 @@
 """
-Golden snapshots over the fixture gallery (#58) — and #32's characterization test.
+Golden snapshots over the fixture gallery (#58).
 
-Three artifacts are pinned per fixture, because a render, its attachments and
-its plain-text projection all drift independently:
+Three artifacts per fixture, because a render, its attachments and its
+plain-text projection drift independently:
 
-``goldens/<name>.html``
-    The rendered HTML, byte for byte, with no normalization. This is the
-    byte-identity bar every migration epic promises to hold (#33, #41, #42,
-    #49 all say "golden test unchanged").
+``goldens/<name>.html``       the rendered HTML, byte for byte, unnormalised
+``goldens/<name>.assets.txt`` the asset manifest, one record per ``ImageAsset``
+``goldens/<name>.txt``        the plain-text projection (#110)
 
-``goldens/<name>.assets.txt``
-    The asset manifest: one tab-separated record per ``ImageAsset``, in
-    manifest order — ``content_id``, ``mime_type``, byte length, filename.
-    The *bytes* are deliberately absent: they already live in the fixture that
-    generates them, and storing them twice would double the repo's image
-    weight to catch nothing extra. Length plus the content-addressed id is
-    enough, since a Content-ID is ``sha256(bytes)[:16]`` — different bytes
-    cannot keep the same id. Order is preserved rather than sorted, so a
-    reordering of ``Email.assets()`` is a failure, which is what #32 asked
-    for: image aggregation moves between classes during the header epic.
+``pytest --update-goldens`` is the only regeneration path, and a **missing**
+golden fails rather than creating itself — a golden that writes itself on
+first run pins whatever the code did that day.
 
-``goldens/<name>.txt``
-    The plain-text projection (#110), byte for byte. It is a *separate*
-    artifact for the same reason the manifest is: since #109 the text part is
-    a second projection of the section tree rather than a degradation of the
-    render, so a component's ``text()`` can change with the HTML byte-identical
-    and vice versa. Neither golden can see the other's drift.
-
-    Its first regeneration is reviewed as what it is — the initial pin of the
-    house format, where the diff *is* the feature.
-
-**One harness, not two.** #58 required that this and #32 resolve to a single
-mechanism. #32 had not started, so it is satisfied here: ``kitchen_sink`` is
-the representative email it specified, exhaustive over ``EmailMetadata`` for
-exactly that reason.
-
-**Regeneration is opt-in and reviewed.** ``pytest --update-goldens`` is the
-only path — nothing regenerates automatically, and a missing golden fails
-rather than being silently created, because a golden that writes itself on
-first run pins whatever happened to be true that day. *A golden diff in a pull
-request is a claim that the change is intended*, and the reviewer reads it as
-one.
-
-This module is deliberately free of pytest: the gallery's later tools (#61's
-``preview`` CLI in particular) can check goldens without importing a test
-framework.
+`.claude/rules/qa-harness.md` carries the mismatch report's shape and why.
 """
 
 from __future__ import annotations

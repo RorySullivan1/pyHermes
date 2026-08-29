@@ -56,16 +56,6 @@
     }
   </style>
 </head>
-<!--
-  ACADEMIC FINANCIAL EMAIL SKELETON — Design Reference
-  ====================================================
-  Palette:
-    Every colour and shadow comes from the resolved Theme, which arrives as
-    the "theme" namespace. The token table — name, value, and the sites each
-    one covers — lives in svc/builder/theming.py, where something other than
-    a person can read it. The hand-maintained list that used to sit here had
-    already drifted: it named a row-alt colour the table never used.
--->
 <body style="margin:0; padding:0; background-color:#F2F1EE; font-family: Georgia, 'Times New Roman', serif;" bgcolor="#F2F1EE">
 
   <!-- Preheader -->
@@ -79,15 +69,11 @@
     <tr>
       <td align="center" style="padding:20px 0;">
 
-        <!-- ============================================ -->
         <!-- MAIN CONTAINER — 680px                       -->
-        <!-- ============================================ -->
         <table class="email-container" role="presentation" width="680" cellpadding="0" cellspacing="0"
                border="0" style="background-color:#FFFFFF; max-width:680px;" bgcolor="#FFFFFF">
 
-          <!-- ══════════════════════════════════════════ -->
           <!-- HEADER: Disclaimer bar                    -->
-          <!-- ══════════════════════════════════════════ -->
           <tr>
             <td align="left" style="background-color:#1E2B38; padding:5px 24px; text-align:left;" bgcolor="#1E2B38">
               <div style="margin:0; font-family: Arial, Helvetica, sans-serif; font-size:9.5px;
@@ -97,9 +83,7 @@
             </td>
           </tr>
 
-          <!-- ══════════════════════════════════════════ -->
           <!-- HEADER: Background image + text overlay   -->
-          <!-- ══════════════════════════════════════════ -->
           <tr>
             <td style="background-color:#3A2B3F;" bgcolor="#3A2B3F">
               <!--[if mso]>
@@ -111,13 +95,6 @@
               <div style="background-image:url('https://cdn.example.com/header-bg.png');
 background-color:#3A2B3F; background-size:cover;
                           background-position:center center; background-repeat:no-repeat;">
-                <!-- Dark overlay for text legibility.  Hidden from Outlook on
-                     purpose: the v:fill above already applies this exact scrim
-                     through its own color + opacity attributes, and the Word
-                     engine demotes a transparent background-color to a
-                     background image, inheriting VML's limitations for a
-                     second copy of an effect it has already drawn (#78).
-                     Both halves still read one Rgba, so they cannot drift. -->
                 <!--[if !mso]><!--><div style="background-color:rgba(36,26,40,0.55);"><!--<![endif]-->
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                   <tr>
@@ -195,9 +172,7 @@ background-color:#3A2B3F; background-size:cover;
             </td>
           </tr>
 
-          <!-- ══════════════════════════════════════════ -->
           <!-- SECTIONS: Insert containers here          -->
-          <!-- ══════════════════════════════════════════ -->
           <tr>
   <td style="padding:1px 1px 1px 1px; background-color:#FFFFFF; border-top:1px solid #D6D2CB; border-bottom:1px solid #D6D2CB;">
     <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#F8F7F5;">

@@ -1,73 +1,18 @@
 """
-The email's typeface vocabulary — one validated object per house voice.
+Every typeface in the email, as one validated object per house voice.
 
-Faces were the last hardcoded axis of the design system. Colour became a
-resolved :class:`~svc.builder.theming.Theme` in #46 and density a resolved
-:class:`~svc.builder.sizing.SizeScheme` in #45, but ``font-family`` stacks
-stayed baked into the templates: repeated per declaration, unnamed,
-unvariable. A newsletter wanting a different house face forked templates.
-This module is that owner.
+A ``FontTheme`` is four roles named by job rather than by face — ``heading``,
+``body``, ``label``, ``numeric`` — each a ``FontStack`` whose families are
+stored unquoted and rendered by a byte-exact ``css`` property. Every stack
+must end in a generic family; a bare generic alone is rejected.
 
-::
+``EmailMetadata.font_theme`` names a preset or supplies a ``FontTheme``;
+:meth:`Email.render` resolves it once and binds it as the ``font`` namespace,
+so no template holds a ``font-family`` literal.
 
-    EmailMetadata.font_theme        (a preset name, or a FontTheme)
-            |  resolved ONCE in Email.render()
-            v
-    FontTheme                       (frozen, validated at construction)
-    +-- heading    FontStack        masthead title, section titles, item titles
-    +-- body       FontStack        prose, the page default, KPI values
-    +-- label      FontStack        meta, captions, table text, footer, chrome
-    +-- numeric    FontStack        the data table's figure columns
-
-**The audit this module is pinned to** — every ``font-family`` declaration in
-``svc/builder/templates/``, 2026-08-28. Three stacks, 49 declarations:
-
-===========================================  =====  ==============================
-stack                                        count  drawn at
-===========================================  =====  ==============================
-``Georgia, 'Times New Roman', serif``           21  the page default (``<body>``
-                                                    inline **and** the ``[if mso]``
-                                                    ``body, td, th`` fallback),
-                                                    masthead title, section titles,
-                                                    italic subtitles, item titles,
-                                                    list ordinals, prose body, and
-                                                    the **KPI values**
-``Arial, Helvetica, sans-serif``                27  the strip, masthead subtitle /
-                                                    meta / department, card labels
-                                                    and sublabels, table headers and
-                                                    cells, captions, contact copy,
-                                                    the footer
-``'Courier New', Courier, monospace``            1  the data table's non-first
-                                                    columns, via ``{% if
-                                                    loop.first %}`` — the figures
-===========================================  =====  ==============================
-
-**Four roles, not three, and the difference is the whole point.** Naming them
-after the values — ``serif`` and ``sans`` — is the mistake the colour and size
-audits each existed to avoid, and here it would also be *wrong*: the serif is
-not "headings", it is the editorial voice, and it sets the KPI numerals as
-readily as the masthead. A preset that wants a sans masthead over a serif body
-— the motivating variant — needs ``heading`` and ``body`` separately
-addressable, so the vocabulary is cut by the job a face does rather than by
-which face happens to do it today. That ``heading`` and ``body`` are the same
-stack in the default is a fact about the default, not about the roles.
-
-**A stack is the atom, never a face.** Every :class:`FontStack` must end in a
-CSS generic family, because in email the fallback chain *is* the rendering:
-Outlook's Word engine walks the chain and lands wherever it lands, so the
-generic is the floor that makes a custom face safe rather than a gamble. That
-rule is checkable without maintaining a list of "websafe" names that would rot,
-and it is what lets ``font_theme`` accept a caller's own object where
-``size_theme`` accepts only a preset name.
-
-**Weights, italics and letter-spacing stay literal, and that is a decision.**
-The audit found ``font-weight`` at ``bold`` (16), ``400`` (2) and ``300`` (1),
-plus ``font-style:italic`` (10). These are structural emphasis riding the role
-sites — the same call ``border-width`` and ``letter-spacing`` got in #45: shape
-rather than voice. Numeric weights beyond 400/700 are also unreliable in the
-Word engine, which synthesises what a face does not supply. A theme that wants
-a lighter voice picks a lighter *face*, in the stack, where the fallback chain
-can be reasoned about.
+`.claude/rules/design-axes.md` carries the presets, the validation rules and
+their reasons, and the ``[if mso]`` block that is the watch-site for a
+literal creeping back.
 """
 
 from __future__ import annotations

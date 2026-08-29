@@ -1,26 +1,16 @@
 """
-pyHermes Service Layer
-======================
+pyHermes service layer: ``builder`` -> ``delivery`` -> ``gmail`` / ``outlook``.
 
-svc/
-├── builder/     — OO email assembly (Jinja2): HTML + an asset manifest.
-├── delivery/    — transport-neutral MIME assembly: HTML + manifest → message.
-├── gmail/       — Gmail send adapter: message → the wire.
-└── outlook/     — Outlook send adapter, over Microsoft Graph.
+Two seams hold the chain apart, and both are load-bearing:
 
-The seam between builder and delivery: the builder *declares* CID embeds
-(for every ``src="cid:X"`` in the HTML, ``Email.assets()`` has the entry
-describing what to attach as ``X``), and delivery *performs* them.
+**Builder to delivery** — the builder *declares* CID embeds. For every
+``src="cid:X"`` in the HTML, :meth:`Email.assets` has the entry describing
+what to attach as ``X``; delivery *performs* the attachment.
 
-The seam between delivery and an adapter: delivery assembles bytes, an
-adapter transmits them. Adapters own their provider's wire contract and
-error semantics; they never own authentication, so pyHermes has no
-dependency on any provider SDK.
+**Delivery to an adapter** — delivery assembles bytes, an adapter transmits
+them. Adapters own their provider's wire contract and error semantics and
+**never** authentication, so pyHermes depends on no provider SDK.
 
-Usage::
-
-    from svc.builder import CardGroup, EmailBuilder, FullWidth
-    from svc.builder.models import Card, KpiItem
-    from svc.delivery import build_message, save_eml
-    from svc.gmail import GoogleApiTransport, send_message
+This package re-exports nothing: import from ``svc.builder``,
+``svc.delivery``, ``svc.gmail`` or ``svc.outlook`` directly.
 """

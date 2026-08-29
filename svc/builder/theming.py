@@ -1,105 +1,18 @@
 """
-Theming — every colour and shadow in the email, as one validated object.
+Every colour and shadow in the email, as one validated object.
 
-Colour used to be 18 distinct hex values in 245 occurrences across all 20
-template files, plus three ``rgba()`` literals and three Python-side
-fallbacks. A palette *comment* in ``base.html`` named 13 roles, but it was
-dead text: it could not be read by anything, and it had already drifted (see
-the audit below). This module is what replaces it — a named home for every
-value, frozen and validated, so a caller can re-skin the newsletter from one
-field instead of forking 20 templates.
+A ``Theme`` is four frozen layers — ``palette``, ``text``, ``semantic`` and
+``shadow`` — with no optional token field, each value validated as
+``#RRGGBB`` at construction.
+
+``EmailMetadata.theme`` names a preset or supplies a custom ``Theme``;
+:meth:`Email.render` resolves it once and binds it as the ``theme``
+namespace, so no template and no Python default holds a hex literal.
 
 **The theme is the unit of customisation, never a single colour at a call
-site.** Coherence survives because the whole theme is the atom: the layers
-are frozen, no token field is optional, and every value is validated at
-construction. There is no way to build a ``Theme`` that later fails a render
-under ``StrictUndefined`` — completeness is structural, not remembered.
-
-Four layers, because they answer different questions:
-
-============== ==================================================
-:class:`Palette`        surfaces and structure — what the email is made of
-:class:`TextColors`     the type, on light grounds and on the navy masthead
-:class:`SemanticColors` what a *number* means; defaults and fallbacks only
-:class:`ShadowStyle`    the three composed ``rgba()`` values
-============== ==================================================
-
-``SemanticColors`` deserves its own note. ``KpiItem.color`` and
-``TableRow.colors`` are the caller's statement about the **data** ("this
-number is down"), not a styling choice — they stay caller-supplied. The
-theme provides only what is used when the caller says nothing.
-
-The audit
----------
-
-Every default below is exactly what the templates hardcode today. Occurrence
-counts are over ``svc/builder/templates/``; the palette comment's own 13
-lines are excluded from "renders in".
-
-Palette
-    ``wrapper_bg``     ``#F2F1EE``  13×  base, footer-legal — the warm stone padding,
-                                         and the preheader text hidden against it
-    ``surface``        ``#FFFFFF``  63×  everywhere — the white email body
-    ``header_bg``      ``#2C3E50``   9×  the masthead band — soft navy
-    ``accent``         ``#5B8A9A``   9×  links, the CTA button, rules — muted teal
-    ``rule``           ``#D6D2CB``  33×  the standard hairline, all 8 containers
-    ``rule_subtle``    ``#EAE8E4``   2×  data-table row separators, author-block top
-    ``rule_dark``      ``#2C3E50``   1×  the section-title underline
-    ``highlight_tint`` ``#F8F7F5``  27×  ``highlight=True`` in all 8 containers
-    ``row_alt``        ``#F8F7F5``   9×  data-table alternating rows
-
-TextColors
-    ``primary``        ``#3B3B3B``  26×  body copy
-    ``secondary``      ``#7A7A72``  12×  captions, sources, sublabels
-    ``light``          ``#A09E97``   6×  as-of lines, the copyright line
-    ``heading``        ``#2C3E50``  11×  section titles, table headers, author name
-    ``fine_print``     ``#8A8880``   1×  the footer disclaimer
-    ``on_dark``        ``#FFFFFF``   2×  the firm name over navy
-    ``on_dark_secondary`` ``#CFD8DC``  2×  the campaign name over navy
-    ``on_dark_muted``  ``#90A4AE``   6×  header disclaimer, date range, issue label
-    ``on_accent``      ``#FFFFFF``   2×  the contact CTA's label, on the accent fill
-
-SemanticColors
-    ``positive``       ``#4A7C59``   0×  **no render site today** — see below
-    ``negative``       ``#B85450``   0×  **no render site today** — see below
-    ``neutral``        ``#5A5A5A``   2×  the data-table header row and its cell
-                                         fallback; also what an unset
-                                         ``Card.color`` resolves to
-
-ShadowStyle
-    ``scrim``          ``#141E2C`` @ 0.65  the header hero's legibility overlay
-    ``title``          ``#000000`` @ 0.4   ``text-shadow`` on the firm name
-    ``subtitle``       ``#000000`` @ 0.3   ``text-shadow`` on the campaign name
-
-Four things the audit found, recorded rather than quietly fixed
----------------------------------------------------------------
-
-* **The palette comment was wrong, not merely incomplete.** It named "Row alt
-  ``#F5F4F1``", but ``data-table.html`` alternates rows with ``#F8F7F5`` — the
-  same value as the highlight tint. ``#F5F4F1`` appears nowhere else in the
-  repo. The *role* was real; the value the comment claimed was not, which is
-  precisely the failure mode a comment nothing can read is prone to.
-
-* **``row_alt`` and ``highlight_tint`` are separate tokens that happen to
-  share a value.** Collapsing them would make the coincidence permanent and
-  deny a theme author the distinction the comment itself drew.
-
-* **``rule_dark`` is ``header_bg``'s value by design, and stays a distinct
-  token** for the same reason — a section heading's underline matching the
-  masthead is a decision a theme may want to keep or break.
-
-* **``default_color`` and ``validate_hex_color`` were registered filters that
-  no template called.** ``default_color``'s ``#5A5A5A`` was therefore a
-  literal in a code path nothing exercised. The migration puts the filter to
-  work — ``{{ card.color | default_color(theme.semantic.neutral) }}`` — which
-  removes the literal, resolves an unset ``Card.color`` against the live
-  theme, and validates an explicit one on the way through.
-
-* **``positive`` and ``negative`` render nowhere by default.** They live in
-  the docstring examples and in callers' own ``KpiItem`` data. They are
-  tokens here because they are the vocabulary the palette comment published
-  and callers already use — but tokenising them changes no byte, and nothing
-  in the templates reads them.
+site** — coherence survives because the whole theme is the atom.
+`.claude/rules/design-axes.md` carries the audit, the closed list of
+per-component colour exceptions, and why each was admitted.
 """
 
 from __future__ import annotations

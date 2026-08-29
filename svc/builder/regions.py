@@ -1,53 +1,18 @@
 """
 Regions — the layer between the skeleton and the containers.
 
-The composition model is ``skeleton ← regions (header | banner | body | footer) ←
-containers ← components``. A *region* is a named area of the email that
-renders itself from its own template(s) and declares its own images, the way
-a :class:`~svc.builder.components.Component` already does for a content
-block.
+The composition model is ``skeleton <- regions (header | banner | body |
+footer) <- containers <- components``. A region is a named area that renders
+itself from its own template(s) and declares its own images, the way a
+:class:`~svc.builder.components.Component` does for a content block.
 
-Two rules give the layer its shape:
+Two rules give the layer its shape: **each region owns exactly one skeleton
+slot**, and **facts flow down** — a region receives the email's facts and
+layers them *over* its own context, so what the email owns cannot be shadowed
+from below.
 
-**Facts flow down.** The firm's name, the campaign, the dates, the
-disclaimers and the outbound URLs are facts about the *email*; they live on
-:class:`~svc.builder.models.EmailMetadata` and are passed into the region at
-render time. A region presents them — it cannot own or contradict them,
-which :meth:`Region.context` enforces by layering the facts *over* its own
-keys rather than under them.
-
-**The design system is not a parameter.** Fonts, palette, padding and the
-680px geometry stay in the templates, exactly as for containers and
-components. A region varies the *structure* of the masthead, not its look.
-
-**A region fills one or more named slots.** The banner fills two since #89 —
-``{{ header_bar_html }}`` for the strip at the top of the email and
-``{{ banner_html }}`` for the masthead below it, which shared a template only
-by accident of file layout; the footer fills one (``{{ footer_html }}``),
-rendered as a self-contained sibling table below the body.
-:meth:`Region.render_slots` is the contract the skeleton consumes, and a
-slot a variant leaves unfilled renders empty, which is how a variant
-*omits* a block rather than conditionalising it away.
-
-**``Banner`` was called ``Header`` until #90, and there is no alias.** The
-name is being reused: #87 gives the strip at the top of the email a region of
-its own, and *that* becomes ``Header``. A deprecated warn-and-forward shim —
-the courtesy ``KpiStrip`` extends to ``CardGroup`` — would collide with the
-new class rather than ease the migration, so the break is clean and loud on
-purpose. Between #90 and #87, ``from svc.builder import Header`` raises
-``ImportError``; afterwards an old-style ``Header(logo_url=…)`` fails at
-construction, because the class that answers to the name has no such field.
-Both failures happen at the call site, immediately, which is the point: a
-name that quietly changed meaning would keep running and be wrong. The flat
-keywords (``logo_url``, ``logo_alt``, ``logo_width``, ``header_bg_image_url``
-on :class:`~svc.builder.models.EmailMetadata`) are unaffected and still build
-the region — they are the common call path, and they never named the class.
-
-The body region is deliberately not a class: it *is* the email's ordered
-section list, and wrapping that in an object would add a layer with no
-behaviour. The preheader stays skeleton plumbing for the same reason. The
-strip the banner still renders becomes a region of its own in #87; until
-then the banner owns both of its slots.
+`.claude/rules/builder-architecture.md` carries the four-region model, the
+``BoxSurface`` mixin the header and footer share, and ``theme_context()``.
 """
 
 from __future__ import annotations

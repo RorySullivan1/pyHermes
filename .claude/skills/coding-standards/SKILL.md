@@ -28,23 +28,10 @@ For stack-specific depth, use the dedicated skills instead:
 - **`python-maintenance`** — debugging, refactoring, modernizing existing Python.
 - **`VSTO-development`** — C#/VB.NET Office add-in patterns and the Office object model.
 
-## When to Activate
-
-- Starting a new project or module
-- Reviewing code for quality and maintainability
-- Refactoring existing code to follow conventions
-- Enforcing naming, formatting, or structural consistency
-- Setting up linting, formatting, or type-checking rules
-- Onboarding new contributors to coding conventions
-
 ## Scope Boundaries
 
-Activate this skill for:
-
-- descriptive naming
-- immutability defaults
-- readability, KISS, DRY, and YAGNI enforcement
-- error-handling expectations and code-smell review
+When to reach for this skill is the frontmatter `description`'s job; it is not
+restated here. What that field cannot carry is the negative half:
 
 Do **not** use this skill as the primary source for:
 
@@ -422,6 +409,36 @@ count += 1  # increment counter
 ```
 
 Document public APIs (XML doc comments / docstrings); skip comments that restate code.
+
+### How much, by scope
+
+That rule is a floor — it says a docstring must exist. This is the ceiling, and it is
+deliberately scope-dependent, because the length that is right for a class is wrong for
+a function:
+
+| Scope | Rule |
+|---|---|
+| **File top** | The file's *purpose* — what it is for, not how it came to be |
+| **Class** | May be verbose. This is where a design decision belongs |
+| **Function** | Limited but descriptive: what it does, its contract, its surprises |
+| **Inline** | The non-obvious only — a notice, a trap, a *why* the code cannot say |
+| **A documented constant** | Its own scope, not inline prose. A language that has a form for documenting a public constant (Python's `#:`, a doc comment) is asking for a docstring, and it is budgeted like one |
+| **Emitted output** | An HTML template, a CSS bundle, a generated header: its comments reach the consumer and cost bytes there. A higher bar, not the same one. What the build *compiles away* is free; what it *emits* is not |
+
+The test is **contract, not history**. The Python example above runs twelve lines and
+every one is contract — what it takes, what it returns, what it raises. A six-line
+docstring recounting which change introduced a parameter is the longer of the two,
+because none of it tells a caller anything.
+
+**No line counts here, on purpose.** A cap that fits one codebase is wrong for the
+next, so numbers belong in a project's own check rather than in a cross-project
+standard. What travels is the shape.
+
+Prose that overruns its scope is usually misplaced rather than unwanted, and the
+reasoning in a mature codebase is load-bearing — it is why a bad idea does not come
+back. Route it with **`knowledge-router`** rather than discarding it or letting it
+bloat the nearest docstring: cutting a docstring by *moving* its content is the goal,
+cutting it by losing the content is a regression that looks like progress.
 
 ## Performance
 

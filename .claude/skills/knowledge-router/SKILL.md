@@ -6,7 +6,8 @@ description: >-
   where to store it so it compounds across sessions. Use whenever the user says to
   remember/note/capture/learn something, or when you recognize something worth keeping
   past this session. Routes each item to the right home (skill, project memory, CLAUDE.md,
-  or a reference note) rather than dumping everything in one place, and defaults to
+  a reference note, or a docstring on the code itself) rather than dumping everything in
+  one place, names where knowledge must not go, and defaults to
   dropping low-value observations. Trigger even if no keyword is used: a reusable insight
   is the signal.
 ---
@@ -47,13 +48,46 @@ Identify what *kind* of knowledge it is and send it to the matching home:
   line. Lessons share the notes' plumbing but not their content rules — a lesson is a
   standing instruction, not a fact — and they stay free of design decisions and
   specifications, or the tier degenerates into a diary nobody reads.
+- **Reasoning about one piece of code** (why this function guards that case, why the
+  obvious implementation was rejected here, a trap the next editor will hit) → **the
+  code itself**, as a docstring or a comment on the thing it concerns. The only home
+  that is read at the moment it is needed, because the reader is already looking at
+  the file. Scope it as `coding-standards` does — a design decision belongs on a
+  class, a contract or a surprise on a function, a trap inline.
 - **None of the above / a one-off / already captured** → **drop it.** Most observations
   land here.
 
-If you're unsure between memory and a note: memory is for things that *change* (state,
-decisions); a note is for things that are *stable* (facts, concepts). If unsure between a
-note and `CLAUDE.md`: if it's short and consulted every session, it's `CLAUDE.md`; if it's
-larger and consulted occasionally, it's a note.
+## Choosing between homes
+
+- **Memory or a note?** Memory is for things that *change* (state, decisions); a note is
+  for things that are *stable* (facts, concepts).
+- **A note or `CLAUDE.md`?** Short and consulted every session → `CLAUDE.md`. Larger and
+  consulted occasionally → a note.
+- **The code or somewhere shared?** Ask how far it reads: *would someone editing this one
+  file need it, and would someone editing a sibling need it too?* One yes routes it to the
+  code. **Two yeses route it away** — see the anti-destination below.
+
+### Not the source, when it is cross-cutting
+
+The first anti-destination: a rule holding across many files belongs in **none** of them.
+Written into the file you had open, it is invisible from the other nineteen and the copies
+drift — a palette comment in one template of a set did exactly that, naming a colour the
+code had stopped using, and no reader of the other files could have caught it.
+
+The notes tier already gates on this from the other side ("not tied to one file path"); the
+anti-destination is that gate made two-way, so path-scoped knowledge has somewhere to go
+and cross-cutting knowledge has somewhere it may not.
+
+The trap is that it looks correct as you write it: the open file is always a plausible home
+for what you just learned. Reach is the test, not convenience.
+
+### When it belongs in two homes
+
+The common case, not the edge — a cross-cutting rule usually has a local consequence. The
+guardrail against storing one thing twice still holds, because you do not: **the rule goes
+to the shared home in full, and the code carries a different sentence** — the local
+consequence, or a one-line pointer naming where the rule lives. Never a second copy of the
+rule, which is the thing that drifts.
 
 ## Separate the *why* from the *what*
 
