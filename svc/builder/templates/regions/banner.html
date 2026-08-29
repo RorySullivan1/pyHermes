@@ -1,6 +1,6 @@
-          <!-- ══════════════════════════════════════════ -->
+          {# ══════════════════════════════════════════ #}
           <!-- HEADER: Background image + text overlay   -->
-          <!-- ══════════════════════════════════════════ -->
+          {# ══════════════════════════════════════════ #}
           <tr>
             <td style="background-color:{{ banner_palette.band }};" bgcolor="{{ banner_palette.band }}">
               <!--[if mso]>
@@ -15,13 +15,13 @@
               <div style="{% if background_image_url %}background-image:url('{{ background_image_url | escape_html }}');
                           {% endif %}background-color:{{ banner_palette.band }}; background-size:cover;
                           background-position:center center; background-repeat:no-repeat;">
-                <!-- Dark overlay for text legibility.  Hidden from Outlook on
+                {# Dark overlay for text legibility.  Hidden from Outlook on
                      purpose: the v:fill above already applies this exact scrim
                      through its own color + opacity attributes, and the Word
                      engine demotes a transparent background-color to a
                      background image, inheriting VML's limitations for a
                      second copy of an effect it has already drawn (#78).
-                     Both halves still read one Rgba, so they cannot drift. -->
+                     Both halves still read one Rgba, so they cannot drift. #}
                 <!--[if !mso]><!--><div style="background-color:{{ banner_palette.scrim }};"><!--<![endif]-->
                 {# One 2x2 table, not a logo row above a copy block. The logo shares a row
                    with the title and the department shares one with the subtitle, so the

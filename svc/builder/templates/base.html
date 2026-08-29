@@ -56,7 +56,7 @@
     }
   </style>
 </head>
-<!--
+{#
   ACADEMIC FINANCIAL EMAIL SKELETON — Design Reference
   ====================================================
   Palette:
@@ -65,7 +65,7 @@
     one covers — lives in svc/builder/theming.py, where something other than
     a person can read it. The hand-maintained list that used to sit here had
     already drifted: it named a row-alt colour the table never used.
--->
+#}
 <body style="margin:0; padding:0; background-color:{{ theme.palette.wrapper_bg }}; font-family: {{ font.body }};" bgcolor="{{ theme.palette.wrapper_bg }}">
 
   <!-- Preheader -->
@@ -89,9 +89,9 @@
          tests/test_screenshots.py, because no golden can see it. #}
       <td align="center" style="padding:{{ size.frame.outer_pad_y }}px 0;">
 
-        <!-- ============================================ -->
+        {# ============================================ #}
         <!-- MAIN CONTAINER — {{ size.frame.width }}px                       -->
-        <!-- ============================================ -->
+        {# ============================================ #}
         <table class="email-container" role="presentation" width="{{ size.frame.width }}" cellpadding="0" cellspacing="0"
                border="0" style="background-color:{{ theme.palette.surface }}; max-width:{{ size.frame.width }}px;" bgcolor="{{ theme.palette.surface }}">
 
@@ -103,9 +103,9 @@
    own trailing newline plus this line's; do not add a third. #}
 {{ header_bar_html }}
 {{ banner_html }}
-          <!-- ══════════════════════════════════════════ -->
+          {# ══════════════════════════════════════════ #}
           <!-- SECTIONS: Insert containers here          -->
-          <!-- ══════════════════════════════════════════ -->
+          {# ══════════════════════════════════════════ #}
           {{ sections_html }}
 
         </table>
