@@ -950,11 +950,37 @@ class TestTheEmailApi:
         with pytest.raises(RuntimeError, match="metadata"):
             EmailBuilder().banner(Banner())
 
-    def test_the_banner_renders_into_the_skeleton(self, valid_metadata):
-        email = Email({**valid_metadata, "logo_alt": "explicit"})
+    def test_the_banner_renders_into_the_skeleton(self, valid_metadata, png_bytes):
+        """The alt is the probe, so the banner needs a logo for it to reach the markup.
+
+        Before the empty-``src`` fix this passed with no ``logo_url`` at all, because
+        the logo ``img`` rendered unconditionally — which is the defect, not the
+        contract. Supplying one keeps the original claim and adds the alt chain.
+        """
+        logo = EmailImage.attached(png_bytes, alt="from the image")
+        email = Email({**valid_metadata, "logo_url": logo, "logo_alt": "explicit"})
         html = email.render()
         assert "{{ banner_html }}" not in html
         assert 'alt="explicit"' in html
+
+    def test_a_banner_without_a_logo_emits_no_image(self, valid_metadata):
+        """An ``img`` with an empty ``src`` is a broken icon in every client.
+
+        It shipped in nine of fourteen gallery fixtures until a real report was
+        built against the public API, and the goldens pinned it the whole time.
+
+        Scoped to ``img`` on purpose. The ``v:fill`` inside the ``[if mso]``
+        block still emits ``src=""`` when no background image is supplied — the
+        same defect in the Outlook half, which #78 fixed for the CSS
+        ``background-image`` beside it and missed here. Gating VML changes what
+        classic Outlook draws, and that cannot be verified without an Outlook
+        host, so it is tracked separately rather than guessed at.
+        """
+        html = Email(valid_metadata).render()
+        images = re.findall(r"<img[^>]*>", html)
+        assert not [tag for tag in images if 'src=""' in tag], (
+            f"the banner emits a logo img with no source: {images}"
+        )
 
     def test_a_cid_logo_is_attached_exactly_once(self, valid_metadata, png_bytes):
         image = EmailImage.attached(png_bytes, alt="Firm logo")

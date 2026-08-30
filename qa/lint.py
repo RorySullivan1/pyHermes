@@ -77,7 +77,10 @@ SOURCES: dict[str, str] = {
     "empty-url": (
         "An empty url() is not inert: a client may resolve it against the "
         "current document and issue a spurious request for the message body "
-        "itself. Templates guard the declaration on the value instead."
+        "itself. Templates guard the declaration on the value instead. The "
+        "same rule covers an empty `img src`, which adds a visible "
+        "broken-image icon to that cost — the form the banner shipped for "
+        "nine of fourteen fixtures until a real report was built against it."
     ),
     "size-budget": (
         "Gmail clips a message above ~102 KB behind a 'View entire message' "
@@ -329,6 +332,16 @@ class _Linter(HTMLParser):
 
     def _check_image(self, attributes: dict[str, str]) -> None:
         source = attributes.get("src", "")[:60]
+
+        if not source.strip():
+            self._report(
+                "empty-url",
+                Severity.ERROR,
+                "<img> has an empty or missing src; it renders as a broken-image "
+                "icon in every client, and the empty value may resolve against "
+                "the current document. Guard the tag on the value.",
+                'src=""',
+            )
 
         width = attributes.get("width", "").strip()
         if not width:
