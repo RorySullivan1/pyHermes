@@ -209,6 +209,7 @@ test (#60). `lint_html(html)` returns `Finding(rule_id, severity, location, mess
 | `outlook-transparent-background` | error | `background-color` carrying an alpha channel — Outlook demotes it to a background image |
 | `empty-url` | error | `url()` with nothing in it; a client may resolve it against the message body |
 | `table-role` | error | A layout table with no `role`, **and** a data table carrying one (#114) |
+| `vml-fill-empty-src` | error | A `v:fill` with `src=""` inside `[if mso]` (#150) — `empty-url`'s case, in the one place that rule cannot reach |
 | `size-budget` | warn/error | The 90/102 KB thresholds, **attributing the bytes to section-marker regions** |
 
 Seven decisions worth not re-litigating:
@@ -260,6 +261,16 @@ conditional comment over as text rather than tags, which is the behaviour wanted
 carries Outlook-only VML, so judging it by standard-HTML rules would fire on markup that is
 correct *because* it is non-standard. `no-external-css` still reads comment text, since an
 `@import` hidden in a conditional is just as external.
+
+**`vml-fill-empty-src` is the second such exception, and the shape is the rule** (#150). It
+reaches into comment text for one named defect rather than opening the block to linting — the
+policy above is right, and a rule that grew into judging VML generally would fire on markup
+that is correct precisely because it is non-standard. Its four tests pin that scope: the empty
+`src` fires, a real one passes, an *absent* one passes, and a `v:roundrect` is untouched.
+It exists because `empty-url` already denies `url('')` in the CSS half two lines away, and the
+VML half went unguarded — a rule that stops at the edge of a comment is a rule the same defect
+walks around. **It caught all eight affected gallery fixtures** when run against the pre-fix
+templates, which is how it was checked rather than assumed.
 
 ## The preview CLI — `qa/preview.py`
 

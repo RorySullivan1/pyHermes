@@ -52,6 +52,17 @@ SOURCES: dict[str, str] = {
         "case is a real data table, which must NOT carry it. W3C WAI, "
         "Tables Tutorial: Layout Tables. w3.org/WAI/tutorials/tables/layout"
     ),
+    "vml-fill-empty-src": (
+        "An empty src is not inert: #78 established that url('') may be "
+        "resolved against the current document and issue a spurious request, "
+        "and gated the CSS background-image on that. The VML half two lines "
+        "above was missed, so a banner with no backdrop shipped "
+        'src="" to Outlook for the life of the package (#150). Reached by '
+        "inspecting conditional-comment text, the exception no-external-css "
+        "already makes: markup inside [if mso] is otherwise not linted, "
+        "because judging VML by standard-HTML rules fires on markup that is "
+        "correct precisely because it is non-standard."
+    ),
     "no-external-css": (
         "Microsoft, on Outlook Classic: styles that are not fully inline "
         "'may be stripped or misapplied'. learn.microsoft.com/troubleshoot/"
@@ -158,6 +169,10 @@ _TRANSPARENT_COLOR = re.compile(r"\b(?:rgba|hsla)\s*\(|#[0-9a-f]{8}\b")
 
 #: ``url()`` with nothing in it, quoted or not.
 _EMPTY_URL = re.compile(r"""url\(\s*(?:''|""|)\s*\)""")
+
+#: A ``v:fill`` carrying an empty ``src``. Matched over conditional-comment
+#: text, where the VML lives; see ``_check_vml_fill``.
+_VML_EMPTY_SRC = re.compile(r"""<v:fill\b[^>]*\bsrc\s*=\s*(?:''|"")""", re.IGNORECASE)
 
 #: How many regions the size breakdown names. Enough to point at the culprit,
 #: short enough to read in a failure message.
@@ -289,8 +304,29 @@ class _Linter(HTMLParser):
         # Conditional comments carry real CSS for Outlook; an @import there
         # would be just as external as one in a <style> block.
         self._check_at_import(data)
+        self._check_vml_fill(data)
 
     # -- rules --------------------------------------------------------
+
+    def _check_vml_fill(self, data: str) -> None:
+        """
+        A ``v:fill`` may not carry an empty ``src``.
+
+        The one VML rule, and it reaches into comment text rather than tags
+        because ``[if mso]`` markup never reaches the tag handlers. Narrow on
+        purpose: this is not a foothold for linting VML generally, which the
+        class docstring argues against. It exists because the identical
+        defect in the CSS half was worth fixing and this half was missed.
+        """
+        for match in _VML_EMPTY_SRC.finditer(data):
+            self._report(
+                "vml-fill-empty-src",
+                Severity.ERROR,
+                "<v:fill> has an empty src; an empty URL may resolve against the "
+                "current document and issue a spurious request. Gate the attribute "
+                "on the value, as the CSS background-image is gated.",
+                match.group(0)[:60],
+            )
 
     def _check_table(self, table: _OpenTable) -> None:
         """

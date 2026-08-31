@@ -105,6 +105,38 @@ class TestImgAlt:
         assert "img-alt" in rule_ids(lint_html(tag))
 
 
+class TestVmlFillEmptySrc:
+    """
+    The one rule that reads conditional-comment text for VML (#150).
+
+    ``[if mso]`` markup is otherwise not linted at all — judging VML by
+    standard-HTML rules fires on markup that is correct precisely because it
+    is non-standard. This reaches in for one specific defect, the exception
+    ``no-external-css`` already makes for an ``@import``.
+    """
+
+    def test_an_empty_src_fires(self):
+        html = '<!--[if mso]><v:fill type="frame" src="" color="#111"/><![endif]-->'
+        assert "vml-fill-empty-src" in rule_ids(lint_html(html))
+
+    def test_a_real_src_passes(self):
+        html = '<!--[if mso]><v:fill type="frame" src="https://a/b.png"/><![endif]-->'
+        assert not rule_ids(lint_html(html))
+
+    def test_an_absent_src_passes(self):
+        """The shape the fix emits: the attribute is gated, not emptied."""
+        html = '<!--[if mso]><v:fill type="frame" color="#111" opacity="65%"/><![endif]-->'
+        assert not rule_ids(lint_html(html))
+
+    def test_other_vml_is_left_alone(self):
+        """
+        The scope guarantee. A rule that grew into linting VML generally
+        would fire on markup that is correct because it is non-standard.
+        """
+        html = '<!--[if mso]><v:roundrect arcsize="8%" stroke="false"></v:roundrect><![endif]-->'
+        assert not rule_ids(lint_html(html))
+
+
 class TestNoExternalCss:
     def test_a_stylesheet_link_fires(self):
         findings = lint_html('<link rel="stylesheet" href="https://example.com/a.css">')
