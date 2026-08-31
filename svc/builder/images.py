@@ -183,18 +183,19 @@ class EmailImage:
     An image plus the strategy for getting it in front of the reader.
 
     Build one with :meth:`hosted`, :meth:`attached` or :meth:`inline` rather
-    than calling the constructor directly — the factories do the file
-    reading, format sniffing and Content-ID derivation, and they make the
-    valid field combinations unmissable.
+    than the constructor — the factories read the file, sniff the format,
+    derive the Content-ID, and make the valid field combinations unmissable.
 
-    Validation runs at construction, per the builder's convention: by the
-    time a component holds an ``EmailImage``, the bytes have been read, the
-    format is known good, and the size is within budget.
+    Validation runs at construction: by the time a component holds an
+    ``EmailImage``, the bytes are read and the format is known good.
 
     Attributes:
         strategy:  How the bytes reach the reader.
         alt:       Alt text. Required — it is what the reader sees whenever
             images are blocked, which for Outlook desktop is the default.
+        decorative: The image carries no information, so a screen reader
+            should skip it. Emits ``alt=""`` — a positive assertion, not an
+            absent attribute — and the only case where ``alt`` may be empty.
         url:       The hosted URL. ``REMOTE`` only.
         data:      The raw bytes. ``CID`` and ``DATA_URI`` only.
         mime_type: Sniffed from ``data``. ``CID`` and ``DATA_URI`` only.
@@ -202,12 +203,13 @@ class EmailImage:
         filename:  Suggested attachment filename. ``CID`` only.
         width:     Display width in px, emitted as the ``width`` attribute
             because Outlook's Word engine ignores CSS ``max-width``. For a
-            retina asset pass the *display* width, not the pixel width of
-            the file. ``None`` renders full-width.
+            retina asset pass the *display* width, not the file's. ``None``
+            renders full-width.
     """
 
     strategy: EmbedStrategy
-    alt: str
+    alt: str = ""
+    decorative: bool = False
     url: str = ""
     data: bytes = b""
     mime_type: str = ""
@@ -220,7 +222,9 @@ class EmailImage:
     # ------------------------------------------------------------------
 
     @classmethod
-    def hosted(cls, url: str, alt: str, width: int | None = None) -> EmailImage:
+    def hosted(
+        cls, url: str, alt: str = "", width: int | None = None, *, decorative: bool = False
+    ) -> EmailImage:
         """
         Reference a publicly hosted image by URL.
 
@@ -232,25 +236,35 @@ class EmailImage:
             url:   Absolute or relative image URL.
             alt:   Alt text; shown wherever images are blocked.
             width: Display width in px. ``None`` renders full-width.
+            decorative: The image carries no information; emit ``alt=""``.
 
         Raises:
-            ValidationError: On an empty/unsafe URL or empty alt text.
+            ValidationError: On an empty/unsafe URL, or on alt text that is
+                empty without ``decorative`` or supplied with it.
         """
         from .models import _validate_url  # local: models imports nothing from here
 
         if not url:
             raise ValidationError("EmailImage.hosted() requires a url.")
         _validate_url(url, "image.url")
-        return cls(strategy=EmbedStrategy.REMOTE, alt=alt, url=url, width=_check_width(width))
+        return cls(
+            strategy=EmbedStrategy.REMOTE,
+            alt=alt,
+            decorative=decorative,
+            url=url,
+            width=_check_width(width),
+        )
 
     @classmethod
     def attached(
         cls,
         source: str | Path | bytes,
-        alt: str,
+        alt: str = "",
         width: int | None = None,
         content_id: str = "",
         filename: str = "",
+        *,
+        decorative: bool = False,
     ) -> EmailImage:
         """
         Embed by attaching the bytes as a MIME part, referenced by ``cid:``.
@@ -269,10 +283,11 @@ class EmailImage:
                 so the same image used twice is attached once.
             filename:   Attachment filename. Defaults to the source file's
                 name, or ``<content_id><ext>`` for raw bytes.
+            decorative: The image carries no information; emit ``alt=""``.
 
         Raises:
             ValidationError: On unreadable files, unsupported formats, an
-                unsafe ``content_id``, or empty alt text.
+                unsafe ``content_id``, or an alt/``decorative`` mismatch.
         """
         data, original_name = _read_source(source)
         mime_type, extension = sniff_image_type(data)
@@ -285,6 +300,7 @@ class EmailImage:
         return cls(
             strategy=EmbedStrategy.CID,
             alt=alt,
+            decorative=decorative,
             data=data,
             mime_type=mime_type,
             content_id=resolved_id,
@@ -293,24 +309,31 @@ class EmailImage:
         )
 
     @classmethod
-    def inline(cls, source: str | Path | bytes, alt: str, width: int | None = None) -> EmailImage:
+    def inline(
+        cls,
+        source: str | Path | bytes,
+        alt: str = "",
+        width: int | None = None,
+        *,
+        decorative: bool = False,
+    ) -> EmailImage:
         """
         Inline the bytes as a base64 ``data:`` URI.
 
         **Gmail strips data URIs and Outlook's Word engine will not render
-        them.** Use this for browser preview or a known non-Gmail,
-        non-Outlook-desktop channel — never as a general default.
+        them.** For browser preview or a known non-Gmail, non-Outlook-desktop
+        channel — never a general default.
 
         Args:
             source: Path to an image file, or raw image bytes.
             alt:    Alt text; shown wherever the URI is stripped.
             width:  Display width in px. ``None`` renders full-width.
+            decorative: Carries no information; emit ``alt=""``.
 
         Raises:
             ValidationError: On unreadable files or unsupported formats.
-            SizeError: If the base64 payload would exceed
-                :data:`INLINE_LIMIT_KB`, which would leave too little of
-                the 102 KB Gmail budget for the rest of the email.
+            SizeError: If the base64 payload exceeds
+                :data:`INLINE_LIMIT_KB`, leaving too little of the budget.
         """
         data, _ = _read_source(source)
         mime_type, _ = sniff_image_type(data)
@@ -332,6 +355,7 @@ class EmailImage:
         return cls(
             strategy=EmbedStrategy.DATA_URI,
             alt=alt,
+            decorative=decorative,
             data=data,
             mime_type=mime_type,
             width=_check_width(width),
@@ -342,10 +366,18 @@ class EmailImage:
     # ------------------------------------------------------------------
 
     def __post_init__(self) -> None:
-        if not self.alt or not self.alt.strip():
+        if self.decorative and self.alt:
+            raise ValidationError(
+                f"a decorative image cannot also carry alt text, got: {self.alt!r}. "
+                "Decorative means a screen reader should skip it; text means it has "
+                "something to say. Drop one."
+            )
+        if not self.decorative and (not self.alt or not self.alt.strip()):
             raise ValidationError(
                 "'image.alt' is required and cannot be empty: it is what the reader "
-                "sees whenever images are blocked, which is Outlook's default."
+                "sees whenever images are blocked, which is Outlook's default. If the "
+                "image is purely decorative, say so with decorative=True, which emits "
+                'alt="" so a screen reader skips it.'
             )
         if self.strategy == EmbedStrategy.REMOTE:
             if not self.url:
@@ -406,6 +438,7 @@ def coerce_image(
     alt: str,
     field_name: str,
     width: int | None = None,
+    decorative: bool = False,
 ) -> EmailImage:
     """
     Accept either an :class:`EmailImage` or a bare URL string.
@@ -420,6 +453,7 @@ def coerce_image(
         field_name: Name used in the error message.
         width:      Display width in px. Used only when wrapping a bare
             string, for the same reason.
+        decorative: Emit ``alt=""``. Bare-string only, for the same reason.
 
     Raises:
         ValidationError: If ``value`` is empty or of an unsupported type.
@@ -434,7 +468,7 @@ def coerce_image(
         from .models import _validate_url
 
         _validate_url(value, field_name)
-        return EmailImage.hosted(value, alt=alt, width=width)
+        return EmailImage.hosted(value, alt=alt, width=width, decorative=decorative)
     raise ValidationError(
         f"'{field_name}' must be a URL string or an EmailImage, got {type(value).__name__}."
     )

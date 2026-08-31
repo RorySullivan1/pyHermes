@@ -445,10 +445,14 @@ class LinkRow:
     not about content.
 
     Attributes:
-        copyright: Free-form **plain text**, escaped on output. Empty means
-                   *resolve to* ``© {current_year} {firm_name}`` from the
-                   email's own facts, which is what makes an unset row
-                   byte-identical to the pre-#100 render.
+        copyright: Free-form **plain text**. Write the characters you mean —
+                   ``©``, an em dash, an accent — and the builder emits each
+                   as a numeric reference, so the line survives a client that
+                   guesses the charset wrong. Writing an entity yourself
+                   escapes it to literal text (#148). Empty means *resolve
+                   to* ``© {current_year} {firm_name}`` from the email's own
+                   facts, which is what makes an unset row byte-identical to
+                   the pre-#100 render.
         links:     ``None`` means *build the default pair* from the metadata's
                    two URLs and the footer's labels — so ``link_row=None``
                    changes nothing. An explicit list, including an empty one,

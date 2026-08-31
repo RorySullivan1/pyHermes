@@ -144,7 +144,7 @@ class TestTheLinkRow:
                 )
             )
         )
-        assert "2026 Acme — all rights reserved" in html
+        assert "2026 Acme &#8212; all rights reserved" in html
         assert html.index("Privacy") < html.index("Terms")
         assert "&copy;" not in html, "a caller's own line replaces the default entirely"
         assert html.count("&nbsp;&middot;&nbsp;") == 2
@@ -152,6 +152,46 @@ class TestTheLinkRow:
     def test_the_copyright_is_plain_text_and_escaped(self):
         html = _render(Footer(link_row=LinkRow(copyright="Smith & Sons <not markup>")))
         assert "Smith &amp; Sons &lt;not markup&gt;" in html
+
+    def test_a_caller_can_write_the_copyright_sign(self):
+        """
+        #148: the field is plain text, so the caller writes the character.
+        """
+        html = _render(Footer(link_row=LinkRow(copyright="© 2026 Acme")))
+        assert "&#169; 2026 Acme" in html
+
+    def test_the_two_paths_agree_about_a_non_ascii_character(self):
+        """
+        The defect was the asymmetry, not the escaping.
+
+        The default has always emitted the symbol as a reference, because a
+        bare ``©`` mis-decoded as latin-1 renders as ``Â©``. A caller's line
+        went out as the raw character or, if they wrote the entity, as
+        literal text — so the one field with a recorded decision about this
+        applied it to exactly one of its two branches.
+        """
+        default = _render(Footer())
+        supplied = _render(Footer(link_row=LinkRow(copyright="© 2026 F")))
+        for html in (default, supplied):
+            assert "©" not in html
+
+    def test_every_non_ascii_character_travels_as_a_reference(self):
+        """
+        Not a special case for one symbol: an em dash mis-decoded is
+        ``â€"`` and an umlaut ``Ã¼``, which is the same failure.
+        """
+        html = _render(Footer(link_row=LinkRow(copyright="Zürich — 2026")))
+        assert "Z&#252;rich &#8212; 2026" in html
+
+    def test_an_entity_the_caller_writes_is_still_literal_text(self):
+        """
+        The field stays plain text. #148 gave the caller a way to render the
+        character, and deliberately did not turn the row into a markup
+        surface — a sixth raw-HTML field would also have to answer #130's
+        div rule, and this line renders inside a ``p``.
+        """
+        html = _render(Footer(link_row=LinkRow(copyright="&copy; 2026 Acme")))
+        assert "&amp;copy; 2026 Acme" in html
 
     def test_an_empty_link_list_renders_a_link_free_row(self):
         """

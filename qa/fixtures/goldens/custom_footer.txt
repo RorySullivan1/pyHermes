@@ -24,7 +24,7 @@ renders on the theme's own tokens.
 
 Distributed to registered recipients only.
 
-2026 Hermes Research — all rights reserved
+© 2026 Hermes Research — all rights reserved
 
 Privacy: https://example.com/privacy
 Stop receiving this: https://example.com/unsubscribe

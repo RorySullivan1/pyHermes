@@ -215,10 +215,30 @@ markup's, so adding a "Privacy" link meant forking the file. `Footer.link_row` t
 and this footer's labels, which is why the default path is byte-identical and #64's label
 fields still work. The trigger for making it an object is the one that made `Card` and
 `TableRow` objects: **the row has a variable-length part, and variable length is what fields
-cannot express.** The default copyright keeps the `&copy;` **entity** rather than a bare `©` —
-this is an email library, and U+00A9 mis-decoded as latin-1 renders as a mojibake pair; a
-caller's own line is plain text, escaped by the resolver, which is why the template reads one
-already-HTML key instead of branching.
+cannot express.** The copyright keeps the `&copy;` **entity** rather than a bare `©` — this is
+an email library, and U+00A9 mis-decoded as latin-1 renders as a mojibake pair. A caller's own
+line is plain text, escaped by the resolver, which is why the template reads one already-HTML
+key instead of branching.
+
+**Both branches of that resolver escape to ASCII (#148), and the symmetry is the rule.** The
+decision above applied to the *default* only: a caller writing `&copy;` got it escaped to
+literal text, and a caller writing `©` got the raw bytes the decision exists to avoid — so the
+one field with a recorded charset decision honoured it on one of its two paths. Both now go
+through `escape_html_ascii`, which spells **every** non-ASCII character as a numeric reference:
+scoping it to the symbol would be arbitrary, since an em dash mis-decoded is `â€"` in the same
+way. Two things follow. The field stays **plain text** — a caller writes the character, never
+the entity — because making it a raw-HTML surface would add a sixth to the closed list of five,
+and this line renders inside a `p`, which #130 forbids. And the plain-text projection needs no
+branch: the degrader decodes character references, so `_text()` still degrades the one source
+`resolved_copyright_html()` produces.
+
+**The filter is deliberately not applied to every plain-text field.** The charset exposure is
+identical everywhere, so the narrow scope is a decision rather than an oversight: going global
+costs bytes against the 102 KB budget — a reference is 8 where the character is 3 — and is a
+policy change for the whole package, not a bug fix for one row. The gallery had been quietly
+paying for the old behaviour: `kitchen_sink` and `custom_footer` both wrote their copyright
+line *without a symbol at all*, which is what a caller does when the correct spelling does not
+work.
 
 ### Public API (import from `svc.builder`)
 
@@ -340,8 +360,25 @@ Rules the module enforces at construction, per the validation philosophy below:
 - **Format is sniffed from magic bytes, not the file extension** — PNG, JPEG and GIF only.
   WebP and SVG are detected specifically so the rejection can say why (Outlook's Word engine
   renders neither, and SVG can carry script).
-- **`alt` is required.** It is what the reader sees whenever images are blocked, which for
-  Outlook desktop is the default state.
+- **`alt` is required, with one named exception.** It is what the reader sees whenever images
+  are blocked, which for Outlook desktop is the default state. The exception is
+  `decorative=True` (#149), which emits `alt=""` — **an assertion, not an absence**: omitting
+  the attribute makes a screen reader announce the filename, and any string makes it announce
+  the decoration, so the empty string is the only correct value for an image carrying no
+  information. It cannot be reached by passing `""`; that still raises, and the message now
+  names the opt-out. Supplying both raises too — they are contradictory claims about one image.
+  The opt-out is on `EmailImage`, `coerce_image` and `ImageBlock`, and deliberately **not** on
+  `ChartBlock`: a chart is never decorative. Region images (`Banner.logo_*`, `Footer.image_*`)
+  resolve alt through their own fallback chains and were left alone; giving them the opt-out is
+  a separate decision.
+- **A decorative image declares itself in the markup**, with `role="presentation"` beside the
+  empty `alt`. This is standing rule 8's lesson on a second element: `alt=""` deliberate and
+  `alt=""` forgotten are **identical in the render**, so a guard reading the HTML cannot tell
+  them apart and the annotation is what does. The `img-alt` lint rule is enforced **both ways**
+  like `table-role` — an empty alt without the role fires, and the role *with* alt text fires —
+  so the marker cannot drift from the thing it marks. The projection mirrors it: a decorative
+  image contributes nothing to the text part rather than an empty `[]`, though its caption
+  still projects, because a caption is copy either way.
 - **Content-IDs are content-addressed** — `sha256(bytes)[:16]` by default, so the same image
   used in two sections is attached once, and the same input always yields the same output.
   An explicit `content_id` is checked against `[A-Za-z0-9._+-]{1,128}`.

@@ -27,7 +27,11 @@
       {% if link_url %}
       <a href="{{ link_url | escape_html }}" style="text-decoration: none; border: 0;">
       {% endif %}
-      <img src="{{ image_src | escape_html }}" alt="{{ image_alt | escape_html }}"
+      {# role="presentation" travels with the empty alt, never alone: in the
+         render the two spellings of alt="" are identical, so the annotation is
+         the only thing that says which one this is — the same job it does on a
+         layout table, and what the img-alt lint rule reads (#149). #}
+      <img src="{{ image_src | escape_html }}" alt="{{ image_alt | escape_html }}"{% if image_decorative %} role="presentation"{% endif +%}
            {% if image_width %}width="{{ image_width }}"{% else %}width="100%"{% endif %}
            style="display: block; border: 0; outline: none; text-decoration: none; max-width: 100%; height: auto;">
       {% if link_url %}

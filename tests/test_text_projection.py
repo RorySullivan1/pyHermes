@@ -354,6 +354,17 @@ class TestRegionsProjectResolvedState:
         footer = Footer(link_row=LinkRow(copyright="2026 Example — all rights reserved"))
         assert "2026 Example — all rights reserved" in footer.text(self.FOOTER_FACTS)
 
+    def test_a_caller_line_round_trips_through_the_references(self):
+        """
+        The inversion above, for the branch #148 changed: the HTML part
+        spells these as references and the text part degrades that same
+        source back to the characters the caller wrote — which is the whole
+        argument for escaping on the way out rather than asking callers to
+        supply two spellings.
+        """
+        footer = Footer(link_row=LinkRow(copyright="© 2026 Zürich — Example"))
+        assert "© 2026 Zürich — Example" in footer.text(self.FOOTER_FACTS)
+
     def test_the_default_links_carry_their_urls(self):
         projected = Footer().text(self.FOOTER_FACTS)
         assert "Unsubscribe: https://example.com/u" in projected

@@ -87,6 +87,23 @@ def build(template_dir: Path | None = None) -> Email:
                 ),
             )
         )
+        .section(
+            FullWidth(
+                title="Decorative",
+                content=ImageBlock(
+                    EmailImage.hosted(
+                        "https://cdn.example.com/divider-rule.png",
+                        width=200,
+                        decorative=True,
+                    ),
+                    caption=(
+                        'Carries no information, so it renders alt="" and a screen '
+                        "reader skips it — the caption is the copy meant to be read."
+                    ),
+                    align=ImageAlign.CENTER,
+                ),
+            )
+        )
         # The repeated attachment, in a column layout, next to prose.
         .section(
             TwoColumn(

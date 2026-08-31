@@ -117,7 +117,22 @@ mechanism rather than a claim to re-test per role. `Renderer` grew a `theme` pro
 this: the banner needs the theme as an *object*, and reading it off the engine is what kept
 `render_slots()` the signature every region shares. **The scrim stays one `Rgba`** because the
 masthead emits it twice (CSS `rgba()` for everyone, `v:fill` colour + opacity for Outlook), and
-two sources is the drift this module exists to end. Three tests hold the wiring: the templates
+two sources is the drift this module exists to end.
+
+**The two halves share the colour and must also share their guards — #150 is where they did
+not.** #78 gated the CSS `background-image` on the value, because `url('')` is not inert, and
+missed the `v:fill src` two lines above it; eight gallery fixtures shipped `src=""` to Outlook
+for the life of the package. The gate is now on both, and only the *attribute* moves: the
+`v:rect`, its colour and its opacity are untouched, because the scrim is drawn over the flat
+band whether or not there is a photograph — in this half and in the CSS half alike. **STAGED,
+NOT VERIFIED.** Standing rule 3 owns this: no screenshot here can say what the Word engine
+draws, so before merging, check in a real classic Outlook that (a) a banner with no backdrop
+still draws the band and its scrim, and (b) one *with* a backdrop is unchanged. The specific
+risk is `type="frame"` with no `src` — the shipped markup keeps it, and if Outlook treats that
+as "stretch nothing" and paints transparent rather than the fill colour, the fix is to gate
+`type` alongside `src` rather than to gate the whole `v:rect`, which would take the scrim with
+it. `TestTheVmlFillSrcIsGated` pins what is emitted in every case, so a change of approach
+fails loudly rather than silently dropping the scrim. Three tests hold the wiring: the templates
 may not read `theme.` at all, they may not name a role `FALLBACKS` does not declare, and every
 declared role must actually be drawn.
 

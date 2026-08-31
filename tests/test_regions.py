@@ -969,18 +969,53 @@ class TestTheEmailApi:
         It shipped in nine of fourteen gallery fixtures until a real report was
         built against the public API, and the goldens pinned it the whole time.
 
-        Scoped to ``img`` on purpose. The ``v:fill`` inside the ``[if mso]``
-        block still emits ``src=""`` when no background image is supplied — the
-        same defect in the Outlook half, which #78 fixed for the CSS
-        ``background-image`` beside it and missed here. Gating VML changes what
-        classic Outlook draws, and that cannot be verified without an Outlook
-        host, so it is tracked separately rather than guessed at.
+        Scoped to ``img``. The ``v:fill`` in the ``[if mso]`` block carried the
+        same defect and is handled by ``TestTheVmlFillSrcIsGated`` below.
         """
         html = Email(valid_metadata).render()
         images = re.findall(r"<img[^>]*>", html)
         assert not [tag for tag in images if 'src=""' in tag], (
             f"the banner emits a logo img with no source: {images}"
         )
+
+
+class TestTheVmlFillSrcIsGated:
+    """
+    #150 — the Outlook half of the defect #78 fixed in the CSS half.
+
+    **Not yet verified in a real Outlook client.** These tests pin what the
+    builder *emits*; what the Word engine *draws* from it is the open
+    question, and standing rule 3 says no screenshot here can close it. The
+    claim being staged is narrow: only the attribute moves. The rect, its
+    colour and its opacity are untouched, because the scrim is drawn over
+    the flat band whether or not there is a photograph — in this half and in
+    the CSS half alike.
+    """
+
+    def _fill(self, html: str) -> str:
+        match = re.search(r"<v:fill[^>]*>", html)
+        assert match, "the masthead should always draw a v:fill"
+        return match.group(0)
+
+    def test_no_backdrop_emits_no_src(self, valid_metadata):
+        assert "src=" not in self._fill(Email(valid_metadata).render())
+
+    def test_a_backdrop_still_emits_its_src(self, valid_metadata):
+        banner = Banner(background_image_url="https://cdn.test/hero.png")
+        fill = self._fill(Email(valid_metadata, banner=banner).render())
+        assert 'src="https://cdn.test/hero.png"' in fill
+
+    @pytest.mark.parametrize("backdrop", ["", "https://cdn.test/hero.png"])
+    def test_the_scrim_survives_either_way(self, valid_metadata, backdrop):
+        """
+        The load-bearing half of the claim: gating the src must not stop
+        Outlook drawing the band and its scrim. If a future edit gates the
+        whole ``v:rect`` instead, this is what fails.
+        """
+        banner = Banner(background_image_url=backdrop)
+        fill = self._fill(Email(valid_metadata, banner=banner).render())
+        assert 'type="frame"' in fill
+        assert "color=" in fill and "opacity=" in fill
 
     def test_a_cid_logo_is_attached_exactly_once(self, valid_metadata, png_bytes):
         image = EmailImage.attached(png_bytes, alt="Firm logo")

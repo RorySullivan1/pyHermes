@@ -524,6 +524,8 @@ class ImageBlock(Component):
         image:    An :class:`~svc.builder.images.EmailImage`, or a plain URL
             string wrapped as a hosted image using ``alt_text``.
         alt_text: Alt text, used only when ``image`` is a bare URL string.
+        decorative: The image carries no information; emits ``alt=""`` and
+            projects to nothing in the text part. Also bare-string only.
         caption:  Optional caption rendered beneath the image.
         link_url: Optional URL the image links to.
         align:    ``"center"`` (default), ``"left"`` or ``"right"``.
@@ -549,6 +551,7 @@ class ImageBlock(Component):
         align: str | ImageAlign = ImageAlign.CENTER,
         subtitle: str | None = None,
         width: int | None = None,
+        decorative: bool = False,
     ):
         if not image:
             raise ValidationError("ImageBlock requires an image.")
@@ -558,7 +561,9 @@ class ImageBlock(Component):
             )
         _validate_url(link_url, "image.link_url")
 
-        self.image = coerce_image(image, alt=alt_text, field_name="image", width=width)
+        self.image = coerce_image(
+            image, alt=alt_text, field_name="image", width=width, decorative=decorative
+        )
         self.caption = caption
         self.link_url = link_url
         self.align = align
@@ -571,9 +576,16 @@ class ImageBlock(Component):
         """
         The alt text in brackets, its caption, and where a linked image goes.
 
+        A **decorative** image projects to nothing at all, not to an empty
+        ``[]`` — the mirror of the HTML side, where ``alt=""`` tells a screen
+        reader to skip it. Its caption still projects, because a caption is
+        copy the reader is meant to read either way.
+
         ``align`` projects to nothing: plain text has one column, so an
         alignment is presentation with nothing to present.
         """
+        if self.image.decorative:
+            return self._with_subtitle(wrap(self.caption))
         alt = f"[{self.image.alt}]"
         if self.link_url:
             alt = format_link(alt, self.link_url)
@@ -583,6 +595,7 @@ class ImageBlock(Component):
         return {
             "image_src": self.image.src,
             "image_alt": self.image.alt,
+            "image_decorative": self.image.decorative,
             "image_width": self.image.width or "",
             "image_align": self.align,
             "link_url": self.link_url,

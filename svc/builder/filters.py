@@ -72,6 +72,24 @@ def escape_html(value: Any) -> str:
     return html.escape(str(value), quote=True)
 
 
+def escape_html_ascii(value: Any) -> str:
+    """
+    :func:`escape_html`, with every non-ASCII character as a numeric reference.
+
+    For text that must survive a client guessing the charset wrong: ``©``
+    mis-decoded as latin-1 renders as ``Â©``, an em dash as ``â€"``. The
+    footer's default copyright always avoided that by writing ``&copy;`` as
+    an entity; a caller cannot, since their entity would escape to literal
+    text, so this is the same guarantee for text they supply (#148).
+
+    Scoped to that row, not to every plain-text field. The exposure is the
+    same everywhere, but going global is a policy decision with a size cost
+    against the 102 KB budget — a reference is 8 bytes where the character
+    is 3 — and belongs to its own change.
+    """
+    return "".join(ch if ch.isascii() else f"&#{ord(ch)};" for ch in escape_html(value))
+
+
 def size_kb(value: str) -> float:
     """
     Return the size of a string in kilobytes (UTF-8 encoded).
