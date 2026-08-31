@@ -87,6 +87,23 @@ class TestImgAlt:
     def test_real_alt_passes(self):
         assert not lint_html('<img src="a.png" width="10" alt="Factor returns">')
 
+    def test_a_declared_decorative_image_passes(self):
+        """
+        ``alt=""`` is correct for an image carrying no information — but in
+        the render it is indistinguishable from a forgotten alt, so the rule
+        reads the annotation, exactly as ``table-role`` does (#149).
+        """
+        assert not lint_html('<img src="a.png" width="10" alt="" role="presentation">')
+
+    def test_the_declaration_alone_does_not_suppress_the_rule(self):
+        """
+        The mirror case, and the reason this is a two-way rule: an image that
+        says a screen reader should skip it and then supplies text for one is
+        making both claims at once.
+        """
+        tag = '<img src="a.png" width="10" alt="Factor returns" role="presentation">'
+        assert "img-alt" in rule_ids(lint_html(tag))
+
 
 class TestNoExternalCss:
     def test_a_stylesheet_link_fires(self):

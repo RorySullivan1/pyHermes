@@ -28,6 +28,13 @@ Inline (data URI)
 Spends the 102 KB budget directly; Gmail strips it.
 
 
+Decorative
+----------
+
+Carries no information, so it renders alt="" and a screen reader skips it —
+the caption is the copy meant to be read.
+
+
 The Same Attachment, Twice
 --------------------------
 

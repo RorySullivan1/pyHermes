@@ -176,6 +176,67 @@ class TestSharedValidation:
         assert EmailImage.hosted("https://cdn.test/c.png", alt="Chart").width is None
 
 
+class TestDecorativeImages:
+    """
+    ``alt=""`` is an assertion, not an absence (#149).
+
+    It is the only correct value for an image carrying no information: an
+    omitted attribute makes a screen reader announce the filename, and any
+    string makes it announce the decoration. The rule above stays exactly as
+    it is for content images; this is the one deliberate opt-out.
+    """
+
+    @pytest.mark.parametrize("strategy", ["hosted", "attached", "inline"])
+    def test_every_strategy_takes_the_opt_out(self, png_bytes, strategy):
+        source = "https://cdn.test/rule.png" if strategy == "hosted" else png_bytes
+        image = getattr(EmailImage, strategy)(source, decorative=True)
+        assert image.alt == ""
+        assert image.decorative is True
+
+    @pytest.mark.parametrize("alt", ["", "   "])
+    def test_an_empty_string_alone_still_raises(self, alt):
+        """
+        The opt-out must be unreachable by accident, or it stops being one:
+        a caller who forgot alt text has to keep failing.
+        """
+        with pytest.raises(ValidationError, match="image.alt"):
+            EmailImage.hosted("https://cdn.test/c.png", alt=alt)
+
+    def test_the_error_names_the_opt_out(self):
+        with pytest.raises(ValidationError, match="decorative=True"):
+            EmailImage.hosted("https://cdn.test/c.png")
+
+    def test_alt_text_and_decorative_together_raise(self):
+        """Two contradictory claims about the same image."""
+        with pytest.raises(ValidationError, match="cannot also carry alt text"):
+            EmailImage.hosted("https://cdn.test/c.png", alt="Chart", decorative=True)
+
+    def test_the_render_carries_the_marker(self, engine):
+        """
+        ``alt=""`` alone is indistinguishable from a forgotten alt in the
+        rendered HTML, so the annotation is what says which one it is — the
+        job ``role="presentation"`` already does for a layout table.
+        """
+        html = ImageBlock("https://cdn.test/rule.png", decorative=True).render(engine)
+        assert 'alt=""' in html
+        assert 'role="presentation"' in html
+
+    def test_a_content_image_carries_no_marker(self, engine):
+        html = ImageBlock("https://cdn.test/c.png", alt_text="Chart").render(engine)
+        img = html[html.index("<img ") : html.index(">", html.index("<img "))]
+        assert 'role="presentation"' not in img
+        assert 'role="presentation"' in html, "the wrapper table still declares itself"
+
+    def test_it_projects_to_nothing_in_the_text_part(self):
+        """
+        Not to an empty ``[]`` — the mirror of ``alt=""``. The caption still
+        projects: that is copy the reader is meant to read either way.
+        """
+        block = ImageBlock("https://cdn.test/rule.png", decorative=True, caption="Fig 1")
+        assert "[]" not in block.text()
+        assert "Fig 1" in block.text()
+
+
 class TestImageBlock:
     def test_renders_the_src_and_alt(self, engine, png_bytes):
         html = ImageBlock(EmailImage.attached(png_bytes, alt="Factor returns")).render(engine)

@@ -360,8 +360,25 @@ Rules the module enforces at construction, per the validation philosophy below:
 - **Format is sniffed from magic bytes, not the file extension** — PNG, JPEG and GIF only.
   WebP and SVG are detected specifically so the rejection can say why (Outlook's Word engine
   renders neither, and SVG can carry script).
-- **`alt` is required.** It is what the reader sees whenever images are blocked, which for
-  Outlook desktop is the default state.
+- **`alt` is required, with one named exception.** It is what the reader sees whenever images
+  are blocked, which for Outlook desktop is the default state. The exception is
+  `decorative=True` (#149), which emits `alt=""` — **an assertion, not an absence**: omitting
+  the attribute makes a screen reader announce the filename, and any string makes it announce
+  the decoration, so the empty string is the only correct value for an image carrying no
+  information. It cannot be reached by passing `""`; that still raises, and the message now
+  names the opt-out. Supplying both raises too — they are contradictory claims about one image.
+  The opt-out is on `EmailImage`, `coerce_image` and `ImageBlock`, and deliberately **not** on
+  `ChartBlock`: a chart is never decorative. Region images (`Banner.logo_*`, `Footer.image_*`)
+  resolve alt through their own fallback chains and were left alone; giving them the opt-out is
+  a separate decision.
+- **A decorative image declares itself in the markup**, with `role="presentation"` beside the
+  empty `alt`. This is standing rule 8's lesson on a second element: `alt=""` deliberate and
+  `alt=""` forgotten are **identical in the render**, so a guard reading the HTML cannot tell
+  them apart and the annotation is what does. The `img-alt` lint rule is enforced **both ways**
+  like `table-role` — an empty alt without the role fires, and the role *with* alt text fires —
+  so the marker cannot drift from the thing it marks. The projection mirrors it: a decorative
+  image contributes nothing to the text part rather than an empty `[]`, though its caption
+  still projects, because a caption is copy either way.
 - **Content-IDs are content-addressed** — `sha256(bytes)[:16]` by default, so the same image
   used in two sections is attached once, and the same input always yields the same output.
   An explicit `content_id` is checked against `[A-Za-z0-9._+-]{1,128}`.

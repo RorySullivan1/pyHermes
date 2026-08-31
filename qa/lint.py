@@ -35,7 +35,12 @@ SOURCES: dict[str, str] = {
     "img-alt": (
         "Alt text is what the reader sees whenever images are blocked, which "
         "for Outlook desktop is the default state (svc/builder/images.py). "
-        "EmailImage requires it at construction; this checks the render."
+        "EmailImage requires it at construction; this checks the render. The "
+        'exception is a decorative image, which takes alt="" so a screen '
+        "reader skips it — indistinguishable in the render from a forgotten "
+        'alt, so it must say so with role="presentation", the same annotation '
+        "table-role asks of a layout table. W3C WAI, Decorative Images. "
+        "w3.org/WAI/tutorials/images/decorative"
     ),
     "table-role": (
         "A table with no role is exposed to assistive technology as a data "
@@ -361,12 +366,24 @@ class _Linter(HTMLParser):
                 source,
             )
 
-        if not attributes.get("alt", "").strip():
+        decorative = attributes.get("role", "").strip().lower() == "presentation"
+        alt = attributes.get("alt", "").strip()
+        if not alt and not decorative:
             self._report(
                 "img-alt",
                 Severity.ERROR,
                 "<img> has empty or missing alt text; with images blocked — "
-                "Outlook desktop's default — this is all the reader gets.",
+                "Outlook desktop's default — this is all the reader gets. If the "
+                'image is decorative, say so with role="presentation".',
+                source,
+            )
+        elif alt and decorative:
+            self._report(
+                "img-alt",
+                Severity.ERROR,
+                '<img role="presentation"> carries alt text; the annotation says a '
+                "screen reader should skip it and the text says it has something "
+                "to say. Drop one.",
                 source,
             )
 
