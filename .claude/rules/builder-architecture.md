@@ -215,10 +215,30 @@ markup's, so adding a "Privacy" link meant forking the file. `Footer.link_row` t
 and this footer's labels, which is why the default path is byte-identical and #64's label
 fields still work. The trigger for making it an object is the one that made `Card` and
 `TableRow` objects: **the row has a variable-length part, and variable length is what fields
-cannot express.** The default copyright keeps the `&copy;` **entity** rather than a bare `©` —
-this is an email library, and U+00A9 mis-decoded as latin-1 renders as a mojibake pair; a
-caller's own line is plain text, escaped by the resolver, which is why the template reads one
-already-HTML key instead of branching.
+cannot express.** The copyright keeps the `&copy;` **entity** rather than a bare `©` — this is
+an email library, and U+00A9 mis-decoded as latin-1 renders as a mojibake pair. A caller's own
+line is plain text, escaped by the resolver, which is why the template reads one already-HTML
+key instead of branching.
+
+**Both branches of that resolver escape to ASCII (#148), and the symmetry is the rule.** The
+decision above applied to the *default* only: a caller writing `&copy;` got it escaped to
+literal text, and a caller writing `©` got the raw bytes the decision exists to avoid — so the
+one field with a recorded charset decision honoured it on one of its two paths. Both now go
+through `escape_html_ascii`, which spells **every** non-ASCII character as a numeric reference:
+scoping it to the symbol would be arbitrary, since an em dash mis-decoded is `â€"` in the same
+way. Two things follow. The field stays **plain text** — a caller writes the character, never
+the entity — because making it a raw-HTML surface would add a sixth to the closed list of five,
+and this line renders inside a `p`, which #130 forbids. And the plain-text projection needs no
+branch: the degrader decodes character references, so `_text()` still degrades the one source
+`resolved_copyright_html()` produces.
+
+**The filter is deliberately not applied to every plain-text field.** The charset exposure is
+identical everywhere, so the narrow scope is a decision rather than an oversight: going global
+costs bytes against the 102 KB budget — a reference is 8 where the character is 3 — and is a
+policy change for the whole package, not a bug fix for one row. The gallery had been quietly
+paying for the old behaviour: `kitchen_sink` and `custom_footer` both wrote their copyright
+line *without a symbol at all*, which is what a caller does when the correct spelling does not
+work.
 
 ### Public API (import from `svc.builder`)
 

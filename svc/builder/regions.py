@@ -741,22 +741,23 @@ class Footer(BoxSurface, Region):
         The copyright line, as HTML the builder produced.
 
         Two paths, one key, because the alternative is a conditional in the
-        markup and therefore two rendering paths. The default keeps the
-        ``&copy;`` **entity** — deliberately, not by inertia: this is an
-        email library, and a bare ``©`` (U+00A9) mis-decoded as latin-1
-        renders as ``Â©`` in a client that guesses the charset wrong, which
-        is exactly the class of failure the whole package exists to avoid.
-        A caller's own line is plain text and escaped here, so the key is
-        named ``_html`` because it *is* HTML by the time the template sees
-        it — produced by the builder, never by the caller.
+        markup and therefore two rendering paths. Both escape through
+        :func:`~svc.builder.filters.escape_html_ascii`, so both spell a
+        non-ASCII character as a reference: the default's ``&copy;`` was
+        always written that way — a bare ``©`` mis-decoded as latin-1
+        renders as ``Â©`` — and #148 was that the caller's path did not
+        agree, leaving them to choose between an entity that escaped to
+        literal text and a character the decision had already ruled out.
+        The key is named ``_html`` because it *is* HTML by the time the
+        template sees it — produced by the builder, never by the caller.
         """
-        from .filters import escape_html
+        from .filters import escape_html_ascii
 
         row = self.link_row or LinkRow()
         if row.copyright:
-            return escape_html(row.copyright)
-        year = escape_html(str(facts.get("current_year", "")))
-        firm = escape_html(str(facts.get("firm_name", "")))
+            return escape_html_ascii(row.copyright)
+        year = escape_html_ascii(str(facts.get("current_year", "")))
+        firm = escape_html_ascii(str(facts.get("firm_name", "")))
         return f"&copy; {year} {firm}"
 
     def resolved_links(self, facts: dict[str, Any]) -> list[FooterLink]:

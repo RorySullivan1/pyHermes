@@ -58,7 +58,7 @@ def build(template_dir: Path | None = None) -> Email:
                 image=_MARK,
                 disclaimer="<p>Distributed to registered recipients only.</p>",
                 link_row=LinkRow(
-                    copyright="2026 Hermes Research — all rights reserved",
+                    copyright="© 2026 Hermes Research — all rights reserved",
                     links=[
                         FooterLink("Privacy", "https://example.com/privacy"),
                         FooterLink("Stop receiving this", "https://example.com/unsubscribe"),

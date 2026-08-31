@@ -202,7 +202,7 @@ def build(template_dir: Path | None = None, **metadata_overrides: Any) -> Email:
                 # `minimal_footer` leaves it None, pinning the resolution
                 # path and #64's label fields with it.
                 link_row=LinkRow(
-                    copyright="2026 Hermes Research — all rights reserved",
+                    copyright="© 2026 Hermes Research — all rights reserved",
                     links=[
                         FooterLink("Privacy", "https://example.com/privacy"),
                         FooterLink("Stop receiving this", "https://example.com/unsubscribe"),
