@@ -71,3 +71,49 @@ def bar_chart(
             for x in range(left, min(left + bar_w, width)):
                 pixels[y][x] = colour
     return _encode(width, height, pixels)
+
+
+def sparkline_strip(
+    series: list[list[float]],
+    *,
+    width: int = 560,
+    row_height: int = 44,
+    ground: RGB = (255, 255, 255),
+    line: RGB = (58, 90, 120),
+    rule: RGB = (222, 218, 210),
+) -> bytes:
+    """One sparkline per series, stacked — a small-multiples strip.
+
+    Each row is scaled to its **own** range rather than a shared one: these are
+    different quantities, and a shared scale would flatten every series but the
+    widest into a straight line.
+    """
+    height = row_height * len(series)
+    pixels = [[ground for _ in range(width)] for _ in range(height)]
+
+    for index, values in enumerate(series):
+        top = index * row_height
+        if index:
+            for x in range(width):
+                pixels[top][x] = rule
+        low, high = min(values), max(values)
+        span = (high - low) or 1.0
+        pad = 8
+        usable = row_height - 2 * pad
+        step = (width - 2 * pad) / max(len(values) - 1, 1)
+        points = [
+            (
+                int(pad + i * step),
+                top + pad + int((1 - (v - low) / span) * usable),
+            )
+            for i, v in enumerate(values)
+        ]
+        for (x0, y0), (x1, y1) in zip(points, points[1:], strict=False):
+            steps = max(abs(x1 - x0), abs(y1 - y0), 1)
+            for s in range(steps + 1):
+                x = x0 + (x1 - x0) * s // steps
+                y = y0 + (y1 - y0) * s // steps
+                for thickness in (0, 1):
+                    if 0 <= y + thickness < height and 0 <= x < width:
+                        pixels[y + thickness][x] = line
+    return _encode(width, height, pixels)
