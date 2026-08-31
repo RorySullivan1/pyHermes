@@ -32,8 +32,10 @@
                     </p>
                   </td>
                   <td valign="bottom" align="right" style="text-align:right; padding:{{ size.space.masthead_top }}px {{ size.frame.pad_x }}px {{ size.space.masthead_title_bottom }}px {{ size.space.gutter }}px;">
+                    {% if logo_url %}
                     <img src="{{ logo_url | escape_html }}" width="{{ logo_width }}" alt="{{ logo_alt | escape_html }}"
                          style="display:block; max-width:{{ logo_width }}px; height:auto;">
+                    {% endif %}
                   </td>
                 </tr>
                 <tr>
