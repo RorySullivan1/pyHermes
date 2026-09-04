@@ -17,6 +17,10 @@ A step up from ``market-snapshot``: this one shows how containers compose.
   Inlining is deliberate for a *local preview* example. In a real newsletter use
   a **hosted** URL instead — Gmail strips ``data:`` URIs and Outlook's Word
   engine will not render them.
+- **A ``ContactBlock`` call-to-action** as the closing body section.
+- **A fully structured ``Footer``** — a tinted, full-box-bordered band carrying
+  an inline sign-off mark above the copyright line, plus a disclaimer. This is
+  the whole new footer surface in one place.
 
 Run it directly to (re)generate ``research-brief.html`` next to this file:
 
@@ -31,6 +35,7 @@ from __future__ import annotations
 
 import struct
 import zlib
+from collections.abc import Callable
 from pathlib import Path
 
 from svc.builder import (
@@ -54,45 +59,28 @@ _GAIN = "#4A7C59"
 _LOSS = "#B85450"
 
 
-def _bar_chart_png(width: int = 560, height: int = 200) -> bytes:
+Pixel = tuple[int, int, int]
+
+# Shared palette for the two generated images.
+_SLATE = (42, 61, 84)
+_ACCENT = (74, 124, 89)  # gain green
+_TINT = (242, 241, 238)  # == the footer's #F2F1EE, so the mark sits seamlessly
+
+
+def _encode_png(width: int, height: int, pixel: Callable[[int, int], Pixel]) -> bytes:
     """
-    A small, self-contained bar chart as PNG bytes — no Pillow, no files.
+    Encode an 8-bit RGB PNG from a ``pixel(x, y) -> (r, g, b)`` function.
 
-    Draws five vertical bars on a light ground, the last one accented, over a
-    hairline baseline. Deterministic (same bytes every call), so the example's
-    output HTML is stable run to run. Built with only ``struct`` + ``zlib`` so
-    the example carries no image dependency; the real builder does the heavy
-    lifting once these bytes are handed to :meth:`EmailImage.inline`.
+    No Pillow, no files — only ``struct`` + ``zlib``, so the example carries no
+    image dependency. Deterministic for a deterministic ``pixel``, which keeps
+    the rendered HTML stable run to run.
     """
-    ground = (245, 247, 250)
-    axis = (203, 209, 217)
-    bar = (42, 61, 84)  # slate
-    accent = (74, 124, 89)  # gain green
-    heights = [0.42, 0.61, 0.53, 0.74, 0.9]
-
-    margin, gap = 24, 18
-    n = len(heights)
-    bar_w = (width - 2 * margin - gap * (n - 1)) // n
-    baseline = height - margin
-
-    def _pixel(x: int, y: int) -> tuple[int, int, int]:
-        if baseline <= y <= baseline + 1:
-            return axis
-        for i, frac in enumerate(heights):
-            x0 = margin + i * (bar_w + gap)
-            if x0 <= x < x0 + bar_w:
-                top = baseline - int(frac * (baseline - margin))
-                if top <= y < baseline:
-                    return accent if i == n - 1 else bar
-                break
-        return ground
-
     # Each scanline is a filter byte (0 = None) followed by RGB triples.
     raw = bytearray()
     for y in range(height):
         raw.append(0)
         for x in range(width):
-            raw += bytes(_pixel(x, y))
+            raw += bytes(pixel(x, y))
 
     def _chunk(kind: bytes, payload: bytes) -> bytes:
         return (
@@ -111,6 +99,54 @@ def _bar_chart_png(width: int = 560, height: int = 200) -> bytes:
     )
 
 
+def _bar_chart_png(width: int = 560, height: int = 200) -> bytes:
+    """Five vertical bars on a light ground, the last one accented, over a baseline."""
+    ground = (245, 247, 250)
+    axis = (203, 209, 217)
+    heights = [0.42, 0.61, 0.53, 0.74, 0.9]
+
+    margin, gap = 24, 18
+    n = len(heights)
+    bar_w = (width - 2 * margin - gap * (n - 1)) // n
+    baseline = height - margin
+
+    def pixel(x: int, y: int) -> Pixel:
+        if baseline <= y <= baseline + 1:
+            return axis
+        for i, frac in enumerate(heights):
+            x0 = margin + i * (bar_w + gap)
+            if x0 <= x < x0 + bar_w:
+                top = baseline - int(frac * (baseline - margin))
+                if top <= y < baseline:
+                    return _ACCENT if i == n - 1 else _SLATE
+                break
+        return ground
+
+    return _encode_png(width, height, pixel)
+
+
+def _mark_png(width: int = 120, height: int = 40) -> bytes:
+    """
+    A minimal sign-off brand mark: an accent square beside a slate wordmark bar.
+
+    A placeholder for the footer's ``image`` slot — in production you would pass
+    ``EmailImage.hosted("https://cdn.example.com/logo.png", ...)`` instead. Its
+    ground matches the footer tint so its edges disappear into the band.
+    """
+    pad = 6
+    square = height - 2 * pad
+    bar_x0 = pad + square + 8
+
+    def pixel(x: int, y: int) -> Pixel:
+        if pad <= y < height - pad and pad <= x < pad + square:
+            return _ACCENT
+        if pad + 4 <= y < height - pad - 4 and bar_x0 <= x < width - pad:
+            return _SLATE
+        return _TINT
+
+    return _encode_png(width, height, pixel)
+
+
 def build(template_dir: Path | None = None) -> Email:
     """Build the Research Brief email. Deterministic: same bytes every call."""
     return (
@@ -124,7 +160,17 @@ def build(template_dir: Path | None = None) -> Email:
                 "date_range": "Week ending 24 August 2026",
             }
         )
-        .footer(Footer(disclaimer="For illustrative purposes only. Not investment advice."))
+        # Fully structured footer: a tinted, full-box-bordered band with an inline
+        # sign-off mark above the copyright line, plus a disclaimer. (Use
+        # EmailImage.hosted(...) for the mark in production — see _mark_png.)
+        .footer(
+            Footer(
+                background_color="#F2F1EE",
+                border=True,
+                image=EmailImage.inline(_mark_png(), alt="Hermes Research", width=120),
+                disclaimer="For illustrative purposes only. Not investment advice.",
+            )
+        )
         # 1. Two DataTables side by side (50-50). colors is index-aligned with
         #    cells; "" leaves a cell its default colour.
         .section(
