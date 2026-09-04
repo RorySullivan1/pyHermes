@@ -3,10 +3,12 @@ Market Snapshot — a small, realistic weekly-newsletter email.
 
 Demonstrates the core of the builder in one readable pass:
 
-- required metadata (subject / firm / campaign) plus a preheader and a footer,
+- required metadata (subject / firm / campaign) plus a preheader,
 - a highlighted ``FullWidth`` section wrapping a horizontal ``CardGroup`` of KPIs
-  (the coloured strip that collapses to stacked cards on mobile), and
-- a plain ``FullWidth`` ``TextBlock`` for the week's commentary.
+  (the coloured strip that collapses to stacked cards on mobile),
+- a plain ``FullWidth`` ``TextBlock`` for the week's commentary,
+- a ``ContactBlock`` call-to-action as the closing body section, and
+- a structured ``Footer`` — a tinted, bordered band with a disclaimer.
 
 Run it directly to (re)generate ``market-snapshot.html`` next to this file:
 
@@ -21,7 +23,15 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from svc.builder import CardGroup, Email, EmailBuilder, Footer, FullWidth, TextBlock
+from svc.builder import (
+    CardGroup,
+    ContactBlock,
+    Email,
+    EmailBuilder,
+    Footer,
+    FullWidth,
+    TextBlock,
+)
 from svc.builder.enums import CardOrientation
 from svc.builder.models import KpiItem
 
@@ -43,7 +53,15 @@ def build(template_dir: Path | None = None) -> Email:
                 "date_range": "Week ending 24 August 2026",
             }
         )
-        .footer(Footer(disclaimer="For illustrative purposes only. Not investment advice."))
+        # Structured footer: a tinted, bordered band (the copyright + links line
+        # always renders; the disclaimer is optional and emitted raw-but-unwrapped).
+        .footer(
+            Footer(
+                background_color="#F2F1EE",
+                border=True,
+                disclaimer="For illustrative purposes only. Not investment advice.",
+            )
+        )
         # Highlighted KPI strip: 2–4 cards across, colour-coded by direction.
         .section(
             FullWidth(
@@ -71,6 +89,18 @@ def build(template_dir: Path | None = None) -> Email:
                     "cyclicals leading defensives, while Treasury yields eased across "
                     "the curve.</p>"
                 ),
+            )
+        )
+        # Closing call-to-action. ContactBlock is a body component now (it left
+        # the footer in the rework), so it's placed like any other section.
+        .section(
+            FullWidth(
+                content=ContactBlock(
+                    heading="Questions about this snapshot?",
+                    description="Reach the research desk any time.",
+                    cta_label="Contact us",
+                    cta_url="mailto:research@example.com",
+                )
             )
         )
         .build()
