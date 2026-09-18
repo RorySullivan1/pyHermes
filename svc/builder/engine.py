@@ -15,6 +15,7 @@ import jinja2
 
 from .exceptions import TemplateError
 from .filters import register_all
+from .medium import DEFAULT_MEDIUM
 from .sizing import STANDARD_SIZES
 from .theming import DEFAULT_THEME, Theme
 from .typography import DEFAULT_FONTS
@@ -158,9 +159,9 @@ class TemplateEngine:
             template_name: Template path relative to template_dir.
             context: Dictionary of variables passed to the template.
 
-        The three design-system namespaces are layered **under** ``context``:
-        the engine guarantees a theme, a size scheme and a set of typefaces,
-        and the email chooses which by binding its own over them
+        The four shared namespaces are layered **under** ``context``: the
+        engine guarantees a theme, a size scheme, a set of typefaces and a
+        medium, and the document chooses each by binding its own over them
         (:meth:`bound`). That floor is what keeps rendering a component on its
         own a one-liner.
 
@@ -172,15 +173,18 @@ class TemplateEngine:
         """
         try:
             tpl = self.get_template(template_name)
-            # Every template reads colours from ``theme`` since #49 and sizes
-            # from ``size`` since #41, so the engine guarantees both are
-            # present: rendering a component on its own stays a one-liner,
-            # and it renders in the shipped palette at the shipped density.
-            # The *choice* of either belongs to Email.render(), which binds
-            # resolved ones — and because the caller's context is layered on
-            # top here, that binding always wins over this floor.
+            # The four namespaces every template reads have a floor here, so
+            # rendering one component alone stays a one-liner. Email.render()
+            # binds the resolved ones, and the caller's context is layered on
+            # top, so that binding always wins over this floor.
             return tpl.render(
-                **{"theme": DEFAULT_THEME, "size": STANDARD_SIZES, "font": DEFAULT_FONTS, **context}
+                **{
+                    "theme": DEFAULT_THEME,
+                    "size": STANDARD_SIZES,
+                    "font": DEFAULT_FONTS,
+                    "medium": DEFAULT_MEDIUM,
+                    **context,
+                }
             )
         except jinja2.TemplateError as exc:
             raise TemplateError(f"Error rendering {template_name}: {exc}") from exc
@@ -200,9 +204,15 @@ class TemplateEngine:
         """
         try:
             tpl = self._env.from_string(source)
-            # Same theme and size floor as render(); see the note there.
+            # Same four-namespace floor as render(); see the note there.
             return tpl.render(
-                **{"theme": DEFAULT_THEME, "size": STANDARD_SIZES, "font": DEFAULT_FONTS, **context}
+                **{
+                    "theme": DEFAULT_THEME,
+                    "size": STANDARD_SIZES,
+                    "font": DEFAULT_FONTS,
+                    "medium": DEFAULT_MEDIUM,
+                    **context,
+                }
             )
         except jinja2.TemplateError as exc:
             raise TemplateError(f"Error rendering string template: {exc}") from exc

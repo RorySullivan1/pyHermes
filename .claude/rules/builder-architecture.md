@@ -6,8 +6,14 @@ paths:
 # The builder's composition model, ownership rule and public API
 
 
-`svc/builder/` is the only implementation. Its public surface is re-exported from
+`svc/builder/` is the shared kit. Its public surface is re-exported from
 [svc/builder/__init__.py](../../svc/builder/__init__.py).
+
+**Superseded (#158): "`svc/builder/` is the only implementation."** It was, until the
+medium was named. A `Medium` now owns the skeleton, the slot contract and the constraints
+a composed document must pass, and `svc/email/` owns the shipped email one — including the
+102 KB Gmail check, which is a fact about a client rather than about rendering. Epic #157
+moves the rest of the email-only half there; the kit keeps what every medium shares.
 
 (A legacy flat string-replace assembler, `svc/assembler.py`, was removed in #14. It is
 recoverable from git history if ever needed for reference.)

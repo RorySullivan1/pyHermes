@@ -13,11 +13,11 @@ from dataclasses import replace
 
 import pytest
 
-from svc.builder import Email
 from svc.builder.exceptions import SizeError
 from svc.builder.images import EmailImage
 from svc.config import Config, config_override, get_config, set_config
 from svc.delivery.retry import retry_with_backoff
+from svc.email.medium import validate_gmail_size
 from svc.outlook import GraphApiTransport
 
 
@@ -137,12 +137,12 @@ class TestTheWiringIsLive:
 
     def test_size_limit_is_read_from_config(self):
         html = "x" * (20 * 1024)  # 20 KB: fine by default, over a 10 KB limit
-        Email._validate_size(html)
+        validate_gmail_size(html)
         # inline_image_limit_kb comes along because Config refuses to let a
         # single image be allowed to outweigh the whole email.
         with config_override(size_limit_kb=10, size_warn_kb=5, inline_image_limit_kb=5):
             with pytest.raises(SizeError, match="10 KB"):
-                Email._validate_size(html)
+                validate_gmail_size(html)
 
     def test_inline_image_cap_is_read_from_config(self, png_bytes):
         EmailImage.inline(png_bytes, alt="Chart")  # fine by default
@@ -226,8 +226,8 @@ class TestTheWiringIsLive:
 
     def test_defaults_reproduce_the_previous_constants(self):
         # The whole change must be behaviour-preserving out of the box.
-        from svc.builder.email import _SIZE_LIMIT_KB, _SIZE_WARN_KB
         from svc.builder.images import INLINE_LIMIT_KB
+        from svc.email.medium import _SIZE_LIMIT_KB, _SIZE_WARN_KB
         from svc.outlook.sender import DEFAULT_TIMEOUT_SECONDS
 
         config = Config()

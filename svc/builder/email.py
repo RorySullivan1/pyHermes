@@ -8,9 +8,9 @@ Two construction patterns, the fluent one preferred::
         .section(FullWidth(content=TextBlock("Hello"), title="Intro"))
         .build())
 
-``render()`` resolves the theme, size scheme and fonts once, renders the four
-regions and every section, and validates the composed document against the
-102 KB Gmail limit. ``assets()`` and ``text()`` are the other two
+``render()`` resolves the theme, size scheme, fonts and medium once, renders
+the four regions and every section, and runs the medium's constraints over
+the composed document. ``assets()`` and ``text()`` are the other two
 projections of the same tree.
 """
 
@@ -19,26 +19,19 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from svc.config import Config, get_config
+from svc.email import EMAIL_MEDIUM
 
 from .containers import Container
 from .engine import TemplateEngine
 from .enums import EmbedStrategy
-from .exceptions import SizeError
 from .images import EmailImage, ImageAsset, dedupe_assets
+from .medium import Medium
 from .models import EmailMetadata
 from .regions import Banner, Footer, Header
 from .sizing import resolve_size_scheme
 from .textgen import join_sections
 from .theming import resolve_theme
 from .typography import resolve_font_theme
-
-# The shipped defaults, kept as module constants because they read as the
-# thresholds themselves at a call site. The live values come from
-# :func:`svc.config.get_config` at check time -- read those, not these, if
-# you need what is actually in force.
-_SIZE_LIMIT_KB = Config().size_limit_kb  # Gmail clips emails above this.
-_SIZE_WARN_KB = Config().size_warn_kb
 
 
 class Email:
@@ -56,6 +49,10 @@ class Email:
                       header, which the flat masthead keywords build — so an
                       email that never mentions a header is unchanged.
         footer:       The closing region, on exactly the same terms.
+        medium:       Where this document is going to be read. An ``Email``
+                      pins the email medium; the argument exists so a test
+                      can drive a different constraint set, and it is the
+                      seam ``Document`` grows out of.
 
     Raises:
         ValidationError: If required metadata (``email_subject``, ``firm_name``,
@@ -69,8 +66,10 @@ class Email:
         header: Header | None = None,
         banner: Banner | None = None,
         footer: Footer | None = None,
+        medium: Medium | None = None,
     ):
         self._engine = TemplateEngine(template_dir)
+        self._medium: Medium = medium if medium is not None else EMAIL_MEDIUM
 
         if isinstance(metadata, dict):
             self._metadata = EmailMetadata(**metadata)
@@ -107,6 +106,17 @@ class Email:
         caller already held this reference.
         """
         return self._metadata
+
+    @property
+    def medium(self) -> Medium:
+        """
+        Where this email is going to be read.
+
+        Read-only: a medium decides the skeleton and the checks, so swapping
+        one mid-life would leave an email that had already validated against
+        rules it no longer runs.
+        """
+        return self._medium
 
     @property
     def header(self) -> Header:
@@ -244,24 +254,25 @@ class Email:
            the engine every template below renders through.
         1. Render the header and footer regions into their skeleton slots.
         2. Render every section via its container.
-        3. Inject all of it into the base skeleton.
-        4. Validate final size against the 102 KB Gmail limit — on the
-           *composed* document, so region bytes are inside the budget.
+        3. Inject all of it into the medium's skeleton.
+        4. Run the medium's constraints over the *composed* document, so
+           region bytes are inside whatever budget it sets.
 
         Returns:
             Complete HTML string.
 
         Raises:
-            SizeError: If the HTML exceeds 102 KB.
+            SizeError: If the email medium's 102 KB Gmail check fails.
         """
         # The one resolution point. Every template below — skeleton, regions,
-        # containers, components — reads the same Theme and the same
-        # SizeScheme, because they all render through this binder rather
-        # than looking either one up themselves.
+        # containers, components — reads the same Theme, SizeScheme, fonts
+        # and medium, because they all render through this binder rather
+        # than looking any of them up themselves.
         engine = self._engine.bound(
             theme=resolve_theme(self._metadata.theme),
             size=resolve_size_scheme(self._metadata.size_theme),
             font=resolve_font_theme(self._metadata.font_theme),
+            medium=self._medium,
         )
 
         sections_html = "\n".join(section.render(engine) for section in self._sections)
@@ -276,10 +287,9 @@ class Email:
         ctx.update(self._banner.render_slots(engine, self._metadata.banner_facts()))
         ctx.update(self._footer.render_slots(engine, self._metadata.footer_facts()))
 
-        html = engine.render("base.html", ctx)
+        html = engine.render(self._medium.skeleton, ctx)
 
-        # Size check
-        self._validate_size(html, self._inline_image_hint())
+        self._medium.validate(html, self._inline_image_hint())
 
         return html
 
@@ -336,30 +346,6 @@ class Email:
     # ------------------------------------------------------------------
     # Internals
     # ------------------------------------------------------------------
-
-    @staticmethod
-    def _validate_size(html: str, hint: str = "") -> None:
-        """
-        Check the rendered size against the Gmail clipping limit.
-
-        Static, and takes the HTML as its only argument, so the size edges can
-        be driven directly in tests. The thresholds come from the active
-        :class:`~svc.config.Config` at call time, not import time.
-
-        ``hint`` appends caller-supplied context to the failure message —
-        ``render()`` uses it to name inlined images.
-        """
-        config = get_config()
-        size_kb = len(html.encode("utf-8")) / 1024
-        if size_kb > config.size_limit_kb:
-            raise SizeError(
-                f"Rendered email is {size_kb:.1f} KB, "
-                f"exceeds {config.size_limit_kb} KB Gmail clipping limit.{hint}"
-            )
-        if size_kb > config.size_warn_kb:
-            print(f"WARNING: Email size {size_kb:.1f} KB (target < {config.size_warn_kb} KB)")
-        else:
-            print(f"Email size: {size_kb:.1f} KB (OK)")
 
     def _inline_image_hint(self) -> str:
         """
