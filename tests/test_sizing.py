@@ -10,7 +10,7 @@ and is the table *closed* (can a half-built scheme reach a render).
 from __future__ import annotations
 
 import re
-from dataclasses import FrozenInstanceError, fields
+from dataclasses import FrozenInstanceError, fields, replace
 from pathlib import Path
 from typing import Any
 
@@ -24,6 +24,7 @@ from svc.builder.sizing import (
     STANDARD_SIZES,
     ComponentScale,
     FrameGeometry,
+    PageFormat,
     SizeScheme,
     SpacingScale,
     TypeScale,
@@ -123,6 +124,9 @@ AUDIT: dict[str, dict[str, int | float]] = {
     },
     "frame": {
         "width": 680,
+        # None is the shipped value, not a gap: an email body is continuous
+        # and ends where its content does. See PageFormat.
+        "height": None,
         "pad_x": 32,
         "outer_pad_y": 28,
         "mobile_breakpoint": 700,
@@ -151,6 +155,29 @@ class TestTheAudit:
         """
         declared = {spec.name for spec in fields(SizeScheme.LAYERS[layer])}
         assert declared == set(AUDIT[layer])
+
+    def test_a_page_knows_its_own_orientation(self) -> None:
+        # Derived, never stored: a declared orientation is a second fact about
+        # the same two numbers, and the two can disagree.
+        assert PageFormat(680).orientation == "continuous"
+        assert PageFormat(794, 1123).orientation == "portrait"
+        assert PageFormat(1123, 794).orientation == "landscape"
+        assert PageFormat(800, 800).orientation == "square"
+
+    def test_a_page_validates_the_breakpoint_it_declares(self) -> None:
+        with pytest.raises(ValidationError, match="must exceed"):
+            PageFormat(width=680, mobile_breakpoint=680)
+
+    def test_a_page_that_never_collapses_is_legal(self) -> None:
+        # A printed page has no breakpoint, and that is a state rather than a
+        # missing number.
+        assert PageFormat(width=794, height=1123).mobile_breakpoint is None
+
+    def test_a_page_still_refuses_a_nonsense_dimension(self) -> None:
+        with pytest.raises(ValidationError, match="must be positive"):
+            PageFormat(width=0)
+        with pytest.raises(ValidationError, match="must be positive"):
+            PageFormat(width=680, height=-1)
 
     def test_inner_width_is_derived_not_stored(self) -> None:
         assert STANDARD_SIZES.frame.inner == 616
@@ -265,7 +292,10 @@ class TestSizeScheme:
             for layer, layer_cls in SizeScheme.LAYERS.items():
                 value = getattr(scheme, layer)
                 assert isinstance(value, layer_cls), f"{name}.{layer}"
+                optional = getattr(layer_cls, "OPTIONAL", ())
                 for spec in fields(layer_cls):
+                    if spec.name in optional:
+                        continue  # None is a state here -- a page with no height
                     assert getattr(value, spec.name) is not None
 
     def test_derive_overrides_one_token_and_inherits_the_rest(self) -> None:
@@ -473,6 +503,9 @@ class TestTheSchemeReachesEveryTemplate:
 #: would go untested.
 NEVER_RENDERED = {
     "frame.narrow_column",
+    # No template reads a page height yet: an email is continuous. The paged
+    # skeleton in #162 is what makes this token live.
+    "frame.height",
     # The contact card was removed from the footer region in the Task 2
     # footer rework; these spacing tokens are no longer used in any template.
     "space.footer_contact_top",
@@ -480,6 +513,17 @@ NEVER_RENDERED = {
     # footer_legal_bottom was split into copyright_bottom in the rework.
     "space.footer_legal_bottom",
 }
+
+
+#: The page the sentinel renders onto. Wide enough that three sentinel-sized
+#: gutters still leave real columns.
+#:
+#: **The page dimensions are perturbed here rather than in the scheme**, because
+#: since #159 the medium owns them and ``with_page`` layers them over whatever
+#: the density said. Perturbing the scheme alone would prove nothing: the
+#: medium would overwrite it with the shipped 680 and every template would
+#: still render the value it always had.
+SENTINEL_PAGE = PageFormat(width=20_001, mobile_breakpoint=20_100)
 
 
 def _sentinel_scheme() -> SizeScheme:
@@ -501,18 +545,19 @@ def _sentinel_scheme() -> SizeScheme:
         for spec in fields(layer_cls):
             values[spec.name] = next(line) if spec.name.endswith("_line") else next(px)
         if layer == "frame":
-            # Wide enough that three sentinel-sized gutters still leave real
-            # columns, and with the threshold a quarter of the way in, so
-            # both column paddings are exercised rather than only the wide one.
-            width, pad_x = 20_001, 1017
+            # The threshold sits a quarter of the way into the content width,
+            # so both column paddings are exercised rather than only the wide
+            # one. Width and breakpoint come from SENTINEL_PAGE below.
+            pad_x = 1017
             values.update(
-                width=width,
+                width=SENTINEL_PAGE.width,
                 pad_x=pad_x,
-                mobile_breakpoint=width + 99,
-                narrow_column=(width - 2 * pad_x) // 4,
+                height=None,
+                mobile_breakpoint=SENTINEL_PAGE.mobile_breakpoint,
+                narrow_column=(SENTINEL_PAGE.width - 2 * pad_x) // 4,
             )
         layers[layer] = layer_cls(**values)
-    return SizeScheme(**layers)
+    return SizeScheme(**layers).with_page(SENTINEL_PAGE)
 
 
 class TestTheTokensAreLive:
@@ -534,6 +579,9 @@ class TestTheTokensAreLive:
         monkeypatch.setitem(sizing.SIZE_SCHEMES, SizeTheme.SPACIOUS, scheme)
         builder = kitchen_sink.build()
         builder._metadata.size_theme = SizeTheme.SPACIOUS  # type: ignore[union-attr]
+        # The page is the medium's since #159, so the sentinel has to reach
+        # the render the way a real one would rather than through the scheme.
+        builder._medium = replace(builder.medium, page_format=SENTINEL_PAGE)
         self.scheme = scheme
         return builder.render()
 
@@ -866,8 +914,11 @@ class TestTheShippedSchemes:
         for layer, layer_cls in SizeScheme.LAYERS.items():
             value = getattr(scheme, layer)
             assert isinstance(value, layer_cls)
+            optional = getattr(layer_cls, "OPTIONAL", ())
             for spec in fields(layer_cls):
                 token = getattr(value, spec.name)
+                if token is None and spec.name in optional:
+                    continue
                 assert isinstance(token, (int, float)) and token > 0
 
     @pytest.mark.parametrize("theme", ALL_THEMES)

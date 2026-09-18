@@ -14,8 +14,10 @@ sits above.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Protocol, runtime_checkable
+
+from .sizing import DEFAULT_PAGE, PageFormat
 
 if TYPE_CHECKING:  # pragma: no cover - regions imports nothing from here
     from .regions import Region
@@ -51,6 +53,9 @@ class Medium:
     leaves the region classes as the single owner of what they fill, which is
     what ``Region.SLOTS`` has always been.
 
+    :attr:`page_format` is the medium's half of ``size.frame``; the density
+    supplies the rest. :class:`~svc.builder.sizing.PageFormat` carries why.
+
     :attr:`paged` and :attr:`email` are what a shared template may branch on.
     They are independent rather than one enum: a standalone HTML deliverable
     is neither, and nothing is served by making it claim to be one.
@@ -61,6 +66,11 @@ class Medium:
 
     #: Template path of the full page, rendered last with every slot filled.
     skeleton: str
+
+    #: The page this medium renders onto. Layered over the density's frame at
+    #: render time, so a preset decides how roomy a document feels and the
+    #: medium decides how wide it is.
+    page_format: PageFormat = field(default=DEFAULT_PAGE)
 
     #: The region classes whose slots this medium's skeleton names, in
     #: skeleton order. The body's own slot is not here — the ordered section

@@ -98,11 +98,13 @@ from .regions import (
 # Sizing
 from .sizing import (
     COMPACT_SIZES,
+    DEFAULT_PAGE,
     SIZE_SCHEMES,
     SPACIOUS_SIZES,
     STANDARD_SIZES,
     ComponentScale,
     FrameGeometry,
+    PageFormat,
     SizeScheme,
     SpacingScale,
     TypeScale,
@@ -158,6 +160,8 @@ __all__ = [
     "SpacingScale",
     "ComponentScale",
     "FrameGeometry",
+    "PageFormat",
+    "DEFAULT_PAGE",
     "STANDARD_SIZES",
     "COMPACT_SIZES",
     "SPACIOUS_SIZES",

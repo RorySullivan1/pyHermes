@@ -270,7 +270,7 @@ class Email:
         # than looking any of them up themselves.
         engine = self._engine.bound(
             theme=resolve_theme(self._metadata.theme),
-            size=resolve_size_scheme(self._metadata.size_theme),
+            size=resolve_size_scheme(self._metadata.size_theme).with_page(self._medium.page_format),
             font=resolve_font_theme(self._metadata.font_theme),
             medium=self._medium,
         )

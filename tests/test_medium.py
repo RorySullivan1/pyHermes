@@ -18,6 +18,7 @@ from svc.builder.exceptions import SizeError
 from svc.builder.images import EmailImage
 from svc.builder.medium import DEFAULT_MEDIUM, Medium
 from svc.builder.regions import Banner, Footer, Header
+from svc.builder.sizing import DEFAULT_PAGE, SPACIOUS_SIZES, STANDARD_SIZES, PageFormat
 from svc.email.medium import _SIZE_LIMIT_KB, EMAIL_MEDIUM, validate_gmail_size
 
 #: A medium identical to the shipped one but for its (absent) constraints.
@@ -141,3 +142,67 @@ class TestTheMediumRidesTheBinder:
         assert email.medium is EMAIL_MEDIUM
         with pytest.raises(AttributeError):
             email.medium = DEFAULT_MEDIUM
+
+
+class TestTheFrameBelongsToTheMedium:
+    """
+    #159: the page is the medium's, the padding inside it is the density's.
+
+    The three shipped densities are the evidence: not one of them changes the
+    width, only what sits inside it.
+    """
+
+    def test_no_shipped_density_declares_a_page_dimension(self):
+        # The structural form of "density is not width". Before #159 a preset
+        # could have set a width and nothing would have stopped it.
+        from svc.builder.sizing import SIZE_SCHEMES
+
+        for theme, scheme in SIZE_SCHEMES.items():
+            assert scheme.frame.width == DEFAULT_PAGE.width, theme
+            assert scheme.frame.height == DEFAULT_PAGE.height, theme
+            assert scheme.frame.mobile_breakpoint == DEFAULT_PAGE.mobile_breakpoint, theme
+
+    def test_the_densities_still_differ_at_the_frames_edge(self):
+        # ...and the half that IS the density's must not have been flattened
+        # along the way.
+        assert SPACIOUS_SIZES.frame.pad_x != STANDARD_SIZES.frame.pad_x
+        assert SPACIOUS_SIZES.frame.outer_pad_y != STANDARD_SIZES.frame.outer_pad_y
+
+    def test_the_page_is_layered_over_a_caller_derived_frame(self):
+        # The same precedence facts get over a region and a bound value gets
+        # over caller context: what the medium owns cannot be shadowed.
+        forged = STANDARD_SIZES.derive(frame={"width": 1234, "mobile_breakpoint": 1300})
+        assert forged.with_page(DEFAULT_PAGE).frame.width == DEFAULT_PAGE.width
+
+    def test_a_density_already_on_that_page_is_returned_unchanged(self):
+        # Not an optimisation detail: one scheme object per shipped page is
+        # what lets a test assert the scheme is threaded, not rebuilt.
+        assert STANDARD_SIZES.with_page(DEFAULT_PAGE) is STANDARD_SIZES
+
+    def test_no_shipped_page_value_survives_a_medium_on_another_page(self, valid_metadata):
+        """
+        The sentinel #106 taught, aimed at the frame's new owner.
+
+        Change only the medium's page -- no template, no density -- and every
+        rendered page dimension has to follow. A template still reading the
+        frame from the old owner would render 680 here and look perfectly
+        correct doing it, which is exactly what a golden cannot see.
+        """
+        page = PageFormat(width=9001, mobile_breakpoint=9101)
+        html = Email(valid_metadata, medium=replace(EMAIL_MEDIUM, page_format=page)).render()
+
+        # Both page tokens any template reads, at their sentinel values...
+        assert 'width="9001"' in html, "the frame width never reached the markup"
+        assert "max-width:9001px" in html
+        assert "max-width:9101px" in html, "the breakpoint never reached the media query"
+
+        # ...and no trace of the page the medium did not name.
+        for shipped in (DEFAULT_PAGE.width, DEFAULT_PAGE.mobile_breakpoint):
+            assert f"max-width:{shipped}px" not in html, f"{shipped} survived a page change"
+        assert f'width="{DEFAULT_PAGE.width}"' not in html
+
+    def test_the_content_width_follows_the_page(self, valid_metadata):
+        # frame.inner spans both owners -- width from the medium, pad_x from
+        # the density -- so it is the one value that proves they compose.
+        wide = replace(EMAIL_MEDIUM, page_format=PageFormat(width=900, mobile_breakpoint=920))
+        assert STANDARD_SIZES.with_page(wide.page_format).frame.inner == 900 - 2 * 32
