@@ -3,10 +3,11 @@
 ## State            (rewrite in place — current truth only, ≤ ~10 lines)
 - pyHermes builds and sends: `svc/builder` → `svc/delivery` → `svc/gmail` / `svc/outlook`.
   Architecture and rationale live in CLAUDE.md — do not restate them here.
-- `main` @ `e5c587a` — **PR #146 merged**, closing epics #134 and #140 (twelve issues).
-  No branch open; the issue backlog is empty.
-- Every epic filed before 2026-08-29 is complete and every issue up to #133 is closed.
-- **Epics #134 and #140 are COMPLETE.** Every issue up to #146 is closed.
+- `main` @ `6b280d8` — **PR #152 merged**. Open: **#150** (banner VML `src`, needs an Outlook
+  host), **epic #153** (per-exhibit disclosure, #154–#156), and **epic #157** (below).
+- **Epic #157 — multi-medium rescope — is FILED, nothing built.** Nine phases #158–#166; email
+  becomes one `Medium` beside paged PDF/slides/HTML. Phases 1–4 (#158–#161) must ship with
+  byte-identical goldens. Branch `claude/gifted-ritchie-7dkp5g` carries only memory edits.
 - The prose budget is live: caps in `.claude/prose-budget.json`, 110 baselined locations in
   `qa/prose_baseline.json`, gate in `tests/test_prose_budget.py`.
 
@@ -28,7 +29,21 @@
   and made every session 215 lines cheaper —
   sessions/2026-08-29-1628-asset-self-restriction.md.
 
+- [2026-09-17] **A medium is a product, not a fourth design axis — but it rides the binder
+  as the fourth keyword.** Theme/size/font leave the structure untouched; a medium changes
+  skeleton, slot set, frame, constraints, lint and exporter, so it is chosen by class, then
+  bound so templates can ask `medium.paged` — sessions/2026-09-17-2353-multi-medium-rescope.md
+- [2026-09-17] **The frame belongs to the medium, not the density.** compact/spacious never
+  change `FrameGeometry.width`; lift it to `PageFormat` and re-inject under `size.frame` so no
+  template changes — sessions/2026-09-17-2353-multi-medium-rescope.md
+- [2026-09-17] **Per-medium template trees with fallback, forked one template at a time.**
+  `ChoiceLoader(templates/<medium>/, templates/shared/)` is "one template set" on day one and
+  never a big bang; each fork is a golden-diffed PR with a stated reason —
+  sessions/2026-09-17-2353-multi-medium-rescope.md
+
 ## Threads          (open items; remove when closed)
+- **Epic #157 is next.** Start at #158 (name the medium). Every issue body in this repo is
+  written without angle brackets — GitHub's sanitizer has emptied three bodies here already.
 - **CLAUDE.md is a router**; the detail is in path-scoped `.claude/rules/*.md`, which load
   only when a matching file is read. Add reasoning there, not back into the router.
 - **Factory hand-off for #140 is in `.claude/README.md`** — what claudeBrain should take,
@@ -48,3 +63,10 @@
 - [2026-08-29 20:30] prose-discipline — **epic #134 complete** and **PR #146 merged** at
   `e5c587a`: CLAUDE.md 2,045 -> 160, 2,049 comment bytes off every email, baseline
   110 -> 48 — sessions/2026-08-29-1628-asset-self-restriction.md
+- [2026-09-17 23:53] multi-medium-rescope — brainstormed the epic that makes email one
+  `Medium` among paged/PDF/slides/HTML; inventoried the seams (mostly already there) and a
+  nine-phase plan whose first four ship golden-identical —
+  sessions/2026-09-17-2353-multi-medium-rescope.md
+- [2026-09-18 00:20] multi-medium-rescope — all three design calls agreed; **filed epic #157**
+  with sub-issues #158–#166, one per phase. Corrected the stale "backlog is empty": #150 and
+  #153–#156 were open — sessions/2026-09-17-2353-multi-medium-rescope.md
