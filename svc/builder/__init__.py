@@ -77,6 +77,7 @@ from .models import (
     Card,
     Cell,
     Column,
+    DocumentMetadata,
     EmailMetadata,
     KpiItem,
     NumberedItem,
@@ -175,6 +176,7 @@ __all__ = [
     "Header",
     "EmptyHeader",
     # Models
+    "DocumentMetadata",
     "EmailMetadata",
     "Card",
     "KpiItem",

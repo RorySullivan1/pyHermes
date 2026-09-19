@@ -161,58 +161,128 @@ def _default_theme() -> "Theme":
 
 
 @dataclass
-class EmailMetadata:
+class DocumentMetadata:
     """
-    Email-level metadata: the facts an email is built from.
+    The facts a document is built from, whatever it is rendered onto.
 
-    **Facts live here; masthead presentation lives on the header.** Subject,
-    preheader, firm, campaign, dates and the outbound URLs are things that are
-    *true of the email*; the background image, the logo and its resolution
-    chains are one way of *presenting* them, and belong to
-    :class:`~svc.builder.regions.Banner`. The header is handed the facts at
-    render time and cannot contradict them.
+    **Facts live here; presentation lives on a region.** Who sent this, when,
+    in what language, under what legal copy — these are true of the document,
+    and a region is handed them at render time and cannot contradict one.
+    :class:`EmailMetadata` adds the facts that are true only of an email.
 
-    ``header_disclaimer`` sits on the email side of that line deliberately:
-    it is displayed in the masthead, but it is legal copy and legal copy is a
-    fact about the email. The footer's disclaimer and contact card copy are now
-    presentation — they belong to :class:`~svc.builder.regions.Footer` (pass a
-    ``Footer(disclaimer=...)`` to set the fine-print, or use a
-    :class:`~svc.builder.components.ContactBlock` component for the contact
-    card).
+    Two boundary calls are worth knowing, both made for a reason rather than
+    by shape:
 
-    Every remaining field maps to a variable in ``templates/base.html``.
+    ``header_disclaimer`` is a *fact*, though it is displayed in the masthead:
+    it is legal copy, and legal copy belongs to the document rather than to
+    any one way of presenting it. #95 moved it between regions for free
+    precisely because it had never been a region's to begin with.
 
-    The flat region keyword arguments are still accepted and build the region
-    for you, so an email written before the header split is unchanged: four for
-    the masthead (``logo_url``, ``logo_alt``, ``logo_width``,
-    ``header_bg_image_url``). For the footer, ``unsubscribe_label`` and
-    ``view_in_browser_label`` are still accepted as flat keywords.
-    Passing one *and* the region it belongs to is an error rather than a
-    silent precedence rule.
+    ``language`` is the one optional field whose default is a *claim* rather
+    than a blank. An unset ``lang`` leaves a screen reader to guess from the
+    reader's locale, so the field is always populated and validated by shape,
+    never against the IANA registry — a lookup table shipped in a wheel goes
+    stale between releases, while a trailing hyphen stays wrong forever.
+
+    The three design axes sit here too: every medium has colours, a density
+    and typefaces, and each is resolved once by the document's ``render()``.
     """
 
-    email_subject: str = ""
-    preheader_text: str = ""
-    #: The language the email is written in, as a BCP 47 tag — the ``lang``
-    #: attribute on the root element.  A *fact*: what language an email is
-    #: written in is true of the email, not a way of presenting it, so it
-    #: sits beside ``firm_name`` rather than on a region.  It is what a
-    #: screen reader picks its pronunciation from, which is why the default
-    #: is a real claim rather than an absence: an unset ``lang`` leaves the
-    #: reader to guess, and a wrong one is confidently wrong.
+    #: The language the document is written in, as a BCP 47 tag — the
+    #: ``lang`` attribute on the root element. See the class docstring for
+    #: why its default is a claim rather than an absence.
     language: str = "en"
     header_disclaimer: str = ""
     firm_name: str = ""
     campaign_name: str = ""
     #: The desk within the firm, e.g. "Rates Strategy". A *fact*, decided
-    #: rather than assumed: a department is who the email is from, the same
-    #: kind of truth as ``firm_name``. Putting it on the banner would let two
-    #: renders of one email disagree about its sender. Optional — empty
-    #: collapses the line entirely rather than reserving space for it.
+    #: rather than assumed: a department is who the document is from, the
+    #: same kind of truth as ``firm_name``. Putting it on a region would let
+    #: two renders of one document disagree about its sender. Optional —
+    #: empty collapses the line entirely rather than reserving space for it.
     department: str = ""
     date_range: str = ""
     issue_label: str = ""
     current_year: str = ""
+
+    #: Every colour and shadow the document renders with. A
+    #: :class:`~svc.builder.theming.Theme` instance or the name of a curated
+    #: preset; see :mod:`svc.builder.theming` for the token table. Unlike a
+    #: region, this is the *entire* colour surface — there is deliberately no
+    #: per-component colour parameter anywhere in the builder.
+    theme: "Theme | str" = field(default_factory=_default_theme)
+
+    #: How dense the document renders. A :class:`~svc.builder.enums.SizeTheme`
+    #: member or its bare string, and nothing else — deliberately narrower
+    #: than ``theme``, which also takes a custom object. See
+    #: :mod:`svc.builder.sizing` for the token table and for why the two
+    #: differ: callers pick a density, never a px. The *page* it renders onto
+    #: is the medium's, not this field's (#159).
+    size_theme: "SizeTheme | str" = SizeTheme.STANDARD
+
+    #: Every typeface the document renders with. A
+    #: :class:`~svc.builder.typography.FontTheme` instance or the name of a
+    #: curated preset — ``theme``'s width rather than ``size_theme``'s
+    #: narrowness, and the asymmetry argument runs the *other way* here.
+    #: Density is names-only because an untested scheme interacts with the
+    #: clipping limit, the Word engine and the mobile collapse at once;
+    #: a custom ``FontTheme`` is safe **by construction**, because the
+    #: terminal-generic rule means Outlook always walks a chain the caller
+    #: curated down to a websafe floor. A house brand face with fallbacks is
+    #: the axis's core use case. See :mod:`svc.builder.typography`.
+    font_theme: "FontTheme | str" = field(default_factory=_default_fonts)
+
+    def __post_init__(self) -> None:
+        from .sizing import resolve_size_scheme
+        from .theming import resolve_theme
+        from .typography import resolve_font_theme
+
+        _validate_language(self.language, "metadata.language")
+
+        # Resolve only to check: a preset name that names nothing is a typo,
+        # and a typo belongs to construction, not to render. The field keeps
+        # whatever the caller passed — render() is the one resolution point
+        # that turns it into a concrete Theme.
+        resolve_theme(self.theme)
+        resolve_size_scheme(self.size_theme)
+        resolve_font_theme(self.font_theme)
+
+    def validate(self) -> None:
+        """Validate the facts every document must carry."""
+        for fname in ("firm_name", "campaign_name"):
+            _require(getattr(self, fname), fname)
+
+
+@dataclass
+class EmailMetadata(DocumentMetadata):
+    """
+    What an email adds to :class:`DocumentMetadata`.
+
+    A subject line, inbox-preview text and the two outbound URLs are true of
+    an *email* and of nothing else; the shared facts — firm, campaign, dates,
+    language, legal copy — are the base class's. Splitting them is what lets
+    a paged document reuse the facts without inheriting a subject line it
+    could never have.
+
+    **Masthead presentation lives on the header, not here.** The background
+    image, the logo and its resolution chains are one way of *presenting*
+    these facts and belong to :class:`~svc.builder.regions.Banner`. The
+    footer's disclaimer and contact copy are presentation on the same terms
+    (pass ``Footer(disclaimer=...)``, or a
+    :class:`~svc.builder.components.ContactBlock` for the contact card).
+
+    Every remaining field maps to a variable in ``templates/base.html``.
+
+    The flat region keyword arguments are still accepted and build the region
+    for you, so an email written before the header split is unchanged: four
+    for the masthead (``logo_url``, ``logo_alt``, ``logo_width``,
+    ``header_bg_image_url``) and two for the footer (``unsubscribe_label``,
+    ``view_in_browser_label``). Passing one *and* the region it belongs to is
+    an error rather than a silent precedence rule.
+    """
+
+    email_subject: str = ""
+    preheader_text: str = ""
     unsubscribe_url: str = ""
     view_in_browser_url: str = ""
 
@@ -229,32 +299,6 @@ class EmailMetadata:
     #: used to hardcode; ``Email(footer=...)`` overrides it for one email.
     footer: "Footer" = field(default_factory=_default_footer)
 
-    #: Every colour and shadow the email renders with. A
-    #: :class:`~svc.builder.theming.Theme` instance or the name of a curated
-    #: preset; see :mod:`svc.builder.theming` for the token table. Unlike a
-    #: region, this is the *entire* colour surface — there is deliberately no
-    #: per-component colour parameter anywhere in the builder.
-    theme: "Theme | str" = field(default_factory=_default_theme)
-
-    #: How dense the email renders. A :class:`~svc.builder.enums.SizeTheme`
-    #: member or its bare string, and nothing else — deliberately narrower
-    #: than ``theme``, which also takes a custom object. See
-    #: :mod:`svc.builder.sizing` for the token table and for why the two
-    #: differ: callers pick a density, never a px.
-    size_theme: "SizeTheme | str" = SizeTheme.STANDARD
-
-    #: Every typeface the email renders with. A
-    #: :class:`~svc.builder.typography.FontTheme` instance or the name of a
-    #: curated preset — ``theme``'s width rather than ``size_theme``'s
-    #: narrowness, and the asymmetry argument runs the *other way* here.
-    #: Density is names-only because an untested scheme interacts with the
-    #: clipping limit, the Word engine and the mobile collapse at once;
-    #: a custom ``FontTheme`` is safe **by construction**, because the
-    #: terminal-generic rule means Outlook always walks a chain the caller
-    #: curated down to a websafe floor. A house brand face with fallbacks is
-    #: the axis's core use case. See :mod:`svc.builder.typography`.
-    font_theme: "FontTheme | str" = field(default_factory=_default_fonts)
-
     # Back-compatible region keywords. InitVars, so they are constructor
     # arguments only: they never become attributes and never appear in
     # ``fields()``, ``repr`` or ``==`` — the region is the single owner.
@@ -265,14 +309,14 @@ class EmailMetadata:
     unsubscribe_label: InitVar["str | None"] = None
     view_in_browser_label: InitVar["str | None"] = None
 
-    #: Email-level facts the strip renders. One today, and it stays a fact
+    #: Document facts the strip renders. One today, and it stays a fact
     #: rather than moving onto the region with the box's presentation: it is
-    #: legal copy that belongs to the *email*, the same call the footer's
+    #: legal copy that belongs to the *document*, the same call the footer's
     #: two URLs get.
     HEADER_FACTS = ("header_disclaimer",)
 
-    #: Email-level facts the masthead renders. Passed *down* to it; the
-    #: banner layers them over its own context, so it cannot shadow one.
+    #: Document facts the masthead renders. Passed *down* to it; the banner
+    #: layers them over its own context, so it cannot shadow one.
     BANNER_FACTS = (
         "firm_name",
         "campaign_name",
@@ -281,10 +325,10 @@ class EmailMetadata:
         "issue_label",
     )
 
-    #: Email-level facts the footer region renders, on the same terms. The
-    #: two URLs are here rather than on the region because an unsubscribe
-    #: address is a property of the mailing, not a way of wording it — and
-    #: :meth:`validate` already checks both schemes.
+    #: Facts the footer region renders, on the same terms. The two URLs are
+    #: here rather than on the region because an unsubscribe address is a
+    #: property of the mailing, not a way of wording it — and :meth:`validate`
+    #: already checks both schemes.
     FOOTER_FACTS = (
         "firm_name",
         "current_year",
@@ -302,9 +346,6 @@ class EmailMetadata:
         view_in_browser_label: "str | None",
     ) -> None:
         from .regions import Banner, Footer
-        from .sizing import resolve_size_scheme
-        from .theming import resolve_theme
-        from .typography import resolve_font_theme
 
         self.banner = self._hydrate(
             Banner,
@@ -325,15 +366,9 @@ class EmailMetadata:
             },
         )
 
-        _validate_language(self.language, "metadata.language")
-
-        # Resolve only to check: a preset name that names nothing is a typo,
-        # and a typo belongs to construction, not to render. The field keeps
-        # whatever the caller passed — Email.render() is the one resolution
-        # point that turns it into a concrete Theme.
-        resolve_theme(self.theme)
-        resolve_size_scheme(self.size_theme)
-        resolve_font_theme(self.font_theme)
+        # After hydration, so a flat-keyword conflict still names itself
+        # before a bad language tag or a misspelt preset does.
+        super().__post_init__()
 
     def _hydrate(self, region_cls: type, attr: str, legacy: dict[str, Any]) -> Any:
         """
@@ -360,21 +395,21 @@ class EmailMetadata:
 
     def validate(self) -> None:
         """Validate required fields and URL schemes."""
-        for fname in ("email_subject", "firm_name", "campaign_name"):
-            _require(getattr(self, fname), fname)
+        super().validate()
+        _require(self.email_subject, "email_subject")
         for fname in ("unsubscribe_url", "view_in_browser_url"):
             _validate_url(getattr(self, fname), f"metadata.{fname}")
 
     def header_facts(self) -> dict[str, Any]:
-        """The email-level facts the strip renders."""
+        """The document facts the strip renders."""
         return {name: getattr(self, name) for name in self.HEADER_FACTS}
 
     def banner_facts(self) -> dict[str, Any]:
-        """The email-level facts a masthead region renders."""
+        """The document facts a masthead region renders."""
         return {name: getattr(self, name) for name in self.BANNER_FACTS}
 
     def footer_facts(self) -> dict[str, Any]:
-        """The email-level facts a footer region renders."""
+        """The document facts a footer region renders."""
         return {name: getattr(self, name) for name in self.FOOTER_FACTS}
 
     def to_dict(self) -> dict[str, Any]:

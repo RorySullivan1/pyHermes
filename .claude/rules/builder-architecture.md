@@ -85,6 +85,14 @@ structurally separate, rather than find a gap to fill.
 
 ### The ownership rule — facts flow down
 
+**#161 split the facts in two.** `DocumentMetadata` holds what is true of any document —
+firm, campaign, department, dates, language, `header_disclaimer`, and the three design axes —
+and `EmailMetadata` adds what is true only of an email: subject, preheader, and the two
+outbound URLs. A paged document reuses the facts without inheriting a subject line it could
+never have. The rule below is unchanged; it now has a base class and a subclass to state it
+over, and `TestTheDocumentFactsSplitFromTheEmailOnes` names which fact sits on which side,
+because a decision nothing pins gets re-made.
+
 **Facts about the email live on `EmailMetadata`; how a region presents them lives on the
 region.** Stated once, for all three: a region presents facts, it cannot own or contradict
 them.
