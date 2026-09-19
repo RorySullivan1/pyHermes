@@ -68,8 +68,10 @@ class Email:
         footer: Footer | None = None,
         medium: Medium | None = None,
     ):
-        self._engine = TemplateEngine(template_dir)
+        # The medium is settled first: it names the templates this engine
+        # searches before the shared tree.
         self._medium: Medium = medium if medium is not None else EMAIL_MEDIUM
+        self._engine = TemplateEngine(template_dir, search_path=self._medium.template_search_path)
 
         if isinstance(metadata, dict):
             self._metadata = EmailMetadata(**metadata)

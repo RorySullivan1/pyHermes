@@ -206,3 +206,25 @@ class TestTheFrameBelongsToTheMedium:
         # the density -- so it is the one value that proves they compose.
         wide = replace(EMAIL_MEDIUM, page_format=PageFormat(width=900, mobile_breakpoint=920))
         assert STANDARD_SIZES.with_page(wide.page_format).frame.inner == 900 - 2 * 32
+
+
+class TestTheMediumNamesItsTemplates:
+    """#160: the search path is the medium's, and Email wires it."""
+
+    def test_the_email_medium_declares_its_own_directory(self):
+        assert EMAIL_MEDIUM.template_search_path == ("email",)
+
+    def test_an_email_searches_that_directory_ahead_of_the_shared_tree(self, valid_metadata):
+        assert Email(valid_metadata)._engine.search_path == EMAIL_MEDIUM.template_search_path
+
+    def test_nothing_is_forked_yet(self, valid_metadata):
+        # The claim that makes #160 byte-identical: the overlay is declared
+        # and empty, so every lookup in the suite falls through to the shared
+        # tree. When this first fails, a fork has landed and its PR owes a
+        # reason -- see TemplateEngine's docstring.
+        engine = Email(valid_metadata)._engine
+        for sub in engine.search_path:
+            assert not (engine.template_dir / sub).exists(), f"{sub}/ now holds a fork"
+
+    def test_a_medium_that_forks_nothing_declares_nothing(self):
+        assert DEFAULT_MEDIUM.template_search_path == ()

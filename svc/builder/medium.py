@@ -80,6 +80,10 @@ class Medium:
     #: Checks run over the composed document, in order, after rendering.
     constraints: tuple[Constraint, ...] = ()
 
+    #: Template directories searched ahead of the shared tree, so this medium
+    #: can fork one template without forking the tree. Usually empty.
+    template_search_path: tuple[str, ...] = ()
+
     paged: bool = False
     email: bool = False
 

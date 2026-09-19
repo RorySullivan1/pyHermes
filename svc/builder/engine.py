@@ -64,17 +64,33 @@ class TemplateEngine:
     """
     Wraps a Jinja2 Environment configured for HTML email templates.
 
-    The engine is initialised with a template directory and provides
-    methods to load and render templates. Custom filters for color
-    validation, size checking, etc. are registered automatically.
+    Initialised with a template directory; the custom filters for colour
+    validation, size checking and the rest are registered automatically.
+
+    **A medium may fork one template without forking the tree.**
+    ``search_path`` names directories searched *before* the root, so a file
+    at ``<medium>/text/text-block.html`` shadows ``text/text-block.html``
+    for that medium and is invisible to every other. Nothing moves to turn
+    this on: a medium with no forks has no directory at all, and every
+    lookup falls through to the shared tree.
+
+    To fork one, copy it to the same relative path under the medium's
+    directory, change it, regenerate that medium's goldens, and say in the
+    PR **why the shared template was wrong here** — a fork is a claim that
+    two media genuinely need different markup, and it doubles the sites a
+    later change has to reach.
 
     Args:
         template_dir: Root directory containing all templates.
                       Defaults to the ``templates/`` directory packaged
                       inside ``svc.builder``.
+        search_path:  Directories, relative to the root, searched ahead of
+                      it in order. A name with no directory behind it is
+                      not an error; it is what a medium that has forked
+                      nothing looks like.
     """
 
-    def __init__(self, template_dir: Path | None = None):
+    def __init__(self, template_dir: Path | None = None, *, search_path: tuple[str, ...] = ()):
         if template_dir is None:
             template_dir = _packaged_template_dir()
         self._template_dir = Path(template_dir).resolve()
@@ -82,8 +98,17 @@ class TemplateEngine:
         if not self._template_dir.is_dir():
             raise TemplateError(f"Template directory not found: {self._template_dir}")
 
+        self._search_path = tuple(search_path)
+        # Overlays first, the shared tree last. A FileSystemLoader over a
+        # directory that does not exist finds nothing and raises nothing,
+        # which is exactly the fall-through an unforked medium needs.
+        loaders = [
+            jinja2.FileSystemLoader(str(self._template_dir / sub)) for sub in self._search_path
+        ]
+        loaders.append(jinja2.FileSystemLoader(str(self._template_dir)))
+
         self._env = jinja2.Environment(
-            loader=jinja2.FileSystemLoader(str(self._template_dir)),
+            loader=jinja2.ChoiceLoader(loaders),
             autoescape=False,  # HTML emails need raw output
             trim_blocks=True,  # Strip newline after block tags
             lstrip_blocks=True,  # Strip leading whitespace before block tags
@@ -107,6 +132,11 @@ class TemplateEngine:
     def template_dir(self) -> Path:
         """Return the resolved template directory path."""
         return self._template_dir
+
+    @property
+    def search_path(self) -> tuple[str, ...]:
+        """The directories searched ahead of the root, in order."""
+        return self._search_path
 
     @property
     def theme(self) -> Theme:

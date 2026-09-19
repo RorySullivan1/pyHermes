@@ -54,5 +54,6 @@ EMAIL_MEDIUM = Medium(
     skeleton="base.html",
     region_types=(Header, Banner, Footer),
     constraints=(validate_gmail_size,),
+    template_search_path=("email",),
     email=True,
 )

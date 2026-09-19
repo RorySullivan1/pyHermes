@@ -126,8 +126,10 @@ itself — file purpose, verbose class, limited function, inline-for-traps — i
   builds the wheel and renders an email from a clean venv to keep it that way.
 - **Import path.** `from svc.builder import …` / `from svc.builder.models import …`.
   `svc/__init__.py` re-exports nothing, and there is no `svc.models`.
-- **The rendered skeleton is `svc/builder/templates/base.html`.** The engine's
-  `FileSystemLoader` root is that directory and it loads `"base.html"`.
+- **The skeleton is the medium's, and the email one is `templates/base.html`.** The engine
+  loads it through a `ChoiceLoader`: each of the medium's `template_search_path` directories
+  first, that root last — so a medium can fork one template without forking the tree, and a
+  declared directory that does not exist is the normal, unforked case.
 
 ## Working in this repo — the `.claude/` tooling
 
