@@ -90,6 +90,32 @@ def escape_html_ascii(value: Any) -> str:
     return "".join(ch if ch.isascii() else f"&#{ord(ch)};" for ch in escape_html(value))
 
 
+def css_string(value: Any) -> str:
+    """
+    Escape text for use inside a quoted CSS string, e.g. ``content: "..."``.
+
+    The running margin boxes are the only place this package writes a fact
+    into CSS rather than into markup, and CSS has its own escaping rules:
+    a backslash or a double quote ends or corrupts the literal.
+
+    ``<`` is escaped too, and that is the trap rather than the nicety. These
+    strings are emitted inside a ``style`` element, where the HTML parser is
+    still watching for ``</style>`` — a firm name containing one would close
+    the stylesheet and put the rest of the rule on the page as text. A hex
+    escape keeps it a string to the CSS parser and invisible to the HTML one.
+
+    A newline becomes ``\\A``, CSS's line break, rather than being dropped.
+    """
+    text = "" if value is None else str(value)
+    return (
+        text.replace("\\", "\\\\")
+        .replace('"', '\\"')
+        .replace("<", "\\3C ")
+        .replace("\r", "")
+        .replace("\n", "\\A ")
+    )
+
+
 def size_kb(value: str) -> float:
     """
     Return the size of a string in kilobytes (UTF-8 encoded).
@@ -156,6 +182,7 @@ def register_all(env: jinja2.Environment) -> None:
         env: jinja2.Environment instance
     """
     env.filters["escape_html"] = escape_html
+    env.filters["css_string"] = css_string
     env.filters["validate_hex_color"] = validate_hex_color
     env.filters["size_kb"] = size_kb
     env.filters["default_color"] = default_color

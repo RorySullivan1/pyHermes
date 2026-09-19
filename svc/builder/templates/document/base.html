@@ -12,6 +12,18 @@
       size: {{ size.frame.width }}px{% if size.frame.height %} {{ size.frame.height }}px{% endif %};
       margin: {{ size.frame.outer_pad_y }}px 0;
     }
+
+    {# The running margin boxes, each filled by its own region. They are CSS
+       rather than markup, which is why these two slots land here rather than
+       in the body -- see document/regions/running-box.html. #}
+{{ running_header_html }}
+{{ running_footer_html }}
+
+    {# The cover claims a named page so the folio and the running head do not
+       appear on it. A zero margin renders no margin box at all, which is the
+       shortest way to say "not here" without repeating every box by name. #}
+    @page cover { margin: 0; }
+
     body {
       margin: 0;
       padding: 0;
@@ -25,6 +37,8 @@
 </head>
 <body>
 
+{{ cover_html }}
+
   {# The body table is frame.width, not frame.inner: every container computes
      its column widths from the frame and pads inside that, so narrowing the
      table here would overflow each split by its own padding. #}
@@ -33,6 +47,8 @@
          style="width:{{ size.frame.width }}px; background-color:{{ theme.palette.surface }};">
 {{ sections_html }}
   </table>
+
+{{ back_matter_html }}
 
 </body>
 </html>

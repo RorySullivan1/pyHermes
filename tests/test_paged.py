@@ -18,7 +18,15 @@ from svc.builder.engine import TemplateEngine
 from svc.builder.medium import DEFAULT_MEDIUM
 from svc.builder.models import EmailMetadata
 from svc.builder.sizing import A4_PORTRAIT, PAGE_FORMATS, SLIDE_16_9
-from svc.document import PAGED_MEDIUM, paged_medium
+from svc.document import (
+    PAGED_MEDIUM,
+    EmptyBackMatter,
+    EmptyCover,
+    EmptyRunningFooter,
+    EmptyRunningHeader,
+    PagedDocument,
+    paged_medium,
+)
 from svc.email import EMAIL_MEDIUM
 
 PAGED_NAMES = sorted(all_paged_fixtures())
@@ -54,11 +62,17 @@ class TestThePagedSkeletonIsNotAnEmail:
 
     @pytest.fixture()
     def bare_skeleton(self) -> str:
-        # A document with no sections, so what is left is the skeleton and
+        # No sections and no regions, so what is left is the skeleton and
         # nothing else. Asserting over a *populated* render would be a claim
         # about the shared component templates, which is a different one --
         # see TestTheSharedMarkupStillCarriesEmailBaggage.
-        return Document(_paged.facts(), medium=PAGED_MEDIUM).render()
+        return PagedDocument(
+            _paged.facts(),
+            cover=EmptyCover(),
+            running_header=EmptyRunningHeader(),
+            running_footer=EmptyRunningFooter(),
+            back_matter=EmptyBackMatter(),
+        ).render()
 
     @pytest.fixture()
     def email_html(self) -> str:
@@ -131,25 +145,22 @@ class TestThePageReachesTheRender:
         """
         The A/B the pair exists for: same copy, one ``PageFormat`` apart.
 
-        Every differing line must be a dimension. A difference anywhere else
-        would mean the page had reached something that is not geometry --
-        a colour, a face, a piece of copy -- which is the failure the axes
-        are separate to prevent.
+        Asserted by masking every digit and demanding the rest match, rather
+        than by diffing lines — a line diff reports identical lines inside a
+        changed hunk, so it cannot tell "the markup moved" from "a number
+        did". With the numbers gone, any surviving difference is a colour, a
+        face or a piece of copy having followed the page, which is the
+        failure the axes are separate to prevent.
         """
-        import difflib
+        import re
 
-        a4 = all_paged_fixtures()["a4_portrait"]().render().splitlines()
-        slide = all_paged_fixtures()["slide_16_9"]().render().splitlines()
-        changed = [
-            line
-            for line in difflib.unified_diff(a4, slide, lineterm="", n=0)
-            if line.startswith(("+", "-")) and not line.startswith(("+++", "---"))
-        ]
-        assert changed, "the two pages rendered identically; the page reached nothing"
-        for line in changed:
-            assert "width" in line or "size:" in line, (
-                f"a non-dimension moved with the page: {line.strip()[:120]}"
-            )
+        a4 = all_paged_fixtures()["a4_portrait"]().render()
+        slide = all_paged_fixtures()["slide_16_9"]().render()
+
+        assert a4 != slide, "the two pages rendered identically; the page reached nothing"
+        assert re.sub(r"\d+", "N", a4) == re.sub(r"\d+", "N", slide), (
+            "something that is not a dimension moved with the page"
+        )
 
     def test_the_page_reaches_the_computed_column_widths(self):
         # The composition proved end to end: a split's column width is
@@ -182,8 +193,10 @@ class TestTheMediumIsWired:
         # medium names "base.html" and gets its own.
         engine = TemplateEngine(search_path=PAGED_MEDIUM.template_search_path)
         assert PAGED_MEDIUM.skeleton == EMAIL_MEDIUM.skeleton == "base.html"
+        empty_slots = {f"{slot}_html": "" for slot in PAGED_MEDIUM.slots}
         paged = engine.render(
-            PAGED_MEDIUM.skeleton, {"language": "en", "campaign_name": "x", "sections_html": ""}
+            PAGED_MEDIUM.skeleton,
+            {"language": "en", "campaign_name": "x", "sections_html": "", **empty_slots},
         )
         assert "@page" in paged
         # ...and the same name, without the overlay, is still the email's.
@@ -233,6 +246,6 @@ class TestWhatTheEmailLintMakesOfAPagedDocument:
         from qa.lint import lint_email
         from svc.builder import FullWidth, TextBlock
 
-        oversized = Document(_paged.facts(), medium=PAGED_MEDIUM)
+        oversized = PagedDocument(_paged.facts())
         oversized.add_section(FullWidth(content=TextBlock("<p>" + "x" * 110 * 1024 + "</p>")))
         assert [f.rule_id for f in lint_email(oversized)] == ["size-budget"]

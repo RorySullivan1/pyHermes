@@ -8,6 +8,28 @@
       size: 794px 1123px;
       margin: 28px 0;
     }
+
+    @page {
+      @top-right {
+        content: "Hermes Research — Quarterly Review" " · " counter(page) " / " counter(pages);
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 9.5px;
+        color: #A09E97;
+      }
+    }
+
+    @page {
+      @bottom-left {
+        content: "Confidential";
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 9.5px;
+        color: #A09E97;
+      }
+    }
+
+
+    @page cover { margin: 0; }
+
     body {
       margin: 0;
       padding: 0;
@@ -20,6 +42,22 @@
   </style>
 </head>
 <body>
+
+<table role="presentation" width="794" cellpadding="0" cellspacing="0" border="0"
+       style="width:794px; page: cover; break-after:page; page-break-after:always; background-color:#1E2B38;"
+       bgcolor="#1E2B38">
+  <tr>
+    <td align="left"
+        style="padding:18px 32px 18px; text-align:left; background-image:url('https://cdn.example.com/cover-bg.png'); background-size:cover;">
+      <img src="cid:f92ba5c4bbbbb160" alt="Hermes Research — quarterly review" width="96"
+           style="display:block; border:0; margin-bottom:10px;">
+      <h1 style="margin:0 0 6px; font-family:Georgia, 'Times New Roman', serif; font-size:28px; line-height:120%; color:#F5F2EC;">Quarterly Review</h1>
+      <p style="margin:0 0 8px; font-family:Georgia, 'Times New Roman', serif; font-size:17px; line-height:130%; color:#F5F2EC;">What the curve priced, and what it did not</p>
+      <p style="margin:10px 0 0; font-family:Arial, Helvetica, sans-serif; font-size:11px; line-height:140%; color:#F5F2EC;">Rates Strategy · Quarter ending 30 September · Issue 001</p>
+    </td>
+  </tr>
+</table>
+
 
   <table class="document-container" role="presentation" width="794"
          cellpadding="0" cellspacing="0" border="0"
@@ -181,7 +219,50 @@
   </td>
 </tr>
 
+<tr style="break-before:page; page-break-before:always; break-after:page; page-break-after:always;">
+  <td style="padding:0;">
+    <table role="presentation" width="794" cellpadding="0" cellspacing="0"
+           border="0" style="width:794px; background-color:#FFFFFF;"
+           bgcolor="#FFFFFF">
+<tr>
+  <td style="padding:0; background-color:#FFFFFF;">
+    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td style="padding:22px 32px 12px 32px;">
+          <h2 style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:17px; font-weight:bold; color:#2C3E50; line-height:120%;">
+            Methodology
+          </h2>
+        </td>
+      </tr>
+    </table>
+    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:16px 32px 14px 32px; font-family: Arial, Helvetica, sans-serif; font-size:14px; color:#3B3B3B; line-height:172%;">
+          <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: #3B3B3B; line-height: 172%; margin: 0 0 16px 0;"><p>Factor returns are computed long-short and gross of transaction costs.</p></div>
+
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+
+    </table>
+  </td>
+</tr>
+
   </table>
+
+<table role="presentation" width="794" cellpadding="0" cellspacing="0" border="0"
+       style="width:794px; break-before:page; page-break-before:always;">
+  <tr>
+    <td align="left"
+        style="padding:22px 32px 24px; text-align:left;">
+      <h2 style="margin:0 0 12px; font-family:Georgia, 'Times New Roman', serif; font-size:17px; line-height:130%; color:#3B3B3B;">Important Disclosures</h2>
+      <div style="font-family:Georgia, 'Times New Roman', serif; font-size:11px; line-height:160%; color:#8A8880;">For illustrative purposes. Not investment advice.</div>
+    </td>
+  </tr>
+</table>
+
 
 </body>
 </html>

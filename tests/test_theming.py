@@ -345,12 +345,23 @@ class TestTheThemeIsSelectable:
 
 
 def _theme_resolving_regions() -> list[type]:
-    """Every shipped region whose ``theme_context`` resolves anything."""
+    """
+    Every shipped region whose ``theme_context`` resolves anything.
+
+    Scanned across **every** medium's region module, not just the email's:
+    since #163 a paged document has a cover that resolves two tokens of its
+    own, and a discovery scoped to one module would have reported its
+    template as escaping the theme when it does no such thing. A medium
+    added later is picked up by adding its module here, which is one line
+    and visible, rather than by widening an assertion.
+    """
     from svc.builder import regions as region_api
+    from svc.document import regions as document_regions
 
     return [
         obj
-        for obj in vars(region_api).values()
+        for module in (region_api, document_regions)
+        for obj in vars(module).values()
         if isinstance(obj, type)
         and issubclass(obj, region_api.Region)
         and obj is not region_api.Region

@@ -14,13 +14,28 @@ from pathlib import Path
 from typing import Any
 
 from svc.builder import CardGroup, DataTable, FullWidth, TextBlock, TwoColumn
-from svc.builder.document import Document
 from svc.builder.enums import CardOrientation, TwoColumnRatio
+from svc.builder.images import EmailImage
 from svc.builder.medium import Medium
 from svc.builder.models import KpiItem, TableRow
+from svc.document import (
+    BackMatter,
+    Cover,
+    Page,
+    PagedDocument,
+    RunningFooter,
+    RunningHeader,
+)
+
+from ._png import solid_png
 
 _GAIN = "#4A7C59"
 _LOSS = "#B85450"
+
+#: Light on purpose: the cover's ground is #1E2B38, and a mark in that same
+#: colour renders correctly and shows nothing — a screenshot cannot judge an
+#: image it cannot see, which is half of what this fixture is for.
+_MARK_PNG = solid_png(72, 72, (245, 242, 236))
 
 #: Fixed so the render never moves. A fixture that reads the clock cannot be
 #: snapshotted.
@@ -44,9 +59,46 @@ def facts() -> dict[str, Any]:
     }
 
 
-def build_on(medium: Medium, template_dir: Path | None = None) -> Document:
-    """The shared document, laid onto ``medium``'s page."""
-    document = Document(facts(), template_dir=template_dir, medium=medium)
+def build_on(medium: Medium, template_dir: Path | None = None) -> PagedDocument:
+    """
+    The shared document, laid onto ``medium``'s page.
+
+    Every region field carries a **non-default** value, per standing rule 9:
+    a field left at its default is one the golden cannot pin, because the
+    render would not move if the default changed underneath it.
+    """
+    document = PagedDocument(
+        facts(),
+        template_dir=template_dir,
+        medium=medium,
+        cover=Cover(
+            # Distinct from firm_name / campaign_name on purpose, so the
+            # golden pins that the cover says its own thing while the facts
+            # still reach the running boxes and the text projection (#91).
+            title="Quarterly Review",
+            subtitle="What the curve priced, and what it did not",
+            logo_url=EmailImage.attached(_MARK_PNG, alt="Hermes Research mark", width=72),
+            logo_alt="Hermes Research — quarterly review",
+            logo_width=96,
+            background_image_url="https://cdn.example.com/cover-bg.png",
+            align="left",
+            background_color="#1E2B38",
+            text_color="#F5F2EC",
+        ),
+        running_header=RunningHeader(
+            label="Hermes Research — Quarterly Review",
+            box="top-right",
+            show_page_number=True,
+        ),
+        running_footer=RunningFooter(
+            label="Confidential",
+            box="bottom-left",
+            # The footer's default; the header above carries the folio here,
+            # so this one is the off case and the pair covers both.
+            show_page_number=False,
+        ),
+        back_matter=BackMatter(heading="Important Disclosures", align="left"),
+    )
     return (
         document.add_section(
             FullWidth(
@@ -94,6 +146,25 @@ def build_on(medium: Medium, template_dir: Path | None = None) -> Document:
                 title="Positioning",
                 left=TextBlock("<p>The left half of a 50-50 split.</p>"),
                 right=TextBlock("<p>The right half of a 50-50 split.</p>"),
+            )
+        )
+        # An explicit sheet boundary, with both breaks at non-default values.
+        # In the email medium this same tree flattens and the wrapper is not
+        # emitted at all, which is what a test rather than a golden pins.
+        .add_section(
+            Page(
+                [
+                    FullWidth(
+                        title="Methodology",
+                        content=TextBlock(
+                            "<p>Factor returns are computed long-short and gross "
+                            "of transaction costs.</p>"
+                        ),
+                    )
+                ],
+                break_before=True,
+                break_after=True,
+                title="Appendix",
             )
         )
     )

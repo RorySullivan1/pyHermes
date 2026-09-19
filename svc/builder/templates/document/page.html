@@ -1,0 +1,25 @@
+{# A page break, carried by a table ROW.
+
+   Containers emit `tr` blocks, so a page cannot wrap them in a div without
+   producing invalid markup inside the body table. CSS break properties do
+   not apply to a `td` either -- a table-cell is not a block box -- so the
+   declaration lands on the `tr`, which CSS 2.1 does allow. The nested table
+   is what gives those child rows somewhere valid to live; it is the frame's
+   own width, so every column width computed from the frame still holds.
+
+   Both spellings are emitted: `break-before` is the current property and
+   `page-break-before` the CSS 2.1 one every print engine still honours.
+
+   The ground is the container idiom, not a special case: a caller's
+   `background_color` if they set one, the theme's surface otherwise. Jinja's
+   `default` substitutes only for an *undefined* name, which is exactly how
+   `_base_context` injects the field -- present when set, absent when not. #}
+<tr{% if break_before or break_after %} style="{% if break_before %}break-before:page; page-break-before:always;{% endif %}{% if break_after %} break-after:page; page-break-after:always;{% endif %}"{% endif %}>
+  <td style="padding:0;">
+    <table role="presentation" width="{{ size.frame.width }}" cellpadding="0" cellspacing="0"
+           border="0" style="width:{{ size.frame.width }}px; background-color:{{ background_color | default(theme.palette.surface) }};"
+           bgcolor="{{ background_color | default(theme.palette.surface) }}">
+{{ sections_html }}
+    </table>
+  </td>
+</tr>

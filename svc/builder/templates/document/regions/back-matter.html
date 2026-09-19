@@ -1,0 +1,16 @@
+{# The closing sheet. The disclosure copy is a raw-HTML fact emitted inside a
+   `div`, never a `p`: a paragraph is auto-closed the moment caller markup
+   opens one, and the copy then escapes the styling it should inherit (#130).
+   Escaping untrusted text in it is the caller's job, as everywhere else. #}
+<table role="presentation" width="{{ size.frame.width }}" cellpadding="0" cellspacing="0" border="0"
+       style="width:{{ size.frame.width }}px; break-before:page; page-break-before:always;">
+  <tr>
+    <td align="{{ align | default('left', true) }}"
+        style="padding:{{ size.space.section_title_top }}px {{ size.frame.pad_x }}px {{ size.space.footer_copyright_bottom }}px; text-align:{{ align | default('left', true) }};">
+      {% if heading %}
+      <h2 style="margin:0 0 {{ size.space.section_title_bottom }}px; font-family:{{ font.heading }}; font-size:{{ size.type.section }}px; line-height:{{ size.type.heading_line | percent }}; color:{{ theme.text.primary }};">{{ heading | escape_html }}</h2>
+      {% endif %}
+      <div style="font-family:{{ font.body }}; font-size:{{ size.type.small }}px; line-height:{{ size.component.legal_line | percent }}; color:{{ theme.text.fine_print }};">{{ header_disclaimer }}</div>
+    </td>
+  </tr>
+</table>

@@ -41,8 +41,11 @@ svc/
 │   └── templates/      ← packaged with the wheel (moved here in #10)
 │       ├── base.html                — the EMAIL skeleton (four slots: header_bar_html,
 │                                      banner_html, sections_html, footer_html)
-│       ├── document/base.html       — the PAGED skeleton (@page, one body slot), reached
+│       ├── document/base.html       — the PAGED skeleton (@page, five slots), reached
 │                                      by the document medium's template overlay
+│       ├── document/page.html       — the sheet-boundary wrapper (a `tr`, not a `div`)
+│       ├── document/regions/*.html  — cover.html, back-matter.html, and running-box.html
+│                                      which emits CSS rather than markup
 │       ├── regions/*.html           — header-bar.html, banner.html, banner-minimal.html,
 │                                      footer.html
 │       ├── common/containers/*.html — layout geometry: full-width.html + columns.html
@@ -58,7 +61,12 @@ svc/
 │   └── exceptions.py   — DeliveryError / MessageError / TransportError (siblings of
 │                          EmailBuilderError)
 ├── email/              ← the email medium: the Gmail size constraint, the four slots
-├── document/           ← the paged medium: PAGED_MEDIUM, paged_medium(page)
+├── document/           ← the paged medium
+│   ├── medium.py       — PAGED_MEDIUM, paged_medium(page)
+│   ├── document.py     — PagedDocument: cover | running boxes | body | back matter
+│   ├── page.py         — Page: a sheet boundary that FLATTENS in a non-paged medium
+│   └── regions.py      — Cover, RunningHeader/Footer (@page margin boxes), BackMatter,
+│                         plus an Empty variant of each
 ├── gmail/              ← Gmail send adapter (consumes delivery; owns no credentials)
 │   └── sender.py       — GmailTransport protocol, GoogleApiTransport shim, send_message()
 ├── outlook/            ← Outlook send adapter over Microsoft Graph (same shape as gmail)

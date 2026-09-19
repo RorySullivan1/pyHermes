@@ -1,0 +1,13 @@
+{# A @page margin box. This template emits CSS, not markup -- the slot it
+   fills lands inside the skeleton's `style` element -- so every interpolated
+   value goes through `css_string` and never `escape_html`. HTML entities
+   inside a stylesheet render literally, and neither filter's absence would
+   stop a `</style>` in a firm name closing the block early. #}
+    @page {
+      @{{ running_box }} {
+        content: "{{ running_label | css_string }}"{% if show_page_number %} " · " counter(page) " / " counter(pages){% endif %};
+        font-family: {{ font.label }};
+        font-size: {{ size.type.micro }}px;
+        color: {{ theme.text.light }};
+      }
+    }

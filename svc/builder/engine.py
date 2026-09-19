@@ -15,7 +15,7 @@ import jinja2
 
 from .exceptions import TemplateError
 from .filters import register_all
-from .medium import DEFAULT_MEDIUM
+from .medium import DEFAULT_MEDIUM, Medium
 from .sizing import STANDARD_SIZES
 from .theming import DEFAULT_THEME, Theme
 from .typography import DEFAULT_FONTS
@@ -30,6 +30,13 @@ class Renderer(Protocol):
     :class:`BoundEngine` can stand in for a :class:`TemplateEngine` anywhere
     in the section tree without a single call site changing.
 
+    :attr:`medium` joined it in #163 on the same terms: a
+    :class:`~svc.document.page.Page` renders a page break for a paged medium
+    and flattens for every other, which is a decision it can only make in
+    Python. It was deliberately left off this protocol in #158, when nothing
+    needed it — the bar for adding to a contract every container, component
+    and region shares is a reader, not a plausible future one.
+
     :attr:`theme` exists because one consumer needs the theme as an *object*
     rather than as context: :class:`~svc.builder.regions.Banner` resolves a
     :class:`~svc.builder.theming.BannerPalette` against it in Python, so that
@@ -42,6 +49,9 @@ class Renderer(Protocol):
 
     @property
     def theme(self) -> "Theme": ...
+
+    @property
+    def medium(self) -> "Medium": ...
 
 
 def _packaged_template_dir() -> Path:
@@ -137,6 +147,11 @@ class TemplateEngine:
     def search_path(self) -> tuple[str, ...]:
         """The directories searched ahead of the root, in order."""
         return self._search_path
+
+    @property
+    def medium(self) -> Medium:
+        """The medium an unbound render gets, which is plain HTML."""
+        return DEFAULT_MEDIUM
 
     @property
     def theme(self) -> Theme:
@@ -284,6 +299,12 @@ class BoundEngine:
     def template_dir(self) -> Path:
         """The underlying engine's template directory."""
         return self.engine.template_dir
+
+    @property
+    def medium(self) -> "Medium":
+        """The medium this render is bound to, falling through to the engine's."""
+        bound = self.shared.get("medium")
+        return bound if isinstance(bound, Medium) else self.engine.medium
 
     @property
     def theme(self) -> "Theme":

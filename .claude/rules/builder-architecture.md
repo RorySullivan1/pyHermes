@@ -70,6 +70,23 @@ unfilled slot renders the empty string, so `EmptyHeader` omits the strip by decl
 `TEMPLATE_PATHS = {}` and the skeleton needs no conditional. `Banner.render()` survives as the
 whole-region convenience and delegates to `render_slots()` — one rendering path, not two.
 
+**The region mechanism now serves two media, which is the strongest evidence it
+generalises** (#163). The paged medium has four of its own — `Cover`, `RunningHeader`,
+`RunningFooter`, `BackMatter` — declared in `svc/document/regions.py` on exactly the base
+class the email's three use, with the same `SLOTS` / `TEMPLATE_PATHS` / facts-over-presentation
+rules and an `Empty` variant each. Three things it taught:
+
+- **A slot need not be markup.** The two running boxes fill slots inside the skeleton's
+  `style` element, because a `@page` margin box *is* CSS. That works without changing the
+  mechanism — a slot was always a string hole — but it needs a different escaper, so
+  `css_string` exists beside `escape_html`. The trap it closes is not the quoting: it is
+  that a `</style>` inside a fact would close the stylesheet and spill the rest onto the page.
+- **A projection left empty must say so.** `RunningBox._text` returns `""` **by decision** —
+  a folio counts sheets plain text does not have — and is implemented rather than left to
+  raise, which is what distinguishes it from standing rule 10's failure case.
+- **The back matter mints no new raw-HTML surface.** It renders `header_disclaimer`, a fact
+  `DocumentMetadata` already owns, so the blessed set stays closed at five.
+
 **"No fourth region" was a real decision, and #87 reopened it deliberately.** This file used to
 say *"banner, body and footer are the complete set; a fourth region is a decision to reopen,
 not a gap to fill."* It is recorded as superseded rather than deleted, because the reasoning

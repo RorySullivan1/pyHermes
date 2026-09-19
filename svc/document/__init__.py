@@ -1,12 +1,37 @@
 """
 The paged medium, and what will become the document-only half of the builder.
 
-Today this package owns the medium and its page. Epic #157's #163 adds the
-managed elements a paged document needs and an email never had: a ``Page``
-with its breaks, a cover, running header and footer margin boxes, and a
-back-matter disclaimer.
+``PagedDocument`` is the product; ``Page`` marks a sheet boundary inside the
+section tree; the regions are the managed elements an email never had — a
+cover, two running margin boxes and a back-matter sheet. Each region has an
+``Empty`` variant that fills no slot, the way ``EmptyHeader`` does.
 """
 
+from .document import PagedDocument
 from .medium import PAGED_MEDIUM, paged_medium
+from .page import Page
+from .regions import (
+    BackMatter,
+    Cover,
+    EmptyBackMatter,
+    EmptyCover,
+    EmptyRunningFooter,
+    EmptyRunningHeader,
+    RunningFooter,
+    RunningHeader,
+)
 
-__all__ = ["PAGED_MEDIUM", "paged_medium"]
+__all__ = [
+    "PAGED_MEDIUM",
+    "BackMatter",
+    "Cover",
+    "EmptyBackMatter",
+    "EmptyCover",
+    "EmptyRunningFooter",
+    "EmptyRunningHeader",
+    "Page",
+    "PagedDocument",
+    "RunningFooter",
+    "RunningHeader",
+    "paged_medium",
+]
