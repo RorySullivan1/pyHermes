@@ -103,6 +103,65 @@ jobs:
           path: output/screenshots/
           if-no-files-found: error
 
+  pdf:
+    # Guards #164: the PDF exporter is the optional "[pdf]" extra, and the
+    # render half of tests/test_pdf.py skips without it -- so this job is the
+    # only place a document is ever actually laid onto sheets. Its policy half
+    # (no network, the core never imports the backend) runs in `check` above
+    # and needs nothing installed.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: System libraries
+        # WeasyPrint renders through Pango and Cairo, which are system
+        # libraries rather than wheels. The fonts are not optional either: a
+        # runner with none installed picks a last-resort fallback, embeds it,
+        # and hands back a finished-looking PDF -- which is why
+        # test_a_real_face_is_embedded_rather_than_a_fallback exists and why
+        # a serif and a sans are installed here on purpose.
+        # libharfbuzz-subset is what WeasyPrint's own DeprecationWarning asks
+        # for; installing it now keeps a future release from turning that
+        # warning into a failure.
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libpango-1.0-0 libpangoft2-1.0-0 libcairo2 libharfbuzz-subset0 \
+            fonts-liberation
+
+      - name: Install (with the PDF extra)
+        run: pip install -e ".[dev,pdf]"
+
+      - name: PDF tests
+        run: pytest tests/test_pdf.py
+
+      - name: Render the paged gallery to PDF
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          from qa.fixtures import all_paged_fixtures
+          from svc.pdf import page_count, save_pdf
+
+          out = Path("output/pdf")
+          for name, build in sorted(all_paged_fixtures().items()):
+              document = build()
+              path = save_pdf(document, out / f"{name}.pdf")
+              print(f"{name}: {page_count(document)} page(s), {path.stat().st_size} bytes")
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pdf
+          path: output/pdf/
+          if-no-files-found: error
+
   wheel:
     # Guards #10: templates/ must ship inside the wheel, so the package can
     # render an email with no source tree present. A parent-directory lookup

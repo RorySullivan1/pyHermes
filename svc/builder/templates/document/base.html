@@ -32,6 +32,14 @@
       color: {{ theme.text.primary }};
     }
     table { border-collapse: collapse; }
+
+    {# A print engine honours the CSS `width` property; the `width` HTML
+       attribute on a table is a presentational hint it does not map, where a
+       browser does. The component templates carry widths as attributes
+       because Outlook's Word engine reads nothing else -- so without this the
+       shared markup renders correctly and shrink-wraps every table to its
+       content, measured at 188px inside a 794px page. #}
+    table[width="100%"] { width: 100%; }
     img { border: 0; }
   </style>
 </head>

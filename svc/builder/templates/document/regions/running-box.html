@@ -11,3 +11,8 @@
         color: {{ theme.text.light }};
       }
     }
+    {# ...and not on the cover. A zero margin there does NOT suppress a margin
+       box -- it renders anyway, clipped against the page edge, which is what
+       the first PDF showed. Only `content: none` removes it. The region that
+       put the box somewhere is what knows which one to blank. #}
+    @page cover { @{{ running_box }} { content: none; } }

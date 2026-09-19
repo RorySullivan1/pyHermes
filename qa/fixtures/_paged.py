@@ -37,6 +37,9 @@ _LOSS = "#B85450"
 #: image it cannot see, which is half of what this fixture is for.
 _MARK_PNG = solid_png(72, 72, (245, 242, 236))
 
+#: The cover's backdrop, attached so the document is self-contained.
+_COVER_PNG = solid_png(120, 80, (22, 33, 45))
+
 #: Fixed so the render never moves. A fixture that reads the clock cannot be
 #: snapshotted.
 _YEAR = "2026"
@@ -80,7 +83,11 @@ def build_on(medium: Medium, template_dir: Path | None = None) -> PagedDocument:
             logo_url=EmailImage.attached(_MARK_PNG, alt="Hermes Research mark", width=72),
             logo_alt="Hermes Research — quarterly review",
             logo_width=96,
-            background_image_url="https://cdn.example.com/cover-bg.png",
+            # Attached rather than hosted, and that is a finding rather than
+            # a preference: the PDF exporter makes no network requests, so a
+            # document whose cover art lives on a CDN cannot be printed at
+            # all. A printable document carries its own images (#164).
+            background_image_url=EmailImage.attached(_COVER_PNG, alt="Cover backdrop", width=794),
             align="left",
             background_color="#1E2B38",
             text_color="#F5F2EC",

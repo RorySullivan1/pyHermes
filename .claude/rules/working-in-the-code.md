@@ -71,6 +71,10 @@ svc/
 │   └── sender.py       — GmailTransport protocol, GoogleApiTransport shim, send_message()
 ├── outlook/            ← Outlook send adapter over Microsoft Graph (same shape as gmail)
 │   └── sender.py       — OutlookTransport protocol, GraphApiTransport shim, send_message()
+├── pdf/                ← the PDF exporter, on the adapters' contract; "[pdf]" extra
+│   ├── exporter.py     — render_pdf / save_pdf / page_count / available; lazy backend
+│   ├── fetcher.py      — serves cid: from the manifest, refuses every other URL
+│   └── exceptions.py   — PdfError, a sibling of EmailBuilderError and DeliveryError
 qa/                     ← QA harness (epic #54); NOT shipped in the wheel
 ├── goldens.py         — the golden snapshot harness: check_fixture(), write_fixture(),
 │                        render_manifest(), and the diagnosable mismatch report

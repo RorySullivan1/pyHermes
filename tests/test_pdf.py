@@ -1,0 +1,333 @@
+"""
+The PDF exporter (#164): the third exporter, and the first real pagination.
+
+Two halves. The **policy** half runs everywhere — the exporter must be
+importable without WeasyPrint, the core must never import it, and the fetcher
+must refuse what it is not given. The **render** half skips when the
+``[pdf]`` extra is absent, which is what proves the extra is optional.
+"""
+
+from __future__ import annotations
+
+import ast
+import pathlib
+import re
+import zlib
+
+import pytest
+
+from qa.fixtures import all_paged_fixtures
+from svc.builder import FullWidth, TextBlock
+from svc.builder.images import EmailImage
+from svc.document import (
+    EmptyBackMatter,
+    EmptyCover,
+    EmptyRunningFooter,
+    EmptyRunningHeader,
+    Page,
+    PagedDocument,
+)
+from svc.pdf import (
+    BackendMissingError,
+    PdfError,
+    UnreachableResourceError,
+    available,
+    page_count,
+    render_pdf,
+    save_pdf,
+)
+from svc.pdf.exporter import _backend
+
+requires_backend = pytest.mark.skipif(
+    not available(),
+    reason='no WeasyPrint; the PDF exporter is the optional "[pdf]" extra',
+)
+
+FACTS = {"firm_name": "Hermes Research", "campaign_name": "Quarterly Review"}
+
+
+def _decompressed(pdf: bytes) -> bytes:
+    """The PDF plus every FlateDecode stream it carries, inflated."""
+    blob = bytearray(pdf)
+    for match in re.finditer(rb"stream\r?\n", pdf):
+        end = pdf.find(b"endstream", match.end())
+        try:
+            blob += zlib.decompress(pdf[match.end() : end])
+        except zlib.error:
+            continue
+    return bytes(blob)
+
+
+BARE = {
+    "cover": EmptyCover(),
+    "running_header": EmptyRunningHeader(),
+    "running_footer": EmptyRunningFooter(),
+    "back_matter": EmptyBackMatter(),
+}
+
+
+def document(*sections) -> PagedDocument:
+    """A paged document with no regions, so only its sections make pages."""
+    built = PagedDocument(FACTS, **BARE)
+    for section in sections or (FullWidth(content=TextBlock("<p>Short.</p>")),):
+        built.add_section(section)
+    return built
+
+
+class TestTheCoreNeverImportsTheBackend:
+    """
+    The purity rule the send adapters already hold, for the third exporter.
+
+    ``pip install -e .`` must render and project everything; only turning a
+    document into PDF bytes may need the extra.
+    """
+
+    @pytest.mark.parametrize("package", ["svc/builder", "svc/document", "svc/email"])
+    def test_no_module_imports_weasyprint(self, package):
+        for path in sorted(pathlib.Path(package).rglob("*.py")):
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Import):
+                    names = [alias.name for alias in node.names]
+                elif isinstance(node, ast.ImportFrom) and node.module:
+                    names = [node.module]
+                else:
+                    continue
+                assert not any(name.split(".")[0] == "weasyprint" for name in names), (
+                    f"{path} imports weasyprint; the core install is Jinja2-only"
+                )
+
+    def test_the_exporter_itself_imports_it_lazily(self):
+        # svc.pdf must import cleanly without the extra, so a caller catches
+        # BackendMissingError rather than an ImportError from their own graph.
+        tree = ast.parse(pathlib.Path("svc/pdf/exporter.py").read_text(encoding="utf-8"))
+        module_level = [n for n in tree.body if isinstance(n, (ast.Import, ast.ImportFrom))]
+        assert not any(
+            "weasyprint" in (getattr(n, "module", "") or "")
+            or any(a.name.startswith("weasyprint") for a in getattr(n, "names", []))
+            for n in module_level
+        )
+
+    def test_a_missing_backend_names_the_install(self, monkeypatch):
+        import builtins
+
+        real_import = builtins.__import__
+
+        def refuse(name, *args, **kwargs):
+            if name == "weasyprint":
+                raise ImportError("no weasyprint")
+            return real_import(name, *args, **kwargs)
+
+        monkeypatch.setattr(builtins, "__import__", refuse)
+        with pytest.raises(BackendMissingError, match=r"pyhermes\[pdf\]"):
+            _backend()
+
+    def test_every_failure_is_catchable_as_one_base(self):
+        assert issubclass(BackendMissingError, PdfError)
+        assert issubclass(UnreachableResourceError, PdfError)
+
+    def test_it_is_not_a_delivery_failure(self):
+        # A document that will not print is neither a build failure nor a
+        # transport failure, and a caller must be able to tell the three apart.
+        from svc.builder.exceptions import EmailBuilderError
+        from svc.delivery.exceptions import DeliveryError
+
+        assert not issubclass(PdfError, (EmailBuilderError, DeliveryError))
+
+
+@requires_backend
+class TestTheFetcherServesTheManifestAndNothingElse:
+    def test_a_hosted_image_is_refused_by_url(self, png_bytes):
+        # Not slow -- refused. A build that reaches the network for an image
+        # the caller forgot to attach is the failure this policy prevents.
+        doc = document(
+            FullWidth(
+                content=TextBlock('<p><img src="https://cdn.example.com/x.png" width="10"></p>')
+            )
+        )
+        with pytest.raises(UnreachableResourceError, match="cdn.example.com"):
+            render_pdf(doc)
+
+    def test_the_refusal_says_what_to_do_instead(self, png_bytes):
+        doc = document(
+            FullWidth(content=TextBlock('<p><img src="http://example.com/y.png" width="10"></p>'))
+        )
+        with pytest.raises(UnreachableResourceError, match="EmailImage.attached"):
+            render_pdf(doc)
+
+    def test_a_declared_attachment_is_served(self, png_bytes):
+        from svc.builder import ChartBlock
+
+        doc = document(
+            FullWidth(content=ChartBlock(EmailImage.attached(png_bytes, alt="C", width=40)))
+        )
+        assert render_pdf(doc).startswith(b"%PDF")
+
+    def test_an_inlined_image_never_reaches_the_fetcher(self, png_bytes):
+        # A data URI carries its own bytes, so it resolves without the
+        # manifest -- and must not be refused for not being in one.
+        from svc.builder import ChartBlock
+
+        doc = document(
+            FullWidth(content=ChartBlock(EmailImage.inline(png_bytes, alt="C", width=40)))
+        )
+        assert render_pdf(doc).startswith(b"%PDF")
+
+    def test_the_fetcher_refuses_an_undeclared_cid(self):
+        from svc.pdf.fetcher import build_fetcher
+
+        with pytest.raises(UnreachableResourceError, match="asset manifest"):
+            build_fetcher([]).fetch("cid:nothing-here")
+
+
+@requires_backend
+class TestThePagesBreakWhereTheTreeSaysTheyDo:
+    """
+    #163 pinned the markup and said plainly that it could not verify a print
+    engine honours it. This is where that claim gets its teeth.
+    """
+
+    def test_one_short_section_is_one_page(self):
+        assert page_count(document()) == 1
+
+    def test_a_page_break_adds_a_sheet(self):
+        # Identical content, one flag apart. Overflow cannot explain this.
+        short = FullWidth(content=TextBlock("<p>Short.</p>"))
+        broken = document(short, Page([FullWidth(content=TextBlock("<p>Next.</p>"))]))
+        unbroken = document(
+            short,
+            Page([FullWidth(content=TextBlock("<p>Next.</p>"))], break_before=False),
+        )
+        assert page_count(broken) == page_count(unbroken) + 1
+
+    def test_the_gallery_paginates_as_its_page_format_implies(self):
+        # The same content on a shorter page needs more sheets.
+        a4 = page_count(all_paged_fixtures()["a4_portrait"]())
+        slide = page_count(all_paged_fixtures()["slide_16_9"]())
+        assert a4 == 4 and slide == 5, (a4, slide)
+
+    def test_every_sheet_is_the_mediums_page(self):
+        import weasyprint
+
+        from svc.pdf.fetcher import build_fetcher
+
+        fixture = all_paged_fixtures()["a4_portrait"]()
+        rendered = weasyprint.HTML(
+            string=fixture.render(), url_fetcher=build_fetcher(fixture.assets())
+        ).render()
+        page = fixture.medium.page_format
+        for sheet in rendered.pages:
+            assert (round(sheet.width), round(sheet.height)) == (page.width, page.height)
+
+
+@requires_backend
+class TestTheBytesAreAPdf:
+    def test_render_pdf_returns_a_pdf(self):
+        assert render_pdf(document()).startswith(b"%PDF")
+
+    def test_save_pdf_writes_one(self, tmp_path):
+        path = save_pdf(document(), tmp_path / "out" / "doc.pdf")
+        assert path.is_file() and path.read_bytes().startswith(b"%PDF")
+
+    def test_a_real_face_is_embedded_rather_than_a_fallback(self):
+        """
+        The font stack has to resolve to a real face, and the PDF has to
+        carry it.
+
+        A print engine picks from *system* fonts, not from the web-safe
+        stacks the theme names, so a machine with none installed renders in a
+        last-resort fallback and still hands back a finished-looking PDF.
+        That failure is silent by construction, which is why it gets a test.
+
+        The bytes are read decompressed: font objects live inside FlateDecode
+        streams, so searching the raw file finds nothing and would pass this
+        test for the wrong reason — which is exactly what it did first.
+        """
+        blob = _decompressed(render_pdf(all_paged_fixtures()["a4_portrait"]()))
+        assert b"/FontFile" in blob, "no font embedded; the PDF would not be portable"
+        faces = {name.decode() for name in re.findall(rb"/BaseFont\s*/([A-Za-z0-9+#\-]+)", blob)}
+        assert faces, "no face named"
+        assert any("serif" in face.lower() for face in faces), (
+            f"the classic theme asks for a serif and the PDF embeds {sorted(faces)}"
+        )
+
+
+@requires_backend
+class TestWhatOnlyAPrintEngineCouldShow:
+    """
+    Two defects the first real PDF surfaced, neither of which any golden or
+    browser screenshot could see. Both are in the paged skeleton, so both are
+    pinned by measuring the laid-out result rather than the markup.
+    """
+
+    @staticmethod
+    def _laid_out(document):
+        import weasyprint
+
+        from svc.pdf.fetcher import build_fetcher
+
+        return weasyprint.HTML(
+            string=document.render(), url_fetcher=build_fetcher(document.assets())
+        ).render()
+
+    @staticmethod
+    def _table_widths(page) -> list[int]:
+        widths: list[int] = []
+
+        def walk(box):
+            if type(box).__name__ == "TableBox":
+                widths.append(round(box.width))
+            for child in getattr(box, "children", []):
+                walk(child)
+
+        walk(page._page_box)
+        return widths
+
+    @staticmethod
+    def _text_of(page) -> str:
+        found: list[str] = []
+
+        def walk(box):
+            text = getattr(box, "text", None)
+            if isinstance(text, str):
+                found.append(text)
+            for child in getattr(box, "children", []):
+                walk(child)
+
+        walk(page._page_box)
+        return " ".join(found)
+
+    def test_a_tables_width_attribute_reaches_the_layout(self):
+        """
+        The component templates carry table widths as HTML *attributes*,
+        because Outlook's Word engine reads nothing else. A print engine
+        honours the CSS property instead and does not map the attribute, so
+        without the skeleton's mapping rule every table shrink-wraps to its
+        content — measured at 188px inside a 794px page, rendering perfectly
+        and looking like a different document.
+        """
+        fixture = all_paged_fixtures()["a4_portrait"]()
+        body = self._laid_out(fixture).pages[1]
+        widths = self._table_widths(body)
+        page_width = fixture.medium.page_format.width
+        assert widths, "no tables laid out"
+        # Every table on the body page fills the frame rather than its content.
+        assert min(widths) > page_width * 0.9, (
+            f"a table shrink-wrapped: {sorted(widths)} inside a {page_width}px page"
+        )
+
+    def test_no_running_box_appears_on_the_cover(self):
+        """
+        A zero margin does **not** suppress a margin box: it renders anyway,
+        clipped against the page edge, which is what the first PDF showed —
+        a folio on the cover of a document. Only ``content: none`` removes it.
+        """
+        fixture = all_paged_fixtures()["a4_portrait"]()
+        pages = self._laid_out(fixture).pages
+        cover, body = self._text_of(pages[0]), self._text_of(pages[1])
+
+        assert "Quarterly Review" in cover, "the cover did not render"
+        assert "Confidential" not in cover, "the running footer leaked onto the cover"
+        assert "1 / 4" not in cover, "the folio leaked onto the cover"
+        # ...and it is suppressed only there.
+        assert "Confidential" in body and "2 / 4" in body

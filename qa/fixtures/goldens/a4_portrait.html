@@ -17,6 +17,7 @@
         color: #A09E97;
       }
     }
+    @page cover { @top-right { content: none; } }
 
     @page {
       @bottom-left {
@@ -26,6 +27,7 @@
         color: #A09E97;
       }
     }
+    @page cover { @bottom-left { content: none; } }
 
 
     @page cover { margin: 0; }
@@ -38,6 +40,8 @@
       color: #3B3B3B;
     }
     table { border-collapse: collapse; }
+
+    table[width="100%"] { width: 100%; }
     img { border: 0; }
   </style>
 </head>
@@ -48,7 +52,7 @@
        bgcolor="#1E2B38">
   <tr>
     <td align="left"
-        style="padding:18px 32px 18px; text-align:left; background-image:url('https://cdn.example.com/cover-bg.png'); background-size:cover;">
+        style="padding:18px 32px 18px; text-align:left; background-image:url('cid:bc9154aa590064cf'); background-size:cover;">
       <img src="cid:f92ba5c4bbbbb160" alt="Hermes Research — quarterly review" width="96"
            style="display:block; border:0; margin-bottom:10px;">
       <h1 style="margin:0 0 6px; font-family:Georgia, 'Times New Roman', serif; font-size:28px; line-height:120%; color:#F5F2EC;">Quarterly Review</h1>
