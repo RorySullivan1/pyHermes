@@ -1,5 +1,5 @@
 """
-``Email`` — the orchestrator that owns the section tree and renders it.
+``Email`` — a :class:`~svc.builder.document.Document` with a masthead.
 
 Two construction patterns, the fluent one preferred::
 
@@ -8,56 +8,60 @@ Two construction patterns, the fluent one preferred::
         .section(FullWidth(content=TextBlock("Hello"), title="Intro"))
         .build())
 
-``render()`` resolves the theme, size scheme, fonts and medium once, renders
-the four regions and every section, and runs the medium's constraints over
-the composed document. ``assets()`` and ``text()`` are the other two
-projections of the same tree.
+Everything generic — the three projections, the binder, the section tree —
+is ``Document``'s. What is an email's and nothing else's lives here: the
+four-slot skeleton's regions, and the facts each is handed.
 """
 
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 from svc.email import EMAIL_MEDIUM
 
 from .containers import Container
-from .engine import TemplateEngine
-from .enums import EmbedStrategy
-from .images import EmailImage, ImageAsset, dedupe_assets
+from .document import Document, RegionFacts
+from .images import ImageAsset
 from .medium import Medium
 from .models import EmailMetadata
 from .regions import Banner, Footer, Header
-from .sizing import resolve_size_scheme
-from .textgen import join_sections
-from .theming import resolve_theme
-from .typography import resolve_font_theme
 
 
-class Email:
+class Email(Document):
     """
-    Represents a complete, renderable email.
+    A document read in a mail client: ``strip | masthead | body | footer``.
 
-    The email is ``header | body | footer``: the metadata holds the facts,
-    the two regions present them, and the body is the ordered section list.
+    The metadata holds the facts, the three regions present them, and the
+    body is the ordered section list. Everything generic is
+    :class:`~svc.builder.document.Document`'s; what is here is the region
+    set and the facts each one is handed.
 
     Args:
         metadata:     Dict or EmailMetadata with the email's facts.
         template_dir: Path to the ``templates/`` directory.  Defaults to
                       the copy packaged inside ``svc.builder``.
-        header:       The masthead region. Defaults to the metadata's own
-                      header, which the flat masthead keywords build — so an
-                      email that never mentions a header is unchanged.
-        footer:       The closing region, on exactly the same terms.
-        medium:       Where this document is going to be read. An ``Email``
-                      pins the email medium; the argument exists so a test
-                      can drive a different constraint set, and it is the
-                      seam ``Document`` grows out of.
+        header:       The strip at the top. Defaults to the metadata's own,
+                      which the flat masthead keywords build — so an email
+                      that never mentions a header is unchanged.
+        banner:       The masthead, on the same terms.
+        footer:       The closing region, on the same terms.
+        medium:       Where this is read. An ``Email`` pins the email medium;
+                      the argument exists so a test can drive a different
+                      constraint set.
 
     Raises:
         ValidationError: If required metadata (``email_subject``, ``firm_name``,
             ``campaign_name``) is missing or empty.
     """
+
+    METADATA: ClassVar[type[EmailMetadata]] = EmailMetadata
+
+    #: Narrows what ``Document`` stores. An ``Email`` is constructed through
+    #: :attr:`METADATA`, so the facts it holds are always an
+    #: :class:`~svc.builder.models.EmailMetadata` — the annotation says so
+    #: rather than every reader asserting it.
+    _metadata: EmailMetadata
 
     def __init__(
         self,
@@ -68,57 +72,15 @@ class Email:
         footer: Footer | None = None,
         medium: Medium | None = None,
     ):
-        # The medium is settled first: it names the templates this engine
-        # searches before the shared tree.
-        self._medium: Medium = medium if medium is not None else EMAIL_MEDIUM
-        self._engine = TemplateEngine(template_dir, search_path=self._medium.template_search_path)
-
-        if isinstance(metadata, dict):
-            self._metadata = EmailMetadata(**metadata)
-        else:
-            self._metadata = metadata
-
-        # Validation happens at construction time, not render time, so a
-        # missing required field names itself instead of surfacing later as a
-        # confusing render-time symptom.
-        self._metadata.validate()
-
+        super().__init__(metadata, template_dir, medium if medium is not None else EMAIL_MEDIUM)
         self._header: Header = header if header is not None else self._metadata.header
         self._banner: Banner = banner if banner is not None else self._metadata.banner
         self._footer: Footer = footer if footer is not None else self._metadata.footer
-        self._sections: list[Container] = []
 
     @property
     def metadata(self) -> EmailMetadata:
-        """
-        The email's own metadata — the facts it was built from.
-
-        ``render()`` and ``assets()`` publish what the email *produces*; this
-        publishes what it *knows*, so a consumer can read a fact rather than
-        being told it twice. :func:`svc.delivery.build_message` uses it to
-        default the ``Subject`` header.
-
-        Read-only, and deliberately not a copy. Mutating the returned object
-        after construction is unsupported: :meth:`validate` has already run,
-        so a later edit is neither checked nor re-checked. A copy would be
-        worse — mutating it would silently do nothing, which is a subtler
-        trap than the one it closes. Note the object was never private in
-        practice either: an ``Email`` built from an ``EmailMetadata``
-        instance stores the caller's own object rather than a copy, so the
-        caller already held this reference.
-        """
+        """The email's own facts. See :attr:`Document.metadata`."""
         return self._metadata
-
-    @property
-    def medium(self) -> Medium:
-        """
-        Where this email is going to be read.
-
-        Read-only: a medium decides the skeleton and the checks, so swapping
-        one mid-life would leave an email that had already validated against
-        rules it no longer runs.
-        """
-        return self._medium
 
     @property
     def header(self) -> Header:
@@ -181,191 +143,16 @@ class Email:
         self._footer = footer
         return self
 
-    def add_section(self, container: Container) -> Email:
-        """
-        Append a section (container + component) to the email.
-
-        Returns ``self`` for optional chaining.
-        """
-        self._sections.append(container)
-        return self
-
-    # ------------------------------------------------------------------
-    # Image manifest
-    # ------------------------------------------------------------------
-
-    def images(self) -> list[EmailImage]:
-        """
-        Every image this email references: header, then sections in order,
-        then footer.
-
-        The footer participates even though no shipped variant carries an
-        image. The slot has to exist or a variant that adds one — a signature
-        block, a set of social icons — silently drops its bytes and renders a
-        broken ``cid:`` reference, which is the failure the ``images()`` rule
-        exists to prevent.
-        """
-        images = list(self._header.images()) + list(self._banner.images())
-        for section in self._sections:
-            for component in section.components():
-                images.extend(component.images())
-        images.extend(self._footer.images())
-        return images
-
-    def assets(self) -> list[ImageAsset]:
-        """
-        The attachment manifest: the image parts a delivery layer must
-        attach for this email to render.
-
-        The builder composes the HTML and picks each image's ``src``, but it
-        cannot attach a MIME part — that belongs to a delivery service
-        (``svc/gmail``, ``svc/outlook``). This is the contract between them:
-        for every ``src="cid:X"`` in the HTML, the entry describing what to
-        attach as ``X``.
-
-        Only ``CID`` images appear. Hosted images have no bytes to attach
-        and data URIs carry their own, so both are absent by design. Repeat
-        Content-IDs collapse to one entry, first-seen order preserved, so
-        an image used in two sections is attached once.
-
-        Returns:
-            A list of :class:`~svc.builder.images.ImageAsset`, possibly empty.
-
-        Example::
-
-            html = email.render()
-            for asset in email.assets():
-                message.attach(asset.data, asset.mime_type,
-                               cid=asset.content_id, filename=asset.filename)
-        """
-        assets = list(self._header.assets()) + list(self._banner.assets())
-        for section in self._sections:
-            assets.extend(section.assets())
-        assets.extend(self._footer.assets())
-        return dedupe_assets(assets)
-
-    # ------------------------------------------------------------------
-    # Rendering
-    # ------------------------------------------------------------------
-
-    def render(self) -> str:
-        """
-        Render the complete email HTML.
-
-        0. Resolve the theme and the size scheme once, and bind both to
-           the engine every template below renders through.
-        1. Render the header and footer regions into their skeleton slots.
-        2. Render every section via its container.
-        3. Inject all of it into the medium's skeleton.
-        4. Run the medium's constraints over the *composed* document, so
-           region bytes are inside whatever budget it sets.
-
-        Returns:
-            Complete HTML string.
-
-        Raises:
-            SizeError: If the email medium's 102 KB Gmail check fails.
-        """
-        # The one resolution point. Every template below — skeleton, regions,
-        # containers, components — reads the same Theme, SizeScheme, fonts
-        # and medium, because they all render through this binder rather
-        # than looking any of them up themselves.
-        engine = self._engine.bound(
-            theme=resolve_theme(self._metadata.theme),
-            size=resolve_size_scheme(self._metadata.size_theme).with_page(self._medium.page_format),
-            font=resolve_font_theme(self._metadata.font_theme),
-            medium=self._medium,
-        )
-
-        sections_html = "\n".join(section.render(engine) for section in self._sections)
-
-        # Build skeleton context: the email's facts, plus one string per slot
-        # each region fills. Every region goes through the same render path —
-        # there is no separate "default footer" branch, because the default
-        # *is* a default-constructed region.
-        ctx = self._metadata.to_dict()
-        ctx["sections_html"] = sections_html
-        ctx.update(self._header.render_slots(engine, self._metadata.header_facts()))
-        ctx.update(self._banner.render_slots(engine, self._metadata.banner_facts()))
-        ctx.update(self._footer.render_slots(engine, self._metadata.footer_facts()))
-
-        html = engine.render(self._medium.skeleton, ctx)
-
-        self._medium.validate(html, self._inline_image_hint())
-
-        return html
-
-    def text(self) -> str:
-        """
-        Render the email's ``text/plain`` projection (#109).
-
-        Header → banner → sections → footer, the skeleton's own order, joined
-        by the section rhythm :mod:`svc.builder.textgen` defines.
-
-        **A second projection of the same tree, not a degradation of the
-        first.** No template is loaded and no HTML is produced anywhere on
-        this path — a test asserts it by making ``TemplateEngine.render``
-        raise — because stripping the rendered markup is exactly what would
-        turn a KPI strip and a data table into garbage, which is the failure
-        epic #53 exists to prevent.
-
-        Nothing here resolves a theme, a size scheme or a font: all three are
-        HTML concerns by construction, so the text part is identical across
-        every one of them. That orthogonality is not a coincidence to be
-        grateful for — it is what makes "one house format" possible at all.
-
-        Deterministic: no clock, no randomness, and **no ``text_override``**,
-        so derived text cannot drift from the HTML's content.
-
-        Returns:
-            The plain-text part, with no trailing newline.
-        """
-        return join_sections(
-            self._header.text(self._metadata.header_facts()),
-            self._banner.text(self._metadata.banner_facts()),
-            *(section.text() for section in self._sections),
-            self._footer.text(self._metadata.footer_facts()),
-        )
-
-    def save(self, output_path: str | Path) -> Path:
-        """
-        Render and write to disk.
-
-        Args:
-            output_path: Destination file path. A ``str`` is accepted -- the
-                body has always coerced one, and :func:`svc.delivery.save_eml`
-                takes the same union.
-
-        Returns:
-            The resolved output path.
-        """
-        html = self.render()
-        output_path = Path(output_path)
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        output_path.write_text(html, encoding="utf-8")
-        return output_path
-
-    # ------------------------------------------------------------------
-    # Internals
-    # ------------------------------------------------------------------
-
-    def _inline_image_hint(self) -> str:
-        """
-        Name inlined images in a size failure when the email has any.
-
-        A base64 data URI costs +33% on top of the raw bytes and lands
-        entirely inside the HTML, so it is the usual reason an email that
-        was comfortably under the limit suddenly is not.
-        """
-        inlined = [i for i in self.images() if i.strategy == EmbedStrategy.DATA_URI]
-        if not inlined:
-            return ""
-        inline_kb = sum(len(i.data) for i in inlined) / 1024
+    def leading_regions(self) -> tuple[RegionFacts, ...]:
+        """The strip and the masthead, each with the facts it renders."""
         return (
-            f" {len(inlined)} inlined image(s) contribute roughly "
-            f"{inline_kb * 4 / 3:.1f} KB of base64 to that total; switching them to "
-            f"EmailImage.attached() moves the bytes out of the HTML entirely."
+            (self._header, self._metadata.header_facts()),
+            (self._banner, self._metadata.banner_facts()),
         )
+
+    def trailing_regions(self) -> tuple[RegionFacts, ...]:
+        """The closing block, on the same terms."""
+        return ((self._footer, self._metadata.footer_facts()),)
 
 
 class EmailBuilder:

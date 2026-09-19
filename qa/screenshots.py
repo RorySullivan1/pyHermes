@@ -30,7 +30,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
-from svc.builder import Email
+from svc.builder.document import Document
 
 from .fixtures import all_fixtures
 
@@ -95,7 +95,7 @@ class ScreenshotError(RuntimeError):
 # ──────────────────────────────────────────────────────────────────────
 
 
-def inline_cid_images(html: str, email: Email) -> str:
+def inline_cid_images(html: str, email: Document) -> str:
     """
     Rewrite ``src="cid:X"`` to a data URI, for the screenshot only.
 
@@ -132,7 +132,7 @@ def inline_cid_images(html: str, email: Email) -> str:
 
 
 def capture_emails(
-    emails: Mapping[str, Email],
+    emails: Mapping[str, Document],
     out_dir: Path | None = None,
 ) -> tuple[list[Shot], dict[str, object]]:
     """

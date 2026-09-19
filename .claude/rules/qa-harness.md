@@ -54,6 +54,20 @@ epic #54). Fourteen fixtures, each a `build()` returning a built `Email`, enumer
 | `aligned_layout` | Every alignment axis at once (#128), closing epic #124 — a centred section whose **title follows**, a component **overriding** its container, a **right-aligned** band holding a `CardGroup` and a `DataTable` that do not move, and aligned two- and three-column splits. The band is right-aligned on purpose: a centred one could not tell "the KPI strip kept its own alignment" from "it inherited the section's". Body short, theme/size/font default, for `rich_table`'s reasons. It also carries the gallery's only explicit `Container.background_color` — widening the field-completeness rule to containers found that the **original** entry in the closed colour list had never been set by any fixture |
 | `minimal_footer` | A minimal-footer build (#66), the same argument at the other end. Paired with the **default** header on purpose: the two region choices are independent, and swapping both at once could not say which one moved a byte |
 
+**There is a second gallery since #162**, `all_paged_fixtures()` — today `a4_portrait` and
+`slide_16_9`, the same content one `PageFormat` apart. It is a separate registry rather than a
+wider one on purpose: `all_fixtures()` feeds a dozen test modules whose assertions are about
+*emails* (Outlook rules, a phone viewport, the `kitchen_sink` completeness rules keyed to
+`EmailMetadata`), and widening it would drag every one of them onto a paged render before the
+harness knows what a medium is. #165 is where the two become one registry keyed by medium.
+`qa.preview` already spans both, because a viewer has no reason to refuse one.
+
+**What the email lint makes of a paged document, measured rather than predicted** (#162): a
+realistic paged render is **clean** against all ten rules — the shared component markup already
+satisfies them and the Outlook-only rules are suppressed inside the conditional comments they
+live in. Exactly one misfires, past a threshold nothing enforces here: `size-budget` is Gmail's
+102 KB, and nothing clips a PDF. That is #165's problem, stated as a number.
+
 **Determinism is the rule the gallery rests on**, and it is not a style preference: Content-IDs
 are `sha256(bytes)[:16]`, so a fixture image that varies changes the `cid:` references in the
 HTML and fails every downstream golden for a reason unrelated to the change under review.

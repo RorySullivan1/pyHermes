@@ -12,10 +12,13 @@ paths:
 ```
 svc/
 ├── config.py           ← the tunable numbers, in one frozen dataclass
-├── builder/            ← current OO email builder (use this for new work)
+├── builder/            ← the shared kit: everything every medium has
 │   ├── __init__.py     — public API surface (re-exports everything below)
-│   ├── engine.py       — TemplateEngine + BoundEngine (per-render theme + size binding)
-│   ├── email.py        — Email + EmailBuilder (fluent), _validate_size()
+│   ├── engine.py       — TemplateEngine + BoundEngine (binds theme, size, font, medium;
+│                         a ChoiceLoader searches the medium's overlay before the root)
+│   ├── medium.py       — Medium + DEFAULT_MEDIUM: skeleton, slots, page, constraints
+│   ├── document.py     — Document: metadata + sections + the three projections
+│   ├── email.py        — Email(Document) + EmailBuilder (fluent): the four-slot region set
 │   ├── regions.py      — Region base + Banner/MinimalBanner, Footer
 │                         (body = the section list, deliberately not a class)
 │   ├── containers.py   — Container, FullWidth, TwoColumn, ThreeColumn (+ `highlight=` property)
@@ -36,8 +39,10 @@ svc/
 │   ├── filters.py      — Jinja filters (e.g. validate_hex_color)
 │   ├── exceptions.py   — EmailBuilderError hierarchy
 │   └── templates/      ← packaged with the wheel (moved here in #10)
-│       ├── base.html                — the rendered skeleton (four slots: header_bar_html,
+│       ├── base.html                — the EMAIL skeleton (four slots: header_bar_html,
 │                                      banner_html, sections_html, footer_html)
+│       ├── document/base.html       — the PAGED skeleton (@page, one body slot), reached
+│                                      by the document medium's template overlay
 │       ├── regions/*.html           — header-bar.html, banner.html, banner-minimal.html,
 │                                      footer.html
 │       ├── common/containers/*.html — layout geometry: full-width.html + columns.html
@@ -52,6 +57,8 @@ svc/
 │   ├── retry.py        — retry_with_backoff(): shared policy, per-adapter classification
 │   └── exceptions.py   — DeliveryError / MessageError / TransportError (siblings of
 │                          EmailBuilderError)
+├── email/              ← the email medium: the Gmail size constraint, the four slots
+├── document/           ← the paged medium: PAGED_MEDIUM, paged_medium(page)
 ├── gmail/              ← Gmail send adapter (consumes delivery; owns no credentials)
 │   └── sender.py       — GmailTransport protocol, GoogleApiTransport shim, send_message()
 ├── outlook/            ← Outlook send adapter over Microsoft Graph (same shape as gmail)

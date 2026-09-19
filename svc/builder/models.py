@@ -8,7 +8,7 @@ metadata for the email skeleton, typed data for each component, etc.
 
 import re
 from dataclasses import InitVar, dataclass, field, fields
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from .enums import ColumnAlign, ColumnKind, RowKind, SizeTheme
 from .exceptions import ValidationError
@@ -247,10 +247,26 @@ class DocumentMetadata:
         resolve_size_scheme(self.size_theme)
         resolve_font_theme(self.font_theme)
 
+    #: Fields :meth:`to_dict` keeps out of the template context. The three
+    #: axes reach every template through the bound engine, so carrying them
+    #: here too would give one value two sources. A subclass extends this.
+    CONTEXT_SKIP: ClassVar[frozenset[str]] = frozenset({"theme", "size_theme", "font_theme"})
+
     def validate(self) -> None:
         """Validate the facts every document must carry."""
         for fname in ("firm_name", "campaign_name"):
             _require(getattr(self, fname), fname)
+
+    def to_dict(self) -> dict[str, Any]:
+        """
+        Flatten to the template context the skeleton reads.
+
+        Regions are excluded where a subclass has them: each renders itself
+        from its own facts and arrives in the skeleton as the slot strings it
+        fills. See :attr:`CONTEXT_SKIP`.
+        """
+        skip = type(self).CONTEXT_SKIP
+        return {f.name: getattr(self, f.name) for f in fields(self) if f.name not in skip}
 
 
 @dataclass
@@ -308,6 +324,14 @@ class EmailMetadata(DocumentMetadata):
     header_bg_image_url: InitVar["str | EmailImage | None"] = None
     unsubscribe_label: InitVar["str | None"] = None
     view_in_browser_label: InitVar["str | None"] = None
+
+    #: The three regions join the axes: each arrives in the skeleton as the
+    #: slot strings it fills, never as context of its own.
+    CONTEXT_SKIP: ClassVar[frozenset[str]] = DocumentMetadata.CONTEXT_SKIP | {
+        "header",
+        "banner",
+        "footer",
+    }
 
     #: Document facts the strip renders. One today, and it stays a fact
     #: rather than moving onto the region with the box's presentation: it is
@@ -411,21 +435,6 @@ class EmailMetadata(DocumentMetadata):
     def footer_facts(self) -> dict[str, Any]:
         """The document facts a footer region renders."""
         return {name: getattr(self, name) for name in self.FOOTER_FACTS}
-
-    def to_dict(self) -> dict[str, Any]:
-        """
-        Flatten to the template context for ``base.html``.
-
-        The regions are excluded: each renders itself from its own facts and
-        arrives in the skeleton as the slot strings it fills. ``theme`` is
-        excluded for the mirror-image reason: it reaches every template
-        through the bound engine, so carrying it here too would give one
-        value two sources — and ``size_theme`` and ``font_theme`` are excluded
-        for exactly the same reason, since the resolved scheme and the
-        resolved typefaces ride the same binder.
-        """
-        skip = {"header", "banner", "footer", "theme", "size_theme", "font_theme"}
-        return {f.name: getattr(self, f.name) for f in fields(self) if f.name not in skip}
 
 
 # ──────────────────────────────────────────────────────────────────────

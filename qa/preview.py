@@ -9,7 +9,7 @@ email has two readable parts and no screenshot or lint rule can show the
 second one.
 
 Takes a gallery fixture by name or any ``path.py:callable`` returning an
-``Email``, so a draft outside the gallery uses the same loop.
+``Document``, so a draft outside the gallery uses the same loop.
 """
 
 from __future__ import annotations
@@ -18,12 +18,14 @@ import argparse
 import importlib.util
 import sys
 import webbrowser
+from collections.abc import Callable
 from pathlib import Path
 
-from svc.builder import Email, EmailBuilder
+from svc.builder import EmailBuilder
+from svc.builder.document import Document
 from svc.builder.exceptions import EmailBuilderError
 
-from .fixtures import all_fixtures
+from .fixtures import all_fixtures, all_paged_fixtures
 from .lint import Severity, format_findings, lint_html
 from .screenshots import ScreenshotError, capture_emails
 
@@ -44,9 +46,9 @@ class PreviewError(RuntimeError):
 # ──────────────────────────────────────────────────────────────────────
 
 
-def resolve(target: str) -> tuple[str, Email]:
+def resolve(target: str) -> tuple[str, Document]:
     """
-    Turn a target into ``(name, email)``.
+    Turn a target into ``(name, document)``.
 
     Two forms, told apart by the ``:``:
 
@@ -66,17 +68,29 @@ def resolve(target: str) -> tuple[str, Email]:
     return target, _from_fixture(target)
 
 
-def _from_fixture(name: str) -> Email:
-    gallery = all_fixtures()
+def _gallery() -> dict[str, Callable[[], Document]]:
+    """
+    Both galleries, for a tool that only ever *looks* at what it is given.
+
+    The two registries stay apart for the test suite, whose assertions are
+    per-medium (#165 merges them). Here the distinction buys nothing: this
+    command renders a document and shows it to you, and refusing to preview
+    a paged fixture would be the tool having an opinion it has no use for.
+    """
+    return {**all_fixtures(), **all_paged_fixtures()}
+
+
+def _from_fixture(name: str) -> Document:
+    gallery = _gallery()
     if name not in gallery:
         raise PreviewError(
             f"No fixture named {name!r}. Available: {', '.join(sorted(gallery))}.\n"
             "For a file, use the path:callable form, e.g. drafts/weekly.py:build"
         )
-    return _as_email(gallery[name](), name)
+    return _as_document(gallery[name](), name)
 
 
-def _from_spec(target: str) -> tuple[str, Email]:
+def _from_spec(target: str) -> tuple[str, Document]:
     """
     Load ``path/to/module.py:callable``.
 
@@ -116,19 +130,24 @@ def _from_spec(target: str) -> tuple[str, Email]:
         raise PreviewError(f"{attribute!r} in {path} is not callable.")
 
     name = f"{path.stem}-{attribute}"
-    return name, _as_email(builder(), name)
+    return name, _as_document(builder(), name)
 
 
-def _as_email(value: object, name: str) -> Email:
+def _as_document(value: object, name: str) -> Document:
     """
-    Accept an ``Email`` or an ``EmailBuilder``, since both are public API and a
-    caller should not have to remember which one their function returns.
+    Accept a ``Document``, an ``Email`` or an ``EmailBuilder``.
+
+    All three are public API and a caller should not have to remember which
+    one their own function returns. An ``Email`` *is* a ``Document`` since
+    #162, so the check is one line shorter than it looks.
     """
     if isinstance(value, EmailBuilder):
         return value.build()
-    if isinstance(value, Email):
+    if isinstance(value, Document):
         return value
-    raise PreviewError(f"{name} returned {type(value).__name__}, not an Email or EmailBuilder.")
+    raise PreviewError(
+        f"{name} returned {type(value).__name__}, not a Document, Email or EmailBuilder."
+    )
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -143,7 +162,7 @@ def _parser() -> argparse.ArgumentParser:
         epilog=(
             "targets:\n"
             "  kitchen_sink             a fixture from the gallery (see --list)\n"
-            "  drafts/weekly.py:build   a zero-arg callable returning an Email\n"
+            "  drafts/weekly.py:build   a zero-arg callable returning a Document\n"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -166,7 +185,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if args.list:
-        for name in sorted(all_fixtures()):
+        for name in sorted(_gallery()):
             print(name)
         return EXIT_OK
 

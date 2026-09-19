@@ -9,8 +9,6 @@
   "svc/builder/components.py::comment_run:DataTable.context#2": "6 lines against a budget of 4 — a trap or a spec citation, at the length the notice needs",
   "svc/builder/containers.py::class:Container": "45 lines against a budget of 28 — a design decision, at the length the decision needs; the standard permits a verbose class",
   "svc/builder/containers.py::class:ThreeColumn": "30 lines against a budget of 28 — a design decision, at the length the decision needs; the standard permits a verbose class",
-  "svc/builder/email.py::function:Email.assets": "25 lines against a budget of 18 — a contract for a wide signature — every line is Args/Returns/Raises",
-  "svc/builder/email.py::function:Email.text": "24 lines against a budget of 18 — a contract for a wide signature — every line is Args/Returns/Raises",
   "svc/builder/engine.py::function:TemplateEngine.render": "19 lines against a budget of 18 — a contract for a wide signature — every line is Args/Returns/Raises",
   "svc/builder/filters.py::function:escape_html": "21 lines against a budget of 18 — a contract for a wide signature — every line is Args/Returns/Raises",
   "svc/builder/filters.py::function:percent": "22 lines against a budget of 18 — a contract for a wide signature — every line is Args/Returns/Raises",

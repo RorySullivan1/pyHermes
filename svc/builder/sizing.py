@@ -250,6 +250,30 @@ class PageFormat:
 DEFAULT_PAGE = PageFormat(width=680, mobile_breakpoint=700)
 
 
+#: The shipped page presets, in px at 96 dpi — the resolution WeasyPrint and
+#: every browser assume, where 1px is 0.75pt. A4 is 210x297mm and Letter
+#: 8.5x11in; the slide is the pragmatic 16:9 pixel size rather than a paper.
+#:
+#: None of them declares a ``mobile_breakpoint``: a sheet of paper does not
+#: collapse to a phone layout, and a breakpoint the skeleton never reads
+#: would be a number pretending to be a rule.
+A4_PORTRAIT = PageFormat(width=794, height=1123)
+A4_LANDSCAPE = PageFormat(width=1123, height=794)
+LETTER_PORTRAIT = PageFormat(width=816, height=1056)
+LETTER_LANDSCAPE = PageFormat(width=1056, height=816)
+SLIDE_16_9 = PageFormat(width=1280, height=720)
+
+#: Every shipped page by name, the way ``SIZE_SCHEMES`` names every density.
+PAGE_FORMATS: dict[str, PageFormat] = {
+    "default": DEFAULT_PAGE,
+    "a4_portrait": A4_PORTRAIT,
+    "a4_landscape": A4_LANDSCAPE,
+    "letter_portrait": LETTER_PORTRAIT,
+    "letter_landscape": LETTER_LANDSCAPE,
+    "slide_16_9": SLIDE_16_9,
+}
+
+
 @dataclass(frozen=True)
 class FrameGeometry:
     """
