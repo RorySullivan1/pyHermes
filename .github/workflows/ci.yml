@@ -135,25 +135,34 @@ jobs:
             libpango-1.0-0 libpangoft2-1.0-0 libcairo2 libharfbuzz-subset0 \
             fonts-liberation
 
-      - name: Install (with the PDF extra)
-        run: pip install -e ".[dev,pdf]"
+      - name: Install (with the PDF and QA extras)
+        # [qa] comes along for pypdfium2: the paged half of the gallery is
+        # photographed from its PDF rather than through a browser, because a
+        # browser renders a paged document as one long scroll and so cannot
+        # show the one property the medium exists for.
+        run: pip install -e ".[dev,pdf,qa]"
 
       - name: PDF tests
-        run: pytest tests/test_pdf.py
+        run: pytest tests/test_pdf.py tests/test_medium_aware_harness.py
 
-      - name: Render the paged gallery to PDF
+      - name: Render the paged gallery to PDF, and photograph every sheet
         run: |
           python - <<'PY'
           from pathlib import Path
 
           from qa.fixtures import all_paged_fixtures
+          from qa.screenshots import capture_pages
           from svc.pdf import page_count, save_pdf
 
-          out = Path("output/pdf")
-          for name, build in sorted(all_paged_fixtures().items()):
-              document = build()
-              path = save_pdf(document, out / f"{name}.pdf")
+          gallery = {name: build() for name, build in sorted(all_paged_fixtures().items())}
+          for name, document in gallery.items():
+              path = save_pdf(document, Path("output/pdf") / f"{name}.pdf")
               print(f"{name}: {page_count(document)} page(s), {path.stat().st_size} bytes")
+
+          shots, environment = capture_pages(gallery, Path("output/pdf/pages"))
+          print(environment)
+          for shot in shots:
+              print(f"  {shot.path}  {shot.width}x{shot.height}")
           PY
 
       - uses: actions/upload-artifact@v4

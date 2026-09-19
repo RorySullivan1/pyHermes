@@ -934,3 +934,44 @@ What the golden on this fixture pins that no other one can:
 * a **CID logo** on a variant reaches ``assets()`` once, through the region's
   own ``images()`` rather than through the metadata.
 ```
+
+
+## The harness became medium-aware (#165)
+
+Three things moved, and each had a failure mode a green suite would have hidden.
+
+**Every lint rule declares the media it applies to**, in `RULE_MEDIA` beside `SOURCES`, and a
+test fails if a rule in one is missing from the other — so a rule added later cannot quietly
+apply everywhere or nowhere. The question an entry answers is not "could this fire here" but
+*is the claim behind it true here*: a rule about Outlook's Word engine says nothing about a
+sheet of paper, and running it there produces findings a reader learns to ignore, which is how
+a lint pass dies. `lint_document(document)` is the entry point that reads the medium off the
+document; `lint_email` is kept as the name every existing caller uses and returns exactly what
+it always did.
+
+The split was **measured, not predicted** (#162): ten rules for email, six for a paged
+document, and only one rule had to be *taken away* rather than merely being quiet —
+`size-budget` is Gmail's 102 KB and nothing clips a PDF. The size *report* stays available
+everywhere, because knowing where the bytes went is useful for any document; it is the
+threshold that is a fact about one mail client. Two paged-only rules arrived, and both came
+from a defect a real PDF produced rather than from reading a specification: `page-size-declared`
+(no `@page size` means the engine picks its own page and says nothing) and `paged-table-width`
+(a print engine does not map a table's `width` attribute, so an unmapped one shrink-wraps —
+measured at 188px inside a 794px page).
+
+**Goldens are keyed by medium**: `goldens/<medium>/<name>.*`. Two media may hold a fixture of
+one name, and before this the second would have overwritten the first's snapshot. The move was
+48 pure renames with no content change, which is what made it reviewable.
+
+**A paged fixture is photographed from its PDF**, one PNG per sheet, through `pypdfium2` — a
+self-contained wheel, because rasterising through Poppler would put a *system* binary inside an
+extra that is meant to be `pip install` and nothing else. The default scale reconciles units
+rather than choosing a resolution: a PDF is 72 dpi and a `PageFormat` is px at 96, so an
+unscaled A4 raster comes back 596px wide for a page laid out at 794 — close enough to look
+right and wrong enough to measure. A test asserts every sheet rasters at exactly its
+`PageFormat`.
+
+`qa.preview` spans both media on one command: it lints a document by its own medium's rules,
+writes a PDF beside the HTML for a paged one, photographs sheets instead of viewports, and
+`--open` opens the PDF — showing a paged document's HTML in a browser would show a page
+without pages.

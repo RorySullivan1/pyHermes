@@ -21,6 +21,7 @@ from enum import StrEnum
 from html.parser import HTMLParser
 
 from svc.builder import Email
+from svc.builder.document import Document
 from svc.config import get_config
 
 #: Where each rule's claim about a mail client comes from. Prose that cannot be
@@ -98,6 +99,23 @@ SOURCES: dict[str, str] = {
         "broken-image icon to that cost — the form the banner shipped for "
         "nine of fourteen fixtures until a real report was built against it."
     ),
+    "page-size-declared": (
+        "A paged document that declares no @page size is laid out on the "
+        "engine's default page, silently: WeasyPrint falls back to A4, so a "
+        "Letter document renders 8mm too tall and nothing says so. CSS Paged "
+        "Media Level 3, section 3.1 (the page size property). The skeleton "
+        "takes it from the medium's PageFormat, so an absent one means the "
+        "page never reached the render."
+    ),
+    "paged-table-width": (
+        "A print engine honours the CSS width property and does not map the "
+        "`width` HTML attribute on a table, where a browser does. The "
+        "component templates carry widths as attributes because Outlook's "
+        "Word engine reads nothing else, so a paged skeleton that does not "
+        "map them back renders every table shrink-wrapped to its content -- "
+        "measured at 188px inside a 794px page in #164, correct markup and a "
+        "different document."
+    ),
     "size-budget": (
         "Gmail clips a message above ~102 KB behind a 'View entire message' "
         "link. svc/config.Config.size_limit_kb; Email._validate_size enforces "
@@ -150,6 +168,53 @@ class _OpenTable:
     where: str
     role: str
     has_header: bool = False
+
+
+#: Which media each rule applies to, by ``Medium.name``.
+#:
+#: **Every rule in SOURCES needs an entry, and a test enforces it**, so a rule
+#: added later cannot quietly apply everywhere or nowhere. The question each
+#: entry answers is not "could this fire here" but "is the claim behind it
+#: true here" — a rule about Outlook's Word engine says nothing about a sheet
+#: of paper, and running it there produces findings a reader has to learn to
+#: ignore, which is how a lint pass dies.
+#:
+#: The paged column was **measured, not predicted** (#162): a realistic paged
+#: render is clean against all ten email rules, and exactly one of them —
+#: ``size-budget``, which is Gmail's 102 KB — is wrong there rather than
+#: merely quiet. Nothing clips a PDF.
+RULE_MEDIA: dict[str, frozenset[str]] = {
+    # Accessibility, not client compatibility: a screen reader reads a PDF
+    # too, and neither rule mentions a mail client in its source.
+    "img-alt": frozenset({"email", "document", "html"}),
+    "table-role": frozenset({"email", "document", "html"}),
+    # A URL that cannot resolve is a defect in any medium, and #164 made it a
+    # harder one for paged output than for email: the PDF exporter refuses
+    # every URL it cannot serve from the manifest, so an empty or external
+    # one stops the render rather than merely wasting a request.
+    "empty-url": frozenset({"email", "document", "html"}),
+    "no-external-css": frozenset({"email", "document", "html"}),
+    # Outlook's Word engine, and the markup written for it. None of this is
+    # true of a print engine -- #164 measured the reverse for the width
+    # attribute, which a print engine ignores where Outlook needs it.
+    "img-width-attr": frozenset({"email"}),
+    "outlook-unsupported-css": frozenset({"email"}),
+    "outlook-line-height": frozenset({"email"}),
+    "outlook-transparent-background": frozenset({"email"}),
+    "vml-fill-empty-src": frozenset({"email"}),
+    # Gmail's clipping limit. The size *report* stays available everywhere --
+    # knowing where the bytes went is useful for any document -- but the
+    # threshold is a fact about one mail client.
+    "size-budget": frozenset({"email"}),
+    # Paged-only, and both come from a defect a real PDF produced (#164).
+    "page-size-declared": frozenset({"document"}),
+    "paged-table-width": frozenset({"document"}),
+}
+
+
+def rules_for(medium: str) -> frozenset[str]:
+    """Every rule that applies to the medium named ``medium``."""
+    return frozenset(rule for rule, media in RULE_MEDIA.items() if medium in media)
 
 
 _OUTLOOK_ONLY_RULES = frozenset(
@@ -584,27 +649,94 @@ def _budget_findings(html: str) -> list[Finding]:
     ]
 
 
+#: A ``@page`` rule declaring a size. Matched over the whole document rather
+#: than parsed: it lives in a ``style`` element, which HTMLParser hands over
+#: as text.
+_PAGE_SIZE = re.compile(r"@page\b[^{]*\{[^}]*\bsize\s*:", re.IGNORECASE | re.DOTALL)
+
+#: A table carrying a percentage width as an attribute, and the CSS rule that
+#: maps it back for an engine that ignores attributes.
+_TABLE_PCT_ATTR = re.compile(r"""<table\b[^>]*\bwidth\s*=\s*['"]?100%""", re.IGNORECASE)
+_TABLE_PCT_RULE = re.compile(r"""table\s*\[\s*width\s*=\s*['"]?100%['"]?\s*\]""", re.IGNORECASE)
+
+
+def _paged_findings(html: str) -> list[Finding]:
+    """
+    The two checks that are about a *page* rather than about a client.
+
+    Both are document-level rather than per-element, because both are about
+    something the skeleton must declare once. Both come from a defect a real
+    PDF produced in #164 rather than from reading a specification and
+    imagining one.
+    """
+    findings = []
+    if not _PAGE_SIZE.search(html):
+        findings.append(
+            Finding(
+                rule_id="page-size-declared",
+                severity=Severity.ERROR,
+                location="the document's stylesheet",
+                message=(
+                    "no @page rule declares a size, so the engine lays this out on "
+                    "its own default page and says nothing"
+                ),
+            )
+        )
+    if _TABLE_PCT_ATTR.search(html) and not _TABLE_PCT_RULE.search(html):
+        findings.append(
+            Finding(
+                rule_id="paged-table-width",
+                severity=Severity.ERROR,
+                location="the document's stylesheet",
+                message=(
+                    'a table carries width="100%" as an attribute and nothing maps it '
+                    "to CSS, so a print engine shrink-wraps it to its content"
+                ),
+            )
+        )
+    return findings
+
+
 # ──────────────────────────────────────────────────────────────────────
 # Public API
 # ──────────────────────────────────────────────────────────────────────
 
 
-def lint_html(html: str) -> list[Finding]:
+def lint_html(html: str, medium: str = "email") -> list[Finding]:
     """
-    Lint rendered email HTML. The entry point #61's ``preview`` CLI reuses.
+    Lint rendered HTML for the medium named ``medium``.
 
-    Takes a string rather than an ``Email`` so it works on markup from
-    anywhere — a saved file, a paste, another builder.
+    Takes a string rather than a document so it works on markup from anywhere
+    — a saved file, a paste, another builder — and a medium *name* rather than
+    a ``Medium`` for the same reason: this module imports nothing from
+    ``svc`` beyond what it already needs, and a name is what the rule table
+    is keyed by.
+
+    Defaults to ``"email"`` so every pre-#165 caller keeps its exact
+    behaviour; :func:`lint_document` is what reads the medium off a document.
     """
     linter = _Linter()
     linter.feed(html)
     linter.close()
-    return linter.findings + _budget_findings(html)
+    applicable = rules_for(medium)
+    found = linter.findings + _budget_findings(html) + _paged_findings(html)
+    return [finding for finding in found if finding.rule_id in applicable]
+
+
+def lint_document(document: Document) -> list[Finding]:
+    """
+    Lint a built document under the rules its own medium answers to.
+
+    This is the entry point that makes the rule table mean anything: an
+    email is judged by the ten rules about mail clients, and a paged document
+    by the six that are true of a page.
+    """
+    return lint_html(document.render(), document.medium.name)
 
 
 def lint_email(email: Email) -> list[Finding]:
-    """Lint a built email. Convenience over ``lint_html(email.render())``."""
-    return lint_html(email.render())
+    """Lint a built email. Kept as the name every existing caller uses."""
+    return lint_document(email)
 
 
 def errors(findings: list[Finding]) -> list[Finding]:
@@ -626,6 +758,7 @@ def format_findings(findings: list[Finding]) -> str:
 
 __all__ = [
     "DEFERRED_RULES",
+    "RULE_MEDIA",
     "SOURCES",
     "UNSUPPORTED_DECLARATIONS",
     "Finding",
@@ -634,7 +767,9 @@ __all__ = [
     "SizeReport",
     "errors",
     "format_findings",
+    "lint_document",
     "lint_email",
     "lint_html",
+    "rules_for",
     "size_report",
 ]

@@ -43,6 +43,11 @@ dev = [
 # Chromium build that produced it instead (see qa/screenshots.py).
 qa = [
     "playwright~=1.62.0",
+    # Rasterises a PDF page to PNG, for the paged half of the gallery (#165).
+    # A self-contained wheel on purpose: going through Poppler would add a
+    # *system* binary to an extra that is meant to be `pip install` and
+    # nothing else, which is the whole reason [qa] is separable.
+    "pypdfium2~=5.13",
 ]
 
 # The PDF exporter (#164) is a third extra, on the [qa] reasoning exactly: it
@@ -114,5 +119,14 @@ warn_unused_configs = true
 # while still reporting success. mypy warns about that; the warning is the only
 # thing that shows it.
 [[tool.mypy.overrides]]
-module = ["playwright.*", "weasyprint.*"]
+# Both spellings per package: a `foo.*` pattern matches submodules, not the
+# top-level module, so `import pypdfium2` needs the bare name as well.
+module = [
+    "playwright",
+    "playwright.*",
+    "weasyprint",
+    "weasyprint.*",
+    "pypdfium2",
+    "pypdfium2.*",
+]
 ignore_missing_imports = true

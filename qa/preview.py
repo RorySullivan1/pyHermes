@@ -24,10 +24,11 @@ from pathlib import Path
 from svc.builder import EmailBuilder
 from svc.builder.document import Document
 from svc.builder.exceptions import EmailBuilderError
+from svc.pdf import PdfError
 
 from .fixtures import all_fixtures, all_paged_fixtures
-from .lint import Severity, format_findings, lint_html
-from .screenshots import ScreenshotError, capture_emails
+from .lint import Severity, format_findings, lint_document
+from .screenshots import ScreenshotError, capture_emails, capture_pages
 
 #: Where rendered HTML lands. Gitignored, per the repo's existing convention.
 DEFAULT_OUT_DIR = Path("output")
@@ -220,25 +221,48 @@ def main(argv: list[str] | None = None) -> int:
     exit_code = EXIT_OK
 
     if args.lint:
-        findings = lint_html(html)
+        # Judged by its own medium's rules since #165: an email answers to
+        # the ten about mail clients, a paged document to the six about a page.
+        findings = lint_document(email)
         print(format_findings(findings))
         if any(finding.severity is Severity.ERROR for finding in findings):
             exit_code = EXIT_LINT_ERRORS
 
+    pdf_destination = None
+    if email.medium.paged:
+        # A paged document's deliverable is the PDF, so preview writes one
+        # where it writes the HTML -- and says why it could not, rather than
+        # failing, because the backend is an optional extra like the browser.
+        try:
+            from svc.pdf import page_count, save_pdf
+
+            pdf_destination = save_pdf(email, args.out / f"{name}.pdf")
+            size_kb = pdf_destination.stat().st_size / 1024
+            print(f"{pdf_destination}  ({size_kb:.1f} KB, {page_count(email)} page(s))")
+        except PdfError as exc:
+            print(f"pdf skipped: {exc}", file=sys.stderr)
+
     if args.screenshot:
         try:
-            shots, environment = capture_emails({name: email}, args.out / "screenshots")
-        except ScreenshotError as exc:
-            # Not a failure: the browser extra is optional by design, so a
-            # missing one must not turn a good email into a bad exit code.
+            if email.medium.paged:
+                shots, environment = capture_pages({name: email}, args.out / "screenshots")
+                print(f"pdfium {environment['renderer']}")
+            else:
+                shots, environment = capture_emails({name: email}, args.out / "screenshots")
+                print(f"Chromium {environment['browser']}")
+        except (ScreenshotError, PdfError) as exc:
+            # Not a failure: both extras are optional by design, so a missing
+            # one must not turn a good document into a bad exit code.
             print(f"screenshots skipped: {exc}", file=sys.stderr)
         else:
-            print(f"Chromium {environment['browser']}")
             for shot in shots:
                 print(f"  {shot.path}  {shot.width}x{shot.height}")
 
     if args.open:
-        webbrowser.open(destination.resolve().as_uri())
+        # A paged document opens as the thing it is. Showing its HTML in a
+        # browser would show a page without pages -- the one property the
+        # medium exists for.
+        webbrowser.open((pdf_destination or destination).resolve().as_uri())
 
     return exit_code
 

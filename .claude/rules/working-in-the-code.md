@@ -108,11 +108,16 @@ These are not conventions to remember — each has teeth, and the teeth are name
    `pytest --update-goldens` and nothing else; a missing golden fails rather than being
    created. Never regenerate to silence a failure — if the diff is not one you meant to make,
    the change is wrong, not the golden.
-3. **Screenshots approximate Gmail-in-a-browser; the lint pass owns Outlook.** "The
-   screenshot looks fine" never closes a compatibility question — Chromium renders
-   `display:flex` perfectly and Outlook's Word engine does not. The filenames say `chromium`
-   for exactly this reason. Conversely, a clean lint says nothing about whether the layout
-   *reads* well; that is what the images are for.
+3. **Screenshots approximate Gmail-in-a-browser; the lint pass owns Outlook; the PDF
+   rasterisation owns pagination.** "The screenshot looks fine" never closes a
+   compatibility question — Chromium renders `display:flex` perfectly and Outlook's Word
+   engine does not. The filenames say `chromium` for exactly this reason. Conversely, a
+   clean lint says nothing about whether the layout *reads* well; that is what the images
+   are for. **The third clause is #165's**: a browser renders a paged document's HTML as
+   one long scroll, which is precisely the property that medium does not have, so a paged
+   fixture is rastered from its PDF one image per sheet — and #164 is why it earns a clause
+   rather than a footnote, since the first real PDF put a folio on its own cover and
+   shrink-wrapped every table to 188px, both of them correct markup to every other check.
 4. **A new template takes its colours from the `theme` namespace.** A hardcoded hex or
    `rgba()` literal in a template is a bug — it is a colour outside the palette, which is
    the drift epic #46 exists to end. Two tests enforce it: one asserts no literal survives

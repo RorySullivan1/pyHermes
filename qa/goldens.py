@@ -1,18 +1,18 @@
 """
-Golden snapshots over the fixture gallery (#58).
+Golden snapshots over the fixture galleries (#58), keyed by medium (#165).
 
 Three artifacts per fixture, because a render, its attachments and its
-plain-text projection drift independently:
+plain-text projection drift independently::
 
-``goldens/<name>.html``       the rendered HTML, byte for byte, unnormalised
-``goldens/<name>.assets.txt`` the asset manifest, one record per ``ImageAsset``
-``goldens/<name>.txt``        the plain-text projection (#110)
+    goldens/<medium>/<name>.html        the rendered HTML, byte for byte
+    goldens/<medium>/<name>.assets.txt  one record per ``ImageAsset``
+    goldens/<medium>/<name>.txt         the plain-text projection (#110)
 
-``pytest --update-goldens`` is the only regeneration path, and a **missing**
-golden fails rather than creating itself — a golden that writes itself on
-first run pins whatever the code did that day.
-
-`.claude/rules/qa-harness.md` carries the mismatch report's shape and why.
+The ``<medium>`` segment keeps two media holding a fixture of one name
+from overwriting each other, and tells a reviewer which medium a diff
+belongs to from the path alone.
+``pytest --update-goldens`` is the only regeneration path, and a missing
+golden fails rather than creating itself.
 """
 
 from __future__ import annotations
@@ -20,7 +20,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from svc.builder import Email
+from svc.builder.document import Document as Email
 
 #: Where the checked-in goldens live — inside the fixture package, next to the
 #: code that generates them.
@@ -37,19 +37,30 @@ _CONTEXT_LINES = 3
 _EXCERPT_CHARS = 120
 
 
-def html_path(name: str) -> Path:
+def medium_dir(medium: str) -> Path:
+    """
+    Where one medium's goldens live.
+
+    **Keyed by medium since #165**, so two media may hold a fixture of the
+    same name without one silently overwriting the other's snapshot — and so
+    a reviewer reading a diff can see which medium moved from the path alone.
+    """
+    return GOLDEN_DIR / medium
+
+
+def html_path(name: str, medium: str = "email") -> Path:
     """Path to a fixture's rendered-HTML golden."""
-    return GOLDEN_DIR / f"{name}.html"
+    return medium_dir(medium) / f"{name}.html"
 
 
-def manifest_path(name: str) -> Path:
+def manifest_path(name: str, medium: str = "email") -> Path:
     """Path to a fixture's asset-manifest golden."""
-    return GOLDEN_DIR / f"{name}.assets.txt"
+    return medium_dir(medium) / f"{name}.assets.txt"
 
 
-def text_path(name: str) -> Path:
+def text_path(name: str, medium: str = "email") -> Path:
     """Path to a fixture's plain-text golden."""
-    return GOLDEN_DIR / f"{name}.txt"
+    return medium_dir(medium) / f"{name}.txt"
 
 
 def render_manifest(email: Email) -> str:
@@ -101,10 +112,11 @@ def artifacts(name: str, email: Email) -> list[tuple[str, Path, str]]:
     — which is how a fourth artifact would otherwise be checked but never
     written, or written but never checked.
     """
+    medium = email.medium.name
     return [
-        ("rendered HTML", html_path(name), email.render()),
-        ("asset manifest", manifest_path(name), render_manifest(email)),
-        ("plain text", text_path(name), email.text()),
+        ("rendered HTML", html_path(name, medium), email.render()),
+        ("asset manifest", manifest_path(name, medium), render_manifest(email)),
+        ("plain text", text_path(name, medium), email.text()),
     ]
 
 
@@ -130,9 +142,12 @@ def write_fixture(name: str, email: Email) -> list[Path]:
 
     Returns the paths written, so a caller can report what it touched.
     """
-    GOLDEN_DIR.mkdir(parents=True, exist_ok=True)
     written = []
     for _, path, content in artifacts(name, email):
+        # Per artifact rather than once for GOLDEN_DIR: since #165 each
+        # medium has a directory of its own, and the first fixture of a new
+        # medium is written before anything has created it.
+        path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(content, encoding="utf-8")
         written.append(path)
     return written
@@ -248,6 +263,7 @@ __all__ = [
     "artifacts",
     "check_fixture",
     "html_path",
+    "medium_dir",
     "manifest_path",
     "render_manifest",
     "text_path",

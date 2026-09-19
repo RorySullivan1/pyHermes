@@ -285,7 +285,7 @@ class TestTheTextGoldenDetectsDrift:
         """
         shutil.copytree(GOLDEN_DIR, tmp_path / "goldens")
         monkeypatch.setattr("qa.goldens.GOLDEN_DIR", tmp_path / "goldens")
-        (tmp_path / "goldens" / "minimal.txt").unlink()
+        (tmp_path / "goldens" / "email" / "minimal.txt").unlink()
 
         mismatches = check_fixture("minimal", all_fixtures()["minimal"]())
 

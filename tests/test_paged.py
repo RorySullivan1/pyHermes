@@ -224,28 +224,32 @@ class TestTheMediumIsWired:
 
 class TestWhatTheEmailLintMakesOfAPagedDocument:
     """
-    The measurement #162 asked for, and it is narrower than expected.
+    #162 measured this and #165 retired it; both halves are worth keeping.
 
     The prediction was "expect some lint findings on the paged render". The
-    reality: a realistic paged document lints **clean** against all ten email
-    rules. The shared component markup already satisfies them, and the
-    Outlook-only rules are suppressed inside the conditional comments they
-    live in.
+    measurement was narrower: a realistic paged document lints **clean**
+    against all ten email rules, because the shared component markup already
+    satisfies them and the Outlook-only rules are suppressed inside the
+    conditional comments they live in.
 
-    Exactly one rule misfires, and only past a threshold nothing enforces
-    here: ``size-budget`` is Gmail's 102 KB, and a PDF is not clipped at any
-    size. That is the whole of #165's problem, stated as a number.
+    Exactly one misfired, past a threshold nothing enforces here —
+    ``size-budget`` is Gmail's 102 KB, and nothing clips a PDF. The rule
+    table is what retired it, so the second test below is now the proof
+    rather than the measurement.
     """
 
     def test_a_realistic_paged_document_lints_clean(self):
-        from qa.lint import lint_email
+        from qa.lint import lint_document
 
-        assert lint_email(all_paged_fixtures()["a4_portrait"]()) == []
+        assert lint_document(all_paged_fixtures()["a4_portrait"]()) == []
 
-    def test_only_the_gmail_size_rule_misfires_and_only_past_its_threshold(self):
-        from qa.lint import lint_email
+    def test_the_gmail_size_rule_no_longer_reaches_a_paged_document(self):
+        from qa.lint import lint_document, lint_html
         from svc.builder import FullWidth, TextBlock
 
         oversized = PagedDocument(_paged.facts())
         oversized.add_section(FullWidth(content=TextBlock("<p>" + "x" * 110 * 1024 + "</p>")))
-        assert [f.rule_id for f in lint_email(oversized)] == ["size-budget"]
+        assert [f.rule_id for f in lint_document(oversized)] == []
+        # ...and it is the medium that retired it, not the check: judged as
+        # an email, the same bytes still fail.
+        assert [f.rule_id for f in lint_html(oversized.render(), "email")] == ["size-budget"]

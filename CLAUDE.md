@@ -88,10 +88,12 @@ that enforces each, is in `working-in-the-code.md`.
 2. **A golden diff in a PR is a claim that the visual change is intended.**
    `pytest --update-goldens` is the only regeneration path; a missing golden fails rather
    than being created. Never regenerate to silence a failure.
-3. **Screenshots approximate Gmail-in-a-browser; the lint pass owns Outlook.** "The
-   screenshot looks fine" never closes a compatibility question, and a clean lint never
-   says the layout reads well. **A byte-verified diff is not a verified render** — the
-   alignment epic shipped three defects no golden could see.
+3. **Screenshots approximate Gmail-in-a-browser; the lint pass owns Outlook; the PDF
+   rasterisation owns pagination.** "The screenshot looks fine" never closes a
+   compatibility question, a clean lint never says the layout reads well, and a browser
+   renders a paged document as one long scroll — so a paged fixture is photographed from
+   its PDF, one image per sheet. **A byte-verified diff is not a verified render** — the
+   alignment epic shipped three defects no golden could see, and #164 two more.
 4. **A new template takes its colours from the `theme` namespace.** A hardcoded hex or
    `rgba()` is a bug. No documented exceptions.
 5. **A new template takes its sizes from the `size` namespace.** Four named structural
