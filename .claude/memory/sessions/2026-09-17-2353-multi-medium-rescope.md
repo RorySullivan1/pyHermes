@@ -46,3 +46,13 @@
 - Worth reusing: the perturbation probe (edit one mechanism, assert a NAMED test fails) caught
   every silent `str.replace` no-op, of which there were four — ruff reformats the target and
   the pattern stops matching. Always assert the pattern was found before writing.
+
+## PR
+
+[2026-09-20 18:54] Opened **PR #167** — https://github.com/RorySullivan1/pyHermes/pull/167 —
+`claude/gifted-ritchie-7dkp5g` into `main`: 115 files, +5839/-576, 10 commits, mergeable clean.
+The body carries `Closes #157`, so the epic and #158–#166 close on merge rather than by hand.
+No PR template exists in this repo (`.github/` holds only `workflows/`), so the body is the
+house shape: the model, the three agreed design calls, the nine phases, the 42 R100 golden
+renames as mechanical proof that phases 1–4 were byte-identical, the two PDF-only defects, and
+the verification in both install shapes. Written without angle brackets, as every body here is.

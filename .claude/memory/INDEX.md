@@ -6,7 +6,7 @@
   one contract — `svc/delivery`+`gmail`+`outlook`, and `svc/pdf`. Rationale: CLAUDE.md and
   `.claude/rules/media.md`; do not restate it here.
 - **Epic #157 (rescope to media) is COMPLETE** — #158–#166 on branch
-  `claude/gifted-ritchie-7dkp5g`, not yet merged. Phases 1–4 shipped golden-identical.
+  `claude/gifted-ritchie-7dkp5g`, open as PR #167. Phases 1–4 shipped golden-identical.
 - Open: **#150** (banner VML `src`, needs a real Outlook host) and **epic #153**
   (per-exhibit disclosure, #154–#156) — orthogonal, touches no skeleton, frame or region.
 - The prose budget is live; the baseline is 45 and may only shrink.
@@ -27,8 +27,9 @@
   sessions/2026-09-17-2353-multi-medium-rescope.md
 
 ## Threads          (open items; remove when closed)
-- **Next is a PR for epic #157**, or #153 if the rescope should land first. Every issue body
-  in this repo is written without angle brackets — GitHub's sanitizer has emptied three.
+- **PR #167 is open for epic #157** (https://github.com/RorySullivan1/pyHermes/pull/167) and
+  closes #157–#166 on merge. Next after it lands is #153. Every issue or PR body in this repo
+  is written without angle brackets — GitHub's sanitizer has emptied three.
 - **Two optional extras now.** `[pdf]` (WeasyPrint, needs Pango/Cairo) and `[qa]` (Playwright
   + pypdfium2). `[dev]` alone must stay free of both; their tests skip, which is the proof.
 - **CLAUDE.md is a router**; the detail is in path-scoped `.claude/rules/*.md`, which load
@@ -66,3 +67,7 @@
   matter, `svc/pdf` on WeasyPrint, the medium-aware harness, and the docs. Every email golden
   byte-identical throughout; the first real PDF found two defects no golden could see —
   sessions/2026-09-17-2353-multi-medium-rescope.md
+
+- [2026-09-20 18:54] multi-medium-rescope — **PR #167 opened** for epic #157: 115 files, +5839
+  /-576, 10 commits, `Closes #157` so #158–#166 close with it —
+  https://github.com/RorySullivan1/pyHermes/pull/167
