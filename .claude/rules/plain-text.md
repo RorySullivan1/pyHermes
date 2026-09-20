@@ -2,7 +2,14 @@
 paths:
   - "svc/builder/textgen.py"
   - "svc/builder/email.py"
+  - "svc/builder/document.py"
 ---
+
+**Since #162 the projection is `Document.text()`, not `Email.text()`.** The mechanism is
+unchanged — a second projection of the same section tree, no template loaded, no theme, size
+or font resolved — but it is shared by every medium, and a region's `text()` is what each
+supplies. `.claude/rules/media.md` has the medium model; the element table and the policy
+below are unchanged.
 
 # The plain-text projection — a second walk of the same tree
 

@@ -167,3 +167,30 @@ Decisions and Log entries folded out of `INDEX.md` on 2026-08-29 (#143), verbati
 - [2026-08-28 21:00] datatable-epic — shipped **#120**. First step in the epic whose goldens *move* (20 lines, 7 files), and the diff is three things not two: the `th`/`td` swap, the `scope`, **and an explicit `font-weight: normal`** — because `th` is bold by default in browsers and the Word engine, so the semantic change would otherwise have been a visual one. Script-verified, #106's pattern. The caption/subtitle question resolved to **a separate field**: reusing `subtitle` would have moved every golden and made shipped emails announce a standfirst where a name belongs. Two existing tests needed updating for shape, not claim (`count('<th') == count(scope="col")` became *every* th is scoped; a `split('<td')` index shifted). — sessions/2026-08-28-1940-datatable-epic.md
 - [2026-08-28 21:30] datatable-epic — shipped **#121**, closing **epic #116**. The field-completeness test is the durable part: it closes a gap the epic *found* rather than created — metadata fields, region fields and component classes all had completeness rules, component **fields** had none, so seven new `DataTable` properties would have been unwatched. **Proved it fails** by temporarily adding `Cell.tooltip` and `Column.width`. One pre-existing test needed widening for a real reason: the theme audit's `caller_data` set knew about `TableRow.colors` but not `Cell.background`, so a legitimate caller colour read as an unaudited theme colour. Only `rich_table`'s own three artifacts are new; no existing golden moved. 1674 tests — sessions/2026-08-28-1940-datatable-epic.md
 - [2026-08-28 22:00] datatable-epic — opened **PR #123** for #114 + epic #116, then merged `main` into it after **PR #122** landed underneath (`c3a1933`). The only conflict was this file, and it is the same one every time: **State is rewrite-in-place, so two branches always collide there; Decisions is append-only, so both sides are kept and interleaved by timestamp.** Resolving State means writing today's truth rather than picking a side — neither branch's line was current once both had merged.
+
+## Aged out of INDEX.md on 2026-09-20
+
+- [2026-08-27] **Parity of fields, not of tokens.** The two boxes fall back to different theme tokens and keep their own `theme_context()`; forcing … — sessions/2026-08-27-2130-footer-box-epic.md
+- [2026-08-27] **Keep the `&copy;` ENTITY in the default copyright.** A bare U+00A9 mis-decoded as latin-1 renders as a mojibake pair — the failure … — sessions/2026-08-27-2130-footer-box-epic.md
+- [2026-08-27] **`{% endif +%}` disables `trim_blocks` for one tag** — needed to keep a newline after an inline conditional, which is how the link … — sessions/2026-08-27-2130-footer-box-epic.md
+- [2026-08-27] **Reconcile a stale epic in a COMMENT, not by rewriting its body.** #98 was filed before PR #86 and described a two-slot footer with a … — sessions/2026-08-27-2130-footer-box-epic.md
+- [2026-08-27] **Re-measure an issue's stated motivation before acting on it.** #98 warned a coloured footer would paint a wrapper-level band (it is … — sessions/2026-08-27-2130-footer-box-epic.md
+- [2026-08-28] **Decide a `# noqa`'s fate by deleting it and re-running, never by reading it.** `tests/test_theming.py:763` carried `# noqa: <prose>` … — sessions/2026-08-28-2014-fix-invalid-noqa.md
+- [2026-08-29] **A line cap on unbounded lines is not a cap.** This index obeyed "≤ ~80
+  lines" at 256 lines and ~22,900 tokens against a stated ~600 — the width was the
+  evasion, not the count — sessions/2026-08-29-1628-asset-self-restriction.md.
+- [2026-08-29] **Reachability, not scope, makes a home canonical.** A brief nothing loads
+  is not a fallback, it is an uncorrectable second copy — and it is the stale one —
+  sessions/2026-08-29-1628-asset-self-restriction.md.
+- [2026-08-29] **Measure per-session context cost, not repo lines.** #140 added +465 lines
+  and made every session 215 lines cheaper —
+  sessions/2026-08-29-1628-asset-self-restriction.md.
+- [2026-08-28 20:14] fix-invalid-noqa — converted the malformed `# noqa:` at `tests/test_theming.py:763` into a plain explanatory comment after … — sessions/2026-08-28-2014-fix-invalid-noqa.md
+- [2026-08-28 20:35] datatable-epic — shipped **#119** (row kinds). The design line worth keeping: **a row's kind is chrome, a cell's colour is … — sessions/2026-08-28-1940-datatable-epic.md
+- [2026-08-28 21:00] datatable-epic — shipped **#120**. First step in the epic whose goldens *move* (20 lines, 7 files), and the diff is three things … — sessions/2026-08-28-1940-datatable-epic.md
+- [2026-08-28 21:30] datatable-epic — shipped **#121**, closing **epic #116**. The field-completeness test is the durable part: it closes a gap the … — sessions/2026-08-28-1940-datatable-epic.md
+- [2026-08-28 22:00] datatable-epic — opened **PR #123** for #114 + epic #116, then merged `main` into it after **PR #122** landed underneath …
+- [2026-08-29 16:28] asset-self-restriction — **epic #140 complete** (#141–#145) plus #135; the library now bounds the prose it was teaching — sessions/2026-08-29-1628-asset-self-restriction.md
+- [2026-08-29 20:30] prose-discipline — **epic #134 complete** and **PR #146 merged** at
+  `e5c587a`: CLAUDE.md 2,045 -> 160, 2,049 comment bytes off every email, baseline
+  110 -> 48 — sessions/2026-08-29-1628-asset-self-restriction.md

@@ -551,6 +551,10 @@ Call ``operation``, retrying only failures ``is_transient`` accepts.
 
 ## The PDF exporter — the third one, and what it added to the contract (#164)
 
+**Superseded (#157): "the seam between delivery and an adapter" is no longer the only seam.**
+There are three exporters on one contract now, and `.claude/rules/media.md` carries the medium
+model they hang off. What follows stays true of all of them.
+
 `svc/pdf/` is an exporter on exactly the terms `svc/gmail` and `svc/outlook` hold: it takes
 what the builder produces, owns its own wire format, and owns nothing else. WeasyPrint is the
 optional `[pdf]` extra, imported lazily, and an AST test holds that nothing under `svc/builder`,

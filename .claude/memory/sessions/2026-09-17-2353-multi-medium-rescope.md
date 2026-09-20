@@ -30,12 +30,19 @@
   strips raw tags even inside fenced code and has emptied three bodies. Element names bare.
 
 ## State at end
-- All three calls agreed. **Epic #157 filed** with sub-issues #158–#166 (phases 1–9), each
-  with gap / deliverable / acceptance, attached via `parent_issue_number` on create.
-- No code changed. Branch `claude/gifted-ritchie-7dkp5g` carries only these memory edits.
+- **Epic #157 is COMPLETE**: #158–#166 shipped on `claude/gifted-ritchie-7dkp5g`, unmerged.
+  Phases 1–4 (Medium, PageFormat, ChoiceLoader, DocumentMetadata) shipped with every golden
+  byte-identical; 5–7 added the paged medium, its regions and the PDF exporter; 8 made the
+  harness medium-aware; 9 wrote `.claude/rules/media.md` and rescoped CLAUDE.md + README.
+- 1929 tests pass with both extras, 1898 with neither. No email golden ever moved.
 
 ## Open threads
 - Decisions still the user's: units (recommend keep px, 96 dpi), slide = format not medium,
   `text()` stays mandatory for documents, `Page` flattens in email rather than raising, keep
   the project name, one fixture set per medium.
-- Next step: #158. Its acceptance bar is an empty golden diff.
+- Next step: open the PR for #157, or land #153 first — they do not contend.
+- **Unverified claim retired**: #163 could not check that a print engine honours its page
+  breaks; #164 did — identical content, `break_before=True` gives two sheets and `False` one.
+- Worth reusing: the perturbation probe (edit one mechanism, assert a NAMED test fails) caught
+  every silent `str.replace` no-op, of which there were four — ruff reformats the target and
+  the pattern stops matching. Always assert the pattern was found before writing.
