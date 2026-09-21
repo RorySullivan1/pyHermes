@@ -7,8 +7,8 @@
   `.claude/rules/media.md`; do not restate it here.
 - **Epic #157 (rescope to media) is SHIPPED** — PR #167 merged to `main` at `eff6ece`;
   #157 and #158–#166 all closed. Phases 1–4 shipped golden-identical.
-- Open: **#150** (banner VML `src`, needs a real Outlook host) and **epic #153**
-  (per-exhibit disclosure, #154–#156) — orthogonal, touches no skeleton, frame or region.
+- **Epic #153 (per-exhibit disclosure) is COMPLETE** — #154–#156, on the same branch.
+  Open: **#150** (banner VML `src`, needs a real Outlook host).
 - The prose budget is live; the baseline is 45 and may only shrink.
 
 ## Decisions        (append-only; supersede, never delete)
@@ -30,6 +30,14 @@
   the epic and left all nine children open; a bare `#158` in a PR table cross-links but never
   closes. An epic PR lists `Closes` once per sub-issue —
   sessions/2026-09-17-2353-multi-medium-rescope.md
+
+- [2026-09-21] **`disclosure` is plain text; the blessed raw-HTML set stays closed at five.**
+  No inline link, deliberately: widening plain text to HTML later is additive, narrowing is
+  not — sessions/2026-09-21-per-exhibit-disclosure.md
+- [2026-09-21] **A template may fix an alignment the caller-facing axis does not offer.**
+  `justify` sets the disclosure; `TextAlign` still excludes it, and a test pins that, because
+  widening a guard without pinning what it forbids turns it into a comment —
+  sessions/2026-09-21-per-exhibit-disclosure.md
 
 ## Threads          (open items; remove when closed)
 - **Next is epic #153** (per-exhibit disclosure, #154–#156), then #150. Every issue or PR body
@@ -81,3 +89,11 @@
 - [2026-09-21 03:40] multi-medium-rescope — **PR #167 merged** (`eff6ece`). #157 closed by the
   keyword; #158–#166 had to be closed by hand, because closing a parent does not close its
   children — sessions/2026-09-17-2353-multi-medium-rescope.md
+
+- [2026-09-21] **A completeness rule can couple two issues that looked independent.** #154/#155
+  were split on "does the golden move", but the rule introspecting `DataTable.__init__` makes
+  the suite red between them — sessions/2026-09-21-per-exhibit-disclosure.md
+- [2026-09-21] per-exhibit-disclosure — **epic #153 complete** (#154–#156): the shared partial,
+  the field on three exhibits, both projections, four fixtures, and `disclosure.md`. Fifth
+  instance of *a check can be wrong about its scope*, and the first fixed by widening one —
+  sessions/2026-09-21-per-exhibit-disclosure.md
