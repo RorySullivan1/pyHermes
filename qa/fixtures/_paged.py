@@ -144,6 +144,10 @@ def build_on(medium: Medium, template_dir: Path | None = None) -> PagedDocument:
                     source="Hermes Research",
                     as_of="30 September 2026",
                     subtitle="Long-short, gross of costs",
+                    disclosure=(
+                        "Factor returns are shown gross of fees and transaction "
+                        "costs. Past performance is not indicative of future results."
+                    ),
                 ),
             )
         )

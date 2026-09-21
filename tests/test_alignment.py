@@ -66,6 +66,18 @@ STYLE_ONLY_ELEMENTS = frozenset({"caption", "a"})
 BLOCK_ALIGNING_CELLS_PER_EMAIL = 1
 
 _ALIGNMENTS = frozenset({"left", "center", "right"})
+
+#: Alignments a **template** fixes, which no caller can reach and which are
+#: therefore not part of #124's three-value axis.
+#:
+#: ``justify`` sets the per-exhibit disclosure (#154), and the non-goal it
+#: looks like it breaks does not apply: ``TextAlign`` omits justify because
+#: it "does nothing to a single short line", and a disclosure is the one
+#: place in the package that renders multi-sentence prose narrow enough for
+#: it to do something. The caller-facing vocabulary stays three values, and
+#: ``test_the_caller_facing_vocabulary_still_excludes_justify`` is what keeps
+#: this from being read as permission to widen it.
+_TEMPLATE_FIXED_ALIGNMENTS = frozenset({"justify"})
 _TEXT_ALIGN = re.compile(r"text-align:\s*([a-z]+)")
 
 
@@ -235,9 +247,24 @@ class TestTheTwoSpellingsTravelTogether:
             for html in gallery.values()
             for _, attribute, declared in _audit(html)
             for value in (attribute, declared)
-            if value is not None and value not in _ALIGNMENTS
+            if value is not None
+            and value not in _ALIGNMENTS
+            and value not in _TEMPLATE_FIXED_ALIGNMENTS
         }
         assert not strays, f"alignment values outside the vocabulary: {sorted(strays)}"
+
+    def test_the_caller_facing_vocabulary_still_excludes_justify(self):
+        """
+        The other half of ``_TEMPLATE_FIXED_ALIGNMENTS``, and the reason
+        widening the audit above is not a hole. A template may fix an
+        alignment the axis does not offer; a **caller** may not reach one.
+        Without this, admitting ``justify`` to the audit would quietly become
+        permission to add it to the enum.
+        """
+        from svc.builder.enums import TextAlign
+
+        assert "justify" not in {member.value for member in TextAlign}
+        assert "justify" not in _ALIGNMENTS
 
 
 class TestTheStyleOnlyElementsAreDeliberate:
