@@ -5,8 +5,8 @@
   shared kit, `svc/email` and `svc/document` are the two media, and three exporters sit on
   one contract — `svc/delivery`+`gmail`+`outlook`, and `svc/pdf`. Rationale: CLAUDE.md and
   `.claude/rules/media.md`; do not restate it here.
-- **Epic #157 (rescope to media) is COMPLETE** — #158–#166 on branch
-  `claude/gifted-ritchie-7dkp5g`, open as PR #167. Phases 1–4 shipped golden-identical.
+- **Epic #157 (rescope to media) is SHIPPED** — PR #167 merged to `main` at `eff6ece`;
+  #157 and #158–#166 all closed. Phases 1–4 shipped golden-identical.
 - Open: **#150** (banner VML `src`, needs a real Outlook host) and **epic #153**
   (per-exhibit disclosure, #154–#156) — orthogonal, touches no skeleton, frame or region.
 - The prose budget is live; the baseline is 45 and may only shrink.
@@ -26,10 +26,16 @@
   never a big bang; each fork is a golden-diffed PR with a stated reason —
   sessions/2026-09-17-2353-multi-medium-rescope.md
 
+- [2026-09-21] **GitHub closing keywords do not cascade to sub-issues.** `Closes #157` closed
+  the epic and left all nine children open; a bare `#158` in a PR table cross-links but never
+  closes. An epic PR lists `Closes` once per sub-issue —
+  sessions/2026-09-17-2353-multi-medium-rescope.md
+
 ## Threads          (open items; remove when closed)
-- **PR #167 is open for epic #157** (https://github.com/RorySullivan1/pyHermes/pull/167) and
-  closes #157–#166 on merge. Next after it lands is #153. Every issue or PR body in this repo
-  is written without angle brackets — GitHub's sanitizer has emptied three.
+- **Next is epic #153** (per-exhibit disclosure, #154–#156), then #150. Every issue or PR body
+  in this repo is written without angle brackets — GitHub's sanitizer has emptied three.
+- **A closing keyword closes only the issue it names.** An epic PR needs one `Closes #N` line
+  per sub-issue, not just the epic's — see the decision below.
 - **Two optional extras now.** `[pdf]` (WeasyPrint, needs Pango/Cairo) and `[qa]` (Playwright
   + pypdfium2). `[dev]` alone must stay free of both; their tests skip, which is the proof.
 - **CLAUDE.md is a router**; the detail is in path-scoped `.claude/rules/*.md`, which load
@@ -71,3 +77,7 @@
 - [2026-09-20 18:54] multi-medium-rescope — **PR #167 opened** for epic #157: 115 files, +5839
   /-576, 10 commits, `Closes #157` so #158–#166 close with it —
   https://github.com/RorySullivan1/pyHermes/pull/167
+
+- [2026-09-21 03:40] multi-medium-rescope — **PR #167 merged** (`eff6ece`). #157 closed by the
+  keyword; #158–#166 had to be closed by hand, because closing a parent does not close its
+  children — sessions/2026-09-17-2353-multi-medium-rescope.md
