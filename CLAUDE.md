@@ -52,6 +52,7 @@ applies to and loads **only when a matching file is read** — so a session that
 | `builder-architecture.md` | `svc/builder/**` | The four-layer model, the facts-flow-down ownership rule, the public API, images and the asset manifest, parameters, validation, exceptions, the hard constraints in full |
 | `design-axes.md` | theming / sizing / typography / enums / containers / `templates/**` | Colour, density, typeface and alignment — the three themes plus the axis that deliberately is not one |
 | `data-table.md` | `models.py`, `components.py`, `templates/analysis/**` | Columns, cells, row kinds, caption and row headers |
+| `disclosure.md` | `components.py`, `templates/analysis/**` + `media/**`, the shared partial | An exhibit's two kinds of fine print: attribution, and the compliance copy beneath it |
 | `plain-text.md` | `textgen.py`, `email.py` | The second projection of the section tree |
 | `media.md` | `svc/email/`, `svc/document/`, `svc/pdf/`, `medium.py`, `document.py`, `templates/document/**` | The medium model, the page, the template fork rule, each medium's regions, the exporter's resource policy |
 | `delivery.md` | `svc/delivery/`, `svc/gmail/`, `svc/outlook/` | MIME assembly, the adapter contract, the deliberate non-features |
@@ -75,7 +76,9 @@ The rules themselves. `builder-architecture.md` carries why each exists.
 - **Autoescape is OFF, and escaping is split by field kind.** Plain-text fields are escaped
   by the templates — pass them raw. Five HTML fields are emitted raw and escaping them is
   the *caller's* job: `TextBlock.content`, `Card.body`, `NumberedItem.body`,
-  `Footer.disclaimer`, `header_disclaimer`. Attributes are always escaped.
+  `Footer.disclaimer`, `header_disclaimer`. Attributes are always escaped. **The set is
+  closed at five** — `disclosure` (#154) is the sixth candidate and is deliberately plain
+  text, because widening later is additive and narrowing is not (`disclosure.md`).
 - **A raw-HTML field is emitted inside a `div`, never a `p`.** A `p` is auto-closed the
   moment caller markup opens, and the copy escapes the styling it should inherit (#130).
 - **URL schemes are validated** at construction: `http`, `https`, `mailto`, `cid` and
@@ -164,10 +167,9 @@ these rather than improvising:
 ## Open work and state
 
 - Tracked in [GitHub issues](https://github.com/RorySullivan1/pyHermes/issues), as epics
-  with sub-issues. **Epic #157 (rescope to media) is complete**, #158–#166. Open: **#150**
-  (banner VML `src`, needs a real Outlook host) and **epic #153** (per-exhibit disclosure,
-  #154–#156), which is orthogonal — it adds a field to three components and touches no
-  skeleton, frame or region.
+  with sub-issues. **Epic #157 (rescope to media) is complete**, #158–#166, and so is **epic
+  #153** (per-exhibit disclosure, #154–#156). Open: **#150** (banner VML `src`, needs a real
+  Outlook host).
 - Current state, decisions and open threads:
   [.claude/memory/INDEX.md](.claude/memory/INDEX.md).
 - [README.md](README.md) is the human-facing entry point (what it is, install, build, send or
