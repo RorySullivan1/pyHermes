@@ -1,9 +1,14 @@
 # Examples
 
-Worked examples of building emails with `svc.builder`. Each example is a
-self-contained directory that pairs the **source script** with the **rendered
-output** it produces, so you can read the builder code and see exactly what HTML
-it generates.
+Worked examples of building documents with pyHermes. Each is a self-contained
+directory pairing the **source script** with the **rendered output** it
+produces, so you can read the builder code and see exactly what it generates.
+
+Both media are represented, and a test asserts that stays true: the email
+examples render through `svc.email`'s four-slot skeleton, and
+`quarterly-review` renders the same components onto sheets through
+`svc.document` — a cover, a folio in every margin, a real page break, and a
+closing disclosures sheet, plus a PDF when the `[pdf]` extra is installed.
 
 ## Layout
 

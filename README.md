@@ -1,6 +1,6 @@
 # pyHermes
 
-Build HTML emails that survive the clients people actually read them in — then send them.
+Write a research document once. Send it as an email, or print it as a PDF.
 
 An HTML email is not a web page. Gmail clips the message body past ~102 KB and shows a
 "View entire message" link; Outlook on Windows renders through Microsoft Word's layout
@@ -10,7 +10,13 @@ all fail there.
 
 pyHermes composes Jinja2 templates into a single inline-CSS, table-based document
 engineered for those constraints, and enforces the ones that break silently. It depends on
-**Jinja2 and nothing else**, including on the send path.
+**Jinja2 and nothing else**.
+
+The same section tree renders onto more than one **medium**. An `Email` gets the four-slot
+skeleton, the Outlook accommodations and the 102 KB check; a `PagedDocument` gets a cover,
+running margin boxes, real page breaks and an A4 or Letter or 16:9 page. You choose by
+constructing one — the components, the colours, the density and the typefaces are the same
+either way.
 
 ```python
 from svc.builder import Banner, EmailBuilder, FullWidth, CardGroup, TextBlock
@@ -48,13 +54,57 @@ email = (
 email.save("output/weekly-wrap.html")   # prints the rendered size, or raises above 102 KB
 ```
 
+## The same content, printed
+
+Swap the product and the section tree renders onto sheets instead. A cover, a folio in the
+margin of every page, a real break before the appendix, and a closing disclosures page:
+
+```python
+from svc.builder import FullWidth, TextBlock
+from svc.document import BackMatter, Cover, Page, PagedDocument, RunningFooter
+from svc.pdf import save_pdf
+
+document = PagedDocument(
+    {
+        "firm_name": "Hermes Research",
+        "campaign_name": "Quarterly Review",
+        "date_range": "Quarter ending 30 September",
+        "header_disclaimer": "<p>For illustrative purposes. Not investment advice.</p>",
+    },
+    cover=Cover(title="Quarterly Review", subtitle="What the curve priced"),
+    running_footer=RunningFooter(label="Confidential", show_page_number=True),
+    back_matter=BackMatter(heading="Important Disclosures"),
+)
+document.add_section(FullWidth(content=TextBlock("<p>The curve steepened.</p>"), title="Narrative"))
+document.add_section(Page([FullWidth(content=TextBlock("<p>Method.</p>"), title="Appendix")]))
+
+document.save("review.html")       # the HTML is a deliverable on its own
+save_pdf(document, "review.pdf")   # ...and so is the PDF  (needs the [pdf] extra)
+```
+
+`A4_PORTRAIT` is the default; `paged_medium(SLIDE_16_9)` and the Letter presets are in
+`svc.builder.sizing`. A `Page` **flattens** in the email medium — one tree, two outputs — so
+the same sections can go to both.
+
+**The PDF exporter makes no network requests.** It serves `cid:` references from the
+document's own manifest and refuses every other URL by name, so a document whose cover art
+lives on a CDN raises rather than silently printing without it. Attach images with
+`EmailImage.attached()` and they travel with the document.
+
 ## Install
 
 Requires Python 3.11+. Not published to PyPI — install from a clone:
 
 ```bash
 pip install -e ".[dev]"     # editable, plus pytest / ruff / mypy
+pip install -e ".[pdf]"     # optional: WeasyPrint, to print a document
+pip install -e ".[qa]"      # optional: Playwright + pypdfium2, for screenshots
 ```
+
+**The two optional extras are genuinely optional**, and the suite proves it rather than
+claiming it: their tests *skip* when the extra is absent, so `pip install -e ".[dev]"` and
+`pytest` run anywhere. `[pdf]` needs Pango and Cairo from the system, which is exactly why
+it is not in the floor.
 
 The `dev` extra also pulls `requests` and `httplib2`. Those are the HTTP transports the send
 adapters *document*, not ones they use: the adapters import neither, and an AST-parsing test
@@ -634,23 +684,27 @@ form is the interface.
 
 ## Scope
 
-**In:** composing the HTML, assembling the MIME message, transmitting it through Gmail or
-Microsoft Graph.
+**In:** composing the document, rendering it for an email client or a page, assembling the
+MIME message, transmitting it through Gmail or Microsoft Graph, and printing it to PDF.
 
 **Out, deliberately:** OAuth flows (the caller's, by design); campaign management — no
 scheduling, recipient lists, batching or send-time analytics; open tracking and link
-rewriting.
+rewriting. On the paged side: no table of contents, no footnotes or cross-references, and
+no DOCX or PPTX exporter — each is a new epic on the same contract rather than a gap.
 
 ## Layout
 
 ```
 svc/
 ├── config.py     the tunable numbers, in one frozen dataclass
-├── builder/      templates, containers, components, models, images
+├── builder/      the shared kit: Document, Medium, templates, components, the three axes
+├── email/        the email medium: the four slots and the Gmail size check
+├── document/     the paged medium: PagedDocument, Page, Cover, running boxes, back matter
 ├── delivery/     transport-neutral MIME assembly + shared retry policy
 ├── gmail/        Gmail send adapter
-└── outlook/      Outlook send adapter over Microsoft Graph
-qa/               the fixture gallery, goldens, screenshots, lint, preview CLI
+├── outlook/      Outlook send adapter over Microsoft Graph
+└── pdf/          the PDF exporter, on the adapters' contract — no network
+qa/               the fixture galleries, goldens, screenshots, lint, preview CLI
 tests/            pytest suite
 ```
 

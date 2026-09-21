@@ -17,7 +17,7 @@ from pathlib import Path
 
 import pytest
 
-from qa.fixtures import all_fixtures
+from qa.fixtures import all_fixtures, all_paged_fixtures
 from qa.preview import (
     EXIT_BUILD_FAILED,
     EXIT_LINT_ERRORS,
@@ -131,7 +131,7 @@ class TestResolvingAModuleSpec:
     def test_a_wrong_return_type_names_what_came_back(self, tmp_path):
         module = write_module(tmp_path, "draft", "def build():\n    return 'html'\n")
 
-        with pytest.raises(PreviewError, match="str, not an Email"):
+        with pytest.raises(PreviewError, match="str, not a Document"):
             resolve(f"{module}:build")
 
     def test_an_import_error_is_reported_not_raised_raw(self, tmp_path):
@@ -216,7 +216,10 @@ class TestTheCommand:
         code = main(["--list"])
 
         assert code == EXIT_OK
-        assert capsys.readouterr().out.split() == sorted(all_fixtures())
+        # Both galleries: preview only ever *looks* at what it is handed, so
+        # refusing to show a paged fixture would be an opinion it has no use
+        # for. The registries stay apart for the test suite (#165).
+        assert capsys.readouterr().out.split() == sorted({**all_fixtures(), **all_paged_fixtures()})
 
     def test_no_target_and_no_list_is_a_usage_error(self):
         with pytest.raises(SystemExit) as excinfo:

@@ -30,7 +30,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
-from svc.builder import Email
+from svc.builder.document import Document
 
 from .fixtures import all_fixtures
 
@@ -95,7 +95,7 @@ class ScreenshotError(RuntimeError):
 # ──────────────────────────────────────────────────────────────────────
 
 
-def inline_cid_images(html: str, email: Email) -> str:
+def inline_cid_images(html: str, email: Document) -> str:
     """
     Rewrite ``src="cid:X"`` to a data URI, for the screenshot only.
 
@@ -132,7 +132,7 @@ def inline_cid_images(html: str, email: Email) -> str:
 
 
 def capture_emails(
-    emails: Mapping[str, Email],
+    emails: Mapping[str, Document],
     out_dir: Path | None = None,
 ) -> tuple[list[Shot], dict[str, object]]:
     """
@@ -325,6 +325,76 @@ def _launch(playwright: Any) -> Any:
             f"{EXECUTABLE_ENV_VAR} at a Chromium binary this machine already "
             "provides."
         ) from exc
+
+
+#: Points to px at 96 dpi. A PDF is 72 dpi by definition and a
+#: :class:`~svc.builder.sizing.PageFormat` is px at 96, so this is the factor
+#: that makes a raster come back at the width the document was designed at.
+PDF_PX_SCALE = 96 / 72
+
+
+def pages_available() -> bool:
+    """Whether this environment can rasterise a PDF. Used to skip, never fail."""
+    try:
+        import pypdfium2  # noqa: F401
+
+        from svc.pdf import available as backend_available
+    except ImportError:
+        return False
+    return bool(backend_available())
+
+
+def capture_pages(
+    documents: Mapping[str, Document],
+    out_dir: Path | None = None,
+    scale: float = PDF_PX_SCALE,
+) -> tuple[list[Shot], dict[str, object]]:
+    """
+    Rasterise each paged document to one PNG per sheet.
+
+    **A browser is the wrong instrument here.** Chromium renders a paged
+    document's HTML as one long scroll, which is precisely the property the
+    medium does not have. So standing rule 3 gains a third clause: the
+    screenshots approximate Gmail, the lint pass owns Outlook, and **the PDF
+    rasterisation owns pagination**.
+
+    ``pypdfium2`` is a self-contained wheel deliberately — Poppler would add
+    a *system* binary to an extra meant to be ``pip install`` and nothing
+    else. The default ``scale`` reconciles units rather than choosing a
+    resolution; see :data:`PDF_PX_SCALE`.
+    """
+    import pypdfium2
+
+    from svc.pdf import render_pdf
+
+    out_dir = out_dir or DEFAULT_OUT_DIR
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    shots: list[Shot] = []
+    for name, document in documents.items():
+        pdf = pypdfium2.PdfDocument(render_pdf(document))
+        for index, page in enumerate(pdf, start=1):
+            image = page.render(scale=scale).to_pil()
+            path = out_dir / f"{name}-page-{index}.png"
+            image.save(path)
+            shots.append(
+                Shot(
+                    fixture=name,
+                    viewport=f"page-{index}",
+                    path=path,
+                    width=image.width,
+                    height=image.height,
+                )
+            )
+        pdf.close()
+
+    # Recorded rather than pinned, exactly as the browser build is: what makes
+    # two runs comparable is the scale and the page, not the rasteriser.
+    return shots, {
+        "renderer": f"pypdfium2 {pypdfium2.version.PYPDFIUM_INFO}",
+        "pdfium": str(pypdfium2.PDFIUM_INFO),
+        "scale": scale,
+    }
 
 
 def available() -> bool:

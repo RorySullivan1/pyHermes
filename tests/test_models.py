@@ -6,10 +6,13 @@ tests assert on the exception raised by .validate(), which the components
 call from their own __init__.
 """
 
+import dataclasses
+
 import pytest
 
 from svc.builder.exceptions import EmailBuilderError, ValidationError
 from svc.builder.models import (
+    DocumentMetadata,
     EmailMetadata,
     KpiItem,
     NumberedItem,
@@ -104,6 +107,89 @@ class TestEmailMetadata:
     def test_optional_fields_may_stay_empty(self, valid_metadata):
         # Only the three above are required; the rest default to "".
         EmailMetadata(**valid_metadata).validate()
+
+
+class TestTheDocumentFactsSplitFromTheEmailOnes:
+    """
+    #161: a paged document reuses the facts without a subject line.
+
+    The split is only real if the base stands alone -- validating, rejecting
+    a bad language tag, and requiring nothing an email happens to need.
+    """
+
+    def test_an_email_is_a_document(self):
+        assert issubclass(EmailMetadata, DocumentMetadata)
+        assert isinstance(EmailMetadata(), DocumentMetadata)
+
+    def test_an_email_adds_fields_and_removes_none(self):
+        document = {f.name for f in dataclasses.fields(DocumentMetadata)}
+        email = {f.name for f in dataclasses.fields(EmailMetadata)}
+        assert document < email, "an email must be a strict superset of a document"
+
+    def test_the_shared_facts_are_the_medium_neutral_ones(self):
+        # Named rather than derived: which side of the line a fact falls on
+        # is a decision, and a decision that nothing pins gets re-made.
+        assert {f.name for f in dataclasses.fields(DocumentMetadata)} == {
+            "language",
+            "header_disclaimer",
+            "firm_name",
+            "campaign_name",
+            "department",
+            "date_range",
+            "issue_label",
+            "current_year",
+            "theme",
+            "size_theme",
+            "font_theme",
+        }
+
+    def test_the_email_only_facts_are_the_ones_a_document_cannot_have(self):
+        document = {f.name for f in dataclasses.fields(DocumentMetadata)}
+        added = {f.name for f in dataclasses.fields(EmailMetadata)} - document
+        assert added == {
+            "email_subject",
+            "preheader_text",
+            "unsubscribe_url",
+            "view_in_browser_url",
+            "header",
+            "banner",
+            "footer",
+        }
+
+    def test_a_document_validates_on_its_own(self):
+        DocumentMetadata(firm_name="F", campaign_name="C").validate()
+
+    def test_a_document_does_not_need_a_subject(self):
+        # The whole point: a printed page has no subject line, so requiring
+        # one on the base would make the split decorative.
+        assert not hasattr(DocumentMetadata(), "email_subject")
+
+    @pytest.mark.parametrize("field", ["firm_name", "campaign_name"])
+    def test_a_document_still_requires_who_and_what(self, field):
+        values = {"firm_name": "F", "campaign_name": "C"}
+        values[field] = ""
+        with pytest.raises(ValidationError, match=field):
+            DocumentMetadata(**values).validate()
+
+    def test_a_document_validates_its_language_tag(self):
+        with pytest.raises(ValidationError, match="language"):
+            DocumentMetadata(language="en--GB")
+
+    def test_a_document_checks_its_presets_at_construction(self):
+        with pytest.raises(ValidationError):
+            DocumentMetadata(size_theme="not-a-density")
+
+    def test_a_flat_keyword_conflict_is_reported_before_a_bad_language(self, png_bytes):
+        # Error precedence is behaviour too: hydration runs before the base's
+        # checks, and it did before the split.
+        from svc.builder.regions import Banner
+
+        with pytest.raises(ValidationError, match="flat banner field"):
+            EmailMetadata(
+                language="en--GB",
+                banner=Banner(logo_url="https://example.com/a.png"),
+                logo_url="https://example.com/b.png",
+            )
 
 
 class TestSectionConfig:

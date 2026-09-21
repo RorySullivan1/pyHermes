@@ -61,6 +61,56 @@ class TestConstruction:
         assert TemplateEngine(tmp_path).render("x.html", {}) == "hi"
 
 
+class TestTheMediumScopedSearchPath:
+    """
+    #160: a medium forks one template without forking the tree.
+
+    The mechanism is a ChoiceLoader whose overlays come first. It ships
+    switched on and doing nothing — the email medium declares a directory
+    that does not exist — so the fall-through is exercised by every render
+    in the suite and a fork is a file, not a migration.
+    """
+
+    @pytest.fixture()
+    def tree(self, tmp_path: Path) -> Path:
+        (tmp_path / "text").mkdir()
+        (tmp_path / "text" / "block.html").write_text("shared", encoding="utf-8")
+        (tmp_path / "paged" / "text").mkdir(parents=True)
+        (tmp_path / "paged" / "text" / "block.html").write_text("forked", encoding="utf-8")
+        return tmp_path
+
+    def test_an_overlay_shadows_the_shared_template(self, tree):
+        engine = TemplateEngine(tree, search_path=("paged",))
+        assert engine.render("text/block.html", {}) == "forked"
+
+    def test_the_fork_is_invisible_without_the_search_path(self, tree):
+        # The half that makes a fork safe: one medium's markup cannot leak
+        # into another's just by existing.
+        assert TemplateEngine(tree).render("text/block.html", {}) == "shared"
+
+    def test_a_medium_falls_through_for_what_it_has_not_forked(self, tree):
+        (tree / "other.html").write_text("only shared", encoding="utf-8")
+        engine = TemplateEngine(tree, search_path=("paged",))
+        assert engine.render("other.html", {}) == "only shared"
+
+    def test_a_search_path_with_no_directory_behind_it_is_not_an_error(self, tree):
+        # What a medium that has forked nothing looks like -- including the
+        # shipped email one, whose directory does not exist.
+        engine = TemplateEngine(tree, search_path=("nothing-here",))
+        assert engine.render("text/block.html", {}) == "shared"
+
+    def test_earlier_entries_win(self, tree):
+        (tree / "first" / "text").mkdir(parents=True)
+        (tree / "first" / "text" / "block.html").write_text("first", encoding="utf-8")
+        engine = TemplateEngine(tree, search_path=("first", "paged"))
+        assert engine.render("text/block.html", {}) == "first"
+
+    def test_the_root_is_still_the_template_dir(self, tree):
+        # Everything that locates a template by path -- the packaging test,
+        # the golden harness -- reads this, and an overlay must not move it.
+        assert TemplateEngine(tree, search_path=("paged",)).template_dir == tree.resolve()
+
+
 class TestEnvironmentConfiguration:
     def test_autoescape_is_off(self, engine):
         # HTML emails need raw output; callers pre-escape their own text.

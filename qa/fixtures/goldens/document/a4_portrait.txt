@@ -1,0 +1,58 @@
+Quarterly Review
+================
+
+What the curve priced, and what it did not
+Rates Strategy · Quarter ending 30 September · Issue 001
+
+
+Market Snapshot
+---------------
+
+S&P 500: 5,234 (+1.42%)
+UST 10Y: 4.28% (+6 bps)
+Gold: 2,411 (+0.85%)
+
+
+Narrative
+---------
+
+The curve steepened through the quarter as the front end repriced. Duration
+added to returns for the first time in four quarters.
+
+
+Factor Returns
+--------------
+
+Long-short, gross of costs
+
+Factor       1M     YTD
+--------  -----  ------
+Value     +1.8%   +7.4%
+Momentum  -0.4%  +11.2%
+Quality   +0.9%   +5.1%
+
+Hermes Research
+30 September 2026
+
+
+Positioning
+-----------
+
+The left half of a 50-50 split.
+
+The right half of a 50-50 split.
+
+
+Appendix
+--------
+
+Methodology
+-----------
+
+Factor returns are computed long-short and gross of transaction costs.
+
+
+Important Disclosures
+---------------------
+
+For illustrative purposes. Not investment advice.

@@ -1,0 +1,23 @@
+{# The sheet a document opens on. A named CSS page, so the running margin
+   boxes can be suppressed here without suppressing them everywhere: a folio
+   on the cover is wrong, and `page: cover` is how a print engine is told. #}
+<table role="presentation" width="{{ size.frame.width }}" cellpadding="0" cellspacing="0" border="0"
+       style="width:{{ size.frame.width }}px; page: cover; break-after:page; page-break-after:always; background-color:{{ cover_background }};"
+       bgcolor="{{ cover_background }}">
+  <tr>
+    <td align="{{ align | default('left', true) }}"
+        style="padding:{{ size.space.masthead_top }}px {{ size.frame.pad_x }}px {{ size.space.masthead_meta_bottom }}px; text-align:{{ align | default('left', true) }};{% if background_image_url %} background-image:url('{{ background_image_url | escape_html }}'); background-size:cover;{% endif %}">
+      {% if logo_url %}
+      <img src="{{ logo_url | escape_html }}" alt="{{ logo_alt | escape_html }}" width="{{ logo_width }}"
+           style="display:block; border:0; margin-bottom:{{ size.space.masthead_meta_top }}px;">
+      {% endif %}
+      <h1 style="margin:0 0 {{ size.space.masthead_title_bottom }}px; font-family:{{ font.heading }}; font-size:{{ size.type.title }}px; line-height:{{ size.type.title_line | percent }}; color:{{ cover_text }};">{{ cover_title | escape_html }}</h1>
+      {% if cover_subtitle %}
+      <p style="margin:0 0 {{ size.space.masthead_campaign_bottom }}px; font-family:{{ font.body }}; font-size:{{ size.type.section }}px; line-height:{{ size.type.heading_line | percent }}; color:{{ cover_text }};">{{ cover_subtitle | escape_html }}</p>
+      {% endif %}
+      {% if department or date_range or issue_label %}
+      <p style="margin:{{ size.space.masthead_meta_top }}px 0 0; font-family:{{ font.label }}; font-size:{{ size.type.small }}px; line-height:{{ size.type.secondary_line | percent }}; color:{{ cover_text }};">{{ [department, date_range, issue_label] | select | join(' · ') | escape_html }}</p>
+      {% endif %}
+    </td>
+  </tr>
+</table>

@@ -1,0 +1,238 @@
+"""
+``Document`` — the medium-neutral product: metadata, regions, a section tree.
+
+What every destination has in common. Three projections of one tree —
+:meth:`render` to markup, :meth:`text` to the plain-text part and
+:meth:`assets` to the images a delivery layer must carry — plus the one
+resolution point where the theme, density, typefaces and medium are bound.
+
+A subclass supplies its regions through :meth:`leading_regions` and
+:meth:`trailing_regions`; :class:`~svc.builder.email.Email` is the worked
+example. `.claude/rules/builder-architecture.md` carries the layer model.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, ClassVar, Self
+
+from .containers import Container
+from .engine import Renderer, TemplateEngine
+from .enums import EmbedStrategy
+from .images import EmailImage, ImageAsset, dedupe_assets
+from .medium import DEFAULT_MEDIUM, Medium
+from .models import DocumentMetadata
+from .sizing import resolve_size_scheme
+from .textgen import join_sections
+from .theming import resolve_theme
+from .typography import resolve_font_theme
+
+if TYPE_CHECKING:  # pragma: no cover - regions imports models, which imports this
+    from .regions import Region
+
+#: One region and the facts handed down to it. Ordered pairs rather than a
+#: mapping, because the skeleton's order is part of the contract.
+RegionFacts = tuple["Region", dict[str, Any]]
+
+
+class Document:
+    """
+    A renderable document: its facts, its sections, and where it is read.
+
+    Construct with a mapping of facts or a :class:`~svc.builder.models.
+    DocumentMetadata`, add sections in order, then render. The medium decides
+    the skeleton, the page and the checks the composed document must pass; a
+    document that never mentions one gets plain HTML.
+
+    **Regions are a subclass's business.** This class knows only that some
+    render before the body and some after — enough to fill their slots, walk
+    their images and project their text in the right order, and not enough to
+    care that an email has a masthead and a paged document has a cover.
+
+    Args:
+        metadata:     Mapping of facts, or a metadata instance.
+        template_dir: Root of the templates. Defaults to the packaged copy.
+        medium:       Where this is going to be read.
+
+    Raises:
+        ValidationError: If a required fact is missing or empty.
+    """
+
+    #: What a mapping of facts is coerced into. A subclass narrows it.
+    METADATA: ClassVar[type[DocumentMetadata]] = DocumentMetadata
+
+    def __init__(
+        self,
+        metadata: dict[str, Any] | DocumentMetadata,
+        template_dir: Path | None = None,
+        medium: Medium | None = None,
+    ):
+        # The medium is settled first: it names the templates this engine
+        # searches before the shared tree.
+        self._medium: Medium = medium if medium is not None else DEFAULT_MEDIUM
+        self._engine = TemplateEngine(template_dir, search_path=self._medium.template_search_path)
+
+        if isinstance(metadata, dict):
+            self._metadata: DocumentMetadata = self.METADATA(**metadata)
+        else:
+            self._metadata = metadata
+
+        # Validation happens at construction time, not render time, so a
+        # missing required field names itself instead of surfacing later as a
+        # confusing render-time symptom.
+        self._metadata.validate()
+        self._sections: list[Container] = []
+
+    # ------------------------------------------------------------------
+    # What it knows
+    # ------------------------------------------------------------------
+
+    @property
+    def metadata(self) -> DocumentMetadata:
+        """
+        The facts this document was built from.
+
+        Read-only, and deliberately not a copy: :meth:`validate` has already
+        run, so a later edit is neither checked nor re-checked, and a copy
+        would make mutating it silently do nothing — a subtler trap than the
+        one it closes.
+        """
+        return self._metadata
+
+    @property
+    def medium(self) -> Medium:
+        """
+        Where this document is going to be read.
+
+        Read-only: a medium decides the skeleton and the checks, so swapping
+        one mid-life would leave a document that had already validated
+        against rules it no longer runs.
+        """
+        return self._medium
+
+    def leading_regions(self) -> tuple[RegionFacts, ...]:
+        """The regions rendered before the body, in skeleton order."""
+        return ()
+
+    def trailing_regions(self) -> tuple[RegionFacts, ...]:
+        """The regions rendered after the body, in skeleton order."""
+        return ()
+
+    def add_section(self, container: Container) -> Self:
+        """Append a section. Returns ``self`` for optional chaining."""
+        self._sections.append(container)
+        return self
+
+    # ------------------------------------------------------------------
+    # The three projections
+    # ------------------------------------------------------------------
+
+    def images(self) -> list[EmailImage]:
+        """
+        Every image this document references, in render order.
+
+        Leading regions, then sections, then trailing ones. A region with no
+        image today still participates: the slot has to exist, or a variant
+        that adds one silently drops its bytes and renders a broken
+        reference, which is the failure the ``images()`` rule exists to
+        prevent.
+        """
+        images = [image for region, _ in self.leading_regions() for image in region.images()]
+        for section in self._sections:
+            for component in section.components():
+                images.extend(component.images())
+        images.extend(image for region, _ in self.trailing_regions() for image in region.images())
+        return images
+
+    def assets(self) -> list[ImageAsset]:
+        """
+        The attachment manifest: what a delivery layer must carry.
+
+        Only ``CID`` images appear — hosted ones have no bytes to attach and
+        data URIs carry their own. Repeat Content-IDs collapse to one entry,
+        first-seen order preserved.
+        """
+        assets = [asset for region, _ in self.leading_regions() for asset in region.assets()]
+        for section in self._sections:
+            assets.extend(section.assets())
+        assets.extend(asset for region, _ in self.trailing_regions() for asset in region.assets())
+        return dedupe_assets(assets)
+
+    def render(self) -> str:
+        """
+        Render the complete document.
+
+        Resolve the theme, density, typefaces and page once and bind them;
+        render each region into the slots it fills and every section through
+        its container; drop all of it into the medium's skeleton; then run
+        the medium's constraints over the *composed* document, so region
+        bytes are inside whatever budget it sets.
+        """
+        # The one resolution point. Every template below — skeleton, regions,
+        # containers, components — reads the same values, because they all
+        # render through this binder rather than looking any of them up.
+        engine = self._engine.bound(
+            theme=resolve_theme(self._metadata.theme),
+            size=resolve_size_scheme(self._metadata.size_theme).with_page(self._medium.page_format),
+            font=resolve_font_theme(self._metadata.font_theme),
+            medium=self._medium,
+        )
+
+        ctx = self._metadata.to_dict()
+        ctx["sections_html"] = "\n".join(section.render(engine) for section in self._sections)
+        for region, facts in self.leading_regions() + self.trailing_regions():
+            ctx.update(region.render_slots(engine, facts))
+
+        html = engine.render(self._medium.skeleton, ctx)
+        self._medium.validate(html, self._inline_image_hint())
+        return html
+
+    def text(self) -> str:
+        """
+        The plain-text projection: a second projection of the same tree.
+
+        No template is loaded and no HTML is produced anywhere on this path,
+        because stripping rendered markup is exactly what would turn a KPI
+        strip and a data table into garbage. Nothing here resolves a theme, a
+        density or a font: all three are markup concerns, which is what makes
+        one house format possible at all. Deterministic — no clock, no
+        randomness, no override.
+        """
+        return join_sections(
+            *(region.text(facts) for region, facts in self.leading_regions()),
+            *(section.text() for section in self._sections),
+            *(region.text(facts) for region, facts in self.trailing_regions()),
+        )
+
+    def save(self, output_path: str | Path) -> Path:
+        """Render and write to disk, returning the resolved path."""
+        html = self.render()
+        output_path = Path(output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(html, encoding="utf-8")
+        return output_path
+
+    # ------------------------------------------------------------------
+    # Internals
+    # ------------------------------------------------------------------
+
+    def _inline_image_hint(self) -> str:
+        """
+        Name inlined images in a constraint failure when there are any.
+
+        A base64 data URI costs +33% on top of the raw bytes and lands
+        entirely inside the markup, so it is the usual reason a document that
+        was comfortably under a size limit suddenly is not.
+        """
+        inlined = [i for i in self.images() if i.strategy == EmbedStrategy.DATA_URI]
+        if not inlined:
+            return ""
+        inline_kb = sum(len(i.data) for i in inlined) / 1024
+        return (
+            f" {len(inlined)} inlined image(s) contribute roughly "
+            f"{inline_kb * 4 / 3:.1f} KB of base64 to that total; switching them to "
+            f"EmailImage.attached() moves the bytes out of the HTML entirely."
+        )
+
+
+__all__ = ["Document", "RegionFacts", "Renderer"]

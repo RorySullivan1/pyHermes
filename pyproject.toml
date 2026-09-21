@@ -43,6 +43,27 @@ dev = [
 # Chromium build that produced it instead (see qa/screenshots.py).
 qa = [
     "playwright~=1.62.0",
+    # Rasterises a PDF page to PNG, for the paged half of the gallery (#165).
+    # A self-contained wheel on purpose: going through Poppler would add a
+    # *system* binary to an extra that is meant to be `pip install` and
+    # nothing else, which is the whole reason [qa] is separable.
+    "pypdfium2~=5.13",
+]
+
+# The PDF exporter (#164) is a third extra, on the [qa] reasoning exactly: it
+# needs Pango and Cairo from the system, and `pip install -e ".[dev]"` plus
+# `pytest` must stay installable anywhere. tests/test_pdf.py skips when this is
+# absent rather than failing, which is what proves the extra is optional.
+#
+# Pinned to 70.x deliberately rather than loosely. WeasyPrint 70 replaced the
+# url_fetcher contract: a fetcher is now a `URLFetcher` subclass returning a
+# `URLFetcherResponse`, where every earlier version took a plain callable
+# returning a dict. svc/pdf/fetcher.py is written against the new one, so a
+# `>=` range spanning the change would resolve to a version this code cannot
+# drive -- and it is the fetcher that carries the no-network policy, so the
+# failure would land on the security-relevant part.
+pdf = [
+    "weasyprint~=70.0",
 ]
 
 [build-system]
@@ -98,5 +119,14 @@ warn_unused_configs = true
 # while still reporting success. mypy warns about that; the warning is the only
 # thing that shows it.
 [[tool.mypy.overrides]]
-module = ["playwright.*"]
+# Both spellings per package: a `foo.*` pattern matches submodules, not the
+# top-level module, so `import pypdfium2` needs the bare name as well.
+module = [
+    "playwright",
+    "playwright.*",
+    "weasyprint",
+    "weasyprint.*",
+    "pypdfium2",
+    "pypdfium2.*",
+]
 ignore_missing_imports = true

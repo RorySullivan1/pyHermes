@@ -5,16 +5,17 @@ holds what is true for every task, and points at the topic file for everything e
 
 ## What this project is
 
-pyHermes builds **HTML emails for academic / financial newsletters**. Python composes
-Jinja2 templates into a single, inline-CSS HTML document engineered to survive email
-clients (Gmail, Outlook) — the hard part is staying under Gmail's clipping limit while
-keeping the layout table-based and portable.
+pyHermes builds **documents for academic / financial research** from one section tree, and
+renders each onto the medium it will be read on. Python composes Jinja2 templates into a
+single inline-CSS document; the hard parts are per-medium — surviving Gmail's clipping limit
+and Outlook's Word engine for an email, laying out sheets and margin boxes for a page.
 
-**Scope today = build *and* send.** `svc/builder/` renders the HTML, projects the
-`text/plain` part and declares the images; `svc/delivery/` assembles the
-`multipart/alternative`; `svc/gmail/` + `svc/outlook/` transmit it. Adapters own their
-provider's wire contract and **never** authentication, so pyHermes depends on nothing but
-Jinja2.
+**Scope = build, then send *or* print.** `svc/builder/` is the shared kit — the section tree,
+the three design axes, the two projections. A **medium** decides the rest: `svc/email/` the
+four-slot skeleton and the 102 KB check, `svc/document/` the paged one with its cover, running
+boxes and page breaks. Three exporters sit on one contract — `svc/delivery/` + `svc/gmail/` +
+`svc/outlook/` for MIME, `svc/pdf/` for PDF. Each owns its wire format and **never**
+authentication, so the core still depends on Jinja2 alone.
 
 ## Commands
 
@@ -24,15 +25,17 @@ pytest                        # unit suite — validation, error paths, size lim
 ruff check . && ruff format --check .
 mypy                          # config in pyproject: files = ["svc", "qa"]
 
-pip install -e ".[qa]"        # optional: adds Playwright for screenshots (#59)
+pip install -e ".[qa]"        # optional: Playwright + pypdfium2 for screenshots
+pip install -e ".[pdf]"       # optional: WeasyPrint, for PDF (needs Pango/Cairo)
 python -m qa.screenshots      # gallery → output/screenshots/ (gitignored)
 pytest --update-goldens       # the ONLY way to regenerate a golden (#58)
-python -m qa.preview kitchen_sink --lint --screenshot --open   # the review loop (#61)
+python -m qa.preview kitchen_sink --lint --screenshot --open   # an email
+python -m qa.preview a4_portrait --lint --screenshot --open    # a paged document + its PDF
 ```
 
-CI runs the first four on every PR, plus a `screenshots` job and a `wheel` job. `[dev]`
-alone must stay browser-free: the screenshot tests skip rather than fail, and that is what
-proves `[qa]` is optional.
+CI runs the first four on every PR, plus `screenshots`, `pdf` and `wheel` jobs. `[dev]` alone
+must stay browser- **and** WeasyPrint-free: both extras' tests skip rather than fail, and that
+is what proves each is optional.
 
 **To eyeball a change, run `preview`.** A screenshot is the only thing that catches a
 layout regression; see standing rule 3.
@@ -50,6 +53,7 @@ applies to and loads **only when a matching file is read** — so a session that
 | `design-axes.md` | theming / sizing / typography / enums / containers / `templates/**` | Colour, density, typeface and alignment — the three themes plus the axis that deliberately is not one |
 | `data-table.md` | `models.py`, `components.py`, `templates/analysis/**` | Columns, cells, row kinds, caption and row headers |
 | `plain-text.md` | `textgen.py`, `email.py` | The second projection of the section tree |
+| `media.md` | `svc/email/`, `svc/document/`, `svc/pdf/`, `medium.py`, `document.py`, `templates/document/**` | The medium model, the page, the template fork rule, each medium's regions, the exporter's resource policy |
 | `delivery.md` | `svc/delivery/`, `svc/gmail/`, `svc/outlook/` | MIME assembly, the adapter contract, the deliberate non-features |
 | `qa-harness.md` | `qa/**`, `tests/**` | Gallery, goldens, screenshots, lint, the preview CLI |
 | `config.md` | `svc/config.py` | The one frozen dataclass of tunable numbers |
@@ -61,9 +65,11 @@ stops a settled question being reopened, and it belongs beside the code it settl
 
 The rules themselves. `builder-architecture.md` carries why each exists.
 
-- **102 KB Gmail clipping limit.** `Email._validate_size()` raises `SizeError` above it and
-  warns above 90 KB. The single most important runtime check; never disable it without
-  confirming a non-Gmail channel. Both thresholds come from `Config` at check time.
+- **102 KB Gmail clipping limit — the *email medium's* constraint.**
+  `svc.email.validate_gmail_size` raises `SizeError` above it and warns above 90 KB, and the
+  email medium lists it in `constraints`. The most important runtime check there is; never
+  disable it without confirming a non-Gmail channel. Both thresholds come from `Config` at
+  check time. A paged document runs no size constraint, because nothing clips a PDF.
 - **Jinja2 `StrictUndefined`.** A missing template variable raises. A new template var needs
   a matching key in the component's `context()`.
 - **Autoescape is OFF, and escaping is split by field kind.** Plain-text fields are escaped
@@ -74,6 +80,9 @@ The rules themselves. `builder-architecture.md` carries why each exists.
   moment caller markup opens, and the copy escapes the styling it should inherit (#130).
 - **URL schemes are validated** at construction: `http`, `https`, `mailto`, `cid` and
   relative only. `javascript:`, `data:`, `vbscript:`, `file:` raise `ValidationError`.
+- **The PDF exporter makes no network requests.** It serves `cid:` from the document's own
+  manifest and refuses every other URL by name, so a hosted image is not slow — it is a
+  `PdfError`. A printable document carries its own images.
 - **Colours are `#RRGGBB`**, validated at construction and again in the templates.
 - **Validation runs at construction time, never at render time.** By the time `.render()`
   is called the data shape is already known good. Preserve this when adding a component.
@@ -88,10 +97,12 @@ that enforces each, is in `working-in-the-code.md`.
 2. **A golden diff in a PR is a claim that the visual change is intended.**
    `pytest --update-goldens` is the only regeneration path; a missing golden fails rather
    than being created. Never regenerate to silence a failure.
-3. **Screenshots approximate Gmail-in-a-browser; the lint pass owns Outlook.** "The
-   screenshot looks fine" never closes a compatibility question, and a clean lint never
-   says the layout reads well. **A byte-verified diff is not a verified render** — the
-   alignment epic shipped three defects no golden could see.
+3. **Screenshots approximate Gmail-in-a-browser; the lint pass owns Outlook; the PDF
+   rasterisation owns pagination.** "The screenshot looks fine" never closes a
+   compatibility question, a clean lint never says the layout reads well, and a browser
+   renders a paged document as one long scroll — so a paged fixture is photographed from
+   its PDF, one image per sheet. **A byte-verified diff is not a verified render** — the
+   alignment epic shipped three defects no golden could see, and #164 two more.
 4. **A new template takes its colours from the `theme` namespace.** A hardcoded hex or
    `rgba()` is a bug. No documented exceptions.
 5. **A new template takes its sizes from the `size` namespace.** Four named structural
@@ -126,8 +137,10 @@ itself — file purpose, verbose class, limited function, inline-for-traps — i
   builds the wheel and renders an email from a clean venv to keep it that way.
 - **Import path.** `from svc.builder import …` / `from svc.builder.models import …`.
   `svc/__init__.py` re-exports nothing, and there is no `svc.models`.
-- **The rendered skeleton is `svc/builder/templates/base.html`.** The engine's
-  `FileSystemLoader` root is that directory and it loads `"base.html"`.
+- **The skeleton is the medium's, and the email one is `templates/base.html`.** The engine
+  loads it through a `ChoiceLoader`: each of the medium's `template_search_path` directories
+  first, that root last — so a medium can fork one template without forking the tree, and a
+  declared directory that does not exist is the normal, unforked case.
 
 ## Working in this repo — the `.claude/` tooling
 
@@ -151,10 +164,12 @@ these rather than improvising:
 ## Open work and state
 
 - Tracked in [GitHub issues](https://github.com/RorySullivan1/pyHermes/issues), as epics
-  with sub-issues. Every epic filed before 2026-08-29 is complete and every issue up to
-  #133 is closed. Open: **#134** (prose discipline) and its remaining sub-issues.
+  with sub-issues. **Epic #157 (rescope to media) is complete**, #158–#166. Open: **#150**
+  (banner VML `src`, needs a real Outlook host) and **epic #153** (per-exhibit disclosure,
+  #154–#156), which is orthogonal — it adds a field to three components and touches no
+  skeleton, frame or region.
 - Current state, decisions and open threads:
   [.claude/memory/INDEX.md](.claude/memory/INDEX.md).
-- [README.md](README.md) is the human-facing entry point (what it is, install, build, send,
-  the constraints it enforces). The router and its rules files stay the *rationale*: the
-  README says what the library does, these say why each constraint exists. Keep the split.
+- [README.md](README.md) is the human-facing entry point (what it is, install, build, send or
+  print, the constraints it enforces). The router and its rules files stay the *rationale*:
+  the README says what the library does, these say why each constraint exists. Keep the split.

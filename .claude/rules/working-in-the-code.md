@@ -12,10 +12,13 @@ paths:
 ```
 svc/
 ├── config.py           ← the tunable numbers, in one frozen dataclass
-├── builder/            ← current OO email builder (use this for new work)
+├── builder/            ← the shared kit: everything every medium has
 │   ├── __init__.py     — public API surface (re-exports everything below)
-│   ├── engine.py       — TemplateEngine + BoundEngine (per-render theme + size binding)
-│   ├── email.py        — Email + EmailBuilder (fluent), _validate_size()
+│   ├── engine.py       — TemplateEngine + BoundEngine (binds theme, size, font, medium;
+│                         a ChoiceLoader searches the medium's overlay before the root)
+│   ├── medium.py       — Medium + DEFAULT_MEDIUM: skeleton, slots, page, constraints
+│   ├── document.py     — Document: metadata + sections + the three projections
+│   ├── email.py        — Email(Document) + EmailBuilder (fluent): the four-slot region set
 │   ├── regions.py      — Region base + Banner/MinimalBanner, Footer
 │                         (body = the section list, deliberately not a class)
 │   ├── containers.py   — Container, FullWidth, TwoColumn, ThreeColumn (+ `highlight=` property)
@@ -36,8 +39,13 @@ svc/
 │   ├── filters.py      — Jinja filters (e.g. validate_hex_color)
 │   ├── exceptions.py   — EmailBuilderError hierarchy
 │   └── templates/      ← packaged with the wheel (moved here in #10)
-│       ├── base.html                — the rendered skeleton (four slots: header_bar_html,
+│       ├── base.html                — the EMAIL skeleton (four slots: header_bar_html,
 │                                      banner_html, sections_html, footer_html)
+│       ├── document/base.html       — the PAGED skeleton (@page, five slots), reached
+│                                      by the document medium's template overlay
+│       ├── document/page.html       — the sheet-boundary wrapper (a `tr`, not a `div`)
+│       ├── document/regions/*.html  — cover.html, back-matter.html, and running-box.html
+│                                      which emits CSS rather than markup
 │       ├── regions/*.html           — header-bar.html, banner.html, banner-minimal.html,
 │                                      footer.html
 │       ├── common/containers/*.html — layout geometry: full-width.html + columns.html
@@ -52,10 +60,21 @@ svc/
 │   ├── retry.py        — retry_with_backoff(): shared policy, per-adapter classification
 │   └── exceptions.py   — DeliveryError / MessageError / TransportError (siblings of
 │                          EmailBuilderError)
+├── email/              ← the email medium: the Gmail size constraint, the four slots
+├── document/           ← the paged medium
+│   ├── medium.py       — PAGED_MEDIUM, paged_medium(page)
+│   ├── document.py     — PagedDocument: cover | running boxes | body | back matter
+│   ├── page.py         — Page: a sheet boundary that FLATTENS in a non-paged medium
+│   └── regions.py      — Cover, RunningHeader/Footer (@page margin boxes), BackMatter,
+│                         plus an Empty variant of each
 ├── gmail/              ← Gmail send adapter (consumes delivery; owns no credentials)
 │   └── sender.py       — GmailTransport protocol, GoogleApiTransport shim, send_message()
 ├── outlook/            ← Outlook send adapter over Microsoft Graph (same shape as gmail)
 │   └── sender.py       — OutlookTransport protocol, GraphApiTransport shim, send_message()
+├── pdf/                ← the PDF exporter, on the adapters' contract; "[pdf]" extra
+│   ├── exporter.py     — render_pdf / save_pdf / page_count / available; lazy backend
+│   ├── fetcher.py      — serves cid: from the manifest, refuses every other URL
+│   └── exceptions.py   — PdfError, a sibling of EmailBuilderError and DeliveryError
 qa/                     ← QA harness (epic #54); NOT shipped in the wheel
 ├── goldens.py         — the golden snapshot harness: check_fixture(), write_fixture(),
 │                        render_manifest(), and the diagnosable mismatch report
@@ -89,11 +108,16 @@ These are not conventions to remember — each has teeth, and the teeth are name
    `pytest --update-goldens` and nothing else; a missing golden fails rather than being
    created. Never regenerate to silence a failure — if the diff is not one you meant to make,
    the change is wrong, not the golden.
-3. **Screenshots approximate Gmail-in-a-browser; the lint pass owns Outlook.** "The
-   screenshot looks fine" never closes a compatibility question — Chromium renders
-   `display:flex` perfectly and Outlook's Word engine does not. The filenames say `chromium`
-   for exactly this reason. Conversely, a clean lint says nothing about whether the layout
-   *reads* well; that is what the images are for.
+3. **Screenshots approximate Gmail-in-a-browser; the lint pass owns Outlook; the PDF
+   rasterisation owns pagination.** "The screenshot looks fine" never closes a
+   compatibility question — Chromium renders `display:flex` perfectly and Outlook's Word
+   engine does not. The filenames say `chromium` for exactly this reason. Conversely, a
+   clean lint says nothing about whether the layout *reads* well; that is what the images
+   are for. **The third clause is #165's**: a browser renders a paged document's HTML as
+   one long scroll, which is precisely the property that medium does not have, so a paged
+   fixture is rastered from its PDF one image per sheet — and #164 is why it earns a clause
+   rather than a footnote, since the first real PDF put a folio on its own cover and
+   shrink-wrapped every table to 188px, both of them correct markup to every other check.
 4. **A new template takes its colours from the `theme` namespace.** A hardcoded hex or
    `rgba()` literal in a template is a bug — it is a colour outside the palette, which is
    the drift epic #46 exists to end. Two tests enforce it: one asserts no literal survives

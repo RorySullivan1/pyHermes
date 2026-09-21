@@ -6,8 +6,14 @@ paths:
 # The builder's composition model, ownership rule and public API
 
 
-`svc/builder/` is the only implementation. Its public surface is re-exported from
+`svc/builder/` is the shared kit. Its public surface is re-exported from
 [svc/builder/__init__.py](../../svc/builder/__init__.py).
+
+**Superseded (#158): "`svc/builder/` is the only implementation."** It was, until the
+medium was named. A `Medium` now owns the skeleton, the slot contract and the constraints
+a composed document must pass, and `svc/email/` owns the shipped email one — including the
+102 KB Gmail check, which is a fact about a client rather than about rendering. Epic #157
+moves the rest of the email-only half there; the kit keeps what every medium shares.
 
 (A legacy flat string-replace assembler, `svc/assembler.py`, was removed in #14. It is
 recoverable from git history if ever needed for reference.)
@@ -64,6 +70,23 @@ unfilled slot renders the empty string, so `EmptyHeader` omits the strip by decl
 `TEMPLATE_PATHS = {}` and the skeleton needs no conditional. `Banner.render()` survives as the
 whole-region convenience and delegates to `render_slots()` — one rendering path, not two.
 
+**The region mechanism now serves two media, which is the strongest evidence it
+generalises** (#163). The paged medium has four of its own — `Cover`, `RunningHeader`,
+`RunningFooter`, `BackMatter` — declared in `svc/document/regions.py` on exactly the base
+class the email's three use, with the same `SLOTS` / `TEMPLATE_PATHS` / facts-over-presentation
+rules and an `Empty` variant each. Three things it taught:
+
+- **A slot need not be markup.** The two running boxes fill slots inside the skeleton's
+  `style` element, because a `@page` margin box *is* CSS. That works without changing the
+  mechanism — a slot was always a string hole — but it needs a different escaper, so
+  `css_string` exists beside `escape_html`. The trap it closes is not the quoting: it is
+  that a `</style>` inside a fact would close the stylesheet and spill the rest onto the page.
+- **A projection left empty must say so.** `RunningBox._text` returns `""` **by decision** —
+  a folio counts sheets plain text does not have — and is implemented rather than left to
+  raise, which is what distinguishes it from standing rule 10's failure case.
+- **The back matter mints no new raw-HTML surface.** It renders `header_disclaimer`, a fact
+  `DocumentMetadata` already owns, so the blessed set stays closed at five.
+
 **"No fourth region" was a real decision, and #87 reopened it deliberately.** This file used to
 say *"banner, body and footer are the complete set; a fourth region is a decision to reopen,
 not a gap to fill."* It is recorded as superseded rather than deleted, because the reasoning
@@ -78,6 +101,14 @@ decision to reopen — and the bar #87 met is the one to meet: name the thing th
 structurally separate, rather than find a gap to fill.
 
 ### The ownership rule — facts flow down
+
+**#161 split the facts in two.** `DocumentMetadata` holds what is true of any document —
+firm, campaign, department, dates, language, `header_disclaimer`, and the three design axes —
+and `EmailMetadata` adds what is true only of an email: subject, preheader, and the two
+outbound URLs. A paged document reuses the facts without inheriting a subject line it could
+never have. The rule below is unchanged; it now has a base class and a subclass to state it
+over, and `TestTheDocumentFactsSplitFromTheEmailOnes` names which fact sits on which side,
+because a decision nothing pins gets re-made.
 
 **Facts about the email live on `EmailMetadata`; how a region presents them lives on the
 region.** Stated once, for all three: a region presents facts, it cannot own or contradict

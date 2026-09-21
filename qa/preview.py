@@ -9,7 +9,7 @@ email has two readable parts and no screenshot or lint rule can show the
 second one.
 
 Takes a gallery fixture by name or any ``path.py:callable`` returning an
-``Email``, so a draft outside the gallery uses the same loop.
+``Document``, so a draft outside the gallery uses the same loop.
 """
 
 from __future__ import annotations
@@ -18,14 +18,17 @@ import argparse
 import importlib.util
 import sys
 import webbrowser
+from collections.abc import Callable
 from pathlib import Path
 
-from svc.builder import Email, EmailBuilder
+from svc.builder import EmailBuilder
+from svc.builder.document import Document
 from svc.builder.exceptions import EmailBuilderError
+from svc.pdf import PdfError
 
-from .fixtures import all_fixtures
-from .lint import Severity, format_findings, lint_html
-from .screenshots import ScreenshotError, capture_emails
+from .fixtures import all_fixtures, all_paged_fixtures
+from .lint import Severity, format_findings, lint_document
+from .screenshots import ScreenshotError, capture_emails, capture_pages
 
 #: Where rendered HTML lands. Gitignored, per the repo's existing convention.
 DEFAULT_OUT_DIR = Path("output")
@@ -44,9 +47,9 @@ class PreviewError(RuntimeError):
 # ──────────────────────────────────────────────────────────────────────
 
 
-def resolve(target: str) -> tuple[str, Email]:
+def resolve(target: str) -> tuple[str, Document]:
     """
-    Turn a target into ``(name, email)``.
+    Turn a target into ``(name, document)``.
 
     Two forms, told apart by the ``:``:
 
@@ -66,17 +69,29 @@ def resolve(target: str) -> tuple[str, Email]:
     return target, _from_fixture(target)
 
 
-def _from_fixture(name: str) -> Email:
-    gallery = all_fixtures()
+def _gallery() -> dict[str, Callable[[], Document]]:
+    """
+    Both galleries, for a tool that only ever *looks* at what it is given.
+
+    The two registries stay apart for the test suite, whose assertions are
+    per-medium (#165 merges them). Here the distinction buys nothing: this
+    command renders a document and shows it to you, and refusing to preview
+    a paged fixture would be the tool having an opinion it has no use for.
+    """
+    return {**all_fixtures(), **all_paged_fixtures()}
+
+
+def _from_fixture(name: str) -> Document:
+    gallery = _gallery()
     if name not in gallery:
         raise PreviewError(
             f"No fixture named {name!r}. Available: {', '.join(sorted(gallery))}.\n"
             "For a file, use the path:callable form, e.g. drafts/weekly.py:build"
         )
-    return _as_email(gallery[name](), name)
+    return _as_document(gallery[name](), name)
 
 
-def _from_spec(target: str) -> tuple[str, Email]:
+def _from_spec(target: str) -> tuple[str, Document]:
     """
     Load ``path/to/module.py:callable``.
 
@@ -116,19 +131,24 @@ def _from_spec(target: str) -> tuple[str, Email]:
         raise PreviewError(f"{attribute!r} in {path} is not callable.")
 
     name = f"{path.stem}-{attribute}"
-    return name, _as_email(builder(), name)
+    return name, _as_document(builder(), name)
 
 
-def _as_email(value: object, name: str) -> Email:
+def _as_document(value: object, name: str) -> Document:
     """
-    Accept an ``Email`` or an ``EmailBuilder``, since both are public API and a
-    caller should not have to remember which one their function returns.
+    Accept a ``Document``, an ``Email`` or an ``EmailBuilder``.
+
+    All three are public API and a caller should not have to remember which
+    one their own function returns. An ``Email`` *is* a ``Document`` since
+    #162, so the check is one line shorter than it looks.
     """
     if isinstance(value, EmailBuilder):
         return value.build()
-    if isinstance(value, Email):
+    if isinstance(value, Document):
         return value
-    raise PreviewError(f"{name} returned {type(value).__name__}, not an Email or EmailBuilder.")
+    raise PreviewError(
+        f"{name} returned {type(value).__name__}, not a Document, Email or EmailBuilder."
+    )
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -143,7 +163,7 @@ def _parser() -> argparse.ArgumentParser:
         epilog=(
             "targets:\n"
             "  kitchen_sink             a fixture from the gallery (see --list)\n"
-            "  drafts/weekly.py:build   a zero-arg callable returning an Email\n"
+            "  drafts/weekly.py:build   a zero-arg callable returning a Document\n"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -166,7 +186,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if args.list:
-        for name in sorted(all_fixtures()):
+        for name in sorted(_gallery()):
             print(name)
         return EXIT_OK
 
@@ -201,25 +221,48 @@ def main(argv: list[str] | None = None) -> int:
     exit_code = EXIT_OK
 
     if args.lint:
-        findings = lint_html(html)
+        # Judged by its own medium's rules since #165: an email answers to
+        # the ten about mail clients, a paged document to the six about a page.
+        findings = lint_document(email)
         print(format_findings(findings))
         if any(finding.severity is Severity.ERROR for finding in findings):
             exit_code = EXIT_LINT_ERRORS
 
+    pdf_destination = None
+    if email.medium.paged:
+        # A paged document's deliverable is the PDF, so preview writes one
+        # where it writes the HTML -- and says why it could not, rather than
+        # failing, because the backend is an optional extra like the browser.
+        try:
+            from svc.pdf import page_count, save_pdf
+
+            pdf_destination = save_pdf(email, args.out / f"{name}.pdf")
+            size_kb = pdf_destination.stat().st_size / 1024
+            print(f"{pdf_destination}  ({size_kb:.1f} KB, {page_count(email)} page(s))")
+        except PdfError as exc:
+            print(f"pdf skipped: {exc}", file=sys.stderr)
+
     if args.screenshot:
         try:
-            shots, environment = capture_emails({name: email}, args.out / "screenshots")
-        except ScreenshotError as exc:
-            # Not a failure: the browser extra is optional by design, so a
-            # missing one must not turn a good email into a bad exit code.
+            if email.medium.paged:
+                shots, environment = capture_pages({name: email}, args.out / "screenshots")
+                print(f"pdfium {environment['renderer']}")
+            else:
+                shots, environment = capture_emails({name: email}, args.out / "screenshots")
+                print(f"Chromium {environment['browser']}")
+        except (ScreenshotError, PdfError) as exc:
+            # Not a failure: both extras are optional by design, so a missing
+            # one must not turn a good document into a bad exit code.
             print(f"screenshots skipped: {exc}", file=sys.stderr)
         else:
-            print(f"Chromium {environment['browser']}")
             for shot in shots:
                 print(f"  {shot.path}  {shot.width}x{shot.height}")
 
     if args.open:
-        webbrowser.open(destination.resolve().as_uri())
+        # A paged document opens as the thing it is. Showing its HTML in a
+        # browser would show a page without pages -- the one property the
+        # medium exists for.
+        webbrowser.open((pdf_destination or destination).resolve().as_uri())
 
     return exit_code
 

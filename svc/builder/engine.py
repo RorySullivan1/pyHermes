@@ -15,6 +15,7 @@ import jinja2
 
 from .exceptions import TemplateError
 from .filters import register_all
+from .medium import DEFAULT_MEDIUM, Medium
 from .sizing import STANDARD_SIZES
 from .theming import DEFAULT_THEME, Theme
 from .typography import DEFAULT_FONTS
@@ -29,6 +30,13 @@ class Renderer(Protocol):
     :class:`BoundEngine` can stand in for a :class:`TemplateEngine` anywhere
     in the section tree without a single call site changing.
 
+    :attr:`medium` joined it in #163 on the same terms: a
+    :class:`~svc.document.page.Page` renders a page break for a paged medium
+    and flattens for every other, which is a decision it can only make in
+    Python. It was deliberately left off this protocol in #158, when nothing
+    needed it — the bar for adding to a contract every container, component
+    and region shares is a reader, not a plausible future one.
+
     :attr:`theme` exists because one consumer needs the theme as an *object*
     rather than as context: :class:`~svc.builder.regions.Banner` resolves a
     :class:`~svc.builder.theming.BannerPalette` against it in Python, so that
@@ -41,6 +49,9 @@ class Renderer(Protocol):
 
     @property
     def theme(self) -> "Theme": ...
+
+    @property
+    def medium(self) -> "Medium": ...
 
 
 def _packaged_template_dir() -> Path:
@@ -63,17 +74,33 @@ class TemplateEngine:
     """
     Wraps a Jinja2 Environment configured for HTML email templates.
 
-    The engine is initialised with a template directory and provides
-    methods to load and render templates. Custom filters for color
-    validation, size checking, etc. are registered automatically.
+    Initialised with a template directory; the custom filters for colour
+    validation, size checking and the rest are registered automatically.
+
+    **A medium may fork one template without forking the tree.**
+    ``search_path`` names directories searched *before* the root, so a file
+    at ``<medium>/text/text-block.html`` shadows ``text/text-block.html``
+    for that medium and is invisible to every other. Nothing moves to turn
+    this on: a medium with no forks has no directory at all, and every
+    lookup falls through to the shared tree.
+
+    To fork one, copy it to the same relative path under the medium's
+    directory, change it, regenerate that medium's goldens, and say in the
+    PR **why the shared template was wrong here** — a fork is a claim that
+    two media genuinely need different markup, and it doubles the sites a
+    later change has to reach.
 
     Args:
         template_dir: Root directory containing all templates.
                       Defaults to the ``templates/`` directory packaged
                       inside ``svc.builder``.
+        search_path:  Directories, relative to the root, searched ahead of
+                      it in order. A name with no directory behind it is
+                      not an error; it is what a medium that has forked
+                      nothing looks like.
     """
 
-    def __init__(self, template_dir: Path | None = None):
+    def __init__(self, template_dir: Path | None = None, *, search_path: tuple[str, ...] = ()):
         if template_dir is None:
             template_dir = _packaged_template_dir()
         self._template_dir = Path(template_dir).resolve()
@@ -81,8 +108,17 @@ class TemplateEngine:
         if not self._template_dir.is_dir():
             raise TemplateError(f"Template directory not found: {self._template_dir}")
 
+        self._search_path = tuple(search_path)
+        # Overlays first, the shared tree last. A FileSystemLoader over a
+        # directory that does not exist finds nothing and raises nothing,
+        # which is exactly the fall-through an unforked medium needs.
+        loaders = [
+            jinja2.FileSystemLoader(str(self._template_dir / sub)) for sub in self._search_path
+        ]
+        loaders.append(jinja2.FileSystemLoader(str(self._template_dir)))
+
         self._env = jinja2.Environment(
-            loader=jinja2.FileSystemLoader(str(self._template_dir)),
+            loader=jinja2.ChoiceLoader(loaders),
             autoescape=False,  # HTML emails need raw output
             trim_blocks=True,  # Strip newline after block tags
             lstrip_blocks=True,  # Strip leading whitespace before block tags
@@ -106,6 +142,16 @@ class TemplateEngine:
     def template_dir(self) -> Path:
         """Return the resolved template directory path."""
         return self._template_dir
+
+    @property
+    def search_path(self) -> tuple[str, ...]:
+        """The directories searched ahead of the root, in order."""
+        return self._search_path
+
+    @property
+    def medium(self) -> Medium:
+        """The medium an unbound render gets, which is plain HTML."""
+        return DEFAULT_MEDIUM
 
     @property
     def theme(self) -> Theme:
@@ -158,9 +204,9 @@ class TemplateEngine:
             template_name: Template path relative to template_dir.
             context: Dictionary of variables passed to the template.
 
-        The three design-system namespaces are layered **under** ``context``:
-        the engine guarantees a theme, a size scheme and a set of typefaces,
-        and the email chooses which by binding its own over them
+        The four shared namespaces are layered **under** ``context``: the
+        engine guarantees a theme, a size scheme, a set of typefaces and a
+        medium, and the document chooses each by binding its own over them
         (:meth:`bound`). That floor is what keeps rendering a component on its
         own a one-liner.
 
@@ -172,15 +218,18 @@ class TemplateEngine:
         """
         try:
             tpl = self.get_template(template_name)
-            # Every template reads colours from ``theme`` since #49 and sizes
-            # from ``size`` since #41, so the engine guarantees both are
-            # present: rendering a component on its own stays a one-liner,
-            # and it renders in the shipped palette at the shipped density.
-            # The *choice* of either belongs to Email.render(), which binds
-            # resolved ones — and because the caller's context is layered on
-            # top here, that binding always wins over this floor.
+            # The four namespaces every template reads have a floor here, so
+            # rendering one component alone stays a one-liner. Email.render()
+            # binds the resolved ones, and the caller's context is layered on
+            # top, so that binding always wins over this floor.
             return tpl.render(
-                **{"theme": DEFAULT_THEME, "size": STANDARD_SIZES, "font": DEFAULT_FONTS, **context}
+                **{
+                    "theme": DEFAULT_THEME,
+                    "size": STANDARD_SIZES,
+                    "font": DEFAULT_FONTS,
+                    "medium": DEFAULT_MEDIUM,
+                    **context,
+                }
             )
         except jinja2.TemplateError as exc:
             raise TemplateError(f"Error rendering {template_name}: {exc}") from exc
@@ -200,9 +249,15 @@ class TemplateEngine:
         """
         try:
             tpl = self._env.from_string(source)
-            # Same theme and size floor as render(); see the note there.
+            # Same four-namespace floor as render(); see the note there.
             return tpl.render(
-                **{"theme": DEFAULT_THEME, "size": STANDARD_SIZES, "font": DEFAULT_FONTS, **context}
+                **{
+                    "theme": DEFAULT_THEME,
+                    "size": STANDARD_SIZES,
+                    "font": DEFAULT_FONTS,
+                    "medium": DEFAULT_MEDIUM,
+                    **context,
+                }
             )
         except jinja2.TemplateError as exc:
             raise TemplateError(f"Error rendering string template: {exc}") from exc
@@ -244,6 +299,12 @@ class BoundEngine:
     def template_dir(self) -> Path:
         """The underlying engine's template directory."""
         return self.engine.template_dir
+
+    @property
+    def medium(self) -> "Medium":
+        """The medium this render is bound to, falling through to the engine's."""
+        bound = self.shared.get("medium")
+        return bound if isinstance(bound, Medium) else self.engine.medium
 
     @property
     def theme(self) -> "Theme":

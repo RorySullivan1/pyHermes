@@ -18,8 +18,10 @@ from __future__ import annotations
 from collections.abc import Callable
 
 from svc.builder import Email
+from svc.builder.document import Document
 
 from . import (
+    a4_portrait,
     aligned_layout,
     compact_size,
     custom_banner,
@@ -33,6 +35,7 @@ from . import (
     no_header,
     rich_table,
     slate_theme,
+    slide_16_9,
     spacious_size,
 )
 
@@ -57,6 +60,9 @@ DEPRECATED_COMPONENTS = frozenset({"KpiStrip"})
 #: It stays out of the alias deliberately: consumers must not be obliged to
 #: pass it.
 FixtureBuilder = Callable[[], Email]
+
+#: A paged fixture builder, on the same no-argument contract.
+PagedFixtureBuilder = Callable[[], Document]
 
 
 def all_fixtures() -> dict[str, FixtureBuilder]:
@@ -84,4 +90,29 @@ def all_fixtures() -> dict[str, FixtureBuilder]:
     }
 
 
-__all__ = ["DEPRECATED_COMPONENTS", "FixtureBuilder", "all_fixtures"]
+def all_paged_fixtures() -> dict[str, PagedFixtureBuilder]:
+    """
+    The paged gallery, name → builder.
+
+    **A second registry rather than a wider one, deliberately.**
+    :func:`all_fixtures` is consumed by a dozen test modules whose assertions
+    are about *emails* — Outlook lint rules, a phone viewport, the
+    ``kitchen_sink`` completeness rules keyed to ``EmailMetadata``. Widening
+    it here would drag every one of them onto a paged render several phases
+    before the harness knows what a medium is. #165 is where the two become
+    one registry keyed by medium; until then the split is what keeps each
+    gallery's tests about the thing they test.
+    """
+    return {
+        "a4_portrait": a4_portrait.build,
+        "slide_16_9": slide_16_9.build,
+    }
+
+
+__all__ = [
+    "DEPRECATED_COMPONENTS",
+    "FixtureBuilder",
+    "PagedFixtureBuilder",
+    "all_fixtures",
+    "all_paged_fixtures",
+]

@@ -1,0 +1,18 @@
+{# A @page margin box. This template emits CSS, not markup -- the slot it
+   fills lands inside the skeleton's `style` element -- so every interpolated
+   value goes through `css_string` and never `escape_html`. HTML entities
+   inside a stylesheet render literally, and neither filter's absence would
+   stop a `</style>` in a firm name closing the block early. #}
+    @page {
+      @{{ running_box }} {
+        content: "{{ running_label | css_string }}"{% if show_page_number %} " · " counter(page) " / " counter(pages){% endif %};
+        font-family: {{ font.label }};
+        font-size: {{ size.type.micro }}px;
+        color: {{ theme.text.light }};
+      }
+    }
+    {# ...and not on the cover. A zero margin there does NOT suppress a margin
+       box -- it renders anyway, clipped against the page edge, which is what
+       the first PDF showed. Only `content: none` removes it. The region that
+       put the box somewhere is what knows which one to blank. #}
+    @page cover { @{{ running_box }} { content: none; } }

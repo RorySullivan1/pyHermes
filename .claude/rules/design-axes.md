@@ -265,7 +265,11 @@ treat a KPI number as ordinary body copy. Tests assert all three.
 **Non-goals, as decisions**: no free-form size parameters (`size_theme` is the whole surface);
 **no narrow-frame theme** — all three keep the 680px frame, and #42 made width *derivable* so
 that shipping a different one becomes a deliberate act with its own client-testing burden and
-its own interplay with image `width=` attributes, rather than a side effect; one theme per
+its own interplay with image `width=` attributes, rather than a side effect. **#159 made that
+deliberate act a named one**: the page is a `PageFormat` the *medium* owns, layered over the
+density's frame at render time, so a density still cannot reach a width and choosing a
+different one now means choosing where the document is read. The non-goal stands; what changed
+is that a frame width has an owner rather than a convention; one theme per
 email, since density is an email-level voice; and no font theming — which stopped being a
 non-goal when #56 landed, and is the axis below.
 

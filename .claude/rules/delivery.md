@@ -547,3 +547,45 @@ Call ``operation``, retrying only failures ``is_transient`` accepts.
             transient. Wrapping it is the adapter's job, which has the
             context to say what it means.
 ```
+
+
+## The PDF exporter — the third one, and what it added to the contract (#164)
+
+**Superseded (#157): "the seam between delivery and an adapter" is no longer the only seam.**
+There are three exporters on one contract now, and `.claude/rules/media.md` carries the medium
+model they hang off. What follows stays true of all of them.
+
+`svc/pdf/` is an exporter on exactly the terms `svc/gmail` and `svc/outlook` hold: it takes
+what the builder produces, owns its own wire format, and owns nothing else. WeasyPrint is the
+optional `[pdf]` extra, imported lazily, and an AST test holds that nothing under `svc/builder`,
+`svc/document` or `svc/email` imports it.
+
+What it *adds* to the adapter contract is a **resource policy**, and it is the security-relevant
+part: the exporter makes **no network requests**. `cid:` references are served from the
+document's own manifest, `data:` URIs resolve themselves, and every other URL is refused by name
+with a message saying what to do instead. Two settings carry it rather than convention —
+`allowed_protocols=("data",)` leaves the inherited opener nowhere to go, and
+`fail_on_errors=True` makes a refusal *stop the render*, because WeasyPrint's default is to warn
+and carry on, which would drop a chart out of a compliance document and still hand back a PDF
+that looks finished.
+
+Four things that phase established, each of which cost a render to find:
+
+- **A document with hosted images cannot be printed**, and that is the policy working rather
+  than a gap. The paged fixtures attach their cover art for exactly this reason.
+- **The exporter presents its own exception tree.** `fail_on_errors=True` makes WeasyPrint wrap
+  the cause in its own `FatalURLFetchingError` on the way out, so a caller catching `PdfError`
+  — the documented contract — would have missed it. The exporter unwraps and re-raises, cause
+  chained, the way the send adapters do.
+- **A print engine does not map a table's `width` attribute.** The component templates carry
+  widths as attributes because Outlook's Word engine reads nothing else; without the paged
+  skeleton's one mapping rule every table shrink-wrapped to its content — 188px inside a 794px
+  page, rendering perfectly and looking like a different document.
+- **`@page cover { margin: 0 }` does not suppress a margin box.** It renders anyway, clipped
+  against the page edge, which is how the first PDF put a folio on its own cover. Only
+  `content: none` removes it, and the region that placed the box is what blanks it.
+
+The pin is `weasyprint~=70.0` rather than a range: version 70 replaced the `url_fetcher`
+contract (a `URLFetcher` subclass returning a `URLFetcherResponse`, where every earlier version
+took a callable returning a dict), and it is the fetcher that carries the no-network policy — so
+a range spanning that change would land the failure on the part that matters most.
