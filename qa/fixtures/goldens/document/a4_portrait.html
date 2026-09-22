@@ -43,6 +43,10 @@
 
     table[width="100%"] { width: 100%; }
     img { border: 0; }
+
+    .data-table tbody tr { break-inside: avoid; page-break-inside: avoid; }
+    .data-table tr.row-total { break-before: avoid; page-break-before: avoid; }
+    .data-table tr.row-subhead { break-after: avoid; page-break-after: avoid; }
   </style>
 </head>
 <body>

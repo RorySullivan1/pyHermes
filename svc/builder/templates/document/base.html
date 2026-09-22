@@ -41,6 +41,16 @@
        content, measured at 188px inside a 794px page. #}
     table[width="100%"] { width: 100%; }
     img { border: 0; }
+
+    {# Where a sheet may not end (#169). Each rule sits on the thing that must
+       not split, never on a table that may be taller than a sheet: `avoid`
+       on one of those pushes it whole to the next sheet and strands a
+       half-empty one. The email never loads this skeleton, so the rules cost
+       it nothing; the class hooks are the shared markup's only share.
+       Both spellings travel together, as in page.html. #}
+    .data-table tbody tr { break-inside: avoid; page-break-inside: avoid; }
+    .data-table tr.row-total { break-before: avoid; page-break-before: avoid; }
+    .data-table tr.row-subhead { break-after: avoid; page-break-after: avoid; }
   </style>
 </head>
 <body>
