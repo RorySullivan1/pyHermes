@@ -171,6 +171,7 @@ email a byte, and nothing was forked.
 | `tr.row-subhead` | `break-after: avoid` | A subhead closing a sheet |
 | `.data-table > caption` | `break-after: avoid` | A table's name closing a sheet |
 | `.section-title` | `break-after: avoid` | A section title stranded at the foot |
+| `.subtitle` | `break-after: avoid` | A component's standfirst left behind by its figure |
 | `.fine-print` | `break-before: avoid` | An attribution or disclosure opening a sheet |
 | `.figure` | `break-inside: avoid` | A chart or image block splitting |
 | `body` | `orphans: 2; widows: 2` | The CSS initial values, stated so the decision is visible |
@@ -190,8 +191,13 @@ email a byte, and nothing was forked.
 - **Cell padding can move a whole table.** When a table's rows fit on a sheet but the
   container cell's bottom padding does not, WeasyPrint breaks before the table rather than
   inside it. The title rule keeps the title with the table when that happens.
-- **Each hook is a class and nothing else.** `section-title`, `fine-print`, `figure`,
-  `row-total` and `row-subhead` carry no style of their own. The email golden diffs were
+- **Two rules can interact, and only a raster shows it.** The figure rule moves a chart whole,
+  and that left the chart's subtitle alone at the foot of the sheet it came from. No issue
+  named the defect. The first photograph of the long-table fixture found it, and the
+  `subtitle` rule followed. Its test strips that one rule and not the rest, because without
+  any rules the chart never moves and the subtitle is never stranded.
+- **Each hook is a class and nothing else.** `section-title`, `subtitle`, `fine-print`,
+  `figure`, `row-total` and `row-subhead` carry no style of their own. The email golden diffs were
   checked by a script to contain only the inserted attributes, and every email screenshot
   stayed pixel-identical.
 
