@@ -476,6 +476,12 @@ Validation runs at **construction time**, not render time. Models (`KpiItem`, `T
 `__init__`. By the time you call `.render()`, the data shape is already known good.
 **Preserve this pattern** when adding components — validate in `__init__`, not in `context()`.
 
+A **document** validates as it grows: `add_section` rejects a second claimant to an anchor and
+leaves the document as it was (#181, #183). **The one check that waits is a cross-reference**
+(#184): a `#fragment` may name a section not yet added, so `Document.validate()` answers it at
+the start of each projection, before any template loads — the constraint's purpose, kept.
+`apparatus.md` has the reasoning.
+
 ### Exceptions
 
 All errors inherit from [EmailBuilderError](../../svc/builder/exceptions.py): `TemplateError`

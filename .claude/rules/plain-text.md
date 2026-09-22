@@ -5,6 +5,13 @@ paths:
   - "svc/builder/document.py"
 ---
 
+**The apparatus projects too (#171), from the same numbers the markup prints.** An exhibit's
+heading line reads `Exhibit 3 · Factor returns`; a footnote marker is `[7]` in place, and a
+`Notes` block after the last section lists `[7] …` with a hanging indent — in every medium,
+since plain text has no sheet foot. A same-document link (`#exhibit-3`) degrades to its label
+alone: `[Exhibit 3](#exhibit-3)` would point nowhere, so `format_link` drops a fragment URL.
+A running box and a contents sheet's page numbers project to nothing, by decision.
+
 **Since #162 the projection is `Document.text()`, not `Email.text()`.** The mechanism is
 unchanged — a second projection of the same section tree, no template loaded, no theme, size
 or font resolved — but it is shared by every medium, and a region's `text()` is what each

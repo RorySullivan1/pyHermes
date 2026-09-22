@@ -57,7 +57,8 @@ email.save("output/weekly-wrap.html")   # prints the rendered size, or raises ab
 ## The same content, printed
 
 Swap the product and the section tree renders onto sheets instead. A cover, a folio in the
-margin of every page, a real break before the appendix, and a closing disclosures page:
+margin of every page, a real break before the appendix, and a closing disclosures page (a
+contents sheet, footnotes and cross-references are [below](#numbers-notes-contents-and-references)):
 
 ```python
 from svc.builder import FullWidth, TextBlock
@@ -428,6 +429,52 @@ raw, and do not pre-escape. That means no inline link today; the reasoning, and 
 figure-specific-vs-document-wide steering that keeps a repeated boilerplate off the 102 KB
 budget, are in `.claude/rules/disclosure.md`.
 
+## Numbers, notes, contents and references
+
+A research document is navigated by its apparatus, and pyHermes numbers all of it in Python —
+once — so the email, the PDF and the plain-text part agree:
+
+```python
+from svc.builder import Contents, DataTable, FullWidth, TextBlock
+from svc.document import ContentsPage, PagedDocument, RunningHeader
+
+document = PagedDocument(
+    facts,
+    contents=ContentsPage(heading="Contents"),              # a sheet after the cover
+    running_header=RunningHeader(follow="section"),         # the current section, per sheet
+)
+document.add_section(FullWidth(title="Factor Returns", content=DataTable(
+    headers=["Factor", "1M"], rows=rows,
+    caption="Style factor returns", label="Exhibit",        # "Exhibit 1 · Style factor returns"
+    source="Hermes Research[^1]", notes=["Equal-weighted across quintiles."],
+)))
+document.add_section(FullWidth(title="Method", content=TextBlock(
+    '<p>The returns in <a class="xref" href="#exhibit-1">Exhibit 1</a> are gross.</p>'
+)))
+```
+
+| | On paper | In an email | In plain text |
+|---|---|---|---|
+| `label="Exhibit"` | Exhibit 1 · …, `id="exhibit-1"` | the same | the same |
+| `[^1]` + `notes=` | at the foot of the marker's sheet | endnotes after the last section | `[1]`, then a Notes list |
+| Contents | `ContentsPage`, with page numbers | the `Contents` component, linked | the titles |
+| `class="xref"` | Exhibit 1 (p. 3) | Exhibit 1, linked | Exhibit 1 |
+| `follow="section"` | the running header tracks the section | — | — |
+
+- **Exhibits number per label** — `Table 2` and `Figure 1` coexist — in reading order, across
+  splits and pages. The separator is `Config.exhibit_separator`.
+- **A footnote marker is `[^n]`, local to its component**, and the document renumbers across the
+  tree. Every marker must call a note and every note must be called, checked at construction.
+  A note is plain text, escaped for you, like `disclosure`.
+- **Every titled section is an anchor**, a slug of its title (`#factor-returns`); `anchor=`
+  overrides it. Two claimants to one anchor raise when the second is added.
+- **A reference to an anchor nothing defines raises** at the start of `render()` or `text()`,
+  naming it — which is how a relabelled exhibit is caught before a reader finds it.
+  `document.validate()` checks sooner.
+
+The page numbers are the print engine's (WeasyPrint's `target-counter`); everything else is
+Python's, which is why the text part can carry it.
+
 ## Colour
 
 Every colour and shadow comes from one validated `Theme`, chosen with one metadata field:
@@ -584,7 +631,8 @@ rather than documented:
   90 KB. Both thresholds are configurable, so a non-Gmail channel can raise them deliberately
   rather than by commenting out the check.
 - **Validation at construction, not at render.** Models and components raise `ValidationError`
-  from `__init__`; by the time you call `.render()`, the data shape is already known good.
+  from `__init__`; by the time you call `.render()`, the data shape is already known good. The
+  one document-wide check, that every `#reference` lands, runs before any template loads.
 - **Missing template variables fail loudly** — Jinja2 runs under `StrictUndefined`.
 - **URL schemes.** `http`, `https`, `mailto`, `cid` and relative URLs are allowed;
   `javascript:`, `data:`, `vbscript:` and `file:` are rejected at construction.
@@ -775,8 +823,9 @@ MIME message, transmitting it through Gmail or Microsoft Graph, and printing it 
 
 **Out, deliberately:** OAuth flows (the caller's, by design); campaign management — no
 scheduling, recipient lists, batching or send-time analytics; open tracking and link
-rewriting. On the paged side: no table of contents, no footnotes or cross-references, and
-no DOCX or PPTX exporter — each is a new epic on the same contract rather than a gap.
+rewriting. On the paged side: no index, bibliography or list of figures, no multi-level
+numbering, and no DOCX or PPTX exporter — each is a new epic on the same contract rather
+than a gap.
 
 ## Layout
 

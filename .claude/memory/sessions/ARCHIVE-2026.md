@@ -246,3 +246,6 @@ Decisions and Log entries folded out of `INDEX.md` on 2026-08-29 (#143), verbati
 - [2026-09-22 11:17] per-exhibit-disclosure — **PR #168 merged** (`72eb30a`): 28 files, +580/-47.
   #153–#156 all closed by their own keywords, confirming the #167 lesson from the other side —
   sessions/2026-09-21-per-exhibit-disclosure.md
+
+- [2026-09-22 14:07] format-coverage-audit — read-only sweep, then **filed epics #169–#172** and
+  sub-issues #173–#189 — sessions/2026-09-22-1351-format-coverage-audit.md

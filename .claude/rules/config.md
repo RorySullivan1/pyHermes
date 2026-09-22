@@ -5,6 +5,11 @@ paths:
 
 # Configuration — the tunable numbers
 
+**One field is a string, not a number: `exhibit_separator` (#181).** The " · " between an
+exhibit's number and its caption is house style — a judgment call, like the rest — and it is
+read at render, so a `config_override` moves both projections at once. `from_env` takes a
+string field verbatim, surrounding spaces included, and a blank one is refused.
+
 ## Configuration — `svc/config`
 
 Every judgment-call number in the package is a field on one frozen
