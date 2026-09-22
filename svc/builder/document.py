@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Self
 
 from .apparatus import check_unique
+from .components import Component, Exhibit
 from .containers import Container
 from .engine import Renderer, TemplateEngine
 from .enums import EmbedStrategy
@@ -130,9 +131,11 @@ class Document:
         """
         self._sections.append(container)
         try:
+            self._number_exhibits()
             check_unique(self._anchors())
         except ValidationError:
             self._sections.pop()
+            self._number_exhibits()
             raise
         return self
 
@@ -190,6 +193,7 @@ class Document:
         the medium's constraints over the *composed* document, so region
         bytes are inside whatever budget it sets.
         """
+        self._number_exhibits()
         # The one resolution point. Every template below — skeleton, regions,
         # containers, components — reads the same values, because they all
         # render through this binder rather than looking any of them up.
@@ -220,6 +224,7 @@ class Document:
         one house format possible at all. Deterministic — no clock, no
         randomness, no override.
         """
+        self._number_exhibits()
         return join_sections(
             *(region.text(facts) for region, facts in self.leading_regions()),
             *(section.text() for section in self._sections),
@@ -238,13 +243,39 @@ class Document:
     # Internals
     # ------------------------------------------------------------------
 
+    def _components(self) -> list[Component]:
+        """Every component, in reading order: sections in turn, a split left to right."""
+        return [component for section in self._sections for component in section.components()]
+
+    def _number_exhibits(self) -> None:
+        """
+        Number every labelled exhibit in reading order, one count per label.
+
+        Run before each projection rather than once, so a component shared with
+        another document carries this one's number while this one renders.
+        """
+        counts: dict[str, int] = {}
+        for component in self._components():
+            if isinstance(component, Exhibit):
+                if component.label:
+                    counts[component.label] = counts.get(component.label, 0) + 1
+                    component.number = counts[component.label]
+                else:
+                    component.number = None
+
     def _anchors(self) -> list[tuple[str, str]]:
         """Every anchor this document defines, each with who defines it."""
-        return [
+        sections = [
             (anchor, f"the section titled {section.title!r}")
             for section in self._flat_sections()
             if (anchor := section.resolved_anchor())
         ]
+        exhibits = [
+            (anchor, f"{component.numbered('') or 'an unnumbered'} {type(component).__name__}")
+            for component in self._components()
+            if isinstance(component, Exhibit) and (anchor := component.resolved_anchor())
+        ]
+        return sections + exhibits
 
     def _inline_image_hint(self) -> str:
         """

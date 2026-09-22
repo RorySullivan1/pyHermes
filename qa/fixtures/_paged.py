@@ -13,7 +13,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from svc.builder import CardGroup, DataTable, FullWidth, TextBlock, TwoColumn
+from svc.builder import CardGroup, ChartBlock, DataTable, FullWidth, TextBlock, TwoColumn
 from svc.builder.enums import CardOrientation, TwoColumnRatio
 from svc.builder.images import EmailImage
 from svc.builder.medium import Medium
@@ -39,6 +39,9 @@ _MARK_PNG = solid_png(72, 72, (245, 242, 236))
 
 #: The cover's backdrop, attached so the document is self-contained.
 _COVER_PNG = solid_png(120, 80, (22, 33, 45))
+
+#: The curve chart, the document's second numbered exhibit (#181).
+_CURVE_PNG = solid_png(600, 120, (91, 138, 154))
 
 #: Fixed so the render never moves. A fixture that reads the clock cannot be
 #: snapshotted.
@@ -146,6 +149,8 @@ def build_on(medium: Medium, template_dir: Path | None = None) -> PagedDocument:
                     source="Hermes Research",
                     as_of="30 September 2026",
                     subtitle="Long-short, gross of costs",
+                    caption="Style factor returns",
+                    label="Exhibit",
                     disclosure=(
                         "Factor returns are shown gross of fees and transaction "
                         "costs. Past performance is not indicative of future results."
@@ -158,7 +163,12 @@ def build_on(medium: Medium, template_dir: Path | None = None) -> PagedDocument:
                 ratio=TwoColumnRatio.EQUAL,
                 title="Positioning",
                 left=TextBlock("<p>The left half of a 50-50 split.</p>"),
-                right=TextBlock("<p>The right half of a 50-50 split.</p>"),
+                right=ChartBlock(
+                    EmailImage.attached(_CURVE_PNG, alt="2s10s spread over the quarter", width=600),
+                    caption="The 2s10s spread",
+                    label="Exhibit",
+                    source="Hermes Research",
+                ),
             )
         )
         # An explicit sheet boundary, with both breaks at non-default values.

@@ -22,11 +22,13 @@
                first column, when its resolved kind is text.
     source   — Attribution string (optional)
     as_of    — Date string (optional)
+    anchor   — The table's `id`, empty when it has none (#181). The caption
+               arrives already numbered: the document assigned the number
 #}
 {% if subtitle %}
 <p class="subtitle" style="font-family: {{ font.body }}; font-size: {{ size.type.secondary }}px; font-style: italic; color: {{ theme.text.secondary }}; margin: 0 0 {{ size.space.subtitle_gap }}px 0; line-height: {{ size.type.secondary_line | percent }};">{{ subtitle | escape_html }}</p>
 {% endif %}
-<table class="data-table" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
+<table class="data-table"{% if anchor %} id="{{ anchor | escape_html }}"{% endif %} border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
 {% if caption %}
   {# The table's accessible NAME, not a standfirst — see the component's
      docstring on why this is a field of its own. `caption-side` and the

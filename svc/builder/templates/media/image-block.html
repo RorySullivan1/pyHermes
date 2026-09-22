@@ -16,14 +16,15 @@
     image_width    — Display width in px, or "" for full width
     image_align    — "left" | "center" | "right"
     link_url       — Optional href wrapping the image ("" for none)
-    caption        — Optional caption rendered beneath the image
+    caption        — Optional caption rendered beneath the image, numbered
+    anchor         — The figure's `id`, empty when it has none (#181)
     disclosure     — Compliance copy beneath the caption, from the partial
                      all three exhibits share
 #}
 {% if subtitle %}
 <p class="subtitle" style="font-family: {{ font.body }}; font-size: {{ size.type.secondary }}px; font-style: italic; color: {{ theme.text.secondary }}; margin: 0 0 {{ size.space.subtitle_gap }}px 0; line-height: {{ size.type.secondary_line | percent }};">{{ subtitle | escape_html }}</p>
 {% endif %}
-<table class="figure" role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
+<table class="figure"{% if anchor %} id="{{ anchor | escape_html }}"{% endif %} role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
   <tr>
     <td align="{{ image_align | escape_html }}" style="padding: 0; text-align: {{ image_align }};">
       {% if link_url %}

@@ -316,6 +316,9 @@ def build(template_dir: Path | None = None, **metadata_overrides: Any) -> Email:
                     source="Hermes Research",
                     as_of="24 August 2026",
                     subtitle="Long-short, gross of costs",
+                    caption="Style factor returns",
+                    label="Exhibit",
+                    anchor="factor-table",
                     disclosure=(
                         "Factor returns are shown gross of fees and transaction "
                         "costs. Past performance is not indicative of future "
@@ -332,6 +335,8 @@ def build(template_dir: Path | None = None, **metadata_overrides: Any) -> Email:
                     EmailImage.attached(_CHART_PNG, alt="Cumulative factor performance", width=320),
                     source="Hermes Research",
                     subtitle="Indexed to 100",
+                    caption="Cumulative factor performance",
+                    label="Exhibit",
                     disclosure=(
                         "The chart above is indexed to 100 at inception and "
                         "excludes the effect of the 0.75% management fee."
@@ -356,6 +361,7 @@ def build(template_dir: Path | None = None, **metadata_overrides: Any) -> Email:
                 left=ImageBlock(
                     EmailImage.attached(_THUMB_PNG, alt="Thumbnail", width=96),
                     caption="A 30% column",
+                    label="Figure",
                     align=ImageAlign.LEFT,
                     disclosure="Illustrative only; not a recommendation to buy or sell.",
                 ),

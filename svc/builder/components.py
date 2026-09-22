@@ -16,6 +16,9 @@ from __future__ import annotations
 import warnings
 from typing import Any
 
+from svc.config import get_config
+
+from .apparatus import slugify, validate_anchor
 from .engine import Renderer
 from .enums import CardOrientation, ColumnKind, ImageAlign, RowKind
 from .exceptions import ValidationError
@@ -87,6 +90,56 @@ class CopyAlignment:
         name raises rather than testing falsey.
         """
         return {"align": self.align}
+
+
+class Exhibit:
+    """
+    What makes a chart, table or image *"Exhibit 3"* — mixed into all three.
+
+    ``label`` opts an exhibit into numbering; unset, it renders exactly as it
+    did before #181. Separate labels count separately, so *"Table 2"* and
+    *"Figure 1"* coexist in one document.
+
+    **The number is assigned, never chosen.** :class:`~svc.builder.document.
+    Document` walks its tree in reading order and sets :attr:`number` before
+    each projection, so the markup and the text part are handed the same
+    number. An exhibit never numbers itself: shared between two documents it
+    would otherwise carry one document's number into the other.
+
+    ``anchor`` overrides the derived ``id`` (``exhibit-3``); it is the only
+    anchor an unlabelled exhibit can have.
+    """
+
+    label: str = ""
+    anchor: str = ""
+
+    #: Set by the document's walk; ``None`` when unlabelled or rendered alone.
+    number: int | None = None
+
+    def validate_exhibit(self, label: str, anchor: str) -> None:
+        """Validate and store the two caller-facing fields."""
+        name = type(self).__name__.lower()
+        if label and not label.strip():
+            raise ValidationError(f"'{name}.label' must not be blank, got: {label!r}")
+        validate_anchor(anchor, f"{name}.anchor")
+        self.label = label
+        self.anchor = anchor
+        self.number = None
+
+    def resolved_anchor(self) -> str:
+        """The ``id`` this exhibit carries, or ``""`` when it has none."""
+        if self.anchor:
+            return self.anchor
+        if self.label and self.number:
+            return f"{slugify(self.label, 'exhibit')}-{self.number}"
+        return ""
+
+    def numbered(self, heading: str) -> str:
+        """``heading`` behind this exhibit's number — the one string both projections print."""
+        if not (self.label and self.number):
+            return heading
+        prefix = f"{self.label} {self.number}"
+        return f"{prefix}{get_config().exhibit_separator}{heading}" if heading else prefix
 
 
 class Component:
@@ -285,7 +338,7 @@ class KpiStrip(CardGroup):
         return self.cards
 
 
-class DataTable(Component):
+class DataTable(Exhibit, Component):
     """
     Financial data table with headers, alternating row colours, and
     colour-coded numeric cells.
@@ -306,6 +359,7 @@ class DataTable(Component):
                   justified fine print beneath the attribution. Plain
                   text, escaped on the way out; see `disclosure.md` for when
                   it belongs here rather than on ``Footer.disclaimer``.
+        label, anchor: Numbering and its ``id``; see :class:`Exhibit`.
 
     **``caption`` and ``subtitle`` are separate on purpose**, even when a
     caller would write the same words in both. ``subtitle`` is presentation
@@ -337,7 +391,10 @@ class DataTable(Component):
         subtitle: str | None = None,
         caption: str = "",
         disclosure: str = "",
+        label: str = "",
+        anchor: str = "",
     ):
+        self.validate_exhibit(label, anchor)
         if not headers:
             raise ValidationError("DataTable requires at least one header.")
         if not rows:
@@ -383,7 +440,7 @@ class DataTable(Component):
     def text(self) -> str:
         """Aligned columns, then the attribution lines."""
         return self._with_subtitle(
-            wrap(self.caption),
+            wrap(self.numbered(self.caption)),
             table(
                 self.headers,
                 [[cell.text for cell in row.cells] for row in self.rows],
@@ -442,12 +499,13 @@ class DataTable(Component):
             "source": self.source,
             "as_of": self.as_of,
             "subtitle": self.subtitle,
-            "caption": self.caption,
+            "caption": self.numbered(self.caption),
+            "anchor": self.resolved_anchor(),
             "disclosure": self.disclosure,
         }
 
 
-class ChartBlock(CopyAlignment, Component):
+class ChartBlock(Exhibit, CopyAlignment, Component):
     """
     A chart image, bordered, with source attribution.
 
@@ -471,6 +529,8 @@ class ChartBlock(CopyAlignment, Component):
                   justified fine print beneath the attribution. Plain
                   text, escaped on the way out; see `disclosure.md` for when
                   it belongs here rather than on ``Footer.disclaimer``.
+        caption:  Optional heading line above the chart, where its number goes.
+        label, anchor: Numbering and its ``id``; see :class:`Exhibit`.
     """
 
     template_path = "analysis/chart-block.html"
@@ -484,9 +544,13 @@ class ChartBlock(CopyAlignment, Component):
         width: int | None = None,
         align: str | None = None,
         disclosure: str = "",
+        caption: str = "",
+        label: str = "",
+        anchor: str = "",
     ):
         if not image_url:
             raise ValidationError("ChartBlock requires an image_url.")
+        self.validate_exhibit(label, anchor)
         self.align = self.validate_alignment(align)
         self.image = coerce_image(
             image_url, alt=alt_text, field_name="chart.image_url", width=width
@@ -494,6 +558,7 @@ class ChartBlock(CopyAlignment, Component):
         self.source = source
         self.subtitle = subtitle
         self.disclosure = disclosure
+        self.caption = caption
 
     @property
     def image_url(self) -> str:
@@ -516,7 +581,10 @@ class ChartBlock(CopyAlignment, Component):
         empty — which is the whole reason that rule exists.
         """
         return self._with_subtitle(
-            wrap(f"[{self.image.alt}]"), wrap(self.source), wrap(self.disclosure)
+            wrap(self.numbered(self.caption)),
+            wrap(f"[{self.image.alt}]"),
+            wrap(self.source),
+            wrap(self.disclosure),
         )
 
     def context(self) -> dict[str, Any]:
@@ -525,6 +593,8 @@ class ChartBlock(CopyAlignment, Component):
             "chart_alt_text": self.image.alt,
             "chart_image_width": self.image.width or "",
             "chart_source": self.source,
+            "caption": self.numbered(self.caption),
+            "anchor": self.resolved_anchor(),
             # Bare, not ``chart_``-prefixed: all three exhibits include one
             # shared partial, so they must agree on the key it reads.
             "disclosure": self.disclosure,
@@ -533,7 +603,7 @@ class ChartBlock(CopyAlignment, Component):
         }
 
 
-class ImageBlock(Component):
+class ImageBlock(Exhibit, Component):
     """
     A single image — optionally linked, captioned and aligned.
 
@@ -557,10 +627,10 @@ class ImageBlock(Component):
         subtitle: Optional sub-heading rendered above the image.
         width:    Display width in px, used only when ``image`` is a bare
             URL string.  ``None`` renders full width.
+        label, anchor: Numbering and its ``id``; see :class:`Exhibit`.
 
     Raises:
-        ValidationError: On a missing image, an unsupported alignment, or
-            an unsafe ``link_url`` scheme.
+        ValidationError: On a missing image, a bad alignment or link scheme.
     """
 
     template_path = "media/image-block.html"
@@ -578,9 +648,12 @@ class ImageBlock(Component):
         width: int | None = None,
         decorative: bool = False,
         disclosure: str = "",
+        label: str = "",
+        anchor: str = "",
     ):
         if not image:
             raise ValidationError("ImageBlock requires an image.")
+        self.validate_exhibit(label, anchor)
         if align not in self.ALIGNMENTS:
             raise ValidationError(
                 f"Unsupported alignment '{align}'. Use: {[a.value for a in self.ALIGNMENTS]}"
@@ -611,12 +684,13 @@ class ImageBlock(Component):
         ``align`` projects to nothing: plain text has one column, so an
         alignment is presentation with nothing to present.
         """
+        caption = self.numbered(self.caption)
         if self.image.decorative:
-            return self._with_subtitle(wrap(self.caption), wrap(self.disclosure))
+            return self._with_subtitle(wrap(caption), wrap(self.disclosure))
         alt = f"[{self.image.alt}]"
         if self.link_url:
             alt = format_link(alt, self.link_url)
-        return self._with_subtitle(wrap(alt), wrap(self.caption), wrap(self.disclosure))
+        return self._with_subtitle(wrap(alt), wrap(caption), wrap(self.disclosure))
 
     def context(self) -> dict[str, Any]:
         return {
@@ -626,7 +700,8 @@ class ImageBlock(Component):
             "image_width": self.image.width or "",
             "image_align": self.align,
             "link_url": self.link_url,
-            "caption": self.caption,
+            "caption": self.numbered(self.caption),
+            "anchor": self.resolved_anchor(),
             "disclosure": self.disclosure,
             "subtitle": self.subtitle,
         }

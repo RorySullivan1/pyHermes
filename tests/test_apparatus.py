@@ -6,11 +6,25 @@ test reads one projection against the other rather than trusting either alone.
 
 from __future__ import annotations
 
+import re
+
 import pytest
 
-from svc.builder import FullWidth, TextBlock, ThreeColumn, TwoColumn, ValidationError
+from svc.builder import (
+    ChartBlock,
+    DataTable,
+    FullWidth,
+    ImageBlock,
+    TemplateEngine,
+    TextBlock,
+    ThreeColumn,
+    TwoColumn,
+    ValidationError,
+)
 from svc.builder.apparatus import slugify
 from svc.builder.email import Email
+from svc.builder.models import TableRow
+from svc.config import config_override
 from svc.document import Page
 
 FACTS = {"email_subject": "Subject", "firm_name": "Hermes", "campaign_name": "Review"}
@@ -87,3 +101,119 @@ class TestSectionAnchors:
         page = Page([FullWidth(content=prose())], title="Appendix")
         assert page.resolved_anchor() == ""
         email(FullWidth(title="Appendix", content=prose()), page)
+
+
+CHART = "https://cdn.example.com/chart.png"
+
+
+def table(caption: str = "Factor returns", **kwargs) -> DataTable:
+    return DataTable(["Factor", "1M"], [TableRow(["Value", "+1.8%"])], caption=caption, **kwargs)
+
+
+def chart(caption: str = "Cumulative return", **kwargs) -> ChartBlock:
+    return ChartBlock(CHART, alt_text="A chart", caption=caption, **kwargs)
+
+
+def image(caption: str = "The desk", **kwargs) -> ImageBlock:
+    return ImageBlock(CHART, alt_text="A photo", caption=caption, **kwargs)
+
+
+class TestExhibitNumbering:
+    """#181: numbered once, in Python, in reading order, and both projections agree."""
+
+    @pytest.fixture
+    def document(self):
+        return email(
+            FullWidth(title="Returns", content=table(label="Exhibit")),
+            TwoColumn(
+                title="Split",
+                left=chart(label="Exhibit"),
+                right=image(label="Exhibit"),
+            ),
+        )
+
+    def test_the_order_is_reading_order_in_the_markup(self, document):
+        html = document.render()
+        found = re.findall(r"Exhibit (\d) · (\w+)", html)
+        assert found == [("1", "Factor"), ("2", "Cumulative"), ("3", "The")]
+
+    def test_the_order_is_the_same_in_the_text(self, document):
+        found = re.findall(r"Exhibit (\d) · (\w+)", document.text())
+        assert found == [("1", "Factor"), ("2", "Cumulative"), ("3", "The")]
+
+    def test_each_numbered_exhibit_carries_its_anchor(self, document):
+        html = document.render()
+        for n in (1, 2, 3):
+            assert html.count(f'id="exhibit-{n}"') == 1
+
+    def test_a_page_numbers_its_exhibits_in_place(self):
+        document = email(
+            FullWidth(content=table(label="Exhibit")),
+            Page([FullWidth(content=chart(label="Exhibit"))]),
+            FullWidth(content=image(label="Exhibit")),
+        )
+        assert re.findall(r"Exhibit (\d) ·", document.text()) == ["1", "2", "3"]
+
+    def test_each_label_keeps_its_own_count(self):
+        document = email(
+            FullWidth(content=table(label="Table")),
+            FullWidth(content=chart(label="Figure")),
+            FullWidth(content=table(caption="Second", label="Table")),
+        )
+        text = document.text()
+        assert "Table 1 · Factor returns" in text
+        assert "Figure 1 · Cumulative return" in text
+        assert "Table 2 · Second" in text
+        assert 'id="figure-1"' in document.render()
+
+    def test_an_uncaptioned_exhibit_prints_its_number_alone(self):
+        document = email(FullWidth(content=chart(caption="", label="Exhibit")))
+        assert "Exhibit 1\n" in document.text() + "\n"
+        assert "Exhibit 1 ·" not in document.render()
+
+    def test_the_separator_is_house_style_read_at_render(self):
+        document = email(FullWidth(content=table(label="Exhibit")))
+        with config_override(exhibit_separator=": "):
+            assert "Exhibit 1: Factor returns" in document.render()
+            assert "Exhibit 1: Factor returns" in document.text()
+
+    def test_the_caller_may_override_the_anchor(self):
+        html = email(FullWidth(content=table(label="Exhibit", anchor="returns"))).render()
+        assert 'id="returns"' in html and 'id="exhibit-1"' not in html
+
+    def test_an_unlabelled_exhibit_may_still_be_a_destination(self):
+        html = email(FullWidth(content=chart(anchor="the-chart"))).render()
+        assert 'id="the-chart"' in html and "Exhibit" not in html
+
+    @pytest.mark.parametrize("build", [table, chart, image])
+    def test_an_unlabelled_exhibit_renders_byte_identically(self, build):
+        engine = TemplateEngine()
+        labelled_alone = build(label="Exhibit")
+        assert labelled_alone.number is None
+        assert labelled_alone.render(engine) == build().render(engine)
+        assert labelled_alone.text() == build().text()
+
+    def test_a_shared_exhibit_takes_each_documents_number(self):
+        shared = chart(label="Exhibit")
+        first = email(FullWidth(content=shared))
+        second = email(FullWidth(content=table(label="Exhibit")), FullWidth(content=shared))
+        assert "Exhibit 2 · Cumulative" in second.text()
+        assert "Exhibit 1 · Cumulative" in first.text()
+
+    def test_a_duplicate_anchor_raises_at_construction(self):
+        document = email(FullWidth(content=table(label="Exhibit")))
+        with pytest.raises(ValidationError, match="'exhibit-1' is claimed twice"):
+            document.add_section(FullWidth(content=chart(anchor="exhibit-1")))
+
+    def test_an_exhibit_and_a_section_may_not_share_an_anchor(self):
+        document = email(FullWidth(title="Exhibit 1", content=prose()))
+        with pytest.raises(ValidationError, match="Exhibit 1 DataTable"):
+            document.add_section(FullWidth(content=table(label="Exhibit")))
+
+    def test_a_blank_label_raises(self):
+        with pytest.raises(ValidationError, match="datatable.label"):
+            table(label="   ")
+
+    def test_a_malformed_anchor_raises(self):
+        with pytest.raises(ValidationError, match="chartblock.anchor"):
+            chart(anchor="3rd")

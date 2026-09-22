@@ -25,6 +25,8 @@ Factor Returns
 
 Long-short, gross of costs
 
+Exhibit 1 · Style factor returns
+
 Factor       1M     YTD
 --------  -----  ------
 Value     +1.8%   +7.4%
@@ -43,7 +45,11 @@ Positioning
 
 The left half of a 50-50 split.
 
-The right half of a 50-50 split.
+Exhibit 2 · The 2s10s spread
+
+[2s10s spread over the quarter]
+
+Hermes Research
 
 
 Appendix

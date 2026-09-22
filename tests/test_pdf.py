@@ -273,16 +273,21 @@ class TestWhatOnlyAPrintEngineCouldShow:
         ).render()
 
     @staticmethod
-    def _table_widths(page) -> list[int]:
-        widths: list[int] = []
+    def _table_widths(page, frame_width: int) -> list[tuple[int, int]]:
+        """Each table's laid-out width beside the width it should fill."""
+        widths: list[tuple[int, int]] = []
 
-        def walk(box):
-            if type(box).__name__ == "TableBox":
-                widths.append(round(box.width))
+        def walk(box, container: int):
+            kind = type(box).__name__
+            if kind == "TableBox":
+                widths.append((round(box.width), container))
+            elif kind == "InlineTableBox":
+                # A split's column: what a table inside it fills is the column.
+                container = round(box.width)
             for child in getattr(box, "children", []):
-                walk(child)
+                walk(child, container)
 
-        walk(page._page_box)
+        walk(page._page_box, frame_width)
         return widths
 
     @staticmethod
@@ -310,14 +315,16 @@ class TestWhatOnlyAPrintEngineCouldShow:
         """
         fixture = all_paged_fixtures()["a4_portrait"]()
         body = self._laid_out(fixture).pages[1]
-        widths = self._table_widths(body)
         # The frame, not the sheet: since #175 the page's margins sit outside it.
         frame_width = fixture.medium.page_format.frame_width
+        widths = self._table_widths(body, frame_width)
         assert widths, "no tables laid out"
-        # Every table on the body page fills the frame rather than its content.
-        assert min(widths) > frame_width * 0.85, (
-            f"a table shrink-wrapped: {sorted(widths)} inside a {frame_width}px frame"
+        assert any(container < frame_width for _, container in widths), (
+            "no table inside a split, so the column case is unmeasured"
         )
+        # Every table fills what holds it — the frame, or its column — not its content.
+        shrunk = [(width, container) for width, container in widths if width <= container * 0.85]
+        assert not shrunk, f"a table shrink-wrapped (width, container): {shrunk}"
 
     def test_no_running_box_appears_on_the_cover(self):
         """
