@@ -64,6 +64,38 @@ position**, so a cell's `align` overrides what its column resolved and an unset 
   `background-color` declaration; a caller's hex simply replaces the theme's, and both are
   seven characters. The size worry the epic recorded turned out to be free.
 
+### A cell's tone — the same claim, spelled as a word (#178)
+
+`Cell.tone` and `Card.tone` take `positive`, `negative` or `neutral`
+([Tone](../../svc/builder/enums.py)), and the template resolves the word to the **live**
+theme's `semantic` token at render. Before this, `theme.semantic.positive` and `negative`
+rendered nowhere by default: they were tokens with no render site, so the only way a figure
+turned green was a caller copying the hex out of the theme and passing it back.
+
+- **It is not a fifth colour exception, and that is the point.** `Cell.color` is admitted
+  as the caller's claim about a figure. `tone` makes the same claim with no hex in it, so
+  the theme keeps its authority over what *negative* looks like. A tone validates against
+  the enum, so passing `#B85450` as a tone raises and names `color` as the field for a hex.
+- **The precedence is subhead, then colour, then tone, then the column's kind.** An explicit
+  colour wins over a tone for the reason it wins over a kind: the caller said something
+  specific about that figure. A subhead outranks both, since a row kind is chrome.
+- **It resolves at render, like `Card.color`'s fallback.** A value fixed at construction
+  cannot see the theme chosen at render, so a template reads `theme.semantic[tone]`.
+  That pattern also makes the default path byte-identical: an untoned card reads
+  `theme.semantic['neutral']`, the same value it read before.
+- **A sign and a tone are different claims.** `tone_of(value, fmt)` derives one from the sign
+  (up is positive), and `Cell.from_number` uses it. But a caller may state one: a rising
+  yield is bad for a bond book and a falling VIX is good news, and `kitchen_sink` carries
+  both. When `fmt` is given, a figure that renders as zero is neutral whatever its unrounded
+  sign, so a `0.00%` is never coloured red.
+- **The text projection needs nothing.** The sign already in the formatted string is the
+  tone's projection, so a toned table and an untoned one project to identical text.
+- **The goldens proved it rather than asserting it.** `kitchen_sink` moved its KPI strip and
+  two table rows from hand-picked hexes to tones with **every golden byte-identical**, since
+  the classic theme's semantic tokens are those hexes. One toned cell in `slate_theme` then
+  moved one line: `#5A6068` became slate's own negative `#A8514E`. That is the first time
+  `semantic.negative` has rendered anywhere in the gallery.
+
 ### The data table's row kinds
 
 `TableRow(kind=…)` says what a row *is* (#119): `data`, `total` or `subhead`

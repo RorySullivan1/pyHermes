@@ -52,6 +52,7 @@ from .enums import (
     SizeTheme,
     TextAlign,
     ThreeColumnRatio,
+    Tone,
     TwoColumnRatio,
 )
 
@@ -83,6 +84,7 @@ from .models import (
     NumberedItem,
     SectionConfig,
     TableRow,
+    tone_of,
 )
 
 # Regions
@@ -185,6 +187,8 @@ __all__ = [
     "Card",
     "KpiItem",
     "TableRow",
+    "Tone",
+    "tone_of",
     "Column",
     "Cell",
     "NumberedItem",

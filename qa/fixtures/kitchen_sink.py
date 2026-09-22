@@ -17,6 +17,7 @@ makes a golden diff point at the field that moved.
 
 from __future__ import annotations
 
+from functools import partial
 from pathlib import Path
 from typing import Any
 
@@ -40,10 +41,19 @@ from svc.builder import (
     ThreeColumn,
     TwoColumn,
 )
-from svc.builder.enums import CardOrientation, ImageAlign, ThreeColumnRatio, TwoColumnRatio
+from svc.builder.enums import CardOrientation, ImageAlign, ThreeColumnRatio, Tone, TwoColumnRatio
 from svc.builder.formats import bps, delta, number, pct
 from svc.builder.images import EmailImage
-from svc.builder.models import Card, FooterLink, KpiItem, LinkRow, NumberedItem, TableRow
+from svc.builder.models import (
+    Card,
+    Cell,
+    FooterLink,
+    KpiItem,
+    LinkRow,
+    NumberedItem,
+    TableRow,
+    tone_of,
+)
 
 from ._png import solid_png
 
@@ -53,6 +63,7 @@ _YEAR = "2026"
 
 _GAIN = "#4A7C59"
 _LOSS = "#B85450"
+_RETURN = partial(pct, dp=1, sign=True)
 
 _CHART_PNG = solid_png(320, 120, (42, 61, 84))
 _THUMB_PNG = solid_png(96, 96, (184, 84, 80))
@@ -219,12 +230,30 @@ def build(template_dir: Path | None = None, **metadata_overrides: Any) -> Email:
                 highlight=True,
                 content=CardGroup(
                     [
-                        # Figures go through svc.builder.formats (#177), so the
-                        # golden pins the formatters' output, not a hand-typed string.
-                        KpiItem("S&P 500", number(5234), _GAIN, pct(0.0142, sign=True)),
-                        KpiItem("UST 10Y", pct(0.0428), _LOSS, bps(0.0006)),
-                        KpiItem("Gold", number(2411), _GAIN, pct(0.0085, sign=True)),
-                        KpiItem("VIX", number(14.32, 2), _GAIN, delta(-2.18, unit="pts")),
+                        # Figures go through svc.builder.formats (#177), and each
+                        # value is coloured by a tone the theme resolves (#178):
+                        # the sign where the sign is the claim, stated where not.
+                        KpiItem(
+                            "S&P 500",
+                            number(5234),
+                            sublabel=pct(0.0142, sign=True),
+                            tone=tone_of(0.0142),
+                        ),
+                        # Rising yields hurt the bond book: up, and still negative.
+                        KpiItem("UST 10Y", pct(0.0428), sublabel=bps(0.0006), tone=Tone.NEGATIVE),
+                        KpiItem(
+                            "Gold",
+                            number(2411),
+                            sublabel=pct(0.0085, sign=True),
+                            tone=tone_of(0.0085),
+                        ),
+                        # A falling VIX is good news: down, and still positive.
+                        KpiItem(
+                            "VIX",
+                            number(14.32, 2),
+                            sublabel=delta(-2.18, unit="pts"),
+                            tone=Tone.POSITIVE,
+                        ),
                     ],
                     orientation=CardOrientation.HORIZONTAL,
                 ),
@@ -267,13 +296,21 @@ def build(template_dir: Path | None = None, **metadata_overrides: Any) -> Email:
                             cells=["Value", pct(0.018, 1, sign=True), pct(0.074, 1, sign=True)],
                             colors=["", _GAIN, _GAIN],
                         ),
+                        # The first row keeps the flat `colors=` spelling; these
+                        # two are formatted once and toned by their sign (#178).
                         TableRow(
-                            cells=["Momentum", pct(-0.004, 1, sign=True), pct(0.112, 1, sign=True)],
-                            colors=["", _LOSS, _GAIN],
+                            cells=[
+                                "Momentum",
+                                Cell.from_number(-0.004, _RETURN),
+                                Cell.from_number(0.112, _RETURN),
+                            ]
                         ),
                         TableRow(
-                            cells=["Quality", pct(0.009, 1, sign=True), pct(0.051, 1, sign=True)],
-                            colors=["", _GAIN, _GAIN],
+                            cells=[
+                                "Quality",
+                                Cell.from_number(0.009, _RETURN),
+                                Cell.from_number(0.051, _RETURN),
+                            ]
                         ),
                     ],
                     source="Hermes Research",

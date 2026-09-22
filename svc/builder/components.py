@@ -252,6 +252,7 @@ class CardGroup(Component):
                     "label": c.label,
                     "value": c.value,
                     "color": c.color,
+                    "tone": c.tone,
                     "sublabel": c.sublabel,
                     "body": c.body,
                 }
@@ -419,6 +420,7 @@ class DataTable(Component):
                             # The chain completes here: cell → column → position.
                             "align": cell.resolved_align(column.align),
                             "color": cell.color,
+                            "tone": cell.tone,
                             "background": cell.background,
                             "is_text": column.kind == ColumnKind.TEXT,
                             # A row header, not a data cell: the first column

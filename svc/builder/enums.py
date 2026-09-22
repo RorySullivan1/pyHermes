@@ -146,6 +146,19 @@ class ColumnKind(StrEnum):
     NUMERIC = "numeric"
 
 
+class Tone(StrEnum):
+    """
+    What a figure means, as a word the theme turns into a colour (#178).
+
+    Each member names a ``theme.semantic`` token, so a table or card set in
+    tones recolours with the theme instead of pinning the caller's hex.
+    """
+
+    POSITIVE = "positive"
+    NEGATIVE = "negative"
+    NEUTRAL = "neutral"
+
+
 class RowKind(StrEnum):
     """
     What a row of a :class:`~svc.builder.components.DataTable` *is*.
