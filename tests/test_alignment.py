@@ -29,6 +29,7 @@ from svc.builder import (
     ChartBlock,
     Component,
     ContactBlock,
+    Contents,
     DataTable,
     EmailBuilder,
     FullWidth,
@@ -459,6 +460,14 @@ class TestTheBoundaryHolds:
             f"a right-aligned section leaked into the KPI strip: {kpi}"
         )
 
+    def test_a_contents_list_keeps_its_own_left(self):
+        """The third structural shape: a centred entry would leave its leader."""
+        html = self._render(FullWidth(title="Inside", align="center", content=Contents()))
+        contents = [
+            (e.attribute, e.declared) for e in _aligned_elements(html) if "contents" in e.css_class
+        ]
+        assert contents == [("left", "left")], f"the section leaked into the list: {contents}"
+
     def test_a_data_table_keeps_its_column_resolution(self):
         """
         Same shape for the other structural component. The table resolves
@@ -497,6 +506,7 @@ STRUCTURALLY_ALIGNED = {
     "KpiStrip": "the deprecated alias of CardGroup",
     "DataTable": "columns and cells resolve their own alignment (#117, #118)",
     "ImageBlock": "already has an align, and that one places a block (ImageAlign)",
+    "Contents": "an entry is a title, a leader and a page number, left to right (#183)",
 }
 
 
@@ -554,7 +564,7 @@ class TestOnlyProseComponentsTakeAnAlignment:
         the next reader meets.
         """
         doc = CopyAlignment.__doc__ or ""
-        for name in ("CardGroup", "DataTable", "ImageBlock"):
+        for name in ("CardGroup", "DataTable", "ImageBlock", "Contents"):
             assert name in doc, f"{name}'s exclusion is undocumented on CopyAlignment"
 
 

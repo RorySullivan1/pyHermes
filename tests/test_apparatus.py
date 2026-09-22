@@ -6,12 +6,15 @@ test reads one projection against the other rather than trusting either alone.
 
 from __future__ import annotations
 
+import importlib.util
 import re
 
 import pytest
 
+from qa.fixtures import all_paged_fixtures
 from svc.builder import (
     ChartBlock,
+    Contents,
     DataTable,
     FullWidth,
     ImageBlock,
@@ -25,9 +28,16 @@ from svc.builder.apparatus import slugify
 from svc.builder.email import Email
 from svc.builder.models import TableRow
 from svc.config import config_override
-from svc.document import Page
+from svc.document import ContentsPage, EmptyContentsPage, Page, PagedDocument
+from svc.pdf import available, render_pdf
 
-FACTS = {"email_subject": "Subject", "firm_name": "Hermes", "campaign_name": "Review"}
+requires_pdf = pytest.mark.skipif(
+    not available() or importlib.util.find_spec("pypdfium2") is None,
+    reason='reading a sheet back needs the "[pdf]" and "[qa]" extras',
+)
+
+PAPER_FACTS = {"firm_name": "Hermes", "campaign_name": "Review"}
+FACTS = {"email_subject": "Subject", **PAPER_FACTS}
 
 
 def email(*sections) -> Email:
@@ -217,3 +227,102 @@ class TestExhibitNumbering:
     def test_a_malformed_anchor_raises(self):
         with pytest.raises(ValidationError, match="chartblock.anchor"):
             chart(anchor="3rd")
+
+
+def sheets(document) -> list[list[str]]:
+    """Each sheet's lines of text, read back out of the PDF."""
+    import pypdfium2
+
+    pdf = pypdfium2.PdfDocument(render_pdf(document))
+    return [
+        [line.strip() for line in sheet.get_textpage().get_text_range().splitlines()]
+        for sheet in pdf
+    ]
+
+
+class TestTheContentsComponent:
+    """#183 in an email: a linked list, no page numbers, filled by the document."""
+
+    @pytest.fixture
+    def document(self):
+        return email(
+            FullWidth(title="In This Issue", content=Contents(subtitle="Inside")),
+            FullWidth(title="Factor Returns", content=prose()),
+            Page([FullWidth(title="Method", anchor="how", content=prose())], title="Appendix"),
+        )
+
+    def test_it_links_every_other_titled_section_in_reading_order(self, document):
+        html = document.render()
+        links = re.findall(
+            r'<li class="contents-entry"[^>]*><a href="#([\w-]+)"[^>]*>([^<]+)</a>', html
+        )
+        assert links == [("factor-returns", "Factor Returns"), ("how", "Method")]
+
+    def test_every_link_lands_on_a_heading(self, document):
+        html = document.render()
+        for anchor in re.findall(r'<li class="contents-entry"[^>]*><a href="#([\w-]+)"', html):
+            assert f'<h2 id="{anchor}"' in html
+
+    def test_an_email_carries_no_page_numbers(self, document):
+        assert "target-counter" not in document.render()
+
+    def test_the_text_is_the_titles_one_per_line(self, document):
+        assert "Inside\n\nFactor Returns\nMethod\n" in document.text()
+
+    def test_an_untitled_section_is_not_listed(self):
+        document = email(
+            FullWidth(content=Contents()),
+            FullWidth(content=prose()),
+            FullWidth(title="T", content=prose()),
+        )
+        assert document._components()[0].entries == [("T", "t")]
+
+
+class TestTheContentsSheet:
+    """#183 on paper: a region after the cover, the page numbers the print engine's."""
+
+    def test_it_is_opt_in(self):
+        assert isinstance(PagedDocument(PAPER_FACTS).contents, EmptyContentsPage)
+
+    def test_it_follows_the_cover_in_both_projections(self):
+        document = all_paged_fixtures()["a4_portrait"]()
+        text = document.text()
+        assert (
+            text.index("Quarterly Review")
+            < text.index("In This Review")
+            < text.index("Market Snapshot\n---")
+        )
+        html = document.render()
+        assert (
+            html.index("page: cover")
+            < html.index("In This Review")
+            < html.index('class="document-container"')
+        )
+
+    def test_its_heading_is_not_a_section_title(self):
+        html = PagedDocument(PAPER_FACTS, contents=ContentsPage()).render()
+        heading = html[: html.index(">Contents</h2>")]
+        assert "section-title" not in heading[heading.rindex("<table") :]
+
+    def test_the_page_number_is_the_print_engines(self):
+        html = all_paged_fixtures()["a4_portrait"]().render()
+        assert "target-counter(attr(href), page)" in html
+
+    @requires_pdf
+    @pytest.mark.parametrize("name", ["a4_portrait", "slide_16_9"])
+    def test_every_entry_cites_the_sheet_its_section_starts_on(self, name):
+        pages = sheets(all_paged_fixtures()[name]())
+        contents = pages[1]
+        assert contents[0] == "In This Review"
+        entries = [re.fullmatch(r"(.+?)\s*\.{3,}\s*(\d+)", line) for line in contents[1:]]
+        cited = [(m.group(1), int(m.group(2))) for m in entries if m]
+        assert [title for title, _ in cited] == [
+            "Market Snapshot",
+            "Narrative",
+            "Factor Returns",
+            "Positioning",
+            "Methodology",
+        ]
+        for title, page in cited:
+            starts = next(n for n, lines in enumerate(pages[2:], start=3) if title in lines)
+            assert page == starts, f"{title!r} cited as p. {page}, starts on {starts}"

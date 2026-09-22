@@ -20,6 +20,7 @@ from svc.builder.medium import Medium
 from svc.builder.models import KpiItem, TableRow
 from svc.document import (
     BackMatter,
+    ContentsPage,
     Cover,
     Page,
     PagedDocument,
@@ -110,7 +111,13 @@ def regions() -> dict[str, Any]:
 
 def build_on(medium: Medium, template_dir: Path | None = None) -> PagedDocument:
     """The shared document, laid onto ``medium``'s page."""
-    document = PagedDocument(facts(), template_dir=template_dir, medium=medium, **regions())
+    document = PagedDocument(
+        facts(),
+        template_dir=template_dir,
+        medium=medium,
+        contents=ContentsPage(heading="In This Review"),
+        **regions(),
+    )
     return (
         document.add_section(
             FullWidth(

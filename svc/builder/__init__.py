@@ -24,6 +24,7 @@ from .components import (
     ChartBlock,
     Component,
     ContactBlock,
+    Contents,
     DataTable,
     ImageBlock,
     KpiStrip,
@@ -204,6 +205,7 @@ __all__ = [
     "NumberedList",
     "AuthorBlock",
     "ContactBlock",
+    "Contents",
     # Containers
     "Container",
     "FullWidth",

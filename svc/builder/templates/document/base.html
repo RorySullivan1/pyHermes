@@ -62,11 +62,22 @@
     .subtitle { break-after: avoid; page-break-after: avoid; }
     .fine-print { break-before: avoid; page-break-before: avoid; }
     .figure { break-inside: avoid; page-break-inside: avoid; }
+
+    {# The document apparatus (#171). Python numbers everything but the page,
+       which only the print engine knows: `target-counter` and `leader` are
+       WeasyPrint features from CSS Generated Content for Paged Media, not
+       universal CSS, and a future exporter inherits them from here. An email
+       never loads this block, so its links carry no page, honestly. #}
+    .contents-entry a::after {
+      content: leader(".") " " target-counter(attr(href), page);
+      color: {{ theme.text.light }};
+    }
   </style>
 </head>
 <body>
 
 {{ cover_html }}
+{{ contents_html }}
 
   {# The body table is frame.width, not frame.inner: every container computes
      its column widths from the frame and pads inside that, so narrowing the

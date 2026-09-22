@@ -203,10 +203,11 @@ class TestThePagesBreakWhereTheTreeSaysTheyDo:
         assert page_count(broken) == page_count(unbroken) + 1
 
     def test_the_gallery_paginates_as_its_page_format_implies(self):
-        # The same content on a shorter page needs more sheets.
+        # The same content on a shorter page needs more sheets. Each count
+        # includes the cover, the contents sheet (#183) and the back matter.
         a4 = page_count(all_paged_fixtures()["a4_portrait"]())
         slide = page_count(all_paged_fixtures()["slide_16_9"]())
-        assert a4 == 4 and slide == 5, (a4, slide)
+        assert a4 == 5 and slide == 6, (a4, slide)
 
     def test_every_sheet_is_the_mediums_page(self):
         import weasyprint
@@ -314,7 +315,8 @@ class TestWhatOnlyAPrintEngineCouldShow:
         and looking like a different document.
         """
         fixture = all_paged_fixtures()["a4_portrait"]()
-        body = self._laid_out(fixture).pages[1]
+        # Sheet three: the cover and the contents sheet come first.
+        body = self._laid_out(fixture).pages[2]
         # The frame, not the sheet: since #175 the page's margins sit outside it.
         frame_width = fixture.medium.page_format.frame_width
         widths = self._table_widths(body, frame_width)
@@ -338,9 +340,9 @@ class TestWhatOnlyAPrintEngineCouldShow:
 
         assert "Quarterly Review" in cover, "the cover did not render"
         assert "Confidential" not in cover, "the running footer leaked onto the cover"
-        assert "1 / 4" not in cover, "the folio leaked onto the cover"
-        # ...and it is suppressed only there.
-        assert "Confidential" in body and "2 / 4" in body
+        assert "1 / 5" not in cover, "the folio leaked onto the cover"
+        # ...and it is suppressed only there: the contents sheet carries both.
+        assert "Confidential" in body and "2 / 5" in body
 
 
 requires_rasteriser = pytest.mark.skipif(

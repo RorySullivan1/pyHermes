@@ -46,7 +46,7 @@ class CopyAlignment:
     ``TestOnlyProseComponentsTakeAnAlignment`` reads the class hierarchy
     rather than a hand-written list.
 
-    **Three components deliberately do not mix this in.**
+    **Four components deliberately do not mix this in.**
     :class:`CardGroup` and :class:`DataTable` align *structurally* — a KPI
     cell is centred because it is a KPI cell, and a table column resolves
     from its ``kind`` (#117, #118). A second, coarser knob would be a
@@ -55,7 +55,8 @@ class CopyAlignment:
     ``Column.align``) or be ignored by it (a parameter that does nothing).
     :class:`ImageBlock` is excluded for the plain reason that it already
     has an ``align``, and that one places a *block* rather than aligning
-    text — see :class:`~svc.builder.enums.ImageAlign`.
+    text — see :class:`~svc.builder.enums.ImageAlign`. :class:`Contents`
+    fixes its own: an entry is a title, a leader and a page, left to right.
 
     Unset means *inherit*: the component emits no declaration and takes
     whatever its container said, by ordinary CSS inheritance. There is no
@@ -893,3 +894,46 @@ class AuthorBlock(CopyAlignment, Component):
             "subtitle": self.subtitle,
             **self.alignment_context(),
         }
+
+
+class Contents(Component):
+    """
+    An "In this issue" list: every titled section, linked to its heading.
+
+    **The document fills it; the caller only places it.** A component cannot
+    see the tree it sits in, so :class:`~svc.builder.document.Document` hands
+    it the section titles and anchors in reading order before each
+    projection, leaving out the section that holds the list itself.
+
+    One class and one template serve both media. On paper the paged
+    skeleton's stylesheet appends each entry's page number, a figure only the
+    print engine knows; in an email the same markup is a linked list with no
+    page column, because there are no pages. The paged medium's own contents
+    sheet is :class:`~svc.document.regions.ContentsPage`, which renders the
+    same partial.
+
+    Args:
+        subtitle: Optional sub-heading rendered above the list.
+    """
+
+    template_path = "text/contents.html"
+
+    def __init__(self, subtitle: str | None = None):
+        self.subtitle = subtitle
+        #: ``(title, anchor)`` per listed section, assigned by the document.
+        self.entries: list[tuple[str, str]] = []
+
+    def text(self) -> str:
+        """The titles, one per line and unnumbered: plain text has no pages to cite."""
+        return self._with_subtitle(wrap("\n".join(title for title, _ in self.entries)))
+
+    def context(self) -> dict[str, Any]:
+        return {
+            "subtitle": self.subtitle,
+            "contents_entries": contents_entries(self.entries),
+        }
+
+
+def contents_entries(entries: list[tuple[str, str]]) -> list[dict[str, str]]:
+    """The shape the shared contents partial reads, from ``(title, anchor)`` pairs."""
+    return [{"title": title, "anchor": anchor} for title, anchor in entries]

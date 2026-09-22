@@ -105,6 +105,21 @@ class TestFromEnv:
         assert result.retry_max_attempts == 7
 
 
+class TestTheExhibitSeparator:
+    """#181's house-style constant: the one string field, so the one text cast."""
+
+    def test_it_defaults_to_a_middle_dot(self):
+        assert Config().exhibit_separator == " · "
+
+    def test_a_blank_one_is_refused(self):
+        with pytest.raises(ValueError, match="exhibit_separator"):
+            Config(exhibit_separator="   ")
+
+    def test_the_environment_supplies_it_verbatim(self, monkeypatch):
+        monkeypatch.setenv("PYHERMES_EXHIBIT_SEPARATOR", " — ")
+        assert Config.from_env().exhibit_separator == " — "
+
+
 class TestActiveConfig:
     def test_set_and_get_round_trip(self):
         original = get_config()

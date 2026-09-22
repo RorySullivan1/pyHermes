@@ -140,6 +140,44 @@ class EmptyCover(Cover):
 
 
 @dataclass
+class ContentsPage(Region):
+    """
+    The sheet after the cover that lists every section and the page it starts on.
+
+    **The titles are handed down, never held.** The document passes its
+    sections' titles and anchors as ``contents_entries``, layered over this
+    region's fields like any fact, so the list cannot restate a title the
+    body spells differently. The page numbers are the one figure Python
+    cannot know: the paged skeleton's stylesheet asks the print engine for
+    each through ``target-counter``, on the partial the email's
+    :class:`~svc.builder.components.Contents` component shares.
+
+    Its heading is deliberately not a section title, so it never becomes the
+    section a running header follows (#185). There is no ``align``: the list
+    fixes its own, since an entry's shape — title, leader, page — is its
+    alignment.
+    """
+
+    CONTEXT_NAME: ClassVar[str] = "contents"
+    SLOTS: ClassVar[tuple[str, ...]] = ("contents",)
+    TEMPLATE_PATHS: ClassVar[dict[str, str]] = {"contents": "document/regions/contents.html"}
+
+    heading: str = "Contents"
+
+    def _text(self, facts: dict[str, Any]) -> str:
+        """The heading, then the titles one per line: plain text has no page numbers."""
+        titles = [entry["title"] for entry in facts.get("contents_entries", [])]
+        return join_blocks(underline(self.heading or ""), wrap("\n".join(titles)))
+
+
+@dataclass
+class EmptyContentsPage(ContentsPage):
+    """No contents sheet: the body follows the cover. Fills no slot."""
+
+    TEMPLATE_PATHS: ClassVar[dict[str, str]] = {}
+
+
+@dataclass
 class RunningBox(Region):
     """
     Shared half of the two margin-box regions: where it sits and what it says.
@@ -288,8 +326,10 @@ class EmptyBackMatter(BackMatter):
 __all__ = [
     "MARGIN_BOXES",
     "BackMatter",
+    "ContentsPage",
     "Cover",
     "EmptyBackMatter",
+    "EmptyContentsPage",
     "EmptyCover",
     "EmptyRunningFooter",
     "EmptyRunningHeader",

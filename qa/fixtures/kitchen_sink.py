@@ -28,6 +28,7 @@ from svc.builder import (
     CardGroup,
     ChartBlock,
     ContactBlock,
+    Contents,
     DataTable,
     Email,
     EmailBuilder,
@@ -221,6 +222,12 @@ def build(template_dir: Path | None = None, **metadata_overrides: Any) -> Email:
                         FooterLink("Contact", "mailto:research@example.com"),
                     ],
                 ),
+            )
+        )
+        .section(
+            FullWidth(
+                title="In This Issue",
+                content=Contents(subtitle="Every section below, linked to its heading"),
             )
         )
         # FullWidth + horizontal CardGroup + highlight.

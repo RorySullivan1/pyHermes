@@ -54,6 +54,11 @@
     .subtitle { break-after: avoid; page-break-after: avoid; }
     .fine-print { break-before: avoid; page-break-before: avoid; }
     .figure { break-inside: avoid; page-break-inside: avoid; }
+
+    .contents-entry a::after {
+      content: leader(".") " " target-counter(attr(href), page);
+      color: #A09E97;
+    }
   </style>
 </head>
 <body>
@@ -69,6 +74,24 @@
       <h1 style="margin:0 0 6px; font-family:Georgia, 'Times New Roman', serif; font-size:28px; line-height:120%; color:#F5F2EC;">Quarterly Review</h1>
       <p style="margin:0 0 8px; font-family:Georgia, 'Times New Roman', serif; font-size:17px; line-height:130%; color:#F5F2EC;">What the curve priced, and what it did not</p>
       <p style="margin:10px 0 0; font-family:Arial, Helvetica, sans-serif; font-size:11px; line-height:140%; color:#F5F2EC;">Rates Strategy · Quarter ending 30 September · Issue 001</p>
+    </td>
+  </tr>
+</table>
+
+<table role="presentation" width="1204" cellpadding="0" cellspacing="0" border="0"
+       style="width:1204px; break-after:page; page-break-after:always;">
+  <tr>
+    <td style="padding:22px 32px 14px;">
+      <h2 style="margin:0 0 12px; font-family:Georgia, 'Times New Roman', serif; font-size:17px; line-height:120%; color:#2C3E50;">In This Review</h2>
+<div class="contents" align="left" style="text-align: left;">
+<ol style="margin: 0; padding: 0; list-style-type: none;">
+  <li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 172%; margin: 0 0 8px 0;"><a href="#market-snapshot" style="color: #5B8A9A; text-decoration: none;">Market Snapshot</a></li>
+  <li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 172%; margin: 0 0 8px 0;"><a href="#narrative" style="color: #5B8A9A; text-decoration: none;">Narrative</a></li>
+  <li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 172%; margin: 0 0 8px 0;"><a href="#factor-returns" style="color: #5B8A9A; text-decoration: none;">Factor Returns</a></li>
+  <li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 172%; margin: 0 0 8px 0;"><a href="#positioning" style="color: #5B8A9A; text-decoration: none;">Positioning</a></li>
+  <li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 172%; margin: 0 0 8px 0;"><a href="#methodology" style="color: #5B8A9A; text-decoration: none;">Methodology</a></li>
+</ol>
+</div>
     </td>
   </tr>
 </table>

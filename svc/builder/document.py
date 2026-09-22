@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Self
 
 from .apparatus import check_unique
-from .components import Component, Exhibit
+from .components import Component, Contents, Exhibit
 from .containers import Container
 from .engine import Renderer, TemplateEngine
 from .enums import EmbedStrategy
@@ -131,11 +131,11 @@ class Document:
         """
         self._sections.append(container)
         try:
-            self._number_exhibits()
+            self._walk()
             check_unique(self._anchors())
         except ValidationError:
             self._sections.pop()
-            self._number_exhibits()
+            self._walk()
             raise
         return self
 
@@ -193,7 +193,7 @@ class Document:
         the medium's constraints over the *composed* document, so region
         bytes are inside whatever budget it sets.
         """
-        self._number_exhibits()
+        self._walk()
         # The one resolution point. Every template below — skeleton, regions,
         # containers, components — reads the same values, because they all
         # render through this binder rather than looking any of them up.
@@ -224,7 +224,7 @@ class Document:
         one house format possible at all. Deterministic — no clock, no
         randomness, no override.
         """
-        self._number_exhibits()
+        self._walk()
         return join_sections(
             *(region.text(facts) for region, facts in self.leading_regions()),
             *(section.text() for section in self._sections),
@@ -247,13 +247,30 @@ class Document:
         """Every component, in reading order: sections in turn, a split left to right."""
         return [component for section in self._sections for component in section.components()]
 
-    def _number_exhibits(self) -> None:
+    def _walk(self) -> None:
         """
-        Number every labelled exhibit in reading order, one count per label.
+        Hand every part of the apparatus what only the whole tree knows.
 
-        Run before each projection rather than once, so a component shared with
-        another document carries this one's number while this one renders.
+        Run on each :meth:`add_section` and before each projection, so a
+        component shared with another document carries this one's numbers
+        while this one renders.
         """
+        self._number_exhibits()
+        for section in self._flat_sections():
+            for component in section.components():
+                if isinstance(component, Contents):
+                    component.entries = self._contents_entries(skip=section)
+
+    def _contents_entries(self, skip: Container | None = None) -> list[tuple[str, str]]:
+        """``(title, anchor)`` for every titled section in reading order, less ``skip``."""
+        return [
+            (section.title, section.resolved_anchor())
+            for section in self._flat_sections()
+            if section.title and section is not skip
+        ]
+
+    def _number_exhibits(self) -> None:
+        """Number every labelled exhibit in reading order, one count per label."""
         counts: dict[str, int] = {}
         for component in self._components():
             if isinstance(component, Exhibit):

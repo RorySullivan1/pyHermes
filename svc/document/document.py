@@ -12,12 +12,20 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, ClassVar
 
+from svc.builder.components import contents_entries
 from svc.builder.document import Document, RegionFacts
 from svc.builder.medium import Medium
 from svc.builder.models import DocumentMetadata
 
 from .medium import PAGED_MEDIUM
-from .regions import BackMatter, Cover, RunningFooter, RunningHeader
+from .regions import (
+    BackMatter,
+    ContentsPage,
+    Cover,
+    EmptyContentsPage,
+    RunningFooter,
+    RunningHeader,
+)
 
 
 class PagedDocument(Document):
@@ -44,6 +52,9 @@ class PagedDocument(Document):
         running_footer: The line in the bottom margin, usually the folio.
         back_matter:    The closing sheet carrying the disclosures.
         medium:         Which page. Defaults to A4 portrait.
+        contents:       The sheet listing the sections, after the cover.
+                        Opt-in, unlike the rest: a two-sheet factsheet is
+                        not improved by a third that indexes it.
     """
 
     METADATA: ClassVar[type[DocumentMetadata]] = DocumentMetadata
@@ -57,17 +68,24 @@ class PagedDocument(Document):
         running_footer: RunningFooter | None = None,
         back_matter: BackMatter | None = None,
         medium: Medium | None = None,
+        contents: ContentsPage | None = None,
     ):
         super().__init__(metadata, template_dir, medium if medium is not None else PAGED_MEDIUM)
         self._cover = cover if cover is not None else Cover()
         self._running_header = running_header if running_header is not None else RunningHeader()
         self._running_footer = running_footer if running_footer is not None else RunningFooter()
         self._back_matter = back_matter if back_matter is not None else BackMatter()
+        self._contents = contents if contents is not None else EmptyContentsPage()
 
     @property
     def cover(self) -> Cover:
         """The opening sheet. Read-only, as every region here is."""
         return self._cover
+
+    @property
+    def contents(self) -> ContentsPage:
+        """The sheet listing the sections."""
+        return self._contents
 
     @property
     def running_header(self) -> RunningHeader:
@@ -85,9 +103,11 @@ class PagedDocument(Document):
         return self._back_matter
 
     def leading_regions(self) -> tuple[RegionFacts, ...]:
-        """The cover and the two margin boxes, each with the facts it renders."""
+        """The cover, the contents and the two margin boxes, each with what it renders."""
+        entries = contents_entries(self._contents_entries())
         return (
             (self._cover, self._facts(COVER_FACTS)),
+            (self._contents, {"contents_entries": entries}),
             (self._running_header, self._facts(RUNNING_FACTS)),
             (self._running_footer, self._facts(RUNNING_FACTS)),
         )

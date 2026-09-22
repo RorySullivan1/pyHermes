@@ -21,6 +21,7 @@ from svc.builder.images import EmailImage
 from svc.builder.medium import DEFAULT_MEDIUM
 from svc.document import (
     BackMatter,
+    ContentsPage,
     Cover,
     EmptyBackMatter,
     EmptyCover,
@@ -36,7 +37,7 @@ from svc.document.medium import PAGED_MEDIUM
 from svc.document.regions import MARGIN_BOXES
 
 TEMPLATE_DIR = TemplateEngine().template_dir
-DOCUMENT_REGIONS = (Cover, RunningHeader, RunningFooter, BackMatter)
+DOCUMENT_REGIONS = (Cover, ContentsPage, RunningHeader, RunningFooter, BackMatter)
 
 
 def section(body: str = "<p>Body.</p>", title: str | None = None) -> FullWidth:
@@ -270,6 +271,7 @@ class TestTheDocumentRegionsAreComplete:
     def test_every_field_is_exercised_at_a_non_default_value(self, region_cls):
         built = {
             "Cover": all_paged_fixtures()["a4_portrait"]().cover,
+            "ContentsPage": all_paged_fixtures()["a4_portrait"]().contents,
             "RunningHeader": all_paged_fixtures()["a4_portrait"]().running_header,
             "RunningFooter": all_paged_fixtures()["a4_portrait"]().running_footer,
             "BackMatter": all_paged_fixtures()["a4_portrait"]().back_matter,
