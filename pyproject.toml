@@ -66,6 +66,16 @@ pdf = [
     "weasyprint~=70.0",
 ]
 
+# The data adapters (svc/data, #179 and #180). Two extras rather than one: a
+# table author should not have to install a plotting library to adapt a frame.
+data = [
+    "pandas~=3.0",
+]
+
+charts = [
+    "matplotlib~=3.11",
+]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
@@ -128,5 +138,9 @@ module = [
     "weasyprint.*",
     "pypdfium2",
     "pypdfium2.*",
+    "pandas",
+    "pandas.*",
+    "matplotlib",
+    "matplotlib.*",
 ]
 ignore_missing_imports = true

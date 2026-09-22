@@ -171,6 +171,33 @@ jobs:
           path: output/pdf/
           if-no-files-found: error
 
+  data:
+    # Guards #170: the data adapters are the optional "[data]" and "[charts]"
+    # extras, and their tests skip without them -- so this job is the only
+    # place a DataFrame is actually adapted. The purity half
+    # (tests/test_data_layer.py) runs in `check` above, with neither installed,
+    # which is the environment that claim is about.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install (with the data extras)
+        run: pip install -e ".[dev,data,charts]"
+
+      - name: Adapter tests
+        run: pytest tests/test_frames.py tests/test_data_layer.py
+
+      - name: Type-check with the backends present
+        # mypy must be green whether or not the extras are installed; `check`
+        # proves the absent case, this proves the present one.
+        run: mypy
+
   wheel:
     # Guards #10: templates/ must ship inside the wheel, so the package can
     # render an email with no source tree present. A parent-directory lookup
