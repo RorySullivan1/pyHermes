@@ -13,6 +13,7 @@ import pytest
 
 from qa.fixtures import all_paged_fixtures
 from svc.builder import (
+    CardGroup,
     ChartBlock,
     Contents,
     DataTable,
@@ -27,7 +28,7 @@ from svc.builder import (
 )
 from svc.builder.apparatus import slugify
 from svc.builder.email import Email
-from svc.builder.models import Footnote, NumberedItem, TableRow
+from svc.builder.models import Card, Footnote, NumberedItem, TableRow
 from svc.config import config_override
 from svc.document import ContentsPage, EmptyContentsPage, Page, PagedDocument
 from svc.pdf import available, render_pdf
@@ -460,3 +461,85 @@ class TestFootnotesAcrossTheDocument:
             assert lines.index(note) > max(
                 i for i, line in enumerate(lines) if marker_context in line
             )
+
+
+XREF = '<p>See <a class="xref" href="#exhibit-1">Exhibit 1</a>.</p>'
+
+
+class TestCrossReferences:
+    """#184: a class hook, one CSS rule, one degrader rule and one validator."""
+
+    def test_an_email_renders_the_link_as_written(self):
+        html = email(
+            FullWidth(content=table(label="Exhibit")), FullWidth(content=prose(XREF))
+        ).render()
+        assert '<a class="xref" href="#exhibit-1">Exhibit 1</a>' in html
+        assert "target-counter" not in html
+
+    def test_the_text_part_says_the_reference_alone(self):
+        document = email(FullWidth(content=table(label="Exhibit")), FullWidth(content=prose(XREF)))
+        assert "See Exhibit 1." in document.text()
+
+    def test_paper_asks_the_print_engine_for_the_page(self):
+        html = all_paged_fixtures()["a4_portrait"]().render()
+        assert re.search(r'a\.xref::after \{\s*content: " \(p\. " target-counter', html)
+
+    def test_a_forward_reference_is_legal(self):
+        document = email(FullWidth(content=prose(XREF)), FullWidth(content=table(label="Exhibit")))
+        assert "See Exhibit 1." in document.text()
+
+    def test_a_dangling_reference_raises_by_name_before_any_template(self):
+        document = email(FullWidth(content=prose(XREF)))
+        for project in (document.render, document.text, document.validate):
+            with pytest.raises(ValidationError, match="TextBlock links to #exhibit-1"):
+                project()
+
+    def test_renumbering_is_what_it_catches(self):
+        document = email(FullWidth(content=table(label="Table")), FullWidth(content=prose(XREF)))
+        with pytest.raises(ValidationError, match="#exhibit-1"):
+            document.render()
+
+    @pytest.mark.parametrize(
+        "section",
+        [
+            lambda: FullWidth(content=CardGroup([Card("A", body=XREF)], orientation="vertical")),
+            lambda: FullWidth(content=NumberedList([NumberedItem("1", "T", XREF)])),
+        ],
+        ids=["card-body", "numbered-item-body"],
+    )
+    def test_every_raw_html_field_is_checked(self, section):
+        with pytest.raises(ValidationError, match="#exhibit-1"):
+            email(section()).render()
+
+    def test_the_document_facts_and_the_footer_are_checked_too(self):
+        from svc.builder import Footer
+
+        with pytest.raises(ValidationError, match="header_disclaimer links to #nowhere"):
+            Email({**FACTS, "header_disclaimer": '<a href="#nowhere">x</a>'}).render()
+        with pytest.raises(ValidationError, match="Footer links to #nowhere"):
+            Email(FACTS, footer=Footer(disclaimer='<a href="#nowhere">x</a>')).render()
+
+    def test_a_link_to_a_section_or_a_note_resolves(self):
+        copy = '<p><a href="#outlook">Outlook</a>, and <a href="#note-1">note 1</a>[^1].</p>'
+        document = email(
+            FullWidth(title="Outlook", content=TextBlock(copy, notes=["A note."])),
+        )
+        document.validate()
+
+    @requires_pdf
+    def test_on_paper_the_page_is_the_sheet_the_target_is_on(self):
+        pages = sheets(all_paged_fixtures()["a4_portrait"]())
+        cited = [
+            (n, int(match.group(1)))
+            for n, lines in enumerate(pages, start=1)
+            for line in lines
+            if (match := re.search(r"Exhibit 1 \(p\. (\d+)\)", line))
+        ]
+        assert len(cited) == 1, cited
+        citing, page = cited[0]
+        target = next(
+            n
+            for n, lines in enumerate(pages, start=1)
+            if any("Exhibit 1 ·" in line for line in lines)
+        )
+        assert page == target and citing != target

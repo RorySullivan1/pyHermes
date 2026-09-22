@@ -190,8 +190,9 @@ def build_on(medium: Medium, template_dir: Path | None = None) -> PagedDocument:
                     FullWidth(
                         title="Methodology",
                         content=TextBlock(
-                            "<p>Factor returns are computed long-short and gross "
-                            "of transaction costs.</p>"
+                            '<p>The factor returns in <a class="xref" href="#exhibit-1">'
+                            "Exhibit 1</a> are computed long-short and gross of "
+                            "transaction costs.</p>"
                         ),
                     )
                 ],

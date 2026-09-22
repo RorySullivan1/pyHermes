@@ -16,7 +16,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Self
 
-from .apparatus import check_unique, note_anchor, note_ref_anchor
+from .apparatus import check_unique, note_anchor, note_ref_anchor, references
 from .components import Component, Contents, Endnotes, Exhibit
 from .containers import Container, FullWidth
 from .engine import Renderer, TemplateEngine
@@ -148,6 +148,28 @@ class Document:
         """
         return [inner for section in self._sections for inner in _flatten(section)]
 
+    def validate(self) -> None:
+        """
+        Check what only the finished tree can answer, before any template loads.
+
+        Every ``#fragment`` in caller markup must land on an anchor this
+        document defines. It runs at the start of each projection rather than
+        in :meth:`add_section`, because a reference may name a section not yet
+        added; call it directly to check sooner.
+
+        Raises:
+            ValidationError: Naming the first dangling reference and who made it.
+        """
+        self._walk()
+        defined = {anchor for anchor, _ in self._anchors()}
+        for owner, html in self._raw_html():
+            for target in references(html):
+                if target not in defined:
+                    raise ValidationError(
+                        f"{owner} links to #{target}, which nothing in this document "
+                        "defines. Check the anchor, or the numbering it assumed."
+                    )
+
     # ------------------------------------------------------------------
     # The three projections
     # ------------------------------------------------------------------
@@ -193,7 +215,7 @@ class Document:
         the medium's constraints over the *composed* document, so region
         bytes are inside whatever budget it sets.
         """
-        self._walk()
+        self.validate()
         # The one resolution point. Every template below — skeleton, regions,
         # containers, components — reads the same values, because they all
         # render through this binder rather than looking any of them up.
@@ -229,7 +251,7 @@ class Document:
         one house format possible at all. Deterministic — no clock, no
         randomness, no override.
         """
-        self._walk()
+        self.validate()
         endnotes = self._endnotes()
         return join_sections(
             *(region.text(facts) for region, facts in self.leading_regions()),
@@ -269,6 +291,19 @@ class Document:
             for component in section.components():
                 if isinstance(component, Contents):
                     component.entries = self._contents_entries(skip=section)
+
+    def _raw_html(self) -> list[tuple[str, str]]:
+        """Every raw-HTML field in the document, each with who carries it."""
+        regions = [region for region, _ in self.leading_regions() + self.trailing_regions()]
+        return [
+            ("header_disclaimer", self._metadata.header_disclaimer),
+            *((type(region).__name__, html) for region in regions for html in region.raw_html()),
+            *(
+                (type(component).__name__, html)
+                for component in self._components()
+                for html in component.raw_html()
+            ),
+        ]
 
     def _footnotes(self) -> list[Footnote]:
         """Every note the tree calls, in reading order."""

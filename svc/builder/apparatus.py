@@ -22,6 +22,9 @@ ANCHOR = re.compile(r"^[A-Za-z][A-Za-z0-9_-]*$")
 
 _NOT_SLUG = re.compile(r"[^a-z0-9]+")
 
+#: A link within the document in caller markup: ``href="#exhibit-3"``.
+REFERENCE = re.compile(r"""href\s*=\s*(["'])#([^"']+)\1""", re.IGNORECASE)
+
 #: A footnote marker in copy: ``[^1]``. A plain-text convention the builder
 #: replaces, never markup, so the raw-HTML set stays closed at five.
 MARKER = re.compile(r"\[\^(\d+)\]")
@@ -67,6 +70,11 @@ def check_unique(anchors: Iterable[tuple[str, str]]) -> None:
                 f"and by {owner}. Pass anchor= to one of them."
             )
         seen[anchor] = owner
+
+
+def references(html: str) -> list[str]:
+    """Every anchor ``html`` links to within the document, in order."""
+    return [match.group(2) for match in REFERENCE.finditer(html)]
 
 
 def note_anchor(number: int) -> str:
@@ -140,10 +148,12 @@ __all__ = [
     "ANCHOR",
     "MARKER",
     "Note",
+    "REFERENCE",
     "check_markers",
     "check_unique",
     "note_anchor",
     "note_ref_anchor",
+    "references",
     "slugify",
     "split_markers",
     "text_markers",

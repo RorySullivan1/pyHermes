@@ -68,7 +68,8 @@ Appendix
 Methodology
 -----------
 
-Factor returns are computed long-short and gross of transaction costs.
+The factor returns in Exhibit 1 are computed long-short and gross of
+transaction costs.
 
 
 Notes

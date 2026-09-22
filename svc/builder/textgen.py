@@ -58,7 +58,9 @@ def format_link(label: str, url: str) -> str:
 
     The seam #108 leaves for #109: the formatting policy owns the final
     spelling, and it can move without reopening the parser. A link whose
-    label *is* its URL emits once rather than saying the same thing twice.
+    label *is* its URL emits once rather than saying the same thing twice,
+    and a link within the document (``#exhibit-3``) emits its label alone:
+    a fragment points nowhere in a plain-text part (#184).
 
     Args:
         label: The link's visible text, already degraded and collapsed.
@@ -67,7 +69,7 @@ def format_link(label: str, url: str) -> str:
     Returns:
         The text to emit in place of the link.
     """
-    if not url:
+    if not url or (url.startswith("#") and label):
         return label
     if not label or label == url:
         return url

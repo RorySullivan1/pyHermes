@@ -79,6 +79,13 @@
     }
     .footnote::footnote-call { content: none; }
     .footnote::footnote-marker { content: attr(data-note) ". "; }
+
+    a.xref::after {
+      content: " (p. " target-counter(attr(href), page) ")";
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 9.5px;
+      color: #A09E97;
+    }
   </style>
 </head>
 <body>

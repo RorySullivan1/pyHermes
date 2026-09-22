@@ -357,7 +357,10 @@ def build(template_dir: Path | None = None, **metadata_overrides: Any) -> Email:
             TwoColumn(
                 ratio=TwoColumnRatio.EQUAL,
                 title="Equal Columns",
-                left=TextBlock("<p>The left half of a 50-50 split.</p>"),
+                left=TextBlock(
+                    '<p>The left half of a 50-50 split, below <a class="xref" '
+                    'href="#exhibit-2">Exhibit 2</a>.</p>'
+                ),
                 right=TextBlock("<p>The right half of a 50-50 split.</p>"),
             )
         )

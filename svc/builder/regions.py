@@ -138,6 +138,10 @@ class Region:
             if isinstance(value := getattr(self, fname), EmailImage)
         ]
 
+    def raw_html(self) -> list[str]:
+        """The caller markup this region emits raw, for the document's link check."""
+        return []
+
     def assets(self) -> list[ImageAsset]:
         """The attachment manifest entries for this region's images."""
         return [image.asset for image in self.images() if image.asset is not None]
@@ -711,6 +715,9 @@ class Footer(BoxSurface, Region):
             "footer_links": self.resolved_links(facts),
         }
         return {**super().context({}), **resolved, **facts}
+
+    def raw_html(self) -> list[str]:
+        return [self.disclaimer] if self.disclaimer else []
 
     def _text(self, facts: dict[str, Any]) -> str:
         """

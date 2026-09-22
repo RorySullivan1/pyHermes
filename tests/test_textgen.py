@@ -62,6 +62,14 @@ class TestLinksCarryTheirUrl:
         html = '<a href="https://example.com">https://example.com</a>'
         assert html_to_text(html) == "https://example.com"
 
+    def test_a_link_within_the_document_is_just_its_label(self):
+        # #184: a fragment points nowhere in a plain-text part.
+        html = '<p>See <a class="xref" href="#exhibit-3">Exhibit 3</a>.</p>'
+        assert html_to_text(html) == "See Exhibit 3."
+
+    def test_a_bare_fragment_with_no_label_still_says_something(self):
+        assert html_to_text('<a href="#top"></a>') == "#top"
+
     def test_a_link_with_no_href_is_just_its_label(self):
         assert html_to_text("<a>plain</a>") == "plain"
 

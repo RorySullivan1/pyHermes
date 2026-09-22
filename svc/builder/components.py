@@ -187,6 +187,15 @@ class Component:
         """
         return []
 
+    def raw_html(self) -> list[str]:
+        """
+        The caller markup this component emits raw, for the document's link check.
+
+        Empty by default: only the blessed raw-HTML fields carry markup, and a
+        component holding one returns it so a ``#fragment`` in it is checked.
+        """
+        return []
+
     def footnotes(self) -> list[Footnote]:
         """
         Every note this component's copy calls, in reading order (#182).
@@ -308,6 +317,9 @@ class CardGroup(Component):
         self.cards = cards
         self.orientation = orientation
         self.subtitle = subtitle
+
+    def raw_html(self) -> list[str]:
+        return [card.body for card in self.cards if card.body]
 
     def text(self) -> str:
         """
@@ -783,6 +795,9 @@ class TextBlock(CopyAlignment, Component):
         self.content = content
         self.subtitle = subtitle
 
+    def raw_html(self) -> list[str]:
+        return [self.content]
+
     def text(self) -> str:
         """The prose, through #108's degrader — ``content`` is raw HTML."""
         return self._with_subtitle(wrap(html_to_text(text_markers(self.content, self.notes))))
@@ -896,6 +911,9 @@ class NumberedList(CopyAlignment, Component):
                 for item in self.items
             )
         )
+
+    def raw_html(self) -> list[str]:
+        return [item.body for item in self.items]
 
     def footnotes(self) -> list[Footnote]:
         """Every item's notes, item by item."""
