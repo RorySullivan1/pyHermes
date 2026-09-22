@@ -16,6 +16,8 @@ manifest of the images that HTML references::
 """
 
 # Components
+# Email builder + engine
+from . import formats
 from .components import (
     AuthorBlock,
     CardGroup,
@@ -36,8 +38,6 @@ from .containers import (
     ThreeColumn,
     TwoColumn,
 )
-
-# Email builder + engine
 from .email import Email, EmailBuilder
 from .engine import TemplateEngine
 
@@ -134,6 +134,8 @@ from .typography import (
 )
 
 __all__ = [
+    # Number formatting (#177)
+    "formats",
     # Engine
     "TemplateEngine",
     # Medium

@@ -41,6 +41,7 @@ from svc.builder import (
     TwoColumn,
 )
 from svc.builder.enums import CardOrientation, ImageAlign, ThreeColumnRatio, TwoColumnRatio
+from svc.builder.formats import bps, delta, number, pct
 from svc.builder.images import EmailImage
 from svc.builder.models import Card, FooterLink, KpiItem, LinkRow, NumberedItem, TableRow
 
@@ -218,10 +219,12 @@ def build(template_dir: Path | None = None, **metadata_overrides: Any) -> Email:
                 highlight=True,
                 content=CardGroup(
                     [
-                        KpiItem("S&P 500", "5,234", _GAIN, "+1.42%"),
-                        KpiItem("UST 10Y", "4.28%", _LOSS, "+6 bps"),
-                        KpiItem("Gold", "2,411", _GAIN, "+0.85%"),
-                        KpiItem("VIX", "14.32", _GAIN, "-2.18 pts"),
+                        # Figures go through svc.builder.formats (#177), so the
+                        # golden pins the formatters' output, not a hand-typed string.
+                        KpiItem("S&P 500", number(5234), _GAIN, pct(0.0142, sign=True)),
+                        KpiItem("UST 10Y", pct(0.0428), _LOSS, bps(0.0006)),
+                        KpiItem("Gold", number(2411), _GAIN, pct(0.0085, sign=True)),
+                        KpiItem("VIX", number(14.32, 2), _GAIN, delta(-2.18, unit="pts")),
                     ],
                     orientation=CardOrientation.HORIZONTAL,
                 ),
@@ -260,9 +263,18 @@ def build(template_dir: Path | None = None, **metadata_overrides: Any) -> Email:
                 content=DataTable(
                     headers=["Factor", "1M", "YTD"],
                     rows=[
-                        TableRow(cells=["Value", "+1.8%", "+7.4%"], colors=["", _GAIN, _GAIN]),
-                        TableRow(cells=["Momentum", "-0.4%", "+11.2%"], colors=["", _LOSS, _GAIN]),
-                        TableRow(cells=["Quality", "+0.9%", "+5.1%"], colors=["", _GAIN, _GAIN]),
+                        TableRow(
+                            cells=["Value", pct(0.018, 1, sign=True), pct(0.074, 1, sign=True)],
+                            colors=["", _GAIN, _GAIN],
+                        ),
+                        TableRow(
+                            cells=["Momentum", pct(-0.004, 1, sign=True), pct(0.112, 1, sign=True)],
+                            colors=["", _LOSS, _GAIN],
+                        ),
+                        TableRow(
+                            cells=["Quality", pct(0.009, 1, sign=True), pct(0.051, 1, sign=True)],
+                            colors=["", _GAIN, _GAIN],
+                        ),
                     ],
                     source="Hermes Research",
                     as_of="24 August 2026",
