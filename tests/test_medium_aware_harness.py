@@ -44,7 +44,8 @@ class TestEveryRuleSaysWhereItApplies:
     def test_the_email_set_is_unchanged(self):
         # #165 must not quietly narrow what an email is judged by. Ten rules
         # before, ten after, and the same ten.
-        assert rules_for("email") == set(SOURCES) - {"page-size-declared", "paged-table-width"}
+        paged_only = {"page-size-declared", "paged-table-width", "table-structure"}
+        assert rules_for("email") == set(SOURCES) - paged_only
         assert len(rules_for("email")) == 10
 
     def test_the_outlook_rules_reach_no_other_medium(self):
@@ -109,6 +110,40 @@ class TestThePagedRulesAreExercised:
         for name in sorted(all_fixtures()):
             found = {f.rule_id for f in lint_email(all_fixtures()[name]())}
             assert not found & {"page-size-declared", "paged-table-width"}
+
+    DATA_TABLE = (
+        "<table><caption>Holdings</caption>{head}"
+        '<tr><th scope="col">Name</th></tr>{head_end}'
+        "<tr><td>UKT 2032</td></tr></table>"
+    )
+
+    def _structure_findings(self, html: str, medium: str = "document") -> list[str]:
+        return [f.rule_id for f in lint_html(html, medium) if f.rule_id == "table-structure"]
+
+    def test_a_data_table_with_no_thead_is_an_error_on_paper(self):
+        # #176: the lint half of the teeth, which runs without WeasyPrint.
+        html = self.DATA_TABLE.format(head="", head_end="")
+        assert self._structure_findings(html) == ["table-structure"]
+
+    def test_a_thead_satisfies_it(self):
+        html = self.DATA_TABLE.format(head="<thead>", head_end="</thead>")
+        assert self._structure_findings(html) == []
+
+    def test_it_is_silent_for_an_email(self):
+        # An email has no sheets to repeat a header across.
+        html = self.DATA_TABLE.format(head="", head_end="")
+        assert self._structure_findings(html, "email") == []
+
+    def test_a_layout_table_is_not_asked_for_one(self):
+        html = '<table role="presentation"><tr><td>x</td></tr></table>'
+        assert self._structure_findings(html) == []
+
+    def test_the_thead_belongs_to_the_innermost_table(self):
+        # A layout table holding a proper data table is not itself a data
+        # table, and the data table's thead is its own.
+        inner = self.DATA_TABLE.format(head="<thead>", head_end="</thead>")
+        html = f'<table role="presentation"><tr><td>{inner}</td></tr></table>'
+        assert self._structure_findings(html) == []
 
     def test_the_shipped_paged_gallery_satisfies_both(self):
         for name, build in sorted(all_paged_fixtures().items()):

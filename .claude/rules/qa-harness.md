@@ -54,8 +54,9 @@ epic #54). Fourteen fixtures, each a `build()` returning a built `Email`, enumer
 | `aligned_layout` | Every alignment axis at once (#128), closing epic #124 — a centred section whose **title follows**, a component **overriding** its container, a **right-aligned** band holding a `CardGroup` and a `DataTable` that do not move, and aligned two- and three-column splits. The band is right-aligned on purpose: a centred one could not tell "the KPI strip kept its own alignment" from "it inherited the section's". Body short, theme/size/font default, for `rich_table`'s reasons. It also carries the gallery's only explicit `Container.background_color` — widening the field-completeness rule to containers found that the **original** entry in the closed colour list had never been set by any fixture |
 | `minimal_footer` | A minimal-footer build (#66), the same argument at the other end. Paired with the **default** header on purpose: the two region choices are independent, and swapping both at once could not say which one moved a byte |
 
-**There is a second gallery since #162**, `all_paged_fixtures()` — today `a4_portrait` and
-`slide_16_9`, the same content one `PageFormat` apart. It is a separate registry rather than a
+**There is a second gallery since #162**, `all_paged_fixtures()` — `a4_portrait` and
+`slide_16_9`, the same content one `PageFormat` apart, and since #176 `a4_long_table`, which
+exists to cross sheets. It is a separate registry rather than a
 wider one on purpose: `all_fixtures()` feeds a dozen test modules whose assertions are about
 *emails* (Outlook rules, a phone viewport, the `kitchen_sink` completeness rules keyed to
 `EmailMetadata`), and widening it would drag every one of them onto a paged render before the
@@ -223,6 +224,7 @@ test (#60). `lint_html(html)` returns `Finding(rule_id, severity, location, mess
 | `outlook-transparent-background` | error | `background-color` carrying an alpha channel — Outlook demotes it to a background image |
 | `empty-url` | error | `url()` with nothing in it; a client may resolve it against the message body |
 | `table-role` | error | A layout table with no `role`, **and** a data table carrying one (#114) |
+| `table-structure` | error | A data table with no `thead`, **paged documents only** (#176). A print engine repeats only a `thead` on each sheet |
 | `vml-fill-empty-src` | error | A `v:fill` with `src=""` inside `[if mso]` (#150) — `empty-url`'s case, in the one place that rule cannot reach |
 | `size-budget` | warn/error | The 90/102 KB thresholds, **attributing the bytes to section-marker regions** |
 
@@ -950,7 +952,7 @@ document; `lint_email` is kept as the name every existing caller uses and return
 it always did.
 
 The split was **measured, not predicted** (#162): ten rules for email, six for a paged
-document, and only one rule had to be *taken away* rather than merely being quiet —
+document (seven since #176 added `table-structure`), and only one rule had to be *taken away* rather than merely being quiet —
 `size-budget` is Gmail's 102 KB and nothing clips a PDF. The size *report* stays available
 everywhere, because knowing where the bytes went is useful for any document; it is the
 threshold that is a fact about one mail client. Two paged-only rules arrived, and both came
@@ -975,3 +977,34 @@ right and wrong enough to measure. A test asserts every sheet rasters at exactly
 writes a PDF beside the HTML for a paged one, photographs sheets instead of viewports, and
 `--open` opens the PDF — showing a paged document's HTML in a browser would show a page
 without pages.
+
+
+## The long-table fixture — engineered boundaries (#176)
+
+`a4_long_table` is the third paged fixture and the teeth for epic #169. Before it, no paged
+fixture had a table that crossed a sheet, so nothing in the harness could see a lost header.
+It carries a 60-row holdings table with a subhead and a total, a chart with a subtitle, source
+and disclosure, and a section title. Its three lead-in paragraph counts are **tuned, not
+chosen**. Each puts one boundary exactly at a sheet edge, so that the defect occurs when the
+paged skeleton's break rules are removed:
+
+| Constant | Boundary | Defect without the rules |
+|---|---|---|
+| `INTRO_PARAGRAPHS` | The table's end | The total opens a sheet with no data row above it |
+| `LEAD_IN_PARAGRAPHS` | The chart | The disclosure opens a sheet, away from its chart |
+| `RUN_ON_PARAGRAPHS` | The "Outlook" section | Its title ends a sheet without its first line |
+
+- **The tests read the PDF's text back, sheet by sheet**, through pypdfium2. They need both
+  `[pdf]` and `[qa]` and skip without either. `TestALongTableCrossesSheetsIntact` holds the
+  claims: the headers on every sheet the table occupies, the total with its last row, the
+  subhead with its first, the title with its first line, and the chart with its subtitle and
+  fine print.
+- **`TestTheFixtureIsEngineeredRatherThanLucky` strips the rules and asserts each defect
+  appears.** Without it, the tests above could pass because a boundary drifted rather than
+  because a rule held. When layout moves and one of these goes green, retune the constant.
+  Do not delete the test. The tuning loop is a search over one constant at a time, in document
+  order, since each boundary depends only on what precedes it.
+- **The `thead` removal is a committed test**, not a one-off check. `TestRemovingTheTheadIsCaught`
+  renders the fixture against a template copy with no `thead`. It asserts that the lint rule
+  fires and that the headers vanish from the table's second sheet. The lint half runs without
+  WeasyPrint, so the `[dev]`-only CI job enforces the structure too.

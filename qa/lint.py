@@ -116,6 +116,15 @@ SOURCES: dict[str, str] = {
         "measured at 188px inside a 794px page in #164, correct markup and a "
         "different document."
     ),
+    "table-structure": (
+        "A print engine repeats a table's header on every sheet the table "
+        "crosses only when the header row sits in a `thead`; CSS 2.1, section "
+        "17.2 (table-header-group), which WeasyPrint implements. The shared "
+        "data table emitted a bare header row until #173, so a holdings table "
+        "lost its column headers after sheet one. No golden or browser "
+        "screenshot could see it, because an email has no sheets. This rule "
+        "reads the markup, so it holds without a PDF backend installed."
+    ),
     "size-budget": (
         "Gmail clips a message above ~102 KB behind a 'View entire message' "
         "link. svc/config.Config.size_limit_kb; Email._validate_size enforces "
@@ -168,6 +177,7 @@ class _OpenTable:
     where: str
     role: str
     has_header: bool = False
+    has_thead: bool = False
 
 
 #: Which media each rule applies to, by ``Medium.name``.
@@ -206,9 +216,10 @@ RULE_MEDIA: dict[str, frozenset[str]] = {
     # knowing where the bytes went is useful for any document -- but the
     # threshold is a fact about one mail client.
     "size-budget": frozenset({"email"}),
-    # Paged-only, and both come from a defect a real PDF produced (#164).
+    # Paged-only, and each comes from a defect a real PDF produced (#164, #173).
     "page-size-declared": frozenset({"document"}),
     "paged-table-width": frozenset({"document"}),
+    "table-structure": frozenset({"document"}),
 }
 
 
@@ -335,6 +346,8 @@ class _Linter(HTMLParser):
             # correctly rather than marking its ancestors as data too.
             if tag == "th":
                 self._tables[-1].has_header = True
+        if tag == "thead" and self._tables:
+            self._tables[-1].has_thead = True
         if tag == "img":
             self._check_image(attributes)
         if tag == "link":
@@ -422,7 +435,22 @@ class _Linter(HTMLParser):
                     ),
                 )
             )
-        elif not table.has_header and not presentational:
+        elif table.has_header and not table.has_thead:
+            # Paged only, by RULE_MEDIA: the header repeats per sheet only
+            # from a thead, and an email has no sheets.
+            self.findings.append(
+                Finding(
+                    rule_id="table-structure",
+                    severity=Severity.ERROR,
+                    location=table.where,
+                    message=(
+                        "data <table> has no <thead>, so a print engine shows its "
+                        "column headers on the first sheet only. Put the header row "
+                        "in a <thead> and the data rows in a <tbody>."
+                    ),
+                )
+            )
+        if not table.has_header and not presentational:
             self.findings.append(
                 Finding(
                     rule_id="table-role",
