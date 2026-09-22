@@ -114,5 +114,25 @@ def test_mypy_ignores_both_spellings_of_each_backend():
         "overrides"
     ]
     modules = {name for block in overrides for name in block["module"]}
-    for backend in ("pandas", "matplotlib"):
+    for backend in ("pandas", "matplotlib", "numpy"):
         assert {backend, f"{backend}.*"} <= modules, backend
+
+
+def test_mypy_skips_the_backends_rather_than_reading_them():
+    """
+    ``ignore_missing_imports`` covers only the *absent* case. With the extras
+    installed, mypy followed matplotlib into numpy 2.5's stubs, which use the
+    3.12 ``type`` statement, and failed at ``python_version = "3.11"``. That
+    failure appeared only in CI's ``data`` job. Skipping makes the installed and
+    absent cases one check.
+    """
+    import tomllib
+
+    overrides = tomllib.loads(pathlib.Path("pyproject.toml").read_text())["tool"]["mypy"][
+        "overrides"
+    ]
+    for backend in ("pandas", "matplotlib", "numpy"):
+        block = next(b for b in overrides if backend in b["module"])
+        assert block.get("follow_imports") == "skip", backend
+        # Without this, mypy ignores the skip for .pyi stubs, which both ship.
+        assert block.get("follow_imports_for_stubs") is True, backend

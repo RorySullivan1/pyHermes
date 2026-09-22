@@ -77,6 +77,15 @@ with neither extra installed.
 - **mypy lists both spellings of each backend** (`pandas` and `pandas.*`). This is the #157
   lesson: `foo.*` matches submodules only. A test reads `pyproject.toml` and asserts both are
   there.
+- **mypy *skips* the backends, not just tolerates their absence.** The first CI run of the
+  `data` job failed in mypy, not in a test. matplotlib ships `.pyi` stubs, mypy followed them
+  into numpy, and numpy 2.5's stubs use the 3.12 `type` statement, which a project checked at
+  `python_version = "3.11"` cannot parse. It could not reproduce here at first, because numpy
+  2.5 needs Python 3.12+ and this machine's default is 3.11. A 3.13 venv reproduced it
+  exactly. The fix took two keys, not one: `follow_imports = "skip"` **is ignored for `.pyi`
+  stubs** unless `follow_imports_for_stubs = true` is also set. numpy is listed because it
+  comes in transitively. `svc/data` types every backend as `Any`, so nothing is lost by
+  skipping it.
 
 ### The frame adapter's inferences
 
