@@ -15,7 +15,9 @@ the three design axes, the two projections. A **medium** decides the rest: `svc/
 four-slot skeleton and the 102 KB check, `svc/document/` the paged one with its cover, running
 boxes and page breaks. Three exporters sit on one contract — `svc/delivery/` + `svc/gmail/` +
 `svc/outlook/` for MIME, `svc/pdf/` for PDF. Each owns its wire format and **never**
-authentication, so the core still depends on Jinja2 alone.
+authentication, so the core still depends on Jinja2 alone. Figures arrive as numbers:
+`svc/builder/formats.py` formats them and `svc/data/` adapts a DataFrame or a Figure, each
+adapter behind an optional extra.
 
 ## Commands
 
@@ -27,15 +29,17 @@ mypy                          # config in pyproject: files = ["svc", "qa"]
 
 pip install -e ".[qa]"        # optional: Playwright + pypdfium2 for screenshots
 pip install -e ".[pdf]"       # optional: WeasyPrint, for PDF (needs Pango/Cairo)
+pip install -e ".[data]"      # optional: pandas, for DataFrame -> DataTable
+pip install -e ".[charts]"    # optional: matplotlib, for Figure -> chart image
 python -m qa.screenshots      # gallery → output/screenshots/ (gitignored)
 pytest --update-goldens       # the ONLY way to regenerate a golden (#58)
 python -m qa.preview kitchen_sink --lint --screenshot --open   # an email
 python -m qa.preview a4_portrait --lint --screenshot --open    # a paged document + its PDF
 ```
 
-CI runs the first four on every PR, plus `screenshots`, `pdf` and `wheel` jobs. `[dev]` alone
-must stay browser- **and** WeasyPrint-free: both extras' tests skip rather than fail, and that
-is what proves each is optional.
+CI runs the first four on every PR, plus `screenshots`, `pdf`, `data` and `wheel` jobs. `[dev]`
+alone must stay free of every extra: each extra's tests skip rather than fail, and that is what
+proves each is optional.
 
 **To eyeball a change, run `preview`.** A screenshot is the only thing that catches a
 layout regression; see standing rule 3.
@@ -53,6 +57,7 @@ applies to and loads **only when a matching file is read** — so a session that
 | `design-axes.md` | theming / sizing / typography / enums / containers / `templates/**` | Colour, density, typeface and alignment — the three themes plus the axis that deliberately is not one |
 | `data-table.md` | `models.py`, `components.py`, `templates/analysis/**` | Columns, cells, row kinds, caption and row headers |
 | `disclosure.md` | `components.py`, `templates/analysis/**` + `media/**`, the shared partial | An exhibit's two kinds of fine print: attribution, and the compliance copy beneath it |
+| `data-layer.md` | `formats.py`, `svc/data/**` | Figures as numbers: the formatters, the two adapters, why the dependency runs one way |
 | `plain-text.md` | `textgen.py`, `email.py` | The second projection of the section tree |
 | `media.md` | `svc/email/`, `svc/document/`, `svc/pdf/`, `medium.py`, `document.py`, `templates/document/**` | The medium model, the page, the template fork rule, each medium's regions, the exporter's resource policy |
 | `delivery.md` | `svc/delivery/`, `svc/gmail/`, `svc/outlook/` | MIME assembly, the adapter contract, the deliberate non-features |
@@ -167,9 +172,10 @@ these rather than improvising:
 ## Open work and state
 
 - Tracked in [GitHub issues](https://github.com/RorySullivan1/pyHermes/issues), as epics
-  with sub-issues. **Epic #157 (rescope to media) is complete**, #158–#166, and so is **epic
-  #153** (per-exhibit disclosure, #154–#156). Open: **#150** (banner VML `src`, needs a real
-  Outlook host).
+  with sub-issues. Complete: **#157** (rescope to media), **#153** (per-exhibit disclosure),
+  **#169** (pagination hardening) and **#170** (the data layer, #177–#180). Open: **#171**
+  (document apparatus), **#172** (the brochure medium) and **#150** (banner VML `src`, needs
+  a real Outlook host).
 - Current state, decisions and open threads:
   [.claude/memory/INDEX.md](.claude/memory/INDEX.md).
 - [README.md](README.md) is the human-facing entry point (what it is, install, build, send or

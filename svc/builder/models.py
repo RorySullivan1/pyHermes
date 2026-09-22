@@ -7,10 +7,12 @@ metadata for the email skeleton, typed data for each component, etc.
 """
 
 import re
+from collections.abc import Callable
 from dataclasses import InitVar, dataclass, field, fields
 from typing import TYPE_CHECKING, Any, ClassVar
 
-from .enums import ColumnAlign, ColumnKind, RowKind, SizeTheme
+from . import formats
+from .enums import ColumnAlign, ColumnKind, RowKind, SizeTheme, Tone
 from .exceptions import ValidationError
 
 if TYPE_CHECKING:  # pragma: no cover - import cycle: images/regions import from here
@@ -537,6 +539,9 @@ class Card:
         body:     Optional prose beneath the card. **HTML field** — emitted
                   raw so callers can pass markup, so escaping untrusted text
                   in it is the caller's job (see filters.escape_html).
+        tone:     What the value *means* — ``positive``, ``negative`` or
+                  ``neutral`` — resolved to the live theme's semantic token
+                  at render (#178). An explicit ``color`` still wins.
 
     Either ``value`` or ``body`` must be present: a card with only a label
     has nothing to say.
@@ -547,11 +552,13 @@ class Card:
     color: str = ""
     sublabel: str = ""
     body: str = ""
+    tone: str = ""
 
     def validate(self) -> None:
         _require(self.label, "card.label")
         if self.color:
             _validate_color(self.color, "card.color")
+        _validate_tone(self.tone, "card.tone")
         if not self.value and not self.body:
             raise ValidationError(
                 "'card' requires a 'value' or a 'body'; a label alone says nothing."
@@ -573,6 +580,7 @@ class KpiItem(Card):
         _require(self.value, "kpi.value")
         if self.color:
             _validate_color(self.color, "kpi.color")
+        _validate_tone(self.tone, "kpi.tone")
 
 
 @dataclass
@@ -702,22 +710,24 @@ class Cell:
     as *"the caller styles cells"*, the closed list has opened and the rule
     is dead — a ``title_color=`` with more steps.
 
-    The theme remains the fallback: an unset colour takes the token the
-    column's kind implies, and an unset background leaves the row's
-    alternating tint alone.
+    The theme remains the fallback, and ``tone`` (#178) is that claim as a
+    word the theme resolves; `data-table.md` argues it.
 
     Attributes:
         text:       The cell's contents. Plain text, escaped on the way out.
         align:      Overrides the column's resolved alignment. Empty inherits.
-        color:      Text colour, ``#RRGGBB``. Empty takes the theme's token.
+        color:      Text colour, ``#RRGGBB``. Wins over ``tone``.
         background: Cell background, ``#RRGGBB``. Empty leaves the row's
                     alternating tint in place.
+        tone:       ``positive`` / ``negative`` / ``neutral``, as the live
+                    theme's semantic token. Empty takes the column's kind.
     """
 
     text: str = ""
     align: str = ""
     color: str = ""
     background: str = ""
+    tone: str = ""
 
     def validate(self) -> None:
         if self.align and self.align not in tuple(ColumnAlign):
@@ -728,10 +738,58 @@ class Cell:
             _validate_color(self.color, "cell.color")
         if self.background:
             _validate_color(self.background, "cell.background")
+        _validate_tone(self.tone, "cell.tone")
+
+    @classmethod
+    def from_number(
+        cls,
+        value: Any,
+        fmt: Callable[[Any], str] = formats.number,
+        *,
+        tone: str = "auto",
+        align: str = "",
+        background: str = "",
+    ) -> "Cell":
+        """
+        A cell formatted once, with a tone that cannot disagree with its text.
+
+        ``tone="auto"`` reads the tone off the sign via :func:`tone_of`, which
+        is handed the same ``fmt``, so ``0.00%`` is neutral whatever the
+        unrounded sign was. Pass a :class:`~svc.builder.enums.Tone` to state
+        it instead — a falling VIX is good news.
+        """
+        resolved = tone_of(value, fmt) if tone == "auto" else tone
+        cell = cls(text=fmt(value), align=align, background=background, tone=resolved)
+        cell.validate()
+        return cell
 
     def resolved_align(self, column_align: str) -> str:
         """This cell's alignment, falling back to its column's resolved one."""
         return self.align or column_align
+
+
+def tone_of(value: Any, fmt: Callable[[Any], str] | None = None) -> Tone:
+    """
+    The tone a figure's sign implies: up is positive, down negative.
+
+    Zero, ``None`` and NaN are neutral, and so is a figure that ``fmt``
+    renders as zero — so the colour cannot contradict the string beside it.
+    """
+    if fmt is not None and formats.displays_zero(fmt(value)):
+        return Tone.NEUTRAL
+    if value is None or value != value:  # NaN is the one value unequal to itself
+        return Tone.NEUTRAL
+    if value > 0:
+        return Tone.POSITIVE
+    return Tone.NEGATIVE if value < 0 else Tone.NEUTRAL
+
+
+def _validate_tone(value: str, field_name: str) -> None:
+    if value and value not in tuple(Tone):
+        raise ValidationError(
+            f"{field_name!r} must be one of {[t.value for t in Tone]}, got: {value!r}. "
+            "A tone is a word the theme resolves; pass a hex as 'color' instead."
+        )
 
 
 def coerce_cell(value: "str | Cell", field_name: str = "cell") -> Cell:

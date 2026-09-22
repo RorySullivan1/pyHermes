@@ -37,6 +37,8 @@ svc/
 │                         closed-tag-set degrader) + the formatting policy — wrap, underline,
 │                         table, join_blocks/join_sections, format_link/link_line
 │   ├── filters.py      — Jinja filters (e.g. validate_hex_color)
+│   ├── formats.py      — finance formatters (#177): number, pct, bps, delta, money,
+│                         compact; stdlib only, half-up, ASCII. `data-layer.md`
 │   ├── exceptions.py   — EmailBuilderError hierarchy
 │   └── templates/      ← packaged with the wheel (moved here in #10)
 │       ├── base.html                — the EMAIL skeleton (four slots: header_bar_html,
@@ -71,6 +73,10 @@ svc/
 │   └── sender.py       — GmailTransport protocol, GoogleApiTransport shim, send_message()
 ├── outlook/            ← Outlook send adapter over Microsoft Graph (same shape as gmail)
 │   └── sender.py       — OutlookTransport protocol, GraphApiTransport shim, send_message()
+├── data/               ← the data adapters (#179, #180); "[data]" and "[charts]" extras
+│   ├── frames.py       — table_from_frame: a DataFrame as a DataTable
+│   ├── charts.py       — image_from_figure / chart_from_figure: a Figure as an image
+│   └── exceptions.py   — DataError, BackendMissingError (a sibling of EmailBuilderError)
 ├── pdf/                ← the PDF exporter, on the adapters' contract; "[pdf]" extra
 │   ├── exporter.py     — render_pdf / save_pdf / page_count / available; lazy backend
 │   ├── fetcher.py      — serves cid: from the manifest, refuses every other URL

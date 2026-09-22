@@ -23,7 +23,7 @@ from svc.builder import (
     ThreeColumn,
     TwoColumn,
 )
-from svc.builder.models import Card, NumberedItem, TableRow
+from svc.builder.models import Card, Cell, NumberedItem, TableRow
 
 
 def build(template_dir: Path | None = None) -> Email:
@@ -87,7 +87,8 @@ def build(template_dir: Path | None = None) -> Email:
                     rows=[
                         TableRow(["Policy rate", "4.25%", "unch"]),
                         TableRow(["Core CPI", "2.8%", "-0.1"], colors=["", "", "#3F7A63"]),
-                        TableRow(["Unemployment", "4.1%", "+0.1"]),
+                        # A tone, not a hex: it renders as slate's own negative (#178).
+                        TableRow(["Unemployment", "4.1%", Cell("+0.1", tone="negative")]),
                     ],
                     source="Hermes Research",
                     as_of="7 September 2026",
