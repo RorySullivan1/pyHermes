@@ -217,7 +217,9 @@ class TestComponentFieldsAreExercised:
             "no gallery component sets its own align; the override is unpinned"
         )
 
-    @pytest.mark.parametrize("field_name", ["title", "background_color", "highlight", "align"])
+    @pytest.mark.parametrize(
+        "field_name", ["title", "background_color", "highlight", "align", "anchor"]
+    )
     def test_every_container_field_is_exercised(self, field_name):
         """
         Containers had **no** completeness rule before #128 — the same gap
@@ -226,7 +228,13 @@ class TestComponentFieldsAreExercised:
         """
         sections = list(_gallery_sections())
         assert sections, "the gallery builds no sections"
-        defaults = {"title": None, "background_color": None, "highlight": False, "align": None}
+        defaults = {
+            "title": None,
+            "background_color": None,
+            "highlight": False,
+            "align": None,
+            "anchor": None,
+        }
         assert any(
             getattr(section, field_name, defaults[field_name]) != defaults[field_name]
             for section in sections

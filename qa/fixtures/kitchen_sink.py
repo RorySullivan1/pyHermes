@@ -379,6 +379,7 @@ def build(template_dir: Path | None = None, **metadata_overrides: Any) -> Email:
             ThreeColumn(
                 ratio=ThreeColumnRatio.EQUAL,
                 title="Three Equal",
+                anchor="thirds",
                 left=TextBlock("<p>First third.</p>"),
                 center=TextBlock("<p>Second third.</p>"),
                 right=TextBlock("<p>Final third.</p>"),

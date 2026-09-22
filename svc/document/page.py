@@ -77,6 +77,10 @@ class Page(Container):
         self.break_before = break_before
         self.break_after = break_after
 
+    def resolved_anchor(self) -> str:
+        """None: a page's title is never rendered, so there is no heading to land on."""
+        return ""
+
     def components(self) -> list[Component]:
         """Every component on this page, in reading order."""
         return [component for section in self.sections for component in section.components()]

@@ -16,9 +16,11 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Self
 
+from .apparatus import check_unique
 from .containers import Container
 from .engine import Renderer, TemplateEngine
 from .enums import EmbedStrategy
+from .exceptions import ValidationError
 from .images import EmailImage, ImageAsset, dedupe_assets
 from .medium import DEFAULT_MEDIUM, Medium
 from .models import DocumentMetadata
@@ -119,9 +121,29 @@ class Document:
         return ()
 
     def add_section(self, container: Container) -> Self:
-        """Append a section. Returns ``self`` for optional chaining."""
+        """
+        Append a section. Returns ``self`` for optional chaining.
+
+        Raises:
+            ValidationError: If the section claims an anchor the document already
+                has; the document is left as it was.
+        """
         self._sections.append(container)
+        try:
+            check_unique(self._anchors())
+        except ValidationError:
+            self._sections.pop()
+            raise
         return self
+
+    def _flat_sections(self) -> list[Container]:
+        """
+        Every section in reading order, a page's own flattened in.
+
+        A :class:`~svc.document.page.Page` is a sheet boundary, not a section a
+        reader navigates to, so the sections inside it stand in for it.
+        """
+        return [inner for section in self._sections for inner in _flatten(section)]
 
     # ------------------------------------------------------------------
     # The three projections
@@ -216,6 +238,14 @@ class Document:
     # Internals
     # ------------------------------------------------------------------
 
+    def _anchors(self) -> list[tuple[str, str]]:
+        """Every anchor this document defines, each with who defines it."""
+        return [
+            (anchor, f"the section titled {section.title!r}")
+            for section in self._flat_sections()
+            if (anchor := section.resolved_anchor())
+        ]
+
     def _inline_image_hint(self) -> str:
         """
         Name inlined images in a constraint failure when there are any.
@@ -233,6 +263,12 @@ class Document:
             f"{inline_kb * 4 / 3:.1f} KB of base64 to that total; switching them to "
             f"EmailImage.attached() moves the bytes out of the HTML entirely."
         )
+
+
+def _flatten(section: Container) -> list[Container]:
+    """A section, or the sections a page holds in its place."""
+    inner = getattr(section, "sections", None)
+    return list(inner) if isinstance(inner, list) else [section]
 
 
 __all__ = ["Document", "RegionFacts", "Renderer"]
