@@ -6,9 +6,8 @@
   one contract — `svc/delivery`+`gmail`+`outlook`, and `svc/pdf`. Rationale: CLAUDE.md and
   `.claude/rules/media.md`; do not restate it here.
 - **Shipped and closed**: #157 rescope-to-media (PR #167), #153 disclosure (PR #168), #169
-  pagination hardening (PR #190, `120cabd`, #173–#176).
-- **Epic #170 (data layer) is implemented on `claude/gifted-ritchie-7dkp5g`** (#177–#180, five
-  commits, pushed), **no PR open**. Next: #171 apparatus → #172 brochure. #150 needs Outlook.
+  pagination hardening (PR #190, #173–#176), #170 data layer (PR #191, `c76671c`, #177–#180).
+- **No PR open.** Next: #171 apparatus → #172 brochure. #150 needs a real Outlook host.
 - The prose budget is live; the baseline is 45 and may only shrink.
 
 ## Decisions        (append-only; supersede, never delete)
@@ -42,11 +41,11 @@
   sessions/2026-09-22-1903-pagination-hardening.md
 
 ## Threads          (open items; remove when closed)
-- **#170 needs its PR**: one `Closes` per issue (#170, #177–#180). Every issue or PR body in this
-  repo is written without angle brackets — GitHub's sanitizer has emptied three.
+- **Every issue or PR body is written without angle brackets** — GitHub's sanitizer has
+  emptied three.
 - **A closing keyword closes only the issue it names, and this is now proven both ways.**
-  #167 named only the epic and left all nine children open; #168 named all four and closed all
-  four (`sub_issues_summary` 3/3). One `Closes #N` per sub-issue, and check that summary after
+  #167 named only the epic and left all nine children open; #168 and #191 named every issue
+  and closed every one. One `Closes #N` per sub-issue, and check that summary after
   any epic merge.
 - **Two optional extras now.** `[pdf]` (WeasyPrint, needs Pango/Cairo) and `[qa]` (Playwright
   + pypdfium2). `[dev]` alone must stay free of both; their tests skip, which is the proof.
@@ -73,6 +72,6 @@
   margins, `a4_long_table` + `table-structure`. Each rule probed on its boundary under WeasyPrint 70
   — sessions/2026-09-22-1903-pagination-hardening.md
 
-- [2026-09-22 21:00] data-layer — **#170 implemented**: formatters, tone, `svc.data` frame and
-  Figure adapters, `data-layer.md`. No `from_frame` classmethods: the purity test wins —
-  sessions/2026-09-22-2100-data-layer.md
+- [2026-09-22 21:00] data-layer — **#170 shipped, PR #191**: formatters, tone, `svc.data` adapters.
+  No `from_frame`: the purity test wins. mypy's `follow_imports="skip"` is ignored for `.pyi`
+  unless `follow_imports_for_stubs=true` — sessions/2026-09-22-2100-data-layer.md
