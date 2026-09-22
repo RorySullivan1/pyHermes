@@ -77,10 +77,17 @@ class TestAMissingBackendNamesTheInstall:
         with pytest.raises(BackendMissingError, match=r"pyhermes\[data\]"):
             table_from_frame(object())
 
-    def test_availability_reports_the_backend(self, refuse):
-        from svc.data import frames_available
+    def test_a_figure_without_matplotlib_says_install_charts(self, refuse):
+        from svc.data import BackendMissingError, image_from_figure
+
+        with pytest.raises(BackendMissingError, match=r"pyhermes\[charts\]"):
+            image_from_figure(object(), alt="Chart", width=320)
+
+    def test_availability_reports_each_backend(self, refuse):
+        from svc.data import charts_available, frames_available
 
         assert frames_available() is False
+        assert charts_available() is False
 
 
 def test_the_extras_are_declared_separately():
@@ -92,6 +99,8 @@ def test_the_extras_are_declared_separately():
     ]
     assert any(dep.startswith("pandas") for dep in extras["data"])
     assert not any(dep.startswith("matplotlib") for dep in extras["data"])
+    assert any(dep.startswith("matplotlib") for dep in extras["charts"])
+    assert not any(dep.startswith("pandas") for dep in extras["charts"])
 
 
 def test_mypy_ignores_both_spellings_of_each_backend():

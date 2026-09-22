@@ -8,6 +8,8 @@ lazily, so the core install stays Jinja2-only and an AST test holds it there.
 table author does not install a plotting library.
 """
 
+from .charts import available as charts_available
+from .charts import chart_from_figure, image_from_figure
 from .exceptions import BackendMissingError, DataError
 from .frames import available as frames_available
 from .frames import table_from_frame
@@ -15,6 +17,9 @@ from .frames import table_from_frame
 __all__ = [
     "BackendMissingError",
     "DataError",
+    "chart_from_figure",
+    "charts_available",
+    "image_from_figure",
     "frames_available",
     "table_from_frame",
 ]

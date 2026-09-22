@@ -191,7 +191,7 @@ jobs:
         run: pip install -e ".[dev,data,charts]"
 
       - name: Adapter tests
-        run: pytest tests/test_frames.py tests/test_data_layer.py
+        run: pytest tests/test_frames.py tests/test_charts.py tests/test_data_layer.py
 
       - name: Type-check with the backends present
         # mypy must be green whether or not the extras are installed; `check`
