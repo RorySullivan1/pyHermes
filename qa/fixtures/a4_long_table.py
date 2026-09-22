@@ -10,6 +10,7 @@ skeleton's break rules are removed. `.claude/rules/qa-harness.md` carries how.
 
 from __future__ import annotations
 
+import dataclasses
 from pathlib import Path
 
 from svc.builder import ChartBlock, DataTable, FullWidth, TextBlock
@@ -99,12 +100,26 @@ def _holdings_table() -> DataTable:
     )
 
 
+def regions() -> dict:
+    """
+    The shared regions, with the **footer** following the section (#185).
+
+    ``a4_portrait``'s header follows; this is the complementary pairing, a
+    fixed header over a following footer. Margin boxes take no body space, so
+    the tuned boundaries above do not move.
+    """
+    shared = _paged.regions()
+    shared["running_header"] = dataclasses.replace(shared["running_header"], follow=None)
+    shared["running_footer"] = dataclasses.replace(shared["running_footer"], follow="section")
+    return shared
+
+
 def build_with(
     intro: int, lead_in: int, run_on: int, template_dir: Path | None = None
 ) -> PagedDocument:
     """The document with its three lead-in lengths as parameters, for tuning."""
     document = PagedDocument(
-        _paged.facts(), template_dir=template_dir, medium=PAGED_MEDIUM, **_paged.regions()
+        _paged.facts(), template_dir=template_dir, medium=PAGED_MEDIUM, **regions()
     )
     return (
         document.add_section(FullWidth(title="Portfolio", content=_paragraphs(intro, "Intro")))

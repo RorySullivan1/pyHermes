@@ -97,6 +97,8 @@ def regions() -> dict[str, Any]:
             label="Hermes Research — Quarterly Review",
             box="top-right",
             show_page_number=True,
+            # The section a sheet holds, with the label before the first (#185).
+            follow="section",
         ),
         running_footer=RunningFooter(
             label="Confidential",

@@ -95,6 +95,13 @@
       color: {{ theme.text.secondary }};
       text-align: left;
     }
+    {# Each section title sets both running boxes' strings (#185); a box
+       prints its own only if it follows the section. One rule for both,
+       because two regions each writing this selector would overwrite. #}
+    .section-title h2 {
+      string-set: running-header content(), running-footer content(),
+        running-header-fallback "", running-footer-fallback "";
+    }
     .footnote::footnote-call { content: none; }
     .footnote::footnote-marker { content: attr(data-note) ". "; }
 
@@ -112,6 +119,12 @@
 <body>
 
 {{ cover_html }}
+  {# Zero-height leaves where a following running box seeds its fallback.
+     A leaf, because a string set on an element spanning sheets -- the body,
+     the document table -- wins on every sheet it spans and the section
+     titles below would never show. After the cover, because an element
+     ahead of a named page opens a blank sheet of its own. #}
+  <div class="running-header-start"></div><div class="running-footer-start"></div>
 {{ contents_html }}
 
   {# The body table is frame.width, not frame.inner: every container computes

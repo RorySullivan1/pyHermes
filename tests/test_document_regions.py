@@ -269,18 +269,22 @@ class TestTheDocumentRegionsAreComplete:
 
     @pytest.mark.parametrize("region_cls", DOCUMENT_REGIONS)
     def test_every_field_is_exercised_at_a_non_default_value(self, region_cls):
-        built = {
-            "Cover": all_paged_fixtures()["a4_portrait"]().cover,
-            "ContentsPage": all_paged_fixtures()["a4_portrait"]().contents,
-            "RunningHeader": all_paged_fixtures()["a4_portrait"]().running_header,
-            "RunningFooter": all_paged_fixtures()["a4_portrait"]().running_footer,
-            "BackMatter": all_paged_fixtures()["a4_portrait"]().back_matter,
+        # Across the paged gallery, as standing rule 9 words it: a field on a
+        # base both margin boxes share cannot be non-default on both at once
+        # in one document without the two saying the same thing (#185).
+        attribute = {
+            "Cover": "cover",
+            "ContentsPage": "contents",
+            "RunningHeader": "running_header",
+            "RunningFooter": "running_footer",
+            "BackMatter": "back_matter",
         }[region_cls.__name__]
+        built = [getattr(build(), attribute) for build in all_paged_fixtures().values()]
         default = region_cls()
         for field in dataclasses.fields(region_cls):
-            assert getattr(built, field.name) != getattr(default, field.name), (
+            assert any(getattr(b, field.name) != getattr(default, field.name) for b in built), (
                 f"{region_cls.__name__}.{field.name} is never set to anything but its "
-                "default, so no golden can pin it"
+                "default in the paged gallery, so no golden can pin it"
             )
 
     @pytest.mark.parametrize("region_cls", DOCUMENT_REGIONS)

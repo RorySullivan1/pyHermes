@@ -30,7 +30,16 @@ from svc.builder.apparatus import slugify
 from svc.builder.email import Email
 from svc.builder.models import Card, Footnote, NumberedItem, TableRow
 from svc.config import config_override
-from svc.document import ContentsPage, EmptyContentsPage, Page, PagedDocument
+from svc.document import (
+    ContentsPage,
+    EmptyBackMatter,
+    EmptyContentsPage,
+    EmptyCover,
+    EmptyRunningFooter,
+    Page,
+    PagedDocument,
+    RunningHeader,
+)
 from svc.pdf import available, render_pdf
 
 requires_pdf = pytest.mark.skipif(
@@ -543,3 +552,92 @@ class TestCrossReferences:
             if any("Exhibit 1 ·" in line for line in lines)
         )
         assert page == target and citing != target
+
+
+def header_lines(pages: list[list[str]], folio: str = " / ") -> list[str]:
+    """Each sheet's top-margin line, the one carrying the folio; "" where none."""
+    return [next((line for line in lines if folio in line), "") for lines in pages]
+
+
+def following_lines(document, pages: list[list[str]]) -> list[str]:
+    """
+    What the following margin box says on each sheet after the cover.
+
+    ``a4_portrait``'s header follows and carries the folio; ``a4_long_table``'s
+    footer follows and carries none, and is the last line pdfium reads off a sheet.
+    """
+    body = pages[1:]
+    if document.running_header.follow:
+        return [line.split(" · ")[0] for line in header_lines(body)]
+    return [lines[-1] for lines in body]
+
+
+class TestTheRunningHeaderFollowsTheSection:
+    """#185: the page's own knowledge of what it holds, through the print engine."""
+
+    def test_only_a_known_thing_may_be_followed(self):
+        with pytest.raises(ValidationError, match="running_header.follow"):
+            RunningHeader(follow="chapter")
+
+    def test_a_following_box_prints_the_named_string(self):
+        html = all_paged_fixtures()["a4_portrait"]().render()
+        assert "string(running-header-fallback, last) string(running-header, first)" in html
+        assert '.running-header-start { string-set: running-header-fallback "Hermes' in html
+
+    def test_a_box_that_does_not_follow_prints_its_label_as_before(self):
+        html = all_paged_fixtures()["a4_portrait"]().render()
+        assert 'content: "Confidential";' in html
+        assert "running-footer-start {" not in html
+
+    def test_the_text_projection_is_still_empty_by_decision(self):
+        assert RunningHeader(follow="section").text({"campaign_name": "C"}) == ""
+
+    def test_the_section_titles_set_the_strings_only_on_paper(self):
+        paged = all_paged_fixtures()["a4_portrait"]().render()
+        assert ".section-title h2 {" in paged
+        emailed = email(FullWidth(title="T", content=prose())).render()
+        assert "string-set" not in emailed and "running-header-start" not in emailed
+
+    @requires_pdf
+    @pytest.mark.parametrize("name", ["a4_portrait", "a4_long_table", "slide_16_9"])
+    def test_each_sheet_is_headed_by_a_section_begun_on_or_before_it(self, name):
+        document = all_paged_fixtures()[name]()
+        box = document.running_header if document.running_header.follow else document.running_footer
+        pages = sheets(document)
+        titles = [section.title for section in document._flat_sections() if section.title]
+        begun: list[str] = []
+        shown_by_sheet = following_lines(document, pages)
+        for n, (lines, shown) in enumerate(zip(pages[1:], shown_by_sheet, strict=True), start=2):
+            begun += [title for title in titles if title in lines and title not in begun]
+            if begun:
+                assert shown in begun, f"sheet {n} is headed {shown!r}, begun: {begun}"
+            else:
+                assert shown == box.label, f"sheet {n}: {shown!r}"
+
+    @requires_pdf
+    @pytest.mark.parametrize("name", ["a4_portrait", "a4_long_table"])
+    def test_the_line_changes_between_sections(self, name):
+        document = all_paged_fixtures()[name]()
+        shown = set(following_lines(document, sheets(document)))
+        assert len(shown & {s.title for s in document._flat_sections()}) >= 2, shown
+
+    def test_the_two_boxes_may_differ(self):
+        document = all_paged_fixtures()["a4_long_table"]()
+        assert document.running_footer.follow and not document.running_header.follow
+        html = document.render()
+        assert "string(running-footer-fallback, last) string(running-footer, first)" in html
+        assert 'content: "Hermes Research — Quarterly Review" " · "' in html
+
+    @requires_pdf
+    def test_with_no_titled_section_the_label_is_the_fallback(self):
+        document = PagedDocument(
+            PAPER_FACTS,
+            cover=EmptyCover(),
+            running_header=RunningHeader(
+                label="The Label", follow="section", show_page_number=True
+            ),
+            running_footer=EmptyRunningFooter(),
+            back_matter=EmptyBackMatter(),
+        )
+        document.add_section(FullWidth(content=prose("<p>Untitled.</p>" * 3)))
+        assert header_lines(sheets(document)) == ["The Label · 1 / 1"]
