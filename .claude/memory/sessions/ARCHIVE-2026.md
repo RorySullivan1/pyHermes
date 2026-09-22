@@ -230,3 +230,13 @@ Decisions and Log entries folded out of `INDEX.md` on 2026-08-29 (#143), verbati
 - [2026-09-21] **A completeness rule can couple two issues that looked independent.** #154/#155
   were split on "does the golden move", but the rule introspecting `DataTable.__init__` makes
   the suite red between them — sessions/2026-09-21-per-exhibit-disclosure.md
+
+## Folded in from INDEX.md on 2026-09-22 (the two epics' merge pointers)
+
+- [2026-09-21 03:40] multi-medium-rescope — **PR #167 merged** (`eff6ece`). #157 closed by the
+  keyword; #158–#166 had to be closed by hand, because closing a parent does not close its
+  children — sessions/2026-09-17-2353-multi-medium-rescope.md
+- [2026-09-21] per-exhibit-disclosure — **epic #153 complete** (#154–#156): the shared partial,
+  the field on three exhibits, both projections, four fixtures, and `disclosure.md`. Fifth
+  instance of *a check can be wrong about its scope*, and the first fixed by widening one —
+  sessions/2026-09-21-per-exhibit-disclosure.md

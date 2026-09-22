@@ -5,11 +5,11 @@
   shared kit, `svc/email` and `svc/document` are the two media, and three exporters sit on
   one contract — `svc/delivery`+`gmail`+`outlook`, and `svc/pdf`. Rationale: CLAUDE.md and
   `.claude/rules/media.md`; do not restate it here.
-- **Epic #157 (rescope to media) is SHIPPED** — PR #167 merged to `main` at `eff6ece`;
-  #157 and #158–#166 all closed. Phases 1–4 shipped golden-identical.
-- **Epic #153 (per-exhibit disclosure) is SHIPPED** — PR #168 merged to `main` at `72eb30a`;
-  #153–#156 all closed by the keywords.
-- **#150** (banner VML `src`, needs a real Outlook host) is the only open issue in the repo.
+- **Both epics are SHIPPED and closed**: #157 rescope-to-media (PR #167, `eff6ece`, #158–#166,
+  golden-identical) and #153 per-exhibit disclosure (PR #168, `72eb30a`, #154–#156).
+- **Four epics filed 2026-09-22 from the format-coverage audit**, in dependency order:
+  #169 pagination hardening (#173–#176) → #170 data layer (#177–#180) → #171 document
+  apparatus (#181–#185) → #172 brochure medium (#186–#189). Plus #150 (needs a real Outlook).
 - The prose budget is live; the baseline is 45 and may only shrink.
 
 ## Decisions        (append-only; supersede, never delete)
@@ -33,9 +33,15 @@
   widening a guard without pinning what it forbids turns it into a comment —
   sessions/2026-09-21-per-exhibit-disclosure.md
 
+- [2026-09-22] **The distance to a brochure is a medium; the distance to a factsheet is not.**
+  A factsheet needs break discipline and document apparatus on the paged medium already shipped;
+  a brochure needs fold geometry, imposition and print prep, so it is `svc/brochure/`, not a page
+  preset — sessions/2026-09-22-1351-format-coverage-audit.md
+
 ## Threads          (open items; remove when closed)
-- **The backlog is down to #150**, which needs a real Outlook host to verify. Every issue or
-  PR body in this repo is written without angle brackets — GitHub's sanitizer has emptied three.
+- **Start with #173** (`thead`/`tbody`) — the cheapest high-value fix in the backlog, verified
+  against WeasyPrint 70 before filing. Every issue or PR body in this repo is written without
+  angle brackets — GitHub's sanitizer has emptied three.
 - **A closing keyword closes only the issue it names, and this is now proven both ways.**
   #167 named only the epic and left all nine children open; #168 named all four and closed all
   four (`sub_issues_summary` 3/3). One `Closes #N` per sub-issue, and check that summary after
@@ -58,15 +64,14 @@
   demanded prose parse as Python — sessions/2026-09-17-2353-multi-medium-rescope.md
 
 
-- [2026-09-21 03:40] multi-medium-rescope — **PR #167 merged** (`eff6ece`). #157 closed by the
-  keyword; #158–#166 had to be closed by hand, because closing a parent does not close its
-  children — sessions/2026-09-17-2353-multi-medium-rescope.md
-
-- [2026-09-21] per-exhibit-disclosure — **epic #153 complete** (#154–#156): the shared partial,
-  the field on three exhibits, both projections, four fixtures, and `disclosure.md`. Fifth
-  instance of *a check can be wrong about its scope*, and the first fixed by widening one —
-  sessions/2026-09-21-per-exhibit-disclosure.md
-
 - [2026-09-22 11:17] per-exhibit-disclosure — **PR #168 merged** (`72eb30a`): 28 files, +580/-47.
   #153–#156 all closed by their own keywords, confirming the #167 lesson from the other side —
   sessions/2026-09-21-per-exhibit-disclosure.md
+
+- [2026-09-22 13:51] format-coverage-audit — read-only sweep of `svc/` and every template against
+  emails, brochures and factsheets. Nothing changed; the shared markup's missing `thead` is the
+  find — sessions/2026-09-22-1351-format-coverage-audit.md
+
+- [2026-09-22 14:07] format-coverage-audit — **filed the four epics** #169–#172 and their seventeen
+  sub-issues #173–#189, every claim re-verified against the templates and WeasyPrint 70 first —
+  sessions/2026-09-22-1351-format-coverage-audit.md
