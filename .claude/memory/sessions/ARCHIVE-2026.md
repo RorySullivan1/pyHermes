@@ -194,3 +194,39 @@ Decisions and Log entries folded out of `INDEX.md` on 2026-08-29 (#143), verbati
 - [2026-08-29 20:30] prose-discipline — **epic #134 complete** and **PR #146 merged** at
   `e5c587a`: CLAUDE.md 2,045 -> 160, 2,049 comment bytes off every email, baseline
   110 -> 48 — sessions/2026-08-29-1628-asset-self-restriction.md
+
+## Folded in from INDEX.md on 2026-09-22 (epic #157 merged, #153 shipped)
+
+- [2026-09-17] **The frame belongs to the medium, not the density.** compact/spacious never
+  change `FrameGeometry.width`; lift it to `PageFormat` and re-inject under `size.frame` so no
+  template changes — sessions/2026-09-17-2353-multi-medium-rescope.md
+- [2026-09-17] **Per-medium template trees with fallback, forked one template at a time.**
+  `ChoiceLoader(templates/<medium>/, templates/shared/)` is "one template set" on day one and
+  never a big bang; each fork is a golden-diffed PR with a stated reason —
+  sessions/2026-09-17-2353-multi-medium-rescope.md
+- [2026-09-17 23:53] multi-medium-rescope — brainstormed the epic that makes email one
+  `Medium` among paged/PDF/slides/HTML; inventoried the seams (mostly already there) and a
+  nine-phase plan whose first four ship golden-identical —
+  sessions/2026-09-17-2353-multi-medium-rescope.md
+- [2026-09-18 00:20] multi-medium-rescope — all three design calls agreed; **filed epic #157**
+  with sub-issues #158–#166, one per phase. Corrected the stale "backlog is empty": #150 and
+  #153–#156 were open — sessions/2026-09-17-2353-multi-medium-rescope.md
+- [2026-09-20] **A medium is a product, not a fourth axis — but it rides the binder as the
+  fourth keyword.** Chosen by class; bound so a template can ask `medium.paged` —
+  sessions/2026-09-17-2353-multi-medium-rescope.md
+- [2026-09-20] **A sentinel must perturb the CURRENT owner.** #159 moved the frame and the
+  existing sentinel broke loudly; a subtler change would have left it green and meaningless —
+  sessions/2026-09-17-2353-multi-medium-rescope.md
+- [2026-09-20] **mypy's per-module override needs both `foo` and `foo.*`**, and a stale
+  `.mypy_cache` hides the fix — sessions/2026-09-17-2353-multi-medium-rescope.md
+- [2026-09-20 21:00] multi-medium-rescope — **epic #157 complete** (#158–#166): Medium,
+  PageFormat, ChoiceLoader, DocumentMetadata, the paged medium, Page/Cover/running boxes/back
+  matter, `svc/pdf` on WeasyPrint, the medium-aware harness, and the docs. Every email golden
+  byte-identical throughout; the first real PDF found two defects no golden could see —
+  sessions/2026-09-17-2353-multi-medium-rescope.md
+- [2026-09-20 18:54] multi-medium-rescope — **PR #167 opened** for epic #157: 115 files, +5839
+  /-576, 10 commits, `Closes #157` so #158–#166 close with it —
+  https://github.com/RorySullivan1/pyHermes/pull/167
+- [2026-09-21] **A completeness rule can couple two issues that looked independent.** #154/#155
+  were split on "does the golden move", but the rule introspecting `DataTable.__init__` makes
+  the suite red between them — sessions/2026-09-21-per-exhibit-disclosure.md
