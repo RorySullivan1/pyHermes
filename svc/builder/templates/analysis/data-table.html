@@ -63,6 +63,6 @@
   </tbody>
 </table>
 {% if source %}
-<p style="font-family: {{ font.label }}; font-size: {{ size.type.micro }}px; color: {{ theme.text.light }}; font-style: italic; margin: {{ size.space.caption_gap }}px 0 0 0; line-height: {{ size.type.body_line | percent }};">{{ source | escape_html }}{% if as_of %} as of {{ as_of | escape_html }}{% endif %}</p>
+<p class="fine-print" style="font-family: {{ font.label }}; font-size: {{ size.type.micro }}px; color: {{ theme.text.light }}; font-style: italic; margin: {{ size.space.caption_gap }}px 0 0 0; line-height: {{ size.type.body_line | percent }};">{{ source | escape_html }}{% if as_of %} as of {{ as_of | escape_html }}{% endif %}</p>
 {% endif %}
 {% include "common/disclosure.html" %}

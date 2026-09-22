@@ -38,6 +38,8 @@
       background-color: #FFFFFF;
       font-family: Georgia, 'Times New Roman', serif;
       color: #3B3B3B;
+      orphans: 2;
+      widows: 2;
     }
     table { border-collapse: collapse; }
 
@@ -47,6 +49,10 @@
     .data-table tbody tr { break-inside: avoid; page-break-inside: avoid; }
     .data-table tr.row-total { break-before: avoid; page-break-before: avoid; }
     .data-table tr.row-subhead { break-after: avoid; page-break-after: avoid; }
+    .data-table > caption { break-after: avoid; page-break-after: avoid; }
+    .section-title { break-after: avoid; page-break-after: avoid; }
+    .fine-print { break-before: avoid; page-break-before: avoid; }
+    .figure { break-inside: avoid; page-break-inside: avoid; }
   </style>
 </head>
 <body>
@@ -72,7 +78,7 @@
          style="width:1280px; background-color:#FFFFFF;">
 <tr>
   <td style="padding:1px 1px 1px 1px; background-color:#FFFFFF; border-top:1px solid #D6D2CB; border-bottom:1px solid #D6D2CB;">
-    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#F8F7F5;">
+    <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#F8F7F5;">
       <tr>
         <td style="padding:22px 31px 12px 31px;">
           <h2 style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:17px; font-weight:bold; color:#2C3E50; line-height:120%;">
@@ -112,7 +118,7 @@
 
 <tr>
   <td style="padding:0; background-color:#FFFFFF;">
-    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+    <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
       <tr>
         <td style="padding:22px 32px 12px 32px;">
           <h2 style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:17px; font-weight:bold; color:#2C3E50; line-height:120%;">
@@ -134,7 +140,7 @@
 
 <tr>
   <td style="padding:0; background-color:#FFFFFF;">
-    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+    <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
       <tr>
         <td style="padding:22px 32px 12px 32px;">
           <h2 style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:17px; font-weight:bold; color:#2C3E50; line-height:120%;">
@@ -173,8 +179,8 @@
   </tr>
   </tbody>
 </table>
-<p style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #A09E97; font-style: italic; margin: 8px 0 0 0; line-height: 172%;">Hermes Research as of 30 September 2026</p>
-<p align="justify" style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #A09E97; font-style: italic; text-align: justify; margin: 8px 0 0 0; line-height: 172%;">Factor returns are shown gross of fees and transaction costs. Past performance is not indicative of future results.</p>
+<p class="fine-print" style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #A09E97; font-style: italic; margin: 8px 0 0 0; line-height: 172%;">Hermes Research as of 30 September 2026</p>
+<p class="fine-print" align="justify" style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #A09E97; font-style: italic; text-align: justify; margin: 8px 0 0 0; line-height: 172%;">Factor returns are shown gross of fees and transaction costs. Past performance is not indicative of future results.</p>
 
         </td>
       </tr>
@@ -184,7 +190,7 @@
 
 <tr>
   <td style="padding:0; background-color:#FFFFFF;">
-    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+    <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
       <tr>
         <td style="padding:22px 32px 12px 32px;">
           <h2 style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:17px; font-weight:bold; color:#2C3E50; line-height:120%;">
@@ -239,7 +245,7 @@
            bgcolor="#FFFFFF">
 <tr>
   <td style="padding:0; background-color:#FFFFFF;">
-    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+    <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
       <tr>
         <td style="padding:22px 32px 12px 32px;">
           <h2 style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:17px; font-weight:bold; color:#2C3E50; line-height:120%;">

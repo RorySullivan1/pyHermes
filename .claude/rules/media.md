@@ -130,6 +130,45 @@ than left to CSS because `break-before` is inert in a mail client and so would *
 harmless — while the wrapper element around it is not. The break lands on a table `tr`:
 containers emit `tr` blocks, and CSS break properties do not apply to a `td`.
 
+## Where a sheet may not end — the paged skeleton's break rules
+
+Epic #169 gave the paged medium break discipline inside the content. Before it, the only
+break properties in the tree were the sheet boundaries. The rules sit in `document/base.html`'s
+`style` block and are keyed on class hooks in the shared markup. That block is to the paged
+medium what the `@media` block is to mobile. The email never loads it, so no rule costs an
+email a byte, and nothing was forked.
+
+| Hook | Rule | What it stops |
+|---|---|---|
+| `.data-table tbody tr` | `break-inside: avoid` | A row splitting mid-cell |
+| `tr.row-total` | `break-before: avoid` | A total opening a sheet alone |
+| `tr.row-subhead` | `break-after: avoid` | A subhead closing a sheet |
+| `.data-table > caption` | `break-after: avoid` | A table's name closing a sheet |
+| `.section-title` | `break-after: avoid` | A section title stranded at the foot |
+| `.fine-print` | `break-before: avoid` | An attribution or disclosure opening a sheet |
+| `.figure` | `break-inside: avoid` | A chart or image block splitting |
+| `body` | `orphans: 2; widows: 2` | The CSS initial values, stated so the decision is visible |
+
+- **Every rule was probed on its boundary case under WeasyPrint 70, with and without it.**
+  Each defect reproduced without its rule and was gone with it. The probes varied the length
+  of a preceding section until the thing under test landed exactly at a sheet edge.
+- **A rule sits on the thing that must not split, never on a container that may.**
+  `break-inside: avoid` on a table taller than a sheet pushes it whole and strands a
+  half-empty sheet. That is why nothing sits on `.data-table` itself.
+- **The section title's rule goes on the title's *table*.** The title and the content are
+  sibling tables in both container templates, so the break the rule forbids is the one between
+  them.
+- **An `avoid` needs an earlier break to fall back to.** When a section is the first thing in
+  the document, WeasyPrint has nowhere else to break and strands the title anyway. A probe that
+  starts a document with the section under test proves nothing about the rule.
+- **Cell padding can move a whole table.** When a table's rows fit on a sheet but the
+  container cell's bottom padding does not, WeasyPrint breaks before the table rather than
+  inside it. The title rule keeps the title with the table when that happens.
+- **Each hook is a class and nothing else.** `section-title`, `fine-print`, `figure`,
+  `row-total` and `row-subhead` carry no style of their own. The email golden diffs were
+  checked by a script to contain only the inserted attributes, and every email screenshot
+  stayed pixel-identical.
+
 ## The facts split in two
 
 `DocumentMetadata` holds what is true of any document — firm, campaign, department, dates,
