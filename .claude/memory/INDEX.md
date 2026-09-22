@@ -7,9 +7,9 @@
   `.claude/rules/media.md`; do not restate it here.
 - **Both epics are SHIPPED and closed**: #157 rescope-to-media (PR #167, `eff6ece`, #158–#166,
   golden-identical) and #153 per-exhibit disclosure (PR #168, `72eb30a`, #154–#156).
-- **Four epics filed 2026-09-22 from the format-coverage audit**, in dependency order:
-  #169 pagination hardening (#173–#176) → #170 data layer (#177–#180) → #171 document
-  apparatus (#181–#185) → #172 brochure medium (#186–#189). Plus #150 (needs a real Outlook).
+- **Epic #169 is implemented on `claude/gifted-ritchie-7dkp5g`** (#173–#176, six commits), not
+  yet merged and no PR open. Next in order: #170 data layer → #171 apparatus → #172 brochure.
+  Plus #150 (needs a real Outlook).
 - The prose budget is live; the baseline is 45 and may only shrink.
 
 ## Decisions        (append-only; supersede, never delete)
@@ -38,10 +38,13 @@
   a brochure needs fold geometry, imposition and print prep, so it is `svc/brochure/`, not a page
   preset — sessions/2026-09-22-1351-format-coverage-audit.md
 
+- [2026-09-22] **A page is a sheet with a margin; the frame is what the margin leaves.** No preset
+  frame may be 680px, or a template reading the email frame looks right on paper —
+  sessions/2026-09-22-1903-pagination-hardening.md
+
 ## Threads          (open items; remove when closed)
-- **Start with #173** (`thead`/`tbody`) — the cheapest high-value fix in the backlog, verified
-  against WeasyPrint 70 before filing. Every issue or PR body in this repo is written without
-  angle brackets — GitHub's sanitizer has emptied three.
+- **#169 needs its PR**: one `Closes` per issue (#169, #173–#176). Every issue or PR body in this
+  repo is written without angle brackets — GitHub's sanitizer has emptied three.
 - **A closing keyword closes only the issue it names, and this is now proven both ways.**
   #167 named only the epic and left all nine children open; #168 named all four and closed all
   four (`sub_issues_summary` 3/3). One `Closes #N` per sub-issue, and check that summary after
@@ -68,10 +71,9 @@
   #153–#156 all closed by their own keywords, confirming the #167 lesson from the other side —
   sessions/2026-09-21-per-exhibit-disclosure.md
 
-- [2026-09-22 13:51] format-coverage-audit — read-only sweep of `svc/` and every template against
-  emails, brochures and factsheets. Nothing changed; the shared markup's missing `thead` is the
-  find — sessions/2026-09-22-1351-format-coverage-audit.md
+- [2026-09-22 14:07] format-coverage-audit — read-only sweep, then **filed epics #169–#172** and
+  sub-issues #173–#189 — sessions/2026-09-22-1351-format-coverage-audit.md
 
-- [2026-09-22 14:07] format-coverage-audit — **filed the four epics** #169–#172 and their seventeen
-  sub-issues #173–#189, every claim re-verified against the templates and WeasyPrint 70 first —
-  sessions/2026-09-22-1351-format-coverage-audit.md
+- [2026-09-22 19:03] pagination-hardening — **#169 implemented**: thead, eight break rules, page
+  margins, `a4_long_table` + `table-structure`. Each rule probed on its boundary under WeasyPrint 70
+  — sessions/2026-09-22-1903-pagination-hardening.md
