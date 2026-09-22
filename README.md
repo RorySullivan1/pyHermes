@@ -105,9 +105,11 @@ Requires Python 3.11+. Not published to PyPI — install from a clone:
 pip install -e ".[dev]"     # editable, plus pytest / ruff / mypy
 pip install -e ".[pdf]"     # optional: WeasyPrint, to print a document
 pip install -e ".[qa]"      # optional: Playwright + pypdfium2, for screenshots
+pip install -e ".[data]"    # optional: pandas, to build a table from a DataFrame
+pip install -e ".[charts]"  # optional: matplotlib, to build a chart from a Figure
 ```
 
-**The two optional extras are genuinely optional**, and the suite proves it rather than
+**The optional extras are genuinely optional**, and the suite proves it rather than
 claiming it: their tests *skip* when the extra is absent, so `pip install -e ".[dev]"` and
 `pytest` run anywhere. `[pdf]` needs Pango and Cairo from the system, which is exactly why
 it is not in the floor.
@@ -523,6 +525,56 @@ mixed freely — so every table written before these existed keeps working uncha
 - **The table is named and navigable**: the caption is its accessible name, the heading row is
   `scope="col"` and the label column is `scope="row"`.
 
+## Figures as numbers
+
+Pass numbers, not strings. `svc.builder.formats` formats a figure once, and both the HTML and
+the plain-text part read the same string:
+
+```python
+from svc.builder.formats import bps, compact, money, pct
+
+pct(0.0142, sign=True)   # '+1.42%'
+bps(0.0006)              # '+6 bps'
+money(-1200)             # '-$1,200'
+compact(1_240_000_000)   # '1.2bn'
+```
+
+Rounding is half up (`0.125` is `0.13`), the output is ASCII, zero is never signed, and a
+missing figure renders as `--`. There is no `locale`: pass `thousands=` and `decimal=`.
+
+**A cell or card can carry a tone instead of a colour.** `tone="positive"`, `"negative"` or
+`"neutral"` renders in the active theme's semantic colour, so a toned table recolours with the
+theme. `Cell.from_number` formats and tones in one step. The sign decides unless you say
+otherwise, and a figure shown as zero is never coloured:
+
+```python
+from functools import partial
+from svc.builder import Tone
+from svc.builder.models import Cell, KpiItem, TableRow
+
+ret = partial(pct, dp=1, sign=True)
+TableRow(["Momentum", Cell.from_number(-0.004, ret)])        # '-0.4%', negative
+KpiItem("VIX", "14.32", sublabel="-2.18 pts", tone=Tone.POSITIVE)  # down is good news
+```
+
+An explicit `color=` still wins over a tone.
+
+**A DataFrame or a matplotlib Figure can be passed directly**, through `svc.data`
+(`[data]` and `[charts]` above):
+
+```python
+from svc.data import chart_from_figure, table_from_frame
+
+table = table_from_frame(df, formats={"1M": ret}, tones={"1M": "auto"},
+                         total_row=True, source="Hermes Research")
+chart = chart_from_figure(fig, alt="Cumulative returns", width=320,
+                          source="Hermes Research")
+```
+
+The frame's dtypes decide each column's kind, and a named index becomes the row-header
+column. The chart is rendered at twice its display width and attached by `cid:`. pyHermes
+never styles the plot; it takes the Figure you drew.
+
 ## What it enforces
 
 These are the failures that are invisible until a reader reports them, so they are checked
@@ -737,7 +789,8 @@ svc/
 ├── delivery/     transport-neutral MIME assembly + shared retry policy
 ├── gmail/        Gmail send adapter
 ├── outlook/      Outlook send adapter over Microsoft Graph
-└── pdf/          the PDF exporter, on the adapters' contract — no network
+├── pdf/          the PDF exporter, on the adapters' contract — no network
+└── data/         DataFrame -> table and Figure -> chart, each an optional extra
 qa/               the fixture galleries, goldens, screenshots, lint, preview CLI
 tests/            pytest suite
 ```
