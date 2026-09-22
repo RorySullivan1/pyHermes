@@ -4,13 +4,13 @@
   <meta charset="UTF-8">
   <title>{{ campaign_name | escape_html }}</title>
   <style type="text/css">
-    {# The page itself. `size` takes the paper; a continuous page declares a
-       width only and runs as long as its content. Horizontal margin is zero
-       because the containers already inset their copy by frame.pad_x, and
-       adding it here too would inset twice -- the #85 mistake, one layer up. #}
+    {# The page itself. `size` takes the sheet; a continuous page declares a
+       width only and runs as long as its content. The margin is the page
+       format's, never a density token (#175): the frame the tables fill is
+       the sheet less this, and frame.pad_x insets the copy inside it. #}
     @page {
-      size: {{ size.frame.width }}px{% if size.frame.height %} {{ size.frame.height }}px{% endif %};
-      margin: {{ size.frame.outer_pad_y }}px 0;
+      size: {{ size.frame.sheet_width }}px{% if size.frame.sheet_height %} {{ size.frame.sheet_height }}px{% endif %};
+      margin: {{ size.frame.margin.top }}px {{ size.frame.margin.right }}px {{ size.frame.margin.bottom }}px {{ size.frame.margin.left }}px;
     }
 
     {# The running margin boxes, each filled by its own region. They are CSS

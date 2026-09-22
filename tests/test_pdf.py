@@ -309,11 +309,12 @@ class TestWhatOnlyAPrintEngineCouldShow:
         fixture = all_paged_fixtures()["a4_portrait"]()
         body = self._laid_out(fixture).pages[1]
         widths = self._table_widths(body)
-        page_width = fixture.medium.page_format.width
+        # The frame, not the sheet: since #175 the page's margins sit outside it.
+        frame_width = fixture.medium.page_format.frame_width
         assert widths, "no tables laid out"
         # Every table on the body page fills the frame rather than its content.
-        assert min(widths) > page_width * 0.9, (
-            f"a table shrink-wrapped: {sorted(widths)} inside a {page_width}px page"
+        assert min(widths) > frame_width * 0.85, (
+            f"a table shrink-wrapped: {sorted(widths)} inside a {frame_width}px frame"
         )
 
     def test_no_running_box_appears_on_the_cover(self):

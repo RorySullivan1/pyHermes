@@ -73,6 +73,32 @@ thirty template sites already read.
 - **`orientation` is derived, never stored** — a declared one is a second fact about the same
   two numbers and the two can disagree.
 
+**The page is a sheet with a margin, and the frame is what the margin leaves** (#175). Before
+it, `@page` had a hardcoded horizontal margin of zero and took its vertical margin from
+`frame.outer_pad_y`. That is the band an *email* draws above and below itself, so a density
+token was deciding a print margin. `PageFormat` now carries a `PageMargin`. Its `width` and
+`height` stay the **sheet**, which is what `@page size` prints. `frame_width` and `frame_height`
+are the sheet less the margin, and the body tables fill the frame.
+
+- **`with_page` lays the frame and the margin over the density.** `size.frame.width` is the
+  frame, and every existing template site kept reading it. `sheet_width` and `sheet_height` are
+  properties that add the margin back, and the skeleton's `@page` rule reads only those and
+  `size.frame.margin`.
+- **The cover spans the sheet, not the frame.** Its named page has no margin, so a frame-wide
+  cover would leave a gutter down one side.
+- **`PageMargin` is its own type because zero is legal there.** Every other size token must be
+  positive. The continuous email page has no margin at all, and that keeps every email golden
+  byte-identical.
+- **No preset's frame is 680px wide, and that was a decision.** A 15mm side margin on A4 gives
+  exactly 680, the email's column width. A template still reading the email frame would then
+  render correctly on paper, and nothing could see it. A4 takes 20mm all round instead.
+- **The running boxes sit in the margin, aligned to the frame edge**, not to the copy inside
+  `pad_x`. They print level with a highlighted band's hairline, and the raster shows them
+  clear of the content.
+- **The sentinel is `TestThePageMarginIsTheMediums`**, on a 9001 by 9002px sheet with four
+  distinct margins. Three perturbations were each checked to fail it by name: `@page` reading
+  the density again, the body table reading the sheet, and the cover reading the frame.
+
 **The sentinel moved with the owner, and that is the part to remember.** The existing
 token-liveness test perturbed the frame *through the scheme*, which the medium now overwrites —
 so it would have proved nothing while staying green. It perturbs `SENTINEL_PAGE` now, and a
