@@ -7,9 +7,9 @@
   `.claude/rules/media.md`; do not restate it here.
 - **Epic #157 (rescope to media) is SHIPPED** — PR #167 merged to `main` at `eff6ece`;
   #157 and #158–#166 all closed. Phases 1–4 shipped golden-identical.
-- **Epic #153 (per-exhibit disclosure) is COMPLETE** — #154–#156, open as PR #168
-  (https://github.com/RorySullivan1/pyHermes/pull/168), not yet merged.
-- Only **#150** (banner VML `src`, needs a real Outlook host) is left open.
+- **Epic #153 (per-exhibit disclosure) is SHIPPED** — PR #168 merged to `main` at `72eb30a`;
+  #153–#156 all closed by the keywords.
+- **#150** (banner VML `src`, needs a real Outlook host) is the only open issue in the repo.
 - The prose budget is live; the baseline is 45 and may only shrink.
 
 ## Decisions        (append-only; supersede, never delete)
@@ -34,11 +34,12 @@
   sessions/2026-09-21-per-exhibit-disclosure.md
 
 ## Threads          (open items; remove when closed)
-- **PR #168 is open; after it merges the only open issue is #150.** Every issue or PR body
-  in this repo is written without angle brackets — GitHub's sanitizer has emptied three.
-- **A closing keyword closes only the issue it names.** An epic PR needs one `Closes #N` line
-  per sub-issue, not just the epic's — #168 does; #167 did not, and its nine children stayed
-  open. Check the parent's `sub_issues_summary` after any epic merge.
+- **The backlog is down to #150**, which needs a real Outlook host to verify. Every issue or
+  PR body in this repo is written without angle brackets — GitHub's sanitizer has emptied three.
+- **A closing keyword closes only the issue it names, and this is now proven both ways.**
+  #167 named only the epic and left all nine children open; #168 named all four and closed all
+  four (`sub_issues_summary` 3/3). One `Closes #N` per sub-issue, and check that summary after
+  any epic merge.
 - **Two optional extras now.** `[pdf]` (WeasyPrint, needs Pango/Cairo) and `[qa]` (Playwright
   + pypdfium2). `[dev]` alone must stay free of both; their tests skip, which is the proof.
 - **CLAUDE.md is a router**; the detail is in path-scoped `.claude/rules/*.md`, which load
@@ -64,4 +65,8 @@
 - [2026-09-21] per-exhibit-disclosure — **epic #153 complete** (#154–#156): the shared partial,
   the field on three exhibits, both projections, four fixtures, and `disclosure.md`. Fifth
   instance of *a check can be wrong about its scope*, and the first fixed by widening one —
+  sessions/2026-09-21-per-exhibit-disclosure.md
+
+- [2026-09-22 11:17] per-exhibit-disclosure — **PR #168 merged** (`72eb30a`): 28 files, +580/-47.
+  #153–#156 all closed by their own keywords, confirming the #167 lesson from the other side —
   sessions/2026-09-21-per-exhibit-disclosure.md
