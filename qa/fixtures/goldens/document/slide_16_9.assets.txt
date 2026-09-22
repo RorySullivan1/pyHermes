@@ -1,3 +1,3 @@
 f92ba5c4bbbbb160	image/png	166	f92ba5c4bbbbb160.png
 bc9154aa590064cf	image/png	226	bc9154aa590064cf.png
-2be323ec6ce8eee9	image/png	539	2be323ec6ce8eee9.png
+0009fbf079c9a280	image/png	389	0009fbf079c9a280.png

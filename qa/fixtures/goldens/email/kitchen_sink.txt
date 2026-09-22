@@ -60,7 +60,7 @@ Value     +1.8%   +7.4%
 Momentum  -0.4%  +11.2%
 Quality   +0.9%   +5.1%
 
-Hermes Research
+Hermes Research[1]
 24 August 2026
 
 Factor returns are shown gross of fees and transaction costs. Past performance
@@ -96,7 +96,7 @@ Narrow then Wide
 
 [Thumbnail]
 
-Figure 1 · A 30% column
+Figure 1 · A 30% column[2]
 
 Illustrative only; not a recommendation to buy or sell.
 
@@ -159,7 +159,7 @@ Three themes into next week
 
 01. Inflation prints
 
-Core services remain sticky.
+Core services remain sticky.[3]
 
 02. Earnings revisions
 
@@ -175,6 +175,14 @@ Questions about this note?
 Reach the research desk with any questions.
 
 Email the desk: https://example.com/contact
+
+
+Notes
+-----
+
+[1] Each factor is equal-weighted across the top and bottom quintiles.
+[2] The thumbnail is a placeholder, not a chart.
+[3] Core services excluding housing, three-month annualised.
 
 
 Distributed to registered recipients only.

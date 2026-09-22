@@ -16,15 +16,15 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Self
 
-from .apparatus import check_unique
-from .components import Component, Contents, Exhibit
-from .containers import Container
+from .apparatus import check_unique, note_anchor, note_ref_anchor
+from .components import Component, Contents, Endnotes, Exhibit
+from .containers import Container, FullWidth
 from .engine import Renderer, TemplateEngine
 from .enums import EmbedStrategy
 from .exceptions import ValidationError
 from .images import EmailImage, ImageAsset, dedupe_assets
 from .medium import DEFAULT_MEDIUM, Medium
-from .models import DocumentMetadata
+from .models import DocumentMetadata, Footnote
 from .sizing import resolve_size_scheme
 from .textgen import join_sections
 from .theming import resolve_theme
@@ -205,7 +205,12 @@ class Document:
         )
 
         ctx = self._metadata.to_dict()
-        ctx["sections_html"] = "\n".join(section.render(engine) for section in self._sections)
+        sections = list(self._sections)
+        if (endnotes := self._endnotes()) and not self._medium.paged:
+            # A mail client has no sheet foot, so the notes a page floats
+            # there are gathered after the last section instead.
+            sections.append(FullWidth(content=endnotes))
+        ctx["sections_html"] = "\n".join(section.render(engine) for section in sections)
         for region, facts in self.leading_regions() + self.trailing_regions():
             ctx.update(region.render_slots(engine, facts))
 
@@ -225,9 +230,11 @@ class Document:
         randomness, no override.
         """
         self._walk()
+        endnotes = self._endnotes()
         return join_sections(
             *(region.text(facts) for region, facts in self.leading_regions()),
             *(section.text() for section in self._sections),
+            endnotes.text() if endnotes else "",
             *(region.text(facts) for region, facts in self.trailing_regions()),
         )
 
@@ -256,10 +263,21 @@ class Document:
         while this one renders.
         """
         self._number_exhibits()
+        for number, note in enumerate(self._footnotes(), start=1):
+            note.number = number
         for section in self._flat_sections():
             for component in section.components():
                 if isinstance(component, Contents):
                     component.entries = self._contents_entries(skip=section)
+
+    def _footnotes(self) -> list[Footnote]:
+        """Every note the tree calls, in reading order."""
+        return [note for component in self._components() for note in component.footnotes()]
+
+    def _endnotes(self) -> Endnotes | None:
+        """The notes gathered for the end of the document, or ``None`` if it has none."""
+        notes = self._footnotes()
+        return Endnotes(notes) if notes else None
 
     def _contents_entries(self, skip: Container | None = None) -> list[tuple[str, str]]:
         """``(title, anchor)`` for every titled section in reading order, less ``skip``."""
@@ -292,7 +310,12 @@ class Document:
             for component in self._components()
             if isinstance(component, Exhibit) and (anchor := component.resolved_anchor())
         ]
-        return sections + exhibits
+        notes = [
+            (anchor(note.number or 0), f"footnote {note.number}")
+            for note in self._footnotes()
+            for anchor in (note_anchor, note_ref_anchor)
+        ]
+        return sections + exhibits + notes
 
     def _inline_image_hint(self) -> str:
         """

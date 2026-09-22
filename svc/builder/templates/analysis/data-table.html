@@ -25,6 +25,7 @@
     anchor   — The table's `id`, empty when it has none (#181). The caption
                arrives already numbered: the document assigned the number
 #}
+{% from "common/notes.html" import marked with context %}
 {% if subtitle %}
 <p class="subtitle" style="font-family: {{ font.body }}; font-size: {{ size.type.secondary }}px; font-style: italic; color: {{ theme.text.secondary }}; margin: 0 0 {{ size.space.subtitle_gap }}px 0; line-height: {{ size.type.secondary_line | percent }};">{{ subtitle | escape_html }}</p>
 {% endif %}
@@ -42,7 +43,7 @@
      side of the table in a legacy renderer, which is the opposite of a
      no-op. The two spellings are equivalent on td/th/p/div and nowhere
      else. #}
-  <caption style="caption-side: top; text-align: left; font-family: {{ font.label }}; font-size: {{ size.type.label }}px; font-weight: bold; color: {{ theme.text.heading }}; letter-spacing: 0.5px; padding: 0 0 {{ size.space.caption_gap }}px 0;">{{ caption | escape_html }}</caption>
+  <caption style="caption-side: top; text-align: left; font-family: {{ font.label }}; font-size: {{ size.type.label }}px; font-weight: bold; color: {{ theme.text.heading }}; letter-spacing: 0.5px; padding: 0 0 {{ size.space.caption_gap }}px 0;">{{ marked(caption_parts) }}</caption>
 {% endif %}
   {# Header row #}
   <thead>
@@ -65,6 +66,6 @@
   </tbody>
 </table>
 {% if source %}
-<p class="fine-print" style="font-family: {{ font.label }}; font-size: {{ size.type.micro }}px; color: {{ theme.text.light }}; font-style: italic; margin: {{ size.space.caption_gap }}px 0 0 0; line-height: {{ size.type.body_line | percent }};">{{ source | escape_html }}{% if as_of %} as of {{ as_of | escape_html }}{% endif %}</p>
+<p class="fine-print" style="font-family: {{ font.label }}; font-size: {{ size.type.micro }}px; color: {{ theme.text.light }}; font-style: italic; margin: {{ size.space.caption_gap }}px 0 0 0; line-height: {{ size.type.body_line | percent }};">{{ marked(source_parts) }}{% if as_of %} as of {{ as_of | escape_html }}{% endif %}</p>
 {% endif %}
 {% include "common/disclosure.html" %}

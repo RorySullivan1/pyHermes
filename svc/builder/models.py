@@ -7,11 +7,12 @@ metadata for the email skeleton, typed data for each component, etc.
 """
 
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import InitVar, dataclass, field, fields
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from . import formats
+from .apparatus import check_markers
 from .enums import ColumnAlign, ColumnKind, RowKind, SizeTheme, Tone
 from .exceptions import ValidationError
 
@@ -871,16 +872,60 @@ class TableRow:
 
 
 @dataclass
+class Footnote:
+    """
+    A note attached to one place in the copy, numbered by the document (#182).
+
+    **The text is plain, and escaped on the way out**, for ``disclosure``'s
+    reason: the raw-HTML set stays closed at five, and widening a plain field
+    later is additive where narrowing one is not. So a note carries no link.
+
+    Its place in the copy is a marker, ``[^1]``, written in the field of the
+    component that carries it. ``number`` is the document's to assign.
+    """
+
+    text: str
+    number: int | None = field(default=None, init=False, compare=False, repr=False)
+
+    def validate(self) -> None:
+        _require(self.text, "footnote.text")
+
+
+def coerce_notes(
+    notes: Sequence[Footnote | str] | None, copy: Sequence[str], owner: str
+) -> list[Footnote]:
+    """
+    ``notes`` as validated ``Footnote`` objects, each called once from ``copy``.
+
+    A bare string is a note's text. Raises ``ValidationError`` on an empty
+    note, or on markers in ``copy`` that do not call ``[^1]`` to ``[^n]`` once.
+    """
+    coerced = [note if isinstance(note, Footnote) else Footnote(note) for note in notes or ()]
+    for note in coerced:
+        note.validate()
+    check_markers(copy, len(coerced), owner)
+    return coerced
+
+
+@dataclass
 class NumberedItem:
-    """A single item in a numbered list."""
+    """A single item in a numbered list; ``notes`` are called from ``body``."""
 
     number: str
     title: str
     body: str
+    notes: list[Footnote | str] = field(default_factory=list)
 
     def validate(self) -> None:
         _require(self.title, "numbered_item.title")
         _require(self.body, "numbered_item.body")
+        self.notes = list[Footnote | str](
+            coerce_notes(self.notes, [self.body], f"NumberedItem {self.title!r}")
+        )
+
+    def footnotes(self) -> list[Footnote]:
+        """This item's notes, once :meth:`validate` has coerced them."""
+        return [note for note in self.notes if isinstance(note, Footnote)]
 
 
 # ──────────────────────────────────────────────────────────────────────

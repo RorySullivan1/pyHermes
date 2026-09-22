@@ -1,0 +1,28 @@
+{#
+  NOTES — a field's copy with its footnote markers rendered (#182).
+
+  `marked(parts, raw)` walks what `apparatus.split_markers` cut: a run of copy
+  prints as it always did, escaped unless the field is one of the blessed
+  raw-HTML five, and a marker prints as a linked superscript. On paper the
+  note itself follows the marker in a span the paged skeleton floats to the
+  sheet foot (`float: footnote`, a WeasyPrint feature); an email collects its
+  notes as endnotes instead, so the span is not emitted there. The number is
+  the document's, never a CSS counter, so the text part prints the same one.
+
+  Every tag below sits on one logical line with whitespace control, because
+  a field with no marker must render byte-identically to before.
+#}
+{% macro marked(parts, raw=false) -%}
+{%- for part in parts -%}
+{%- if part.note -%}
+<sup class="note-ref" style="line-height: 0;"><a href="#note-{{ part.note }}" id="note-ref-{{ part.note }}" style="color: {{ theme.palette.accent }}; text-decoration: none;">{{ part.note }}</a></sup>
+{%- if medium.paged -%}
+<span class="footnote" id="note-{{ part.note }}" data-note="{{ part.note }}">{{ part.note_text | escape_html }}</span>
+{%- endif -%}
+{%- elif raw -%}
+{{ part.text }}
+{%- else -%}
+{{ part.text | escape_html }}
+{%- endif -%}
+{%- endfor -%}
+{%- endmacro %}

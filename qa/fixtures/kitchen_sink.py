@@ -320,12 +320,13 @@ def build(template_dir: Path | None = None, **metadata_overrides: Any) -> Email:
                             ]
                         ),
                     ],
-                    source="Hermes Research",
+                    source="Hermes Research[^1]",
                     as_of="24 August 2026",
                     subtitle="Long-short, gross of costs",
                     caption="Style factor returns",
                     label="Exhibit",
                     anchor="factor-table",
+                    notes=["Each factor is equal-weighted across the top and bottom quintiles."],
                     disclosure=(
                         "Factor returns are shown gross of fees and transaction "
                         "costs. Past performance is not indicative of future "
@@ -367,8 +368,9 @@ def build(template_dir: Path | None = None, **metadata_overrides: Any) -> Email:
                 highlight=True,
                 left=ImageBlock(
                     EmailImage.attached(_THUMB_PNG, alt="Thumbnail", width=96),
-                    caption="A 30% column",
+                    caption="A 30% column[^1]",
                     label="Figure",
+                    notes=["The thumbnail is a placeholder, not a chart."],
                     align=ImageAlign.LEFT,
                     disclosure="Illustrative only; not a recommendation to buy or sell.",
                 ),
@@ -432,7 +434,10 @@ def build(template_dir: Path | None = None, **metadata_overrides: Any) -> Email:
                 content=NumberedList(
                     [
                         NumberedItem(
-                            "01", "Inflation prints", "<p>Core services remain sticky.</p>"
+                            "01",
+                            "Inflation prints",
+                            "<p>Core services remain sticky.[^1]</p>",
+                            notes=["Core services excluding housing, three-month annualised."],
                         ),
                         NumberedItem("02", "Earnings revisions", "<p>Breadth is narrowing.</p>"),
                         NumberedItem("03", "Positioning", "<p>Futures length is extended.</p>"),

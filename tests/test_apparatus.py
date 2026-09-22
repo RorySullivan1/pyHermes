@@ -18,6 +18,7 @@ from svc.builder import (
     DataTable,
     FullWidth,
     ImageBlock,
+    NumberedList,
     TemplateEngine,
     TextBlock,
     ThreeColumn,
@@ -26,7 +27,7 @@ from svc.builder import (
 )
 from svc.builder.apparatus import slugify
 from svc.builder.email import Email
-from svc.builder.models import TableRow
+from svc.builder.models import Footnote, NumberedItem, TableRow
 from svc.config import config_override
 from svc.document import ContentsPage, EmptyContentsPage, Page, PagedDocument
 from svc.pdf import available, render_pdf
@@ -326,3 +327,136 @@ class TestTheContentsSheet:
         for title, page in cited:
             starts = next(n for n, lines in enumerate(pages[2:], start=3) if title in lines)
             assert page == starts, f"{title!r} cited as p. {page}, starts on {starts}"
+
+
+class TestFootnoteMarkers:
+    """#182's construction-time half: every marker calls a note and every note is called."""
+
+    @pytest.mark.parametrize(
+        "build",
+        [
+            lambda notes: TextBlock("<p>Returns[^1] rose.</p>", notes=notes),
+            lambda notes: table(caption="Returns[^1]", notes=notes),
+            lambda notes: chart(caption="", source="Desk[^1]", notes=notes),
+            lambda notes: image(caption="Desk[^1]", notes=notes),
+            lambda notes: NumberedList([NumberedItem("1", "T", "<p>B[^1]</p>", notes=notes)]),
+        ],
+        ids=["text", "table", "chart", "image", "list-item"],
+    )
+    def test_every_component_that_carries_notes_checks_its_markers(self, build):
+        build(["Gross of fees."])
+        with pytest.raises(ValidationError, match=r"marker \[\^1\] but carries 0 note"):
+            build([])
+        with pytest.raises(ValidationError, match=r"no marker \[\^2\]"):
+            build(["Gross of fees.", "A second note nothing calls."])
+
+    def test_a_note_called_twice_raises(self):
+        with pytest.raises(ValidationError, match="twice"):
+            TextBlock("<p>A[^1] and B[^1]</p>", notes=["One."])
+
+    def test_a_marker_may_sit_in_either_attribution_field(self):
+        both = table(caption="Returns[^2]", source="Desk[^1]", notes=["Desk.", "Returns."])
+        assert "Returns[2]" in both.text() and "Desk[1]" in both.text()
+
+    def test_an_empty_note_raises(self):
+        with pytest.raises(ValidationError, match="footnote.text"):
+            TextBlock("<p>A[^1]</p>", notes=[""])
+
+    def test_a_string_is_a_notes_text(self):
+        block = TextBlock(
+            "<p>A[^1]</p>",
+            notes=[
+                "Gross.",
+            ][:1],
+        )
+        assert block.notes == [Footnote("Gross.")]
+
+    def test_rendered_alone_a_marker_keeps_its_local_number(self):
+        block = TextBlock("<p>A[^1]</p>", notes=["Gross."])
+        assert 'href="#note-1"' in block.render(TemplateEngine())
+        assert block.text() == "A[1]"
+
+
+class TestFootnotesAcrossTheDocument:
+    """#182's projections: one number per note, placed where each medium can put it."""
+
+    @pytest.fixture
+    def sections(self):
+        return (
+            FullWidth(
+                title="A", content=TextBlock("<p>Rates repriced.[^1]</p>", notes=["Two-year."])
+            ),
+            TwoColumn(
+                title="B",
+                left=table(source="Desk[^1]", notes=["Close to close."]),
+                right=chart(caption="Spread[^1]", notes=["In bps."]),
+            ),
+        )
+
+    def test_notes_number_in_reading_order_in_both_projections(self, sections):
+        document = email(*sections)
+        assert re.findall(r'id="note-ref-(\d)"', document.render()) == ["1", "2", "3"]
+        assert re.findall(r"\[(\d)\]", document.text()) == ["1", "2", "3", "1", "2", "3"]
+
+    def test_a_marker_sits_at_the_same_place_in_both_projections(self, sections):
+        document = email(*sections)
+        assert re.search(
+            r'repriced\.<sup class="note-ref"[^>]*><a href="#note-1"', document.render()
+        )
+        assert "Rates repriced.[1]" in document.text()
+
+    def test_each_note_is_said_once_per_projection_in_an_email(self, sections):
+        document = email(*sections)
+        for note in ("Two-year.", "Close to close.", "In bps."):
+            assert document.render().count(note) == 1
+            assert document.text().count(note) == 1
+
+    def test_an_email_gathers_them_as_endnotes_linked_both_ways(self, sections):
+        html = email(*sections).render()
+        assert 'class="notes-heading"' in html and 'class="footnote"' not in html
+        assert re.search(
+            r'<li id="note-2"[^>]*><a href="#note-ref-2"[^>]*>2\.</a> Close to close\.', html
+        )
+
+    def test_a_page_floats_each_note_at_its_marker_and_gathers_none(self, sections):
+        document = PagedDocument(PAPER_FACTS)
+        for section in sections:
+            document.add_section(section)
+        html = document.render()
+        assert 'class="notes-heading"' not in html
+        assert re.search(
+            r'</sup><span class="footnote" id="note-3" data-note="3">In bps\.</span>', html
+        )
+        for note in ("Two-year.", "Close to close.", "In bps."):
+            assert html.count(note) == 1
+        assert "[1] Two-year." in document.text()
+
+    def test_a_document_without_notes_has_no_notes_block(self):
+        document = email(FullWidth(content=prose()))
+        assert "notes-heading" not in document.render()
+        assert "Notes\n-----" not in document.text()
+
+    def test_a_note_anchor_cannot_be_claimed_by_a_section(self, sections):
+        document = email(*sections)
+        with pytest.raises(ValidationError, match="'note-2' is claimed twice"):
+            document.add_section(FullWidth(title="Anything", anchor="note-2", content=prose()))
+
+    @requires_pdf
+    def test_each_note_is_at_the_foot_of_the_sheet_its_marker_is_on(self):
+        pages = sheets(all_paged_fixtures()["a4_portrait"]())
+        called_from = {
+            "1. The front end is the two-year gilt.": "The curve steepened through the quarter",
+            "2. Factor definitions follow the methodology in the appendix.": "Exhibit 1",
+            "3. Measured close to close.": "Exhibit 2",
+        }
+        for note, marker_context in called_from.items():
+            holding = [n for n, lines in enumerate(pages) if note in lines]
+            assert len(holding) == 1, f"{note!r} is on sheets {holding}"
+            assert any(marker_context in line for line in pages[holding[0]]), (
+                f"{note!r} is not on the sheet its marker is on"
+            )
+            # At the foot: below everything but the running footer.
+            lines = pages[holding[0]]
+            assert lines.index(note) > max(
+                i for i, line in enumerate(lines) if marker_context in line
+            )

@@ -72,6 +72,31 @@
       content: leader(".") " " target-counter(attr(href), page);
       color: {{ theme.text.light }};
     }
+
+    {# A footnote floats to the foot of the sheet its marker is on. The note
+       inherits from wherever its marker sat -- a bold caption, an italic
+       source line -- so the face, weight and slant are stated, not inherited.
+       The marker is the builder's own `sup`, so the engine's call is
+       suppressed, and the note's number is the one Python assigned. #}
+    @page {
+      @footnote {
+        border-top: 1px solid {{ theme.palette.rule }};
+        padding-top: {{ size.space.caption_gap }}px;
+      }
+    }
+    .footnote {
+      float: footnote;
+      font-family: {{ font.label }};
+      font-size: {{ size.type.micro }}px;
+      font-style: normal;
+      font-weight: normal;
+      letter-spacing: 0;
+      line-height: {{ size.type.secondary_line | percent }};
+      color: {{ theme.text.secondary }};
+      text-align: left;
+    }
+    .footnote::footnote-call { content: none; }
+    .footnote::footnote-marker { content: attr(data-note) ". "; }
   </style>
 </head>
 <body>

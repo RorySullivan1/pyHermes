@@ -767,8 +767,9 @@ class TestCallerWrappedContentIsStyledToo:
         wrapper was styling escapes.
         """
         surfaces = {
-            "text/text-block.html": "{{ text_content }}",
-            "text/numbered-list.html": "{{ item.body }}",
+            # Both emitted through the footnote macro since #182, raw all the same.
+            "text/text-block.html": "{{ marked(text_parts, true) }}",
+            "text/numbered-list.html": "{{ marked(item.body_parts, true) }}",
             "regions/header-bar.html": "{{header_disclaimer}}",
             "analysis/card-group.html": "{{ card.body }}",
             "regions/footer.html": "{{ disclaimer }}",

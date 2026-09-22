@@ -42,7 +42,7 @@ _MARK_PNG = solid_png(72, 72, (245, 242, 236))
 _COVER_PNG = solid_png(120, 80, (22, 33, 45))
 
 #: The curve chart, the document's second numbered exhibit (#181).
-_CURVE_PNG = solid_png(600, 120, (91, 138, 154))
+_CURVE_PNG = solid_png(600, 80, (91, 138, 154))
 
 #: Fixed so the render never moves. A fixture that reads the clock cannot be
 #: snapshotted.
@@ -138,8 +138,9 @@ def build_on(medium: Medium, template_dir: Path | None = None) -> PagedDocument:
                 title="Narrative",
                 content=TextBlock(
                     "<p>The curve steepened through the quarter as the front end "
-                    "repriced. Duration added to returns for the first time in "
-                    "four quarters.</p>"
+                    "repriced.[^1] Duration added to returns for the first time in "
+                    "four quarters.</p>",
+                    notes=["The front end is the two-year gilt."],
                 ),
             )
         )
@@ -153,11 +154,12 @@ def build_on(medium: Medium, template_dir: Path | None = None) -> PagedDocument:
                         TableRow(cells=["Momentum", "-0.4%", "+11.2%"], colors=["", _LOSS, _GAIN]),
                         TableRow(cells=["Quality", "+0.9%", "+5.1%"], colors=["", _GAIN, _GAIN]),
                     ],
-                    source="Hermes Research",
+                    source="Hermes Research[^1]",
                     as_of="30 September 2026",
                     subtitle="Long-short, gross of costs",
                     caption="Style factor returns",
                     label="Exhibit",
+                    notes=["Factor definitions follow the methodology in the appendix."],
                     disclosure=(
                         "Factor returns are shown gross of fees and transaction "
                         "costs. Past performance is not indicative of future results."
@@ -174,7 +176,8 @@ def build_on(medium: Medium, template_dir: Path | None = None) -> PagedDocument:
                     EmailImage.attached(_CURVE_PNG, alt="2s10s spread over the quarter", width=600),
                     caption="The 2s10s spread",
                     label="Exhibit",
-                    source="Hermes Research",
+                    source="Hermes Research[^1]",
+                    notes=["Measured close to close."],
                 ),
             )
         )

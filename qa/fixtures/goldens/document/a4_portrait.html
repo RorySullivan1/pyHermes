@@ -59,6 +59,26 @@
       content: leader(".") " " target-counter(attr(href), page);
       color: #A09E97;
     }
+
+    @page {
+      @footnote {
+        border-top: 1px solid #D6D2CB;
+        padding-top: 8px;
+      }
+    }
+    .footnote {
+      float: footnote;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 9.5px;
+      font-style: normal;
+      font-weight: normal;
+      letter-spacing: 0;
+      line-height: 140%;
+      color: #7A7A72;
+      text-align: left;
+    }
+    .footnote::footnote-call { content: none; }
+    .footnote::footnote-marker { content: attr(data-note) ". "; }
   </style>
 </head>
 <body>
@@ -154,7 +174,7 @@
     <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
       <tr>
         <td class="mobile-pad" style="padding:16px 32px 14px 32px; font-family: Arial, Helvetica, sans-serif; font-size:14px; color:#3B3B3B; line-height:172%;">
-          <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: #3B3B3B; line-height: 172%; margin: 0 0 16px 0;"><p>The curve steepened through the quarter as the front end repriced. Duration added to returns for the first time in four quarters.</p></div>
+          <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: #3B3B3B; line-height: 172%; margin: 0 0 16px 0;"><p>The curve steepened through the quarter as the front end repriced.<sup class="note-ref" style="line-height: 0;"><a href="#note-1" id="note-ref-1" style="color: #5B8A9A; text-decoration: none;">1</a></sup><span class="footnote" id="note-1" data-note="1">The front end is the two-year gilt.</span> Duration added to returns for the first time in four quarters.</p></div>
 
         </td>
       </tr>
@@ -204,7 +224,7 @@
   </tr>
   </tbody>
 </table>
-<p class="fine-print" style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #A09E97; font-style: italic; margin: 8px 0 0 0; line-height: 172%;">Hermes Research as of 30 September 2026</p>
+<p class="fine-print" style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #A09E97; font-style: italic; margin: 8px 0 0 0; line-height: 172%;">Hermes Research<sup class="note-ref" style="line-height: 0;"><a href="#note-2" id="note-ref-2" style="color: #5B8A9A; text-decoration: none;">2</a></sup><span class="footnote" id="note-2" data-note="2">Factor definitions follow the methodology in the appendix.</span> as of 30 September 2026</p>
 <p class="fine-print" align="justify" style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #A09E97; font-style: italic; text-align: justify; margin: 8px 0 0 0; line-height: 172%;">Factor returns are shown gross of fees and transaction costs. Past performance is not indicative of future results.</p>
 
         </td>
@@ -253,12 +273,12 @@
   </tr>
   <tr>
     <td style="padding: 0;">
-      <img src="cid:2be323ec6ce8eee9" alt="2s10s spread over the quarter"
+      <img src="cid:0009fbf079c9a280" alt="2s10s spread over the quarter"
 width="600"           style="display: block; max-width: 100%; height: auto; border: 1px solid #D6D2CB; margin: 0;">
     </td>
   </tr>
 </table>
-<p class="fine-print" style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #A09E97; font-style: italic; margin: 8px 0 0 0; line-height: 172%;">Hermes Research</p>
+<p class="fine-print" style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #A09E97; font-style: italic; margin: 8px 0 0 0; line-height: 172%;">Hermes Research<sup class="note-ref" style="line-height: 0;"><a href="#note-3" id="note-ref-3" style="color: #5B8A9A; text-decoration: none;">3</a></sup><span class="footnote" id="note-3" data-note="3">Measured close to close.</span></p>
 
         </td>
       </tr>

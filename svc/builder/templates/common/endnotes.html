@@ -1,0 +1,19 @@
+{#
+  ENDNOTES — a document's footnotes, gathered after its last section (#182).
+
+  The email's degradation of a sheet-foot note: a mail client has no sheet
+  foot, so each note is listed here with the `id` its marker links to, and a
+  link back up to the marker. A paged document never renders this; its notes
+  float to the foot of the sheet their marker is on. The note text is plain
+  text, escaped, for `disclosure`'s reason.
+
+  Context:
+    notes_heading — the block's label
+    notes         — list of dicts with keys: number, text, anchor, ref_anchor
+#}
+<p class="notes-heading" style="font-family: {{ font.label }}; font-size: {{ size.type.label }}px; font-weight: bold; color: {{ theme.text.heading }}; letter-spacing: 0.5px; margin: 0 0 {{ size.space.caption_gap }}px 0; line-height: {{ size.type.body_line | percent }};">{{ notes_heading | escape_html }}</p>
+<ol class="notes" style="margin: 0; padding: 0; list-style-type: none;">
+{% for note in notes %}
+  <li id="{{ note.anchor }}" style="font-family: {{ font.label }}; font-size: {{ size.type.small }}px; color: {{ theme.text.secondary }}; line-height: {{ size.type.secondary_line | percent }}; margin: 0 0 {{ size.space.caption_gap }}px 0;"><a href="#{{ note.ref_anchor }}" style="color: {{ theme.palette.accent }}; text-decoration: none;">{{ note.number }}.</a> {{ note.text | escape_html }}</li>
+{% endfor %}
+</ol>
