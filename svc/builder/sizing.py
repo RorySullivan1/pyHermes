@@ -41,6 +41,8 @@ def _validate_size_fields(instance: object, prefix: str) -> None:
         # a medium that never collapses has no breakpoint.
         if value is None and spec.name in optional:
             continue
+        if isinstance(value, PageMargin):
+            continue
         if isinstance(value, bool) or not isinstance(value, (int, float)):
             raise ValidationError(
                 f"'{name}' must be a positive number, got: {type(value).__name__}"
@@ -198,6 +200,37 @@ class ComponentScale:
 
 
 @dataclass(frozen=True)
+class PageMargin:
+    """
+    The four print margins of a sheet, in px at 96 dpi.
+
+    Its own type because zero is a real margin here: the continuous page an
+    email renders into has none, where every other size token must be
+    positive. Validated here, and exempt from that rule in the layers that
+    carry it.
+    """
+
+    top: int | float = 0
+    right: int | float = 0
+    bottom: int | float = 0
+    left: int | float = 0
+
+    def __post_init__(self) -> None:
+        for spec in fields(self):
+            value = getattr(self, spec.name)
+            name = f"page.margin.{spec.name}"
+            if isinstance(value, bool) or not isinstance(value, (int, float)):
+                raise ValidationError(f"'{name}' must be a number, got: {type(value).__name__}")
+            if value < 0:
+                raise ValidationError(f"'{name}' must not be negative, got: {value}")
+            if isinstance(value, float) and value.is_integer():
+                raise ValidationError(
+                    f"'{name}' is the integral float {value}, which would render as "
+                    f"'{value}px'. Pass {int(value)} instead."
+                )
+
+
+@dataclass(frozen=True)
 class PageFormat:
     """
     The page a medium renders onto: how wide, how tall, when it collapses.
@@ -211,6 +244,11 @@ class PageFormat:
     ``height`` of ``None`` means **continuous**: an email body and a web page
     end where their content does. ``mobile_breakpoint`` of ``None`` means the
     frame never collapses, which is what a printed page does.
+
+    ``width`` and ``height`` are the **sheet**, what ``@page size`` prints.
+    The **frame** the tables are sized to is the sheet less its ``margin``
+    (#175), and the arithmetic lives in :attr:`frame_width` and
+    :attr:`frame_height` rather than in any template.
     """
 
     OPTIONAL: ClassVar[tuple[str, ...]] = ("height", "mobile_breakpoint")
@@ -218,9 +256,24 @@ class PageFormat:
     width: int | float
     height: int | float | None = None
     mobile_breakpoint: int | float | None = None
+    margin: PageMargin = PageMargin()
 
     def __post_init__(self) -> None:
         _validate_size_fields(self, "page")
+        if not isinstance(self.margin, PageMargin):
+            raise ValidationError(
+                f"'page.margin' must be a PageMargin, got: {type(self.margin).__name__}"
+            )
+        if self.margin.left + self.margin.right >= self.width:
+            raise ValidationError(
+                f"'page.margin' left and right ({self.margin.left} + {self.margin.right}) "
+                f"leave no content width inside 'page.width' ({self.width})."
+            )
+        if self.height is not None and self.margin.top + self.margin.bottom >= self.height:
+            raise ValidationError(
+                f"'page.margin' top and bottom ({self.margin.top} + {self.margin.bottom}) "
+                f"leave no content height inside 'page.height' ({self.height})."
+            )
         if self.mobile_breakpoint is not None and self.mobile_breakpoint <= self.width:
             raise ValidationError(
                 f"'page.mobile_breakpoint' ({self.mobile_breakpoint}) must exceed "
@@ -243,6 +296,18 @@ class PageFormat:
             return "portrait"
         return "landscape" if self.width > self.height else "square"
 
+    @property
+    def frame_width(self) -> int | float:
+        """The width inside the side margins: what the body tables fill."""
+        return self.width - self.margin.left - self.margin.right
+
+    @property
+    def frame_height(self) -> int | float | None:
+        """The height inside the top and bottom margins; ``None`` when continuous."""
+        if self.height is None:
+            return None
+        return self.height - self.margin.top - self.margin.bottom
+
 
 #: The shipped page: the 680px column this package has always rendered into,
 #: continuous, collapsing at 700. The single source for those numbers — the
@@ -257,11 +322,22 @@ DEFAULT_PAGE = PageFormat(width=680, mobile_breakpoint=700)
 #: None of them declares a ``mobile_breakpoint``: a sheet of paper does not
 #: collapse to a phone layout, and a breakpoint the skeleton never reads
 #: would be a number pretending to be a rule.
-A4_PORTRAIT = PageFormat(width=794, height=1123)
-A4_LANDSCAPE = PageFormat(width=1123, height=794)
-LETTER_PORTRAIT = PageFormat(width=816, height=1056)
-LETTER_LANDSCAPE = PageFormat(width=1056, height=816)
-SLIDE_16_9 = PageFormat(width=1280, height=720)
+#:
+#: Each paper keeps one margin all round and in either orientation (#175):
+#: 20mm (76px) on A4, 0.75in (72px) on Letter. The frame's own ``pad_x``
+#: still insets the copy inside it. A slide is projected rather than
+#: printed, so it keeps a narrower 10mm (38px). No preset's frame is 680px
+#: wide, deliberately: a template still reading the email's frame would
+#: then render correctly on paper and nothing could see it.
+A4_MARGIN = PageMargin(top=76, right=76, bottom=76, left=76)
+LETTER_MARGIN = PageMargin(top=72, right=72, bottom=72, left=72)
+SLIDE_MARGIN = PageMargin(top=38, right=38, bottom=38, left=38)
+
+A4_PORTRAIT = PageFormat(width=794, height=1123, margin=A4_MARGIN)
+A4_LANDSCAPE = PageFormat(width=1123, height=794, margin=A4_MARGIN)
+LETTER_PORTRAIT = PageFormat(width=816, height=1056, margin=LETTER_MARGIN)
+LETTER_LANDSCAPE = PageFormat(width=1056, height=816, margin=LETTER_MARGIN)
+SLIDE_16_9 = PageFormat(width=1280, height=720, margin=SLIDE_MARGIN)
 
 #: Every shipped page by name, the way ``SIZE_SCHEMES`` names every density.
 PAGE_FORMATS: dict[str, PageFormat] = {
@@ -293,15 +369,20 @@ class FrameGeometry:
 
     OPTIONAL: ClassVar[tuple[str, ...]] = PageFormat.OPTIONAL
 
-    width: int | float = DEFAULT_PAGE.width
-    height: int | float | None = DEFAULT_PAGE.height
+    width: int | float = DEFAULT_PAGE.frame_width
+    height: int | float | None = DEFAULT_PAGE.frame_height
     mobile_breakpoint: int | float | None = DEFAULT_PAGE.mobile_breakpoint
+    margin: PageMargin = DEFAULT_PAGE.margin
     pad_x: int | float = 32
     outer_pad_y: int | float = 28
     narrow_column: int | float = 300
 
     def __post_init__(self) -> None:
         _validate_size_fields(self, "frame")
+        if not isinstance(self.margin, PageMargin):
+            raise ValidationError(
+                f"'frame.margin' must be a PageMargin, got: {type(self.margin).__name__}"
+            )
         if self.pad_x * 2 >= self.width:
             raise ValidationError(
                 f"'frame.pad_x' ({self.pad_x}) leaves no content width inside "
@@ -318,6 +399,18 @@ class FrameGeometry:
     def inner(self) -> int | float:
         """The content width: ``width`` less the frame padding on both sides."""
         return self.width - 2 * self.pad_x
+
+    @property
+    def sheet_width(self) -> int | float:
+        """The printed sheet: the frame plus its side margins."""
+        return self.width + self.margin.left + self.margin.right
+
+    @property
+    def sheet_height(self) -> int | float | None:
+        """The printed sheet's height; ``None`` for a continuous frame."""
+        if self.height is None:
+            return None
+        return self.height + self.margin.top + self.margin.bottom
 
 
 @dataclass(frozen=True)
@@ -402,9 +495,10 @@ class SizeScheme:
         """
         frame = replace(
             self.frame,
-            width=page.width,
-            height=page.height,
+            width=page.frame_width,
+            height=page.frame_height,
             mobile_breakpoint=page.mobile_breakpoint,
+            margin=page.margin,
         )
         # A density already describing this page *is* the answer, so it is
         # returned unchanged rather than copied. That keeps one scheme object

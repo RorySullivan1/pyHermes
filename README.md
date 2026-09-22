@@ -83,8 +83,14 @@ save_pdf(document, "review.pdf")   # ...and so is the PDF  (needs the [pdf] extr
 ```
 
 `A4_PORTRAIT` is the default; `paged_medium(SLIDE_16_9)` and the Letter presets are in
-`svc.builder.sizing`. A `Page` **flattens** in the email medium — one tree, two outputs — so
-the same sections can go to both.
+`svc.builder.sizing`. Each preset carries a print margin: 20mm on A4, 0.75in on Letter. The
+running header and footer print inside that margin. For a margin of your own, pass
+`PageFormat(width, height, margin=PageMargin(...))` to `paged_medium`. A `Page` **flattens**
+in the email medium — one tree, two outputs — so the same sections can go to both.
+
+A printed document does not split what belongs together. A table repeats its column headers
+on every sheet it crosses, and a row never splits. A total never opens a sheet alone. A
+section title never ends one, and an exhibit keeps its source line and disclosure with it.
 
 **The PDF exporter makes no network requests.** It serves `cid:` references from the
 document's own manifest and refuses every other URL by name, so a document whose cover art

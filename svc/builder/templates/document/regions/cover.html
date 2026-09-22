@@ -1,8 +1,9 @@
 {# The sheet a document opens on. A named CSS page, so the running margin
    boxes can be suppressed here without suppressing them everywhere: a folio
-   on the cover is wrong, and `page: cover` is how a print engine is told. #}
-<table role="presentation" width="{{ size.frame.width }}" cellpadding="0" cellspacing="0" border="0"
-       style="width:{{ size.frame.width }}px; page: cover; break-after:page; page-break-after:always; background-color:{{ cover_background }};"
+   on the cover is wrong, and `page: cover` is how a print engine is told.
+   That page has no margin, so the cover spans the sheet, not the frame. #}
+<table role="presentation" width="{{ size.frame.sheet_width }}" cellpadding="0" cellspacing="0" border="0"
+       style="width:{{ size.frame.sheet_width }}px; page: cover; break-after:page; page-break-after:always; background-color:{{ cover_background }};"
        bgcolor="{{ cover_background }}">
   <tr>
     <td align="{{ align | default('left', true) }}"

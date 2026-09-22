@@ -348,7 +348,7 @@ class TestTheTemplatesAreAnnotated:
         html = all_fixtures()["kitchen_sink"]().render()
         unmarked = [t for t in re.findall(r"<table[^>]*?>", html, re.S) if "role=" not in t]
         assert len(unmarked) == 1, "exactly one table should be left with data semantics"
-        assert "<th" in html
+        assert re.search(r"<th[\s>]", html)
 
     def test_every_header_cell_is_scoped(self):
         """
@@ -358,7 +358,8 @@ class TestTheTemplatesAreAnnotated:
         """
         html = all_fixtures()["kitchen_sink"]().render()
         scoped = html.count('scope="col"') + html.count('scope="row"')
-        assert html.count("<th") == scoped
+        # The element name, not the prefix: `thead` shares it (#173).
+        assert len(re.findall(r"<th[\s>]", html)) == scoped
         assert html.count('scope="col"'), "the heading row"
         assert html.count('scope="row"'), "the label column"
 

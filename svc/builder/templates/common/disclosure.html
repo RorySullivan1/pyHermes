@@ -24,5 +24,5 @@
                  keeps a fixture that sets none byte-identical
 #}
 {% if disclosure %}
-<p align="justify" style="font-family: {{ font.label }}; font-size: {{ size.type.micro }}px; color: {{ theme.text.light }}; font-style: italic; text-align: justify; margin: {{ size.space.caption_gap }}px 0 0 0; line-height: {{ size.type.body_line | percent }};">{{ disclosure | escape_html }}</p>
+<p class="fine-print" align="justify" style="font-family: {{ font.label }}; font-size: {{ size.type.micro }}px; color: {{ theme.text.light }}; font-style: italic; text-align: justify; margin: {{ size.space.caption_gap }}px 0 0 0; line-height: {{ size.type.body_line | percent }};">{{ disclosure | escape_html }}</p>
 {% endif %}

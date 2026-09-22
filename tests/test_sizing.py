@@ -25,6 +25,7 @@ from svc.builder.sizing import (
     ComponentScale,
     FrameGeometry,
     PageFormat,
+    PageMargin,
     SizeScheme,
     SpacingScale,
     TypeScale,
@@ -131,6 +132,8 @@ AUDIT: dict[str, dict[str, int | float]] = {
         "outer_pad_y": 28,
         "mobile_breakpoint": 700,
         "narrow_column": 300,
+        # Zero all round: an email is not printed. See PageMargin.
+        "margin": PageMargin(),
     },
 }
 
@@ -172,6 +175,37 @@ class TestTheAudit:
         # A printed page has no breakpoint, and that is a state rather than a
         # missing number.
         assert PageFormat(width=794, height=1123).mobile_breakpoint is None
+
+    def test_a_page_is_its_sheet_and_its_frame_is_what_the_margin_leaves(self) -> None:
+        page = PageFormat(794, 1123, margin=PageMargin(top=10, right=20, bottom=30, left=40))
+        assert (page.width, page.height) == (794, 1123)
+        assert (page.frame_width, page.frame_height) == (794 - 60, 1123 - 40)
+        assert PageFormat(680).frame_height is None
+
+    def test_a_zero_margin_is_legal_where_no_other_size_is(self) -> None:
+        # The continuous page an email renders into has none.
+        assert PageFormat(680).margin == PageMargin(0, 0, 0, 0)
+
+    @pytest.mark.parametrize("bad", [-1, True, "4", 4.0])
+    def test_a_margin_refuses_what_a_size_refuses(self, bad: object) -> None:
+        with pytest.raises(ValidationError, match="page.margin.left"):
+            PageMargin(left=bad)  # type: ignore[arg-type]
+
+    def test_a_margin_that_leaves_no_frame_is_refused(self) -> None:
+        with pytest.raises(ValidationError, match="no content width"):
+            PageFormat(794, 1123, margin=PageMargin(right=400, left=394))
+        with pytest.raises(ValidationError, match="no content height"):
+            PageFormat(794, 1123, margin=PageMargin(top=600, bottom=523))
+
+    def test_a_page_margin_is_a_margin(self) -> None:
+        with pytest.raises(ValidationError, match="must be a PageMargin"):
+            PageFormat(794, 1123, margin=20)  # type: ignore[arg-type]
+
+    def test_the_frame_reports_the_sheet_it_came_from(self) -> None:
+        page = PageFormat(794, 1123, margin=PageMargin(top=10, right=20, bottom=30, left=40))
+        frame = STANDARD_SIZES.with_page(page).frame
+        assert (frame.width, frame.height) == (page.frame_width, page.frame_height)
+        assert (frame.sheet_width, frame.sheet_height) == (794, 1123)
 
     def test_a_page_still_refuses_a_nonsense_dimension(self) -> None:
         with pytest.raises(ValidationError, match="must be positive"):
@@ -512,6 +546,9 @@ NEVER_RENDERED = {
     "space.footer_contact_bottom",
     # footer_legal_bottom was split into copyright_bottom in the rework.
     "space.footer_legal_bottom",
+    # An email has no sheet, so nothing in it reads a print margin. The paged
+    # page sentinel in test_paged.py is what pins this token (#175).
+    "frame.margin",
 }
 
 
@@ -543,6 +580,9 @@ def _sentinel_scheme() -> SizeScheme:
     for layer, layer_cls in SizeScheme.LAYERS.items():
         values: dict[str, int | float] = {}
         for spec in fields(layer_cls):
+            if spec.name == "margin":
+                values[spec.name] = SENTINEL_PAGE.margin
+                continue
             values[spec.name] = next(line) if spec.name.endswith("_line") else next(px)
         if layer == "frame":
             # The threshold sits a quarter of the way into the content width,
@@ -919,6 +959,8 @@ class TestTheShippedSchemes:
                 token = getattr(value, spec.name)
                 if token is None and spec.name in optional:
                     continue
+                if isinstance(token, PageMargin):
+                    continue  # validated by its own type, where zero is legal
                 assert isinstance(token, (int, float)) and token > 0
 
     @pytest.mark.parametrize("theme", ALL_THEMES)

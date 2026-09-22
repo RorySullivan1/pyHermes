@@ -11,7 +11,7 @@
     cards       — List of dicts with keys: label, value, color, sublabel, body
 #}
 {% if subtitle %}
-<p style="font-family: {{ font.body }}; font-size: {{ size.type.secondary }}px; font-style: italic; color: {{ theme.text.secondary }}; margin: 0 0 {{ size.space.subtitle_gap }}px 0; line-height: {{ size.type.secondary_line | percent }};">{{ subtitle | escape_html }}</p>
+<p class="subtitle" style="font-family: {{ font.body }}; font-size: {{ size.type.secondary }}px; font-style: italic; color: {{ theme.text.secondary }}; margin: 0 0 {{ size.space.subtitle_gap }}px 0; line-height: {{ size.type.secondary_line | percent }};">{{ subtitle | escape_html }}</p>
 {% endif %}
 {% if orientation == 'vertical' %}
 <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border: 1px solid {{ theme.palette.rule }};">

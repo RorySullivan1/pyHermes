@@ -1,0 +1,222 @@
+Quarterly Review
+================
+
+What the curve priced, and what it did not
+Rates Strategy · Quarter ending 30 September · Issue 001
+
+
+Portfolio
+---------
+
+Intro, paragraph 1: the book held its weights through the month and the curve
+did most of the work.
+
+Intro, paragraph 2: the book held its weights through the month and the curve
+did most of the work.
+
+Intro, paragraph 3: the book held its weights through the month and the curve
+did most of the work.
+
+Intro, paragraph 4: the book held its weights through the month and the curve
+did most of the work.
+
+Intro, paragraph 5: the book held its weights through the month and the curve
+did most of the work.
+
+Intro, paragraph 6: the book held its weights through the month and the curve
+did most of the work.
+
+Intro, paragraph 7: the book held its weights through the month and the curve
+did most of the work.
+
+Intro, paragraph 8: the book held its weights through the month and the curve
+did most of the work.
+
+Intro, paragraph 9: the book held its weights through the month and the curve
+did most of the work.
+
+Intro, paragraph 10: the book held its weights through the month and the curve
+did most of the work.
+
+Intro, paragraph 11: the book held its weights through the month and the curve
+did most of the work.
+
+Intro, paragraph 12: the book held its weights through the month and the curve
+did most of the work.
+
+Intro, paragraph 13: the book held its weights through the month and the curve
+did most of the work.
+
+
+Holdings
+--------
+
+Sterling fixed income, weights at month end
+
+Model portfolio, by issue
+
+Issue                        Sector  Weight  Yield
+-----------------------  ----------  ------  -----
+UKT 0.25% 2027           Government    1.0%   3.0%
+UKT 0.5% 2028            Government    2.1%   4.1%
+UKT 0.875% 2029          Government    3.2%   5.2%
+UKT 1.25% 2030           Government    1.3%   6.3%
+UKT 1.5% 2031            Government    2.4%   3.4%
+UKT 1.625% 2032          Government    3.5%   4.5%
+UKT 2% 2033              Government    1.6%   5.6%
+UKT 3.25% 2034           Government    2.7%   6.0%
+UKT 3.5% 2035            Government    3.8%   3.1%
+UKT 3.75% 2036           Government    1.9%   4.2%
+UKT 0.25% 2037           Government    2.0%   5.3%
+UKT 0.5% 2038            Government    3.1%   6.4%
+UKT 0.875% 2039          Government    1.2%   3.5%
+UKT 1.25% 2040           Government    2.3%   4.6%
+UKT 1.5% 2041            Government    3.4%   5.0%
+UKT 1.625% 2042          Government    1.5%   6.1%
+UKT 2% 2043              Government    2.6%   3.2%
+UKT 3.25% 2044           Government    3.7%   4.3%
+UKT 3.5% 2045            Government    1.8%   5.4%
+UKT 3.75% 2046           Government    2.9%   6.5%
+UKT 0.25% 2047           Government    3.0%   3.6%
+UKT 0.5% 2048            Government    1.1%   4.0%
+UKT 0.875% 2049          Government    2.2%   5.1%
+UKT 1.25% 2050           Government    3.3%   6.2%
+UKT 1.5% 2051            Government    1.4%   3.3%
+UKT 1.625% 2052          Government    2.5%   4.4%
+UKT 2% 2053              Government    3.6%   5.5%
+UKT 3.25% 2054           Government    1.7%   6.6%
+UKT 3.5% 2055            Government    2.8%   3.0%
+UKT 3.75% 2056           Government    3.9%   4.1%
+Investment-grade credit
+Vodafone 2028             Corporate    1.0%   3.0%
+HSBC 2029                 Corporate    2.1%   4.1%
+Tesco 2030                Corporate    3.2%   5.2%
+BT 2031                   Corporate    1.3%   6.3%
+National Grid 2032        Corporate    2.4%   3.4%
+Aviva 2033                Corporate    3.5%   4.5%
+Vodafone 2034             Corporate    1.6%   5.6%
+HSBC 2035                 Corporate    2.7%   6.0%
+Tesco 2036                Corporate    3.8%   3.1%
+BT 2037                   Corporate    1.9%   4.2%
+National Grid 2038        Corporate    2.0%   5.3%
+Aviva 2039                Corporate    3.1%   6.4%
+Vodafone 2040             Corporate    1.2%   3.5%
+HSBC 2041                 Corporate    2.3%   4.6%
+Tesco 2042                Corporate    3.4%   5.0%
+BT 2043                   Corporate    1.5%   6.1%
+National Grid 2044        Corporate    2.6%   3.2%
+Aviva 2045                Corporate    3.7%   4.3%
+Vodafone 2046             Corporate    1.8%   5.4%
+HSBC 2047                 Corporate    2.9%   6.5%
+Tesco 2048                Corporate    3.0%   3.6%
+BT 2049                   Corporate    1.1%   4.0%
+National Grid 2050        Corporate    2.2%   5.1%
+Aviva 2051                Corporate    3.3%   6.2%
+Vodafone 2052             Corporate    1.4%   3.3%
+HSBC 2053                 Corporate    2.5%   4.4%
+Tesco 2054                Corporate    3.6%   5.5%
+BT 2055                   Corporate    1.7%   6.6%
+National Grid 2056        Corporate    2.8%   3.0%
+Aviva 2057                Corporate    3.9%   4.1%
+-----------------------  ----------  ------  -----
+Total portfolio                      100.0%   4.1%
+
+Hermes Research
+30 September 2026
+
+Weights are rounded and may not sum to the total shown.
+
+
+Curve
+-----
+
+Curve, paragraph 1: the book held its weights through the month and the curve
+did most of the work.
+
+Curve, paragraph 2: the book held its weights through the month and the curve
+did most of the work.
+
+Curve, paragraph 3: the book held its weights through the month and the curve
+did most of the work.
+
+Curve, paragraph 4: the book held its weights through the month and the curve
+did most of the work.
+
+Curve, paragraph 5: the book held its weights through the month and the curve
+did most of the work.
+
+Curve, paragraph 6: the book held its weights through the month and the curve
+did most of the work.
+
+Curve, paragraph 7: the book held its weights through the month and the curve
+did most of the work.
+
+Curve, paragraph 8: the book held its weights through the month and the curve
+did most of the work.
+
+Curve, paragraph 9: the book held its weights through the month and the curve
+did most of the work.
+
+Curve, paragraph 10: the book held its weights through the month and the curve
+did most of the work.
+
+
+Key-rate exposure
+
+[Curve exposure by bucket]
+
+Source: Hermes Research, curve model
+
+Modelled exposures are estimates and may differ from the book.
+
+
+Positioning
+-----------
+
+Positioning, paragraph 1: the book held its weights through the month and the
+curve did most of the work.
+
+Positioning, paragraph 2: the book held its weights through the month and the
+curve did most of the work.
+
+Positioning, paragraph 3: the book held its weights through the month and the
+curve did most of the work.
+
+Positioning, paragraph 4: the book held its weights through the month and the
+curve did most of the work.
+
+Positioning, paragraph 5: the book held its weights through the month and the
+curve did most of the work.
+
+Positioning, paragraph 6: the book held its weights through the month and the
+curve did most of the work.
+
+Positioning, paragraph 7: the book held its weights through the month and the
+curve did most of the work.
+
+Positioning, paragraph 8: the book held its weights through the month and the
+curve did most of the work.
+
+Positioning, paragraph 9: the book held its weights through the month and the
+curve did most of the work.
+
+Positioning, paragraph 10: the book held its weights through the month and the
+curve did most of the work.
+
+Positioning, paragraph 11: the book held its weights through the month and the
+curve did most of the work.
+
+Positioning, paragraph 12: the book held its weights through the month and the
+curve did most of the work.
+
+
+Outlook
+-------
+
+Duration stays long into the new year, and the reasons follow.
+
+
+Important Disclosures
+---------------------
+
+For illustrative purposes. Not investment advice.

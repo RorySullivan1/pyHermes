@@ -73,6 +73,32 @@ thirty template sites already read.
 - **`orientation` is derived, never stored** — a declared one is a second fact about the same
   two numbers and the two can disagree.
 
+**The page is a sheet with a margin, and the frame is what the margin leaves** (#175). Before
+it, `@page` had a hardcoded horizontal margin of zero and took its vertical margin from
+`frame.outer_pad_y`. That is the band an *email* draws above and below itself, so a density
+token was deciding a print margin. `PageFormat` now carries a `PageMargin`. Its `width` and
+`height` stay the **sheet**, which is what `@page size` prints. `frame_width` and `frame_height`
+are the sheet less the margin, and the body tables fill the frame.
+
+- **`with_page` lays the frame and the margin over the density.** `size.frame.width` is the
+  frame, and every existing template site kept reading it. `sheet_width` and `sheet_height` are
+  properties that add the margin back, and the skeleton's `@page` rule reads only those and
+  `size.frame.margin`.
+- **The cover spans the sheet, not the frame.** Its named page has no margin, so a frame-wide
+  cover would leave a gutter down one side.
+- **`PageMargin` is its own type because zero is legal there.** Every other size token must be
+  positive. The continuous email page has no margin at all, and that keeps every email golden
+  byte-identical.
+- **No preset's frame is 680px wide, and that was a decision.** A 15mm side margin on A4 gives
+  exactly 680, the email's column width. A template still reading the email frame would then
+  render correctly on paper, and nothing could see it. A4 takes 20mm all round instead.
+- **The running boxes sit in the margin, aligned to the frame edge**, not to the copy inside
+  `pad_x`. They print level with a highlighted band's hairline, and the raster shows them
+  clear of the content.
+- **The sentinel is `TestThePageMarginIsTheMediums`**, on a 9001 by 9002px sheet with four
+  distinct margins. Three perturbations were each checked to fail it by name: `@page` reading
+  the density again, the body table reading the sheet, and the cover reading the frame.
+
 **The sentinel moved with the owner, and that is the part to remember.** The existing
 token-liveness test perturbed the frame *through the scheme*, which the medium now overwrites —
 so it would have proved nothing while staying green. It perturbs `SENTINEL_PAGE` now, and a
@@ -129,6 +155,51 @@ not exist**, byte for byte as though it were not there. The decision is made in 
 than left to CSS because `break-before` is inert in a mail client and so would *look*
 harmless — while the wrapper element around it is not. The break lands on a table `tr`:
 containers emit `tr` blocks, and CSS break properties do not apply to a `td`.
+
+## Where a sheet may not end — the paged skeleton's break rules
+
+Epic #169 gave the paged medium break discipline inside the content. Before it, the only
+break properties in the tree were the sheet boundaries. The rules sit in `document/base.html`'s
+`style` block and are keyed on class hooks in the shared markup. That block is to the paged
+medium what the `@media` block is to mobile. The email never loads it, so no rule costs an
+email a byte, and nothing was forked.
+
+| Hook | Rule | What it stops |
+|---|---|---|
+| `.data-table tbody tr` | `break-inside: avoid` | A row splitting mid-cell |
+| `tr.row-total` | `break-before: avoid` | A total opening a sheet alone |
+| `tr.row-subhead` | `break-after: avoid` | A subhead closing a sheet |
+| `.data-table > caption` | `break-after: avoid` | A table's name closing a sheet |
+| `.section-title` | `break-after: avoid` | A section title stranded at the foot |
+| `.subtitle` | `break-after: avoid` | A component's standfirst left behind by its figure |
+| `.fine-print` | `break-before: avoid` | An attribution or disclosure opening a sheet |
+| `.figure` | `break-inside: avoid` | A chart or image block splitting |
+| `body` | `orphans: 2; widows: 2` | The CSS initial values, stated so the decision is visible |
+
+- **Every rule was probed on its boundary case under WeasyPrint 70, with and without it.**
+  Each defect reproduced without its rule and was gone with it. The probes varied the length
+  of a preceding section until the thing under test landed exactly at a sheet edge.
+- **A rule sits on the thing that must not split, never on a container that may.**
+  `break-inside: avoid` on a table taller than a sheet pushes it whole and strands a
+  half-empty sheet. That is why nothing sits on `.data-table` itself.
+- **The section title's rule goes on the title's *table*.** The title and the content are
+  sibling tables in both container templates, so the break the rule forbids is the one between
+  them.
+- **An `avoid` needs an earlier break to fall back to.** When a section is the first thing in
+  the document, WeasyPrint has nowhere else to break and strands the title anyway. A probe that
+  starts a document with the section under test proves nothing about the rule.
+- **Cell padding can move a whole table.** When a table's rows fit on a sheet but the
+  container cell's bottom padding does not, WeasyPrint breaks before the table rather than
+  inside it. The title rule keeps the title with the table when that happens.
+- **Two rules can interact, and only a raster shows it.** The figure rule moves a chart whole,
+  and that left the chart's subtitle alone at the foot of the sheet it came from. No issue
+  named the defect. The first photograph of the long-table fixture found it, and the
+  `subtitle` rule followed. Its test strips that one rule and not the rest, because without
+  any rules the chart never moves and the subtitle is never stranded.
+- **Each hook is a class and nothing else.** `section-title`, `subtitle`, `fine-print`,
+  `figure`, `row-total` and `row-subhead` carry no style of their own. The email golden diffs were
+  checked by a script to contain only the inserted attributes, and every email screenshot
+  stayed pixel-identical.
 
 ## The facts split in two
 

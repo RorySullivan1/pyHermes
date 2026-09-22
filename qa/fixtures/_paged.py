@@ -62,18 +62,15 @@ def facts() -> dict[str, Any]:
     }
 
 
-def build_on(medium: Medium, template_dir: Path | None = None) -> PagedDocument:
+def regions() -> dict[str, Any]:
     """
-    The shared document, laid onto ``medium``'s page.
+    The four paged regions, as keyword arguments to ``PagedDocument``.
 
     Every region field carries a **non-default** value, per standing rule 9:
     a field left at its default is one the golden cannot pin, because the
     render would not move if the default changed underneath it.
     """
-    document = PagedDocument(
-        facts(),
-        template_dir=template_dir,
-        medium=medium,
+    return dict(
         cover=Cover(
             # Distinct from firm_name / campaign_name on purpose, so the
             # golden pins that the cover says its own thing while the facts
@@ -106,6 +103,11 @@ def build_on(medium: Medium, template_dir: Path | None = None) -> PagedDocument:
         ),
         back_matter=BackMatter(heading="Important Disclosures", align="left"),
     )
+
+
+def build_on(medium: Medium, template_dir: Path | None = None) -> PagedDocument:
+    """The shared document, laid onto ``medium``'s page."""
+    document = PagedDocument(facts(), template_dir=template_dir, medium=medium, **regions())
     return (
         document.add_section(
             FullWidth(

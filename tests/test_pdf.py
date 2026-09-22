@@ -10,12 +10,14 @@ must refuse what it is not given. The **render** half skips when the
 from __future__ import annotations
 
 import ast
+import importlib.util
 import pathlib
 import re
 import zlib
 
 import pytest
 
+from qa.fixtures import a4_long_table as long_table
 from qa.fixtures import all_paged_fixtures
 from svc.builder import FullWidth, TextBlock
 from svc.builder.images import EmailImage
@@ -309,11 +311,12 @@ class TestWhatOnlyAPrintEngineCouldShow:
         fixture = all_paged_fixtures()["a4_portrait"]()
         body = self._laid_out(fixture).pages[1]
         widths = self._table_widths(body)
-        page_width = fixture.medium.page_format.width
+        # The frame, not the sheet: since #175 the page's margins sit outside it.
+        frame_width = fixture.medium.page_format.frame_width
         assert widths, "no tables laid out"
         # Every table on the body page fills the frame rather than its content.
-        assert min(widths) > page_width * 0.9, (
-            f"a table shrink-wrapped: {sorted(widths)} inside a {page_width}px page"
+        assert min(widths) > frame_width * 0.85, (
+            f"a table shrink-wrapped: {sorted(widths)} inside a {frame_width}px frame"
         )
 
     def test_no_running_box_appears_on_the_cover(self):
@@ -331,3 +334,168 @@ class TestWhatOnlyAPrintEngineCouldShow:
         assert "1 / 4" not in cover, "the folio leaked onto the cover"
         # ...and it is suppressed only there.
         assert "Confidential" in body and "2 / 4" in body
+
+
+requires_rasteriser = pytest.mark.skipif(
+    importlib.util.find_spec("pypdfium2") is None,
+    reason='no pypdfium2; reading a sheet\'s text needs the "[qa]" extra',
+)
+
+#: The paged skeleton's break rules, one per line of its style block.
+_BREAK_RULE = re.compile(r"^\s*\.[\w .>-]*\{ *(?:page-)?break-[^}]*\}\s*$", re.M)
+
+
+def _sheets(
+    document, *, strip_break_rules: bool = False, strip_rule: str = ""
+) -> list[tuple[str, int]]:
+    """Each sheet's text and its image count, read back out of the PDF."""
+    import pypdfium2
+    import pypdfium2.raw as pdfium_raw
+    import weasyprint
+
+    from svc.pdf.fetcher import build_fetcher
+
+    html = document.render()
+    if strip_break_rules:
+        html, removed = _BREAK_RULE.subn("", html)
+        assert removed == 8, f"expected the eight break rules, stripped {removed}"
+    if strip_rule:
+        html, removed = re.subn(
+            rf"^\s*{re.escape(strip_rule)} \{{[^}}]*\}}\s*$", "", html, flags=re.M
+        )
+        assert removed == 1, f"{strip_rule} is not one of the break rules"
+    pdf = pypdfium2.PdfDocument(
+        weasyprint.HTML(string=html, url_fetcher=build_fetcher(document.assets())).write_pdf()
+    )
+    image = [pdfium_raw.FPDF_PAGEOBJ_IMAGE]
+    return [
+        (sheet.get_textpage().get_text_range(), len(list(sheet.get_objects(filter=image))))
+        for sheet in pdf
+    ]
+
+
+def _sheet_of(sheets, needle: str) -> int:
+    return next(i for i, (text, _) in enumerate(sheets) if needle in text)
+
+
+def _title_sheet(sheets) -> int:
+    pattern = re.compile(rf"^{long_table.ENGINEERED_TITLE}\s*$", re.M)
+    return next(i for i, (text, _) in enumerate(sheets) if pattern.search(text))
+
+
+def _table_sheets(sheets) -> list[int]:
+    return [i for i, (text, _) in enumerate(sheets) if any(h in text for h in long_table.HOLDINGS)]
+
+
+@requires_backend
+@requires_rasteriser
+class TestALongTableCrossesSheetsIntact:
+    """
+    #176: the test that reads sheet two, which would have caught the missing
+    ``thead`` on the day the paged medium shipped. Every claim is read back
+    out of the PDF's text, sheet by sheet.
+    """
+
+    @pytest.fixture(scope="class")
+    def sheets(self):
+        return _sheets(long_table.build())
+
+    def test_the_table_spans_several_sheets(self, sheets):
+        assert len(_table_sheets(sheets)) > 1
+
+    def test_every_sheet_of_the_table_carries_its_headers(self, sheets):
+        for index in _table_sheets(sheets):
+            text = sheets[index][0]
+            missing = [h for h in long_table.HEADERS if h.upper() not in text]
+            assert not missing, f"sheet {index + 1} lost its column headers {missing}"
+
+    def test_the_total_shares_a_sheet_with_the_row_above_it(self, sheets):
+        assert _sheet_of(sheets, long_table.TOTAL) == _sheet_of(sheets, long_table.HOLDINGS[-1])
+
+    def test_the_subhead_shares_a_sheet_with_the_row_below_it(self, sheets):
+        first_credit = long_table.HOLDINGS[len(long_table.HOLDINGS) // 2]
+        assert _sheet_of(sheets, long_table.SUBHEAD) == _sheet_of(sheets, first_credit)
+
+    def test_the_title_shares_a_sheet_with_its_first_line(self, sheets):
+        assert _title_sheet(sheets) == _sheet_of(sheets, long_table.ENGINEERED_FIRST_LINE)
+
+    def test_the_chart_keeps_its_fine_print(self, sheets):
+        index = _sheet_of(sheets, long_table.CHART_DISCLOSURE[:30])
+        text, images = sheets[index]
+        assert long_table.CHART_SOURCE in text and images, "the fine print left its chart"
+
+    def test_the_chart_keeps_its_subtitle(self, sheets):
+        # Found by the raster rather than the issue: a figure that moves whole
+        # left its standfirst behind at the foot of the sheet before.
+        index = _sheet_of(sheets, long_table.CHART_SUBTITLE)
+        assert sheets[index][1], "the subtitle ended a sheet without its chart"
+
+
+@requires_backend
+@requires_rasteriser
+class TestTheFixtureIsEngineeredRatherThanLucky:
+    """
+    Each boundary the fixture carries must fail without its rule, or the
+    tests above pass for the wrong reason. When layout moves and one of
+    these goes green, retune the paragraph counts in ``a4_long_table``.
+    """
+
+    @pytest.fixture(scope="class")
+    def sheets(self):
+        return _sheets(long_table.build(), strip_break_rules=True)
+
+    def test_without_its_rule_the_total_opens_a_sheet_alone(self, sheets):
+        text = sheets[_sheet_of(sheets, long_table.TOTAL)][0]
+        assert not any(h in text for h in long_table.HOLDINGS)
+
+    def test_without_its_rule_the_title_ends_a_sheet(self, sheets):
+        assert _title_sheet(sheets) != _sheet_of(sheets, long_table.ENGINEERED_FIRST_LINE)
+
+    def test_without_its_rules_the_fine_print_leaves_the_chart(self, sheets):
+        text, images = sheets[_sheet_of(sheets, long_table.CHART_DISCLOSURE[:30])]
+        assert not (long_table.CHART_SOURCE in text and images)
+
+
+@requires_backend
+@requires_rasteriser
+def test_without_its_rule_a_subtitle_ends_the_sheet_its_figure_left():
+    # The two rules interact: the figure's moves the chart whole, and only the
+    # subtitle's stops it leaving its standfirst behind. So this strips one.
+    sheets = _sheets(long_table.build(), strip_rule=".subtitle")
+    assert not sheets[_sheet_of(sheets, long_table.CHART_SUBTITLE)][1]
+
+
+def _without_thead(tmp_path: pathlib.Path) -> pathlib.Path:
+    """A copy of the packaged templates whose data table has no thead."""
+    import shutil
+
+    from svc.builder.engine import TemplateEngine
+
+    destination = tmp_path / "templates"
+    shutil.copytree(TemplateEngine().template_dir, destination)
+    table = destination / "analysis" / "data-table.html"
+    source = table.read_text(encoding="utf-8")
+    assert "<thead>" in source and "</thead>" in source
+    table.write_text(source.replace("<thead>", "").replace("</thead>", ""), encoding="utf-8")
+    return destination
+
+
+class TestRemovingTheTheadIsCaught:
+    """
+    A guard that passes with the bug present is a comment (#130), so the bug
+    is put back and both guards must go red: the lint rule, which needs no
+    backend, and the PDF test, which does.
+    """
+
+    def test_the_lint_rule_fires(self, tmp_path):
+        from qa.lint import lint_document
+
+        document = long_table.build(template_dir=_without_thead(tmp_path))
+        assert "table-structure" in {f.rule_id for f in lint_document(document)}
+
+    @requires_backend
+    @requires_rasteriser
+    def test_the_headers_vanish_from_sheet_two(self, tmp_path):
+        sheets = _sheets(long_table.build(template_dir=_without_thead(tmp_path)))
+        second = _table_sheets(sheets)[1]
+        assert long_table.HEADERS[0].upper() not in sheets[second][0]

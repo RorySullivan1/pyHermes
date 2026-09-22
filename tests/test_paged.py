@@ -17,7 +17,7 @@ from svc.builder.document import Document
 from svc.builder.engine import TemplateEngine
 from svc.builder.medium import DEFAULT_MEDIUM
 from svc.builder.models import EmailMetadata
-from svc.builder.sizing import A4_PORTRAIT, PAGE_FORMATS, SLIDE_16_9
+from svc.builder.sizing import A4_PORTRAIT, PAGE_FORMATS, SLIDE_16_9, PageFormat, PageMargin
 from svc.document import (
     PAGED_MEDIUM,
     EmptyBackMatter,
@@ -133,6 +133,12 @@ class TestThePageReachesTheRender:
     def test_the_page_rules_the_css_and_the_table(self):
         html = all_paged_fixtures()["a4_portrait"]().render()
         assert f"size: {A4_PORTRAIT.width}px {A4_PORTRAIT.height}px;" in html
+        # The body fills the frame; only the cover, on its marginless page,
+        # spans the sheet (#175).
+        assert (
+            f'class="document-container" role="presentation" width="{A4_PORTRAIT.frame_width}"'
+            in html
+        )
         assert f'width="{A4_PORTRAIT.width}"' in html
 
     def test_a_slide_is_the_same_medium_at_another_page(self):
@@ -166,8 +172,9 @@ class TestThePageReachesTheRender:
         # The composition proved end to end: a split's column width is
         # derived from frame.inner, which is the medium's width less the
         # density's padding. Neither owner alone can produce this number.
+        # Since #175 the medium's width is the sheet less its side margins.
         a4 = all_paged_fixtures()["a4_portrait"]().render()
-        inner = A4_PORTRAIT.width - 2 * 32
+        inner = A4_PORTRAIT.frame_width - 2 * 32
         assert f'width="{inner}"' in a4
 
     def test_the_text_projection_is_the_same_on_either_page(self):
@@ -253,3 +260,42 @@ class TestWhatTheEmailLintMakesOfAPagedDocument:
         # ...and it is the medium that retired it, not the check: judged as
         # an email, the same bytes still fail.
         assert [f.rule_id for f in lint_html(oversized.render(), "email")] == ["size-budget"]
+
+
+class TestThePageMarginIsTheMediums:
+    """
+    #175: the print margin comes from the page format, never the density.
+
+    The page sentinel #159 aimed at the width, aimed at the margin. Every
+    value is distinctive, so each appears in the render if and only if a
+    template reads it from the page, and the frame the body fills is a
+    number no template could produce from the sheet alone.
+    """
+
+    PAGE = PageFormat(
+        width=9001, height=9002, margin=PageMargin(top=901, right=902, bottom=903, left=904)
+    )
+
+    @pytest.fixture()
+    def html(self) -> str:
+        return _paged.build_on(paged_medium(self.PAGE)).render()
+
+    def test_the_sheet_and_its_margin_reach_at_page(self, html):
+        assert "size: 9001px 9002px;" in html
+        assert "margin: 901px 902px 903px 904px;" in html
+
+    def test_the_body_fills_the_frame_not_the_sheet(self, html):
+        frame = 9001 - 902 - 904
+        assert f'class="document-container" role="presentation" width="{frame}"' in html
+        assert f"width:{frame}px" in html
+
+    def test_the_cover_spans_the_sheet(self, html):
+        # Its named page has no margin, so the frame would leave a gutter.
+        cover = html[html.index("<body>") : html.index('class="document-container"')]
+        assert 'width="9001"' in cover
+
+    def test_the_density_no_longer_decides_the_print_margin(self, html):
+        from svc.builder.sizing import STANDARD_SIZES
+
+        pad = STANDARD_SIZES.frame.outer_pad_y
+        assert f"margin: {pad}px" not in html, "@page still reads outer_pad_y"

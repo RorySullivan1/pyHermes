@@ -113,6 +113,31 @@ tinted label band.
   Word engine, so a label cell that previously emitted no `font-weight` now emits `normal`.
   That is the third thing in #120's golden diff, and it is there to keep the render identical.
 
+### The data table on paper — `thead`, `tbody` and rows that do not split
+
+The header row sits in a `thead` and the rows in a `tbody` (#173), so a print engine repeats
+the column headers on every sheet a table crosses. Before this, the header row was a bare `tr`
+and a holdings table lost its headers after sheet one. No golden, lint rule or browser
+screenshot could see that, because an email has no sheets.
+
+- **The tags shipped alone, and the diff was checked by a script.** 48 added lines across 12
+  tables, each one a bare open or close tag, with no removed lines. All 28 email screenshots
+  were pixel-identical, because a browser lays out `table-header-group` in place. Two lint
+  tests had counted the substring `<th`, which `thead` also starts with. They now match the
+  element name.
+- **The break rules live in the paged skeleton's `style` block, not in this template.**
+  `document/base.html` is to the paged medium what the `@media` block is to mobile. It holds
+  rules over class hooks the shared markup carries. The email never loads it, so the rules cost
+  an email nothing and nothing had to be forked.
+- **The only shared-markup cost is a class on the two non-data row kinds.** `row-total` and
+  `row-subhead` carry no style of their own. A data row gets no class, so a table with neither
+  kind is byte-identical.
+- **Each rule sits on the thing that must not split:** a `tbody` row never splits mid-cell, a
+  total never opens a sheet alone, and a subhead never closes one. **Nothing sits on the
+  `table`.** `break-inside: avoid` on a table taller than a sheet pushes it whole onto the next
+  sheet and leaves a half-empty one behind.
+- **There is no `tfoot`.** A total repeated on every sheet would be false on all but the last.
+
 [Card](../../svc/builder/models.py) is the unit: `label` (required), `value`, `color`,
 `sublabel`, and an optional `body` for prose. Either `value` or `body` must be present.
 `KpiItem` is a `Card` subclass that adds no fields but keeps the stricter rule — a KPI

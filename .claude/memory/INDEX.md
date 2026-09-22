@@ -5,11 +5,11 @@
   shared kit, `svc/email` and `svc/document` are the two media, and three exporters sit on
   one contract — `svc/delivery`+`gmail`+`outlook`, and `svc/pdf`. Rationale: CLAUDE.md and
   `.claude/rules/media.md`; do not restate it here.
-- **Epic #157 (rescope to media) is SHIPPED** — PR #167 merged to `main` at `eff6ece`;
-  #157 and #158–#166 all closed. Phases 1–4 shipped golden-identical.
-- **Epic #153 (per-exhibit disclosure) is COMPLETE** — #154–#156, open as PR #168
-  (https://github.com/RorySullivan1/pyHermes/pull/168), not yet merged.
-- Only **#150** (banner VML `src`, needs a real Outlook host) is left open.
+- **Both epics are SHIPPED and closed**: #157 rescope-to-media (PR #167, `eff6ece`, #158–#166,
+  golden-identical) and #153 per-exhibit disclosure (PR #168, `72eb30a`, #154–#156).
+- **Epic #169 is implemented on `claude/gifted-ritchie-7dkp5g`** (#173–#176, six commits), not
+  yet merged and no PR open. Next in order: #170 data layer → #171 apparatus → #172 brochure.
+  Plus #150 (needs a real Outlook).
 - The prose budget is live; the baseline is 45 and may only shrink.
 
 ## Decisions        (append-only; supersede, never delete)
@@ -33,12 +33,22 @@
   widening a guard without pinning what it forbids turns it into a comment —
   sessions/2026-09-21-per-exhibit-disclosure.md
 
+- [2026-09-22] **The distance to a brochure is a medium; the distance to a factsheet is not.**
+  A factsheet needs break discipline and document apparatus on the paged medium already shipped;
+  a brochure needs fold geometry, imposition and print prep, so it is `svc/brochure/`, not a page
+  preset — sessions/2026-09-22-1351-format-coverage-audit.md
+
+- [2026-09-22] **A page is a sheet with a margin; the frame is what the margin leaves.** No preset
+  frame may be 680px, or a template reading the email frame looks right on paper —
+  sessions/2026-09-22-1903-pagination-hardening.md
+
 ## Threads          (open items; remove when closed)
-- **PR #168 is open; after it merges the only open issue is #150.** Every issue or PR body
-  in this repo is written without angle brackets — GitHub's sanitizer has emptied three.
-- **A closing keyword closes only the issue it names.** An epic PR needs one `Closes #N` line
-  per sub-issue, not just the epic's — #168 does; #167 did not, and its nine children stayed
-  open. Check the parent's `sub_issues_summary` after any epic merge.
+- **#169 needs its PR**: one `Closes` per issue (#169, #173–#176). Every issue or PR body in this
+  repo is written without angle brackets — GitHub's sanitizer has emptied three.
+- **A closing keyword closes only the issue it names, and this is now proven both ways.**
+  #167 named only the epic and left all nine children open; #168 named all four and closed all
+  four (`sub_issues_summary` 3/3). One `Closes #N` per sub-issue, and check that summary after
+  any epic merge.
 - **Two optional extras now.** `[pdf]` (WeasyPrint, needs Pango/Cairo) and `[qa]` (Playwright
   + pypdfium2). `[dev]` alone must stay free of both; their tests skip, which is the proof.
 - **CLAUDE.md is a router**; the detail is in path-scoped `.claude/rules/*.md`, which load
@@ -57,11 +67,13 @@
   demanded prose parse as Python — sessions/2026-09-17-2353-multi-medium-rescope.md
 
 
-- [2026-09-21 03:40] multi-medium-rescope — **PR #167 merged** (`eff6ece`). #157 closed by the
-  keyword; #158–#166 had to be closed by hand, because closing a parent does not close its
-  children — sessions/2026-09-17-2353-multi-medium-rescope.md
-
-- [2026-09-21] per-exhibit-disclosure — **epic #153 complete** (#154–#156): the shared partial,
-  the field on three exhibits, both projections, four fixtures, and `disclosure.md`. Fifth
-  instance of *a check can be wrong about its scope*, and the first fixed by widening one —
+- [2026-09-22 11:17] per-exhibit-disclosure — **PR #168 merged** (`72eb30a`): 28 files, +580/-47.
+  #153–#156 all closed by their own keywords, confirming the #167 lesson from the other side —
   sessions/2026-09-21-per-exhibit-disclosure.md
+
+- [2026-09-22 14:07] format-coverage-audit — read-only sweep, then **filed epics #169–#172** and
+  sub-issues #173–#189 — sessions/2026-09-22-1351-format-coverage-audit.md
+
+- [2026-09-22 19:03] pagination-hardening — **#169 implemented**: thead, eight break rules, page
+  margins, `a4_long_table` + `table-structure`. Each rule probed on its boundary under WeasyPrint 70
+  — sessions/2026-09-22-1903-pagination-hardening.md

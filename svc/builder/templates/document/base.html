@@ -4,13 +4,13 @@
   <meta charset="UTF-8">
   <title>{{ campaign_name | escape_html }}</title>
   <style type="text/css">
-    {# The page itself. `size` takes the paper; a continuous page declares a
-       width only and runs as long as its content. Horizontal margin is zero
-       because the containers already inset their copy by frame.pad_x, and
-       adding it here too would inset twice -- the #85 mistake, one layer up. #}
+    {# The page itself. `size` takes the sheet; a continuous page declares a
+       width only and runs as long as its content. The margin is the page
+       format's, never a density token (#175): the frame the tables fill is
+       the sheet less this, and frame.pad_x insets the copy inside it. #}
     @page {
-      size: {{ size.frame.width }}px{% if size.frame.height %} {{ size.frame.height }}px{% endif %};
-      margin: {{ size.frame.outer_pad_y }}px 0;
+      size: {{ size.frame.sheet_width }}px{% if size.frame.sheet_height %} {{ size.frame.sheet_height }}px{% endif %};
+      margin: {{ size.frame.margin.top }}px {{ size.frame.margin.right }}px {{ size.frame.margin.bottom }}px {{ size.frame.margin.left }}px;
     }
 
     {# The running margin boxes, each filled by its own region. They are CSS
@@ -30,6 +30,9 @@
       background-color: {{ theme.palette.surface }};
       font-family: {{ font.body }};
       color: {{ theme.text.primary }};
+      {# The CSS initial values, stated: every paragraph inherits them. #}
+      orphans: 2;
+      widows: 2;
     }
     table { border-collapse: collapse; }
 
@@ -41,6 +44,24 @@
        content, measured at 188px inside a 794px page. #}
     table[width="100%"] { width: 100%; }
     img { border: 0; }
+
+    {# Where a sheet may not end (#169). Each rule sits on the thing that must
+       not split, never on a table that may be taller than a sheet: `avoid`
+       on one of those pushes it whole to the next sheet and strands a
+       half-empty one. The email never loads this skeleton, so the rules cost
+       it nothing; the class hooks are the shared markup's only share.
+       Both spellings travel together, as in page.html. #}
+    .data-table tbody tr { break-inside: avoid; page-break-inside: avoid; }
+    .data-table tr.row-total { break-before: avoid; page-break-before: avoid; }
+    .data-table tr.row-subhead { break-after: avoid; page-break-after: avoid; }
+    .data-table > caption { break-after: avoid; page-break-after: avoid; }
+    {# A section title is a sibling table to its content, not its parent,
+       so the rule goes on the title's table and the engine moves the title
+       to the next sheet with the first line of what it heads. #}
+    .section-title { break-after: avoid; page-break-after: avoid; }
+    .subtitle { break-after: avoid; page-break-after: avoid; }
+    .fine-print { break-before: avoid; page-break-before: avoid; }
+    .figure { break-inside: avoid; page-break-inside: avoid; }
   </style>
 </head>
 <body>

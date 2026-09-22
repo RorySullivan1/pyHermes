@@ -63,3 +63,17 @@ exhibits belong to the shared kit rather than to either medium. The paged fixtur
 too, so a golden pins it and a future medium-specific fork of these templates cannot
 silently drop compliance copy from the PDF. That is #157 paying out on the first epic
 written after it.
+
+## Merged
+
+[2026-09-22 11:17] **PR #168 merged** as `72eb30a` — 28 files, +580/-47, 5 commits, CI green on
+every job (check 3.11, check 3.13, screenshots, pdf, wheel), no reviews requested or left.
+
+**The #167 lesson confirmed from the other side.** That PR named only the epic and left all nine
+children open. This one named all four — `Closes #154`, `#155`, `#156`, `#153`, one per line —
+and all four closed on merge, with the parent's `sub_issues_summary` reading 3/3. So the rule is
+mechanical, not situational: a closing keyword closes exactly the issue it names, and the
+parent's summary is the check that proves it worked.
+
+The repo's backlog is now a single issue, #150, which cannot be closed from here — it needs a
+real Outlook host to verify the VML `src` gate.
