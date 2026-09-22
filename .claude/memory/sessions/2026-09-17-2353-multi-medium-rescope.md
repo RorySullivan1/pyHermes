@@ -56,3 +56,21 @@ No PR template exists in this repo (`.github/` holds only `workflows/`), so the 
 house shape: the model, the three agreed design calls, the nine phases, the 42 R100 golden
 renames as mechanical proof that phases 1–4 were byte-identical, the two PDF-only defects, and
 the verification in both install shapes. Written without angle brackets, as every body here is.
+
+## Merge, and the sub-issues that did not close
+
+[2026-09-21 03:40] PR #167 merged as `eff6ece`. `Closes #157` closed the epic — and **only**
+the epic. #158 through #166 stayed open and had to be closed by hand.
+
+Two facts behind that, worth not relearning:
+
+1. **A closing keyword closes exactly the issue it names.** The nine phases appeared in the PR
+   body as a table of bare `#158`…`#166` references. A bare reference cross-links the PR into
+   each issue's timeline and nothing more; only `Closes #N` / `Fixes #N` / `Resolves #N` acts.
+2. **Closing a parent issue does not close its sub-issues.** GitHub's sub-issue hierarchy is a
+   tracking relationship, not a lifecycle one. The web UI warns when you close a parent with
+   open children; it does not cascade, and neither does a merge.
+
+So an epic PR in this repo needs one `Closes` line per sub-issue **plus** the epic's — nine
+keywords here, not one. `sub_issues_summary` on the parent (`total`/`completed`) is the check:
+after the merge it read 9/0, which is the tell that the children were left behind.

@@ -301,6 +301,10 @@ class DataTable(Component):
         caption:  Optional table caption (#120). Renders as a ``caption``
                   element — the table's own accessible **name**, which is
                   what a screen reader announces when it reaches the table.
+        disclosure: Optional compliance copy qualifying this exhibit —
+                  justified fine print beneath the attribution. Plain
+                  text, escaped on the way out; see `disclosure.md` for when
+                  it belongs here rather than on ``Footer.disclaimer``.
 
     **``caption`` and ``subtitle`` are separate on purpose**, even when a
     caller would write the same words in both. ``subtitle`` is presentation
@@ -331,6 +335,7 @@ class DataTable(Component):
         as_of: str = "",
         subtitle: str | None = None,
         caption: str = "",
+        disclosure: str = "",
     ):
         if not headers:
             raise ValidationError("DataTable requires at least one header.")
@@ -356,6 +361,7 @@ class DataTable(Component):
         self.as_of = as_of
         self.subtitle = subtitle
         self.caption = caption
+        self.disclosure = disclosure
 
     @property
     def headers(self) -> list[str]:
@@ -384,6 +390,7 @@ class DataTable(Component):
                 kinds=[row.kind for row in self.rows],
             ),
             wrap("\n".join(filter(None, (self.source, self.as_of)))),
+            wrap(self.disclosure),
         )
 
     def _striping(self) -> dict[int, bool]:
@@ -434,6 +441,7 @@ class DataTable(Component):
             "as_of": self.as_of,
             "subtitle": self.subtitle,
             "caption": self.caption,
+            "disclosure": self.disclosure,
         }
 
 
@@ -457,6 +465,10 @@ class ChartBlock(CopyAlignment, Component):
         width:     Display width in px.  Ignored when ``image_url`` is an
             ``EmailImage``, which carries its own.  ``None`` renders full
             width, as before.
+        disclosure: Optional compliance copy qualifying this exhibit —
+                  justified fine print beneath the attribution. Plain
+                  text, escaped on the way out; see `disclosure.md` for when
+                  it belongs here rather than on ``Footer.disclaimer``.
     """
 
     template_path = "analysis/chart-block.html"
@@ -469,6 +481,7 @@ class ChartBlock(CopyAlignment, Component):
         subtitle: str | None = None,
         width: int | None = None,
         align: str | None = None,
+        disclosure: str = "",
     ):
         if not image_url:
             raise ValidationError("ChartBlock requires an image_url.")
@@ -478,6 +491,7 @@ class ChartBlock(CopyAlignment, Component):
         )
         self.source = source
         self.subtitle = subtitle
+        self.disclosure = disclosure
 
     @property
     def image_url(self) -> str:
@@ -499,7 +513,9 @@ class ChartBlock(CopyAlignment, Component):
         ``alt`` is required at construction, so this projection is never
         empty — which is the whole reason that rule exists.
         """
-        return self._with_subtitle(wrap(f"[{self.image.alt}]"), wrap(self.source))
+        return self._with_subtitle(
+            wrap(f"[{self.image.alt}]"), wrap(self.source), wrap(self.disclosure)
+        )
 
     def context(self) -> dict[str, Any]:
         return {
@@ -507,6 +523,9 @@ class ChartBlock(CopyAlignment, Component):
             "chart_alt_text": self.image.alt,
             "chart_image_width": self.image.width or "",
             "chart_source": self.source,
+            # Bare, not ``chart_``-prefixed: all three exhibits include one
+            # shared partial, so they must agree on the key it reads.
+            "disclosure": self.disclosure,
             "subtitle": self.subtitle,
             **self.alignment_context(),
         }
@@ -527,6 +546,10 @@ class ImageBlock(Component):
         decorative: The image carries no information; emits ``alt=""`` and
             projects to nothing in the text part. Also bare-string only.
         caption:  Optional caption rendered beneath the image.
+        disclosure: Optional compliance copy qualifying this exhibit —
+                  justified fine print beneath the attribution. Plain
+                  text, escaped on the way out; see `disclosure.md` for when
+                  it belongs here rather than on ``Footer.disclaimer``.
         link_url: Optional URL the image links to.
         align:    ``"center"`` (default), ``"left"`` or ``"right"``.
         subtitle: Optional sub-heading rendered above the image.
@@ -552,6 +575,7 @@ class ImageBlock(Component):
         subtitle: str | None = None,
         width: int | None = None,
         decorative: bool = False,
+        disclosure: str = "",
     ):
         if not image:
             raise ValidationError("ImageBlock requires an image.")
@@ -568,6 +592,7 @@ class ImageBlock(Component):
         self.link_url = link_url
         self.align = align
         self.subtitle = subtitle
+        self.disclosure = disclosure
 
     def images(self) -> list[EmailImage]:
         return [self.image]
@@ -585,11 +610,11 @@ class ImageBlock(Component):
         alignment is presentation with nothing to present.
         """
         if self.image.decorative:
-            return self._with_subtitle(wrap(self.caption))
+            return self._with_subtitle(wrap(self.caption), wrap(self.disclosure))
         alt = f"[{self.image.alt}]"
         if self.link_url:
             alt = format_link(alt, self.link_url)
-        return self._with_subtitle(wrap(alt), wrap(self.caption))
+        return self._with_subtitle(wrap(alt), wrap(self.caption), wrap(self.disclosure))
 
     def context(self) -> dict[str, Any]:
         return {
@@ -600,6 +625,7 @@ class ImageBlock(Component):
             "image_align": self.align,
             "link_url": self.link_url,
             "caption": self.caption,
+            "disclosure": self.disclosure,
             "subtitle": self.subtitle,
         }
 

@@ -11,6 +11,9 @@
                         ATTRIBUTE is what Outlook's Word engine honours; it
                         ignores CSS max-width.
     chart_source      — Attribution string (optional)
+    disclosure        — Compliance copy beneath the attribution; the key is
+                        bare rather than `chart_`-prefixed because all three
+                        exhibits include one shared partial
 #}
 {% if subtitle %}
 <p{% if align %} align="{{ align | escape_html }}"{% endif %} style="font-family: {{ font.body }}; font-size: {{ size.type.secondary }}px; font-style: italic; color: {{ theme.text.secondary }}; margin: 0 0 {{ size.space.subtitle_gap }}px 0; line-height: {{ size.type.secondary_line | percent }};{% if align %} text-align:{{ align }};{% endif %}">{{ subtitle | escape_html }}</p>
@@ -27,3 +30,4 @@
 {% if chart_source %}
 <p{% if align %} align="{{ align | escape_html }}"{% endif %} style="font-family: {{ font.label }}; font-size: {{ size.type.micro }}px; color: {{ theme.text.light }}; font-style: italic; margin: {{ size.space.caption_gap }}px 0 0 0; line-height: {{ size.type.body_line | percent }};{% if align %} text-align:{{ align }};{% endif %}">{{ chart_source | escape_html }}</p>
 {% endif %}
+{% include "common/disclosure.html" %}

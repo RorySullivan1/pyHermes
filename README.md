@@ -392,6 +392,34 @@ never lands in an `href`.
 `Footer.disclaimer` is raw HTML, like the header's — escaping untrusted text in it is your job.
 The box stacks **sign-off image → disclaimer → copyright row**, each independently optional.
 
+## Per-exhibit disclosure
+
+`Footer.disclaimer` carries the *document's* legal copy. The sentences that qualify one
+figure — *"returns are shown gross of the 0.75% fee"* — belong under that figure, so the
+three data exhibits take an optional `disclosure`:
+
+```python
+DataTable(
+    headers=["Factor", "1M", "YTD"],
+    rows=[TableRow(cells=["Value", "+1.8%", "+7.4%"])],
+    source="Hermes Research",
+    disclosure=(
+        "Factor returns are shown gross of fees and transaction costs. "
+        "Past performance is not indicative of future results."
+    ),
+)
+```
+
+`ChartBlock` and `ImageBlock` take the same field. It renders as justified fine print
+**beneath** the attribution line — the two coexist, and the order is always exhibit,
+attribution, disclosure. It projects into the plain-text part too, so a text-mode reader
+sees the compliance line rather than a document that quietly omits it.
+
+Unlike the two disclaimers, `disclosure` is **plain text and escaped for you** — pass it
+raw, and do not pre-escape. That means no inline link today; the reasoning, and the
+figure-specific-vs-document-wide steering that keeps a repeated boilerplate off the 102 KB
+budget, are in `.claude/rules/disclosure.md`.
+
 ## Colour
 
 Every colour and shadow comes from one validated `Theme`, chosen with one metadata field:

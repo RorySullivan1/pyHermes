@@ -17,6 +17,8 @@
     image_align    — "left" | "center" | "right"
     link_url       — Optional href wrapping the image ("" for none)
     caption        — Optional caption rendered beneath the image
+    disclosure     — Compliance copy beneath the caption, from the partial
+                     all three exhibits share
 #}
 {% if subtitle %}
 <p style="font-family: {{ font.body }}; font-size: {{ size.type.secondary }}px; font-style: italic; color: {{ theme.text.secondary }}; margin: 0 0 {{ size.space.subtitle_gap }}px 0; line-height: {{ size.type.secondary_line | percent }};">{{ subtitle | escape_html }}</p>
@@ -40,6 +42,7 @@
       {% if caption %}
       <p style="font-family: {{ font.label }}; font-size: {{ size.type.micro }}px; color: {{ theme.text.light }}; font-style: italic; margin: {{ size.space.caption_gap }}px 0 0 0; line-height: {{ size.type.body_line | percent }};">{{ caption | escape_html }}</p>
       {% endif %}
+      {% include "common/disclosure.html" %}
     </td>
   </tr>
 </table>

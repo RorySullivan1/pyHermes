@@ -1,0 +1,28 @@
+{#
+  DISCLOSURE — an exhibit's compliance copy, beneath its attribution line.
+
+  One partial for all three exhibits rather than a fourth hand-written copy
+  of the same `p`: chart-block, data-table and image-block each include it,
+  so the styling cannot drift between them the way the `source`/`caption`
+  line already has three chances to.
+
+  Justified, and finer than the attribution above it — a disclosure is a
+  block the reader is meant to *read*, where `source` is a trailing credit.
+  The attribution stays left-aligned, so the two read as distinct.
+
+  Plain text, escaped here: the blessed raw-HTML set stays closed at five
+  (see textgen.py). A caller writes the copy, never markup.
+
+  Both spellings of the alignment travel together (#125): the attribute is
+  what Outlook's Word engine honours, and without it a disclosure justifies
+  in Gmail and reads ragged-right in the client hardest to check. `justify`
+  is not in the caller-facing vocabulary and is not meant to be — this is a
+  fixed property of one leaf paragraph, not #124's axis.
+
+  Context:
+    disclosure — the copy; empty renders nothing at all, which is what
+                 keeps a fixture that sets none byte-identical
+#}
+{% if disclosure %}
+<p align="justify" style="font-family: {{ font.label }}; font-size: {{ size.type.micro }}px; color: {{ theme.text.light }}; font-style: italic; text-align: justify; margin: {{ size.space.caption_gap }}px 0 0 0; line-height: {{ size.type.body_line | percent }};">{{ disclosure | escape_html }}</p>
+{% endif %}

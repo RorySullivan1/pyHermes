@@ -42,6 +42,10 @@ Quality   +0.9%   +5.1%
 Hermes Research
 24 August 2026
 
+Factor returns are shown gross of fees and transaction costs. Past performance
+is not indicative of future results. Figures are estimates and subject to
+revision.
+
 
 Cumulative Performance
 ----------------------
@@ -51,6 +55,9 @@ Indexed to 100
 [Cumulative factor performance]
 
 Hermes Research
+
+The chart above is indexed to 100 at inception and excludes the effect of the
+0.75% management fee.
 
 
 Equal Columns
@@ -67,6 +74,8 @@ Narrow then Wide
 [Thumbnail]
 
 A 30% column
+
+Illustrative only; not a recommendation to buy or sell.
 
 Commentary occupying the wider 70% column.
 
