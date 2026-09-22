@@ -43,12 +43,15 @@
   <caption style="caption-side: top; text-align: left; font-family: {{ font.label }}; font-size: {{ size.type.label }}px; font-weight: bold; color: {{ theme.text.heading }}; letter-spacing: 0.5px; padding: 0 0 {{ size.space.caption_gap }}px 0;">{{ caption | escape_html }}</caption>
 {% endif %}
   {# Header row #}
+  <thead>
   <tr style="border-top: 1px solid {{ theme.palette.rule }}; border-bottom: 2px solid {{ theme.palette.rule_dark }};">
 {% for column in columns %}
     <th scope="col" align="{{ column.align | escape_html }}" style="font-family: {{ font.label }}; font-size: {{ size.type.label }}px; font-weight: bold; color: {{ theme.semantic.neutral }}; text-transform: uppercase; line-height: {{ size.type.body_line | percent }}; text-align: {{ column.align }}; padding: {{ size.component.table_cell_pad }}px; letter-spacing: 0.5px;">{{ column.header | escape_html }}</th>
 {% endfor %}
   </tr>
+  </thead>
   {# Data rows #}
+  <tbody>
 {% for row in rows %}
   <tr style="border-bottom: 1px solid {% if loop.last %}{{ theme.palette.rule }}{% else %}{{ theme.palette.rule_subtle }}{% endif %};{% if row.kind == "total" %} border-top: 2px solid {{ theme.palette.rule_dark }};{% endif %}">
 {% for cell in row.cells %}
@@ -57,6 +60,7 @@
 {% endfor %}
   </tr>
 {% endfor %}
+  </tbody>
 </table>
 {% if source %}
 <p style="font-family: {{ font.label }}; font-size: {{ size.type.micro }}px; color: {{ theme.text.light }}; font-style: italic; margin: {{ size.space.caption_gap }}px 0 0 0; line-height: {{ size.type.body_line | percent }};">{{ source | escape_html }}{% if as_of %} as of {{ as_of | escape_html }}{% endif %}</p>
