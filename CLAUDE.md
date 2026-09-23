@@ -192,7 +192,8 @@ these rather than improvising:
   **#169** (pagination hardening), **#170** (the data layer, #177–#180), **#171** (document
   apparatus, #181–#185), **#172** (the brochure medium, #186–#189) and **#193** (the digital PDF, #195–#200).
   Open: **#150** (banner VML `src`, needs a real Outlook host), **#201** (an image's width
-  attribute in a paged layout) and **#202** (the PDF/UA tagger, which keeps `SCREEN` untagged).
+  attribute in a paged layout). **#202** is fixed: the PDF/UA tagger's two defects are
+  corrected in the two places they are caused, and `TAGGED` is the opt-in tagged preset.
 - Current state, decisions and open threads:
   [.claude/memory/INDEX.md](.claude/memory/INDEX.md).
 - [README.md](README.md) is the human-facing entry point (what it is, install, build, send or

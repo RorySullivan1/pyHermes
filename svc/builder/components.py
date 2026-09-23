@@ -31,7 +31,7 @@ from .apparatus import (
 from .engine import Renderer
 from .enums import CardOrientation, ColumnKind, ImageAlign, RowKind
 from .exceptions import ValidationError
-from .images import EmailImage, ImageAsset, coerce_image
+from .images import EmailImage, ImageAsset, _displayed_height, coerce_image
 from .models import (
     Card,
     Cell,
@@ -763,6 +763,8 @@ class ImageBlock(Exhibit, Component):
             "image_alt": self.image.alt,
             "image_decorative": self.image.decorative,
             "image_width": self.image.width or "",
+            # Only a paged, decorative image reads this; see the template.
+            "image_height": _displayed_height(self.image.data, self.image.width) or "",
             "image_align": self.align,
             "link_url": self.link_url,
             "caption": self.numbered(self.caption),

@@ -18,6 +18,7 @@ from svc.builder.document import Document
 from .exceptions import BackendMissingError, UnreachableResourceError
 from .fetcher import build_fetcher
 from .profile import PRINT, PdfProfile
+from .tagging import retag_layout_tables
 
 
 def available() -> bool:
@@ -50,9 +51,25 @@ def render_pdf(document: Document, profile: PdfProfile = PRINT) -> bytes:
     with _own_errors():
         return bytes(
             weasyprint.HTML(string=html, url_fetcher=build_fetcher(document.assets())).write_pdf(
-                **profile.options()
+                finisher=_finisher(profile), **profile.options()
             )
         )
+
+
+def _finisher(profile: PdfProfile) -> Any:
+    """
+    The pass that corrects the structure tree, or ``None`` for a plain render.
+
+    Attached only when the profile asks for a conformance variant, which is
+    the only way a structure tree is written at all. Gating it here rather
+    than relying on :func:`~svc.pdf.tagging.retag_layout_tables` to no-op
+    keeps an untagged render on exactly the code path it had before #202 —
+    every existing golden and every byte-for-byte claim stays true by
+    construction rather than by argument.
+    """
+    if profile.variant is None:
+        return None
+    return retag_layout_tables
 
 
 def page_count(document: Document) -> int:
