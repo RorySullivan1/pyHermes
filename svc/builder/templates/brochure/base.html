@@ -56,6 +56,11 @@
        svc.brochure.overflowing_panels() is what makes it loud. #}
     .panel { position: absolute; top: 0; overflow: hidden; box-sizing: border-box; }
     .panel-ground { position: absolute; }
+    {# Over a picture the sections' own grounds go clear, or each would paint
+       a surface-coloured box over the image it sits on. Important, because
+       those grounds are inline; scoped to an imaged panel, so a coloured
+       panel still reads its colour as the surface its sections sit on. #}
+    .panel-imaged table, .panel-imaged td { background-color: transparent !important; }
     .panel-copy { overflow: hidden; }
 
     {# The proof: a guide on every fold and each panel's reader index, for

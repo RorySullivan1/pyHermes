@@ -35,6 +35,10 @@ from ._png import solid_png
 #: prints at 300 dpi there: 300px displayed needs 938 source pixels (#188).
 _CHART_PNG = solid_png(938, 313, (91, 138, 154))
 
+#: The front cover's full-bleed ground (#189): 368px wide with its bleed, so
+#: 1,150 source pixels print it at 300 dpi. Pale, so the cover copy reads on it.
+_COVER_PNG = solid_png(1150, 2625, (226, 234, 240))
+
 #: The wrapped figure on the inside flap: 96px displayed, 300 source pixels.
 _DESK_PNG = solid_png(300, 375, (74, 124, 89))
 
@@ -70,9 +74,10 @@ def panels() -> list[Panel]:
                 ),
             ],
             title="Front cover",
-            # A tinted ground, and the one panel with a wider inset: the
-            # cover's copy sits further from the trim than the rest.
+            # A tinted ground under a full-bleed picture, and the one panel
+            # with a wider inset: the cover's copy sits further from the trim.
             background_color="#EEF2F5",
+            background_image=EmailImage.attached(_COVER_PNG, alt="Cover ground"),
             align="center",
             inset=36,
         ),

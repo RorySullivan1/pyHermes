@@ -47,24 +47,29 @@ def required_pixels(display_width: int | float, dpi: int | None = None) -> int:
     return math.ceil(display_width * (dpi or get_config().print_dpi) / CSS_DPI)
 
 
-def validate_image_resolution(images: Sequence[EmailImage]) -> None:
+def validate_image_resolution(
+    images: Sequence[EmailImage | tuple[EmailImage, int | float]],
+) -> None:
     """
     Every image carries enough pixels to print at ``Config.print_dpi``.
 
-    Below the target prints a warning, as the email's 90 KB threshold does;
-    below half of it raises. A hosted image has no bytes to measure, and the
-    PDF exporter refuses one anyway.
+    An entry is an image, displayed at its own ``width`` (or its pixel width
+    when it has none), or an ``(image, display width)`` pair for one that
+    fills a box instead, such as a panel's ground. Below the target prints a
+    warning, as the email's 90 KB threshold does; below half of it raises. A
+    hosted image has no bytes to measure, and the PDF exporter refuses it.
 
     Raises:
         ValidationError: Naming the image, its pixel width and the width it needs.
     """
     dpi = get_config().print_dpi
-    for image in images:
+    for entry in images:
+        image, fills = entry if isinstance(entry, tuple) else (entry, None)
         size = pixel_size(image.data) if image.data else None
         if size is None:
             continue
         pixels = size[0]
-        display = image.width or pixels
+        display = fills or image.width or pixels
         needed = required_pixels(display, dpi)
         if pixels * 2 < needed:
             raise ValidationError(

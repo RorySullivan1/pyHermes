@@ -114,9 +114,9 @@ class TestPrintPreparation:
         return image, round(-left * PX_PER_POINT), round((top - trim_top) * PX_PER_POINT)
 
     def test_the_covers_ground_runs_past_the_trim(self, pdf):
-        """The cover is side 1's right panel: its tint reaches into the bleed, right and top."""
+        """The cover is side 1's right panel: its picture reaches into the bleed, right and top."""
         image, x0, y0 = self._raster(pdf[0])
-        tint = (0xEE, 0xF2, 0xF5)
+        tint = (226, 234, 240)  # the cover's full-bleed picture (#189)
         inside_bleed = (x0 + 1056 + TRI_FOLD_LETTER.bleed // 2, y0 + 400)
         above_trim = (x0 + 900, y0 - TRI_FOLD_LETTER.bleed // 2)
         for point in (inside_bleed, above_trim):

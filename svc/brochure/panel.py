@@ -10,22 +10,18 @@ renders as an email or a paged document.
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
-from typing import TYPE_CHECKING
 
 from svc.builder.components import Component
 from svc.builder.containers import Container
 from svc.builder.engine import BoundEngine, Renderer, TemplateEngine
-from svc.builder.enums import TextAlign
+from svc.builder.enums import EmbedStrategy, TextAlign
 from svc.builder.exceptions import ValidationError
-from svc.builder.images import ImageAsset
+from svc.builder.images import EmailImage, ImageAsset
 from svc.builder.sizing import STANDARD_SIZES, PageMargin, SizeScheme
 from svc.builder.textgen import join_blocks, underline
 from svc.document.page import Page
 
 from .fold import FoldFormat, _px
-
-if TYPE_CHECKING:  # pragma: no cover
-    from svc.builder.images import EmailImage
 
 
 @dataclass(frozen=True)
@@ -87,9 +83,16 @@ class Panel(Container):
         align:            Alignment inherited by the copy inside.
         inset:            Distance from the panel's edges to its copy, in px.
                           ``None`` takes the fold's.
+        background_image: A picture filling the panel's ground to the bleed
+                          (#189), attached or inline: a printed panel carries
+                          its own image. Its sections' grounds go clear over it.
     """
 
     template_path = "brochure/panel.html"
+
+    #: The images this container carries itself, as a region declares its own
+    #: (standing rule 7): walked by :meth:`images`, so they reach the manifest.
+    IMAGE_FIELDS: tuple[str, ...] = ("background_image",)
 
     def __init__(
         self,
@@ -98,6 +101,7 @@ class Panel(Container):
         background_color: str | None = None,
         align: str | TextAlign | None = None,
         inset: int | float | None = None,
+        background_image: EmailImage | None = None,
     ):
         super().__init__(title=title, background_color=background_color, align=align)
         if not sections:
@@ -116,8 +120,19 @@ class Panel(Container):
             isinstance(inset, bool) or not isinstance(inset, (int, float)) or inset < 0
         ):
             raise ValidationError(f"{self._name()}'s inset must be a number of px, got: {inset!r}")
+        if background_image is not None and not isinstance(background_image, EmailImage):
+            raise ValidationError(
+                f"{self._name()}'s background_image must be an EmailImage, "
+                f"got: {type(background_image).__name__}"
+            )
+        if background_image is not None and background_image.strategy is EmbedStrategy.REMOTE:
+            raise ValidationError(
+                f"{self._name()}'s background_image is hosted, and the PDF exporter "
+                "fetches nothing: attach it with EmailImage.attached()"
+            )
         self.sections = list(sections)
         self.inset = inset
+        self.background_image = background_image
 
     def _name(self) -> str:
         """How errors name this panel."""
@@ -131,13 +146,20 @@ class Panel(Container):
         """Every component on this panel, in reading order."""
         return [component for section in self.sections for component in section.components()]
 
+    def own_images(self) -> list[EmailImage]:
+        """The images this panel carries itself, from ``IMAGE_FIELDS``."""
+        return [image for name in self.IMAGE_FIELDS if (image := getattr(self, name))]
+
     def assets(self) -> list[ImageAsset]:
-        """The manifest entries from every section here, in reading order."""
-        return [asset for section in self.sections for asset in section.assets()]
+        """The manifest entries: this panel's own images, then every section's."""
+        own = [asset for image in self.own_images() if (asset := image.asset)]
+        return own + [asset for section in self.sections for asset in section.assets()]
 
     def images(self) -> list[EmailImage]:
-        """Every image on this panel."""
-        return [image for component in self.components() for image in component.images()]
+        """Every image on this panel: its ground first, then its sections'."""
+        return self.own_images() + [
+            image for section in self.sections for image in section.images()
+        ]
 
     def text(self) -> str:
         """This panel as plain text: its title, then its sections. A fold projects to nothing."""
@@ -183,6 +205,7 @@ class Panel(Container):
                 "inset": inset,
                 "content_height": _px(box.height - 2 * inset),
                 "ground": box.ground(fold.bleed, fold.panels),
+                "background_image": self.background_image.src if self.background_image else "",
             },
         )
 

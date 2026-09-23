@@ -529,3 +529,62 @@ class TestThePrintMarkup:
 
         html = Brochure(_facts(), _panels(6)).render().replace("marks: crop cross;", "")
         assert "print-marks" in {f.rule_id for f in lint_html(html, "brochure")}
+
+
+# ----------------------------------------------------------------------
+# #189 — the full-bleed panel
+# ----------------------------------------------------------------------
+
+
+class TestTheFullBleedPanel:
+    @staticmethod
+    def _image(pixels: int = 1150):
+        from qa.fixtures._png import solid_png
+        from svc.builder.images import EmailImage
+
+        return EmailImage.attached(solid_png(pixels, 20, (9, 9, 9)), alt="Ground")
+
+    def _brochure(self, image) -> Brochure:
+        panels = _panels(6)
+        panels[0] = Panel([FullWidth(TextBlock("<p>Cover</p>"))], background_image=image)
+        return Brochure(_facts(), panels)
+
+    def test_the_image_fills_the_ground_to_the_bleed(self):
+        image = self._image()
+        html = self._brochure(image).render()
+        ground = html[html.index('class="panel-ground" style="left:700px;') :]
+        assert f"background-image:url('cid:{image.content_id}'); background-size:cover;" in ground
+
+    def test_the_sections_go_clear_over_it(self):
+        html = self._brochure(self._image()).render()
+        assert '<div class="panel panel-imaged" data-reader="1"' in html
+        assert ".panel-imaged table, .panel-imaged td { background-color: transparent" in html
+
+    def test_it_is_declared_and_reaches_the_manifest_first(self):
+        """Standing rule 7: the panel names the field, and the bytes are attached."""
+        image = self._image()
+        brochure = self._brochure(image)
+        assert Panel.IMAGE_FIELDS == ("background_image",)
+        assert brochure.panels[0].images()[0] is image
+        assert image.content_id in [asset.content_id for asset in brochure.assets()]
+
+    def test_the_print_check_measures_the_ground_not_the_image(self):
+        """The cover's ground is 368px with its bleed: 1,150 pixels, and half is refused."""
+        with pytest.raises(ValidationError, match=r"'Ground' is 500px wide.*needs 1150px"):
+            self._brochure(self._image(500))
+
+    def test_a_hosted_image_is_refused(self):
+        from svc.builder.images import EmailImage
+
+        with pytest.raises(ValidationError, match="attach it"):
+            Panel(
+                [FullWidth(TextBlock("<p>x</p>"))],
+                background_image=EmailImage.hosted("https://example.com/a.png", alt="A"),
+            )
+
+    def test_it_must_be_an_email_image(self):
+        with pytest.raises(ValidationError, match="must be an EmailImage"):
+            Panel([FullWidth(TextBlock("<p>x</p>"))], background_image="a.png")  # type: ignore[arg-type]
+
+    def test_the_gallery_sets_one(self):
+        assert any(panel.background_image for panel in tri_fold_letter.panels())

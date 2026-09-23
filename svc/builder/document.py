@@ -186,8 +186,7 @@ class Document:
         """
         images = [image for region, _ in self.leading_regions() for image in region.images()]
         for section in self._sections:
-            for component in section.components():
-                images.extend(component.images())
+            images.extend(section.images())
         images.extend(image for region, _ in self.trailing_regions() for image in region.images())
         return images
 

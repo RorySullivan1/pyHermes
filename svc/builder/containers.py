@@ -21,7 +21,7 @@ from .components import Component
 from .engine import Renderer
 from .enums import TextAlign, ThreeColumnRatio, TwoColumnRatio
 from .exceptions import ValidationError
-from .images import ImageAsset
+from .images import EmailImage, ImageAsset
 from .models import _validate_align, _validate_color
 from .sizing import STANDARD_SIZES, SizeScheme, column_layout
 from .textgen import join_blocks, underline
@@ -136,6 +136,10 @@ class Container:
     def assets(self) -> list[ImageAsset]:
         """Return the attachment manifest entries from every component here."""
         return [asset for component in self.components() for asset in component.assets()]
+
+    def images(self) -> list[EmailImage]:
+        """Every image in this section: its components', and any it carries itself."""
+        return [image for component in self.components() for image in component.images()]
 
     def text(self) -> str:
         """

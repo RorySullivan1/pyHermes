@@ -85,7 +85,17 @@ class Brochure(Document):
                 "and a side's foot runs under three panels. Put the note in the panel's copy."
             )
         validate_safe_area(fold, panels)
-        validate_image_resolution(self.images())
+        grounds = {
+            id(panel.background_image): box.ground(fold.bleed, fold.panels)["width"]
+            for box, panel in zip(impose(fold), panels, strict=True)
+            if panel.background_image is not None
+        }
+        validate_image_resolution(
+            [
+                (image, grounds[id(image)]) if id(image) in grounds else image
+                for image in self.images()
+            ]
+        )
 
     @property
     def fold(self) -> FoldFormat:
