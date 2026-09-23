@@ -6,9 +6,8 @@
   one contract — `svc/delivery`+`gmail`+`outlook`, and `svc/pdf`. Rationale: CLAUDE.md and
   `.claude/rules/media.md`; do not restate it here.
 - **Shipped and closed**: #157 (PR #167), #153 (PR #168), #169 (PR #190), #170 (PR #191),
-  #171 apparatus (PR #192), #172 brochure (PR #194, #186–#189).
-- **#193 built** on `claude/gifted-ritchie-7dkp5g` (#195–#200), PR #203. Open issues: #150 needs
-  Outlook; #201 img width in a paged layout; #202 the PDF/UA tagger keeps `SCREEN` untagged.
+  #171 apparatus (PR #192), #172 brochure (PR #194, #186–#189), #193 digital PDF (PR #203, #195–#200).
+- Open issues: #150 needs Outlook; #201 img width in a paged layout; #202 the PDF/UA tagger keeps `SCREEN` untagged.
 - The prose budget is live; the baseline is 45 and may only shrink.
 
 ## Decisions        (append-only; supersede, never delete)
@@ -76,5 +75,5 @@
 - [2026-09-23] brochure-medium — **#172 shipped, PR #194** (4/4 closed, CI green first push): folds, panel, imposition,
   bleed and marks, five editorial primitives. A test that reads the table it tests agrees with a
   wrong one — sessions/2026-09-23-brochure-medium.md
-- [2026-09-23] digital-pdf — **#193 built**, six commits, PR #203. PDF determinism needs
+- [2026-09-23] digital-pdf — **#193 shipped, PR #203** (6/6 closed). PDF determinism needs
   HarfBuzz-Subset; findings #201, #202 filed — sessions/2026-09-23-digital-pdf.md
