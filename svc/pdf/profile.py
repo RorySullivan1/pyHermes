@@ -15,7 +15,7 @@ from typing import Any
 
 from .exceptions import ProfileError
 
-__all__ = ["PRINT", "SCREEN", "PDF_VARIANTS", "PdfProfile"]
+__all__ = ["PRINT", "SCREEN", "TAGGED", "PDF_VARIANTS", "PdfProfile"]
 
 #: The variants WeasyPrint 70 writes, by the name it takes them under. Listed
 #: rather than read off the backend, because a profile must validate with the
@@ -105,3 +105,13 @@ PRINT = PdfProfile(name="PRINT")
 #: Images at 150 dpi where they are displayed, JPEGs at quality 85. The default
 #: for :func:`~svc.pdf.pdf_attachment`, because an attached PDF is read on a screen.
 SCREEN = PdfProfile(name="SCREEN", dpi=150, jpeg_quality=85, optimize_images=True)
+
+#: ``SCREEN`` plus a structure tree, written to PDF/UA-1. Opt-in rather than
+#: the default: it costs 11% to 32% more bytes, and a reader who never needs
+#: the tags should not pay for them. Correct since #202 — before it, every
+#: layout table was announced as a data table and a decorative image was a
+#: figure with no alternate text, which is why this preset did not exist.
+#: `digital-pdf.md` carries the measurements and why ``SCREEN`` stays untagged.
+TAGGED = PdfProfile(
+    name="TAGGED", dpi=150, jpeg_quality=85, optimize_images=True, variant="pdf/ua-1"
+)

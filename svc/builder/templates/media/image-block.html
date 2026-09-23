@@ -34,6 +34,23 @@
       {% if link_url %}
       <a href="{{ link_url | escape_html }}" style="text-decoration: none; border: 0;">
       {% endif %}
+      {# A decorative image is drawn as a CSS background in a paged render, and
+         as an img everywhere else (#202). The print engine marks a background
+         as an artifact, which is what PDF/UA wants for a mark that carries no
+         information — where an img with alt="" becomes a Figure the tagger
+         then reports as missing its required alt text. Nothing changes for
+         email: Outlook needs the img, and medium.paged is false there, so the
+         email goldens cannot move on this branch.
+
+         Gated on image_height as well, because a background box has to be
+         given a height where an img brings its own. Unknowable for a hosted
+         image, and a guessed one would crop the mark — so that case keeps the
+         img and the Figure, which is a smaller fault than a misdrawn rule. #}
+      {% if medium.paged and image_decorative and image_height %}
+      <div role="presentation" style="width: {{ image_width }}px; height: {{ image_height }}px; max-width: 100%;
+           background-image: url('{{ image_src | escape_html }}'); background-repeat: no-repeat;
+           background-size: contain; background-position: {{ image_align }} center;"></div>
+      {% else %}
       {# role="presentation" travels with the empty alt, never alone: in the
          render the two spellings of alt="" are identical, so the annotation is
          the only thing that says which one this is — the same job it does on a
@@ -41,6 +58,7 @@
       <img src="{{ image_src | escape_html }}" alt="{{ image_alt | escape_html }}"{% if image_decorative %} role="presentation"{% endif +%}
            {% if image_width %}width="{{ image_width }}"{% else %}width="100%"{% endif %}
            style="display: block; border: 0; outline: none; text-decoration: none; width: 100%; max-width: {% if image_width %}{{ image_width }}px{% else %}100%{% endif %}; height: auto;">
+      {% endif %}
       {% if link_url %}
       </a>
       {% endif %}

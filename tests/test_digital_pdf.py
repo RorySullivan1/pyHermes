@@ -19,11 +19,20 @@ from qa.fixtures import _paged as paged
 from qa.fixtures import all_brochure_fixtures, all_paged_fixtures
 from qa.fixtures import tri_fold_letter as brochure
 from qa.fixtures._png import solid_png
-from svc.builder import ChartBlock, FullWidth, ImageBlock, TextBlock, TwoColumn
+from svc.builder import ChartBlock, Email, FullWidth, ImageBlock, TextBlock, TwoColumn
 from svc.builder.enums import TwoColumnRatio
 from svc.builder.images import EmailImage
 from svc.document import PagedDocument
-from svc.pdf import PRINT, SCREEN, PdfProfile, available, layout, render_pdf, save_pdf
+from svc.pdf import (
+    PRINT,
+    SCREEN,
+    TAGGED,
+    PdfProfile,
+    available,
+    layout,
+    render_pdf,
+    save_pdf,
+)
 
 pytestmark = pytest.mark.skipif(
     not available() or importlib.util.find_spec("pypdfium2") is None,
@@ -282,7 +291,6 @@ class TestTheProfileTouchesOnlyTheImages:
 
 
 #: The tagged variant on the screen profile: what #199 measured.
-TAGGED = PdfProfile(name="SCREEN, tagged", dpi=150, jpeg_quality=85, variant="pdf/ua-1")
 
 
 def _alt_values(pdf: bytes) -> list[str]:
@@ -333,35 +341,88 @@ class TestTheTaggedPdfCarriesItsStructure:
         assert _alt_values(render_pdf(_decorative_and_content(), TAGGED)) == ["The curve, by tenor"]
 
 
-class TestWhatKeepsTheScreenProfileUntagged:
+class TestLayoutAndDecorationAreTaggedHonestly:
     """
-    #199's decision, pinned by the two measurements that made it.
+    #202, which was #199's reason for leaving ``SCREEN`` untagged.
 
-    WeasyPrint 70 tags by element name and never reads ``role``, so the
-    markup is right and the file is not. When either test below fails, the
-    blocker has moved: revisit the default in ``digital-pdf.md`` and #202.
+    WeasyPrint 70 tags by element name and never reads ``role``, so correct
+    markup produced a dishonest file: every layout table announced as a grid
+    of data, and a decorative image as a figure with no alternate text. Both
+    are now corrected, in the two different places they are caused.
     """
 
-    def test_the_screen_profile_is_untagged(self):
-        assert SCREEN.variant is None and PRINT.variant is None
-
-    def test_every_layout_table_is_tagged_as_a_data_table(self):
+    def test_no_layout_table_survives_as_a_table(self):
+        """The table half, on the fixture #202 measured: twenty layout tables
+        and one data table, and only the data table may stay a ``/Table``."""
         document = all_paged_fixtures()["a4_portrait"]()
         tables = re.findall(r"<table\b[^>]*>", document.render())
         layout_tables = [t for t in tables if 'role="presentation"' in t]
         tagged = _inflated(render_pdf(document, TAGGED))
-        # Twenty layout tables and one data table, and every one a /Table: a
-        # screen reader would announce twenty grids that carry no data.
         assert (len(layout_tables), len(tables)) == (20, 21)
-        assert len(re.findall(rb"/S\s*/Table\b", tagged)) == len(tables)
+        assert len(re.findall(rb"/S\s*/Table\b", tagged)) == 1
 
-    def test_a_decorative_image_is_an_unlabelled_figure_not_an_artifact(self, caplog):
+    def test_a_document_of_only_layout_tables_is_tagged_as_none(self):
+        """The cleanest form of the claim: thirteen layout tables, no data
+        table, and so not one ``/Table`` in the file."""
+        document = all_paged_fixtures()["a4_editorial"]()
+        tables = re.findall(r"<table\b[^>]*>", document.render())
+        assert [t for t in tables if 'role="presentation"' in t] == tables
+        assert not re.findall(rb"/S\s*/Table\b", _inflated(render_pdf(document, TAGGED)))
+
+    def test_a_data_table_keeps_its_tags(self):
+        """The mirror, and the reason ``th`` is the discriminator: retagging
+        that swallowed the data table would satisfy the test above and lose
+        the one grid a screen reader should navigate."""
+        tagged = _inflated(render_pdf(all_paged_fixtures()["a4_portrait"](), TAGGED))
+        assert re.findall(rb"/S\s*/TH\b", tagged)
+        assert re.findall(rb"/S\s*/TD\b", tagged)
+
+    def test_a_data_table_split_across_sheets_keeps_every_fragment(self):
+        """A table broken over sheets is tagged once per sheet. Each fragment
+        carries its own header, so each must survive on its own evidence."""
+        document = all_paged_fixtures()["a4_long_table"]()
+        tagged = _inflated(render_pdf(document, TAGGED))
+        assert len(re.findall(rb"/S\s*/Table\b", tagged)) > 1
+
+    def test_a_decorative_image_is_an_artifact_not_an_unlabelled_figure(self, caplog):
+        """The figure half. One figure for the chart, one ``/Alt`` for its own
+        text, and nothing logged -- where both images used to be figures and
+        the decorative one had no alternate text, which PDF/UA forbids."""
         with caplog.at_level("ERROR", logger="weasyprint"):
-            tagged = _inflated(render_pdf(_decorative_and_content(), TAGGED))
-        # Two figures, one alt: the decorative image is a Figure with no /Alt,
-        # which PDF/UA forbids, and WeasyPrint says so as it writes it.
-        assert len(re.findall(rb"/S\s*/Figure\b", tagged)) == 2
-        assert "has no required alt description" in caplog.text
+            pdf = render_pdf(_decorative_and_content(), TAGGED)
+        tagged = _inflated(pdf)
+        assert len(re.findall(rb"/S\s*/Figure\b", tagged)) == 1
+        assert _alt_values(pdf) == ["The curve, by tenor"]
+        assert "has no required alt description" not in caplog.text
+
+    def test_the_decorative_image_is_drawn_as_a_background_only_when_paged(self):
+        """Where the figure half is fixed, and the guarantee that comes with
+        it: an email still gets the ``img`` Outlook needs, so no email golden
+        can move on this branch."""
+        paged_html = _decorative_and_content().render()
+        assert "background-image" in paged_html
+        assert len(re.findall(r"<img\b", paged_html)) == 1
+
+        email = Email(
+            {
+                "firm_name": "Hermes Research",
+                "campaign_name": "Tags",
+                "email_subject": "Tags",
+            }
+        )
+        rule = EmailImage.attached(brochure._DESK_PNG, width=40, decorative=True)
+        email.add_section(FullWidth(content=ImageBlock(image=rule)))
+        email_html = email.render()
+        assert 'role="presentation"' in email_html
+        assert "<img" in email_html and "background-image" not in email_html
+
+    def test_the_screen_profile_is_still_untagged_and_tagging_is_opt_in(self):
+        """#202 removed the *blocker*, not the cost: tagging is 11% to 32%
+        more bytes, so it is a preset a caller chooses rather than a default
+        every reader pays for. ``digital-pdf.md`` carries the numbers."""
+        assert SCREEN.variant is None and PRINT.variant is None
+        assert TAGGED.variant == "pdf/ua-1"
+        assert (TAGGED.dpi, TAGGED.jpeg_quality) == (SCREEN.dpi, SCREEN.jpeg_quality)
 
 
 class TestTheLandscapeReport:

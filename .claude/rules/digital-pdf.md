@@ -123,34 +123,49 @@ fixture under `SCREEN`:
 | `slide_16_9` | 41 181 | 52 991 | +28.7% | 0.54 | 0.56 | 0 |
 | `tri_fold_letter` | 35 171 | 40 033 | +13.8% | 0.67 | 0.61 | 0 |
 
-The cost is small. The tagged file is deterministic, marked, has a structure tree and a
-catalog `Lang`, and every image carries its alt text. **What stopped it being the default is
-what it tags wrongly**, and none of it is the markup:
+The tagged file is deterministic, marked, has a structure tree and a catalog `Lang`, and
+every image carries its alt text. **What it used to tag wrongly is fixed (#202)**, and neither
+defect was ever in the markup:
 
-| Fixture | Tables | Layout, `role="presentation"` | Data | Tagged `/Table` |
-|---|---|---|---|---|
-| `a4_portrait` | 21 | 20 | 1 | 21 |
-| `a4_long_table` | 16 | 15 | 1 | 31, split across sheets |
-| `a4_editorial` | 13 | 13 | 0 | 13 |
-| `slide_16_9` | 21 | 20 | 1 | 24 |
-| `tri_fold_letter` | 31 | 31 | 0 | 31 |
+| Fixture | Tables | Layout, `role="presentation"` | Data | `/Table` before #202 | after |
+|---|---|---|---|---|---|
+| `a4_portrait` | 21 | 20 | 1 | 21 | **1** |
+| `a4_long_table` | 16 | 15 | 1 | 31, split across sheets | **4**, one table over four sheets |
+| `a4_editorial` | 13 | 13 | 0 | 13 | **0** |
+| `slide_16_9` | 21 | 20 | 1 | 24 | **2** |
 
-- **WeasyPrint 70 tags by element name and never reads `role`.** Every layout table becomes a
-  `/Table` with rows and cells, so a screen reader announces twenty grids that hold no data.
-  The email's table layout is not negotiable, since Outlook's Word engine reads nothing else.
-- **A decorative image becomes a `/Figure` with no `/Alt`**, not an artifact, and WeasyPrint
-  logs "has no required alt description" as it writes it. The markup says `alt=""` and
-  `role="presentation"`, which is correct. PDF/UA forbids a figure without alternate text.
+- **WeasyPrint 70 tags by element name and never reads `role`**, so every layout table became
+  a `/Table` with rows and cells. The table layout is not negotiable — Outlook's Word engine
+  reads nothing else — so there is no markup that would have fixed it, and the correction
+  happens where the tag is chosen: [svc/pdf/tagging.py](../../svc/pdf/tagging.py), a
+  WeasyPrint `finisher` that retags a table with no `th` as a `/Div`. `th` is the
+  discriminator `qa/lint.py`'s `table-role` rule already uses, so the linter and the tagger
+  cannot disagree about which table is which.
+- **A decorative image became a `/Figure` with no `/Alt`**, which PDF/UA forbids, and
+  WeasyPrint logged "has no required alt description" as it wrote it. This one *is* fixable in
+  the markup, so it is fixed there: in a paged medium a decorative image is drawn as a CSS
+  background, which the print engine marks an artifact. Email still gets the `img` Outlook
+  needs, because the branch is on `medium.paged` — which is why no email golden moves.
 
-A file that declares PDF/UA-1 while doing both would claim a conformance it does not have,
-which is worse than declaring none. So **`SCREEN.variant` stays `None`**, and a caller who
-wants the tags sets `variant="pdf/ua-1"` on a profile of their own. `PRINT` stays `None`
-regardless: a press file's conformance concern is PDF/X, a non-goal here.
+**The two halves are fixed in two different places on purpose.** A layout table is markup this
+package cannot change without breaking email, so it is corrected after tagging; a decorative
+image is markup it can change for one medium, so it never becomes a figure at all. Preferring
+the markup where the markup can carry it keeps the amount of WeasyPrint-internals surgery to
+the one case that has no alternative.
 
-`TestWhatKeepsTheScreenProfileUntagged` pins both blockers. When either test fails, the
-blocker has moved: revisit this decision rather than updating the numbers. The fix paths are
-in #202. Retagging through WeasyPrint's `finisher` hook reaches internals the pin
-protects but a minor release could move. An upstream change is the other route.
+**`SCREEN.variant` still stays `None` — but for a different reason than before.** It was
+blocked; now it is priced. Tagging costs 11.4% to 32.2% more bytes (`a4_editorial` 11.4%,
+`a4_portrait` 18.7%, `letter_landscape_report` 19.9%, `slide_16_9` 25.4%, `a4_long_table`
+32.2%), and a reader who never needs the tags should not pay for them. So tagging is a
+**preset a caller chooses**: `TAGGED` is `SCREEN` plus `pdf/ua-1`, exported from `svc.pdf`.
+`PRINT` stays `None` regardless: a press file's conformance concern is PDF/X, a non-goal here.
+
+`TestLayoutAndDecorationAreTaggedHonestly` pins both halves, including the mirrors that make
+them worth having — a data table keeps its `/TH` and `/TD`, a table split over sheets keeps
+every fragment, and an email keeps its `img`. The `~=70.0` pin still matters: the retagger
+reads the `/StructElem` dictionaries PDF itself specifies rather than WeasyPrint's private
+attributes, but *what* the tagger emits could still move in a minor release. Teaching
+WeasyPrint's tagger to read `role` upstream remains the better long-term route.
 
 **The checks are structural, and say so.** pypdfium2 cannot validate PDF/UA. The tests check
 that `/MarkInfo`, `/StructTreeRoot`, the catalog `Lang` and each `/Alt` are present. Full
@@ -182,4 +197,5 @@ Two findings from the epic are filed rather than fixed, because each is a change
 - **#201, an `img` width attribute never reaches a paged layout.** WeasyPrint maps no
   presentational hint, so the cover logo declared at 96px printed at its intrinsic 72px.
   Fixed since: the image templates repeat the width as a CSS cap (`media.md`).
-- **#202, the tagger's two blockers**, with their fix paths. It is what keeps `SCREEN` untagged.
+- **#202 is closed**: the tagger's two defects are fixed, in the two places they are caused.
+  `SCREEN` stays untagged by price rather than by blocker; `TAGGED` is the opt-in preset.

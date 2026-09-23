@@ -191,11 +191,12 @@ these rather than improvising:
   with sub-issues. Complete: **#157** (rescope to media), **#153** (per-exhibit disclosure),
   **#169** (pagination hardening), **#170** (the data layer, #177–#180), **#171** (document
   apparatus, #181–#185), **#172** (the brochure medium, #186–#189) and **#193** (the digital PDF, #195–#200).
-  Open: **#201** (an image's width
-  attribute in a paged layout) and **#202** (the PDF/UA tagger, which keeps `SCREEN` untagged).
-  **#150** (banner VML fill) is fixed and verified on this branch: the staged gate on `src`
-  alone left `type="frame"` with nothing to frame, which the Word engine draws as a
-  broken-image placeholder over the masthead — `type` and `src` are now gated together.
+  Open: **#201** (an image's width attribute in a paged layout). **#150** (the banner's VML
+  fill) is closed: gating `src` while keeping `type="frame"` left the Word engine painting a
+  broken-image placeholder over the masthead, so the two are now gated together. **#202** is
+  fixed: the PDF/UA tagger's two defects are corrected in the two places they are caused —
+  layout tables after tagging, decorative images in the markup — and `TAGGED` is the opt-in
+  tagged preset.
 - Current state, decisions and open threads:
   [.claude/memory/INDEX.md](.claude/memory/INDEX.md).
 - [README.md](README.md) is the human-facing entry point (what it is, install, build, send or

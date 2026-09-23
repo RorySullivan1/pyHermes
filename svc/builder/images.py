@@ -449,6 +449,32 @@ class EmailImage:
         )
 
 
+def _displayed_height(data: bytes | None, width: int | None) -> int | None:
+    """
+    How tall ``width`` pixels of ``data`` render, or ``None`` if unknowable.
+
+    Needed only where a box must be given a height rather than taking one
+    from the image it contains — a CSS background, which is how a paged
+    render draws a decorative image so the print engine marks it an artifact
+    (#202). An ``img`` never needs this: it keeps its own aspect.
+
+    ``None`` for a hosted image, whose bytes this package never sees, and for
+    a header that does not say. The caller falls back to an ``img`` rather
+    than guessing: a wrong height crops or letterboxes the mark, and a
+    decorative rule that is visibly the wrong shape is worse than one a
+    screen reader has to skip.
+    """
+    if not data or not width:
+        return None
+    size = pixel_size(data)
+    if size is None:
+        return None
+    intrinsic_width, intrinsic_height = size
+    if not intrinsic_width:
+        return None
+    return max(1, round(width * intrinsic_height / intrinsic_width))
+
+
 def _check_width(width: int | None) -> int | None:
     """Raise if a display width is not a positive integer."""
     if width is None:
