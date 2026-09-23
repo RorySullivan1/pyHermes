@@ -217,3 +217,12 @@ class TestOverflowIsLoud:
         """The table-cell design carried a side onto five more sheets; this one does not."""
         long = "<p>" + " ".join(["The curve steepened again."] * 900) + "</p>"
         assert len(_pdf(self._brochure(long))) == 2
+
+
+def test_the_harness_photographs_each_side_bleed_and_slug_included(tmp_path):
+    """Standing rule 3 for the third medium: one raster per side, from the PDF."""
+    from qa.screenshots import capture_pages
+
+    shots, _ = capture_pages({"tri_fold_letter": tri_fold_letter.build()}, tmp_path)
+    grow = 2 * (TRI_FOLD_LETTER.bleed + TRI_FOLD_LETTER.slug)
+    assert [(shot.width, shot.height) for shot in shots] == [(1056 + grow, 816 + grow)] * 2

@@ -114,6 +114,17 @@ class TestTheReadmesHeadlinePrograms:
         source = _block_after("## The same content, printed")
         _run(source.split("save_pdf(document")[0], "README: paged (no extra)")
 
+    @pytest.mark.skipif(
+        not _pdf_available(),
+        reason='the README\'s brochure block ends in save_pdf; that is the "[pdf]" extra',
+    )
+    def test_the_brochure_example_runs(self):
+        _run(_block_after("## The same content, folded"), "README: brochure")
+
+    def test_the_brochure_example_builds_without_the_extra(self):
+        source = _block_after("## The same content, folded")
+        _run(source.split("save_pdf(brochure")[0], "README: brochure (no extra)")
+
     def test_the_illustrative_fragments_say_so(self):
         # The teeth on the exemption: a block that does not parse must be
         # visibly pseudo-code. One that does not parse and has no ellipsis is

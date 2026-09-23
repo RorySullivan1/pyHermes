@@ -255,3 +255,15 @@ Decisions and Log entries folded out of `INDEX.md` on 2026-08-29 (#143), verbati
 - [2026-09-22 19:03] pagination-hardening — **#169 implemented**: thead, eight break rules, page
   margins, `a4_long_table` + `table-structure`. Each rule probed on its boundary under WeasyPrint 70
   — sessions/2026-09-22-1903-pagination-hardening.md
+
+## Folded in from INDEX.md on 2026-09-23 (the medium decision and the check-scope log)
+
+- [2026-09-17] **A medium is a product, not a fourth design axis — but it rides the binder
+  as the fourth keyword.** Theme/size/font leave the structure untouched; a medium changes
+  skeleton, slot set, frame, constraints, lint and exporter, so it is chosen by class, then
+  bound so templates can ask `medium.paged` — sessions/2026-09-17-2353-multi-medium-rescope.md
+
+- [2026-09-20] **A check can be wrong about its scope, and fixing the code instead is the
+  trap.** Four times in one epic: the theme test scanned one module, the golden harness made
+  one directory, `page.html` used the wrong colour idiom, and a README-block check would have
+  demanded prose parse as Python — sessions/2026-09-17-2353-multi-medium-rescope.md

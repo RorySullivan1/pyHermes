@@ -75,6 +75,13 @@ svc/
 │   ├── page.py         — Page: a sheet boundary that FLATTENS in a non-paged medium
 │   └── regions.py      — Cover, ContentsPage, RunningHeader/Footer (@page margin boxes),
 │                         BackMatter, plus an Empty variant of each
+├── brochure/           ← the folded medium (#172): one sheet, panels, both sides
+│   ├── fold.py         — FoldFormat, FoldKind, four presets; the tuck is a distance
+│   ├── panel.py        — Panel (flattens elsewhere) and PanelBox, where one sits
+│   ├── imposition.py   — reader order → (side, position), one table per fold
+│   ├── document.py     — Brochure: panels in reader order, two sides, proof()
+│   ├── checks.py       — safe area and print resolution, at construction
+│   └── fit.py          — overflowing_panels(): the print engine says what clipped
 ├── gmail/              ← Gmail send adapter (consumes delivery; owns no credentials)
 │   └── sender.py       — GmailTransport protocol, GoogleApiTransport shim, send_message()
 ├── outlook/            ← Outlook send adapter over Microsoft Graph (same shape as gmail)
