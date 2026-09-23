@@ -198,7 +198,12 @@ jobs:
         run: pip install -e ".[dev,data,charts]"
 
       - name: Adapter tests
-        run: pytest tests/test_frames.py tests/test_charts.py tests/test_data_layer.py
+        # test_examples.py runs here as well as in `check`: the
+        # fund-factsheet example plots through [charts], so this is the
+        # only job where it actually builds rather than skipping.
+        run: |
+          pytest tests/test_frames.py tests/test_charts.py tests/test_data_layer.py \
+                 tests/test_examples.py
 
       - name: Type-check with the backends present
         # mypy must be green whether or not the extras are installed; `check`
