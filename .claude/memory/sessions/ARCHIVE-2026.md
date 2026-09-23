@@ -249,3 +249,9 @@ Decisions and Log entries folded out of `INDEX.md` on 2026-08-29 (#143), verbati
 
 - [2026-09-22 14:07] format-coverage-audit — read-only sweep, then **filed epics #169–#172** and
   sub-issues #173–#189 — sessions/2026-09-22-1351-format-coverage-audit.md
+
+## Folded in from INDEX.md on 2026-09-23 (epic #169's pointer)
+
+- [2026-09-22 19:03] pagination-hardening — **#169 implemented**: thead, eight break rules, page
+  margins, `a4_long_table` + `table-structure`. Each rule probed on its boundary under WeasyPrint 70
+  — sessions/2026-09-22-1903-pagination-hardening.md

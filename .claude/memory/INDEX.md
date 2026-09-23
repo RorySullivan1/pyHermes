@@ -69,10 +69,6 @@
   one directory, `page.html` used the wrong colour idiom, and a README-block check would have
   demanded prose parse as Python — sessions/2026-09-17-2353-multi-medium-rescope.md
 
-- [2026-09-22 19:03] pagination-hardening — **#169 implemented**: thead, eight break rules, page
-  margins, `a4_long_table` + `table-structure`. Each rule probed on its boundary under WeasyPrint 70
-  — sessions/2026-09-22-1903-pagination-hardening.md
-
 - [2026-09-22 21:00] data-layer — **#170 shipped, PR #191**: formatters, tone, `svc.data` adapters.
   No `from_frame`: the purity test wins. mypy's `follow_imports="skip"` is ignored for `.pyi`
   unless `follow_imports_for_stubs=true` — sessions/2026-09-22-2100-data-layer.md
