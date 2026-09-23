@@ -51,4 +51,4 @@ Started from `main` @ `565ace0` plus `2fcece1` (router and memory). Six commits 
 
 ## State at end
 - All six sub-issues built and committed; full suite 2529 passed, ruff, format and mypy clean.
-- PR opened with one `Closes` per sub-issue and the epic; CI to be watched.
+- **PR #203** opened with one `Closes` per sub-issue and the epic; subscribed, check-in set. Next: CI green, then merge and check all seven closed.
