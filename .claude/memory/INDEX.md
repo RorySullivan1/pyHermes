@@ -5,11 +5,10 @@
   shared kit, `svc/email`, `svc/document` and `svc/brochure` are the media, and exporters sit on
   one contract — `svc/delivery`+`gmail`+`outlook`, and `svc/pdf`. Rationale: CLAUDE.md and
   `.claude/rules/media.md`; do not restate it here.
-- **Shipped and closed**: #157 rescope-to-media (PR #167), #153 disclosure (PR #168), #169
-  pagination (PR #190), #170 data layer (PR #191), #171 apparatus (PR #192, #181–#185).
-- **#172 brochure implemented on the branch** (#186–#189, `.claude/rules/brochure.md`); its PR
-  closes all five. **#193** (stub): the digital PDF — the paged medium already has the cover
-  and contents; the gap is attaching it to an email, size, metadata. #150 needs Outlook.
+- **Shipped and closed**: #157 (PR #167), #153 (PR #168), #169 (PR #190), #170 (PR #191),
+  #171 apparatus (PR #192), #172 brochure (PR #194, #186–#189).
+- **#193 built** on `claude/gifted-ritchie-7dkp5g` (#195–#200), PR #203. Open issues: #150 needs
+  Outlook; #201 img width in a paged layout; #202 the PDF/UA tagger keeps `SCREEN` untagged.
 - The prose budget is live; the baseline is 45 and may only shrink.
 
 ## Decisions        (append-only; supersede, never delete)
@@ -44,6 +43,9 @@
   engine.** Table cells ran a side onto five sheets; a sentinel read off `page.anchors` names an
   overflowing face — sessions/2026-09-23-brochure-medium.md
 
+- [2026-09-23] **A screen PDF is a profile, not a medium; `SCREEN` stays untagged.** WeasyPrint 70
+  tags layout tables as `/Table` and ignores `role` (#202) — sessions/2026-09-23-digital-pdf.md
+
 ## Threads          (open items; remove when closed)
 - **Every issue or PR body is written without angle brackets** — GitHub's sanitizer has
   emptied three.
@@ -71,6 +73,8 @@
   contents, footnotes, xrefs, running section. Every mechanism probed under WeasyPrint 70 first
   — sessions/2026-09-22-2200-document-apparatus.md
 
-- [2026-09-23] brochure-medium — **#172 implemented**, eight commits: folds, panel, imposition,
+- [2026-09-23] brochure-medium — **#172 shipped, PR #194** (4/4 closed, CI green first push): folds, panel, imposition,
   bleed and marks, five editorial primitives. A test that reads the table it tests agrees with a
   wrong one — sessions/2026-09-23-brochure-medium.md
+- [2026-09-23] digital-pdf — **#193 built**, six commits, PR #203. PDF determinism needs
+  HarfBuzz-Subset; findings #201, #202 filed — sessions/2026-09-23-digital-pdf.md

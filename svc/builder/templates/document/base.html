@@ -3,6 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <title>{{ campaign_name | escape_html }}</title>
+  {# The PDF's document information (#195). WeasyPrint reads Author, Subject and
+     Keywords off these tags, and the title and language are the skeleton's
+     own. Every value is a fact the document owns, escaped as an attribute.
+
+     Deliberately no dcterms.created or dcterms.modified: a date makes two
+     renders of one document differ, and the goldens rest on determinism.
+     Keywords split on commas in the PDF, which is why the list joins on one. #}
+{% if firm_name %}
+  <meta name="author" content="{{ firm_name | escape_html }}">
+{% endif %}
+{% if campaign_name or department or date_range %}
+  <meta name="description" content="{{ [campaign_name, department, date_range] | select | join(' · ') | escape_html }}">
+{% endif %}
+{% if department or issue_label %}
+  <meta name="keywords" content="{{ [department, issue_label] | select | join(', ') | escape_html }}">
+{% endif %}
   <style type="text/css">
     {# The page itself. `size` takes the sheet; a continuous page declares a
        width only and runs as long as its content. The margin is the page

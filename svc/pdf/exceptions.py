@@ -36,3 +36,11 @@ class UnreachableResourceError(PdfError):
     (:meth:`~svc.builder.images.EmailImage.inline`) and they travel with the
     document instead.
     """
+
+
+class ProfileError(PdfError, ValueError):
+    """Raised when a :class:`~svc.pdf.profile.PdfProfile` is constructed wrong.
+
+    Also a ``ValueError``, as a bad ``Config`` field is: a profile is setup,
+    and a caller validating setup catches that.
+    """

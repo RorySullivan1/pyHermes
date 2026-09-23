@@ -18,7 +18,7 @@ imposed for the press with bleed and crop marks. The apparatus a reader navigate
 exhibit numbers, footnotes, contents, cross-references — is numbered in Python, once, so
 every projection agrees; only the page number is the print engine's. Three exporters sit
 on one contract — `svc/delivery/` + `svc/gmail/` + `svc/outlook/` for MIME, `svc/pdf/` for
-PDF. Each owns its wire format and **never** authentication, so the core still depends on
+PDF — and a PDF can ride a message as an attachment, rendered under a screen profile. Each owns its wire format and **never** authentication, so the core still depends on
 Jinja2 alone. Figures arrive as numbers:
 `svc/builder/formats.py` formats them and `svc/data/` adapts a DataFrame or a Figure, each
 adapter behind an optional extra.
@@ -66,6 +66,7 @@ applies to and loads **only when a matching file is read** — so a session that
 | `plain-text.md` | `textgen.py`, `email.py` | The second projection of the section tree |
 | `apparatus.md` | `apparatus.py`, `document.py`, the notes / contents / running-box templates | Exhibit numbers, footnotes, contents, cross-references, the running section — Python numbers all but the page |
 | `media.md` | `svc/email/`, `svc/document/`, `svc/pdf/`, `medium.py`, `document.py`, `templates/document/**` | The medium model, the page, the template fork rule, each medium's regions, the exporter's resource policy |
+| `digital-pdf.md` | `svc/pdf/**`, `svc/delivery/message.py`, the digital-PDF tests | The `PdfProfile` and its two presets, attachments and the message's size budget, metadata and determinism, the PDF/UA decision with its numbers, and why a screen PDF is not a medium |
 | `brochure.md` | `svc/brochure/**`, `templates/brochure/**`, the editorial partial | Folds, the panel, imposition, bleed and marks, the editorial primitives and each one's email degradation |
 | `delivery.md` | `svc/delivery/`, `svc/gmail/`, `svc/outlook/` | MIME assembly, the adapter contract, the deliberate non-features |
 | `qa-harness.md` | `qa/**`, `tests/**` | Gallery, goldens, screenshots, lint, the preview CLI |
@@ -95,6 +96,9 @@ The rules themselves. `builder-architecture.md` carries why each exists.
   moment caller markup opens, and the copy escapes the styling it should inherit (#130).
 - **URL schemes are validated** at construction: `http`, `https`, `mailto`, `cid` and
   relative only. `javascript:`, `data:`, `vbscript:`, `file:` raise `ValidationError`.
+- **A message carrying an attachment has a budget: 20 MB on the wire.** `build_message` raises
+  above `Config.attachment_limit_kb` and warns above `attachment_warn_kb`. It is separate from
+  the 102 KB check, which is about the HTML part and Gmail's clipping.
 - **The PDF exporter makes no network requests.** It serves `cid:` from the document's own
   manifest and refuses every other URL by name, so a hosted image is not slow — it is a
   `PdfError`. A printable document carries its own images.
@@ -186,9 +190,9 @@ these rather than improvising:
 - Tracked in [GitHub issues](https://github.com/RorySullivan1/pyHermes/issues), as epics
   with sub-issues. Complete: **#157** (rescope to media), **#153** (per-exhibit disclosure),
   **#169** (pagination hardening), **#170** (the data layer, #177–#180), **#171** (document
-  apparatus, #181–#185) and **#172** (the brochure medium, #186–#189). Open: **#193** (the digital
-  PDF: attach it to an email, size, metadata; a stub) and **#150** (banner VML `src`, needs a
-  real Outlook host).
+  apparatus, #181–#185), **#172** (the brochure medium, #186–#189) and **#193** (the digital PDF, #195–#200).
+  Open: **#150** (banner VML `src`, needs a real Outlook host), **#201** (an image's width
+  attribute in a paged layout) and **#202** (the PDF/UA tagger, which keeps `SCREEN` untagged).
 - Current state, decisions and open threads:
   [.claude/memory/INDEX.md](.claude/memory/INDEX.md).
 - [README.md](README.md) is the human-facing entry point (what it is, install, build, send or

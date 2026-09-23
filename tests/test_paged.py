@@ -203,7 +203,14 @@ class TestTheMediumIsWired:
         empty_slots = {f"{slot}_html": "" for slot in PAGED_MEDIUM.slots}
         paged = engine.render(
             PAGED_MEDIUM.skeleton,
-            {"language": "en", "campaign_name": "x", "sections_html": "", **empty_slots},
+            {
+                "language": "en",
+                "campaign_name": "x",
+                # The facts the head's PDF metadata reads (#195).
+                **dict.fromkeys(("firm_name", "department", "date_range", "issue_label"), ""),
+                "sections_html": "",
+                **empty_slots,
+            },
         )
         assert "@page" in paged
         # ...and the same name, without the overlay, is still the email's.

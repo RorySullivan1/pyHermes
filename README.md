@@ -98,6 +98,63 @@ document's own manifest and refuses every other URL by name, so a document whose
 lives on a CDN raises rather than silently printing without it. Attach images with
 `EmailImage.attached()` and they travel with the document.
 
+## Sent as a PDF
+
+A cover email and the report behind it go out as one message. `pdf_attachment` renders the
+report for a screen and hands it to `build_message` as a file:
+
+```python
+from svc.builder import EmailBuilder, FullWidth, TextBlock
+from svc.builder.sizing import LETTER_LANDSCAPE
+from svc.delivery import build_message, save_eml
+from svc.document import ContentsPage, Cover, PagedDocument, paged_medium
+from svc.pdf import pdf_attachment
+
+facts = {"firm_name": "Hermes Research", "campaign_name": "Global Rates Review"}
+
+report = PagedDocument(
+    {**facts, "department": "Global Rates", "date_range": "July to September 2026"},
+    medium=paged_medium(LETTER_LANDSCAPE),
+    cover=Cover(title="Global Rates Review", subtitle="Six curves, one quarter"),
+    contents=ContentsPage(heading="Contents"),
+)
+report.add_section(FullWidth(content=TextBlock("<p>Six curves steepened.</p>"), title="Summary"))
+report.add_section(FullWidth(content=TextBlock("<p>Keep the steepener.</p>"), title="Outlook"))
+
+email = (
+    EmailBuilder()
+    .metadata({**facts, "email_subject": "Global Rates Review: the third quarter"})
+    .section(FullWidth(content=TextBlock("<p>This quarter's review is attached.</p>")))
+    .build()
+)
+
+message = build_message(
+    email,
+    sender="research@example.com",
+    to="clients@example.com",
+    attachments=[pdf_attachment(report, "global-rates-review.pdf")],  # needs the [pdf] extra
+)
+save_eml(message, "review.eml")   # a dry run; send it through svc.gmail or svc.outlook as before
+```
+
+The message becomes a `multipart/mixed`: the email first, unchanged, and the PDF after it as
+an attachment. The cover email's own `cid:` images still render in place.
+
+- **`pdf_attachment` renders under the `SCREEN` profile.** It caps every image at 150 dpi where
+  it is shown and re-encodes JPEGs at quality 85. `render_pdf` and `save_pdf` default to
+  `PRINT`, which leaves images as they arrived. Pass `profile=` to either to choose.
+- **A message with an attachment has a size budget.** Above 20 MB on the wire,
+  `build_message` raises and names each file with its size. That is Microsoft 365's default
+  limit, below Gmail's 25 MB, and base64 makes a 16 MB PDF a 22 MB message. A PDF rendered
+  under `PRINT` is named with the fix. Above 15 MB it prints a warning. Both numbers are in
+  `Config`.
+- **The PDF's Author, Subject and Keywords come from the document's facts**: the firm, then
+  the campaign with the department and dates, then the department and issue. It carries no
+  creation date, so one document renders to the same bytes every time.
+- **Tagged PDF is opt-in.** `PdfProfile(name="tagged", dpi=150, variant="pdf/ua-1")` writes a
+  structure tree, the language and every image's alt text. It is not the default, because
+  WeasyPrint 70 tags the layout tables as data tables.
+
 ## The same content, folded
 
 A brochure is one sheet folded into panels. You hand over the panels in the order a reader
@@ -202,6 +259,10 @@ multipart/alternative            (an email with CID images)
 └── multipart/related
     ├── text/html
     └── image/*  × N
+
+multipart/mixed                  (with attachments=[...])
+├── multipart/alternative        (either shape above, unchanged)
+└── application/pdf  × N         (Content-Disposition: attachment)
 ```
 
 Text first, HTML last, per RFC 2046's order of increasing preference: a graphical client
@@ -869,8 +930,8 @@ form is the interface.
 ## Scope
 
 **In:** composing the document, rendering it for an email client, a page or a folded sheet,
-assembling the MIME message, transmitting it through Gmail or Microsoft Graph, and printing it
-to PDF.
+assembling the MIME message, transmitting it through Gmail or Microsoft Graph, printing it
+to PDF, and attaching that PDF to an email.
 
 **Out, deliberately:** OAuth flows (the caller's, by design); campaign management — no
 scheduling, recipient lists, batching or send-time analytics; open tracking and link
@@ -891,7 +952,7 @@ svc/
 ├── delivery/     transport-neutral MIME assembly + shared retry policy
 ├── gmail/        Gmail send adapter
 ├── outlook/      Outlook send adapter over Microsoft Graph
-├── pdf/          the PDF exporter, on the adapters' contract — no network
+├── pdf/          the PDF exporter, on the adapters' contract — no network; profiles, attachments
 └── data/         DataFrame -> table and Figure -> chart, each an optional extra
 qa/               the fixture galleries, goldens, screenshots, lint, preview CLI
 tests/            pytest suite

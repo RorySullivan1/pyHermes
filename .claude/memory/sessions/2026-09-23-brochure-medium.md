@@ -43,4 +43,9 @@ Started from `main` @ `4276727` (PR #192 merged). Eight commits on `claude/gifte
 - Run `python -m mypy`: the bare `mypy` on PATH lacks jinja2.
 
 ## State at end
-- Branch pushed; PR not yet opened. One `Closes` each for #172, #186, #187, #188, #189.
+- **PR #194 merged** 2026-09-23; one `Closes` per issue, #172 closed with 4/4. CI green on all
+  six jobs at first push, the widened `pdf` job included.
+- **#193 built out** into an epic with #195–#200, after probing the current PDF: links are live
+  (`page.links`), metadata comes from `meta` tags, WeasyPrint 70 writes `pdf/ua-1`. The paged medium already carries the cover,
+  contents and portrait/landscape; the gaps are a PDF attachment in `build_message`, a size
+  budget, metadata, verified links and tagged PDF.

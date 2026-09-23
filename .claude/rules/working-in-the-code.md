@@ -64,7 +64,8 @@ svc/
 ├── delivery/           ← transport-neutral MIME assembly (consumes the builder)
 │   ├── __init__.py     — public API: build_message, save_eml, collect_cid_references
 │   ├── message.py      — build_message() → multipart/alternative (text first, HTML last,
-│                         related nested); to_wire_bytes(); save_eml()
+│                         related nested), inside multipart/mixed with Attachments (#197) and
+│                         the attachment size budget (#198); to_wire_bytes(); save_eml()
 │   ├── retry.py        — retry_with_backoff(): shared policy, per-adapter classification
 │   └── exceptions.py   — DeliveryError / MessageError / TransportError (siblings of
 │                          EmailBuilderError)
@@ -91,7 +92,9 @@ svc/
 │   ├── charts.py       — image_from_figure / chart_from_figure: a Figure as an image
 │   └── exceptions.py   — DataError, BackendMissingError (a sibling of EmailBuilderError)
 ├── pdf/                ← the PDF exporter, on the adapters' contract; "[pdf]" extra
-│   ├── exporter.py     — render_pdf / save_pdf / page_count / available; lazy backend
+│   ├── exporter.py     — render_pdf / save_pdf / layout / page_count / available; lazy backend
+│   ├── profile.py      — PdfProfile, PRINT (render_pdf's default) and SCREEN (#196). `digital-pdf.md`
+│   ├── attachment.py   — pdf_attachment(): a document as an application/pdf Attachment (#197)
 │   ├── fetcher.py      — serves cid: from the manifest, refuses every other URL
 │   └── exceptions.py   — PdfError, a sibling of EmailBuilderError and DeliveryError
 qa/                     ← QA harness (epic #54); NOT shipped in the wheel

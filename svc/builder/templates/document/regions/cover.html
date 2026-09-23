@@ -8,9 +8,10 @@
   <tr>
     <td align="{{ align | default('left', true) }}"
         style="padding:{{ size.space.masthead_top }}px {{ size.frame.pad_x }}px {{ size.space.masthead_meta_bottom }}px; text-align:{{ align | default('left', true) }};{% if background_image_url %} background-image:url('{{ background_image_url | escape_html }}'); background-size:cover;{% endif %}">
+      {# A block image ignores text-align, so its margins follow the copy. #}
       {% if logo_url %}
       <img src="{{ logo_url | escape_html }}" alt="{{ logo_alt | escape_html }}" width="{{ logo_width }}"
-           style="display:block; border:0; margin-bottom:{{ size.space.masthead_meta_top }}px;">
+           style="display:block; border:0; margin-bottom:{{ size.space.masthead_meta_top }}px;{% if align == 'center' %} margin-left:auto; margin-right:auto;{% elif align == 'right' %} margin-left:auto;{% endif %}">
       {% endif %}
       <h1 style="margin:0 0 {{ size.space.masthead_title_bottom }}px; font-family:{{ font.heading }}; font-size:{{ size.type.title }}px; line-height:{{ size.type.title_line | percent }}; color:{{ cover_text }};">{{ cover_title | escape_html }}</h1>
       {% if cover_subtitle %}

@@ -290,3 +290,25 @@ to hand its skeleton the bleed. Every other document's body is the section list,
 and converting colour for a press is the print house's step. Pretending otherwise would ship
 a wrong colour profile with confidence. The `rgb-only` lint finding says so once per
 brochure, at the `INFO` severity that never fails a build. `brochure.md` has the rest.
+
+## The PDF's document information is read off the facts (#195)
+
+The paged and brochure skeletons carry the same three lines in the head. They are inlined in
+each rather than shared as a partial: `test_every_template_now_reads_the_theme_namespace`
+holds that every template paints, and a head-only partial paints nothing. The lines emit
+`author` from `firm_name`, `description` from `campaign_name`, `department` and `date_range`,
+and `keywords` from `department` and `issue_label`. WeasyPrint writes these as the PDF's
+Author, Subject and Keywords. The title and `lang` were already the skeleton's. No exporter
+argument restates any of them: a caller who wants a different author changes the facts.
+
+- **No creation or modification date, deliberately.** A date makes two renders of one document
+  differ, and the goldens rest on determinism. A test reads both fields back empty.
+- **Determinism needs HarfBuzz-Subset.** Without it WeasyPrint falls back to fontTools, and
+  `TTFont.save()` stamps the clock into each embedded font's `head` table. Two renders then
+  differ whenever they straddle a second. CI's `pdf` job installs `libharfbuzz-subset0`.
+- **The outline keeps the contents sheet and the disclosures.** Both are headed sheets a
+  reader navigates to, so both are bookmarks beside the sections, one level under the cover.
+
+**The digital PDF (#193) is not a medium.** It is a `PdfProfile` on this exporter plus an
+attachment path in `svc/delivery`, and `digital-pdf.md` has the decision, the profiles, the size
+budget and the PDF/UA measurement.
