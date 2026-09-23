@@ -366,3 +366,83 @@ class TestWhatKeepsTheScreenProfileUntagged:
         # which PDF/UA forbids, and WeasyPrint says so as it writes it.
         assert len(re.findall(rb"/S\s*/Figure\b", tagged)) == 2
         assert "has no required alt description" in caplog.text
+
+
+class TestTheLandscapeReport:
+    """#200: the epic's claim, as a fixture: a landscape report with a cover and
+    contents, read on a screen, and sent by email as a PDF."""
+
+    @pytest.fixture(scope="class")
+    @classmethod
+    def report(cls) -> PagedDocument:
+        return all_paged_fixtures()["letter_landscape_report"]()
+
+    @pytest.fixture(scope="class")
+    @classmethod
+    def pdf(cls, report) -> bytes:
+        return render_pdf(report, SCREEN)
+
+    def test_every_sheet_is_letter_landscape(self, pdf):
+        sizes = {tuple(round(v * 96 / 72) for v in page.get_size()) for page in _read(pdf)}
+        assert sizes == {(1056, 816)}
+
+    def test_it_rasters_one_image_per_sheet(self, report, tmp_path):
+        from qa.screenshots import capture_pages
+
+        shots, _ = capture_pages({"letter_landscape_report": report}, tmp_path)
+        assert len(shots) == len(_read(render_pdf(report))) == 5
+        assert {(shot.width, shot.height) for shot in shots} == {(1056, 816)}
+
+    def test_the_contents_entries_link_to_the_sheets_their_sections_start_on(self, pdf):
+        contents = [link for link in _links(pdf) if link[0] == 1]
+        text = _text(pdf)
+        assert {target for *_, target, _ in contents} == {2, 3}
+        assert "Summary" in text[2] and "From the Desk" in text[3]
+
+    def test_the_running_header_follows_the_section(self, pdf):
+        # Read from the top margin band, where the box prints: the label
+        # before the first section, then the section each sheet holds.
+        margin_pt = 72 * 72 / 96  # Letter's 0.75in margin, in points
+        tops = []
+        for page in list(_read(pdf))[1:4]:
+            width, height = page.get_size()
+            band = page.get_textpage().get_text_bounded(0, height - margin_pt, width, height)
+            tops.append(band.strip())
+        assert tops == ["Global Rates Review", "Summary", "From the Desk"]
+
+    def test_a_centred_cover_centres_its_logo(self, pdf):
+        # A block image ignores text-align; this fixture is the first centred
+        # cover, and the first raster showed the mark stranded at the left.
+        [page] = [next(iter(_read(pdf)))]
+        import pypdfium2.raw as pdfium_raw
+
+        [mark] = [
+            image
+            for image in page.get_objects(filter=[pdfium_raw.FPDF_PAGEOBJ_IMAGE])
+            if image.get_px_size() == (64, 64)
+        ]
+        left, _, right, _ = mark.get_bounds()
+        assert (left + right) / 2 * 96 / 72 == pytest.approx(1056 / 2, abs=1)
+
+    def test_it_goes_out_as_one_message(self, report, pdf):
+        from email import message_from_bytes
+
+        from svc.builder import EmailBuilder
+        from svc.delivery import build_message
+        from svc.delivery.message import to_wire_bytes
+        from svc.pdf import pdf_attachment
+
+        cover = (
+            EmailBuilder()
+            .metadata({**report.metadata.to_dict(), "email_subject": "Global Rates Review"})
+            .section(FullWidth(content=TextBlock("<p>This quarter's review is attached.</p>")))
+            .build()
+        )
+        attachment = pdf_attachment(report, "global-rates-review.pdf")
+        message = build_message(
+            cover, sender="research@example.com", to="clients@example.com", attachments=[attachment]
+        )
+        parsed = message_from_bytes(to_wire_bytes(message))
+        [sent] = [part for part in parsed.walk() if part.get_filename()]
+        assert sent.get_payload(decode=True) == pdf
+        assert _info(pdf)["Author"] == "Hermes Research"

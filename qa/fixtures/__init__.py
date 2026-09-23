@@ -30,6 +30,7 @@ from . import (
     custom_footer,
     image_matrix,
     kitchen_sink,
+    letter_landscape_report,
     minimal,
     minimal_banner,
     minimal_footer,
@@ -111,6 +112,7 @@ def all_paged_fixtures() -> dict[str, PagedFixtureBuilder]:
         "a4_long_table": a4_long_table.build,
         "a4_editorial": a4_editorial.build,
         "slide_16_9": slide_16_9.build,
+        "letter_landscape_report": letter_landscape_report.build,
     }
 
 

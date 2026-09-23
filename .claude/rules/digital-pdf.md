@@ -155,3 +155,30 @@ protects but a minor release could move. An upstream change is the other route.
 **The checks are structural, and say so.** pypdfium2 cannot validate PDF/UA. The tests check
 that `/MarkInfo`, `/StructTreeRoot`, the catalog `Lang` and each `/Alt` are present. Full
 conformance needs veraPDF, a Java tool this repository will not carry.
+
+## The landscape report, and the send in the README (#200)
+
+`letter_landscape_report` is the epic's claim as a fixture: a US Letter landscape report with a
+cover, a contents sheet, a running header that follows the section, an eight-column table that
+wants the width, a wrapped figure, a pull quote and a disclosures sheet. Its copy is its own,
+not `_paged`'s, because its point is the landscape reading layout rather than an A/B against
+A4. It is five sheets, lints clean under the paged rules and rasters one image per sheet.
+`TestTheLandscapeReport` reads back the sheet size, the contents links, the running head from
+the top margin band, and the whole send: `pdf_attachment`, `build_message`, and the PDF
+recovered from the wire bytes intact.
+
+- **Its first raster found a cover defect.** A centred cover left its logo at the left edge:
+  the image is `display:block`, and a block ignores `text-align`. No fixture had a centred
+  cover before. The logo's margins now follow `align`, in `document/regions/cover.html`, a
+  paged-only template, so no email golden moved and no other paged golden did either.
+- **The README's "Sent as a PDF" block is a headline program.** `test_examples` runs it whole
+  with `[pdf]` and runs the half before `build_message` without it.
+- **CI's `pdf` job names the three new modules**: `test_digital_pdf`, `test_pdf_profile` and
+  `test_attachments`. Each skips its PDF half without the extras, and a module missing from
+  that line never runs its PDF half anywhere.
+
+Two findings from the epic are filed rather than fixed, because each is a change of its own:
+
+- **#201, an `img` width attribute never reaches a paged layout.** WeasyPrint maps no
+  presentational hint, so the cover logo declared at 96px prints at its intrinsic 72px.
+- **#202, the tagger's two blockers**, with their fix paths. It is what keeps `SCREEN` untagged.

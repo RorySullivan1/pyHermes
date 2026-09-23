@@ -1033,3 +1033,13 @@ line is never run anywhere. `test_apparatus` had been missing since #171.
 lacks `bleed` or `marks`. `rgb-only` is the first `INFO` finding: a fact no edit can change,
 stated once per brochure and never failing a build. Both apply to the brochure only, and the
 paged rules all apply to it too, because the same engine prints it.
+
+
+## The landscape report (#200)
+
+`letter_landscape_report` is the fifth paged fixture and the digital PDF's (#193): US Letter
+landscape, a centred cover, a contents sheet, a running header that follows the section, an
+eight-column table, a wrapped figure, a pull quote and a disclosures sheet, in copy of its own.
+It exists to show the landscape reading layout, not to A/B against A4. It is also the gallery's
+first centred cover, and its first raster found the cover logo stranded at the left, fixed in
+`document/regions/cover.html`. `digital-pdf.md` has the tests that read it back.

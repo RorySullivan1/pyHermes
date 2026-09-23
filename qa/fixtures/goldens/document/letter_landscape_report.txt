@@ -1,0 +1,73 @@
+Global Rates Review
+===================
+
+Six curves, one quarter, and what the desk does next
+Global Rates · July to September 2026 · Report 7
+
+
+Contents
+--------
+
+Summary
+Curves by Market
+From the Desk
+In Their Words
+
+
+Summary
+-------
+
+Six curves steepened in the quarter, and five of them did it from the front.
+Markets pushed the first cuts later, two-year yields rose, and the long ends
+held. The one exception was Japan, where the long end sold off as the central
+bank stepped back from the market.
+
+
+Curves by Market
+----------------
+
+Spreads and moves in basis points
+
+Exhibit 1 · Government bond yields and curve slopes
+
+Market             2Y     5Y    10Y    30Y  2s10s  5s30s  QoQ 10Y
+--------------  -----  -----  -----  -----  -----  -----  -------
+United States   4.62%  4.31%  4.28%  4.44%    -34    +13       +6
+United Kingdom  4.18%  4.02%  4.21%  4.74%     +3    +72       +9
+Germany         2.71%  2.38%  2.46%  2.69%    -25    +31       -4
+Japan           0.38%  0.61%  0.97%  2.19%    +59   +158      +14
+Canada          3.94%  3.41%  3.38%  3.36%    -56     -5       -2
+Australia       3.88%  3.97%  4.24%  4.61%    +36    +64      +11
+
+Hermes Research
+30 September 2026
+
+
+From the Desk
+-------------
+
+[The global rates desk]
+
+The global rates desk
+
+The desk keeps the steepener in the United States and adds one in Australia,
+where the front end has the most room to fall if growth slows. Japan is the
+one curve we would not chase: its long end moved on a change of buyer, not a
+change of view.
+
+Duration stays neutral. Carry pays for the wait in every market but Canada,
+where the curve is flat enough that waiting costs.
+
+
+In Their Words
+--------------
+
+    "Five curves steepened from the front. The sixth tells you who stopped
+    buying."
+    -- Head of Global Rates
+
+
+Disclosures
+-----------
+
+For institutional investors only. Not investment advice.

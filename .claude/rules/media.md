@@ -308,3 +308,7 @@ argument restates any of them: a caller who wants a different author changes the
   differ whenever they straddle a second. CI's `pdf` job installs `libharfbuzz-subset0`.
 - **The outline keeps the contents sheet and the disclosures.** Both are headed sheets a
   reader navigates to, so both are bookmarks beside the sections, one level under the cover.
+
+**The digital PDF (#193) is not a medium.** It is a `PdfProfile` on this exporter plus an
+attachment path in `svc/delivery`, and `digital-pdf.md` has the decision, the profiles, the size
+budget and the PDF/UA measurement.

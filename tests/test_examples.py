@@ -89,7 +89,7 @@ class TestEveryExampleBuilds:
 
 class TestTheReadmesHeadlinePrograms:
     """
-    Only the two blocks the README presents as complete programs.
+    Only the blocks the README presents as complete programs.
 
     **Not every fenced block**, deliberately. Most are illustrative fragments
     — ``{..., "language": "fr"}`` is prose, not Python, and several
@@ -113,6 +113,18 @@ class TestTheReadmesHeadlinePrograms:
         # The half that needs nothing installed: everything up to save_pdf.
         source = _block_after("## The same content, printed")
         _run(source.split("save_pdf(document")[0], "README: paged (no extra)")
+
+    @pytest.mark.skipif(
+        not _pdf_available(),
+        reason='the README\'s attachment renders a PDF; that is the "[pdf]" extra',
+    )
+    def test_the_sent_as_a_pdf_example_runs(self):
+        _run(_block_after("## Sent as a PDF"), "README: sent as a PDF")
+
+    def test_the_sent_as_a_pdf_example_builds_without_the_extra(self):
+        # Both documents build with nothing installed; only the attachment prints.
+        source = _block_after("## Sent as a PDF")
+        _run(source.split("message = build_message(")[0], "README: sent as a PDF (no extra)")
 
     @pytest.mark.skipif(
         not _pdf_available(),
