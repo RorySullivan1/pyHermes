@@ -11,14 +11,20 @@ WeasyPrint is an optional extra (``pip install "pyhermes[pdf]"``), imported
 lazily, so the core install stays Jinja2-only and an AST test holds it there.
 """
 
-from .exceptions import BackendMissingError, PdfError, UnreachableResourceError
+from .exceptions import BackendMissingError, PdfError, ProfileError, UnreachableResourceError
 from .exporter import available, layout, page_count, render_pdf, save_pdf
+from .profile import PDF_VARIANTS, PRINT, SCREEN, PdfProfile
 
 __all__ = [
     "BackendMissingError",
     "available",
     "layout",
     "PdfError",
+    "PDF_VARIANTS",
+    "PdfProfile",
+    "PRINT",
+    "ProfileError",
+    "SCREEN",
     "UnreachableResourceError",
     "page_count",
     "render_pdf",

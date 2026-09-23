@@ -17,6 +17,7 @@ from svc.builder.document import Document
 
 from .exceptions import BackendMissingError, UnreachableResourceError
 from .fetcher import build_fetcher
+from .profile import PRINT, PdfProfile
 
 
 def available() -> bool:
@@ -28,15 +29,16 @@ def available() -> bool:
     return True
 
 
-def render_pdf(document: Document) -> bytes:
+def render_pdf(document: Document, profile: PdfProfile = PRINT) -> bytes:
     """
-    Render ``document`` to PDF bytes.
+    Render ``document`` to PDF bytes, written under ``profile``.
 
     The document's own :meth:`~svc.builder.document.Document.render` produces
     the HTML and its :meth:`~svc.builder.document.Document.assets` the images;
     nothing else is read, and nothing is fetched. A reference the manifest
     does not cover raises
     :class:`~svc.pdf.exceptions.UnreachableResourceError` naming the URL.
+    ``PRINT`` leaves every image as it arrived; ``SCREEN`` downsamples.
 
     Raises:
         BackendMissingError: If WeasyPrint is not installed.
@@ -47,7 +49,9 @@ def render_pdf(document: Document) -> bytes:
     html = document.render()
     with _own_errors():
         return bytes(
-            weasyprint.HTML(string=html, url_fetcher=build_fetcher(document.assets())).write_pdf()
+            weasyprint.HTML(string=html, url_fetcher=build_fetcher(document.assets())).write_pdf(
+                **profile.options()
+            )
         )
 
 
@@ -62,27 +66,28 @@ def page_count(document: Document) -> int:
     return len(layout(document).pages)
 
 
-def layout(document: Document) -> Any:
+def layout(document: Document, profile: PdfProfile = PRINT) -> Any:
     """
     ``document`` laid out by the print engine, before any PDF is written.
 
     WeasyPrint's own rendered document: its ``pages`` each carry ``anchors``,
     the position of every element with an ``id``, which is how a check asks
     where something landed. Typed ``Any`` for :func:`_backend`'s reason.
-    Shares :func:`render_pdf`'s resource policy exactly.
+    Shares :func:`render_pdf`'s resource policy exactly, and carries
+    ``profile`` so its own ``write_pdf()`` writes what :func:`render_pdf` would.
     """
     weasyprint = _backend()
     with _own_errors():
         return weasyprint.HTML(
             string=document.render(), url_fetcher=build_fetcher(document.assets())
-        ).render()
+        ).render(**profile.options())
 
 
-def save_pdf(document: Document, output_path: str | Path) -> Path:
-    """Render and write to disk, returning the resolved path."""
+def save_pdf(document: Document, output_path: str | Path, profile: PdfProfile = PRINT) -> Path:
+    """Render under ``profile`` and write to disk, returning the resolved path."""
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_bytes(render_pdf(document))
+    output_path.write_bytes(render_pdf(document, profile))
     return output_path
 
 
