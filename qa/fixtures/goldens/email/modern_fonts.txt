@@ -16,6 +16,7 @@ Every section below, linked to its heading
 Market Snapshot
 Sector Notes
 In Their Words
+Long Read
 Factor Returns
 Cumulative Performance
 Equal Columns
@@ -53,6 +54,14 @@ In Their Words
 
     "Duration earned its place in the book again this quarter."
     -- Head of Rates Strategy
+
+
+Long Read
+---------
+
+On paper this passage runs down one column and on into the next, the way a
+newspaper sets its copy. In an email it is one column, because Outlook's Word
+engine has no multi-column layout.
 
 
 Factor Returns

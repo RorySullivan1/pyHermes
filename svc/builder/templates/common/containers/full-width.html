@@ -14,6 +14,8 @@
     background_color — Optional hex override; defaults to the theme's surface,
                        or its highlight tint when highlighted
     highlight        — When true, tints the band and adds hairline rules top and bottom
+    flow_columns     — Columns the content flows through (#189); 0 for none. Only
+                       FlowedColumns sets it, and only on paper
 #}
 {# A highlighted band spends 1px a side on its hairline frame, so every
    horizontal inset inside it gives that pixel back. Content then starts at
@@ -43,7 +45,9 @@
     <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:{{ background_color | default(theme.palette.highlight_tint if highlight else theme.palette.surface) }};">
       <tr>
         <td class="mobile-pad"{% if section_align %} align="{{ section_align | escape_html }}"{% endif %} style="padding:{{ size.space.content_top }}px {{ edge_pad }}px {{ size.space.content_bottom }}px {{ edge_pad }}px; font-family: {{ font.label }}; font-size:{{ size.type.body }}px; color:{{ theme.text.primary }}; line-height:{{ size.type.body_line | percent }};{% if section_align %} text-align:{{ section_align }};{% endif %}">
+{% if flow_columns %}<div class="flowed-columns" style="column-count:{{ flow_columns }}; column-gap:{{ size.space.gutter }}px;">{% endif %}
           {{ content }}
+{% if flow_columns %}</div>{% endif %}
         </td>
       </tr>
     </table>

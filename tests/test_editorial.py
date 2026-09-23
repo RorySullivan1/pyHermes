@@ -10,7 +10,7 @@ from __future__ import annotations
 import pytest
 
 from qa.fixtures import all_brochure_fixtures, all_fixtures, all_paged_fixtures
-from svc.builder import EmailBuilder, FullWidth, PullQuote, TextBlock
+from svc.builder import EmailBuilder, FlowedColumns, FullWidth, PullQuote, TextBlock
 from svc.builder.components import _with_drop_cap
 from svc.builder.exceptions import ValidationError
 from svc.document import PagedDocument
@@ -110,6 +110,38 @@ class TestTheDropCap:
         assert 'id="note-ref-1"' in html
 
 
+class TestFlowedColumns:
+    COPY = "<p>One passage, flowed.</p><p>And on into the next column.</p>"
+
+    def test_an_email_is_one_column_byte_for_byte(self):
+        """The #189 done-when: the email golden for a FlowedColumns is one column."""
+        flowed = email_of(FlowedColumns(TextBlock(self.COPY), count=3, title="Read")).render()
+        plain = email_of(FullWidth(TextBlock(self.COPY), title="Read")).render()
+        assert flowed == plain
+
+    def test_paper_flows_the_content_through_its_columns(self):
+        html = paged_of(FlowedColumns(TextBlock(self.COPY), count=3)).render()
+        assert '<div class="flowed-columns" style="column-count:3; column-gap:16px;">' in html
+
+    def test_a_full_width_on_paper_is_not_flowed(self):
+        assert 'class="flowed-columns"' not in paged_of(FullWidth(TextBlock(self.COPY))).render()
+
+    def test_the_text_part_is_the_prose_once(self):
+        assert FlowedColumns(TextBlock(self.COPY), title="Read").text() == (
+            FullWidth(TextBlock(self.COPY), title="Read").text()
+        )
+
+    @pytest.mark.parametrize("count", [1, 5, True, "2"])
+    def test_the_count_is_two_to_four(self, count):
+        with pytest.raises(ValidationError, match="2 to 4 columns"):
+            FlowedColumns(TextBlock(self.COPY), count=count)
+
+    def test_it_holds_one_component_not_several(self):
+        """Not a split: the docstring's when-to-use, as a fact about the type."""
+        block = TextBlock(self.COPY)
+        assert FlowedColumns(block).components() == [block]
+
+
 class TestEveryPrimitiveIsInTheGallery:
     """Standing rules 1 and 9, across all three galleries: each at a non-default value."""
 
@@ -125,6 +157,16 @@ class TestEveryPrimitiveIsInTheGallery:
     def test_a_pull_quote_sets_its_attribution_and_alignment(self):
         quotes = [c for c in every_gallery_component() if isinstance(c, PullQuote)]
         assert any(q.attribution for q in quotes) and any(q.align for q in quotes)
+
+    def test_flowed_columns_are_in_every_gallery_and_some_count_is_not_two(self):
+        for gallery in (all_fixtures(), all_paged_fixtures(), all_brochure_fixtures()):
+            assert any(
+                isinstance(section, FlowedColumns)
+                for build in gallery.values()
+                for section in build()._flat_sections()
+            )
+        flowed = [s for s in every_gallery_section() if isinstance(s, FlowedColumns)]
+        assert any(section.count != 2 for section in flowed)
 
     def test_a_drop_cap_is_set_on_paper_and_in_an_email(self):
         for gallery in (all_fixtures(), all_paged_fixtures(), all_brochure_fixtures()):

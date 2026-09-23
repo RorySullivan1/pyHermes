@@ -36,6 +36,7 @@ from .components import (
 # Containers
 from .containers import (
     Container,
+    FlowedColumns,
     FullWidth,
     ThreeColumn,
     TwoColumn,
@@ -210,6 +211,7 @@ __all__ = [
     "Contents",
     # Containers
     "Container",
+    "FlowedColumns",
     "FullWidth",
     "TwoColumn",
     "ThreeColumn",

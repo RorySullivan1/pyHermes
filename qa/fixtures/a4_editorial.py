@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from svc.builder import FullWidth, PullQuote, TextBlock
+from svc.builder import FlowedColumns, FullWidth, PullQuote, TextBlock
 from svc.document import PagedDocument
 
 from . import _paged
@@ -36,6 +36,21 @@ def sections() -> list[FullWidth]:
                 "the long end held its ground while the front moved. Carry paid, and "
                 "the book was paid to wait for the turn.</p>",
                 drop_cap=True,
+            ),
+        ),
+        FlowedColumns(
+            title="The Long Read",
+            count=3,
+            content=TextBlock(
+                "<p>The front end repriced first. Two-year yields rose through July as "
+                "the market pushed the first cut into next year, and the curve "
+                "steepened with them: the long end, anchored by a softer inflation "
+                "print, held its ground while the front moved.</p>"
+                "<p>That was the trade. Steepeners paid, and carry paid while the "
+                "book waited for the turn. Linkers lagged, and breakevens now look "
+                "cheap against the path the market has priced.</p>"
+                "<p>We keep the steepener into the next meeting, and add to linkers "
+                "on any further weakness.</p>"
             ),
         ),
         FullWidth(

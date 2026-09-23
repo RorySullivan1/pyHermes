@@ -32,6 +32,7 @@ from svc.builder import (
     DataTable,
     Email,
     EmailBuilder,
+    FlowedColumns,
     Footer,
     FullWidth,
     Header,
@@ -301,6 +302,18 @@ def build(template_dir: Path | None = None, **metadata_overrides: Any) -> Email:
                     "Duration earned its place in the book again this quarter.",
                     attribution="Head of Rates Strategy",
                     align="center",
+                ),
+            )
+        )
+        # FlowedColumns (#189): one passage through columns on paper, and in an
+        # email exactly the FullWidth it degrades to.
+        .section(
+            FlowedColumns(
+                title="Long Read",
+                content=TextBlock(
+                    "<p>On paper this passage runs down one column and on into the "
+                    "next, the way a newspaper sets its copy. In an email it is one "
+                    "column, because Outlook's Word engine has no multi-column layout.</p>"
                 ),
             )
         )

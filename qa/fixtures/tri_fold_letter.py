@@ -17,6 +17,7 @@ from svc.builder import (
     CardGroup,
     ChartBlock,
     ContactBlock,
+    FlowedColumns,
     FullWidth,
     NumberedList,
     PullQuote,
@@ -125,6 +126,17 @@ def panels() -> list[Panel]:
                     title=MARKERS[4],
                     content=AuthorBlock(
                         "Rates Strategy", job_title="Hermes Research", align="right"
+                    ),
+                ),
+                # Left, against the panel's right: a measure set ragged-left
+                # reads badly, and the override is the cascade working.
+                FlowedColumns(
+                    align="left",
+                    content=TextBlock(
+                        "<p>Hermes Research covers rates, credit and currencies for "
+                        "institutional clients. This brochure summarises the quarterly "
+                        "review; the full document carries the method and every "
+                        "exhibit.</p>"
                     ),
                 ),
             ],

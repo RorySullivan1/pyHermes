@@ -14,3 +14,7 @@
       margin: {{ size.space.column_top * 2 }}px {{ size.space.caption_gap }}px 0 0;
       color: {{ theme.palette.accent }};
     }
+{# Flowed columns (#189). The passage's first paragraph keeps its top margin
+   and a continuation column starts with none, so without this the first
+   column sits a paragraph lower than the rest. #}
+    .flowed-columns p:first-child { margin-top: 0; }
