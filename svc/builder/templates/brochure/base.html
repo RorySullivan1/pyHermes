@@ -3,6 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <title>{{ campaign_name | escape_html }}</title>
+  {# The paged skeleton's document information, line for line (#195). #}
+{% if firm_name %}
+  <meta name="author" content="{{ firm_name | escape_html }}">
+{% endif %}
+{% if campaign_name or department or date_range %}
+  <meta name="description" content="{{ [campaign_name, department, date_range] | select | join(' · ') | escape_html }}">
+{% endif %}
+{% if department or issue_label %}
+  <meta name="keywords" content="{{ [department, issue_label] | select | join(', ') | escape_html }}">
+{% endif %}
   <style type="text/css">
     {# One CSS page per side of the sheet, at the flat sheet's size with no
        margin: every panel insets its own copy, so a page margin would inset

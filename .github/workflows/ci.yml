@@ -149,6 +149,7 @@ jobs:
         run: >-
           pytest tests/test_pdf.py tests/test_medium_aware_harness.py
           tests/test_apparatus.py tests/test_brochure_pdf.py tests/test_examples.py
+          tests/test_digital_pdf.py
 
       - name: Render the paged and brochure galleries to PDF, and photograph every sheet
         run: |
