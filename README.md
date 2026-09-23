@@ -98,6 +98,56 @@ document's own manifest and refuses every other URL by name, so a document whose
 lives on a CDN raises rather than silently printing without it. Attach images with
 `EmailImage.attached()` and they travel with the document.
 
+## The same content, folded
+
+A brochure is one sheet folded into panels. You hand over the panels in the order a reader
+meets them, front cover first; the fold decides which side of the sheet each one prints on
+and where:
+
+```python
+from svc.brochure import TRI_FOLD_LETTER, Brochure, Panel
+from svc.builder import FullWidth, PullQuote, TextBlock
+from svc.pdf import save_pdf
+
+
+def face(title, copy):
+    return Panel([FullWidth(content=TextBlock(f"<p>{copy}</p>"), title=title)])
+
+
+brochure = Brochure(
+    {"firm_name": "Hermes Research", "campaign_name": "Rates, Folded"},
+    panels=[  # in the order a reader meets them
+        face("Rates, Folded", "A quarterly view of the gilt curve, on one sheet."),
+        face("Why the curve", "The front end repriced."),
+        Panel([FullWidth(content=PullQuote("Duration is back.", attribution="The desk"))]),
+        face("Three positions", "Steepeners, linkers and cash."),
+        face("About us", "Rates, credit and currencies."),
+        face("Talk to the desk", "rates@example.com"),
+    ],
+    fold=TRI_FOLD_LETTER,
+)
+save_pdf(brochure, "brochure.pdf")                # both sides, imposed for the press
+save_pdf(brochure.proof(), "brochure-proof.pdf")  # plus fold guides and reader labels
+```
+
+Four folds ship: `BI_FOLD_LETTER`, `TRI_FOLD_LETTER` (a letter fold, whose inside panel is
+1/8in narrower so it closes flat), `Z_FOLD_LETTER` and `GATE_FOLD_A4`. A wrong panel count
+raises at construction and lists every face in reader order. Each panel is a fixed box: copy
+that overflows it is clipped, never carried onto another panel, and
+`svc.brochure.overflowing_panels(brochure)` names any that did.
+
+**The PDF is print-ready but RGB.** Each side carries 1/8in of bleed, with each panel's colour
+or picture running into it, and crop and registration marks outside that. A panel whose copy
+sits nearer the trim than the fold's safe distance raises. So does an image with fewer than
+half the pixels it needs to print at 300 dpi, and one short of the full count prints a
+warning. Converting colour for a press is the print house's step, and the lint pass says so
+once per brochure.
+
+The editorial pieces are shared, so a report can use them too: `PullQuote`,
+`TextBlock(drop_cap=True)`, `FlowedColumns` for one passage set in columns, and
+`TextBlock(figure=ImageBlock(..., wrap="left"))` for a picture the prose wraps round. Each
+degrades in an email: the drop cap and the float disappear, and the columns become one.
+
 ## Install
 
 Requires Python 3.11+. Not published to PyPI — install from a clone:
@@ -818,14 +868,16 @@ form is the interface.
 
 ## Scope
 
-**In:** composing the document, rendering it for an email client or a page, assembling the
-MIME message, transmitting it through Gmail or Microsoft Graph, and printing it to PDF.
+**In:** composing the document, rendering it for an email client, a page or a folded sheet,
+assembling the MIME message, transmitting it through Gmail or Microsoft Graph, and printing it
+to PDF.
 
 **Out, deliberately:** OAuth flows (the caller's, by design); campaign management — no
 scheduling, recipient lists, batching or send-time analytics; open tracking and link
 rewriting. On the paged side: no index, bibliography or list of figures, no multi-level
 numbering, and no DOCX or PPTX exporter — each is a new epic on the same contract rather
-than a gap.
+than a gap. On the folded side: no CMYK, ICC profile or PDF/X, no booklet imposition, and no
+dielines or die-cut, foil or stock metadata.
 
 ## Layout
 
@@ -835,6 +887,7 @@ svc/
 ├── builder/      the shared kit: Document, Medium, templates, components, the three axes
 ├── email/        the email medium: the four slots and the Gmail size check
 ├── document/     the paged medium: PagedDocument, Page, Cover, running boxes, back matter
+├── brochure/     the folded medium: Brochure, Panel, the folds, imposition, print checks
 ├── delivery/     transport-neutral MIME assembly + shared retry policy
 ├── gmail/        Gmail send adapter
 ├── outlook/      Outlook send adapter over Microsoft Graph

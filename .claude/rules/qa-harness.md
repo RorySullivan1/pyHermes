@@ -1008,3 +1008,28 @@ paged skeleton's break rules are removed:
   renders the fixture against a template copy with no `thead`. It asserts that the lint rule
   fires and that the headers vanish from the table's second sheet. The lint half runs without
   WeasyPrint, so the `[dev]`-only CI job enforces the structure too.
+
+
+## The brochure gallery, and the editorial page (#172)
+
+**A third registry**, `all_brochure_fixtures()`, for `all_paged_fixtures()`' reason: the
+paged tests read the cover, running boxes and back matter off every fixture they are given,
+and a brochure has none. `tri_fold_letter` is its one fixture. Each face opens on a marker no
+other face carries (`MARKERS`), so a test can find every face on the sheet by its text.
+`qa.preview` spans all three registries, and CI's `pdf` job renders and photographs both
+printed galleries. A brochure's raster is its **media box**, trim plus bleed plus slug, so
+1128 × 888 for a letter sheet, where a paged fixture's is exactly its `PageFormat`.
+
+**`a4_editorial` is a paged fixture for the editorial primitives**, apart from `a4_portrait`
+because that fixture's sheet counts are claims other tests make. Adding one pull quote moved
+A4 to six sheets.
+
+**CI's `pdf` job now names every module that reads a PDF back**: `test_pdf`,
+`test_medium_aware_harness`, `test_apparatus`, `test_brochure_pdf` and `test_examples`. Each
+skips without the extras, so the check job passes them by, and a module missing from that
+line is never run anywhere. `test_apparatus` had been missing since #171.
+
+**Two print rules and a severity.** `print-marks` (error) fires when a brochure's `@page`
+lacks `bleed` or `marks`. `rgb-only` is the first `INFO` finding: a fact no edit can change,
+stated once per brochure and never failing a build. Both apply to the brochure only, and the
+paged rules all apply to it too, because the same engine prints it.

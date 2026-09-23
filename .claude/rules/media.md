@@ -136,6 +136,7 @@ variant each.
 |---|---|---|
 | `email` | `Header`, `Banner`, `Footer` | `templates/base.html` |
 | `document` | `Cover`, `ContentsPage`, `RunningHeader`, `RunningFooter`, `BackMatter` | `templates/document/base.html` |
+| `brochure` | none: every face is a `Panel` the caller composes | `templates/brochure/base.html` |
 
 Three things the second set taught:
 
@@ -274,3 +275,18 @@ made them reviewable as changes of *owner* rather than of markup, the proof #95 
 - **Two galleries beat one widened one, until the harness is ready.** `all_fixtures()` feeds a
   dozen test modules whose assertions are about emails. Keeping the paged fixtures in a second
   registry for three phases is what let #165 unify them deliberately rather than by accident.
+
+
+## The third medium: a folded sheet (#172)
+
+`svc/brochure/` is the first medium with **no regions**. A brochure's cover is its first panel,
+and a `Cover` region would be a second way to fill it. Its overlay searches `brochure/`, then
+`document/`, then the shared tree, so it forks only its skeleton, the side and the panel, and
+shares the paged medium's editorial partial. `Document.render` gained one hook for it,
+`_body_context()`, which the brochure overrides to lay the body out as two imposed sides and
+to hand its skeleton the bleed. Every other document's body is the section list, as before.
+
+**Its PDF is RGB, and that is a decision.** WeasyPrint writes no CMYK, ICC profile or PDF/X,
+and converting colour for a press is the print house's step. Pretending otherwise would ship
+a wrong colour profile with confidence. The `rgb-only` lint finding says so once per
+brochure, at the `INFO` severity that never fails a build. `brochure.md` has the rest.

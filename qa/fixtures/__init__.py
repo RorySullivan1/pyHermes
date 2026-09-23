@@ -21,6 +21,7 @@ from svc.builder import Email
 from svc.builder.document import Document
 
 from . import (
+    a4_editorial,
     a4_long_table,
     a4_portrait,
     aligned_layout,
@@ -38,6 +39,7 @@ from . import (
     slate_theme,
     slide_16_9,
     spacious_size,
+    tri_fold_letter,
 )
 
 #: Components that are exempt from the ``kitchen_sink`` completeness rule.
@@ -107,14 +109,28 @@ def all_paged_fixtures() -> dict[str, PagedFixtureBuilder]:
     return {
         "a4_portrait": a4_portrait.build,
         "a4_long_table": a4_long_table.build,
+        "a4_editorial": a4_editorial.build,
         "slide_16_9": slide_16_9.build,
     }
+
+
+def all_brochure_fixtures() -> dict[str, PagedFixtureBuilder]:
+    """
+    The brochure gallery, name → builder (#172).
+
+    A third registry for :func:`all_paged_fixtures`' reason: the paged tests
+    read the cover, the running boxes and the back matter off every fixture
+    they are given, and a brochure has none of them. Every face of a
+    brochure is a panel.
+    """
+    return {"tri_fold_letter": tri_fold_letter.build}
 
 
 __all__ = [
     "DEPRECATED_COMPONENTS",
     "FixtureBuilder",
     "PagedFixtureBuilder",
+    "all_brochure_fixtures",
     "all_fixtures",
     "all_paged_fixtures",
 ]

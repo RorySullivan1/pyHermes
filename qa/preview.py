@@ -26,7 +26,7 @@ from svc.builder.document import Document
 from svc.builder.exceptions import EmailBuilderError
 from svc.pdf import PdfError
 
-from .fixtures import all_fixtures, all_paged_fixtures
+from .fixtures import all_brochure_fixtures, all_fixtures, all_paged_fixtures
 from .lint import Severity, format_findings, lint_document
 from .screenshots import ScreenshotError, capture_emails, capture_pages
 
@@ -71,14 +71,14 @@ def resolve(target: str) -> tuple[str, Document]:
 
 def _gallery() -> dict[str, Callable[[], Document]]:
     """
-    Both galleries, for a tool that only ever *looks* at what it is given.
+    Every gallery, for a tool that only ever *looks* at what it is given.
 
     The two registries stay apart for the test suite, whose assertions are
     per-medium (#165 merges them). Here the distinction buys nothing: this
     command renders a document and shows it to you, and refusing to preview
     a paged fixture would be the tool having an opinion it has no use for.
     """
-    return {**all_fixtures(), **all_paged_fixtures()}
+    return {**all_fixtures(), **all_paged_fixtures(), **all_brochure_fixtures()}
 
 
 def _from_fixture(name: str) -> Document:

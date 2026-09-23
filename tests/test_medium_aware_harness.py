@@ -15,11 +15,12 @@ from qa.fixtures import all_fixtures, all_paged_fixtures
 from qa.goldens import GOLDEN_DIR, artifacts, html_path, medium_dir
 from qa.lint import RULE_MEDIA, SOURCES, Severity, lint_document, lint_email, lint_html, rules_for
 from qa.screenshots import PDF_PX_SCALE, capture_pages, pages_available
+from svc.brochure import BROCHURE_MEDIUM
 from svc.builder.medium import DEFAULT_MEDIUM
 from svc.document import PAGED_MEDIUM, PagedDocument
 from svc.email import EMAIL_MEDIUM
 
-SHIPPED_MEDIA = {EMAIL_MEDIUM.name, PAGED_MEDIUM.name, DEFAULT_MEDIUM.name}
+SHIPPED_MEDIA = {EMAIL_MEDIUM.name, PAGED_MEDIUM.name, BROCHURE_MEDIUM.name, DEFAULT_MEDIUM.name}
 
 requires_pdf = pytest.mark.skipif(
     not pages_available(),
@@ -45,8 +46,23 @@ class TestEveryRuleSaysWhereItApplies:
         # #165 must not quietly narrow what an email is judged by. Ten rules
         # before, ten after, and the same ten.
         paged_only = {"page-size-declared", "paged-table-width", "table-structure"}
-        assert rules_for("email") == set(SOURCES) - paged_only
+        print_only = {"print-marks", "rgb-only"}
+        assert rules_for("email") == set(SOURCES) - paged_only - print_only
         assert len(rules_for("email")) == 10
+
+    def test_the_brochure_is_judged_as_print(self):
+        """Every paged rule, the neutral four, and the two about a press (#188)."""
+        assert rules_for("brochure") == {
+            "img-alt",
+            "table-role",
+            "empty-url",
+            "no-external-css",
+            "page-size-declared",
+            "paged-table-width",
+            "table-structure",
+            "print-marks",
+            "rgb-only",
+        }
 
     def test_the_outlook_rules_reach_no_other_medium(self):
         for rule in ("outlook-line-height", "outlook-transparent-background", "img-width-attr"):

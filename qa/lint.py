@@ -116,6 +116,21 @@ SOURCES: dict[str, str] = {
         "measured at 188px inside a 794px page in #164, correct markup and a "
         "different document."
     ),
+    "print-marks": (
+        "A print house trims a sheet by its crop marks and needs the ground "
+        "colours to run past the trim, or a cut that lands a hair outside it "
+        "leaves a white sliver. CSS Paged Media Level 3, section 7.2 (`bleed`) "
+        "and 7.3 (`marks`), which WeasyPrint implements (#188). The brochure "
+        "skeleton declares both from the fold, so an absent one means the fold "
+        "never reached the render."
+    ),
+    "rgb-only": (
+        "WeasyPrint writes RGB PDFs with no ICC profile and no PDF/X "
+        "conformance, and pyHermes converts no colour: separation for a press "
+        "is the print house's step (#172's recorded non-goal). Stated once per "
+        "brochure so it is never mistaken for an oversight, and never an error, "
+        "because no edit to the document can change it."
+    ),
     "table-structure": (
         "A print engine repeats a table's header on every sheet the table "
         "crosses only when the header row sits in a `thead`; CSS 2.1, section "
@@ -196,14 +211,14 @@ class _OpenTable:
 RULE_MEDIA: dict[str, frozenset[str]] = {
     # Accessibility, not client compatibility: a screen reader reads a PDF
     # too, and neither rule mentions a mail client in its source.
-    "img-alt": frozenset({"email", "document", "html"}),
-    "table-role": frozenset({"email", "document", "html"}),
+    "img-alt": frozenset({"email", "document", "brochure", "html"}),
+    "table-role": frozenset({"email", "document", "brochure", "html"}),
     # A URL that cannot resolve is a defect in any medium, and #164 made it a
     # harder one for paged output than for email: the PDF exporter refuses
     # every URL it cannot serve from the manifest, so an empty or external
     # one stops the render rather than merely wasting a request.
-    "empty-url": frozenset({"email", "document", "html"}),
-    "no-external-css": frozenset({"email", "document", "html"}),
+    "empty-url": frozenset({"email", "document", "brochure", "html"}),
+    "no-external-css": frozenset({"email", "document", "brochure", "html"}),
     # Outlook's Word engine, and the markup written for it. None of this is
     # true of a print engine -- #164 measured the reverse for the width
     # attribute, which a print engine ignores where Outlook needs it.
@@ -217,9 +232,13 @@ RULE_MEDIA: dict[str, frozenset[str]] = {
     # threshold is a fact about one mail client.
     "size-budget": frozenset({"email"}),
     # Paged-only, and each comes from a defect a real PDF produced (#164, #173).
-    "page-size-declared": frozenset({"document"}),
-    "paged-table-width": frozenset({"document"}),
-    "table-structure": frozenset({"document"}),
+    # A brochure is printed by the same engine, so each is as true of it.
+    "page-size-declared": frozenset({"document", "brochure"}),
+    "paged-table-width": frozenset({"document", "brochure"}),
+    "table-structure": frozenset({"document", "brochure"}),
+    # A folded sheet going to a press: true of nothing else this package builds.
+    "print-marks": frozenset({"brochure"}),
+    "rgb-only": frozenset({"brochure"}),
 }
 
 
@@ -258,6 +277,9 @@ _HEAVIEST_REGIONS = 5
 class Severity(StrEnum):
     ERROR = "error"
     WARNING = "warning"
+    #: A fact the reader should know that no edit can change. It never fails
+    #: a build, and says so once per document rather than per element.
+    INFO = "info"
 
 
 @dataclass(frozen=True)
@@ -725,6 +747,40 @@ def _paged_findings(html: str) -> list[Finding]:
     return findings
 
 
+#: A ``@page`` rule declaring both a bleed and marks.
+_PAGE_BLEED = re.compile(r"@page\b[^{]*\{[^}]*\bbleed\s*:", re.IGNORECASE | re.DOTALL)
+_PAGE_MARKS = re.compile(r"@page\b[^{]*\{[^}]*\bmarks\s*:\s*(?!none)", re.IGNORECASE | re.DOTALL)
+
+
+def _print_findings(html: str) -> list[Finding]:
+    """The two checks about a sheet going to a press, both document-level."""
+    findings = []
+    if not (_PAGE_BLEED.search(html) and _PAGE_MARKS.search(html)):
+        findings.append(
+            Finding(
+                rule_id="print-marks",
+                severity=Severity.ERROR,
+                location="the document's stylesheet",
+                message=(
+                    "no @page rule declares both a bleed and crop marks, so a print "
+                    "house has nothing to trim by and no ground past the trim"
+                ),
+            )
+        )
+    findings.append(
+        Finding(
+            rule_id="rgb-only",
+            severity=Severity.INFO,
+            location="whole document",
+            message=(
+                "this PDF is RGB, with no colour profile; converting it for a press "
+                "is the print house's step"
+            ),
+        )
+    )
+    return findings
+
+
 # ──────────────────────────────────────────────────────────────────────
 # Public API
 # ──────────────────────────────────────────────────────────────────────
@@ -747,7 +803,7 @@ def lint_html(html: str, medium: str = "email") -> list[Finding]:
     linter.feed(html)
     linter.close()
     applicable = rules_for(medium)
-    found = linter.findings + _budget_findings(html) + _paged_findings(html)
+    found = linter.findings + _budget_findings(html) + _paged_findings(html) + _print_findings(html)
     return [finding for finding in found if finding.rule_id in applicable]
 
 

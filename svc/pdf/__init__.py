@@ -12,11 +12,12 @@ lazily, so the core install stays Jinja2-only and an AST test holds it there.
 """
 
 from .exceptions import BackendMissingError, PdfError, UnreachableResourceError
-from .exporter import available, page_count, render_pdf, save_pdf
+from .exporter import available, layout, page_count, render_pdf, save_pdf
 
 __all__ = [
     "BackendMissingError",
     "available",
+    "layout",
     "PdfError",
     "UnreachableResourceError",
     "page_count",

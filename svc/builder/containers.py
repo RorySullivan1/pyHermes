@@ -21,7 +21,7 @@ from .components import Component
 from .engine import Renderer
 from .enums import TextAlign, ThreeColumnRatio, TwoColumnRatio
 from .exceptions import ValidationError
-from .images import ImageAsset
+from .images import EmailImage, ImageAsset
 from .models import _validate_align, _validate_color
 from .sizing import STANDARD_SIZES, SizeScheme, column_layout
 from .textgen import join_blocks, underline
@@ -136,6 +136,10 @@ class Container:
     def assets(self) -> list[ImageAsset]:
         """Return the attachment manifest entries from every component here."""
         return [asset for component in self.components() for asset in component.assets()]
+
+    def images(self) -> list[EmailImage]:
+        """Every image in this section: its components', and any it carries itself."""
+        return [image for component in self.components() for image in component.images()]
 
     def text(self) -> str:
         """
@@ -262,6 +266,56 @@ class FullWidth(Container):
     def render(self, engine: Renderer) -> str:
         ctx = self._base_context(engine)
         ctx["content"] = self.content.render(engine)
+        ctx["flow_columns"] = 0
+        return engine.render(self.template_path, ctx)
+
+
+class FlowedColumns(FullWidth):
+    """
+    One block of prose flowed through columns of one measure (#189).
+
+    **Not a split.** :class:`TwoColumn` and :class:`ThreeColumn` place
+    *separate components* side by side in fixed-ratio cells; this flows *one*
+    component, usually a :class:`~svc.builder.components.TextBlock`, down one
+    column and on into the next, as a newspaper sets copy. Use a split to
+    put a chart beside its commentary; use this to set a long passage.
+
+    **Paper only in effect.** CSS multi-column does not survive Outlook's
+    Word engine, so in an email this renders byte for byte as a
+    :class:`FullWidth` holding the same content: one column.
+
+    Args:
+        content: The component to flow.
+        count:   How many columns, two to four.
+        title, background_color, highlight, align, anchor: As on ``FullWidth``.
+    """
+
+    #: The columns a measure can hold at the paged frame widths before a line
+    #: falls under a readable length.
+    COUNTS = range(2, 5)
+
+    def __init__(
+        self,
+        content: Component,
+        count: int = 2,
+        title: str | None = None,
+        background_color: str | None = None,
+        highlight: bool = False,
+        align: str | TextAlign | None = None,
+        anchor: str | None = None,
+    ):
+        super().__init__(content, title, background_color, highlight, align, anchor)
+        if isinstance(count, bool) or count not in self.COUNTS:
+            raise ValidationError(
+                f"FlowedColumns takes {self.COUNTS.start} to {self.COUNTS.stop - 1} "
+                f"columns, got: {count!r}"
+            )
+        self.count = count
+
+    def render(self, engine: Renderer) -> str:
+        ctx = self._base_context(engine)
+        ctx["content"] = self.content.render(engine)
+        ctx["flow_columns"] = self.count if engine.medium.paged else 0
         return engine.render(self.template_path, ctx)
 
 

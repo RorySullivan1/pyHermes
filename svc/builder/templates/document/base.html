@@ -105,6 +105,8 @@
     .footnote::footnote-call { content: none; }
     .footnote::footnote-marker { content: attr(data-note) ". "; }
 
+{% include "document/editorial.html" %}
+
     {# A cross-reference (#184) is a link the caller writes in a raw-HTML
        field with the `xref` class hook; paper appends the page the target
        starts on. Zero Python: an email renders the link as written. #}

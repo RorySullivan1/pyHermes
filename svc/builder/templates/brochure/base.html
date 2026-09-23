@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="{{ language | escape_html }}">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ campaign_name | escape_html }}</title>
+  <style type="text/css">
+    {# One CSS page per side of the sheet, at the flat sheet's size with no
+       margin: every panel insets its own copy, so a page margin would inset
+       the outer panels twice.
+
+       `bleed` and `marks` are CSS Paged Media features WeasyPrint implements
+       (#188): the media box grows by the bleed on every side and the trim box
+       stays the sheet. The engine draws its marks inside the declared bleed,
+       under anything painted there, so the declared bleed is the panels' real
+       bleed plus a slug their grounds never reach. #}
+    @page {
+      size: {{ size.frame.sheet_width }}px {{ size.frame.sheet_height }}px;
+      margin: 0;
+      bleed: {{ print_bleed }}px;
+      marks: crop cross;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: {{ theme.palette.surface }};
+      font-family: {{ font.body }};
+      color: {{ theme.text.primary }};
+      orphans: 2;
+      widows: 2;
+    }
+    table { border-collapse: collapse; }
+    {# The paged skeleton's reason: a print engine does not map a table's
+       width attribute. #}
+    table[width="100%"] { width: 100%; }
+    img { border: 0; }
+
+{% include "document/editorial.html" %}
+
+    {# A side is one sheet face. Its panels are absolutely positioned inside
+       it (#186): as table cells, an overlong panel grew its row and carried
+       the side across five more sheets, which is the imposition broken. #}
+    {# A side does not clip: the panels' grounds run past it into the bleed,
+       and each panel clips its own copy. #}
+    .side {
+      position: relative;
+      width: {{ size.frame.sheet_width }}px;
+      height: {{ size.frame.sheet_height }}px;
+      break-after: page;
+      page-break-after: always;
+    }
+    .side:last-child { break-after: auto; page-break-after: auto; }
+
+    {# A panel is a fixed box, and copy past its safe line is clipped rather
+       than painted into the neighbour. The clip is silent in the PDF;
+       svc.brochure.overflowing_panels() is what makes it loud. #}
+    .panel { position: absolute; top: 0; overflow: hidden; box-sizing: border-box; }
+    .panel-ground { position: absolute; }
+    {# Over a picture the sections' own grounds go clear, or each would paint
+       a surface-coloured box over the image it sits on. Important, because
+       those grounds are inline; scoped to an imaged panel, so a coloured
+       panel still reads its colour as the surface its sections sit on. #}
+    .panel-imaged table, .panel-imaged td { background-color: transparent !important; }
+    .panel-copy { overflow: hidden; }
+
+    {# The proof: a guide on every fold and each panel's reader index, for
+       checking the imposition without folding paper. Never in production. #}
+    .proof-fold {
+      position: absolute;
+      top: 0;
+      height: {{ size.frame.sheet_height }}px;
+      width: 0;
+      border-left-width: 1px;
+      border-left-style: dashed;
+    }
+    .proof-label {
+      position: absolute;
+      bottom: {{ size.space.caption_gap }}px;
+      text-align: center;
+      font-family: {{ font.label }};
+      font-size: {{ size.type.micro }}px;
+    }
+  </style>
+</head>
+<body>
+{{ sections_html }}
+</body>
+</html>

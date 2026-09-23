@@ -29,12 +29,14 @@ from .components import (
     ImageBlock,
     KpiStrip,
     NumberedList,
+    PullQuote,
     TextBlock,
 )
 
 # Containers
 from .containers import (
     Container,
+    FlowedColumns,
     FullWidth,
     ThreeColumn,
     TwoColumn,
@@ -202,12 +204,14 @@ __all__ = [
     "ChartBlock",
     "ImageBlock",
     "TextBlock",
+    "PullQuote",
     "NumberedList",
     "AuthorBlock",
     "ContactBlock",
     "Contents",
     # Containers
     "Container",
+    "FlowedColumns",
     "FullWidth",
     "TwoColumn",
     "ThreeColumn",

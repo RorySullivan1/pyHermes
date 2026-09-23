@@ -43,3 +43,7 @@ Started from `main` @ `946386a` (PR #191 merged). Six code commits and one docs 
 ## Environment note
 - `python -m pytest` (the uv-tool `pytest` lacks jinja2). Playwright's managed browser is absent;
   `PYHERMES_CHROMIUM=/opt/pw-browsers/chromium-1194/chrome-linux/chrome` makes screenshots run.
+
+## Outcome
+- **PR #192 merged** 2026-09-23; one `Closes` per issue, and #171 closed with
+  `sub_issues_summary` 5/5. CI green on all six jobs at first push.

@@ -59,12 +59,23 @@ def page_count(document: Document) -> int:
     makes a claim about a page break checkable. Shares
     :func:`render_pdf`'s resource policy exactly.
     """
+    return len(layout(document).pages)
+
+
+def layout(document: Document) -> Any:
+    """
+    ``document`` laid out by the print engine, before any PDF is written.
+
+    WeasyPrint's own rendered document: its ``pages`` each carry ``anchors``,
+    the position of every element with an ``id``, which is how a check asks
+    where something landed. Typed ``Any`` for :func:`_backend`'s reason.
+    Shares :func:`render_pdf`'s resource policy exactly.
+    """
     weasyprint = _backend()
     with _own_errors():
-        rendered = weasyprint.HTML(
+        return weasyprint.HTML(
             string=document.render(), url_fetcher=build_fetcher(document.assets())
         ).render()
-    return len(rendered.pages)
 
 
 def save_pdf(document: Document, output_path: str | Path) -> Path:

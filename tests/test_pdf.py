@@ -84,7 +84,9 @@ class TestTheCoreNeverImportsTheBackend:
     document into PDF bytes may need the extra.
     """
 
-    @pytest.mark.parametrize("package", ["svc/builder", "svc/document", "svc/email"])
+    @pytest.mark.parametrize(
+        "package", ["svc/builder", "svc/document", "svc/email", "svc/brochure"]
+    )
     def test_no_module_imports_weasyprint(self, package):
         for path in sorted(pathlib.Path(package).rglob("*.py")):
             tree = ast.parse(path.read_text(encoding="utf-8"))

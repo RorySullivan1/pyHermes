@@ -14,7 +14,10 @@
 {% for item in items %}
 <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;{% if not loop.last %} margin-bottom: {{ size.space.block_gap }}px;{% endif %}">
   <tr>
-    <td width="{{ size.component.list_ordinal_width }}" style="padding: 0 {{ size.component.list_ordinal_gap }}px 0 0; vertical-align: top;">
+    {# The width twice: the attribute for Outlook, the property because a
+       print engine does not map the attribute, and without it each item's
+       ordinal shrink-wraps to its own digits and the titles stagger. #}
+    <td width="{{ size.component.list_ordinal_width }}" style="width: {{ size.component.list_ordinal_width }}px; padding: 0 {{ size.component.list_ordinal_gap }}px 0 0; vertical-align: top;">
       <p style="font-family: {{ font.heading }}; font-size: {{ size.type.section }}px; font-weight: bold; color: {{ theme.palette.accent }}; margin: 0; line-height: {{ size.type.title_line | percent }};">{{ item.number | escape_html }}</p>
     </td>
     <td{% if align %} align="{{ align | escape_html }}"{% endif %} style="padding: 0; vertical-align: top;{% if align %} text-align:{{ align }};{% endif %}">

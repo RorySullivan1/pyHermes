@@ -20,6 +20,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import re
+import struct
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -103,6 +104,30 @@ def sniff_image_type(data: bytes) -> tuple[str, str]:
         f"Unrecognised image format (first bytes: {data[:8]!r}). "
         f"Supported: {', '.join(sorted(SUPPORTED_IMAGE_TYPES))}."
     )
+
+
+def pixel_size(data: bytes) -> tuple[int, int] | None:
+    """
+    ``(width, height)`` in pixels, read from a PNG, JPEG or GIF header.
+
+    ``None`` when the header does not say, such as a truncated file or a JPEG
+    whose frame header is missing: a caller treats that as unknown, never as zero.
+    """
+    if data.startswith(b"\x89PNG\r\n\x1a\n") and len(data) >= 24:
+        return struct.unpack(">II", data[16:24])
+    if data[:6] in (b"GIF87a", b"GIF89a") and len(data) >= 10:
+        return struct.unpack("<HH", data[6:10])
+    if data.startswith(b"\xff\xd8"):
+        offset = 2
+        while offset + 9 <= len(data) and data[offset] == 0xFF:
+            marker = data[offset + 1]
+            length = struct.unpack(">H", data[offset + 2 : offset + 4])[0]
+            # SOF0..SOF15 carry the frame size; C4, C8 and CC are other tables.
+            if 0xC0 <= marker <= 0xCF and marker not in (0xC4, 0xC8, 0xCC):
+                height, width = struct.unpack(">HH", data[offset + 5 : offset + 9])
+                return width, height
+            offset += 2 + length
+    return None
 
 
 def _read_source(source: str | Path | bytes) -> tuple[bytes, str]:

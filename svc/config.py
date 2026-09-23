@@ -59,6 +59,8 @@ class Config:
             quote back in an exception message.
         exhibit_separator: Between a numbered exhibit's number and its
             caption — ``"Exhibit 3 · Factor returns"``. House style (#181).
+        print_dpi: The resolution a brochure's images must reach (#188). Below
+            it warns and below half of it raises; 300 is the offset norm.
     """
 
     # Sizes are whole kilobytes: sub-KB precision buys nothing, and an int
@@ -79,6 +81,8 @@ class Config:
 
     exhibit_separator: str = " · "
 
+    print_dpi: int = 300
+
     def __post_init__(self) -> None:
         # Validation at construction, as everywhere else in this codebase --
         # a bad limit should name itself here, not surface later as a
@@ -89,6 +93,7 @@ class Config:
             "size_limit_kb",
             "size_warn_kb",
             "inline_image_limit_kb",
+            "print_dpi",
             "retry_initial_delay",
             "retry_max_delay",
             "retry_max_hint_delay",

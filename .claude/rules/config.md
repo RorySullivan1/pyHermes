@@ -118,3 +118,8 @@ Recorded so they are not re-litigated as oversights:
 - **The Content-ID character set and length bound.** Loosening it produces
   ids that break the ``cid:`` reference they exist to serve.
 ```
+
+**`print_dpi` (#188) is the resolution a brochure's images must reach, 300 by default.** The
+offset norm, and a judgement call rather than a fact: a proof printer is content with less, a
+fine-art press wants more. Below it, a brochure prints a warning at construction; below half
+of it, construction raises. `PYHERMES_PRINT_DPI` sets it, like every other field.

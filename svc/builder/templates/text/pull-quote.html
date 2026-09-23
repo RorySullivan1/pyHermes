@@ -1,0 +1,24 @@
+{#
+  PULL QUOTE — a line lifted from the copy and set large, beside a rule (#189).
+
+  One markup for every medium: a tinted band with an accent rule on its
+  leading edge. That band is the email's degradation, and it needs none of
+  the print engine's features, so an Outlook reader and a printed page see
+  the same thing. The rule's width is shape rather than density, so it
+  stays literal, as a border width does everywhere.
+
+  Context:
+    quote       — The quoted words, plain text
+    attribution — Who said them, plain text; empty for none
+    align       — Optional alignment for the quote's copy
+#}
+<table class="pull-quote" role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
+  <tr>
+    <td{% if align %} align="{{ align | escape_html }}"{% endif %} bgcolor="{{ theme.palette.highlight_tint }}" style="padding: {{ size.space.block_gap }}px {{ size.space.column_pad_x }}px; border-left: 3px solid {{ theme.palette.accent }}; background-color: {{ theme.palette.highlight_tint }};{% if align %} text-align:{{ align }};{% endif %}">
+      <div style="font-family: {{ font.heading }}; font-size: {{ size.type.section }}px; font-style: italic; color: {{ theme.text.heading }}; line-height: {{ size.type.heading_line | percent }};">&ldquo;{{ quote | escape_html }}&rdquo;</div>
+      {% if attribution %}
+      <div style="font-family: {{ font.label }}; font-size: {{ size.type.small }}px; color: {{ theme.text.secondary }}; margin: {{ size.space.caption_gap }}px 0 0 0; line-height: {{ size.type.secondary_line | percent }};">&mdash; {{ attribution | escape_html }}</div>
+      {% endif %}
+    </td>
+  </tr>
+</table>

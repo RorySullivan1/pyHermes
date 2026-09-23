@@ -186,8 +186,7 @@ class Document:
         """
         images = [image for region, _ in self.leading_regions() for image in region.images()]
         for section in self._sections:
-            for component in section.components():
-                images.extend(component.images())
+            images.extend(section.images())
         images.extend(image for region, _ in self.trailing_regions() for image in region.images())
         return images
 
@@ -232,7 +231,7 @@ class Document:
             # A mail client has no sheet foot, so the notes a page floats
             # there are gathered after the last section instead.
             sections.append(FullWidth(content=endnotes))
-        ctx["sections_html"] = "\n".join(section.render(engine) for section in sections)
+        ctx.update(self._body_context(engine, sections))
         for region, facts in self.leading_regions() + self.trailing_regions():
             ctx.update(region.render_slots(engine, facts))
 
@@ -271,6 +270,10 @@ class Document:
     # ------------------------------------------------------------------
     # Internals
     # ------------------------------------------------------------------
+
+    def _body_context(self, engine: Renderer, sections: list[Container]) -> dict[str, Any]:
+        """The skeleton's body keys: every section in reading order. A brochure adds its sides."""
+        return {"sections_html": "\n".join(section.render(engine) for section in sections)}
 
     def _components(self) -> list[Component]:
         """Every component, in reading order: sections in turn, a split left to right."""

@@ -143,18 +143,24 @@ jobs:
         run: pip install -e ".[dev,pdf,qa]"
 
       - name: PDF tests
-        run: pytest tests/test_pdf.py tests/test_medium_aware_harness.py
+        # Every module that reads a PDF back. Each skips without the extras,
+        # so the check job passes them by; this job is the only one that
+        # runs them, and a module missing from this line is never run at all.
+        run: >-
+          pytest tests/test_pdf.py tests/test_medium_aware_harness.py
+          tests/test_apparatus.py tests/test_brochure_pdf.py tests/test_examples.py
 
-      - name: Render the paged gallery to PDF, and photograph every sheet
+      - name: Render the paged and brochure galleries to PDF, and photograph every sheet
         run: |
           python - <<'PY'
           from pathlib import Path
 
-          from qa.fixtures import all_paged_fixtures
+          from qa.fixtures import all_brochure_fixtures, all_paged_fixtures
           from qa.screenshots import capture_pages
           from svc.pdf import page_count, save_pdf
 
-          gallery = {name: build() for name, build in sorted(all_paged_fixtures().items())}
+          builders = {**all_paged_fixtures(), **all_brochure_fixtures()}
+          gallery = {name: build() for name, build in sorted(builders.items())}
           for name, document in gallery.items():
               path = save_pdf(document, Path("output/pdf") / f"{name}.pdf")
               print(f"{name}: {page_count(document)} page(s), {path.stat().st_size} bytes")

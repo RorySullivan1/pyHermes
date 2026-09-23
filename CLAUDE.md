@@ -13,7 +13,8 @@ and Outlook's Word engine for an email, laying out sheets and margin boxes for a
 **Scope = build, then send *or* print.** `svc/builder/` is the shared kit — the section tree,
 the three design axes, the two projections. A **medium** decides the rest: `svc/email/` the
 four-slot skeleton and the 102 KB check, `svc/document/` the paged one with its cover,
-contents sheet, running boxes and page breaks. The apparatus a reader navigates by —
+contents sheet, running boxes and page breaks, `svc/brochure/` a sheet folded into panels,
+imposed for the press with bleed and crop marks. The apparatus a reader navigates by —
 exhibit numbers, footnotes, contents, cross-references — is numbered in Python, once, so
 every projection agrees; only the page number is the print engine's. Three exporters sit
 on one contract — `svc/delivery/` + `svc/gmail/` + `svc/outlook/` for MIME, `svc/pdf/` for
@@ -38,6 +39,7 @@ python -m qa.screenshots      # gallery → output/screenshots/ (gitignored)
 pytest --update-goldens       # the ONLY way to regenerate a golden (#58)
 python -m qa.preview kitchen_sink --lint --screenshot --open   # an email
 python -m qa.preview a4_portrait --lint --screenshot --open    # a paged document + its PDF
+python -m qa.preview tri_fold_letter --lint --screenshot       # a brochure, one image a side
 ```
 
 CI runs the first four on every PR, plus `screenshots`, `pdf`, `data` and `wheel` jobs. `[dev]`
@@ -64,6 +66,7 @@ applies to and loads **only when a matching file is read** — so a session that
 | `plain-text.md` | `textgen.py`, `email.py` | The second projection of the section tree |
 | `apparatus.md` | `apparatus.py`, `document.py`, the notes / contents / running-box templates | Exhibit numbers, footnotes, contents, cross-references, the running section — Python numbers all but the page |
 | `media.md` | `svc/email/`, `svc/document/`, `svc/pdf/`, `medium.py`, `document.py`, `templates/document/**` | The medium model, the page, the template fork rule, each medium's regions, the exporter's resource policy |
+| `brochure.md` | `svc/brochure/**`, `templates/brochure/**`, the editorial partial | Folds, the panel, imposition, bleed and marks, the editorial primitives and each one's email degradation |
 | `delivery.md` | `svc/delivery/`, `svc/gmail/`, `svc/outlook/` | MIME assembly, the adapter contract, the deliberate non-features |
 | `qa-harness.md` | `qa/**`, `tests/**` | Gallery, goldens, screenshots, lint, the preview CLI |
 | `config.md` | `svc/config.py` | The one frozen dataclass of tunable numbers |
@@ -95,6 +98,9 @@ The rules themselves. `builder-architecture.md` carries why each exists.
 - **The PDF exporter makes no network requests.** It serves `cid:` from the document's own
   manifest and refuses every other URL by name, so a hosted image is not slow — it is a
   `PdfError`. A printable document carries its own images.
+- **A brochure is checked for print at construction.** A panel inset inside the fold's safe
+  distance raises; an image below half its 300 dpi pixel count raises, and below the full
+  count warns. Its PDF is RGB, by decision (`brochure.md`).
 - **Colours are `#RRGGBB`**, validated at construction and again in the templates.
 - **Validation runs at construction time, never at render time.** By the time `.render()`
   is called the data shape is already known good. Preserve this when adding a component.
@@ -179,9 +185,10 @@ these rather than improvising:
 
 - Tracked in [GitHub issues](https://github.com/RorySullivan1/pyHermes/issues), as epics
   with sub-issues. Complete: **#157** (rescope to media), **#153** (per-exhibit disclosure),
-  **#169** (pagination hardening), **#170** (the data layer, #177–#180) and **#171** (document
-  apparatus, #181–#185). Open: **#172** (the brochure medium) and **#150** (banner VML `src`,
-  needs a real Outlook host).
+  **#169** (pagination hardening), **#170** (the data layer, #177–#180), **#171** (document
+  apparatus, #181–#185) and **#172** (the brochure medium, #186–#189). Open: **#193** (the digital
+  PDF: attach it to an email, size, metadata; a stub) and **#150** (banner VML `src`, needs a
+  real Outlook host).
 - Current state, decisions and open threads:
   [.claude/memory/INDEX.md](.claude/memory/INDEX.md).
 - [README.md](README.md) is the human-facing entry point (what it is, install, build, send or
