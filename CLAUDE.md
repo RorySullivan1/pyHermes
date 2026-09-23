@@ -187,8 +187,8 @@ these rather than improvising:
   with sub-issues. Complete: **#157** (rescope to media), **#153** (per-exhibit disclosure),
   **#169** (pagination hardening), **#170** (the data layer, #177–#180), **#171** (document
   apparatus, #181–#185) and **#172** (the brochure medium, #186–#189). Open: **#193** (the digital
-  PDF: attach it to an email, size, metadata; a stub) and **#150** (banner VML `src`, needs a
-  real Outlook host).
+  PDF, #195–#200: metadata, a `PdfProfile`, attachments in `build_message`, a size budget,
+  PDF/UA, a landscape fixture) and **#150** (banner VML `src`, needs a real Outlook host).
 - Current state, decisions and open threads:
   [.claude/memory/INDEX.md](.claude/memory/INDEX.md).
 - [README.md](README.md) is the human-facing entry point (what it is, install, build, send or

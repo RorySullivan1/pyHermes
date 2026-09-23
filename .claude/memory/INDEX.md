@@ -7,8 +7,8 @@
   `.claude/rules/media.md`; do not restate it here.
 - **Shipped and closed**: #157 (PR #167), #153 (PR #168), #169 (PR #190), #170 (PR #191),
   #171 apparatus (PR #192), #172 brochure (PR #194, #186–#189).
-- **Open: #193** (stub): the digital PDF — the paged medium already has the cover and
-  contents; the gap is attaching it to an email, size, metadata. #150 needs a real Outlook.
+- **Open: #193**, the digital PDF, six sub-issues #195–#200 in dependency order (metadata first,
+  the landscape fixture last). Not a medium: a `PdfProfile` plus attachments. #150 needs Outlook.
 - The prose budget is live; the baseline is 45 and may only shrink.
 
 ## Decisions        (append-only; supersede, never delete)
