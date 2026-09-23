@@ -38,7 +38,8 @@ class TestTheCoreNeverImportsTheAdapters:
     """
 
     @pytest.mark.parametrize(
-        "package", ["svc/builder", "svc/document", "svc/email", "svc/delivery", "svc/pdf"]
+        "package",
+        ["svc/builder", "svc/document", "svc/email", "svc/brochure", "svc/delivery", "svc/pdf"],
     )
     def test_no_core_module_imports_an_optional_backend_or_the_adapters(self, package):
         for path in sorted(pathlib.Path(package).rglob("*.py")):

@@ -196,14 +196,14 @@ class _OpenTable:
 RULE_MEDIA: dict[str, frozenset[str]] = {
     # Accessibility, not client compatibility: a screen reader reads a PDF
     # too, and neither rule mentions a mail client in its source.
-    "img-alt": frozenset({"email", "document", "html"}),
-    "table-role": frozenset({"email", "document", "html"}),
+    "img-alt": frozenset({"email", "document", "brochure", "html"}),
+    "table-role": frozenset({"email", "document", "brochure", "html"}),
     # A URL that cannot resolve is a defect in any medium, and #164 made it a
     # harder one for paged output than for email: the PDF exporter refuses
     # every URL it cannot serve from the manifest, so an empty or external
     # one stops the render rather than merely wasting a request.
-    "empty-url": frozenset({"email", "document", "html"}),
-    "no-external-css": frozenset({"email", "document", "html"}),
+    "empty-url": frozenset({"email", "document", "brochure", "html"}),
+    "no-external-css": frozenset({"email", "document", "brochure", "html"}),
     # Outlook's Word engine, and the markup written for it. None of this is
     # true of a print engine -- #164 measured the reverse for the width
     # attribute, which a print engine ignores where Outlook needs it.
@@ -217,9 +217,10 @@ RULE_MEDIA: dict[str, frozenset[str]] = {
     # threshold is a fact about one mail client.
     "size-budget": frozenset({"email"}),
     # Paged-only, and each comes from a defect a real PDF produced (#164, #173).
-    "page-size-declared": frozenset({"document"}),
-    "paged-table-width": frozenset({"document"}),
-    "table-structure": frozenset({"document"}),
+    # A brochure is printed by the same engine, so each is as true of it.
+    "page-size-declared": frozenset({"document", "brochure"}),
+    "paged-table-width": frozenset({"document", "brochure"}),
+    "table-structure": frozenset({"document", "brochure"}),
 }
 
 

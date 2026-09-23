@@ -1,0 +1,13 @@
+{# One face of the sheet: its panels in the printer's order, left to right,
+   and on a proof the fold guides and reader labels over them. #}
+<div class="side" data-side="{{ side }}">
+{{ panels_html }}
+{% if proof %}
+{% for fold in folds %}
+  <div class="proof-fold" style="left:{{ fold }}px; border-left-color:{{ theme.palette.rule_dark }};"></div>
+{% endfor %}
+{% for label in labels %}
+  <div class="proof-label" style="left:{{ label.box.left }}px; width:{{ label.box.width }}px; color:{{ theme.text.light }};">{{ label.box.reader }} &middot; {{ label.name | escape_html }}</div>
+{% endfor %}
+{% endif %}
+</div>

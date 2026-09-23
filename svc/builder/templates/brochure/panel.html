@@ -1,0 +1,18 @@
+{# One panel: a fixed box at its place on the side. The copy sits `inset`
+   from every edge -- horizontally through the frame's pad_x, which every
+   container already applies, vertically through this box's own padding --
+   and is clipped at the safe line rather than painting into its neighbour.
+
+   The empty span closing the copy is the overflow sentinel: the print
+   engine records where it lands, and a panel whose sentinel falls below the
+   safe line, or off the sheet, has overflowed. #}
+<div class="panel" data-reader="{{ box.reader }}"{% if section_align %} align="{{ section_align | escape_html }}"{% endif %}
+     style="left:{{ box.left }}px; width:{{ box.width }}px; height:{{ box.height }}px; padding:{{ inset }}px 0; background-color:{{ background_color | default(theme.palette.surface) }};{% if section_align %} text-align:{{ section_align }};{% endif %}">
+  <div class="panel-copy" style="height:{{ content_height }}px;">
+    <table role="presentation" width="{{ box.width }}" cellpadding="0" cellspacing="0" border="0"
+           style="width:{{ box.width }}px;">
+{{ sections_html }}
+    </table>
+    <span class="panel-end" id="panel-{{ box.reader }}-end"></span>
+  </div>
+</div>

@@ -17,7 +17,7 @@ from pathlib import Path
 
 import pytest
 
-from qa.fixtures import all_fixtures, all_paged_fixtures
+from qa.fixtures import all_brochure_fixtures, all_fixtures, all_paged_fixtures
 from qa.preview import (
     EXIT_BUILD_FAILED,
     EXIT_LINT_ERRORS,
@@ -219,7 +219,8 @@ class TestTheCommand:
         # Both galleries: preview only ever *looks* at what it is handed, so
         # refusing to show a paged fixture would be an opinion it has no use
         # for. The registries stay apart for the test suite (#165).
-        assert capsys.readouterr().out.split() == sorted({**all_fixtures(), **all_paged_fixtures()})
+        gallery = {**all_fixtures(), **all_paged_fixtures(), **all_brochure_fixtures()}
+        assert capsys.readouterr().out.split() == sorted(gallery)
 
     def test_no_target_and_no_list_is_a_usage_error(self):
         with pytest.raises(SystemExit) as excinfo:

@@ -15,11 +15,12 @@ from qa.fixtures import all_fixtures, all_paged_fixtures
 from qa.goldens import GOLDEN_DIR, artifacts, html_path, medium_dir
 from qa.lint import RULE_MEDIA, SOURCES, Severity, lint_document, lint_email, lint_html, rules_for
 from qa.screenshots import PDF_PX_SCALE, capture_pages, pages_available
+from svc.brochure import BROCHURE_MEDIUM
 from svc.builder.medium import DEFAULT_MEDIUM
 from svc.document import PAGED_MEDIUM, PagedDocument
 from svc.email import EMAIL_MEDIUM
 
-SHIPPED_MEDIA = {EMAIL_MEDIUM.name, PAGED_MEDIUM.name, DEFAULT_MEDIUM.name}
+SHIPPED_MEDIA = {EMAIL_MEDIUM.name, PAGED_MEDIUM.name, BROCHURE_MEDIUM.name, DEFAULT_MEDIUM.name}
 
 requires_pdf = pytest.mark.skipif(
     not pages_available(),
