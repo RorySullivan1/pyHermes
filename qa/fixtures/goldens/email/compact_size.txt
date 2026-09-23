@@ -8,6 +8,25 @@ What the curve is pricing
 Rates Strategy · Week ending 24 August · Issue 001
 
 
+In This Issue
+-------------
+
+Every section below, linked to its heading
+
+Market Snapshot
+Sector Notes
+Factor Returns
+Cumulative Performance
+Equal Columns
+Narrow then Wide
+Wide then Narrow
+Three Equal
+Wide Left
+Wide Centre
+Wide Right
+What We Are Watching
+
+
 Market Snapshot
 ---------------
 
@@ -33,13 +52,15 @@ Factor Returns
 
 Long-short, gross of costs
 
+Exhibit 1 · Style factor returns
+
 Factor       1M     YTD
 --------  -----  ------
 Value     +1.8%   +7.4%
 Momentum  -0.4%  +11.2%
 Quality   +0.9%   +5.1%
 
-Hermes Research
+Hermes Research[1]
 24 August 2026
 
 Factor returns are shown gross of fees and transaction costs. Past performance
@@ -52,6 +73,8 @@ Cumulative Performance
 
 Indexed to 100
 
+Exhibit 2 · Cumulative factor performance
+
 [Cumulative factor performance]
 
 Hermes Research
@@ -63,7 +86,7 @@ The chart above is indexed to 100 at inception and excludes the effect of the
 Equal Columns
 -------------
 
-The left half of a 50-50 split.
+The left half of a 50-50 split, below Exhibit 2.
 
 The right half of a 50-50 split.
 
@@ -73,7 +96,7 @@ Narrow then Wide
 
 [Thumbnail]
 
-A 30% column
+Figure 1 · A 30% column[2]
 
 Illustrative only; not a recommendation to buy or sell.
 
@@ -136,7 +159,7 @@ Three themes into next week
 
 01. Inflation prints
 
-Core services remain sticky.
+Core services remain sticky.[3]
 
 02. Earnings revisions
 
@@ -152,6 +175,14 @@ Questions about this note?
 Reach the research desk with any questions.
 
 Email the desk: https://example.com/contact
+
+
+Notes
+-----
+
+[1] Each factor is equal-weighted across the top and bottom quintiles.
+[2] The thumbnail is a placeholder, not a chart.
+[3] Core services excluding housing, three-month annualised.
 
 
 Distributed to registered recipients only.

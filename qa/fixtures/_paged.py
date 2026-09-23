@@ -13,13 +13,14 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from svc.builder import CardGroup, DataTable, FullWidth, TextBlock, TwoColumn
+from svc.builder import CardGroup, ChartBlock, DataTable, FullWidth, TextBlock, TwoColumn
 from svc.builder.enums import CardOrientation, TwoColumnRatio
 from svc.builder.images import EmailImage
 from svc.builder.medium import Medium
 from svc.builder.models import KpiItem, TableRow
 from svc.document import (
     BackMatter,
+    ContentsPage,
     Cover,
     Page,
     PagedDocument,
@@ -39,6 +40,9 @@ _MARK_PNG = solid_png(72, 72, (245, 242, 236))
 
 #: The cover's backdrop, attached so the document is self-contained.
 _COVER_PNG = solid_png(120, 80, (22, 33, 45))
+
+#: The curve chart, the document's second numbered exhibit (#181).
+_CURVE_PNG = solid_png(600, 80, (91, 138, 154))
 
 #: Fixed so the render never moves. A fixture that reads the clock cannot be
 #: snapshotted.
@@ -93,6 +97,8 @@ def regions() -> dict[str, Any]:
             label="Hermes Research — Quarterly Review",
             box="top-right",
             show_page_number=True,
+            # The section a sheet holds, with the label before the first (#185).
+            follow="section",
         ),
         running_footer=RunningFooter(
             label="Confidential",
@@ -107,7 +113,13 @@ def regions() -> dict[str, Any]:
 
 def build_on(medium: Medium, template_dir: Path | None = None) -> PagedDocument:
     """The shared document, laid onto ``medium``'s page."""
-    document = PagedDocument(facts(), template_dir=template_dir, medium=medium, **regions())
+    document = PagedDocument(
+        facts(),
+        template_dir=template_dir,
+        medium=medium,
+        contents=ContentsPage(heading="In This Review"),
+        **regions(),
+    )
     return (
         document.add_section(
             FullWidth(
@@ -128,8 +140,9 @@ def build_on(medium: Medium, template_dir: Path | None = None) -> PagedDocument:
                 title="Narrative",
                 content=TextBlock(
                     "<p>The curve steepened through the quarter as the front end "
-                    "repriced. Duration added to returns for the first time in "
-                    "four quarters.</p>"
+                    "repriced.[^1] Duration added to returns for the first time in "
+                    "four quarters.</p>",
+                    notes=["The front end is the two-year gilt."],
                 ),
             )
         )
@@ -143,9 +156,12 @@ def build_on(medium: Medium, template_dir: Path | None = None) -> PagedDocument:
                         TableRow(cells=["Momentum", "-0.4%", "+11.2%"], colors=["", _LOSS, _GAIN]),
                         TableRow(cells=["Quality", "+0.9%", "+5.1%"], colors=["", _GAIN, _GAIN]),
                     ],
-                    source="Hermes Research",
+                    source="Hermes Research[^1]",
                     as_of="30 September 2026",
                     subtitle="Long-short, gross of costs",
+                    caption="Style factor returns",
+                    label="Exhibit",
+                    notes=["Factor definitions follow the methodology in the appendix."],
                     disclosure=(
                         "Factor returns are shown gross of fees and transaction "
                         "costs. Past performance is not indicative of future results."
@@ -158,7 +174,13 @@ def build_on(medium: Medium, template_dir: Path | None = None) -> PagedDocument:
                 ratio=TwoColumnRatio.EQUAL,
                 title="Positioning",
                 left=TextBlock("<p>The left half of a 50-50 split.</p>"),
-                right=TextBlock("<p>The right half of a 50-50 split.</p>"),
+                right=ChartBlock(
+                    EmailImage.attached(_CURVE_PNG, alt="2s10s spread over the quarter", width=600),
+                    caption="The 2s10s spread",
+                    label="Exhibit",
+                    source="Hermes Research[^1]",
+                    notes=["Measured close to close."],
+                ),
             )
         )
         # An explicit sheet boundary, with both breaks at non-default values.
@@ -170,8 +192,9 @@ def build_on(medium: Medium, template_dir: Path | None = None) -> PagedDocument:
                     FullWidth(
                         title="Methodology",
                         content=TextBlock(
-                            "<p>Factor returns are computed long-short and gross "
-                            "of transaction costs.</p>"
+                            '<p>The factor returns in <a class="xref" href="#exhibit-1">'
+                            "Exhibit 1</a> are computed long-short and gross of "
+                            "transaction costs.</p>"
                         ),
                     )
                 ],

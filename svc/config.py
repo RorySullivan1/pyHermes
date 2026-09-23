@@ -57,6 +57,8 @@ class Config:
             forever, so choose it deliberately.
         error_body_excerpt_chars: How much of a provider's error body to
             quote back in an exception message.
+        exhibit_separator: Between a numbered exhibit's number and its
+            caption — ``"Exhibit 3 · Factor returns"``. House style (#181).
     """
 
     # Sizes are whole kilobytes: sub-KB precision buys nothing, and an int
@@ -74,6 +76,8 @@ class Config:
 
     request_timeout_seconds: float | None = 30.0
     error_body_excerpt_chars: int = 500
+
+    exhibit_separator: str = " · "
 
     def __post_init__(self) -> None:
         # Validation at construction, as everywhere else in this codebase --
@@ -118,6 +122,11 @@ class Config:
                 "request_timeout_seconds must be positive, or None for no timeout, "
                 f"got {self.request_timeout_seconds!r}"
             )
+        if not self.exhibit_separator.strip():
+            raise ValueError(
+                f"exhibit_separator must show something between the number and the "
+                f"caption, got {self.exhibit_separator!r}"
+            )
         if self.error_body_excerpt_chars < 0:
             raise ValueError(
                 f"error_body_excerpt_chars must not be negative, "
@@ -142,6 +151,7 @@ class Config:
 
         ``request_timeout_seconds`` additionally accepts ``"none"`` for "no
         timeout", since that is a meaningful setting rather than an absence.
+        A string field takes the variable verbatim, surrounding spaces included.
         """
         source = base if base is not None else cls()
         overrides: dict[str, object] = {}
@@ -150,11 +160,11 @@ class Config:
             raw = os.environ.get(f"{prefix}{field.name.upper()}")
             if raw is None or not raw.strip():
                 continue
-            text = raw.strip()
+            text = raw if field.type == "str" else raw.strip()
             if field.name == "request_timeout_seconds" and text.lower() == "none":
                 overrides[field.name] = None
                 continue
-            caster = int if field.type in ("int", int) else float
+            caster: type = {"int": int, "str": str}.get(str(field.type), float)
             try:
                 overrides[field.name] = caster(text)
             except ValueError as exc:

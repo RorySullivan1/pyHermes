@@ -1,0 +1,24 @@
+{#
+  CONTENTS LIST — the section titles, each linked to its heading (#183).
+
+  Shared by the `Contents` component and the paged medium's contents sheet,
+  so the two cannot drift. The markup is the same in every medium: on paper,
+  the paged skeleton's stylesheet appends a leader and the page number to
+  each link, through `target-counter` — a print-engine feature, not
+  universal CSS — and an email, which never loads that stylesheet, shows the
+  links alone.
+
+  It declares its own alignment, as every structural component does, so a
+  centred section cannot centre an entry away from its leader. The `div`
+  carries both spellings (#125); an `ol` has no `align` attribute.
+
+  Context:
+    contents_entries — list of dicts with keys: title, anchor
+#}
+<div class="contents" align="left" style="text-align: left;">
+<ol style="margin: 0; padding: 0; list-style-type: none;">
+{% for entry in contents_entries %}
+  <li class="contents-entry" style="font-family: {{ font.label }}; font-size: {{ size.type.body }}px; line-height: {{ size.type.body_line | percent }}; margin: 0 0 {{ size.space.caption_gap }}px 0;"><a href="#{{ entry.anchor | escape_html }}" style="color: {{ theme.palette.accent }}; text-decoration: none;">{{ entry.title | escape_html }}</a></li>
+{% endfor %}
+</ol>
+</div>

@@ -140,6 +140,44 @@ class EmptyCover(Cover):
 
 
 @dataclass
+class ContentsPage(Region):
+    """
+    The sheet after the cover that lists every section and the page it starts on.
+
+    **The titles are handed down, never held.** The document passes its
+    sections' titles and anchors as ``contents_entries``, layered over this
+    region's fields like any fact, so the list cannot restate a title the
+    body spells differently. The page numbers are the one figure Python
+    cannot know: the paged skeleton's stylesheet asks the print engine for
+    each through ``target-counter``, on the partial the email's
+    :class:`~svc.builder.components.Contents` component shares.
+
+    Its heading is deliberately not a section title, so it never becomes the
+    section a running header follows (#185). There is no ``align``: the list
+    fixes its own, since an entry's shape — title, leader, page — is its
+    alignment.
+    """
+
+    CONTEXT_NAME: ClassVar[str] = "contents"
+    SLOTS: ClassVar[tuple[str, ...]] = ("contents",)
+    TEMPLATE_PATHS: ClassVar[dict[str, str]] = {"contents": "document/regions/contents.html"}
+
+    heading: str = "Contents"
+
+    def _text(self, facts: dict[str, Any]) -> str:
+        """The heading, then the titles one per line: plain text has no page numbers."""
+        titles = [entry["title"] for entry in facts.get("contents_entries", [])]
+        return join_blocks(underline(self.heading or ""), wrap("\n".join(titles)))
+
+
+@dataclass
+class EmptyContentsPage(ContentsPage):
+    """No contents sheet: the body follows the cover. Fills no slot."""
+
+    TEMPLATE_PATHS: ClassVar[dict[str, str]] = {}
+
+
+@dataclass
 class RunningBox(Region):
     """
     Shared half of the two margin-box regions: where it sits and what it says.
@@ -154,7 +192,15 @@ class RunningBox(Region):
 
     ``label`` is presentation and falls back to a fact, resolving into
     ``running_label`` under the chain the cover and the masthead both use.
+
+    ``follow="section"`` prints the current section's title instead (#185),
+    with ``label`` as the fallback for sheets before the first one. The title
+    reaches the margin through the print engine's named strings, not the
+    facts: which section a sheet holds is the page's own knowledge.
     """
+
+    #: What a box may follow instead of its fixed label. Closed, like the boxes.
+    FOLLOWS: ClassVar[tuple[str, ...]] = ("section",)
 
     #: Which fact this region's label falls back to. Subclasses set it.
     LABEL_FACT: ClassVar[str] = "firm_name"
@@ -165,9 +211,15 @@ class RunningBox(Region):
     label: str = ""
     box: str = ""
     show_page_number: bool = False
+    follow: str | None = None
 
     def validate(self) -> None:
         super().validate()
+        if self.follow is not None and self.follow not in self.FOLLOWS:
+            raise ValidationError(
+                f"'{self.CONTEXT_NAME}.follow' must be one of {list(self.FOLLOWS)} or None, "
+                f"got: {self.follow!r}"
+            )
         if self.box and self.box not in MARGIN_BOXES:
             raise ValidationError(
                 f"'{self.CONTEXT_NAME}.box' must be one of {list(MARGIN_BOXES)}, got: {self.box!r}"
@@ -186,6 +238,7 @@ class RunningBox(Region):
         resolved = {
             "running_box": self.resolved_box(),
             "running_label": self.resolved_label(str(facts.get(self.LABEL_FACT, ""))),
+            "running_string": self.CONTEXT_NAME.replace("_", "-"),
         }
         return {**super().context({}), **resolved, **facts}
 
@@ -196,7 +249,8 @@ class RunningBox(Region):
         A running box is chrome: it repeats copy the cover already carries,
         and a page number counts sheets that plain text does not have. So the
         projection is empty **by decision** rather than by omission — which
-        is why it is implemented rather than left to raise.
+        is why it is implemented rather than left to raise. A box following
+        the section is the same kind of thing: plain text has no sheets to head.
         """
         return ""
 
@@ -288,8 +342,10 @@ class EmptyBackMatter(BackMatter):
 __all__ = [
     "MARGIN_BOXES",
     "BackMatter",
+    "ContentsPage",
     "Cover",
     "EmptyBackMatter",
+    "EmptyContentsPage",
     "EmptyCover",
     "EmptyRunningFooter",
     "EmptyRunningHeader",

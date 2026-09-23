@@ -5,6 +5,16 @@ What the curve priced, and what it did not
 Rates Strategy · Quarter ending 30 September · Issue 001
 
 
+In This Review
+--------------
+
+Market Snapshot
+Narrative
+Factor Returns
+Positioning
+Methodology
+
+
 Market Snapshot
 ---------------
 
@@ -16,7 +26,7 @@ Gold: 2,411 (+0.85%)
 Narrative
 ---------
 
-The curve steepened through the quarter as the front end repriced. Duration
+The curve steepened through the quarter as the front end repriced.[1] Duration
 added to returns for the first time in four quarters.
 
 
@@ -25,13 +35,15 @@ Factor Returns
 
 Long-short, gross of costs
 
+Exhibit 1 · Style factor returns
+
 Factor       1M     YTD
 --------  -----  ------
 Value     +1.8%   +7.4%
 Momentum  -0.4%  +11.2%
 Quality   +0.9%   +5.1%
 
-Hermes Research
+Hermes Research[2]
 30 September 2026
 
 Factor returns are shown gross of fees and transaction costs. Past performance
@@ -43,7 +55,11 @@ Positioning
 
 The left half of a 50-50 split.
 
-The right half of a 50-50 split.
+Exhibit 2 · The 2s10s spread
+
+[2s10s spread over the quarter]
+
+Hermes Research[3]
 
 
 Appendix
@@ -52,7 +68,16 @@ Appendix
 Methodology
 -----------
 
-Factor returns are computed long-short and gross of transaction costs.
+The factor returns in Exhibit 1 are computed long-short and gross of
+transaction costs.
+
+
+Notes
+-----
+
+[1] The front end is the two-year gilt.
+[2] Factor definitions follow the methodology in the appendix.
+[3] Measured close to close.
 
 
 Important Disclosures

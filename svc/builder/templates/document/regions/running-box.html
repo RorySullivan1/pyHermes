@@ -3,9 +3,18 @@
    value goes through `css_string` and never `escape_html`. HTML entities
    inside a stylesheet render literally, and neither filter's absence would
    stop a `</style>` in a firm name closing the block early. #}
+{# A box that follows the section prints the named string the skeleton's
+   section titles set (`string-set`, `string()`: print-engine features). Its
+   label is a second string, seeded on a zero-height leaf after the cover and
+   cleared by every section title, so it shows only on sheets before the
+   first one -- a contents sheet -- and read with `last` so a sheet where the
+   first section starts shows the section, not the label. #}
+{% if follow %}
+    .{{ running_string }}-start { string-set: {{ running_string }}-fallback "{{ running_label | css_string }}"; }
+{% endif %}
     @page {
       @{{ running_box }} {
-        content: "{{ running_label | css_string }}"{% if show_page_number %} " · " counter(page) " / " counter(pages){% endif %};
+        content: {% if follow %}string({{ running_string }}-fallback, last) string({{ running_string }}, first){% else %}"{{ running_label | css_string }}"{% endif %}{% if show_page_number %} " · " counter(page) " / " counter(pages){% endif %};
         font-family: {{ font.label }};
         font-size: {{ size.type.micro }}px;
         color: {{ theme.text.light }};

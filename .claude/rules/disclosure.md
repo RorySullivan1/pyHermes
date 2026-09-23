@@ -97,6 +97,14 @@ narrow column opens inter-word rivers. At the 375px viewport the gallery's two-l
 disclosure reads cleanly, so justify stays the default and `disclosure_align=` is a later,
 additive call if anyone wants it.
 
+### A footnote is not a disclosure, and the two coexist (#182)
+
+A `disclosure` qualifies a whole exhibit, beneath it. A **footnote** qualifies one place in the
+copy — a figure, a phrase, a source — and is numbered across the document: at the sheet foot
+on paper, as endnotes in an email. Both are plain text for the same reason, so neither carries
+a link, and the upgrade path for both is one follow-up. On an exhibit a marker may sit in the
+caption or the source; `apparatus.md` has the mechanism.
+
 ### What #153 leaves
 
 - **A completeness rule can couple two issues that looked independent.** #154 was specified

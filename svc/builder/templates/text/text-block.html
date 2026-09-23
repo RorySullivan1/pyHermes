@@ -7,6 +7,7 @@
     subtitle     — Optional sub-heading rendered above the prose
     text_content — Paragraph HTML or plain text
 #}
+{% from "common/notes.html" import marked with context %}
 {% if subtitle %}
 <p class="subtitle"{% if align %} align="{{ align | escape_html }}"{% endif %} style="font-family: {{ font.body }}; font-size: {{ size.type.secondary }}px; font-style: italic; color: {{ theme.text.secondary }}; margin: 0 0 {{ size.space.subtitle_gap }}px 0; line-height: {{ size.type.secondary_line | percent }};{% if align %} text-align:{{ align }};{% endif %}">{{ subtitle | escape_html }}</p>
 {% endif %}
@@ -20,4 +21,4 @@
    element becomes a real ancestor. `Card.body` and `Footer.disclaimer`
    were already divs; this brings the last three raw-HTML surfaces into
    line with them. #}
-<div class="body-text"{% if align %} align="{{ align | escape_html }}"{% endif %} style="font-family: {{ font.body }}; font-size: {{ size.type.body }}px; color: {{ theme.text.primary }}; line-height: {{ size.type.body_line | percent }}; margin: 0 0 {{ size.space.block_gap }}px 0;{% if align %} text-align:{{ align }};{% endif %}">{{ text_content }}</div>
+<div class="body-text"{% if align %} align="{{ align | escape_html }}"{% endif %} style="font-family: {{ font.body }}; font-size: {{ size.type.body }}px; color: {{ theme.text.primary }}; line-height: {{ size.type.body_line | percent }}; margin: 0 0 {{ size.space.block_gap }}px 0;{% if align %} text-align:{{ align }};{% endif %}">{{ marked(text_parts, true) }}</div>

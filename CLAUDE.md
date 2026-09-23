@@ -12,10 +12,13 @@ and Outlook's Word engine for an email, laying out sheets and margin boxes for a
 
 **Scope = build, then send *or* print.** `svc/builder/` is the shared kit — the section tree,
 the three design axes, the two projections. A **medium** decides the rest: `svc/email/` the
-four-slot skeleton and the 102 KB check, `svc/document/` the paged one with its cover, running
-boxes and page breaks. Three exporters sit on one contract — `svc/delivery/` + `svc/gmail/` +
-`svc/outlook/` for MIME, `svc/pdf/` for PDF. Each owns its wire format and **never**
-authentication, so the core still depends on Jinja2 alone. Figures arrive as numbers:
+four-slot skeleton and the 102 KB check, `svc/document/` the paged one with its cover,
+contents sheet, running boxes and page breaks. The apparatus a reader navigates by —
+exhibit numbers, footnotes, contents, cross-references — is numbered in Python, once, so
+every projection agrees; only the page number is the print engine's. Three exporters sit
+on one contract — `svc/delivery/` + `svc/gmail/` + `svc/outlook/` for MIME, `svc/pdf/` for
+PDF. Each owns its wire format and **never** authentication, so the core still depends on
+Jinja2 alone. Figures arrive as numbers:
 `svc/builder/formats.py` formats them and `svc/data/` adapts a DataFrame or a Figure, each
 adapter behind an optional extra.
 
@@ -59,6 +62,7 @@ applies to and loads **only when a matching file is read** — so a session that
 | `disclosure.md` | `components.py`, `templates/analysis/**` + `media/**`, the shared partial | An exhibit's two kinds of fine print: attribution, and the compliance copy beneath it |
 | `data-layer.md` | `formats.py`, `svc/data/**` | Figures as numbers: the formatters, the two adapters, why the dependency runs one way |
 | `plain-text.md` | `textgen.py`, `email.py` | The second projection of the section tree |
+| `apparatus.md` | `apparatus.py`, `document.py`, the notes / contents / running-box templates | Exhibit numbers, footnotes, contents, cross-references, the running section — Python numbers all but the page |
 | `media.md` | `svc/email/`, `svc/document/`, `svc/pdf/`, `medium.py`, `document.py`, `templates/document/**` | The medium model, the page, the template fork rule, each medium's regions, the exporter's resource policy |
 | `delivery.md` | `svc/delivery/`, `svc/gmail/`, `svc/outlook/` | MIME assembly, the adapter contract, the deliberate non-features |
 | `qa-harness.md` | `qa/**`, `tests/**` | Gallery, goldens, screenshots, lint, the preview CLI |
@@ -94,6 +98,8 @@ The rules themselves. `builder-architecture.md` carries why each exists.
 - **Colours are `#RRGGBB`**, validated at construction and again in the templates.
 - **Validation runs at construction time, never at render time.** By the time `.render()`
   is called the data shape is already known good. Preserve this when adding a component.
+  The one exception is `Document.validate()`'s dangling-reference check: a `#fragment` may name
+  a section not yet added, so it runs before any template loads (`apparatus.md`).
 
 ## Standing rules
 
@@ -173,9 +179,9 @@ these rather than improvising:
 
 - Tracked in [GitHub issues](https://github.com/RorySullivan1/pyHermes/issues), as epics
   with sub-issues. Complete: **#157** (rescope to media), **#153** (per-exhibit disclosure),
-  **#169** (pagination hardening) and **#170** (the data layer, #177–#180). Open: **#171**
-  (document apparatus), **#172** (the brochure medium) and **#150** (banner VML `src`, needs
-  a real Outlook host).
+  **#169** (pagination hardening), **#170** (the data layer, #177–#180) and **#171** (document
+  apparatus, #181–#185). Open: **#172** (the brochure medium) and **#150** (banner VML `src`,
+  needs a real Outlook host).
 - Current state, decisions and open threads:
   [.claude/memory/INDEX.md](.claude/memory/INDEX.md).
 - [README.md](README.md) is the human-facing entry point (what it is, install, build, send or

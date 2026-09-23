@@ -13,9 +13,21 @@ Usage:
 
 from __future__ import annotations
 
+import textwrap
 import warnings
+from collections.abc import Sequence
 from typing import Any
 
+from svc.config import get_config
+
+from .apparatus import (
+    note_anchor,
+    note_ref_anchor,
+    slugify,
+    split_markers,
+    text_markers,
+    validate_anchor,
+)
 from .engine import Renderer
 from .enums import CardOrientation, ColumnKind, ImageAlign, RowKind
 from .exceptions import ValidationError
@@ -24,13 +36,24 @@ from .models import (
     Card,
     Cell,
     Column,
+    Footnote,
     NumberedItem,
     TableRow,
     _validate_align,
     _validate_url,
     coerce_column,
+    coerce_notes,
 )
-from .textgen import format_link, html_to_text, join_blocks, link_line, table, wrap
+from .textgen import (
+    LINE_WIDTH,
+    format_link,
+    html_to_text,
+    join_blocks,
+    link_line,
+    table,
+    underline,
+    wrap,
+)
 
 
 class CopyAlignment:
@@ -43,7 +66,7 @@ class CopyAlignment:
     ``TestOnlyProseComponentsTakeAnAlignment`` reads the class hierarchy
     rather than a hand-written list.
 
-    **Three components deliberately do not mix this in.**
+    **Four components deliberately do not mix this in.**
     :class:`CardGroup` and :class:`DataTable` align *structurally* — a KPI
     cell is centred because it is a KPI cell, and a table column resolves
     from its ``kind`` (#117, #118). A second, coarser knob would be a
@@ -52,7 +75,8 @@ class CopyAlignment:
     ``Column.align``) or be ignored by it (a parameter that does nothing).
     :class:`ImageBlock` is excluded for the plain reason that it already
     has an ``align``, and that one places a *block* rather than aligning
-    text — see :class:`~svc.builder.enums.ImageAlign`.
+    text — see :class:`~svc.builder.enums.ImageAlign`. :class:`Contents`
+    fixes its own: an entry is a title, a leader and a page, left to right.
 
     Unset means *inherit*: the component emits no declaration and takes
     whatever its container said, by ordinary CSS inheritance. There is no
@@ -89,6 +113,56 @@ class CopyAlignment:
         return {"align": self.align}
 
 
+class Exhibit:
+    """
+    What makes a chart, table or image *"Exhibit 3"* — mixed into all three.
+
+    ``label`` opts an exhibit into numbering; unset, it renders exactly as it
+    did before #181. Separate labels count separately, so *"Table 2"* and
+    *"Figure 1"* coexist in one document.
+
+    **The number is assigned, never chosen.** :class:`~svc.builder.document.
+    Document` walks its tree in reading order and sets :attr:`number` before
+    each projection, so the markup and the text part are handed the same
+    number. An exhibit never numbers itself: shared between two documents it
+    would otherwise carry one document's number into the other.
+
+    ``anchor`` overrides the derived ``id`` (``exhibit-3``); it is the only
+    anchor an unlabelled exhibit can have.
+    """
+
+    label: str = ""
+    anchor: str = ""
+
+    #: Set by the document's walk; ``None`` when unlabelled or rendered alone.
+    number: int | None = None
+
+    def validate_exhibit(self, label: str, anchor: str) -> None:
+        """Validate and store the two caller-facing fields."""
+        name = type(self).__name__.lower()
+        if label and not label.strip():
+            raise ValidationError(f"'{name}.label' must not be blank, got: {label!r}")
+        validate_anchor(anchor, f"{name}.anchor")
+        self.label = label
+        self.anchor = anchor
+        self.number = None
+
+    def resolved_anchor(self) -> str:
+        """The ``id`` this exhibit carries, or ``""`` when it has none."""
+        if self.anchor:
+            return self.anchor
+        if self.label and self.number:
+            return f"{slugify(self.label, 'exhibit')}-{self.number}"
+        return ""
+
+    def numbered(self, heading: str) -> str:
+        """``heading`` behind this exhibit's number — the one string both projections print."""
+        if not (self.label and self.number):
+            return heading
+        prefix = f"{self.label} {self.number}"
+        return f"{prefix}{get_config().exhibit_separator}{heading}" if heading else prefix
+
+
 class Component:
     """
     Abstract base for all email components.
@@ -112,6 +186,25 @@ class Component:
         collect the manifest of parts a delivery layer must attach.
         """
         return []
+
+    def raw_html(self) -> list[str]:
+        """
+        The caller markup this component emits raw, for the document's link check.
+
+        Empty by default: only the blessed raw-HTML fields carry markup, and a
+        component holding one returns it so a ``#fragment`` in it is checked.
+        """
+        return []
+
+    def footnotes(self) -> list[Footnote]:
+        """
+        Every note this component's copy calls, in reading order (#182).
+
+        Empty by default, like :meth:`images`. The document walks it to
+        number notes across the whole tree, so a component carrying notes
+        overrides it or they are never numbered.
+        """
+        return list(getattr(self, "notes", []))
 
     def assets(self) -> list[ImageAsset]:
         """
@@ -225,6 +318,9 @@ class CardGroup(Component):
         self.orientation = orientation
         self.subtitle = subtitle
 
+    def raw_html(self) -> list[str]:
+        return [card.body for card in self.cards if card.body]
+
     def text(self) -> str:
         """
         One card per line: ``label: value (sublabel)``, prose beneath.
@@ -285,7 +381,7 @@ class KpiStrip(CardGroup):
         return self.cards
 
 
-class DataTable(Component):
+class DataTable(Exhibit, Component):
     """
     Financial data table with headers, alternating row colours, and
     colour-coded numeric cells.
@@ -306,6 +402,8 @@ class DataTable(Component):
                   justified fine print beneath the attribution. Plain
                   text, escaped on the way out; see `disclosure.md` for when
                   it belongs here rather than on ``Footer.disclaimer``.
+        label, anchor: Numbering and its ``id``; see :class:`Exhibit`.
+        notes:    Footnotes called by ``[^n]`` in ``caption`` or ``source``.
 
     **``caption`` and ``subtitle`` are separate on purpose**, even when a
     caller would write the same words in both. ``subtitle`` is presentation
@@ -337,7 +435,12 @@ class DataTable(Component):
         subtitle: str | None = None,
         caption: str = "",
         disclosure: str = "",
+        label: str = "",
+        anchor: str = "",
+        notes: Sequence[Footnote | str] | None = None,
     ):
+        self.validate_exhibit(label, anchor)
+        self.notes = coerce_notes(notes, [caption, source], "DataTable")
         if not headers:
             raise ValidationError("DataTable requires at least one header.")
         if not rows:
@@ -383,14 +486,14 @@ class DataTable(Component):
     def text(self) -> str:
         """Aligned columns, then the attribution lines."""
         return self._with_subtitle(
-            wrap(self.caption),
+            wrap(text_markers(self.numbered(self.caption), self.notes)),
             table(
                 self.headers,
                 [[cell.text for cell in row.cells] for row in self.rows],
                 aligns=[column.align for column in self.resolved_columns()],
                 kinds=[row.kind for row in self.rows],
             ),
-            wrap("\n".join(filter(None, (self.source, self.as_of)))),
+            wrap("\n".join(filter(None, (text_markers(self.source, self.notes), self.as_of)))),
             wrap(self.disclosure),
         )
 
@@ -440,14 +543,17 @@ class DataTable(Component):
                 for r in self.rows
             ],
             "source": self.source,
+            "source_parts": split_markers(self.source, self.notes),
             "as_of": self.as_of,
             "subtitle": self.subtitle,
-            "caption": self.caption,
+            "caption": self.numbered(self.caption),
+            "caption_parts": split_markers(self.numbered(self.caption), self.notes),
+            "anchor": self.resolved_anchor(),
             "disclosure": self.disclosure,
         }
 
 
-class ChartBlock(CopyAlignment, Component):
+class ChartBlock(Exhibit, CopyAlignment, Component):
     """
     A chart image, bordered, with source attribution.
 
@@ -471,6 +577,9 @@ class ChartBlock(CopyAlignment, Component):
                   justified fine print beneath the attribution. Plain
                   text, escaped on the way out; see `disclosure.md` for when
                   it belongs here rather than on ``Footer.disclaimer``.
+        caption:  Optional heading line above the chart, where its number goes.
+        label, anchor: Numbering and its ``id``; see :class:`Exhibit`.
+        notes:    Footnotes called by ``[^n]`` in ``caption`` or ``source``.
     """
 
     template_path = "analysis/chart-block.html"
@@ -484,9 +593,15 @@ class ChartBlock(CopyAlignment, Component):
         width: int | None = None,
         align: str | None = None,
         disclosure: str = "",
+        caption: str = "",
+        label: str = "",
+        anchor: str = "",
+        notes: Sequence[Footnote | str] | None = None,
     ):
         if not image_url:
             raise ValidationError("ChartBlock requires an image_url.")
+        self.validate_exhibit(label, anchor)
+        self.notes = coerce_notes(notes, [caption, source], "ChartBlock")
         self.align = self.validate_alignment(align)
         self.image = coerce_image(
             image_url, alt=alt_text, field_name="chart.image_url", width=width
@@ -494,6 +609,7 @@ class ChartBlock(CopyAlignment, Component):
         self.source = source
         self.subtitle = subtitle
         self.disclosure = disclosure
+        self.caption = caption
 
     @property
     def image_url(self) -> str:
@@ -516,7 +632,10 @@ class ChartBlock(CopyAlignment, Component):
         empty — which is the whole reason that rule exists.
         """
         return self._with_subtitle(
-            wrap(f"[{self.image.alt}]"), wrap(self.source), wrap(self.disclosure)
+            wrap(text_markers(self.numbered(self.caption), self.notes)),
+            wrap(f"[{self.image.alt}]"),
+            wrap(text_markers(self.source, self.notes)),
+            wrap(self.disclosure),
         )
 
     def context(self) -> dict[str, Any]:
@@ -525,6 +644,10 @@ class ChartBlock(CopyAlignment, Component):
             "chart_alt_text": self.image.alt,
             "chart_image_width": self.image.width or "",
             "chart_source": self.source,
+            "chart_source_parts": split_markers(self.source, self.notes),
+            "caption": self.numbered(self.caption),
+            "caption_parts": split_markers(self.numbered(self.caption), self.notes),
+            "anchor": self.resolved_anchor(),
             # Bare, not ``chart_``-prefixed: all three exhibits include one
             # shared partial, so they must agree on the key it reads.
             "disclosure": self.disclosure,
@@ -533,7 +656,7 @@ class ChartBlock(CopyAlignment, Component):
         }
 
 
-class ImageBlock(Component):
+class ImageBlock(Exhibit, Component):
     """
     A single image — optionally linked, captioned and aligned.
 
@@ -557,10 +680,10 @@ class ImageBlock(Component):
         subtitle: Optional sub-heading rendered above the image.
         width:    Display width in px, used only when ``image`` is a bare
             URL string.  ``None`` renders full width.
+        label, anchor, notes: As on :class:`ChartBlock`; markers go in ``caption``.
 
     Raises:
-        ValidationError: On a missing image, an unsupported alignment, or
-            an unsafe ``link_url`` scheme.
+        ValidationError: On a missing image, a bad alignment or link scheme.
     """
 
     template_path = "media/image-block.html"
@@ -578,9 +701,14 @@ class ImageBlock(Component):
         width: int | None = None,
         decorative: bool = False,
         disclosure: str = "",
+        label: str = "",
+        anchor: str = "",
+        notes: Sequence[Footnote | str] | None = None,
     ):
         if not image:
             raise ValidationError("ImageBlock requires an image.")
+        self.validate_exhibit(label, anchor)
+        self.notes = coerce_notes(notes, [caption], "ImageBlock")
         if align not in self.ALIGNMENTS:
             raise ValidationError(
                 f"Unsupported alignment '{align}'. Use: {[a.value for a in self.ALIGNMENTS]}"
@@ -611,12 +739,13 @@ class ImageBlock(Component):
         ``align`` projects to nothing: plain text has one column, so an
         alignment is presentation with nothing to present.
         """
+        caption = text_markers(self.numbered(self.caption), self.notes)
         if self.image.decorative:
-            return self._with_subtitle(wrap(self.caption), wrap(self.disclosure))
+            return self._with_subtitle(wrap(caption), wrap(self.disclosure))
         alt = f"[{self.image.alt}]"
         if self.link_url:
             alt = format_link(alt, self.link_url)
-        return self._with_subtitle(wrap(alt), wrap(self.caption), wrap(self.disclosure))
+        return self._with_subtitle(wrap(alt), wrap(caption), wrap(self.disclosure))
 
     def context(self) -> dict[str, Any]:
         return {
@@ -626,7 +755,9 @@ class ImageBlock(Component):
             "image_width": self.image.width or "",
             "image_align": self.align,
             "link_url": self.link_url,
-            "caption": self.caption,
+            "caption": self.numbered(self.caption),
+            "caption_parts": split_markers(self.numbered(self.caption), self.notes),
+            "anchor": self.resolved_anchor(),
             "disclosure": self.disclosure,
             "subtitle": self.subtitle,
         }
@@ -645,24 +776,36 @@ class TextBlock(CopyAlignment, Component):
         content:  HTML or plain-text paragraph content.  May contain
                   multiple ``<p>`` tags for multi-paragraph blocks.
         subtitle: Optional sub-heading rendered above the prose.
+        notes:    Footnotes, each called by a ``[^n]`` marker in ``content``.
     """
 
     template_path = "text/text-block.html"
 
-    def __init__(self, content: str, subtitle: str | None = None, align: str | None = None):
+    def __init__(
+        self,
+        content: str,
+        subtitle: str | None = None,
+        align: str | None = None,
+        notes: Sequence[Footnote | str] | None = None,
+    ):
         if not content:
             raise ValidationError("TextBlock requires content.")
         self.align = self.validate_alignment(align)
+        self.notes = coerce_notes(notes, [content], "TextBlock")
         self.content = content
         self.subtitle = subtitle
 
+    def raw_html(self) -> list[str]:
+        return [self.content]
+
     def text(self) -> str:
         """The prose, through #108's degrader — ``content`` is raw HTML."""
-        return self._with_subtitle(wrap(html_to_text(self.content)))
+        return self._with_subtitle(wrap(html_to_text(text_markers(self.content, self.notes))))
 
     def context(self) -> dict[str, Any]:
         return {
             "text_content": self.content,
+            "text_parts": split_markers(self.content, self.notes),
             "subtitle": self.subtitle,
             **self.alignment_context(),
         }
@@ -761,15 +904,31 @@ class NumberedList(CopyAlignment, Component):
         """
         return self._with_subtitle(
             *(
-                join_blocks(wrap(f"{item.number}. {item.title}"), wrap(html_to_text(item.body)))
+                join_blocks(
+                    wrap(f"{item.number}. {item.title}"),
+                    wrap(html_to_text(text_markers(item.body, item.footnotes()))),
+                )
                 for item in self.items
             )
         )
 
+    def raw_html(self) -> list[str]:
+        return [item.body for item in self.items]
+
+    def footnotes(self) -> list[Footnote]:
+        """Every item's notes, item by item."""
+        return [note for item in self.items for note in item.footnotes()]
+
     def context(self) -> dict[str, Any]:
         return {
             "items": [
-                {"number": it.number, "title": it.title, "body": it.body} for it in self.items
+                {
+                    "number": it.number,
+                    "title": it.title,
+                    "body": it.body,
+                    "body_parts": split_markers(it.body, it.footnotes()),
+                }
+                for it in self.items
             ],
             "subtitle": self.subtitle,
             **self.alignment_context(),
@@ -817,4 +976,91 @@ class AuthorBlock(CopyAlignment, Component):
             "author_email": self.email,
             "subtitle": self.subtitle,
             **self.alignment_context(),
+        }
+
+
+class Contents(Component):
+    """
+    An "In this issue" list: every titled section, linked to its heading.
+
+    **The document fills it; the caller only places it.** A component cannot
+    see the tree it sits in, so :class:`~svc.builder.document.Document` hands
+    it the section titles and anchors in reading order before each
+    projection, leaving out the section that holds the list itself.
+
+    One class and one template serve both media. On paper the paged
+    skeleton's stylesheet appends each entry's page number, a figure only the
+    print engine knows; in an email the same markup is a linked list with no
+    page column, because there are no pages. The paged medium's own contents
+    sheet is :class:`~svc.document.regions.ContentsPage`, which renders the
+    same partial.
+
+    Args:
+        subtitle: Optional sub-heading rendered above the list.
+    """
+
+    template_path = "text/contents.html"
+
+    def __init__(self, subtitle: str | None = None):
+        self.subtitle = subtitle
+        #: ``(title, anchor)`` per listed section, assigned by the document.
+        self.entries: list[tuple[str, str]] = []
+
+    def text(self) -> str:
+        """The titles, one per line and unnumbered: plain text has no pages to cite."""
+        return self._with_subtitle(wrap("\n".join(title for title, _ in self.entries)))
+
+    def context(self) -> dict[str, Any]:
+        return {
+            "subtitle": self.subtitle,
+            "contents_entries": contents_entries(self.entries),
+        }
+
+
+def contents_entries(entries: list[tuple[str, str]]) -> list[dict[str, str]]:
+    """The shape the shared contents partial reads, from ``(title, anchor)`` pairs."""
+    return [{"title": title, "anchor": anchor} for title, anchor in entries]
+
+
+class Endnotes(Component):
+    """
+    A document's notes gathered at its end: the email's honest footnote (#182).
+
+    An email client has no sheet foot, so the notes a paged document floats
+    to the foot of each sheet are listed here, after the last section, each
+    linked back to its marker. The plain-text part prints the same list in
+    every medium. Not public: the document builds one when it has notes, and
+    a caller never places it.
+    """
+
+    template_path = "common/endnotes.html"
+
+    def __init__(self, notes: list[Footnote], heading: str = "Notes"):
+        self.notes = notes
+        self.heading = heading
+
+    def text(self) -> str:
+        """``[7] Returns are gross of fees.``, one per note, wrapped under its number."""
+        lines = [
+            textwrap.fill(
+                f"[{note.number}] {note.text}",
+                LINE_WIDTH,
+                subsequent_indent=" " * (len(str(note.number)) + 3),
+            )
+            for note in self.notes
+        ]
+        return join_blocks(underline(self.heading), "\n".join(lines))
+
+    def context(self) -> dict[str, Any]:
+        return {
+            "notes_heading": self.heading,
+            "notes": [
+                {
+                    "number": note.number,
+                    "text": note.text,
+                    "anchor": note_anchor(note.number or 0),
+                    "ref_anchor": note_ref_anchor(note.number or 0),
+                }
+                for note in self.notes
+            ],
         }

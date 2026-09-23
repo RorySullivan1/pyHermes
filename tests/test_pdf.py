@@ -203,10 +203,11 @@ class TestThePagesBreakWhereTheTreeSaysTheyDo:
         assert page_count(broken) == page_count(unbroken) + 1
 
     def test_the_gallery_paginates_as_its_page_format_implies(self):
-        # The same content on a shorter page needs more sheets.
+        # The same content on a shorter page needs more sheets. Each count
+        # includes the cover, the contents sheet (#183) and the back matter.
         a4 = page_count(all_paged_fixtures()["a4_portrait"]())
         slide = page_count(all_paged_fixtures()["slide_16_9"]())
-        assert a4 == 4 and slide == 5, (a4, slide)
+        assert a4 == 5 and slide == 6, (a4, slide)
 
     def test_every_sheet_is_the_mediums_page(self):
         import weasyprint
@@ -273,16 +274,21 @@ class TestWhatOnlyAPrintEngineCouldShow:
         ).render()
 
     @staticmethod
-    def _table_widths(page) -> list[int]:
-        widths: list[int] = []
+    def _table_widths(page, frame_width: int) -> list[tuple[int, int]]:
+        """Each table's laid-out width beside the width it should fill."""
+        widths: list[tuple[int, int]] = []
 
-        def walk(box):
-            if type(box).__name__ == "TableBox":
-                widths.append(round(box.width))
+        def walk(box, container: int):
+            kind = type(box).__name__
+            if kind == "TableBox":
+                widths.append((round(box.width), container))
+            elif kind == "InlineTableBox":
+                # A split's column: what a table inside it fills is the column.
+                container = round(box.width)
             for child in getattr(box, "children", []):
-                walk(child)
+                walk(child, container)
 
-        walk(page._page_box)
+        walk(page._page_box, frame_width)
         return widths
 
     @staticmethod
@@ -309,15 +315,18 @@ class TestWhatOnlyAPrintEngineCouldShow:
         and looking like a different document.
         """
         fixture = all_paged_fixtures()["a4_portrait"]()
-        body = self._laid_out(fixture).pages[1]
-        widths = self._table_widths(body)
+        # Sheet three: the cover and the contents sheet come first.
+        body = self._laid_out(fixture).pages[2]
         # The frame, not the sheet: since #175 the page's margins sit outside it.
         frame_width = fixture.medium.page_format.frame_width
+        widths = self._table_widths(body, frame_width)
         assert widths, "no tables laid out"
-        # Every table on the body page fills the frame rather than its content.
-        assert min(widths) > frame_width * 0.85, (
-            f"a table shrink-wrapped: {sorted(widths)} inside a {frame_width}px frame"
+        assert any(container < frame_width for _, container in widths), (
+            "no table inside a split, so the column case is unmeasured"
         )
+        # Every table fills what holds it — the frame, or its column — not its content.
+        shrunk = [(width, container) for width, container in widths if width <= container * 0.85]
+        assert not shrunk, f"a table shrink-wrapped (width, container): {shrunk}"
 
     def test_no_running_box_appears_on_the_cover(self):
         """
@@ -331,9 +340,9 @@ class TestWhatOnlyAPrintEngineCouldShow:
 
         assert "Quarterly Review" in cover, "the cover did not render"
         assert "Confidential" not in cover, "the running footer leaked onto the cover"
-        assert "1 / 4" not in cover, "the folio leaked onto the cover"
-        # ...and it is suppressed only there.
-        assert "Confidential" in body and "2 / 4" in body
+        assert "1 / 5" not in cover, "the folio leaked onto the cover"
+        # ...and it is suppressed only there: the contents sheet carries both.
+        assert "Confidential" in body and "2 / 5" in body
 
 
 requires_rasteriser = pytest.mark.skipif(

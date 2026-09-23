@@ -7,6 +7,7 @@
     subtitle — Optional sub-heading rendered above the list
     items    — List of dicts with keys: number, title, body
 #}
+{% from "common/notes.html" import marked with context %}
 {% if subtitle %}
 <p class="subtitle"{% if align %} align="{{ align | escape_html }}"{% endif %} style="font-family: {{ font.body }}; font-size: {{ size.type.secondary }}px; font-style: italic; color: {{ theme.text.secondary }}; margin: 0 0 {{ size.space.subtitle_gap }}px 0; line-height: {{ size.type.secondary_line | percent }};{% if align %} text-align:{{ align }};{% endif %}">{{ subtitle | escape_html }}</p>
 {% endif %}
@@ -18,7 +19,7 @@
     </td>
     <td{% if align %} align="{{ align | escape_html }}"{% endif %} style="padding: 0; vertical-align: top;{% if align %} text-align:{{ align }};{% endif %}">
       <p style="font-family: {{ font.heading }}; font-size: {{ size.type.item_title }}px; font-weight: bold; color: {{ theme.text.heading }}; margin: 0 0 {{ size.component.list_title_gap }}px 0; line-height: {{ size.type.heading_line | percent }};">{{ item.title | escape_html }}</p>
-      <div style="font-family: {{ font.body }}; font-size: {{ size.type.body }}px; color: {{ theme.text.primary }}; margin: 0; line-height: {{ size.component.list_body_line | percent }};">{{ item.body }}</div>
+      <div style="font-family: {{ font.body }}; font-size: {{ size.type.body }}px; color: {{ theme.text.primary }}; margin: 0; line-height: {{ size.component.list_body_line | percent }};">{{ marked(item.body_parts, true) }}</div>
     </td>
   </tr>
 </table>

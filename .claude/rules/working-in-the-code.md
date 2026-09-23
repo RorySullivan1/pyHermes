@@ -17,13 +17,16 @@ svc/
 │   ├── engine.py       — TemplateEngine + BoundEngine (binds theme, size, font, medium;
 │                         a ChoiceLoader searches the medium's overlay before the root)
 │   ├── medium.py       — Medium + DEFAULT_MEDIUM: skeleton, slots, page, constraints
-│   ├── document.py     — Document: metadata + sections + the three projections
+│   ├── document.py     — Document: metadata + sections + the three projections, and the
+│                         walk that numbers exhibits and notes and fills a Contents (#171)
+│   ├── apparatus.py    — anchors, slugs, footnote markers, reference parsing. `apparatus.md`
 │   ├── email.py        — Email(Document) + EmailBuilder (fluent): the four-slot region set
 │   ├── regions.py      — Region base + Banner/MinimalBanner, Footer
 │                         (body = the section list, deliberately not a class)
 │   ├── containers.py   — Container, FullWidth, TwoColumn, ThreeColumn (+ `highlight=` property)
-│   ├── components.py   — Component, CardGroup, DataTable, ChartBlock, ImageBlock, TextBlock, NumberedList, AuthorBlock, ContactBlock
-│   ├── models.py       — EmailMetadata (the email's facts), Card, KpiItem, TableRow, NumberedItem, SectionConfig
+│   ├── components.py   — Component, CardGroup, DataTable, ChartBlock, ImageBlock, TextBlock, NumberedList, AuthorBlock, ContactBlock, Contents
+│                         (+ the Exhibit mixin, and the private Endnotes the document appends)
+│   ├── models.py       — EmailMetadata (the email's facts), Card, KpiItem, TableRow, NumberedItem, Footnote, SectionConfig
 │   ├── images.py       — EmailImage (hosted/attached/inline), ImageAsset manifest, format sniffing
 │   ├── enums.py        — StrEnum vocab: TwoColumnRatio, ThreeColumnRatio, CardOrientation, EmbedStrategy, ImageAlign, SizeTheme
 │   ├── theming.py      — Theme (Palette/TextColors/SemanticColors/ShadowStyle),
@@ -43,11 +46,14 @@ svc/
 │   └── templates/      ← packaged with the wheel (moved here in #10)
 │       ├── base.html                — the EMAIL skeleton (four slots: header_bar_html,
 │                                      banner_html, sections_html, footer_html)
-│       ├── document/base.html       — the PAGED skeleton (@page, five slots), reached
+│       ├── document/base.html       — the PAGED skeleton (@page, six slots, the break
+│                                      rules and the apparatus's print-engine CSS), reached
 │                                      by the document medium's template overlay
 │       ├── document/page.html       — the sheet-boundary wrapper (a `tr`, not a `div`)
-│       ├── document/regions/*.html  — cover.html, back-matter.html, and running-box.html
-│                                      which emits CSS rather than markup
+│       ├── document/regions/*.html  — cover.html, contents.html, back-matter.html, and
+│                                      running-box.html which emits CSS rather than markup
+│       ├── common/*.html            — disclosure, notes (the footnote macro), endnotes,
+│                                      contents-list: partials several templates share
 │       ├── regions/*.html           — header-bar.html, banner.html, banner-minimal.html,
 │                                      footer.html
 │       ├── common/containers/*.html — layout geometry: full-width.html + columns.html
@@ -67,8 +73,8 @@ svc/
 │   ├── medium.py       — PAGED_MEDIUM, paged_medium(page)
 │   ├── document.py     — PagedDocument: cover | running boxes | body | back matter
 │   ├── page.py         — Page: a sheet boundary that FLATTENS in a non-paged medium
-│   └── regions.py      — Cover, RunningHeader/Footer (@page margin boxes), BackMatter,
-│                         plus an Empty variant of each
+│   └── regions.py      — Cover, ContentsPage, RunningHeader/Footer (@page margin boxes),
+│                         BackMatter, plus an Empty variant of each
 ├── gmail/              ← Gmail send adapter (consumes delivery; owns no credentials)
 │   └── sender.py       — GmailTransport protocol, GoogleApiTransport shim, send_message()
 ├── outlook/            ← Outlook send adapter over Microsoft Graph (same shape as gmail)

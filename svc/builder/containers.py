@@ -16,6 +16,7 @@ split::
 
 from __future__ import annotations
 
+from .apparatus import slugify, validate_anchor
 from .components import Component
 from .engine import Renderer
 from .enums import TextAlign, ThreeColumnRatio, TwoColumnRatio
@@ -81,14 +82,23 @@ class Container:
         background_color: str | None = None,
         highlight: bool = False,
         align: str | TextAlign | None = None,
+        anchor: str | None = None,
     ):
         if background_color:
             _validate_color(background_color, "container.background_color")
         _validate_align(align or "", "container.align")
+        validate_anchor(anchor or "", "container.anchor")
         self.title = title
         self.background_color = background_color
         self.highlight = highlight
         self.align = align
+        self.anchor = anchor
+
+    def resolved_anchor(self) -> str:
+        """The ``id`` this section's title carries: the caller's, or a slug of the title."""
+        if not self.title:
+            return ""
+        return self.anchor or slugify(self.title)
 
     def _base_context(self, engine: Renderer) -> dict:
         """
@@ -110,6 +120,7 @@ class Container:
         # ``{% if %}``, and under StrictUndefined an *undefined* name raises
         # rather than testing falsey — ``section_title``'s reasoning exactly.
         ctx["section_align"] = self.align or ""
+        ctx["section_anchor"] = self.resolved_anchor()
         return ctx
 
     def components(self) -> list[Component]:
@@ -228,6 +239,7 @@ class FullWidth(Container):
         content:          A Component instance to render inside the container.
         title:            Optional section heading.
         background_color: Optional hex background override.
+        anchor:           The title's ``id``; a slug of the title when unset.
     """
 
     template_path = "common/containers/full-width.html"
@@ -239,8 +251,9 @@ class FullWidth(Container):
         background_color: str | None = None,
         highlight: bool = False,
         align: str | TextAlign | None = None,
+        anchor: str | None = None,
     ):
-        super().__init__(title, background_color, highlight, align)
+        super().__init__(title, background_color, highlight, align, anchor)
         self.content = content
 
     def components(self) -> list[Component]:
@@ -256,9 +269,8 @@ class TwoColumn(_SplitContainer):
     """
     Two-column container with configurable split ratio.
 
-    Slots are positional: ``left`` is always the visually-left column,
-    ``right`` is always the visually-right column. The ``ratio`` string
-    determines the column widths.
+    Slots are positional — ``left`` and ``right`` are the visual columns —
+    and the ``ratio`` string determines their widths.
 
     Supported ratios (widths shown at the shipped 680 px frame, and
     *derived* from it rather than hardcoded — a different frame width
@@ -276,6 +288,7 @@ class TwoColumn(_SplitContainer):
         right:            Component rendered in the right column.
         title:            Optional section heading.
         background_color: Optional hex background override (``#RRGGBB``).
+        anchor:           The title's ``id``; a slug of the title when unset.
 
     Raises:
         ValidationError: On an unsupported ratio, a non-hex background color,
@@ -293,8 +306,9 @@ class TwoColumn(_SplitContainer):
         background_color: str | None = None,
         highlight: bool = False,
         align: str | TextAlign | None = None,
+        anchor: str | None = None,
     ):
-        super().__init__(title, background_color, highlight, align)
+        super().__init__(title, background_color, highlight, align, anchor)
         self._check_ratio(ratio)
         if left is None and right is None:
             raise ValidationError("TwoColumn requires at least one of 'left' or 'right'.")
@@ -342,6 +356,7 @@ class ThreeColumn(_SplitContainer):
         right:            Component rendered in the right column.
         title:            Optional section heading.
         background_color: Optional hex background override (``#RRGGBB``).
+        anchor:           The title's ``id``; a slug of the title when unset.
 
     Raises:
         ValidationError: On an unsupported ratio, a non-hex background color,
@@ -360,8 +375,9 @@ class ThreeColumn(_SplitContainer):
         background_color: str | None = None,
         highlight: bool = False,
         align: str | TextAlign | None = None,
+        anchor: str | None = None,
     ):
-        super().__init__(title, background_color, highlight, align)
+        super().__init__(title, background_color, highlight, align, anchor)
         self._check_ratio(ratio)
         if left is None and center is None and right is None:
             raise ValidationError(

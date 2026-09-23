@@ -16,12 +16,15 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Self
 
-from .containers import Container
+from .apparatus import check_unique, note_anchor, note_ref_anchor, references
+from .components import Component, Contents, Endnotes, Exhibit
+from .containers import Container, FullWidth
 from .engine import Renderer, TemplateEngine
 from .enums import EmbedStrategy
+from .exceptions import ValidationError
 from .images import EmailImage, ImageAsset, dedupe_assets
 from .medium import DEFAULT_MEDIUM, Medium
-from .models import DocumentMetadata
+from .models import DocumentMetadata, Footnote
 from .sizing import resolve_size_scheme
 from .textgen import join_sections
 from .theming import resolve_theme
@@ -119,9 +122,53 @@ class Document:
         return ()
 
     def add_section(self, container: Container) -> Self:
-        """Append a section. Returns ``self`` for optional chaining."""
+        """
+        Append a section. Returns ``self`` for optional chaining.
+
+        Raises:
+            ValidationError: If the section claims an anchor the document already
+                has; the document is left as it was.
+        """
         self._sections.append(container)
+        try:
+            self._walk()
+            check_unique(self._anchors())
+        except ValidationError:
+            self._sections.pop()
+            self._walk()
+            raise
         return self
+
+    def _flat_sections(self) -> list[Container]:
+        """
+        Every section in reading order, a page's own flattened in.
+
+        A :class:`~svc.document.page.Page` is a sheet boundary, not a section a
+        reader navigates to, so the sections inside it stand in for it.
+        """
+        return [inner for section in self._sections for inner in _flatten(section)]
+
+    def validate(self) -> None:
+        """
+        Check what only the finished tree can answer, before any template loads.
+
+        Every ``#fragment`` in caller markup must land on an anchor this
+        document defines. It runs at the start of each projection rather than
+        in :meth:`add_section`, because a reference may name a section not yet
+        added; call it directly to check sooner.
+
+        Raises:
+            ValidationError: Naming the first dangling reference and who made it.
+        """
+        self._walk()
+        defined = {anchor for anchor, _ in self._anchors()}
+        for owner, html in self._raw_html():
+            for target in references(html):
+                if target not in defined:
+                    raise ValidationError(
+                        f"{owner} links to #{target}, which nothing in this document "
+                        "defines. Check the anchor, or the numbering it assumed."
+                    )
 
     # ------------------------------------------------------------------
     # The three projections
@@ -168,6 +215,7 @@ class Document:
         the medium's constraints over the *composed* document, so region
         bytes are inside whatever budget it sets.
         """
+        self.validate()
         # The one resolution point. Every template below — skeleton, regions,
         # containers, components — reads the same values, because they all
         # render through this binder rather than looking any of them up.
@@ -179,7 +227,12 @@ class Document:
         )
 
         ctx = self._metadata.to_dict()
-        ctx["sections_html"] = "\n".join(section.render(engine) for section in self._sections)
+        sections = list(self._sections)
+        if (endnotes := self._endnotes()) and not self._medium.paged:
+            # A mail client has no sheet foot, so the notes a page floats
+            # there are gathered after the last section instead.
+            sections.append(FullWidth(content=endnotes))
+        ctx["sections_html"] = "\n".join(section.render(engine) for section in sections)
         for region, facts in self.leading_regions() + self.trailing_regions():
             ctx.update(region.render_slots(engine, facts))
 
@@ -198,9 +251,12 @@ class Document:
         one house format possible at all. Deterministic — no clock, no
         randomness, no override.
         """
+        self.validate()
+        endnotes = self._endnotes()
         return join_sections(
             *(region.text(facts) for region, facts in self.leading_regions()),
             *(section.text() for section in self._sections),
+            endnotes.text() if endnotes else "",
             *(region.text(facts) for region, facts in self.trailing_regions()),
         )
 
@@ -215,6 +271,86 @@ class Document:
     # ------------------------------------------------------------------
     # Internals
     # ------------------------------------------------------------------
+
+    def _components(self) -> list[Component]:
+        """Every component, in reading order: sections in turn, a split left to right."""
+        return [component for section in self._sections for component in section.components()]
+
+    def _walk(self) -> None:
+        """
+        Hand every part of the apparatus what only the whole tree knows.
+
+        Run on each :meth:`add_section` and before each projection, so a
+        component shared with another document carries this one's numbers
+        while this one renders.
+        """
+        self._number_exhibits()
+        for number, note in enumerate(self._footnotes(), start=1):
+            note.number = number
+        for section in self._flat_sections():
+            for component in section.components():
+                if isinstance(component, Contents):
+                    component.entries = self._contents_entries(skip=section)
+
+    def _raw_html(self) -> list[tuple[str, str]]:
+        """Every raw-HTML field in the document, each with who carries it."""
+        regions = [region for region, _ in self.leading_regions() + self.trailing_regions()]
+        return [
+            ("header_disclaimer", self._metadata.header_disclaimer),
+            *((type(region).__name__, html) for region in regions for html in region.raw_html()),
+            *(
+                (type(component).__name__, html)
+                for component in self._components()
+                for html in component.raw_html()
+            ),
+        ]
+
+    def _footnotes(self) -> list[Footnote]:
+        """Every note the tree calls, in reading order."""
+        return [note for component in self._components() for note in component.footnotes()]
+
+    def _endnotes(self) -> Endnotes | None:
+        """The notes gathered for the end of the document, or ``None`` if it has none."""
+        notes = self._footnotes()
+        return Endnotes(notes) if notes else None
+
+    def _contents_entries(self, skip: Container | None = None) -> list[tuple[str, str]]:
+        """``(title, anchor)`` for every titled section in reading order, less ``skip``."""
+        return [
+            (section.title, section.resolved_anchor())
+            for section in self._flat_sections()
+            if section.title and section is not skip
+        ]
+
+    def _number_exhibits(self) -> None:
+        """Number every labelled exhibit in reading order, one count per label."""
+        counts: dict[str, int] = {}
+        for component in self._components():
+            if isinstance(component, Exhibit):
+                if component.label:
+                    counts[component.label] = counts.get(component.label, 0) + 1
+                    component.number = counts[component.label]
+                else:
+                    component.number = None
+
+    def _anchors(self) -> list[tuple[str, str]]:
+        """Every anchor this document defines, each with who defines it."""
+        sections = [
+            (anchor, f"the section titled {section.title!r}")
+            for section in self._flat_sections()
+            if (anchor := section.resolved_anchor())
+        ]
+        exhibits = [
+            (anchor, f"{component.numbered('') or 'an unnumbered'} {type(component).__name__}")
+            for component in self._components()
+            if isinstance(component, Exhibit) and (anchor := component.resolved_anchor())
+        ]
+        notes = [
+            (anchor(note.number or 0), f"footnote {note.number}")
+            for note in self._footnotes()
+            for anchor in (note_anchor, note_ref_anchor)
+        ]
+        return sections + exhibits + notes
 
     def _inline_image_hint(self) -> str:
         """
@@ -233,6 +369,12 @@ class Document:
             f"{inline_kb * 4 / 3:.1f} KB of base64 to that total; switching them to "
             f"EmailImage.attached() moves the bytes out of the HTML entirely."
         )
+
+
+def _flatten(section: Container) -> list[Container]:
+    """A section, or the sections a page holds in its place."""
+    inner = getattr(section, "sections", None)
+    return list(inner) if isinstance(inner, list) else [section]
 
 
 __all__ = ["Document", "RegionFacts", "Renderer"]

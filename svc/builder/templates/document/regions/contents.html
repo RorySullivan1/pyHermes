@@ -1,0 +1,16 @@
+{# The contents sheet, after the cover. Its heading is an h2 with no
+   `section-title` hook on purpose: the running header follows section
+   titles (#185), and this page is not a section. The list is the partial the
+   email's Contents component renders, so the two cannot drift; the page
+   numbers come from the skeleton's stylesheet, not from here. #}
+<table role="presentation" width="{{ size.frame.width }}" cellpadding="0" cellspacing="0" border="0"
+       style="width:{{ size.frame.width }}px; break-after:page; page-break-after:always;">
+  <tr>
+    <td style="padding:{{ size.space.section_title_top }}px {{ size.frame.pad_x }}px {{ size.space.content_bottom }}px;">
+      {% if heading %}
+      <h2 style="margin:0 0 {{ size.space.section_title_bottom }}px; font-family:{{ font.heading }}; font-size:{{ size.type.section }}px; line-height:{{ size.type.title_line | percent }}; color:{{ theme.text.heading }};">{{ heading | escape_html }}</h2>
+      {% endif %}
+{% include "common/contents-list.html" %}
+    </td>
+  </tr>
+</table>

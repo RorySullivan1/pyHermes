@@ -28,6 +28,7 @@ from svc.builder import (
     CardGroup,
     ChartBlock,
     ContactBlock,
+    Contents,
     DataTable,
     Email,
     EmailBuilder,
@@ -223,6 +224,12 @@ def build(template_dir: Path | None = None, **metadata_overrides: Any) -> Email:
                 ),
             )
         )
+        .section(
+            FullWidth(
+                title="In This Issue",
+                content=Contents(subtitle="Every section below, linked to its heading"),
+            )
+        )
         # FullWidth + horizontal CardGroup + highlight.
         .section(
             FullWidth(
@@ -313,9 +320,13 @@ def build(template_dir: Path | None = None, **metadata_overrides: Any) -> Email:
                             ]
                         ),
                     ],
-                    source="Hermes Research",
+                    source="Hermes Research[^1]",
                     as_of="24 August 2026",
                     subtitle="Long-short, gross of costs",
+                    caption="Style factor returns",
+                    label="Exhibit",
+                    anchor="factor-table",
+                    notes=["Each factor is equal-weighted across the top and bottom quintiles."],
                     disclosure=(
                         "Factor returns are shown gross of fees and transaction "
                         "costs. Past performance is not indicative of future "
@@ -332,6 +343,8 @@ def build(template_dir: Path | None = None, **metadata_overrides: Any) -> Email:
                     EmailImage.attached(_CHART_PNG, alt="Cumulative factor performance", width=320),
                     source="Hermes Research",
                     subtitle="Indexed to 100",
+                    caption="Cumulative factor performance",
+                    label="Exhibit",
                     disclosure=(
                         "The chart above is indexed to 100 at inception and "
                         "excludes the effect of the 0.75% management fee."
@@ -344,7 +357,10 @@ def build(template_dir: Path | None = None, **metadata_overrides: Any) -> Email:
             TwoColumn(
                 ratio=TwoColumnRatio.EQUAL,
                 title="Equal Columns",
-                left=TextBlock("<p>The left half of a 50-50 split.</p>"),
+                left=TextBlock(
+                    '<p>The left half of a 50-50 split, below <a class="xref" '
+                    'href="#exhibit-2">Exhibit 2</a>.</p>'
+                ),
                 right=TextBlock("<p>The right half of a 50-50 split.</p>"),
             )
         )
@@ -355,7 +371,9 @@ def build(template_dir: Path | None = None, **metadata_overrides: Any) -> Email:
                 highlight=True,
                 left=ImageBlock(
                     EmailImage.attached(_THUMB_PNG, alt="Thumbnail", width=96),
-                    caption="A 30% column",
+                    caption="A 30% column[^1]",
+                    label="Figure",
+                    notes=["The thumbnail is a placeholder, not a chart."],
                     align=ImageAlign.LEFT,
                     disclosure="Illustrative only; not a recommendation to buy or sell.",
                 ),
@@ -379,6 +397,7 @@ def build(template_dir: Path | None = None, **metadata_overrides: Any) -> Email:
             ThreeColumn(
                 ratio=ThreeColumnRatio.EQUAL,
                 title="Three Equal",
+                anchor="thirds",
                 left=TextBlock("<p>First third.</p>"),
                 center=TextBlock("<p>Second third.</p>"),
                 right=TextBlock("<p>Final third.</p>"),
@@ -418,7 +437,10 @@ def build(template_dir: Path | None = None, **metadata_overrides: Any) -> Email:
                 content=NumberedList(
                     [
                         NumberedItem(
-                            "01", "Inflation prints", "<p>Core services remain sticky.</p>"
+                            "01",
+                            "Inflation prints",
+                            "<p>Core services remain sticky.[^1]</p>",
+                            notes=["Core services excluding housing, three-month annualised."],
                         ),
                         NumberedItem("02", "Earnings revisions", "<p>Breadth is narrowing.</p>"),
                         NumberedItem("03", "Positioning", "<p>Futures length is extended.</p>"),

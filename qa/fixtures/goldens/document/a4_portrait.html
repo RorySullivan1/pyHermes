@@ -9,9 +9,10 @@
       margin: 76px 76px 76px 76px;
     }
 
+    .running-header-start { string-set: running-header-fallback "Hermes Research — Quarterly Review"; }
     @page {
       @top-right {
-        content: "Hermes Research — Quarterly Review" " · " counter(page) " / " counter(pages);
+        content: string(running-header-fallback, last) string(running-header, first) " · " counter(page) " / " counter(pages);
         font-family: Arial, Helvetica, sans-serif;
         font-size: 9.5px;
         color: #A09E97;
@@ -54,6 +55,42 @@
     .subtitle { break-after: avoid; page-break-after: avoid; }
     .fine-print { break-before: avoid; page-break-before: avoid; }
     .figure { break-inside: avoid; page-break-inside: avoid; }
+
+    .contents-entry a::after {
+      content: leader(".") " " target-counter(attr(href), page);
+      color: #A09E97;
+    }
+
+    @page {
+      @footnote {
+        border-top: 1px solid #D6D2CB;
+        padding-top: 8px;
+      }
+    }
+    .footnote {
+      float: footnote;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 9.5px;
+      font-style: normal;
+      font-weight: normal;
+      letter-spacing: 0;
+      line-height: 140%;
+      color: #7A7A72;
+      text-align: left;
+    }
+    .section-title h2 {
+      string-set: running-header content(), running-footer content(),
+        running-header-fallback "", running-footer-fallback "";
+    }
+    .footnote::footnote-call { content: none; }
+    .footnote::footnote-marker { content: attr(data-note) ". "; }
+
+    a.xref::after {
+      content: " (p. " target-counter(attr(href), page) ")";
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 9.5px;
+      color: #A09E97;
+    }
   </style>
 </head>
 <body>
@@ -73,6 +110,25 @@
   </tr>
 </table>
 
+  <div class="running-header-start"></div><div class="running-footer-start"></div>
+<table role="presentation" width="642" cellpadding="0" cellspacing="0" border="0"
+       style="width:642px; break-after:page; page-break-after:always;">
+  <tr>
+    <td style="padding:22px 32px 14px;">
+      <h2 style="margin:0 0 12px; font-family:Georgia, 'Times New Roman', serif; font-size:17px; line-height:120%; color:#2C3E50;">In This Review</h2>
+<div class="contents" align="left" style="text-align: left;">
+<ol style="margin: 0; padding: 0; list-style-type: none;">
+  <li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 172%; margin: 0 0 8px 0;"><a href="#market-snapshot" style="color: #5B8A9A; text-decoration: none;">Market Snapshot</a></li>
+  <li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 172%; margin: 0 0 8px 0;"><a href="#narrative" style="color: #5B8A9A; text-decoration: none;">Narrative</a></li>
+  <li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 172%; margin: 0 0 8px 0;"><a href="#factor-returns" style="color: #5B8A9A; text-decoration: none;">Factor Returns</a></li>
+  <li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 172%; margin: 0 0 8px 0;"><a href="#positioning" style="color: #5B8A9A; text-decoration: none;">Positioning</a></li>
+  <li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 172%; margin: 0 0 8px 0;"><a href="#methodology" style="color: #5B8A9A; text-decoration: none;">Methodology</a></li>
+</ol>
+</div>
+    </td>
+  </tr>
+</table>
+
 
   <table class="document-container" role="presentation" width="642"
          cellpadding="0" cellspacing="0" border="0"
@@ -82,7 +138,7 @@
     <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#F8F7F5;">
       <tr>
         <td style="padding:22px 31px 12px 31px;">
-          <h2 style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:17px; font-weight:bold; color:#2C3E50; line-height:120%;">
+          <h2 id="market-snapshot" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:17px; font-weight:bold; color:#2C3E50; line-height:120%;">
             Market Snapshot
           </h2>
         </td>
@@ -122,7 +178,7 @@
     <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
       <tr>
         <td style="padding:22px 32px 12px 32px;">
-          <h2 style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:17px; font-weight:bold; color:#2C3E50; line-height:120%;">
+          <h2 id="narrative" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:17px; font-weight:bold; color:#2C3E50; line-height:120%;">
             Narrative
           </h2>
         </td>
@@ -131,7 +187,7 @@
     <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
       <tr>
         <td class="mobile-pad" style="padding:16px 32px 14px 32px; font-family: Arial, Helvetica, sans-serif; font-size:14px; color:#3B3B3B; line-height:172%;">
-          <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: #3B3B3B; line-height: 172%; margin: 0 0 16px 0;"><p>The curve steepened through the quarter as the front end repriced. Duration added to returns for the first time in four quarters.</p></div>
+          <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: #3B3B3B; line-height: 172%; margin: 0 0 16px 0;"><p>The curve steepened through the quarter as the front end repriced.<sup class="note-ref" style="line-height: 0;"><a href="#note-1" id="note-ref-1" style="color: #5B8A9A; text-decoration: none;">1</a></sup><span class="footnote" id="note-1" data-note="1">The front end is the two-year gilt.</span> Duration added to returns for the first time in four quarters.</p></div>
 
         </td>
       </tr>
@@ -144,7 +200,7 @@
     <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
       <tr>
         <td style="padding:22px 32px 12px 32px;">
-          <h2 style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:17px; font-weight:bold; color:#2C3E50; line-height:120%;">
+          <h2 id="factor-returns" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:17px; font-weight:bold; color:#2C3E50; line-height:120%;">
             Factor Returns
           </h2>
         </td>
@@ -154,7 +210,8 @@
       <tr>
         <td class="mobile-pad" style="padding:16px 32px 14px 32px; font-family: Arial, Helvetica, sans-serif; font-size:14px; color:#3B3B3B; line-height:172%;">
           <p class="subtitle" style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; font-style: italic; color: #7A7A72; margin: 0 0 12px 0; line-height: 140%;">Long-short, gross of costs</p>
-<table class="data-table" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
+<table class="data-table" id="exhibit-1" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
+  <caption style="caption-side: top; text-align: left; font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #2C3E50; letter-spacing: 0.5px; padding: 0 0 8px 0;">Exhibit 1 · Style factor returns</caption>
   <thead>
   <tr style="border-top: 1px solid #D6D2CB; border-bottom: 2px solid #2C3E50;">
     <th scope="col" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 172%; text-align: left; padding: 12px; letter-spacing: 0.5px;">Factor</th>
@@ -180,7 +237,7 @@
   </tr>
   </tbody>
 </table>
-<p class="fine-print" style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #A09E97; font-style: italic; margin: 8px 0 0 0; line-height: 172%;">Hermes Research as of 30 September 2026</p>
+<p class="fine-print" style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #A09E97; font-style: italic; margin: 8px 0 0 0; line-height: 172%;">Hermes Research<sup class="note-ref" style="line-height: 0;"><a href="#note-2" id="note-ref-2" style="color: #5B8A9A; text-decoration: none;">2</a></sup><span class="footnote" id="note-2" data-note="2">Factor definitions follow the methodology in the appendix.</span> as of 30 September 2026</p>
 <p class="fine-print" align="justify" style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #A09E97; font-style: italic; text-align: justify; margin: 8px 0 0 0; line-height: 172%;">Factor returns are shown gross of fees and transaction costs. Past performance is not indicative of future results.</p>
 
         </td>
@@ -194,7 +251,7 @@
     <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
       <tr>
         <td style="padding:22px 32px 12px 32px;">
-          <h2 style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:17px; font-weight:bold; color:#2C3E50; line-height:120%;">
+          <h2 id="positioning" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:17px; font-weight:bold; color:#2C3E50; line-height:120%;">
             Positioning
           </h2>
         </td>
@@ -223,7 +280,18 @@
     <table role="presentation" width="281" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:281px; background-color:#FFFFFF;">
       <tr>
         <td class="mobile-pad" style="padding:2px 0px 26px 16px; font-family: Arial, Helvetica, sans-serif; font-size:14px; color:#3B3B3B; line-height:172%;">
-          <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: #3B3B3B; line-height: 172%; margin: 0 0 16px 0;"><p>The right half of a 50-50 split.</p></div>
+          <table class="figure" id="exhibit-2" role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
+  <tr>
+    <td style="padding: 0 0 8px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #2C3E50; letter-spacing: 0.5px; line-height: 172%;">Exhibit 2 · The 2s10s spread</td>
+  </tr>
+  <tr>
+    <td style="padding: 0;">
+      <img src="cid:0009fbf079c9a280" alt="2s10s spread over the quarter"
+width="600"           style="display: block; max-width: 100%; height: auto; border: 1px solid #D6D2CB; margin: 0;">
+    </td>
+  </tr>
+</table>
+<p class="fine-print" style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #A09E97; font-style: italic; margin: 8px 0 0 0; line-height: 172%;">Hermes Research<sup class="note-ref" style="line-height: 0;"><a href="#note-3" id="note-ref-3" style="color: #5B8A9A; text-decoration: none;">3</a></sup><span class="footnote" id="note-3" data-note="3">Measured close to close.</span></p>
 
         </td>
       </tr>
@@ -249,7 +317,7 @@
     <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
       <tr>
         <td style="padding:22px 32px 12px 32px;">
-          <h2 style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:17px; font-weight:bold; color:#2C3E50; line-height:120%;">
+          <h2 id="methodology" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:17px; font-weight:bold; color:#2C3E50; line-height:120%;">
             Methodology
           </h2>
         </td>
@@ -258,7 +326,7 @@
     <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
       <tr>
         <td class="mobile-pad" style="padding:16px 32px 14px 32px; font-family: Arial, Helvetica, sans-serif; font-size:14px; color:#3B3B3B; line-height:172%;">
-          <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: #3B3B3B; line-height: 172%; margin: 0 0 16px 0;"><p>Factor returns are computed long-short and gross of transaction costs.</p></div>
+          <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: #3B3B3B; line-height: 172%; margin: 0 0 16px 0;"><p>The factor returns in <a class="xref" href="#exhibit-1">Exhibit 1</a> are computed long-short and gross of transaction costs.</p></div>
 
         </td>
       </tr>

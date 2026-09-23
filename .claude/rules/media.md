@@ -135,7 +135,7 @@ variant each.
 | Medium | Regions | Skeleton |
 |---|---|---|
 | `email` | `Header`, `Banner`, `Footer` | `templates/base.html` |
-| `document` | `Cover`, `RunningHeader`, `RunningFooter`, `BackMatter` | `templates/document/base.html` |
+| `document` | `Cover`, `ContentsPage`, `RunningHeader`, `RunningFooter`, `BackMatter` | `templates/document/base.html` |
 
 Three things the second set taught:
 
@@ -149,6 +149,14 @@ Three things the second set taught:
   which is what distinguishes it from standing rule 10's failure case.
 - **The back matter mints no new raw-HTML surface.** It renders `header_disclaimer`, a fact
   `DocumentMetadata` owns, so the blessed set stays closed at five.
+- **A running box may follow the section (#185), and the title is not a fact.** Which section
+  a sheet holds is the page's own knowledge, so it reaches the margin through the print
+  engine's named strings (`string-set` on each section title, `string()` in the box) and never
+  through the facts layer. `RUNNING_FACTS` are unchanged; `label` is the fallback before the
+  first section. `apparatus.md` has the four probes the fallback took.
+- **The contents sheet (#183) is the one opt-in region.** `ContentsPage` is handed the sections'
+  titles as a derived fact, `contents_entries`, and its page numbers are the print engine's.
+  It defaults to `EmptyContentsPage`, because a two-sheet factsheet is not improved by a third.
 
 `Page` is the other managed element: a container of containers that **flattens where pages do
 not exist**, byte for byte as though it were not there. The decision is made in Python rather
