@@ -226,6 +226,7 @@ test (#60). `lint_html(html)` returns `Finding(rule_id, severity, location, mess
 | `table-role` | error | A layout table with no `role`, **and** a data table carrying one (#114) |
 | `table-structure` | error | A data table with no `thead`, **paged documents only** (#176). A print engine repeats only a `thead` on each sheet |
 | `vml-fill-empty-src` | error | A `v:fill` with `src=""` inside `[if mso]` (#150) — `empty-url`'s case, in the one place that rule cannot reach |
+| `vml-fill-frame-without-src` | error | A `v:fill` claiming `type="frame"` with no `src` (#150). Outlook paints a broken-image placeholder over the shape rather than falling back to `color`/`opacity` |
 | `size-budget` | warn/error | The 90/102 KB thresholds, **attributing the bytes to section-marker regions** |
 
 Seven decisions worth not re-litigating:
@@ -278,15 +279,24 @@ carries Outlook-only VML, so judging it by standard-HTML rules would fire on mar
 correct *because* it is non-standard. `no-external-css` still reads comment text, since an
 `@import` hidden in a conditional is just as external.
 
-**`vml-fill-empty-src` is the second such exception, and the shape is the rule** (#150). It
-reaches into comment text for one named defect rather than opening the block to linting — the
+**The two VML rules are the second such exception, and the shape is the rule** (#150). They
+reach into comment text for two named defects rather than opening the block to linting — the
 policy above is right, and a rule that grew into judging VML generally would fire on markup
-that is correct precisely because it is non-standard. Its four tests pin that scope: the empty
-`src` fires, a real one passes, an *absent* one passes, and a `v:roundrect` is untouched.
-It exists because `empty-url` already denies `url('')` in the CSS half two lines away, and the
-VML half went unguarded — a rule that stops at the edge of a comment is a rule the same defect
-walks around. **It caught all eight affected gallery fixtures** when run against the pre-fix
-templates, which is how it was checked rather than assumed.
+that is correct precisely because it is non-standard. `vml-fill-empty-src` exists because
+`empty-url` already denies `url('')` in the CSS half two lines away, and the VML half went
+unguarded — a rule that stops at the edge of a comment is a rule the same defect walks around.
+**It caught all eight affected gallery fixtures** when run against the pre-fix templates, which
+is how it was checked rather than assumed.
+
+**`vml-fill-frame-without-src` is what the first fix needed and did not have.** Gating `src`
+alone satisfied `vml-fill-empty-src` and still destroyed the masthead: `type="frame"` with
+nothing to frame makes the Word engine paint a broken-image placeholder over the whole shape —
+no band, no scrim, dark title text on white. A rule that is satisfied while the banner is
+visibly broken is a rule with a hole in it, so the companion rule closes it. Its scope is
+pinned the same way: the frame-with-no-`src` fires, a real `src` passes, a solid fill (the
+shape the fix now emits) passes, and a `v:rect` is untouched. **Both rules were checked by
+running them against the markup they describe**, not by argument — which is also how the
+underlying defect was found.
 
 ## The preview CLI — `qa/preview.py`
 
