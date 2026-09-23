@@ -165,3 +165,34 @@ class TestTheReadmesHeadlinePrograms:
                 ast.parse(block)
             except SyntaxError:
                 assert "..." in block, f"README block {index} is broken, not illustrative"
+
+
+class TestTheFactsheetIsTwoSheets:
+    """
+    The one example whose *shape* is part of its specification.
+
+    Every other example may grow a section without anyone minding. A factsheet
+    may not: two sheets is the format. It drifted to five and to three while
+    being built -- a default ``BackMatter`` region quietly spending a sheet,
+    then a single extra sentence of fine print -- so the count is pinned here
+    rather than left to whoever next re-renders it.
+    """
+
+    FACTSHEET = REPO_ROOT / "examples" / "fund-factsheet" / "fund-factsheet.py"
+
+    def test_the_example_is_still_there(self):
+        assert self.FACTSHEET in EXAMPLES, "the factsheet example has moved or been renamed"
+
+    def test_it_lays_out_to_exactly_two_sheets(self):
+        from svc.pdf import available as pdf_available
+
+        if not pdf_available():
+            pytest.skip('laying a document onto sheets needs the "[pdf]" extra')
+        from svc.pdf import page_count
+
+        module = _load(self.FACTSHEET)
+        try:
+            document = module.build()
+        except DataBackendMissing as exc:  # pragma: no cover - depends on the install
+            pytest.skip(f"the factsheet needs an optional extra: {exc}")
+        assert page_count(document) == module.SHEETS == 2

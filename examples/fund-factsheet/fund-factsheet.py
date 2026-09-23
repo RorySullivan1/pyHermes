@@ -8,8 +8,10 @@ data. It is the format an ETF or fund publishes monthly, and its constraints
 are unusual —
 
 - **the sheet count is the specification.** Two sheets, not "about two": the
-  page break is explicit rather than wherever the content lands, and
-  ``page_count()`` is asserted at the bottom of this file,
+  page break is explicit rather than wherever the content lands, running this
+  file exits non-zero if the layout ever says otherwise, and
+  ``tests/test_examples.py`` pins it so a builder change cannot move it
+  quietly,
 - **density is the point.** Nearly every section is a ``TwoColumn``, so a
   table and the chart that explains it sit side by side rather than one
   scrolling past the other,
@@ -58,6 +60,9 @@ from svc.document import (
 # The numbers, in one place. A factsheet is re-published every month with the
 # same layout and new figures, so the figures are lifted out of the layout.
 # --------------------------------------------------------------------------
+
+#: The specification. A factsheet is two sheets; see the module docstring.
+SHEETS = 2
 
 AS_OF = "30 September 2026"
 FUND = "Hermes Core US Equity ETF"
@@ -138,6 +143,16 @@ _TOP_HOLDINGS = [
     ("Berkshire Hathaway Inc. Class B", "1.71"),
     ("Eli Lilly & Co.", "1.44"),
 ]
+
+
+def _sign(value: str) -> str:
+    """Green or red, read off the figure itself.
+
+    Both returns tables colour from the sign rather than from a constant: a
+    hardcoded green is right only until the first negative quarter, and that
+    is precisely the release nobody re-reads the colours on.
+    """
+    return _LOSS if value.startswith("-") else _GAIN
 
 
 def _facts() -> dict[str, Any]:
@@ -343,10 +358,7 @@ def build(template_dir: Path | None = None) -> PagedDocument:
                 content=DataTable(
                     headers=["Basis", "1 Year", "3 Year", "5 Year", "10 Year", "Since Incept."],
                     rows=[
-                        TableRow(
-                            cells=[name, *values],
-                            colors=["", _GAIN, _GAIN, _GAIN, _GAIN, _GAIN],
-                        )
+                        TableRow(cells=[name, *values], colors=["", *map(_sign, values)])
                         for name, *values in _RETURNS
                     ],
                     as_of=AS_OF,
@@ -365,11 +377,7 @@ def build(template_dir: Path | None = None) -> PagedDocument:
                             rows=[
                                 TableRow(
                                     cells=[year, fund, bench],
-                                    colors=[
-                                        "",
-                                        _LOSS if fund.startswith("-") else _GAIN,
-                                        _LOSS if bench.startswith("-") else _GAIN,
-                                    ],
+                                    colors=["", _sign(fund), _sign(bench)],
                                 )
                                 for year, fund, bench in _CALENDAR
                             ],
@@ -456,8 +464,11 @@ def main() -> None:
         return
     sheets = page_count(build())
     print(f"{pdf}  ({pdf.stat().st_size / 1024:.1f} KB, {sheets} page(s))")
-    if sheets != 2:
-        print(f"  !! a factsheet is two sheets; this laid out to {sheets}")
+    if sheets != SHEETS:
+        raise SystemExit(
+            f"a factsheet is {SHEETS} sheets; this laid out to {sheets}. "
+            "Trim a section or shorten a chart rather than accepting the drift."
+        )
 
 
 if __name__ == "__main__":
