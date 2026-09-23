@@ -83,6 +83,13 @@ class Config:
 
     print_dpi: int = 300
 
+    #: The ceiling on a whole message once it carries an attachment, counted as
+    #: encoded wire bytes. Microsoft 365's default, the lower of the two big
+    #: providers' (Gmail refuses above 25 MB); `config.md` has why.
+    attachment_limit_kb: int = 20480
+    #: Where a message with an attachment starts printing a warning.
+    attachment_warn_kb: int = 15360
+
     def __post_init__(self) -> None:
         # Validation at construction, as everywhere else in this codebase --
         # a bad limit should name itself here, not surface later as a
@@ -94,6 +101,8 @@ class Config:
             "size_warn_kb",
             "inline_image_limit_kb",
             "print_dpi",
+            "attachment_limit_kb",
+            "attachment_warn_kb",
             "retry_initial_delay",
             "retry_max_delay",
             "retry_max_hint_delay",
@@ -106,6 +115,12 @@ class Config:
             raise ValueError(
                 f"size_warn_kb ({self.size_warn_kb}) must not exceed size_limit_kb "
                 f"({self.size_limit_kb}) -- a warning after the hard failure never fires."
+            )
+        if self.attachment_warn_kb > self.attachment_limit_kb:
+            raise ValueError(
+                f"attachment_warn_kb ({self.attachment_warn_kb}) must not exceed "
+                f"attachment_limit_kb ({self.attachment_limit_kb}) -- a warning after the "
+                "hard failure never fires."
             )
         if self.inline_image_limit_kb > self.size_limit_kb:
             raise ValueError(

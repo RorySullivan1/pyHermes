@@ -26,6 +26,7 @@ from pathlib import Path
 from typing import Protocol, cast
 
 from svc.builder.images import ImageAsset
+from svc.config import get_config
 
 from .exceptions import MessageError
 
@@ -417,6 +418,8 @@ def build_message(
             )
 
     _attach(message, attachments)
+    if attachments:
+        _check_attachment_budget(message, attachments)
     return message
 
 
@@ -436,6 +439,35 @@ def _attach(message: EmailMessage, attachments: Sequence[Attachment]) -> None:
         maintype, _, subtype = attachment.mime_type.partition("/")
         message.add_attachment(
             attachment.data, maintype=maintype, subtype=subtype, filename=attachment.filename
+        )
+
+
+def _check_attachment_budget(message: EmailMessage, attachments: Sequence[Attachment]) -> None:
+    """
+    Refuse a message a mail server would refuse, and warn short of it.
+
+    Measured over the encoded wire bytes, since that is what a server counts:
+    base64 makes a 16 MB file a 22 MB message. Both thresholds come from the
+    active :class:`~svc.config.Config`. The 102 KB check is a separate fact
+    about the HTML part and Gmail's clipping, and this one leaves it alone.
+    """
+    config = get_config()
+    size_kb = len(to_wire_bytes(message)) / 1024
+    if size_kb > config.attachment_limit_kb:
+        files = "; ".join(
+            f"{a.filename} is {len(a.data) / 1024:,.1f} KB"
+            + (f" ({a.size_hint})" if a.size_hint else "")
+            for a in attachments
+        )
+        raise MessageError(
+            f"the message is {size_kb:,.1f} KB on the wire, over the "
+            f"{config.attachment_limit_kb:,} KB attachment limit that mail servers "
+            f"enforce: {files}."
+        )
+    if size_kb > config.attachment_warn_kb:
+        print(
+            f"WARNING: Message size {size_kb:,.1f} KB with attachments "
+            f"(target < {config.attachment_warn_kb:,} KB)"
         )
 
 

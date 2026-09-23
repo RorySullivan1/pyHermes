@@ -123,3 +123,20 @@ Recorded so they are not re-litigated as oversights:
 offset norm, and a judgement call rather than a fact: a proof printer is content with less, a
 fine-art press wants more. Below it, a brochure prints a warning at construction; below half
 of it, construction raises. `PYHERMES_PRINT_DPI` sets it, like every other field.
+
+**`attachment_limit_kb` and `attachment_warn_kb` (#198) are the whole message's budget once it
+carries a file**, 20 480 and 15 360 KB by default. Gmail refuses a message over 25 MB, and
+Microsoft 365 defaults to about 20 MB. The default is the lower of the two, because a sender
+rarely knows which server each recipient sits behind, and a refusal lands after the send.
+Both count the encoded wire bytes, so the check runs over `to_wire_bytes()` of the finished
+message, not over the file: base64 makes a 16 MB PDF a 22 MB message.
+
+- **It is a second threshold, not a wider `size_limit_kb`.** 102 KB is about the HTML part and
+  Gmail's clipping. This is about the whole message and a server's refusal. Two facts get two
+  names, and the 102 KB check is untouched.
+- **It runs only when there is an attachment.** A message without one has only the HTML to
+  budget, and the 102 KB check already owns that.
+- **It hints and never acts.** Over the limit, `MessageError` names the total, the limit, each
+  file with its size, and each file's `size_hint`. `pdf_attachment` fills that hint when the
+  PDF was rendered at full resolution, naming the `SCREEN` profile. The message never
+  downsamples a file on its own.

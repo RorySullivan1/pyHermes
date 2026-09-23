@@ -120,6 +120,38 @@ class TestTheExhibitSeparator:
         assert Config.from_env().exhibit_separator == " — "
 
 
+class TestTheAttachmentBudget:
+    """#198: the whole message's ceiling once it carries a file."""
+
+    def test_it_defaults_to_microsoft_365s_limit(self):
+        # The lower of the two big providers': Gmail refuses above 25 MB.
+        assert (Config().attachment_limit_kb, Config().attachment_warn_kb) == (20480, 15360)
+
+    @pytest.mark.parametrize("field", ["attachment_limit_kb", "attachment_warn_kb"])
+    def test_each_must_be_positive(self, field):
+        with pytest.raises(ValueError, match=field):
+            Config(**{field: 0})
+
+    def test_the_warning_must_sit_below_the_limit(self):
+        with pytest.raises(ValueError, match="attachment_warn_kb"):
+            Config(attachment_limit_kb=100, attachment_warn_kb=101)
+
+    def test_it_is_separate_from_the_gmail_limit(self):
+        # Two thresholds, two facts: the HTML part's clipping, the message's refusal.
+        assert Config(attachment_limit_kb=50, attachment_warn_kb=40).size_limit_kb == 102
+
+    def test_the_environment_sets_each(self, monkeypatch):
+        monkeypatch.setenv("PYHERMES_ATTACHMENT_LIMIT_KB", "25600")
+        monkeypatch.setenv("PYHERMES_ATTACHMENT_WARN_KB", "20480")
+        config = Config.from_env()
+        assert (config.attachment_limit_kb, config.attachment_warn_kb) == (25600, 20480)
+
+    def test_a_misspelt_value_names_its_variable(self, monkeypatch):
+        monkeypatch.setenv("PYHERMES_ATTACHMENT_LIMIT_KB", "20MB")
+        with pytest.raises(ValueError, match="PYHERMES_ATTACHMENT_LIMIT_KB"):
+            Config.from_env()
+
+
 class TestActiveConfig:
     def test_set_and_get_round_trip(self):
         original = get_config()
@@ -158,6 +190,18 @@ class TestTheWiringIsLive:
         with config_override(size_limit_kb=10, size_warn_kb=5, inline_image_limit_kb=5):
             with pytest.raises(SizeError, match="10 KB"):
                 validate_gmail_size(html)
+
+    def test_attachment_limit_is_read_from_config(self, valid_metadata, text_block):
+        from svc.builder import EmailBuilder, FullWidth
+        from svc.delivery import Attachment, MessageError, build_message
+
+        email = EmailBuilder().metadata(valid_metadata).section(FullWidth(content=text_block))
+        envelope = {"sender": "a@example.com", "to": "b@example.com"}
+        big = Attachment(b"\x00" * 64 * 1024, "big.bin", "application/octet-stream")
+        build_message(email.build(), **envelope, attachments=[big])  # fine by default
+        with config_override(attachment_limit_kb=32, attachment_warn_kb=16):
+            with pytest.raises(MessageError, match="32 KB"):
+                build_message(email.build(), **envelope, attachments=[big])
 
     def test_inline_image_cap_is_read_from_config(self, png_bytes):
         EmailImage.inline(png_bytes, alt="Chart")  # fine by default

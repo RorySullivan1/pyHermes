@@ -16,6 +16,7 @@ import pytest
 
 from svc.builder import EmailBuilder, FullWidth, ImageBlock
 from svc.builder.images import EmailImage
+from svc.config import config_override
 from svc.delivery import Attachment, MessageError, build_message, save_eml
 from svc.delivery.message import collect_cid_references, to_wire_bytes
 
@@ -194,6 +195,58 @@ class TestTheFileSurvivesTheWire:
         assert _by_filename(parsed, "review.pdf").get_payload(decode=True) == PDF_BYTES
 
 
+def _file(kilobytes: int, name: str = "review.pdf", hint: str = "") -> Attachment:
+    """An attachment of ``kilobytes`` of incompressible bytes, as a PDF would be."""
+    data = bytes((index * 7919) % 251 for index in range(kilobytes * 1024))
+    return Attachment(data, name, "application/pdf", size_hint=hint)
+
+
+#: A budget small enough to cross with test-sized files; the shape is the claim.
+SMALL_BUDGET = {"attachment_limit_kb": 96, "attachment_warn_kb": 48}
+
+
+class TestTheSizeBudget:
+    """#198: a message a server would refuse is refused here, by name."""
+
+    def test_over_the_limit_it_names_the_total_the_limit_and_each_file(self, cid_email):
+        files = [_file(60), _file(20, "appendix.csv")]
+        with config_override(**SMALL_BUDGET):
+            with pytest.raises(MessageError) as raised:
+                build_message(cid_email, **ENVELOPE, attachments=files)
+        message = str(raised.value)
+        total = re.search(r"the message is ([\d,.]+) KB on the wire", message)
+        # Base64 is what a server counts: 80 KB of files is over 96 KB sent.
+        assert total and float(total.group(1).replace(",", "")) > 96
+        assert "96 KB attachment limit" in message
+        assert "review.pdf is 60.0 KB" in message
+        assert "appendix.csv is 20.0 KB" in message
+
+    def test_it_quotes_the_producers_hint(self, cid_email):
+        hinted = _file(90, hint="rendered under PRINT; try SCREEN")
+        with config_override(**SMALL_BUDGET):
+            with pytest.raises(MessageError, match=r"\(rendered under PRINT; try SCREEN\)"):
+                build_message(cid_email, **ENVELOPE, attachments=[hinted])
+
+    def test_between_the_thresholds_it_warns_with_the_total_and_threshold(self, cid_email, capsys):
+        with config_override(**SMALL_BUDGET):
+            build_message(cid_email, **ENVELOPE, attachments=[_file(40)])
+        printed = capsys.readouterr().out
+        assert re.search(r"WARNING: Message size [\d,.]+ KB with attachments", printed)
+        assert "(target < 48 KB)" in printed
+
+    def test_under_the_warning_it_prints_nothing(self, cid_email, capsys):
+        with config_override(**SMALL_BUDGET):
+            build_message(cid_email, **ENVELOPE, attachments=[_file(1)])
+        assert "Message size" not in capsys.readouterr().out
+
+    def test_with_no_attachment_no_check_runs_at_all(self, cid_email, capsys):
+        # A cover email alone is over this budget, and is still not measured:
+        # the budget is about files, and the 102 KB check owns the HTML.
+        with config_override(attachment_limit_kb=1, attachment_warn_kb=1):
+            build_message(cid_email, **ENVELOPE)
+        assert "Message size" not in capsys.readouterr().out
+
+
 class TestAPdfAttachment:
     """``pdf_attachment`` renders the document; it needs the ``[pdf]`` extra."""
 
@@ -222,6 +275,14 @@ class TestAPdfAttachment:
         attachment = pdf_attachment(document, "review.pdf", PRINT)
         assert attachment.data == render_pdf(document, PRINT)
         assert "PRINT" in attachment.size_hint and "SCREEN" in attachment.size_hint
+
+    def test_over_budget_a_print_pdf_points_at_screen(self, document, cid_email):
+        from svc.pdf import PRINT, pdf_attachment
+
+        attachment = pdf_attachment(document, "review.pdf", PRINT)
+        with config_override(attachment_limit_kb=8, attachment_warn_kb=4):
+            with pytest.raises(MessageError, match=r"profile=SCREEN"):
+                build_message(cid_email, **ENVELOPE, attachments=[attachment])
 
     def test_a_path_is_refused_before_anything_renders(self, document, monkeypatch):
         import svc.pdf.attachment as module
