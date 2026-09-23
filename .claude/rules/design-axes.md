@@ -122,17 +122,26 @@ two sources is the drift this module exists to end.
 **The two halves share the colour and must also share their guards — #150 is where they did
 not.** #78 gated the CSS `background-image` on the value, because `url('')` is not inert, and
 missed the `v:fill src` two lines above it; eight gallery fixtures shipped `src=""` to Outlook
-for the life of the package. The gate is now on both, and only the *attribute* moves: the
-`v:rect`, its colour and its opacity are untouched, because the scrim is drawn over the flat
-band whether or not there is a photograph — in this half and in the CSS half alike. **STAGED,
-NOT VERIFIED.** Standing rule 3 owns this: no screenshot here can say what the Word engine
-draws, so before merging, check in a real classic Outlook that (a) a banner with no backdrop
-still draws the band and its scrim, and (b) one *with* a backdrop is unchanged. The specific
-risk is `type="frame"` with no `src` — the shipped markup keeps it, and if Outlook treats that
-as "stretch nothing" and paints transparent rather than the fill colour, the fix is to gate
-`type` alongside `src` rather than to gate the whole `v:rect`, which would take the scrim with
-it. `TestTheVmlFillSrcIsGated` pins what is emitted in every case, so a change of approach
-fails loudly rather than silently dropping the scrim. Three tests hold the wiring: the templates
+for the life of the package. The gate is now on both — and on `type` as well as `src`, which
+is the part that had to be *rendered* to be learned.
+
+**VERIFIED, and the first attempt was wrong.** The staged fix gated `src` alone and kept
+`type="frame"`, on the argument that only the attribute should move. Put in front of the Word
+engine — the engine Outlook Classic uses for HTML mail — that markup does not draw the band at
+all: `type="frame"` is a claim that the fill *is* an image, so with no source the engine paints
+a **broken-image placeholder** across the masthead instead of falling back to `color`/`opacity`.
+No band, no scrim, dark title text on white. That is worse than the empty `src` it replaced,
+and identical to what the empty `src` already did — which is why "the render is unchanged" was
+true and still not good enough.
+
+The remedy is the one this file predicted: **gate `type` alongside `src`**, never the whole
+`v:rect`, which would take the scrim with it. Without a `src` the fill is solid, and solid is
+what VML honours `color` and `opacity` for — so the scrim reaches every banner, backdrop or
+not. All four cases were rendered: backdrop present is byte-identical either way and draws the
+photograph under the scrim; backdrop absent draws the flat band *with* its scrim only once
+`type` is gated too. `TestTheVmlFillSrcIsGated` pins what is emitted in every case, and
+`vml-fill-frame-without-src` now fails the lint pass on the shape that was staged — so this
+particular wrong answer cannot come back quietly. Three tests hold the wiring: the templates
 may not read `theme.` at all, they may not name a role `FALLBACKS` does not declare, and every
 declared role must actually be drawn.
 

@@ -43,12 +43,14 @@ class TestEveryRuleSaysWhereItApplies:
         assert not empty, f"these rules can never fire: {empty}"
 
     def test_the_email_set_is_unchanged(self):
-        # #165 must not quietly narrow what an email is judged by. Ten rules
-        # before, ten after, and the same ten.
+        # #165 must not quietly narrow what an email is judged by. The count
+        # is a tripwire, not a target: it moved from ten to eleven when #150
+        # added vml-fill-frame-without-src, which is a rule being *added* to
+        # what an email is judged by. Narrowing the set is what this guards.
         paged_only = {"page-size-declared", "paged-table-width", "table-structure"}
         print_only = {"print-marks", "rgb-only"}
         assert rules_for("email") == set(SOURCES) - paged_only - print_only
-        assert len(rules_for("email")) == 10
+        assert len(rules_for("email")) == 11
 
     def test_the_brochure_is_judged_as_print(self):
         """Every paged rule, the neutral four, and the two about a press (#188)."""

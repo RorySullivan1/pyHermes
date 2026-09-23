@@ -64,6 +64,17 @@ SOURCES: dict[str, str] = {
         "because judging VML by standard-HTML rules fires on markup that is "
         "correct precisely because it is non-standard."
     ),
+    "vml-fill-frame-without-src": (
+        'type="frame" tells the Word engine the fill *is* an image. With no '
+        "src to frame it does not fall back to color/opacity -- it paints a "
+        "broken-image placeholder across the whole shape, which on the "
+        "masthead means no band, no scrim, and dark title text on white. "
+        "Verified by rendering both forms through the Word engine, which is "
+        "what Outlook Classic uses for HTML mail; gating src alone was the "
+        "first attempt at #150 and this is the defect it left behind. "
+        "Microsoft, VML Fill Element: the type attribute selects the fill "
+        "style, and frame is the one that requires a source image."
+    ),
     "no-external-css": (
         "Microsoft, on Outlook Classic: styles that are not fully inline "
         "'may be stripped or misapplied'. learn.microsoft.com/troubleshoot/"
@@ -227,6 +238,7 @@ RULE_MEDIA: dict[str, frozenset[str]] = {
     "outlook-line-height": frozenset({"email"}),
     "outlook-transparent-background": frozenset({"email"}),
     "vml-fill-empty-src": frozenset({"email"}),
+    "vml-fill-frame-without-src": frozenset({"email"}),
     # Gmail's clipping limit. The size *report* stays available everywhere --
     # knowing where the bytes went is useful for any document -- but the
     # threshold is a fact about one mail client.
@@ -268,6 +280,12 @@ _EMPTY_URL = re.compile(r"""url\(\s*(?:''|""|)\s*\)""")
 #: A ``v:fill`` carrying an empty ``src``. Matched over conditional-comment
 #: text, where the VML lives; see ``_check_vml_fill``.
 _VML_EMPTY_SRC = re.compile(r"""<v:fill\b[^>]*\bsrc\s*=\s*(?:''|"")""", re.IGNORECASE)
+
+#: Any ``v:fill`` tag, so the frame-without-a-source case can be judged on
+#: the tag's whole attribute set rather than by a single lookahead.
+_VML_FILL_TAG = re.compile(r"<v:fill\b[^>]*>", re.IGNORECASE)
+_VML_TYPE_FRAME = re.compile(r"""\btype\s*=\s*['"]?frame\b""", re.IGNORECASE)
+_VML_HAS_SRC = re.compile(r"\bsrc\s*=", re.IGNORECASE)
 
 #: How many regions the size breakdown names. Enough to point at the culprit,
 #: short enough to read in a failure message.
@@ -427,6 +445,18 @@ class _Linter(HTMLParser):
                 "on the value, as the CSS background-image is gated.",
                 match.group(0)[:60],
             )
+
+        for match in _VML_FILL_TAG.finditer(data):
+            tag = match.group(0)
+            if _VML_TYPE_FRAME.search(tag) and not _VML_HAS_SRC.search(tag):
+                self._report(
+                    "vml-fill-frame-without-src",
+                    Severity.ERROR,
+                    '<v:fill> declares type="frame" with no src. The Word engine '
+                    "then paints a broken-image placeholder over the shape rather "
+                    "than falling back to color/opacity. Gate type with the src.",
+                    tag[:60],
+                )
 
     def _check_table(self, table: _OpenTable) -> None:
         """
