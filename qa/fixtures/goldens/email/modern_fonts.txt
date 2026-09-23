@@ -15,6 +15,7 @@ Every section below, linked to its heading
 
 Market Snapshot
 Sector Notes
+In Their Words
 Factor Returns
 Cumulative Performance
 Equal Columns
@@ -45,6 +46,13 @@ Technology: +2.1% (week)
 Semiconductor strength led the advance.
 Energy: -0.7% (week)
 Crude gave back the prior week's gain.
+
+
+In Their Words
+--------------
+
+    "Duration earned its place in the book again this quarter."
+    -- Head of Rates Strategy
 
 
 Factor Returns

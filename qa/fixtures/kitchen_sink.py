@@ -37,6 +37,7 @@ from svc.builder import (
     Header,
     ImageBlock,
     NumberedList,
+    PullQuote,
     Rgba,
     TextBlock,
     ThreeColumn,
@@ -289,6 +290,17 @@ def build(template_dir: Path | None = None, **metadata_overrides: Any) -> Email:
                     ],
                     orientation=CardOrientation.VERTICAL,
                     subtitle="Relative performance",
+                ),
+            )
+        )
+        # PullQuote (#189): centred, attributed, the same band in every medium.
+        .section(
+            FullWidth(
+                title="In Their Words",
+                content=PullQuote(
+                    "Duration earned its place in the book again this quarter.",
+                    attribution="Head of Rates Strategy",
+                    align="center",
                 ),
             )
         )

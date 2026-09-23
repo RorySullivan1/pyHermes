@@ -19,6 +19,7 @@ from svc.builder import (
     ContactBlock,
     FullWidth,
     NumberedList,
+    PullQuote,
     TextBlock,
 )
 from svc.builder.enums import CardOrientation
@@ -78,6 +79,12 @@ def panels() -> list[Panel]:
                         "<p>The curve steepened through the quarter as the front end "
                         "repriced. Duration added to returns for the first time in "
                         "four quarters.</p>"
+                    ),
+                ),
+                FullWidth(
+                    content=PullQuote(
+                        "Duration earned its place in the book again.",
+                        attribution="Head of Rates Strategy",
                     ),
                 ),
             ],

@@ -21,6 +21,7 @@ from svc.builder import Email
 from svc.builder.document import Document
 
 from . import (
+    a4_editorial,
     a4_long_table,
     a4_portrait,
     aligned_layout,
@@ -108,6 +109,7 @@ def all_paged_fixtures() -> dict[str, PagedFixtureBuilder]:
     return {
         "a4_portrait": a4_portrait.build,
         "a4_long_table": a4_long_table.build,
+        "a4_editorial": a4_editorial.build,
         "slide_16_9": slide_16_9.build,
     }
 

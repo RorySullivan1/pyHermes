@@ -29,6 +29,7 @@ from .components import (
     ImageBlock,
     KpiStrip,
     NumberedList,
+    PullQuote,
     TextBlock,
 )
 
@@ -202,6 +203,7 @@ __all__ = [
     "ChartBlock",
     "ImageBlock",
     "TextBlock",
+    "PullQuote",
     "NumberedList",
     "AuthorBlock",
     "ContactBlock",

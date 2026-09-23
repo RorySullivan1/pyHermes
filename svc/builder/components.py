@@ -811,6 +811,44 @@ class TextBlock(CopyAlignment, Component):
         }
 
 
+class PullQuote(CopyAlignment, Component):
+    """
+    A line lifted from the copy and set large, beside a rule (#189).
+
+    The same markup in every medium, which is its email degradation: a
+    highlighted band an Outlook reader sees exactly as a printed page does.
+    Both fields are plain text, escaped, so it opens no raw-HTML surface.
+
+    Args:
+        text:        The quoted words, without quotation marks.
+        attribution: Who said them, set beneath. Optional.
+        align:       Alignment for the quote's copy; inherits when unset.
+    """
+
+    template_path = "text/pull-quote.html"
+
+    def __init__(self, text: str, attribution: str | None = None, align: str | None = None):
+        if not text:
+            raise ValidationError("PullQuote requires text.")
+        self.align = self.validate_alignment(align)
+        self.text_value = text
+        self.attribution = attribution
+
+    def text(self) -> str:
+        """The quote indented four spaces, and its attribution beneath."""
+        lines = wrap(f'"{self.text_value}"').splitlines()
+        if self.attribution:
+            lines.append(f"-- {self.attribution}")
+        return self._with_subtitle("\n".join(f"    {line}" for line in lines))
+
+    def context(self) -> dict[str, Any]:
+        return {
+            "quote": self.text_value,
+            "attribution": self.attribution or "",
+            **self.alignment_context(),
+        }
+
+
 class ContactBlock(CopyAlignment, Component):
     """
     A contact call-to-action card: heading, blurb, and a button.

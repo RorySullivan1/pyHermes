@@ -34,6 +34,7 @@ from svc.builder import (
     EmailBuilder,
     FullWidth,
     NumberedList,
+    PullQuote,
     TextBlock,
     TwoColumn,
     ValidationError,
@@ -496,7 +497,7 @@ class TestTheBoundaryHolds:
         )
 
 
-PROSE_COMPONENTS = (TextBlock, NumberedList, AuthorBlock, ContactBlock, ChartBlock)
+PROSE_COMPONENTS = (TextBlock, NumberedList, AuthorBlock, ContactBlock, ChartBlock, PullQuote)
 
 #: Components that deliberately do **not** take an ``align``, each with the
 #: reason, because an exclusion whose justification lives only in an issue
