@@ -28,8 +28,9 @@ from svc.builder.models import Card, NumberedItem
 from . import _paged
 from ._png import solid_png
 
-#: A chart that fits a full panel's copy: 356px less a 24px inset a side.
-_CHART_PNG = solid_png(600, 200, (91, 138, 154))
+#: A chart that fits a full panel's copy (356px less a 24px inset a side) and
+#: prints at 300 dpi there: 300px displayed needs 938 source pixels (#188).
+_CHART_PNG = solid_png(938, 313, (91, 138, 154))
 
 #: The words each face opens on, in reader order. The tests read these back
 #: off the PDF, one side at a time.

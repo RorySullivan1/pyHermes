@@ -6,10 +6,18 @@
   <style type="text/css">
     {# One CSS page per side of the sheet, at the flat sheet's size with no
        margin: every panel insets its own copy, so a page margin would inset
-       the outer panels twice. #}
+       the outer panels twice.
+
+       `bleed` and `marks` are CSS Paged Media features WeasyPrint implements
+       (#188): the media box grows by the bleed on every side and the trim box
+       stays the sheet. The engine draws its marks inside the declared bleed,
+       under anything painted there, so the declared bleed is the panels' real
+       bleed plus a slug their grounds never reach. #}
     @page {
       size: {{ size.frame.sheet_width }}px {{ size.frame.sheet_height }}px;
       margin: 0;
+      bleed: {{ print_bleed }}px;
+      marks: crop cross;
     }
 
     body {
@@ -30,11 +38,12 @@
     {# A side is one sheet face. Its panels are absolutely positioned inside
        it (#186): as table cells, an overlong panel grew its row and carried
        the side across five more sheets, which is the imposition broken. #}
+    {# A side does not clip: the panels' grounds run past it into the bleed,
+       and each panel clips its own copy. #}
     .side {
       position: relative;
       width: {{ size.frame.sheet_width }}px;
       height: {{ size.frame.sheet_height }}px;
-      overflow: hidden;
       break-after: page;
       page-break-after: always;
     }
@@ -44,6 +53,7 @@
        than painted into the neighbour. The clip is silent in the PDF;
        svc.brochure.overflowing_panels() is what makes it loud. #}
     .panel { position: absolute; top: 0; overflow: hidden; box-sizing: border-box; }
+    .panel-ground { position: absolute; }
     .panel-copy { overflow: hidden; }
 
     {# The proof: a guide on every fold and each panel's reader index, for

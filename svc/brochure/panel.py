@@ -22,7 +22,7 @@ from svc.builder.sizing import STANDARD_SIZES, PageMargin, SizeScheme
 from svc.builder.textgen import join_blocks, underline
 from svc.document.page import Page
 
-from .fold import _px
+from .fold import FoldFormat, _px
 
 if TYPE_CHECKING:  # pragma: no cover
     from svc.builder.images import EmailImage
@@ -44,6 +44,23 @@ class PanelBox:
     left: int | float
     width: int | float
     height: int | float
+
+    def ground(self, bleed: int | float, panels: int) -> dict[str, int | float]:
+        """
+        This panel's ground, on the side: its box grown into the bleed.
+
+        Every panel meets the trim at the top and the bottom; only the first
+        and last on a side meet it at a side edge too. A fold between two
+        panels is not a trim, so neither ground crosses it.
+        """
+        left = bleed if self.position == 1 else 0
+        right = bleed if self.position == panels else 0
+        return {
+            "left": _px(self.left - left),
+            "top": _px(-bleed),
+            "width": _px(self.width + left + right),
+            "height": _px(self.height + 2 * bleed),
+        }
 
 
 class Panel(Container):
@@ -138,12 +155,15 @@ class Panel(Container):
         """
         return "\n".join(section.render(engine) for section in self.sections)
 
-    def render_box(self, engine: Renderer, box: PanelBox, inset: int | float) -> str:
+    def render_box(
+        self, engine: Renderer, box: PanelBox, inset: int | float, fold: FoldFormat
+    ) -> str:
         """
         This panel as a fixed box at ``box``, its copy ``inset`` from each edge.
 
         The sections render against a frame this panel's width, so every
         column width inside is computed for the panel rather than the sheet.
+        Its ground runs into ``fold.bleed`` on every edge that is a trim edge.
         """
         shared: dict[str, object] = {"size": _panel_scheme(_scheme(engine), box, inset)}
         if self.background_color:
@@ -162,6 +182,7 @@ class Panel(Container):
                 "box": box,
                 "inset": inset,
                 "content_height": _px(box.height - 2 * inset),
+                "ground": box.ground(fold.bleed, fold.panels),
             },
         )
 

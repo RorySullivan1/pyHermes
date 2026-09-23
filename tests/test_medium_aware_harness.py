@@ -46,8 +46,23 @@ class TestEveryRuleSaysWhereItApplies:
         # #165 must not quietly narrow what an email is judged by. Ten rules
         # before, ten after, and the same ten.
         paged_only = {"page-size-declared", "paged-table-width", "table-structure"}
-        assert rules_for("email") == set(SOURCES) - paged_only
+        print_only = {"print-marks", "rgb-only"}
+        assert rules_for("email") == set(SOURCES) - paged_only - print_only
         assert len(rules_for("email")) == 10
+
+    def test_the_brochure_is_judged_as_print(self):
+        """Every paged rule, the neutral four, and the two about a press (#188)."""
+        assert rules_for("brochure") == {
+            "img-alt",
+            "table-role",
+            "empty-url",
+            "no-external-css",
+            "page-size-declared",
+            "paged-table-width",
+            "table-structure",
+            "print-marks",
+            "rgb-only",
+        }
 
     def test_the_outlook_rules_reach_no_other_medium(self):
         for rule in ("outlook-line-height", "outlook-transparent-background", "img-width-attr"):

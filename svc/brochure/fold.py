@@ -65,12 +65,21 @@ class FoldFormat:
                bi-fold and a Z-fold, which have no panel that nests.
         inset: How far a panel keeps its copy from its edges unless the
                panel says otherwise, in px. 24px is 1/4in (6.4mm).
+        safe:  The least inset any panel may keep (#188): copy nearer the
+               trim than this risks being cut. 12px is 1/8in (3.2mm).
+        bleed: How far a panel's ground runs past the trim, so a cut that
+               lands a hair outside leaves no white sliver. 12px, 1/8in.
+        slug:  Room past the bleed for the crop and registration marks.
+               24px, 1/4in.
     """
 
     sheet: PageFormat
     kind: FoldKind
     tuck: int | float = 0
     inset: int | float = 24
+    safe: int | float = 12
+    bleed: int | float = 12
+    slug: int | float = 24
 
     def __post_init__(self) -> None:
         try:
@@ -107,10 +116,15 @@ class FoldFormat:
                 f"a {self.kind.value}-fold has no panel that folds inside another, so "
                 f"'fold.tuck' must be 0, got: {self.tuck}"
             )
-        for name in ("inset",):
+        for name in ("inset", "safe", "bleed", "slug"):
             value = getattr(self, name)
             if isinstance(value, bool) or not isinstance(value, (int, float)) or value < 0:
                 raise ValidationError(f"'fold.{name}' must be a number of px, got: {value!r}")
+        if self.inset < self.safe:
+            raise ValidationError(
+                f"'fold.inset' ({self.inset}) is inside the safe distance ({self.safe}): "
+                "every panel that took the default would be refused"
+            )
         if min(self.widths) <= 0:
             raise ValidationError(f"'fold.tuck' ({self.tuck}) leaves a panel with no width")
 

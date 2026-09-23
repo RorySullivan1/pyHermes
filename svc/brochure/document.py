@@ -19,6 +19,7 @@ from svc.builder.engine import Renderer
 from svc.builder.exceptions import ValidationError
 from svc.builder.models import DocumentMetadata
 
+from .checks import validate_image_resolution, validate_safe_area
 from .fold import TRI_FOLD_LETTER, FoldFormat, _px
 from .imposition import face_name, impose, sides
 from .medium import brochure_medium
@@ -39,7 +40,8 @@ class Brochure(Document):
     :meth:`add_section` is refused.
 
     **Footnotes are refused.** A note floats to the foot of a sheet, and a
-    side's foot runs under three panels that a reader meets separately.
+    side's foot runs under three panels that a reader meets separately. So is
+    a panel inset inside the safe distance, and an image too coarse to print.
 
     Args:
         metadata:     Mapping of facts, or a ``DocumentMetadata``.
@@ -82,6 +84,8 @@ class Brochure(Document):
                 "a brochure cannot carry footnotes: a note floats to the foot of a sheet, "
                 "and a side's foot runs under three panels. Put the note in the panel's copy."
             )
+        validate_safe_area(fold, panels)
+        validate_image_resolution(self.images())
 
     @property
     def fold(self) -> FoldFormat:
@@ -132,27 +136,30 @@ class Brochure(Document):
         """The distance ``panel`` keeps its copy from its edges: its own, or the fold's."""
         return self._fold.inset if panel.inset is None else panel.inset
 
-    def _render_body(self, engine: Renderer, sections: list[Container]) -> str:
-        """The two sides, each holding its panels in the printer's order."""
-        panels = self.panels
-        boxes = impose(self._fold)
+    def _body_context(self, engine: Renderer, sections: list[Container]) -> dict[str, Any]:
+        """The two sides, each holding its panels in the printer's order, and the print marks."""
+        fold, panels, boxes = self._fold, self.panels, impose(self._fold)
         rendered = {}
         for box in boxes:
             panel = panels[box.reader - 1]
-            rendered[box.reader] = panel.render_box(engine, box, self.inset(panel))
-        return "\n".join(
+            rendered[box.reader] = panel.render_box(engine, box, self.inset(panel), fold)
+        sides_html = "\n".join(
             engine.render(
                 "brochure/side.html",
                 {
                     "side": side,
                     "panels_html": "\n".join(rendered[reader] for reader in readers),
                     "proof": self._proof,
-                    "folds": [_px(edge) for edge in self._fold.offsets(side)[1:]],
+                    "folds": [_px(edge) for edge in fold.offsets(side)[1:]],
                     "labels": [
-                        {"box": boxes[reader - 1], "name": face_name(self._fold, reader)}
+                        {"box": boxes[reader - 1], "name": face_name(fold, reader)}
                         for reader in readers
                     ],
                 },
             )
-            for side, readers in enumerate(sides(self._fold), start=1)
+            for side, readers in enumerate(sides(fold), start=1)
         )
+        # The print engine draws its marks inside the declared bleed, under
+        # whatever is painted there, so the declared bleed is the real bleed
+        # plus a slug the grounds never reach.
+        return {"sections_html": sides_html, "print_bleed": _px(fold.bleed + fold.slug)}

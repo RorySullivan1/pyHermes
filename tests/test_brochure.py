@@ -335,7 +335,7 @@ class TestTheBrochure:
         panels[0] = Panel([FullWidth(TextBlock("<p>x</p>"))], background_color="#EEF2F5")
         html = Brochure(_facts(), panels).render()
         cover = html[html.index('data-reader="1"') :]
-        cover = cover[: cover.index('data-reader="2"')] if 'data-reader="2"' in cover else cover
+        cover = cover[: cover.index('class="panel-ground"')]
         assert "#FFFFFF" not in cover.upper()
         assert "#EEF2F5" in cover
 
@@ -437,3 +437,95 @@ def test_the_brochure_imports_the_exporter_only_to_check_a_fit():
         top = [n for n in tree.body if isinstance(n, (ast.Import, ast.ImportFrom))]
         modules = {getattr(n, "module", None) or n.names[0].name for n in top}
         assert not any(m and m.startswith("svc.pdf") for m in modules), path
+
+
+# ----------------------------------------------------------------------
+# #188 — print preparation
+# ----------------------------------------------------------------------
+
+
+class TestTheSafeArea:
+    def test_a_panel_inside_the_safe_distance_raises_naming_it(self):
+        panels = _panels(6)
+        panels[3] = Panel([FullWidth(TextBlock("<p>x</p>"))], title="Positions", inset=8)
+        with pytest.raises(ValidationError, match=r"inside right \('Positions'\).*8px.*12px"):
+            Brochure(_facts(), panels)
+
+    def test_exactly_the_safe_distance_is_allowed(self):
+        panels = _panels(6)
+        panels[3] = Panel([FullWidth(TextBlock("<p>x</p>"))], inset=TRI_FOLD_LETTER.safe)
+        Brochure(_facts(), panels)
+
+    def test_a_fold_whose_default_inset_is_unsafe_is_refused(self):
+        with pytest.raises(ValidationError, match="safe distance"):
+            FoldFormat(sheet=LETTER_SHEET, kind=FoldKind.Z, inset=6)
+
+    @pytest.mark.parametrize("name", ["safe", "bleed", "slug"])
+    def test_each_distance_is_a_number_of_px(self, name):
+        with pytest.raises(ValidationError, match=name):
+            FoldFormat(sheet=LETTER_SHEET, kind=FoldKind.Z, **{name: -1})
+
+
+class TestImageResolution:
+    """300 dpi on paper: a 300px display width needs 938 source pixels."""
+
+    def _with_image(self, pixels: int, display: int) -> Brochure:
+        from qa.fixtures._png import solid_png
+        from svc.builder import ImageBlock
+        from svc.builder.images import EmailImage
+
+        image = EmailImage.attached(solid_png(pixels, 10, (1, 2, 3)), alt="Chart", width=display)
+        panels = _panels(6)
+        panels[2] = Panel([FullWidth(ImageBlock(image))])
+        return Brochure(_facts(), panels)
+
+    def test_enough_pixels_is_silent(self, capsys):
+        self._with_image(938, 300)
+        assert "WARNING" not in capsys.readouterr().out
+
+    def test_below_the_target_warns_naming_the_width_it_needs(self, capsys):
+        self._with_image(600, 300)
+        assert (
+            "'Chart' is 600px wide and needs 938px to print at 300 dpi" in capsys.readouterr().out
+        )
+
+    def test_below_half_the_target_raises_naming_the_width_it_needs(self):
+        with pytest.raises(ValidationError, match=r"'Chart' is 400px wide.*needs 938px"):
+            self._with_image(400, 300)
+
+    def test_the_target_is_the_configs(self):
+        from svc.config import config_override
+
+        with config_override(print_dpi=150):
+            self._with_image(469, 300)
+
+
+class TestThePrintMarkup:
+    def test_the_page_declares_bleed_and_slug_and_marks(self):
+        html = Brochure(_facts(), _panels(6)).render()
+        assert "bleed: 36px;" in html and "marks: crop cross;" in html
+
+    def test_an_outer_panels_ground_runs_into_the_bleed_on_three_sides(self):
+        html = Brochure(_facts(), _panels(6)).render()
+        # Side 1's left panel: the flap, 344px, bled left, top and bottom.
+        assert (
+            'class="panel-ground" style="left:-12px; top:-12px; width:356px; height:840px;' in html
+        )
+
+    def test_an_inner_panels_ground_crosses_no_fold(self):
+        html = Brochure(_facts(), _panels(6)).render()
+        assert (
+            'class="panel-ground" style="left:344px; top:-12px; width:356px; height:840px;' in html
+        )
+
+    def test_the_brochure_lints_one_info_finding_and_no_error(self):
+        from qa.lint import Severity
+
+        findings = lint_document(Brochure(_facts(), _panels(6)))
+        assert [(f.rule_id, f.severity) for f in findings] == [("rgb-only", Severity.INFO)]
+
+    def test_a_skeleton_without_marks_is_an_error(self):
+        from qa.lint import lint_html
+
+        html = Brochure(_facts(), _panels(6)).render().replace("marks: crop cross;", "")
+        assert "print-marks" in {f.rule_id for f in lint_html(html, "brochure")}

@@ -80,9 +80,65 @@ class TestTheImpositionOnPaper:
         assert _position(TRI_FOLD_LETTER, side, x) == position
         assert _left_px(pdf[2 - side], marker) is None, f"{marker!r} is on both sides"
 
-    def test_the_sheet_is_the_folds(self, pdf):
-        width, height = pdf[0].get_size()
-        assert (round(width * PX_PER_POINT), round(height * PX_PER_POINT)) == (1056, 816)
+    def test_the_trim_is_the_folds_sheet(self, pdf):
+        for sheet in pdf:
+            left, bottom, right, top = (v * PX_PER_POINT for v in sheet.get_trimbox())
+            assert (round(left), round(bottom), round(right), round(top)) == (0, 0, 1056, 816)
+
+
+class TestPrintPreparation:
+    """The #188 done-when, read off the PDF's own page boxes."""
+
+    @pytest.fixture(scope="class")
+    def pdf(self):
+        return _pdf(tri_fold_letter.build())
+
+    def test_the_media_box_is_the_trim_plus_bleed_and_slug(self, pdf):
+        grow = TRI_FOLD_LETTER.bleed + TRI_FOLD_LETTER.slug
+        for sheet in pdf:
+            left, bottom, right, top = (v * PX_PER_POINT for v in sheet.get_mediabox())
+            assert (round(left), round(bottom)) == (-grow, -grow)
+            assert (round(right), round(top)) == (1056 + grow, 816 + grow)
+
+    def test_the_bleed_box_reaches_past_the_trim(self, pdf):
+        for sheet in pdf:
+            left, bottom, right, top = (v * PX_PER_POINT for v in sheet.get_bleedbox())
+            assert left <= -TRI_FOLD_LETTER.bleed and right >= 1056 + TRI_FOLD_LETTER.bleed
+
+    @staticmethod
+    def _raster(sheet):
+        """The sheet at 96 dpi, and the px offset of the trim's top-left corner in it."""
+        image = sheet.render(scale=PX_PER_POINT).to_pil().convert("RGB")
+        left, _, _, top = sheet.get_mediabox()
+        _, _, _, trim_top = sheet.get_trimbox()
+        return image, round(-left * PX_PER_POINT), round((top - trim_top) * PX_PER_POINT)
+
+    def test_the_covers_ground_runs_past_the_trim(self, pdf):
+        """The cover is side 1's right panel: its tint reaches into the bleed, right and top."""
+        image, x0, y0 = self._raster(pdf[0])
+        tint = (0xEE, 0xF2, 0xF5)
+        inside_bleed = (x0 + 1056 + TRI_FOLD_LETTER.bleed // 2, y0 + 400)
+        above_trim = (x0 + 900, y0 - TRI_FOLD_LETTER.bleed // 2)
+        for point in (inside_bleed, above_trim):
+            assert max(abs(a - b) for a, b in zip(image.getpixel(point), tint, strict=True)) <= 2, (
+                point
+            )
+
+    def test_the_ground_stops_at_the_bleed_and_leaves_the_slug_for_marks(self, pdf):
+        image, x0, y0 = self._raster(pdf[0])
+        slug = (x0 + 1056 + TRI_FOLD_LETTER.bleed + 4, y0 + 400)
+        assert image.getpixel(slug) == (255, 255, 255)
+
+    def test_crop_marks_are_drawn_in_the_slug(self, pdf):
+        """A crop mark runs out from each trim corner; the top-left one crosses the slug."""
+        image, x0, y0 = self._raster(pdf[0])
+        # A hairline, antialiased across the two pixels either side of the edge.
+        band = [
+            image.getpixel((x, y))
+            for x in (x0 - 2, x0 - 1, x0, x0 + 1)
+            for y in range(0, y0 - TRI_FOLD_LETTER.bleed)
+        ]
+        assert sum(1 for pixel in band if max(pixel) < 200) >= 10
 
 
 class TestTheProofOnPaper:
@@ -93,7 +149,11 @@ class TestTheProofOnPaper:
         """Dark pixels in a column of the sheet, well below any copy."""
         sheet = _pdf(document)[side - 1]
         image = sheet.render(scale=PX_PER_POINT).to_pil().convert("L")
-        return sum(1 for y in range(500, 780) if image.getpixel((x, y)) < 200)
+        # The raster is the media box; the trim sits the bleed and slug in.
+        left, _, _, top = sheet.get_mediabox()
+        _, _, _, trim_top = sheet.get_trimbox()
+        x0, y0 = round(-left * PX_PER_POINT), round((top - trim_top) * PX_PER_POINT)
+        return sum(1 for y in range(500, 780) if image.getpixel((x0 + x, y0 + y)) < 200)
 
     def test_the_proof_draws_every_fold(self):
         proof = tri_fold_letter.build().proof()
