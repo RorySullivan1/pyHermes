@@ -5,6 +5,15 @@ What the curve priced, and what it did not
 Rates Strategy · Quarter ending 30 September · Issue 001
 
 
+The Quarter
+-----------
+
+The curve steepened through the quarter as the front end repriced. Duration
+added to returns for the first time in four quarters, and the long end held
+its ground while the front moved. Carry paid, and the book was paid to wait
+for the turn.
+
+
 In Their Words
 --------------
 

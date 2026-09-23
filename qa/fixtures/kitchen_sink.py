@@ -371,7 +371,9 @@ def build(template_dir: Path | None = None, **metadata_overrides: Any) -> Email:
                 title="Equal Columns",
                 left=TextBlock(
                     '<p>The left half of a 50-50 split, below <a class="xref" '
-                    'href="#exhibit-2">Exhibit 2</a>.</p>'
+                    'href="#exhibit-2">Exhibit 2</a>.</p>',
+                    # Paper only (#189): this email renders exactly as without it.
+                    drop_cap=True,
                 ),
                 right=TextBlock("<p>The right half of a 50-50 split.</p>"),
             )

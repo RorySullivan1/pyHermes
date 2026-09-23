@@ -78,7 +78,8 @@ def panels() -> list[Panel]:
                     content=TextBlock(
                         "<p>The curve steepened through the quarter as the front end "
                         "repriced. Duration added to returns for the first time in "
-                        "four quarters.</p>"
+                        "four quarters.</p>",
+                        drop_cap=True,
                     ),
                 ),
                 FullWidth(

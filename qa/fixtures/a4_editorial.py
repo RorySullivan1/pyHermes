@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from svc.builder import FullWidth, PullQuote
+from svc.builder import FullWidth, PullQuote, TextBlock
 from svc.document import PagedDocument
 
 from . import _paged
@@ -28,6 +28,16 @@ def build(template_dir: Path | None = None) -> PagedDocument:
 def sections() -> list[FullWidth]:
     """The body, one section per primitive, so each golden diff names one."""
     return [
+        FullWidth(
+            title="The Quarter",
+            content=TextBlock(
+                "<p>The curve steepened through the quarter as the front end repriced. "
+                "Duration added to returns for the first time in four quarters, and "
+                "the long end held its ground while the front moved. Carry paid, and "
+                "the book was paid to wait for the turn.</p>",
+                drop_cap=True,
+            ),
+        ),
         FullWidth(
             title="In Their Words",
             content=PullQuote(

@@ -1,0 +1,16 @@
+{# The editorial primitives' print rules (#189), included by both paged
+   skeletons: the page and the brochure set copy the same way. An email never
+   loads this, so each primitive's email degradation is simply its markup
+   without these rules, and a test holds each one to that.
+
+   The drop cap is a real element the builder wraps round the first letter,
+   not ::first-letter: WeasyPrint lays out the first line before a floated
+   pseudo-element, so the line ran over the letter. Two body lines tall. #}
+    .drop-cap {
+      float: left;
+      font-family: {{ font.heading }};
+      font-size: {{ size.type.title * 2 }}px;
+      line-height: {{ (size.type.body * size.type.body_line * 2) | round | int }}px;
+      margin: {{ size.space.column_top * 2 }}px {{ size.space.caption_gap }}px 0 0;
+      color: {{ theme.palette.accent }};
+    }

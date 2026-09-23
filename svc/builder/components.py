@@ -777,6 +777,10 @@ class TextBlock(CopyAlignment, Component):
                   multiple ``<p>`` tags for multi-paragraph blocks.
         subtitle: Optional sub-heading rendered above the prose.
         notes:    Footnotes, each called by a ``[^n]`` marker in ``content``.
+        drop_cap: Set the first letter large, on paper only (#189). An email
+                  renders byte for byte as without it: the Word engine's
+                  ``::first-letter`` is unreliable, and a wrong drop cap is
+                  worse than none.
     """
 
     template_path = "text/text-block.html"
@@ -787,6 +791,7 @@ class TextBlock(CopyAlignment, Component):
         subtitle: str | None = None,
         align: str | None = None,
         notes: Sequence[Footnote | str] | None = None,
+        drop_cap: bool = False,
     ):
         if not content:
             raise ValidationError("TextBlock requires content.")
@@ -794,6 +799,21 @@ class TextBlock(CopyAlignment, Component):
         self.notes = coerce_notes(notes, [content], "TextBlock")
         self.content = content
         self.subtitle = subtitle
+        self.drop_cap = drop_cap
+
+    def render(self, engine: Renderer) -> str:
+        """
+        As any component, except that a drop cap on paper wraps the first letter.
+
+        A real element rather than ``::first-letter``: WeasyPrint lays out the
+        first line before a floated pseudo-element, so the line ran over the
+        letter it should have wrapped. The caller's markup is otherwise untouched.
+        """
+        if not (self.drop_cap and engine.medium.paged):
+            return super().render(engine)
+        ctx = self.context()
+        ctx["text_parts"] = split_markers(_with_drop_cap(self.content), self.notes)
+        return engine.render(self.template_path, ctx)
 
     def raw_html(self) -> list[str]:
         return [self.content]
@@ -847,6 +867,21 @@ class PullQuote(CopyAlignment, Component):
             "attribution": self.attribution or "",
             **self.alignment_context(),
         }
+
+
+def _with_drop_cap(html: str) -> str:
+    """``html`` with its first visible character, or entity, wrapped for the drop cap."""
+    index = 0
+    while index < len(html):
+        if html[index] == "<":
+            index = html.find(">", index) + 1 or len(html)
+        elif html[index].isspace():
+            index += 1
+        else:
+            end = html.find(";", index) + 1 if html[index] == "&" else index + 1
+            letter = html[index:end]
+            return f'{html[:index]}<span class="drop-cap">{letter}</span>{html[end:]}'
+    return html
 
 
 class ContactBlock(CopyAlignment, Component):
