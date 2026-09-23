@@ -123,9 +123,22 @@ class TestVmlFillEmptySrc:
         html = '<!--[if mso]><v:fill type="frame" src="https://a/b.png"/><![endif]-->'
         assert not rule_ids(lint_html(html))
 
-    def test_an_absent_src_passes(self):
-        """The shape the fix emits: the attribute is gated, not emptied."""
+    def test_an_absent_src_no_longer_passes_on_its_own(self):
+        """
+        This asserted the opposite until the markup was put in front of the
+        Word engine. Gating ``src`` while leaving ``type="frame"`` does not
+        emit a clean fill -- it emits a frame with nothing to frame, which
+        Outlook draws as a broken-image placeholder. ``vml-fill-empty-src``
+        is satisfied and the banner is still destroyed, which is exactly the
+        gap ``vml-fill-frame-without-src`` exists to close.
+        """
         html = '<!--[if mso]><v:fill type="frame" color="#111" opacity="65%"/><![endif]-->'
+        assert rule_ids(lint_html(html)) == {"vml-fill-frame-without-src"}
+
+    def test_the_shape_the_fix_actually_emits_passes(self):
+        """``type`` and ``src`` gated together: a solid fill, which is what
+        VML honours ``color`` and ``opacity`` for."""
+        html = '<!--[if mso]><v:fill color="#111" opacity="65%"/><![endif]-->'
         assert not rule_ids(lint_html(html))
 
     def test_other_vml_is_left_alone(self):
@@ -135,6 +148,43 @@ class TestVmlFillEmptySrc:
         """
         html = '<!--[if mso]><v:roundrect arcsize="8%" stroke="false"></v:roundrect><![endif]-->'
         assert not rule_ids(lint_html(html))
+
+
+class TestVmlFillFrameWithoutSrc:
+    """
+    #150's correction, and the rule that would have caught it.
+
+    ``type="frame"`` is a claim that the fill *is* an image. With no source
+    the Word engine does not fall back to ``color``/``opacity``; it paints a
+    broken-image placeholder over the whole shape. On the masthead that means
+    no band, no scrim, and dark title text on white.
+    """
+
+    def test_a_frame_with_no_src_fires(self):
+        html = '<!--[if mso]><v:fill type="frame" color="#141E2C" opacity="65%"/><![endif]-->'
+        assert "vml-fill-frame-without-src" in rule_ids(lint_html(html))
+
+    def test_a_frame_with_a_real_src_passes(self):
+        html = (
+            '<!--[if mso]><v:fill type="frame" src="https://a/b.png" color="#141E2C"/><![endif]-->'
+        )
+        assert not rule_ids(lint_html(html))
+
+    def test_a_solid_fill_passes(self):
+        """No ``type`` at all is the fix: VML defaults to a solid fill."""
+        html = '<!--[if mso]><v:fill color="#141E2C" opacity="65%"/><![endif]-->'
+        assert not rule_ids(lint_html(html))
+
+    def test_it_does_not_fire_on_other_vml(self):
+        html = '<!--[if mso]><v:rect fill="true" stroke="false"></v:rect><![endif]-->'
+        assert not rule_ids(lint_html(html))
+
+    def test_the_rule_carries_a_source(self):
+        """Standing rule: a rule nobody can trace is a preference in
+        disguise."""
+        from qa.lint import SOURCES
+
+        assert SOURCES["vml-fill-frame-without-src"].strip()
 
 
 class TestNoExternalCss:

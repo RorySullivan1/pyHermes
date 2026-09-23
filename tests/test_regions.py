@@ -983,13 +983,20 @@ class TestTheVmlFillSrcIsGated:
     """
     #150 — the Outlook half of the defect #78 fixed in the CSS half.
 
-    **Not yet verified in a real Outlook client.** These tests pin what the
-    builder *emits*; what the Word engine *draws* from it is the open
-    question, and standing rule 3 says no screenshot here can close it. The
-    claim being staged is narrow: only the attribute moves. The rect, its
-    colour and its opacity are untouched, because the scrim is drawn over
-    the flat band whether or not there is a photograph — in this half and in
-    the CSS half alike.
+    **Verified in the Word rendering engine**, which is the engine Outlook
+    Classic uses for HTML mail. The first attempt gated ``src`` alone and
+    kept ``type="frame"``; rendering it proved that wrong. With ``type``
+    still asserting a framed image and no source to frame, the Word engine
+    paints a **broken-image placeholder** across the masthead instead of
+    falling back to ``color``/``opacity`` — no band, no scrim. That is worse
+    than the empty ``src`` it replaced.
+
+    So the two attributes are gated **together**, and that pairing is what
+    these tests pin. Dropping ``type`` from the gate reinstates the
+    placeholder; dropping ``src`` from it emits the original defect.
+    ``color`` and ``opacity`` are never gated, because they are what VML
+    honours once the fill is solid — which is how the flat band keeps its
+    scrim when there is no photograph.
     """
 
     def _fill(self, html: str) -> str:
@@ -1014,8 +1021,27 @@ class TestTheVmlFillSrcIsGated:
         """
         banner = Banner(background_image_url=backdrop)
         fill = self._fill(Email(valid_metadata, banner=banner).render())
-        assert 'type="frame"' in fill
         assert "color=" in fill and "opacity=" in fill
+
+    def test_no_backdrop_drops_type_frame_with_the_src(self, valid_metadata):
+        """
+        The correction #150 needed. ``type="frame"`` with nothing to frame
+        makes the Word engine draw a broken-image placeholder over the whole
+        masthead, so it is gated with the ``src`` rather than left behind.
+        Verified by rendering both forms through the Word engine.
+        """
+        fill = self._fill(Email(valid_metadata).render())
+        assert "type=" not in fill, (
+            f"type must be gated alongside src, or Outlook draws a "
+            f"broken-image placeholder instead of the band: {fill}"
+        )
+
+    def test_a_backdrop_keeps_type_frame(self, valid_metadata):
+        """The gate fires only when there is no source; the photograph path
+        is byte-identical to what shipped before #150."""
+        banner = Banner(background_image_url="https://cdn.test/hero.png")
+        fill = self._fill(Email(valid_metadata, banner=banner).render())
+        assert 'type="frame"' in fill
 
     def test_a_cid_logo_is_attached_exactly_once(self, valid_metadata, png_bytes):
         image = EmailImage.attached(png_bytes, alt="Firm logo")
