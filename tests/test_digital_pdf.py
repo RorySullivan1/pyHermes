@@ -283,3 +283,86 @@ class TestTheProfileTouchesOnlyTheImages:
         full = render_pdf(document, PdfProfile(name="tagged print", **tagged))
         reduced = render_pdf(document, PdfProfile(name="tagged screen", dpi=150, **tagged))
         assert _alt_text(full) == _alt_text(reduced) == [b"The cover ground, reduced"]
+
+
+#: The tagged variant on the screen profile: what #199 measured.
+TAGGED = PdfProfile(name="SCREEN, tagged", dpi=150, jpeg_quality=85, variant="pdf/ua-1")
+
+
+def _alt_values(pdf: bytes) -> list[str]:
+    """Every /Alt, literal or UTF-16 hex: a non-ASCII alt is written as the latter."""
+    blob = _inflated(pdf)
+    found = [text.decode("latin-1") for text in re.findall(rb"/Alt\s*\(([^)]*)\)", blob)]
+    for hexed in re.findall(rb"/Alt\s*<([0-9A-Fa-f]+)>", blob):
+        found.append(bytes.fromhex(hexed.decode()).decode("utf-16"))
+    return found
+
+
+def _decorative_and_content() -> PagedDocument:
+    document = PagedDocument({"firm_name": "Hermes Research", "campaign_name": "Tags"})
+    rule = EmailImage.attached(brochure._DESK_PNG, width=40, decorative=True)
+    chart = EmailImage.attached(paged._CURVE_PNG, alt="The curve, by tenor", width=300)
+    document.add_section(FullWidth(content=ImageBlock(image=rule)))
+    document.add_section(FullWidth(content=ImageBlock(image=chart)))
+    return document
+
+
+class TestTheTaggedPdfCarriesItsStructure:
+    """#199: the four structural facts, read back. Structural only: pypdfium2
+    cannot validate PDF/UA, and veraPDF is a Java tool this repo will not carry."""
+
+    @pytest.fixture(scope="class")
+    @classmethod
+    def tagged(cls) -> bytes:
+        return _inflated(render_pdf(all_paged_fixtures()["a4_portrait"](), TAGGED))
+
+    def test_it_is_marked(self, tagged):
+        assert re.search(rb"/MarkInfo\s*<<\s*/Marked\s+true\s*>>", tagged)
+
+    def test_it_has_a_structure_tree(self, tagged):
+        assert b"/StructTreeRoot" in tagged
+
+    def test_the_catalog_carries_the_documents_language(self, tagged):
+        assert set(re.findall(rb"/Lang\s*\(([^)]*)\)", tagged)) == {b"en-GB"}
+
+    def test_every_image_carries_its_alt_text(self):
+        pdf = render_pdf(all_paged_fixtures()["a4_portrait"](), TAGGED)
+        # The cover mark's alt has an em dash, so it arrives as UTF-16 hex.
+        assert sorted(_alt_values(pdf)) == [
+            "2s10s spread over the quarter",
+            "Hermes Research — quarterly review",
+        ]
+
+    def test_a_content_image_carries_its_alt_text(self):
+        assert _alt_values(render_pdf(_decorative_and_content(), TAGGED)) == ["The curve, by tenor"]
+
+
+class TestWhatKeepsTheScreenProfileUntagged:
+    """
+    #199's decision, pinned by the two measurements that made it.
+
+    WeasyPrint 70 tags by element name and never reads ``role``, so the
+    markup is right and the file is not. When either test below fails, the
+    blocker has moved: revisit the default in ``digital-pdf.md`` and #202.
+    """
+
+    def test_the_screen_profile_is_untagged(self):
+        assert SCREEN.variant is None and PRINT.variant is None
+
+    def test_every_layout_table_is_tagged_as_a_data_table(self):
+        document = all_paged_fixtures()["a4_portrait"]()
+        tables = re.findall(r"<table\b[^>]*>", document.render())
+        layout_tables = [t for t in tables if 'role="presentation"' in t]
+        tagged = _inflated(render_pdf(document, TAGGED))
+        # Twenty layout tables and one data table, and every one a /Table: a
+        # screen reader would announce twenty grids that carry no data.
+        assert (len(layout_tables), len(tables)) == (20, 21)
+        assert len(re.findall(rb"/S\s*/Table\b", tagged)) == len(tables)
+
+    def test_a_decorative_image_is_an_unlabelled_figure_not_an_artifact(self, caplog):
+        with caplog.at_level("ERROR", logger="weasyprint"):
+            tagged = _inflated(render_pdf(_decorative_and_content(), TAGGED))
+        # Two figures, one alt: the decorative image is a Figure with no /Alt,
+        # which PDF/UA forbids, and WeasyPrint says so as it writes it.
+        assert len(re.findall(rb"/S\s*/Figure\b", tagged)) == 2
+        assert "has no required alt description" in caplog.text
