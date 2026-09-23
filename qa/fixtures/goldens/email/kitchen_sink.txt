@@ -16,6 +16,7 @@ Every section below, linked to its heading
 Market Snapshot
 Sector Notes
 In Their Words
+Desk Note
 Long Read
 Factor Returns
 Cumulative Performance
@@ -54,6 +55,15 @@ In Their Words
 
     "Duration earned its place in the book again this quarter."
     -- Head of Rates Strategy
+
+
+Desk Note
+---------
+
+[The desk]
+
+The desk's view in brief: the steepener stays on into the next meeting, and
+linkers are the next addition.
 
 
 Long Read

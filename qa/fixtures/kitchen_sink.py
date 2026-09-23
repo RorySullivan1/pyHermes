@@ -70,6 +70,8 @@ _RETURN = partial(pct, dp=1, sign=True)
 
 _CHART_PNG = solid_png(320, 120, (42, 61, 84))
 _THUMB_PNG = solid_png(96, 96, (184, 84, 80))
+#: The wrapped figure's portrait (#189): its own bytes, so its asset is its own.
+_DESK_PNG = solid_png(120, 150, (91, 138, 154))
 
 
 #: A hosted logo, carrying alt text and a width of its own that the explicit
@@ -302,6 +304,22 @@ def build(template_dir: Path | None = None, **metadata_overrides: Any) -> Email:
                     "Duration earned its place in the book again this quarter.",
                     attribution="Head of Rates Strategy",
                     align="center",
+                ),
+            )
+        )
+        # A figure the prose wraps round on paper (#189); in an email it sits
+        # above the prose, placed by its own align.
+        .section(
+            FullWidth(
+                title="Desk Note",
+                content=TextBlock(
+                    "<p>The desk's view in brief: the steepener stays on into the next "
+                    "meeting, and linkers are the next addition.</p>",
+                    figure=ImageBlock(
+                        EmailImage.attached(_DESK_PNG, alt="The desk", width=120),
+                        align="right",
+                        wrap="right",
+                    ),
                 ),
             )
         )

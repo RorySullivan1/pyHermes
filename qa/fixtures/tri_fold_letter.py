@@ -19,6 +19,7 @@ from svc.builder import (
     ContactBlock,
     FlowedColumns,
     FullWidth,
+    ImageBlock,
     NumberedList,
     PullQuote,
     TextBlock,
@@ -33,6 +34,9 @@ from ._png import solid_png
 #: A chart that fits a full panel's copy (356px less a 24px inset a side) and
 #: prints at 300 dpi there: 300px displayed needs 938 source pixels (#188).
 _CHART_PNG = solid_png(938, 313, (91, 138, 154))
+
+#: The wrapped figure on the inside flap: 96px displayed, 300 source pixels.
+_DESK_PNG = solid_png(300, 375, (74, 124, 89))
 
 #: The words each face opens on, in reader order. The tests read these back
 #: off the PDF, one side at a time.
@@ -147,6 +151,17 @@ def panels() -> list[Panel]:
             [
                 FullWidth(
                     title=MARKERS[5],
+                    content=TextBlock(
+                        "<p>The rates desk takes calls from seven, and every client "
+                        "gets the full review on request.</p>",
+                        figure=ImageBlock(
+                            EmailImage.attached(_DESK_PNG, alt="The rates desk", width=96),
+                            align="right",
+                            wrap="right",
+                        ),
+                    ),
+                ),
+                FullWidth(
                     content=CardGroup(
                         [Card("Desk", "+44 20 0000 0000"), Card("Hours", "07:00-18:00")],
                         orientation=CardOrientation.VERTICAL,

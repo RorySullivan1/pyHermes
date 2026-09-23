@@ -398,10 +398,8 @@ class DataTable(Exhibit, Component):
         caption:  Optional table caption (#120). Renders as a ``caption``
                   element — the table's own accessible **name**, which is
                   what a screen reader announces when it reaches the table.
-        disclosure: Optional compliance copy qualifying this exhibit —
-                  justified fine print beneath the attribution. Plain
-                  text, escaped on the way out; see `disclosure.md` for when
-                  it belongs here rather than on ``Footer.disclaimer``.
+        disclosure: Optional compliance copy beneath the attribution; plain
+                  text, escaped. `disclosure.md` says when to use it.
         label, anchor: Numbering and its ``id``; see :class:`Exhibit`.
         notes:    Footnotes called by ``[^n]`` in ``caption`` or ``source``.
 
@@ -658,11 +656,8 @@ class ChartBlock(Exhibit, CopyAlignment, Component):
 
 class ImageBlock(Exhibit, Component):
     """
-    A single image — optionally linked, captioned and aligned.
-
-    The generic image component: any picture that is not a data exhibit.
-    Charts keep their own component (:class:`ChartBlock`) for the border
-    and attribution line.
+    A single image — optionally linked, captioned and aligned. Charts keep
+    :class:`ChartBlock`, for the border and attribution line.
 
     Args:
         image:    An :class:`~svc.builder.images.EmailImage`, or a plain URL
@@ -681,12 +676,18 @@ class ImageBlock(Exhibit, Component):
         width:    Display width in px, used only when ``image`` is a bare
             URL string.  ``None`` renders full width.
         label, anchor, notes: As on :class:`ChartBlock`; markers go in ``caption``.
+        wrap:     ``"left"`` or ``"right"``: on paper, float to that side of the
+            :class:`TextBlock` hosting it as ``figure`` (#189). Needs a width.
 
     Raises:
-        ValidationError: On a missing image, a bad alignment or link scheme.
+        ValidationError: On a missing image, a bad alignment or link scheme, or
+            a ``wrap`` with no width to float at.
     """
 
     template_path = "media/image-block.html"
+
+    #: The sides a figure may float to; empty means it does not float.
+    WRAPS = ("", "left", "right")
 
     ALIGNMENTS = tuple(ImageAlign)
 
@@ -704,9 +705,12 @@ class ImageBlock(Exhibit, Component):
         label: str = "",
         anchor: str = "",
         notes: Sequence[Footnote | str] | None = None,
+        wrap: str = "",
     ):
         if not image:
             raise ValidationError("ImageBlock requires an image.")
+        if wrap not in self.WRAPS:
+            raise ValidationError(f"Unsupported wrap {wrap!r}. Use: {list(self.WRAPS[1:])}")
         self.validate_exhibit(label, anchor)
         self.notes = coerce_notes(notes, [caption], "ImageBlock")
         if align not in self.ALIGNMENTS:
@@ -723,6 +727,12 @@ class ImageBlock(Exhibit, Component):
         self.align = align
         self.subtitle = subtitle
         self.disclosure = disclosure
+        if wrap and not self.image.width:
+            raise ValidationError(
+                "a wrapped ImageBlock needs a display width: a float with no width "
+                "takes the whole measure and leaves the prose nowhere to wrap"
+            )
+        self.wrap = wrap
 
     def images(self) -> list[EmailImage]:
         return [self.image]
@@ -781,6 +791,10 @@ class TextBlock(CopyAlignment, Component):
                   renders byte for byte as without it: the Word engine's
                   ``::first-letter`` is unreliable, and a wrong drop cap is
                   worse than none.
+        figure:   An :class:`ImageBlock` the prose wraps round on paper, to the
+                  side its ``wrap`` names (#189); above the prose in an email.
+                  Unnumbered and unnoted: the document's walk sees this block,
+                  not what it hosts.
     """
 
     template_path = "text/text-block.html"
@@ -792,41 +806,66 @@ class TextBlock(CopyAlignment, Component):
         align: str | None = None,
         notes: Sequence[Footnote | str] | None = None,
         drop_cap: bool = False,
+        figure: ImageBlock | None = None,
     ):
         if not content:
             raise ValidationError("TextBlock requires content.")
+        if figure is not None and not isinstance(figure, ImageBlock):
+            raise ValidationError(
+                f"TextBlock.figure takes an ImageBlock, got: {type(figure).__name__}"
+            )
+        if figure is not None and (figure.label or figure.notes):
+            raise ValidationError(
+                "a TextBlock's figure cannot be numbered or carry notes: the document "
+                "numbers what it walks, and it walks this block, not its figure"
+            )
         self.align = self.validate_alignment(align)
         self.notes = coerce_notes(notes, [content], "TextBlock")
         self.content = content
         self.subtitle = subtitle
         self.drop_cap = drop_cap
+        self.figure = figure
 
     def render(self, engine: Renderer) -> str:
         """
-        As any component, except that a drop cap on paper wraps the first letter.
+        As any component, with a figure placed and, on paper, the first letter set.
 
-        A real element rather than ``::first-letter``: WeasyPrint lays out the
-        first line before a floated pseudo-element, so the line ran over the
-        letter it should have wrapped. The caller's markup is otherwise untouched.
+        The drop cap is a real element rather than ``::first-letter``: WeasyPrint
+        lays out the first line before a floated pseudo-element, so the line ran
+        over the letter it should have wrapped. The caller's markup is otherwise
+        untouched. A figure floats on paper and sits above the prose elsewhere.
         """
-        if not (self.drop_cap and engine.medium.paged):
-            return super().render(engine)
         ctx = self.context()
-        ctx["text_parts"] = split_markers(_with_drop_cap(self.content), self.notes)
+        paged = engine.medium.paged
+        if self.drop_cap and paged:
+            ctx["text_parts"] = split_markers(_with_drop_cap(self.content), self.notes)
+        if self.figure is not None:
+            ctx["figure_html"] = self.figure.render(engine)
+            ctx["figure_wrap"] = self.figure.wrap if paged else ""
+            ctx["figure_width"] = self.figure.image.width or ""
         return engine.render(self.template_path, ctx)
 
     def raw_html(self) -> list[str]:
         return [self.content]
 
+    def images(self) -> list[EmailImage]:
+        """The figure's image, when there is one (standing rule 7)."""
+        return self.figure.images() if self.figure is not None else []
+
     def text(self) -> str:
-        """The prose, through #108's degrader — ``content`` is raw HTML."""
-        return self._with_subtitle(wrap(html_to_text(text_markers(self.content, self.notes))))
+        """The figure, then the prose through #108's degrader — ``content`` is raw HTML."""
+        prose = wrap(html_to_text(text_markers(self.content, self.notes)))
+        figure = self.figure.text() if self.figure is not None else ""
+        return self._with_subtitle(figure, prose)
 
     def context(self) -> dict[str, Any]:
         return {
             "text_content": self.content,
             "text_parts": split_markers(self.content, self.notes),
             "subtitle": self.subtitle,
+            "figure_html": "",
+            "figure_wrap": "",
+            "figure_width": "",
             **self.alignment_context(),
         }
 

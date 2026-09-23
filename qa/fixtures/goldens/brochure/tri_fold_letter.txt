@@ -72,6 +72,11 @@ Inside flap
 Talk to the desk
 ----------------
 
+[The rates desk]
+
+The rates desk takes calls from seven, and every client gets the full review
+on request.
+
 Desk: +44 20 0000 0000
 Hours: 07:00-18:00
 

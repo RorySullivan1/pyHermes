@@ -10,9 +10,11 @@ from __future__ import annotations
 import pytest
 
 from qa.fixtures import all_brochure_fixtures, all_fixtures, all_paged_fixtures
-from svc.builder import EmailBuilder, FlowedColumns, FullWidth, PullQuote, TextBlock
+from qa.fixtures._png import solid_png
+from svc.builder import EmailBuilder, FlowedColumns, FullWidth, ImageBlock, PullQuote, TextBlock
 from svc.builder.components import _with_drop_cap
 from svc.builder.exceptions import ValidationError
+from svc.builder.images import EmailImage
 from svc.document import PagedDocument
 
 FACTS = {"firm_name": "Hermes", "campaign_name": "Editorial", "email_subject": "S"}
@@ -142,6 +144,62 @@ class TestFlowedColumns:
         assert FlowedColumns(block).components() == [block]
 
 
+def figure(wrap: str = "right", **kwargs) -> ImageBlock:
+    image = EmailImage.attached(solid_png(120, 90, (1, 2, 3)), alt="Desk", width=120)
+    return ImageBlock(image, align="right", wrap=wrap, **kwargs)
+
+
+class TestTheWrappedFigure:
+    PROSE = "<p>The desk keeps the steepener on.</p>"
+
+    def test_an_email_sets_it_above_the_prose_with_its_align_and_no_float(self):
+        html = email_of(FullWidth(TextBlock(self.PROSE, figure=figure()))).render()
+        at = html.index('class="wrapped-figure"')
+        assert '<div class="wrapped-figure">' in html
+        assert html.index('align="right"', at) < html.index("The desk keeps", at)
+        assert "wrap-right" not in html
+
+    def test_paper_floats_it_at_its_display_width(self):
+        html = paged_of(FullWidth(TextBlock(self.PROSE, figure=figure("left")))).render()
+        assert '<div class="wrapped-figure wrap-left" style="width:120px;">' in html
+
+    def test_a_text_block_without_one_is_untouched_in_every_medium(self):
+        for render in (email_of, paged_of):
+            assert "wrapped-figure" not in render(FullWidth(TextBlock(self.PROSE))).render()
+
+    def test_its_image_reaches_the_manifest(self):
+        """Standing rule 7: the block that hosts an image declares it."""
+        block = TextBlock(self.PROSE, figure=figure())
+        assert block.images() == [block.figure.image]
+        assert [a.content_id for a in email_of(FullWidth(block)).assets()] == [
+            block.figure.image.content_id
+        ]
+
+    def test_the_text_part_is_the_figure_then_the_prose(self):
+        assert TextBlock(self.PROSE, figure=figure()).text() == (
+            "[Desk]\n\nThe desk keeps the steepener on."
+        )
+
+    def test_a_wrap_needs_a_width(self):
+        with pytest.raises(ValidationError, match="needs a display width"):
+            ImageBlock("https://example.com/a.png", alt_text="A", wrap="left")
+
+    def test_an_unknown_wrap_is_refused(self):
+        with pytest.raises(ValidationError, match="Unsupported wrap"):
+            figure("centre")
+
+    def test_the_figure_must_be_an_image_block(self):
+        with pytest.raises(ValidationError, match="takes an ImageBlock"):
+            TextBlock(self.PROSE, figure=TextBlock("<p>x</p>"))  # type: ignore[arg-type]
+
+    @pytest.mark.parametrize(
+        "kwargs", [{"label": "Figure"}, {"caption": "Desk[^1]", "notes": ["n"]}]
+    )
+    def test_a_figure_cannot_be_numbered_or_noted(self, kwargs):
+        with pytest.raises(ValidationError, match="cannot be numbered or carry notes"):
+            TextBlock(self.PROSE, figure=figure(**kwargs))
+
+
 class TestEveryPrimitiveIsInTheGallery:
     """Standing rules 1 and 9, across all three galleries: each at a non-default value."""
 
@@ -167,6 +225,17 @@ class TestEveryPrimitiveIsInTheGallery:
             )
         flowed = [s for s in every_gallery_section() if isinstance(s, FlowedColumns)]
         assert any(section.count != 2 for section in flowed)
+
+    def test_a_wrapped_figure_is_in_every_gallery_and_both_sides_are_used(self):
+        for gallery in (all_fixtures(), all_paged_fixtures(), all_brochure_fixtures()):
+            assert any(
+                getattr(component, "figure", None) is not None
+                for build in gallery.values()
+                for section in build()._flat_sections()
+                for component in section.components()
+            )
+        sides = {c.figure.wrap for c in every_gallery_component() if getattr(c, "figure", None)}
+        assert sides == {"left", "right"}
 
     def test_a_drop_cap_is_set_on_paper_and_in_an_email(self):
         for gallery in (all_fixtures(), all_paged_fixtures(), all_brochure_fixtures()):
