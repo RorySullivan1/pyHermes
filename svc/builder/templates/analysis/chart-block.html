@@ -9,7 +9,9 @@
     chart_alt_text    — Alt text for accessibility
     chart_image_width — Display width in px, or "" for full width.  The
                         ATTRIBUTE is what Outlook's Word engine honours; it
-                        ignores CSS max-width.
+                        ignores CSS max-width.  The CSS repeats it as a cap
+                        on 100%, for a print engine, which reads no
+                        attribute (#201).
     chart_source      — Attribution string (optional)
     caption           — The heading line, already numbered by the document
     anchor            — The figure's `id`, empty when it has none (#181)
@@ -34,7 +36,7 @@
     <td{% if align %} align="{{ align | escape_html }}"{% endif %} style="padding: 0;{% if align %} text-align:{{ align }};{% endif %}">
       <img src="{{ chart_image_url | escape_html }}" alt="{{ chart_alt_text | escape_html }}"
            {% if chart_image_width %}width="{{ chart_image_width }}"{% else %}width="100%"{% endif %}
-           style="display: block; max-width: 100%; height: auto; border: 1px solid {{ theme.palette.rule }}; margin: 0;">
+           style="display: block; width: 100%; max-width: {% if chart_image_width %}{{ chart_image_width }}px{% else %}100%{% endif %}; height: auto; border: 1px solid {{ theme.palette.rule }}; margin: 0;">
     </td>
   </tr>
 </table>

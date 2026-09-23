@@ -5,6 +5,9 @@
     * The `width` ATTRIBUTE is what Outlook's Word engine honours; it
       ignores CSS `max-width`.  `max-width:100%` + `height:auto` then let
       every other client scale the image down on a narrow screen.
+    * The same width is stated again as CSS, as a cap on `width:100%`: a
+      print engine maps no presentational hint, and a fixed CSS width would
+      widen a column narrower than it rather than shrink to fit (#201).
     * `display:block` kills the descender gap under an inline image, and
       `border:0` kills the blue border Outlook draws around a linked one.
     * The caption sits outside the <a>, so tapping it does not navigate.
@@ -37,7 +40,7 @@
          layout table, and what the img-alt lint rule reads (#149). #}
       <img src="{{ image_src | escape_html }}" alt="{{ image_alt | escape_html }}"{% if image_decorative %} role="presentation"{% endif +%}
            {% if image_width %}width="{{ image_width }}"{% else %}width="100%"{% endif %}
-           style="display: block; border: 0; outline: none; text-decoration: none; max-width: 100%; height: auto;">
+           style="display: block; border: 0; outline: none; text-decoration: none; width: 100%; max-width: {% if image_width %}{{ image_width }}px{% else %}100%{% endif %}; height: auto;">
       {% if link_url %}
       </a>
       {% endif %}
