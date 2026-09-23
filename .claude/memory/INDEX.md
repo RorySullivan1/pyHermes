@@ -8,7 +8,8 @@
 - **Shipped and closed**: #157 rescope-to-media (PR #167), #153 disclosure (PR #168), #169
   pagination (PR #190), #170 data layer (PR #191), #171 apparatus (PR #192, #181–#185).
 - **#172 brochure implemented on the branch** (#186–#189, `.claude/rules/brochure.md`); its PR
-  closes all five. #150 still needs a real Outlook host; nothing else is open.
+  closes all five. **#193** (stub): the digital PDF — the paged medium already has the cover
+  and contents; the gap is attaching it to an email, size, metadata. #150 needs Outlook.
 - The prose budget is live; the baseline is 45 and may only shrink.
 
 ## Decisions        (append-only; supersede, never delete)
