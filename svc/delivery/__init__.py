@@ -14,9 +14,16 @@ adapters (``svc.gmail``, ``svc.outlook``) that consume this message.
 """
 
 from .exceptions import DeliveryError, MessageError
-from .message import RenderableEmail, build_message, collect_cid_references, save_eml
+from .message import (
+    Attachment,
+    RenderableEmail,
+    build_message,
+    collect_cid_references,
+    save_eml,
+)
 
 __all__ = [
+    "Attachment",
     "DeliveryError",
     "MessageError",
     "RenderableEmail",

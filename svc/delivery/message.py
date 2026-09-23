@@ -19,6 +19,7 @@ from __future__ import annotations
 import re
 import warnings
 from collections.abc import Iterator, Sequence
+from dataclasses import dataclass
 from email.message import EmailMessage
 from html.parser import HTMLParser
 from pathlib import Path
@@ -29,6 +30,7 @@ from svc.builder.images import ImageAsset
 from .exceptions import MessageError
 
 __all__ = [
+    "Attachment",
     "RenderableEmail",
     "build_message",
     "collect_cid_references",
@@ -52,6 +54,45 @@ _CSS_URL_CID = re.compile(r"url\(\s*['\"]?\s*cid:([^)'\"\s]+)", re.IGNORECASE)
 # deliverability checks -- just the characters that let a value break out of
 # the single header line it is meant to occupy.
 _CONTROL_CHARS = re.compile(r"[\r\n]")
+
+#: ``type/subtype``, each an RFC 2045 token: what a Content-Type can carry.
+_MIME_TYPE = re.compile(r"[A-Za-z0-9!#$&^_.+-]+/[A-Za-z0-9!#$&^_.+-]+")
+
+
+@dataclass(frozen=True)
+class Attachment:
+    """
+    A file carried after the email, validated at construction.
+
+    A sibling of :class:`~svc.builder.images.ImageAsset`, and deliberately
+    not the same class: an asset is referenced by ``cid:`` from inside the
+    HTML and rendered in place, while an attachment is referenced by nothing
+    and shown as a file. Sharing one type would let either be passed where
+    the other belongs, and each would then be delivered wrong.
+
+    ``size_hint`` is what the producer knows would make the file smaller.
+    The size budget quotes it when a message is over, so the delivery layer
+    can point at a remedy without knowing what made the bytes.
+    """
+
+    data: bytes
+    filename: str
+    mime_type: str
+    size_hint: str = ""
+
+    def __post_init__(self) -> None:
+        if not self.data:
+            raise MessageError(f"attachment data is empty for {self.filename!r}")
+        name = self.filename
+        if not name.strip() or name.strip() in {".", ".."}:
+            raise MessageError(f"attachment filename must name a file, got {name!r}")
+        if "/" in name or "\\" in name:
+            raise MessageError(f"attachment filename must not contain a path separator: {name!r}")
+        _reject_control_chars(name, "attachment filename")
+        if not _MIME_TYPE.fullmatch(self.mime_type):
+            raise MessageError(
+                f"attachment mime_type must be 'type/subtype', got {self.mime_type!r} for {name!r}"
+            )
 
 
 class RenderableEmail(Protocol):
@@ -252,6 +293,7 @@ def build_message(
     to: str | Sequence[str],
     cc: str | Sequence[str] | None = None,
     reply_to: str | None = None,
+    attachments: Sequence[Attachment] = (),
 ) -> EmailMessage:
     """
     Assemble a built email into a sendable MIME message.
@@ -264,20 +306,19 @@ def build_message(
         to:       One recipient address or a sequence of them.
         cc:       Optional carbon-copy recipients.
         reply_to: Optional ``Reply-To`` header.
+        attachments: Files carried after the email, each an :class:`Attachment`.
 
     Returns:
-        An :class:`~email.message.EmailMessage`: ``text/html`` with no CID
-        images, ``multipart/related`` with them.
+        A ``multipart/alternative``, its HTML ``multipart/related`` with CID
+        images, inside a ``multipart/mixed`` when there are attachments.
 
     Raises:
         MessageError: On a missing subject, sender or recipient; a control
             character in an envelope field; an asset with an unusable MIME
-            type; or ``cid:`` references disagreeing with the manifest.
-        EmailBuilderError: Propagated unchanged — a build failure is not a
-            delivery failure.
+            type; ``cid:`` references disagreeing with the manifest.
+        EmailBuilderError: Propagated unchanged.
 
-    ``Bcc`` is deliberately not accepted, and the MIME boundary is random per
-    call; see the module docstring.
+    ``Bcc`` is deliberately not accepted; see the module docstring.
     """
     recipients = _as_list(to)
     cc_recipients = _as_list(cc)
@@ -375,7 +416,27 @@ def build_message(
                 disposition="inline",
             )
 
+    _attach(message, attachments)
     return message
+
+
+def _attach(message: EmailMessage, attachments: Sequence[Attachment]) -> None:
+    """
+    Carry each attachment after the email, in order, as a file.
+
+    The first ``add_attachment`` makes the message ``multipart/mixed`` with
+    the alternative as its first part, so the related subtree keeps its
+    structure one level deeper. With none, the message is left untouched.
+    """
+    for attachment in attachments:
+        if not isinstance(attachment, Attachment):
+            raise MessageError(
+                f"attachments must be Attachment instances, got {type(attachment).__name__}"
+            )
+        maintype, _, subtype = attachment.mime_type.partition("/")
+        message.add_attachment(
+            attachment.data, maintype=maintype, subtype=subtype, filename=attachment.filename
+        )
 
 
 def save_eml(message: EmailMessage, output_path: str | Path) -> Path:
