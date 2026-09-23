@@ -18,7 +18,9 @@ import pytest
 from qa.fixtures import _paged as paged
 from qa.fixtures import all_brochure_fixtures, all_paged_fixtures
 from qa.fixtures import tri_fold_letter as brochure
-from svc.builder import FullWidth, ImageBlock, TextBlock
+from qa.fixtures._png import solid_png
+from svc.builder import ChartBlock, FullWidth, ImageBlock, TextBlock, TwoColumn
+from svc.builder.enums import TwoColumnRatio
 from svc.builder.images import EmailImage
 from svc.document import PagedDocument
 from svc.pdf import PRINT, SCREEN, PdfProfile, available, layout, render_pdf, save_pdf
@@ -109,13 +111,7 @@ _WIDE_PNG = brochure._COVER_PNG
 
 
 def _one_wide_image() -> PagedDocument:
-    """
-    One 1150px image on a sheet, shown at the column's width.
-
-    The column caps it, not its width attribute: WeasyPrint maps no
-    presentational hint, so an img's declared width does not reach the
-    layout. The tests therefore measure the width it was shown at.
-    """
+    """One 1150px image on a sheet, shown at its declared 300px (#201)."""
     document = PagedDocument({"firm_name": "Hermes Research", "campaign_name": "Wide"})
     image = EmailImage.attached(_WIDE_PNG, alt="The cover ground, reduced", width=300)
     document.add_section(FullWidth(content=ImageBlock(image=image)))
@@ -446,3 +442,68 @@ class TestTheLandscapeReport:
         [sent] = [part for part in parsed.walk() if part.get_filename()]
         assert sent.get_payload(decode=True) == pdf
         assert _info(pdf)["Author"] == "Hermes Research"
+
+
+class TestAnImagePrintsAtItsDeclaredWidth:
+    """
+    #201: a print engine maps no ``width`` attribute, so the image templates
+    state the width again, as a CSS cap on ``width: 100%``. Each width is read
+    off the sheet; a browser shows the email's images at the same widths.
+    """
+
+    #: A4's column: the 794px sheet, less its margins and the frame's padding.
+    COLUMN = 578
+
+    @pytest.fixture(scope="class")
+    @classmethod
+    def shown(cls) -> dict[str, float]:
+        """Each image's displayed width, keyed by its alt, read in document order."""
+        wide, small = solid_png(1150, 200, (91, 138, 154)), solid_png(72, 72, (245, 242, 236))
+
+        def image(png: bytes, alt: str, width: int | None = None) -> ImageBlock:
+            return ImageBlock(image=EmailImage.attached(png, alt=alt, width=width))
+
+        chart = EmailImage.attached(small, alt="widened chart", width=200)
+        sections = [
+            FullWidth(content=image(wide, "narrowed", 300)),
+            FullWidth(content=ChartBlock(chart, source="Hermes Research")),
+            FullWidth(content=image(wide, "capped", 900)),
+            FullWidth(content=image(small, "undeclared")),
+            TwoColumn(
+                ratio=TwoColumnRatio.EQUAL,
+                left=image(wide, "capped in a half", 600),
+                right=image(small, "small in a half", 60),
+            ),
+        ]
+        document = PagedDocument({"firm_name": "Hermes Research", "campaign_name": "Widths"})
+        for section in sections:
+            document.add_section(section)
+        alts = ["narrowed", "widened chart", "capped", "undeclared"]
+        alts += ["capped in a half", "small in a half"]
+        widths = [shown for _, _, shown in _image_objects(render_pdf(document))]
+        return dict(zip(alts, widths, strict=True))
+
+    def test_a_large_source_prints_at_its_declared_width(self, shown):
+        assert shown["narrowed"] == pytest.approx(300, abs=0.5)
+
+    def test_a_small_source_is_scaled_up_to_it(self, shown):
+        # The chart's 1px border sits outside the width it declares.
+        assert shown["widened chart"] == pytest.approx(200, abs=0.5)
+
+    def test_a_width_past_the_column_is_capped_at_the_column(self, shown):
+        assert shown["capped"] == pytest.approx(self.COLUMN, abs=0.5)
+
+    def test_an_undeclared_width_is_the_columns(self, shown):
+        assert shown["undeclared"] == pytest.approx(self.COLUMN, abs=0.5)
+
+    def test_a_width_past_a_half_shrinks_to_the_half_and_does_not_widen_it(self, shown):
+        # A fixed CSS width here widened the whole frame past the page margin
+        # and put a4_portrait on six sheets: a px width is not compressible.
+        assert shown["capped in a half"] < self.COLUMN / 2
+        assert shown["small in a half"] == pytest.approx(60, abs=0.5)
+
+    def test_the_cover_logo_prints_at_its_declared_width(self):
+        # a4_portrait's mark is 72px, declared at 96: it printed at 72 before.
+        document = all_paged_fixtures()["a4_portrait"]()
+        [logo] = [shown for w, _, shown in _image_objects(render_pdf(document)) if w == 72]
+        assert logo == pytest.approx(96, abs=0.5)

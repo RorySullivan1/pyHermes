@@ -309,6 +309,31 @@ argument restates any of them: a caller who wants a different author changes the
 - **The outline keeps the contents sheet and the disclosures.** Both are headed sheets a
   reader navigates to, so both are bookmarks beside the sections, one level under the cover.
 
+## An image's width is stated twice, and the CSS copy is a cap (#201)
+
+A print engine maps no `width` attribute on an `img`, as #164 found for a `table`. The paged
+cover's 72px mark, declared at 96, printed at 72; a 1150px image declared at 300 printed at
+the column's 578. CSS cannot read an attribute as a length, so the skeleton's
+`table[width="100%"]` rule has no image equivalent. The three options #201 listed were
+measured on every paged and brochure fixture, sheet by sheet, against the rasters from `main`:
+
+| Option | What the rasters showed |
+|---|---|
+| `presentational_hints=True` in the exporter | a4_portrait on **six** sheets, and every sheet of a4_long_table and the brochure moved |
+| A fixed CSS `width: Npx` beside the attribute | The same six sheets: a 600px chart in a 50-50 split widened the whole frame past the page margin |
+| `width: 100%; max-width: Npx` beside the attribute | Only the images changed, each to its declared width. All 28 email screenshots were pixel-identical |
+
+**The third, in `image-block.html`, `chart-block.html` and the paged cover.** WeasyPrint
+gives a replaced element with a fixed width a min-content of that width, so a table cell can
+never shrink below it. A percentage width has a min-content of zero, the compressible case
+in CSS Sizing. `width: 100%` capped by `max-width` therefore shows the smaller of the declared
+width and the column, which is what a browser already showed for the attribute. Outlook's
+Word engine still reads the attribute, and this is the fluid-hybrid pattern email templates
+already use for it. No template was forked, and the email goldens moved by bytes alone. The
+cover is paged-only and sits on a full sheet, so it takes a plain `width: Npx`.
+`TestAnImagePrintsAtItsDeclaredWidth` reads every case back from the PDF. It also catches
+the fixed-width version in a half column.
+
 **The digital PDF (#193) is not a medium.** It is a `PdfProfile` on this exporter plus an
 attachment path in `svc/delivery`, and `digital-pdf.md` has the decision, the profiles, the size
 budget and the PDF/UA measurement.

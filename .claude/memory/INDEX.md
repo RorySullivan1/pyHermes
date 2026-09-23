@@ -7,7 +7,8 @@
   `.claude/rules/media.md`; do not restate it here.
 - **Shipped and closed**: #157 (PR #167), #153 (PR #168), #169 (PR #190), #170 (PR #191),
   #171 apparatus (PR #192), #172 brochure (PR #194, #186–#189), #193 digital PDF (PR #203, #195–#200).
-- Open issues: #150 needs Outlook; #201 img width in a paged layout; #202 the PDF/UA tagger keeps `SCREEN` untagged.
+- **#201 fixed** on `claude/gifted-ritchie-7dkp5g` (not yet a PR). Open issues: #150 needs Outlook; #202 the PDF/UA
+  tagger keeps `SCREEN` untagged.
 - The prose budget is live; the baseline is 45 and may only shrink.
 
 ## Decisions        (append-only; supersede, never delete)
@@ -45,6 +46,9 @@
 - [2026-09-23] **A screen PDF is a profile, not a medium; `SCREEN` stays untagged.** WeasyPrint 70
   tags layout tables as `/Table` and ignores `role` (#202) — sessions/2026-09-23-digital-pdf.md
 
+- [2026-09-23] **An image's CSS width is a cap on 100%, never a fixed px.** A px width is WeasyPrint's
+  min-content, so a 600px chart in a half column widened the frame and added a sheet — `media.md` (#201)
+
 ## Threads          (open items; remove when closed)
 - **Every issue or PR body is written without angle brackets** — GitHub's sanitizer has
   emptied three.
@@ -77,3 +81,5 @@
   wrong one — sessions/2026-09-23-brochure-medium.md
 - [2026-09-23] digital-pdf — **#193 shipped, PR #203** (6/6 closed). PDF determinism needs
   HarfBuzz-Subset; findings #201, #202 filed — sessions/2026-09-23-digital-pdf.md
+- [2026-09-23] image-width — **#201 fixed**: `width:100%; max-width:Npx` beside the attribute. Hints and a fixed
+  px width each put a4_portrait on six sheets; email screenshots pixel-identical — `media.md`

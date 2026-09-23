@@ -180,5 +180,6 @@ recovered from the wire bytes intact.
 Two findings from the epic are filed rather than fixed, because each is a change of its own:
 
 - **#201, an `img` width attribute never reaches a paged layout.** WeasyPrint maps no
-  presentational hint, so the cover logo declared at 96px prints at its intrinsic 72px.
+  presentational hint, so the cover logo declared at 96px printed at its intrinsic 72px.
+  Fixed since: the image templates repeat the width as a CSS cap (`media.md`).
 - **#202, the tagger's two blockers**, with their fix paths. It is what keeps `SCREEN` untagged.
