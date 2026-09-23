@@ -5,11 +5,10 @@
   shared kit, `svc/email`, `svc/document` and `svc/brochure` are the media, and exporters sit on
   one contract — `svc/delivery`+`gmail`+`outlook`, and `svc/pdf`. Rationale: CLAUDE.md and
   `.claude/rules/media.md`; do not restate it here.
-- **Shipped and closed**: #157 rescope-to-media (PR #167), #153 disclosure (PR #168), #169
-  pagination (PR #190), #170 data layer (PR #191), #171 apparatus (PR #192, #181–#185).
-- **#172 brochure implemented on the branch** (#186–#189, `.claude/rules/brochure.md`); its PR
-  closes all five. **#193** (stub): the digital PDF — the paged medium already has the cover
-  and contents; the gap is attaching it to an email, size, metadata. #150 needs Outlook.
+- **Shipped and closed**: #157 (PR #167), #153 (PR #168), #169 (PR #190), #170 (PR #191),
+  #171 apparatus (PR #192), #172 brochure (PR #194, #186–#189).
+- **Open: #193** (stub): the digital PDF — the paged medium already has the cover and
+  contents; the gap is attaching it to an email, size, metadata. #150 needs a real Outlook.
 - The prose budget is live; the baseline is 45 and may only shrink.
 
 ## Decisions        (append-only; supersede, never delete)
@@ -71,6 +70,6 @@
   contents, footnotes, xrefs, running section. Every mechanism probed under WeasyPrint 70 first
   — sessions/2026-09-22-2200-document-apparatus.md
 
-- [2026-09-23] brochure-medium — **#172 implemented**, eight commits: folds, panel, imposition,
+- [2026-09-23] brochure-medium — **#172 shipped, PR #194** (4/4 closed, CI green first push): folds, panel, imposition,
   bleed and marks, five editorial primitives. A test that reads the table it tests agrees with a
   wrong one — sessions/2026-09-23-brochure-medium.md
