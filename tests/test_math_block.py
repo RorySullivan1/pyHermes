@@ -136,7 +136,7 @@ class TestTheGalleryHoldsIt:
             c
             for section in kitchen_sink.build()._sections
             for c in section.components()
-            if isinstance(c, MathBlock)
+            if isinstance(c, MathBlock) and c.label
         ]
         assert block.caption and block.label and block.anchor and block.notes
         assert block.disclosure and block.align != "center" and block.spacing is not None
@@ -157,3 +157,19 @@ def test_the_builder_imports_no_optional_backend():
     assert not [
         m for m in modules if m and (m.startswith("matplotlib") or m.startswith("svc.math"))
     ]
+
+
+class TestLines:
+    def test_the_component_takes_lines_without_the_extra(self):
+        block = MathBlock(PNG, lines=["a = b", "c = d"], width=40)
+        assert block.image.alt == "a = b\nc = d"
+        assert "$a = b$\n$c = d$" in block.text()
+
+    @pytest.mark.parametrize("lines", [[], ["a", ""], ["a\nb"]])
+    def test_bad_lines_raise(self, lines):
+        with pytest.raises(ValidationError, match="math_block"):
+            MathBlock(PNG, lines=lines, width=40)
+
+    def test_latex_and_lines_together_raise(self):
+        with pytest.raises(ValidationError, match="not both"):
+            MathBlock(PNG, latex="x", lines=["y"], width=40)

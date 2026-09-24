@@ -73,6 +73,7 @@ _RETURN = partial(pct, dp=1, sign=True)
 
 _CHART_PNG = solid_png(320, 120, (42, 61, 84))
 _EQUATION_PNG = solid_png(440, 96, (59, 59, 59))
+_TAIL_PNG = solid_png(410, 114, (59, 59, 59))
 _THUMB_PNG = solid_png(96, 96, (184, 84, 80))
 #: The wrapped figure's portrait (#189): its own bytes, so its asset is its own.
 _DESK_PNG = solid_png(120, 150, (91, 138, 154))
@@ -426,6 +427,21 @@ def build(template_dir: Path | None = None, **metadata_overrides: Any) -> Email:
                     disclosure="The estimate assumes stable correlations.",
                     align="left",
                     spacing={"caption_gap": 5},
+                ),
+            )
+        )
+        # A multi-line display (#232), one image, right-aligned as a block.
+        .section(
+            FullWidth(
+                title="Tail Risk",
+                content=MathBlock(
+                    _TAIL_PNG,
+                    lines=[
+                        r"\text{VaR}_{99\%} = -q_{0.01}(r)",
+                        r"\text{ES}_{99\%} = \mathbb{E}[r \mid r \leq q_{0.01}]",
+                    ],
+                    width=103,
+                    caption="Value at risk and expected shortfall",
                 ),
             )
         )

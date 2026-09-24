@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <title>Quarterly Review</title>
+  <meta name="author" content="Hermes Research">
+  <meta name="description" content="Quarterly Review · Rates Strategy · Quarter ending 30 September">
+  <meta name="keywords" content="Rates Strategy, Issue 001">
+  <style type="text/css">
+    @page {
+      size: 794px 1123px;
+      margin: 76px 76px 76px 76px;
+    }
+
+
+    @page {
+      @bottom-center {
+        content: "Hermes Research · Risk Notes" " · " counter(page) " / " counter(pages);
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 9.5px;
+        color: #A09E97;
+      }
+    }
+    @page cover { @bottom-center { content: none; } }
+
+
+    @page cover { margin: 0; }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #FFFFFF;
+      font-family: Georgia, 'Times New Roman', serif;
+      color: #3B3B3B;
+      orphans: 2;
+      widows: 2;
+    }
+    table { border-collapse: collapse; }
+
+    table[width="100%"] { width: 100%; }
+    img { border: 0; }
+
+    .data-table tbody tr { break-inside: avoid; page-break-inside: avoid; }
+    .data-table tr.row-total { break-before: avoid; page-break-before: avoid; }
+    .data-table tr.row-subhead { break-after: avoid; page-break-after: avoid; }
+    .data-table > caption { break-after: avoid; page-break-after: avoid; }
+    .section-title { break-after: avoid; page-break-after: avoid; }
+    .subtitle { break-after: avoid; page-break-after: avoid; }
+    .fine-print { break-before: avoid; page-break-before: avoid; }
+    .figure { break-inside: avoid; page-break-inside: avoid; }
+
+    .contents-entry a::after {
+      content: leader(".") " " target-counter(attr(href), page);
+      color: #A09E97;
+    }
+
+    @page {
+      @footnote {
+        border-top: 1px solid #D6D2CB;
+        padding-top: 8px;
+      }
+    }
+    .footnote {
+      float: footnote;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 9.5px;
+      font-style: normal;
+      font-weight: normal;
+      letter-spacing: 0;
+      line-height: 140%;
+      color: #7A7A72;
+      text-align: left;
+    }
+    .section-title h2 {
+      string-set: running-header content(), running-footer content(),
+        running-header-fallback "", running-footer-fallback "";
+    }
+    .footnote::footnote-call { content: none; }
+    .footnote::footnote-marker { content: attr(data-note) ". "; }
+
+    .drop-cap {
+      float: left;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 56px;
+      line-height: 48px;
+      margin: 4px 8px 0 0;
+      color: #5B8A9A;
+    }
+    .flowed-columns p:first-child { margin-top: 0; }
+    .wrap-left { float: left; margin: 0 16px 8px 0; }
+    .wrap-right { float: right; margin: 0 0 8px 16px; }
+
+    a.xref::after {
+      content: " (p. " target-counter(attr(href), page) ")";
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 9.5px;
+      color: #A09E97;
+    }
+  </style>
+</head>
+<body>
+
+
+  <div class="running-header-start"></div><div class="running-footer-start"></div>
+
+
+  <table class="document-container" role="presentation" width="642"
+         cellpadding="0" cellspacing="0" border="0"
+         style="width:642px; background-color:#FFFFFF;">
+<tr>
+  <td style="padding:0; background-color:#FFFFFF;">
+    <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td style="padding:22px 32px 12px 32px;">
+          <h2 id="risk" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:17px; font-weight:bold; color:#2C3E50; line-height:120%;">
+            Risk
+          </h2>
+        </td>
+      </tr>
+    </table>
+    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:16px 32px 14px 32px; font-family: Arial, Helvetica, sans-serif; font-size:14px; color:#3B3B3B; line-height:172%;">
+          <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: #3B3B3B; line-height: 172%; margin: 0 0 16px 0;"><p>Risk, paragraph 1: the book held its weights through the month and the covariance estimate moved less than the returns did.</p><p>Risk, paragraph 2: the book held its weights through the month and the covariance estimate moved less than the returns did.</p></div>
+
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+
+<tr>
+  <td style="padding:0; background-color:#FFFFFF;">
+    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:16px 32px 14px 32px; font-family: Arial, Helvetica, sans-serif; font-size:14px; color:#3B3B3B; line-height:172%;">
+          <table class="figure math-block" id="equation-1" role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
+  <tr>
+    <td align="center" style="padding: 0; text-align: center;">
+      <div align="center" style="font-size: 0; line-height: 0; text-align: center;"><img src="cid:03a441ab040c5ed2" alt="\sigma_p^2 = w^\top \Sigma w" width="80" style="display: inline-block; vertical-align: top; border: 0; outline: none; text-decoration: none; width: 100%; max-width: 80px; height: auto;"></div>
+      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #A09E97; font-style: italic; margin: 8px 0 0 0; line-height: 172%;">Equation 1 · Portfolio variance</p>
+    </td>
+  </tr>
+</table>
+
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+
+<tr>
+  <td style="padding:0; background-color:#FFFFFF;">
+    <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td style="padding:22px 32px 12px 32px;">
+          <h2 id="tails" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:17px; font-weight:bold; color:#2C3E50; line-height:120%;">
+            Tails
+          </h2>
+        </td>
+      </tr>
+    </table>
+    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:16px 32px 14px 32px; font-family: Arial, Helvetica, sans-serif; font-size:14px; color:#3B3B3B; line-height:172%;">
+          <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: #3B3B3B; line-height: 172%; margin: 0 0 16px 0;"><p>Tails, paragraph 1: the book held its weights through the month and the covariance estimate moved less than the returns did.</p><p>Tails, paragraph 2: the book held its weights through the month and the covariance estimate moved less than the returns did.</p><p>Tails, paragraph 3: the book held its weights through the month and the covariance estimate moved less than the returns did.</p><p>Tails, paragraph 4: the book held its weights through the month and the covariance estimate moved less than the returns did.</p><p>Tails, paragraph 5: the book held its weights through the month and the covariance estimate moved less than the returns did.</p><p>Tails, paragraph 6: the book held its weights through the month and the covariance estimate moved less than the returns did.</p><p>Tails, paragraph 7: the book held its weights through the month and the covariance estimate moved less than the returns did.</p><p>Tails, paragraph 8: the book held its weights through the month and the covariance estimate moved less than the returns did.</p></div>
+
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+
+<tr>
+  <td style="padding:0; background-color:#FFFFFF;">
+    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:16px 32px 14px 32px; font-family: Arial, Helvetica, sans-serif; font-size:14px; color:#3B3B3B; line-height:172%;">
+          <table class="figure math-block" id="equation-2" role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
+  <tr>
+    <td align="center" style="padding: 0; text-align: center;">
+      <div align="center" style="font-size: 0; line-height: 0; text-align: center;"><img src="cid:ec44c82de3252e71" alt="\text{VaR}_{99\%} = -q_{0.01}(r)
+\text{ES}_{99\%} = \mathbb{E}[r \mid r \leq q_{0.01}]" width="137" style="display: inline-block; vertical-align: top; border: 0; outline: none; text-decoration: none; width: 100%; max-width: 137px; height: auto;"></div>
+      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #A09E97; font-style: italic; margin: 8px 0 0 0; line-height: 172%;">Equation 2 · Value at risk and expected shortfall</p>
+    </td>
+  </tr>
+</table>
+
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+
+<tr>
+  <td style="padding:0; background-color:#FFFFFF;">
+    <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td style="padding:22px 32px 12px 32px;">
+          <h2 id="estimation" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:17px; font-weight:bold; color:#2C3E50; line-height:120%;">
+            Estimation
+          </h2>
+        </td>
+      </tr>
+    </table>
+    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:16px 32px 14px 32px; font-family: Arial, Helvetica, sans-serif; font-size:14px; color:#3B3B3B; line-height:172%;">
+          <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: #3B3B3B; line-height: 172%; margin: 0 0 16px 0;"><p>Estimation, paragraph 1: the book held its weights through the month and the covariance estimate moved less than the returns did.</p><p>Estimation, paragraph 2: the book held its weights through the month and the covariance estimate moved less than the returns did.</p><p>Estimation, paragraph 3: the book held its weights through the month and the covariance estimate moved less than the returns did.</p></div>
+
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+
+<tr>
+  <td style="padding:0; background-color:#FFFFFF;">
+    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:16px 32px 14px 32px; font-family: Arial, Helvetica, sans-serif; font-size:14px; color:#3B3B3B; line-height:172%;">
+          <table class="figure math-block" id="equation-3" role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
+  <tr>
+    <td align="center" style="padding: 0; text-align: center;">
+      <div align="center" style="font-size: 0; line-height: 0; text-align: center;"><img src="cid:bb4bbf4921299b14" alt="\hat{\beta} = (X^\top X)^{-1} X^\top y" width="124" style="display: inline-block; vertical-align: top; border: 0; outline: none; text-decoration: none; width: 100%; max-width: 124px; height: auto;"></div>
+      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #A09E97; font-style: italic; margin: 8px 0 0 0; line-height: 172%;">Equation 3 · The least-squares estimate</p>
+    </td>
+  </tr>
+</table>
+
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+
+  </table>
+
+
+
+</body>
+</html>

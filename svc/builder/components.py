@@ -982,6 +982,8 @@ class MathBlock(Exhibit, Component):
         image:   PNG bytes, attached by ``cid:`` with the source as alt, or an
                  :class:`~svc.builder.images.EmailImage` whose alt is the source.
         latex:   The source, without ``$``. One expression; no newline.
+        lines:   Instead of ``latex``, the sources of a multi-line display, one
+                 image; the source is then the lines joined by newlines (#232).
         width:   Display width in px, used only when ``image`` is bytes.
         caption, disclosure, label, anchor, notes: as on :class:`ImageBlock`.
         align:   ``"center"`` (default), ``"left"`` or ``"right"``.
@@ -996,7 +998,7 @@ class MathBlock(Exhibit, Component):
     def __init__(
         self,
         image: bytes | EmailImage,
-        latex: str,
+        latex: str = "",
         caption: str = "",
         width: int | None = None,
         align: str | ImageAlign = ImageAlign.CENTER,
@@ -1005,15 +1007,11 @@ class MathBlock(Exhibit, Component):
         anchor: str = "",
         notes: Sequence[Footnote | str] | None = None,
         spacing: Spacing | Mapping[str, int | float] | None = None,
+        lines: Sequence[str] | None = None,
     ):
         self.spacing = self._coerce_spacing(spacing)
-        if not isinstance(latex, str) or not latex.strip():
-            raise ValidationError(f"'math_block.latex' is required, got: {latex!r}")
-        if "\n" in latex:
-            raise ValidationError(
-                "'math_block.latex' holds a newline; one expression per image. "
-                "For several lines, render them with math_block(lines=...)."
-            )
+        self.lines = _equation_lines(latex, lines)
+        latex = "\n".join(self.lines)
         if align not in self.ALIGNMENTS:
             raise ValidationError(
                 f"'math_block.align' must be one of {[a.value for a in self.ALIGNMENTS]}, "
@@ -1031,9 +1029,10 @@ class MathBlock(Exhibit, Component):
         return [self.image]
 
     def text(self) -> str:
-        """The numbered caption, the source in ``$ $`` on its own line, the disclosure."""
+        """The numbered caption, each line of the source in ``$ $``, the disclosure."""
         caption = text_markers(self.numbered(self.caption), self.notes)
-        return self._with_subtitle(wrap(caption), f"${self.latex}$", wrap(self.disclosure))
+        source = "\n".join(f"${line}$" for line in self.lines)
+        return self._with_subtitle(wrap(caption), source, wrap(self.disclosure))
 
     def context(self) -> dict[str, Any]:
         return {
@@ -1046,6 +1045,27 @@ class MathBlock(Exhibit, Component):
             "anchor": self.resolved_anchor(),
             "disclosure": self.disclosure,
         }
+
+
+def _equation_lines(latex: str, lines: Sequence[str] | None) -> list[str]:
+    """The source's lines: ``latex`` alone, or ``lines``, never both."""
+    if lines is None:
+        if not isinstance(latex, str) or not latex.strip():
+            raise ValidationError(f"'math_block.latex' is required, got: {latex!r}")
+        if "\n" in latex:
+            raise ValidationError(
+                "'math_block.latex' holds a newline; one expression per image. "
+                "For several lines, render them with math_block(lines=...)."
+            )
+        return [latex]
+    if latex:
+        raise ValidationError("'math_block' takes 'latex' or 'lines', not both")
+    if isinstance(lines, str) or not lines:
+        raise ValidationError(f"'math_block.lines' must be a non-empty list, got: {lines!r}")
+    for line in lines:
+        if not isinstance(line, str) or not line.strip() or "\n" in line:
+            raise ValidationError(f"'math_block.lines' holds a blank or broken line: {line!r}")
+    return list(lines)
 
 
 def _equation_image(image: bytes | EmailImage, latex: str, width: int | None) -> EmailImage:

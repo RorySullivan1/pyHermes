@@ -233,3 +233,66 @@ def test_the_render_size_matches_what_was_measured(latex, size):
         latex, font_px=14, color="#3B3B3B", scale=DEFAULT_MATH_SCALE, fontset=DEFAULT_MATH_FONTSET
     )
     assert abs(rendered.width_px - size[0]) <= 4 and abs(rendered.height_px - size[1]) <= 4
+
+
+# ----------------------------------------------------------------------
+# #232 — several lines, one image, aligned as a block
+# ----------------------------------------------------------------------
+
+LINES = [
+    r"\text{VaR}_{99\%} = -q_{0.01}(r)",
+    r"\text{ES}_{99\%} = \mathbb{E}[r \mid r \leq q_{0.01}]",
+]
+
+
+class TestTheMultiLineShim:
+    def test_two_lines_are_one_block_with_two_source_lines(self):
+        block = math_block(lines=LINES, label="Equation", caption="Tail risk")
+        assert len(block.images()) == 1
+        assert [line for line in block.text().splitlines() if line.startswith("$")] == [
+            f"${line}$" for line in LINES
+        ]
+        assert block.image.alt == "\n".join(LINES)
+
+    def test_two_lines_render_taller_than_one(self):
+        one = render_math(LINES[0], **ARGS)
+        two = render_math(lines=LINES, **ARGS)
+        assert two.height_px > one.height_px * 1.5
+
+    def test_the_block_alignment_changes_the_picture_not_its_size(self):
+        left = render_math(lines=LINES, align_lines="left", **ARGS)
+        right = render_math(lines=LINES, align_lines="right", **ARGS)
+        assert left.png != right.png
+        assert abs(left.width_px - right.width_px) <= 2
+
+    @pytest.mark.parametrize(
+        ("kwargs", "named"),
+        [
+            ({"lines": [r"a &= b", "c"]}, "cannot align on a relation"),
+            ({"lines": []}, "lines"),
+            ({"latex": "x", "lines": LINES}, "not both"),
+            ({"lines": LINES, "align_lines": "justify"}, "align_lines"),
+        ],
+    )
+    def test_each_refusal_names_the_argument(self, kwargs, named):
+        with pytest.raises(ValidationError, match=named):
+            math_block(**kwargs)
+
+
+def test_twenty_equations_ride_the_manifest_not_the_html():
+    """Measured for #232: 280 KB on the wire against a 15 MB warning; math.md records it."""
+    from svc.builder import FullWidth
+    from svc.builder.email import Email
+    from svc.config import get_config
+    from svc.delivery import build_message
+    from svc.delivery.message import to_wire_bytes
+
+    email = Email({"email_subject": "S", "firm_name": "F", "campaign_name": "C"})
+    for i in range(20):
+        source = rf"\sigma_{{{i}}}^2 = \sum_j w_j^2 \sigma_j^2 + {i}"
+        email.add_section(FullWidth(content=math_block(source, label="Equation")))
+    html = email.render()
+    wire = to_wire_bytes(build_message(email, sender="a@example.com", to="b@example.com"))
+    assert len(email.assets()) == 20
+    assert len(wire) < get_config().attachment_warn_kb * 1024
+    assert len(html.encode()) < 40 * 1024, "the image bytes leaked into the HTML part"

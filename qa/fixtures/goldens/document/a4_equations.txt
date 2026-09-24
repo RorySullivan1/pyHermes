@@ -1,0 +1,65 @@
+Risk
+----
+
+Risk, paragraph 1: the book held its weights through the month and the
+covariance estimate moved less than the returns did.
+
+Risk, paragraph 2: the book held its weights through the month and the
+covariance estimate moved less than the returns did.
+
+
+Equation 1 · Portfolio variance
+
+$\sigma_p^2 = w^\top \Sigma w$
+
+
+Tails
+-----
+
+Tails, paragraph 1: the book held its weights through the month and the
+covariance estimate moved less than the returns did.
+
+Tails, paragraph 2: the book held its weights through the month and the
+covariance estimate moved less than the returns did.
+
+Tails, paragraph 3: the book held its weights through the month and the
+covariance estimate moved less than the returns did.
+
+Tails, paragraph 4: the book held its weights through the month and the
+covariance estimate moved less than the returns did.
+
+Tails, paragraph 5: the book held its weights through the month and the
+covariance estimate moved less than the returns did.
+
+Tails, paragraph 6: the book held its weights through the month and the
+covariance estimate moved less than the returns did.
+
+Tails, paragraph 7: the book held its weights through the month and the
+covariance estimate moved less than the returns did.
+
+Tails, paragraph 8: the book held its weights through the month and the
+covariance estimate moved less than the returns did.
+
+
+Equation 2 · Value at risk and expected shortfall
+
+$\text{VaR}_{99\%} = -q_{0.01}(r)$
+$\text{ES}_{99\%} = \mathbb{E}[r \mid r \leq q_{0.01}]$
+
+
+Estimation
+----------
+
+Estimation, paragraph 1: the book held its weights through the month and the
+covariance estimate moved less than the returns did.
+
+Estimation, paragraph 2: the book held its weights through the month and the
+covariance estimate moved less than the returns did.
+
+Estimation, paragraph 3: the book held its weights through the month and the
+covariance estimate moved less than the returns did.
+
+
+Equation 3 · The least-squares estimate
+
+$\hat{\beta} = (X^\top X)^{-1} X^\top y$

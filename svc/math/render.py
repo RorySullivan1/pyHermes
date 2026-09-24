@@ -10,6 +10,7 @@ from __future__ import annotations
 import io
 import re
 import struct
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any
 
@@ -50,23 +51,59 @@ def available() -> bool:
     return True
 
 
+#: How a multi-line display sets its lines: as one block, never on a relation.
+LINE_ALIGNMENTS = ("left", "center", "right")
+
+
 def render_math(
-    latex: str, *, font_px: float, color: str, scale: float, fontset: str
+    latex: str = "",
+    *,
+    font_px: float,
+    color: str,
+    scale: float,
+    fontset: str,
+    lines: Sequence[str] | None = None,
+    align_lines: str = "left",
 ) -> RenderedMath:
     """
-    Render one expression to a transparent PNG, ``scale`` pixels per CSS px.
+    Render one expression, or ``lines`` stacked, to a transparent PNG.
 
-    Deterministic and versionless: one source under one fontset gives the same
-    bytes every call. A source mathtext cannot parse raises
-    :class:`MathSyntaxError` here, at the call, rather than inside a later save.
+    ``scale`` pixels per CSS px. Deterministic and versionless: one source
+    under one fontset gives the same bytes every call. A source mathtext cannot
+    parse raises :class:`MathSyntaxError` here, at the call. ``lines`` are set
+    as one block, aligned by ``align_lines``; mathtext cannot align on ``&``.
     """
-    _check_source(latex)
+    sources = check_sources(latex, lines)
+    if align_lines not in LINE_ALIGNMENTS:
+        raise ValidationError(
+            f"'align_lines' must be one of {list(LINE_ALIGNMENTS)}, got {align_lines!r}"
+        )
     _check_positive(font_px, "font_px")
     _check_positive(scale, "scale")
     validate_hex_color(color)
     if fontset not in FONTSETS:
         raise ValidationError(f"'fontset' must be one of {list(FONTSETS)}, got {fontset!r}")
-    return _render(f"${latex}$", latex, font_px, color, scale, fontset, "left")
+    text = "\n".join(f"${source}$" for source in sources)
+    return _render(text, "\n".join(sources), font_px, color, scale, fontset, align_lines)
+
+
+def check_sources(latex: str, lines: Sequence[str] | None) -> list[str]:
+    """The expressions to render: ``latex`` alone, or each of ``lines``."""
+    if lines is None:
+        _check_source(latex, "latex")
+        return [latex]
+    if latex:
+        raise ValidationError("pass 'latex' or 'lines', not both")
+    if isinstance(lines, str) or not lines:
+        raise ValidationError(f"'lines' must be a non-empty list of sources, got {lines!r}")
+    for line in lines:
+        _check_source(line, "lines")
+        if "&" in line:
+            raise ValidationError(
+                f"'lines' holds '&' in {line!r}: mathtext cannot align on a relation, "
+                "so the lines align as one block (align_lines=)"
+            )
+    return list(lines)
 
 
 def _render(
@@ -111,14 +148,14 @@ def _syntax_error(source: str, exc: ValueError) -> MathSyntaxError:
     return MathSyntaxError(f"mathtext cannot render {source!r}: {what}{where}")
 
 
-def _check_source(latex: str) -> None:
+def _check_source(latex: str, name: str) -> None:
     if not isinstance(latex, str) or not latex.strip():
-        raise ValidationError(f"'latex' is required, got {latex!r}")
+        raise ValidationError(f"'{name}' is required, got {latex!r}")
     if "\n" in latex:
-        raise ValidationError("'latex' holds a newline; render several lines with lines=")
+        raise ValidationError(f"'{name}' holds a newline; render several lines with lines=")
     if re.search(r"(?<!\\)\$", latex):
         raise ValidationError(
-            f"'latex' holds a bare '$'; pass the source without delimiters: {latex!r}"
+            f"'{name}' holds a bare '$'; pass the source without delimiters: {latex!r}"
         )
 
 

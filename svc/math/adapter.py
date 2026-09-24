@@ -17,7 +17,7 @@ from svc.builder.models import Footnote
 from svc.builder.sizing import SizeScheme, resolve_size_scheme
 from svc.builder.theming import Theme, resolve_theme
 
-from .render import render_math
+from .render import check_sources, render_math
 
 #: Computer Modern: what a reader of research expects an equation to look like.
 DEFAULT_MATH_FONTSET = "cm"
@@ -28,15 +28,17 @@ DEFAULT_MATH_SCALE = 4
 
 
 def image_from_math(
-    latex: str,
+    latex: str = "",
     *,
     theme: Theme | str = "classic",
     size_theme: SizeScheme | SizeTheme | str = SizeTheme.STANDARD,
     fontset: str = DEFAULT_MATH_FONTSET,
     scale: float = DEFAULT_MATH_SCALE,
+    lines: Sequence[str] | None = None,
+    align_lines: str = "left",
 ) -> EmailImage:
     """
-    Render ``latex`` in the theme's primary text colour at its body size.
+    Render ``latex`` (or ``lines``) in the theme's primary text colour at its body size.
 
     Attached by ``cid:``, with the source as alt and the display width the
     pixel width over ``scale``, so the same source twice is attached once.
@@ -47,14 +49,17 @@ def image_from_math(
         color=resolve_theme(theme).text.primary,
         scale=scale,
         fontset=fontset,
+        lines=lines,
+        align_lines=align_lines,
     )
+    source = "\n".join(check_sources(latex, lines))
     return EmailImage.attached(
-        rendered.png, alt=latex, width=max(1, round(rendered.width_px / scale))
+        rendered.png, alt=source, width=max(1, round(rendered.width_px / scale))
     )
 
 
 def math_block(
-    latex: str,
+    latex: str = "",
     *,
     theme: Theme | str = "classic",
     size_theme: SizeScheme | SizeTheme | str = SizeTheme.STANDARD,
@@ -67,12 +72,28 @@ def math_block(
     disclosure: str = "",
     align: str | ImageAlign = ImageAlign.CENTER,
     spacing: Spacing | Mapping[str, int | float] | None = None,
+    lines: Sequence[str] | None = None,
+    align_lines: str = "left",
 ) -> MathBlock:
-    """A :class:`MathBlock` around :func:`image_from_math`, exhibit fields included."""
-    image = image_from_math(latex, theme=theme, size_theme=size_theme, fontset=fontset, scale=scale)
+    """
+    A :class:`MathBlock` around :func:`image_from_math`, exhibit fields included.
+
+    ``lines`` renders a multi-line display as one image, aligned as a block by
+    ``align_lines``; its text part prints one ``$line$`` per line.
+    """
+    image = image_from_math(
+        latex,
+        theme=theme,
+        size_theme=size_theme,
+        fontset=fontset,
+        scale=scale,
+        lines=lines,
+        align_lines=align_lines,
+    )
     return MathBlock(
         image,
         latex=latex,
+        lines=lines,
         caption=caption,
         label=label,
         anchor=anchor,

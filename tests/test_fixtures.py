@@ -214,7 +214,12 @@ class TestComponentFieldsAreExercised:
             if isinstance(component, MathBlock)
         ]
         assert blocks, "the gallery builds no MathBlock"
-        aliases = {"width": lambda b: b.image.width, "image": lambda b: b.image}
+        aliases = {
+            "width": lambda b: b.image.width,
+            "image": lambda b: b.image,
+            # A one-line block stores its source as one line: only several count.
+            "lines": lambda b: b.lines if len(b.lines) > 1 else None,
+        }
         for name, parameter in inspect.signature(MathBlock.__init__).parameters.items():
             if name == "self":
                 continue
