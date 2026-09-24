@@ -111,8 +111,11 @@ tinted label band.
   row *below* a subhead specifically.
 - **A subhead is padded to the table's width.** One cell is the honest way to write a heading;
   making the caller spell out the empties would be ceremony. Between one and the full width is
-  still a mistake and still raises. **There is no colspan** — Outlook's Word engine handles it
-  poorly, and a merged cell has no honest plain-text projection.
+  still a mistake and still raises. **There is no colspan in a body row** — a merged body cell
+  splits badly across sheets and has no honest plain-text projection. *Superseded in part by
+  #223, scoped to body rows:* the header tier below is the one place a span is admitted. The
+  original line also said Outlook's Word engine handles `colspan` poorly; no render in this
+  repo has checked that either way, so it is recorded as unverified rather than as fact.
 - **Both kinds project in text**, which is the half most likely to be forgotten: a total gets
   a rule above it matching the header's, and a subhead gets its label alone on its own line,
   unpadded. A total indistinguishable from a data row in the text part is a total only half
@@ -169,6 +172,32 @@ screenshot could see that, because an email has no sheets.
   `table`.** `break-inside: avoid` on a table taller than a sheet pushes it whole onto the next
   sheet and leaves a half-empty one behind.
 - **There is no `tfoot`.** A total repeated on every sheet would be false on all but the last.
+
+### The header tier — column groups (#223)
+
+`DataTable(groups=[ColumnGroup(label, span), …])` renders a second `thead` row above the
+column heads, each group a `th scope="colgroup" colspan="n"`, so 1Y / 3Y / 5Y / 10Y sit under
+one "Annualised" head instead of the unit going into the section title.
+
+- **The span lives in the header only.** A group has an honest plain-text projection — its
+  label centred over the width of its columns, on a line above the heads — where a merged
+  body cell has none. That asymmetry is the whole admission, and `table-header-tier` in
+  `qa/lint.py` enforces it in every medium: a `colspan` outside a `thead`, a tier whose spans
+  miscount the columns, and a spanning `th` without `scope="colgroup"` each fire.
+- **Every column sits under exactly one group,** and a group may cover one column. Spans that
+  do not sum to the column count raise at construction; a blank label raises too, so a label
+  column is given a group of its own rather than a hole. Nested tiers are out.
+- **A label wider than its columns widens the last of them** in the text part, rather than
+  overflowing into the neighbouring group.
+- **On paper the whole `thead` repeats.** WeasyPrint repeats a table-header-group whole, so
+  the tier needed no rule of its own. `a4_long_table.build_grouped()` is the same document
+  with a two-row head. Both shapes run through the crossing tests and the stripped-rules
+  tests. The extra row moved every engineered boundary, so the grouped variant carries its
+  own lead-in counts, `GROUPED_PARAGRAPHS = (8, 9, 11)`, against the one-row `(13, 10, 12)`.
+- **Outlook is owed a render.** The tier ships as standard table markup. Neither the
+  `outlook-html-specifications` skill nor any rules file records how the Word engine lays
+  out a header `colspan`, and no Outlook render exists here (#150's posture). Until one is
+  looked at, the claim stays out of this file.
 
 [Card](../../svc/builder/models.py) is the unit: `label` (required), `value`, `color`,
 `sublabel`, and an optional `body` for prose. Either `value` or `body` must be present.

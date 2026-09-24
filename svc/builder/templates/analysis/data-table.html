@@ -7,6 +7,7 @@
                the table's accessible name — what a screen reader announces
                on reaching it. Distinct from `subtitle`, which is copy that
                merely sits above.
+    groups   — List of dicts with keys: label, span. Empty for no header tier.
     columns  — List of dicts with keys: header, align, kind — already
                resolved (#117), so this template decides neither. A column's
                position means nothing here; its `kind` carries the face and
@@ -47,6 +48,14 @@
 {% endif %}
   {# Header row #}
   <thead>
+{% if groups %}
+  {# The header tier (#223): the one place a span is admitted. #}
+  <tr style="border-top: 1px solid {{ theme.palette.rule }};">
+{% for group in groups %}
+    <th scope="colgroup" colspan="{{ group.span }}" align="center" style="font-family: {{ font.label }}; font-size: {{ size.type.label }}px; font-weight: bold; color: {{ theme.text.heading }}; text-transform: uppercase; line-height: {{ size.type.body_line | percent }}; text-align: center; padding: {{ size.component.table_cell_pad }}px; letter-spacing: 0.5px; border-bottom: 1px solid {{ theme.palette.rule }};">{{ group.label | escape_html }}</th>
+{% endfor %}
+  </tr>
+{% endif %}
   <tr style="border-top: 1px solid {{ theme.palette.rule }}; border-bottom: 2px solid {{ theme.palette.rule_dark }};">
 {% for column in columns %}
     <th scope="col" align="{{ column.align | escape_html }}" style="font-family: {{ font.label }}; font-size: {{ size.type.label }}px; font-weight: bold; color: {{ theme.semantic.neutral }}; text-transform: uppercase; line-height: {{ size.type.body_line | percent }}; text-align: {{ column.align }}; padding: {{ size.component.table_cell_pad }}px; letter-spacing: 0.5px;">{{ column.header | escape_html }}</th>

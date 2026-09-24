@@ -281,6 +281,7 @@ def table(
     rows: list[list[str]],
     aligns: list[str] | None = None,
     kinds: list[str] | None = None,
+    groups: list[tuple[str, int]] | None = None,
 ) -> str:
     """
     Aligned monospace columns.
@@ -301,6 +302,7 @@ def table(
         aligns:  One alignment per column, or ``None`` for the pre-#117 default
                  (first column left, the rest right).
         kinds:   One :class:`~svc.builder.enums.RowKind` per row, or ``None``.
+        groups:  ``(label, span)`` pairs, each label centred over its columns.
 
     Returns:
         The header row, a rule, and one line per row. Empty without headers.
@@ -313,6 +315,11 @@ def table(
         max(len(headers[i]), *(len(row[i]) for row in rows)) if rows else len(headers[i])
         for i in range(len(headers))
     ]
+    start = 0
+    for label, span in groups or []:
+        covered = sum(widths[start : start + span]) + 2 * (span - 1)
+        widths[start + span - 1] += max(0, len(label) - covered)
+        start += span
     pad = {"left": str.ljust, "center": str.center, "right": str.rjust}
 
     def line(cells: list[str]) -> str:
@@ -330,7 +337,14 @@ def table(
         if kind == "total":
             body.append(rule)
         body.append(line(cells))
-    return "\n".join([line(headers), rule, *body])
+    head = [line(headers)]
+    if groups:
+        spans, start = [], 0
+        for label, span in groups:
+            spans.append(label.center(sum(widths[start : start + span]) + 2 * (span - 1)))
+            start += span
+        head.insert(0, "  ".join(spans).rstrip())
+    return "\n".join([*head, rule, *body])
 
 
 __all__ = [

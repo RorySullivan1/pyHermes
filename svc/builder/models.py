@@ -662,6 +662,47 @@ class Column:
         )
 
 
+@dataclass(frozen=True)
+class ColumnGroup:
+    """
+    A head spanning adjacent columns of a :class:`~svc.builder.components.DataTable`.
+
+    The header tier is the one place a span is admitted (#223): a body cell
+    stays unmerged, for the reasons `data-table.md` records.
+
+    Attributes:
+        label: The group's heading. Plain text, escaped on the way out.
+        span:  How many columns it covers, left to right. At least one.
+    """
+
+    label: str
+    span: int = 1
+
+    def validate(self) -> None:
+        _require(self.label, "column_group.label")
+        if isinstance(self.span, bool) or not isinstance(self.span, int) or self.span < 1:
+            raise ValidationError(f"'column_group.span' must be a positive int, got: {self.span!r}")
+
+
+def coerce_groups(groups: "Sequence[ColumnGroup] | None", width: int) -> list[ColumnGroup]:
+    """``groups`` validated, and required to cover exactly ``width`` columns."""
+    if not groups:
+        return []
+    for i, group in enumerate(groups):
+        if not isinstance(group, ColumnGroup):
+            raise ValidationError(
+                f"'data_table.groups[{i}]' must be a ColumnGroup, got: {type(group).__name__}"
+            )
+        group.validate()
+    total = sum(group.span for group in groups)
+    if total != width:
+        raise ValidationError(
+            f"'data_table.groups' span {total} columns but the table has {width}; "
+            "every column sits under exactly one group."
+        )
+    return list(groups)
+
+
 def coerce_column(value: "str | Column", field_name: str = "column") -> Column:
     """
     Accept either a :class:`Column` or a bare header string.

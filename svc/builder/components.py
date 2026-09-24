@@ -36,12 +36,14 @@ from .models import (
     Card,
     Cell,
     Column,
+    ColumnGroup,
     Footnote,
     NumberedItem,
     TableRow,
     _validate_align,
     _validate_url,
     coerce_column,
+    coerce_groups,
     coerce_notes,
 )
 from .sizing import Spacing, coerce_spacing
@@ -433,6 +435,8 @@ class DataTable(Exhibit, Component):
                   text, escaped. `disclosure.md` says when to use it.
         label, anchor: Numbering and its ``id``; see :class:`Exhibit`.
         notes:    Footnotes called by ``[^n]`` in ``caption`` or ``source``.
+        groups:   Optional :class:`ColumnGroup` heads spanning the columns,
+                  left to right (#223); their spans sum to the column count.
 
     **``caption`` and ``subtitle`` are separate on purpose**, even when a
     caller would write the same words in both. ``subtitle`` is presentation
@@ -474,6 +478,7 @@ class DataTable(Exhibit, Component):
         anchor: str = "",
         notes: Sequence[Footnote | str] | None = None,
         spacing: Spacing | Mapping[str, int | float] | None = None,
+        groups: Sequence[ColumnGroup] | None = None,
     ):
         self.spacing = self._coerce_spacing(spacing)
         self.validate_exhibit(label, anchor)
@@ -497,6 +502,7 @@ class DataTable(Exhibit, Component):
                     f"{len(columns)} headers; the table would render misaligned."
                 )
         self.columns = columns
+        self.groups = coerce_groups(groups, len(columns))
         self.rows = rows
         self.source = source
         self.as_of = as_of
@@ -529,6 +535,7 @@ class DataTable(Exhibit, Component):
                 [[cell.text for cell in row.cells] for row in self.rows],
                 aligns=[column.align for column in self.resolved_columns()],
                 kinds=[row.kind for row in self.rows],
+                groups=[(group.label, group.span) for group in self.groups],
             ),
             wrap("\n".join(filter(None, (text_markers(self.source, self.notes), self.as_of)))),
             wrap(self.disclosure),
@@ -551,6 +558,7 @@ class DataTable(Exhibit, Component):
         alt_by_row = self._striping()
         return {
             "columns": [{"header": c.header, "align": c.align, "kind": c.kind} for c in columns],
+            "groups": [{"label": g.label, "span": g.span} for g in self.groups],
             "rows": [
                 {
                     "kind": r.kind,
