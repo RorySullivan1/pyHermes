@@ -16,7 +16,7 @@ import jinja2
 from .exceptions import TemplateError
 from .filters import register_all
 from .medium import DEFAULT_MEDIUM, Medium
-from .sizing import STANDARD_SIZES
+from .sizing import STANDARD_SIZES, SizeScheme, Spacing
 from .theming import DEFAULT_THEME, Theme
 from .typography import DEFAULT_FONTS
 
@@ -317,3 +317,35 @@ class BoundEngine:
         """
         bound = self.shared.get("theme")
         return bound if isinstance(bound, Theme) else self.engine.theme
+
+
+def scheme_of(engine: Renderer) -> SizeScheme:
+    """The size scheme ``engine`` is bound to, or the shipped floor."""
+    shared = getattr(engine, "shared", {})
+    scheme = shared.get("size") if isinstance(shared, Mapping) else None
+    return scheme if isinstance(scheme, SizeScheme) else STANDARD_SIZES
+
+
+def rebind(engine: Renderer, **shared: Any) -> Renderer:
+    """``engine`` with ``shared`` bound over whatever it already had."""
+    if isinstance(engine, BoundEngine):
+        return BoundEngine(engine.engine, {**engine.shared, **shared})
+    if isinstance(engine, TemplateEngine):
+        return engine.bound(**shared)
+    raise TypeError(f"cannot bind onto {type(engine).__name__}")
+
+
+def respaced(engine: Renderer, spacing: Spacing | None, owner: str) -> Renderer:
+    """
+    ``engine`` with ``owner``'s spacing applied to the bound scheme, for its subtree.
+
+    ``None`` returns ``engine`` itself, so an object without an override
+    renders exactly as it did before the mechanism existed.
+
+    Raises:
+        ValidationError: If a token here is unsafe on this medium.
+    """
+    if spacing is None:
+        return engine
+    spacing.check_medium(engine.medium.paged, engine.medium.name, owner)
+    return rebind(engine, size=spacing.applied_to(scheme_of(engine)))

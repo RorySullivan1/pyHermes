@@ -13,11 +13,11 @@ from dataclasses import dataclass, replace
 
 from svc.builder.components import Component
 from svc.builder.containers import Container
-from svc.builder.engine import BoundEngine, Renderer, TemplateEngine
+from svc.builder.engine import Renderer, rebind, scheme_of
 from svc.builder.enums import EmbedStrategy, TextAlign
 from svc.builder.exceptions import ValidationError
 from svc.builder.images import EmailImage, ImageAsset
-from svc.builder.sizing import STANDARD_SIZES, PageMargin, SizeScheme
+from svc.builder.sizing import PageMargin, SizeScheme
 from svc.builder.textgen import join_blocks, underline
 from svc.document.page import Page
 
@@ -187,14 +187,14 @@ class Panel(Container):
         column width inside is computed for the panel rather than the sheet.
         Its ground runs into ``fold.bleed`` on every edge that is a trim edge.
         """
-        shared: dict[str, object] = {"size": _panel_scheme(_scheme(engine), box, inset)}
+        shared: dict[str, object] = {"size": _panel_scheme(scheme_of(engine), box, inset)}
         if self.background_color:
             # A panel's ground is the surface its sections sit on, so every
             # section's own default ground becomes it, and a highlight band
             # inside still tints against it.
             palette = replace(engine.theme.palette, surface=self.background_color)
             shared["theme"] = replace(engine.theme, palette=palette)
-        panel_engine = _rebind(engine, shared)
+        panel_engine = rebind(engine, **shared)
         inner = "\n".join(section.render(panel_engine) for section in self.sections)
         return engine.render(
             self.template_path,
@@ -208,13 +208,6 @@ class Panel(Container):
                 "background_image": self.background_image.src if self.background_image else "",
             },
         )
-
-
-def _scheme(engine: Renderer) -> SizeScheme:
-    """The scheme the document bound, or the shipped one."""
-    shared = getattr(engine, "shared", {})
-    scheme = shared.get("size") if isinstance(shared, dict) else None
-    return scheme if isinstance(scheme, SizeScheme) else STANDARD_SIZES
 
 
 def _panel_scheme(scheme: SizeScheme, box: PanelBox, inset: int | float) -> SizeScheme:
@@ -235,12 +228,3 @@ def _panel_scheme(scheme: SizeScheme, box: PanelBox, inset: int | float) -> Size
         pad_x=inset,
     )
     return scheme.derive(frame=frame)
-
-
-def _rebind(engine: Renderer, shared: dict[str, object]) -> Renderer:
-    """``engine`` with ``shared`` bound over whatever it had."""
-    if isinstance(engine, BoundEngine):
-        return BoundEngine(engine.engine, {**engine.shared, **shared})
-    if isinstance(engine, TemplateEngine):
-        return engine.bound(**shared)
-    raise TypeError(f"cannot bind a panel's frame onto {type(engine).__name__}")

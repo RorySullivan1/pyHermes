@@ -16,14 +16,17 @@ split::
 
 from __future__ import annotations
 
+from collections.abc import Mapping
+from typing import ClassVar
+
 from .apparatus import slugify, validate_anchor
 from .components import Component
-from .engine import Renderer
+from .engine import Renderer, respaced, scheme_of
 from .enums import TextAlign, ThreeColumnRatio, TwoColumnRatio
 from .exceptions import ValidationError
 from .images import EmailImage, ImageAsset
 from .models import _validate_align, _validate_color
-from .sizing import STANDARD_SIZES, SizeScheme, column_layout
+from .sizing import SizeScheme, Spacing, coerce_spacing, column_layout
 from .textgen import join_blocks, underline
 
 
@@ -76,6 +79,13 @@ class Container:
 
     template_path: str = ""
 
+    #: The spacing tokens this container's own template reads, and so the
+    #: only ones its ``spacing`` may move (#213).
+    SPACING_TOKENS: ClassVar[tuple[str, ...]] = ()
+
+    #: This section's spacing override, or ``None`` for the document's.
+    spacing: Spacing | None = None
+
     def __init__(
         self,
         title: str | None = None,
@@ -83,6 +93,7 @@ class Container:
         highlight: bool = False,
         align: str | TextAlign | None = None,
         anchor: str | None = None,
+        spacing: Spacing | Mapping[str, int | float] | None = None,
     ):
         if background_color:
             _validate_color(background_color, "container.background_color")
@@ -93,6 +104,21 @@ class Container:
         self.highlight = highlight
         self.align = align
         self.anchor = anchor
+        self.spacing = coerce_spacing(spacing, self.spacing_tokens(), self._owner())
+
+    @classmethod
+    def spacing_tokens(cls) -> tuple[str, ...]:
+        """The tokens a ``spacing`` on this class may move."""
+        return cls.SPACING_TOKENS
+
+    def _owner(self) -> str:
+        """How errors name this section."""
+        title = getattr(self, "title", None)
+        return f"{type(self).__name__} {title!r}" if title else type(self).__name__
+
+    def _spaced(self, engine: Renderer) -> Renderer:
+        """``engine`` as this section and everything inside it render against."""
+        return respaced(engine, self.spacing, self._owner())
 
     def resolved_anchor(self) -> str:
         """The ``id`` this section's title carries: the caller's, or a slug of the title."""
@@ -175,6 +201,17 @@ class _SplitContainer(Container):
     #: it selects *numbers*, which is the whole point of #42.
     template_path = "common/containers/columns.html"
 
+    SPACING_TOKENS = (
+        "section_title_top",
+        "section_title_bottom",
+        "column_top",
+        "column_bottom",
+        "column_pad_x",
+        "column_pad_x_narrow",
+        "gutter",
+        "pad_x",
+    )
+
     #: The split this container was built with, as its bare string or the
     #: matching enum member. Set by each subclass's ``__init__``.
     ratio: str
@@ -219,21 +256,6 @@ class _SplitContainer(Container):
         ]
         return ctx
 
-    @staticmethod
-    def _scheme(engine: Renderer) -> SizeScheme:
-        """
-        The scheme the email bound, or the shipped one.
-
-        A container is handed a :class:`~svc.builder.engine.BoundEngine`
-        during ``Email.render()``, and that is where the resolved scheme
-        lives — the same binder the theme rides. Rendering a container
-        directly against a bare ``TemplateEngine`` stays legal and falls
-        back to ``STANDARD_SIZES``, matching the engine's own floor.
-        """
-        shared = getattr(engine, "shared", {})
-        scheme = shared.get("size") if isinstance(shared, dict) else None
-        return scheme if isinstance(scheme, SizeScheme) else STANDARD_SIZES
-
 
 class FullWidth(Container):
     """
@@ -244,9 +266,19 @@ class FullWidth(Container):
         title:            Optional section heading.
         background_color: Optional hex background override.
         anchor:           The title's ``id``; a slug of the title when unset.
+        spacing:          A :class:`~svc.builder.sizing.Spacing`, or a mapping of
+                          the ``SPACING_TOKENS`` it moves, for this section.
     """
 
     template_path = "common/containers/full-width.html"
+
+    SPACING_TOKENS: ClassVar[tuple[str, ...]] = (
+        "section_title_top",
+        "section_title_bottom",
+        "content_top",
+        "content_bottom",
+        "pad_x",
+    )
 
     def __init__(
         self,
@@ -256,14 +288,16 @@ class FullWidth(Container):
         highlight: bool = False,
         align: str | TextAlign | None = None,
         anchor: str | None = None,
+        spacing: Spacing | Mapping[str, int | float] | None = None,
     ):
-        super().__init__(title, background_color, highlight, align, anchor)
+        super().__init__(title, background_color, highlight, align, anchor, spacing)
         self.content = content
 
     def components(self) -> list[Component]:
         return [self.content]
 
     def render(self, engine: Renderer) -> str:
+        engine = self._spaced(engine)
         ctx = self._base_context(engine)
         ctx["content"] = self.content.render(engine)
         ctx["flow_columns"] = 0
@@ -287,12 +321,15 @@ class FlowedColumns(FullWidth):
     Args:
         content: The component to flow.
         count:   How many columns, two to four.
-        title, background_color, highlight, align, anchor: As on ``FullWidth``.
+        title, background_color, highlight, align, anchor, spacing: As on ``FullWidth``.
     """
 
     #: The columns a measure can hold at the paged frame widths before a line
     #: falls under a readable length.
     COUNTS = range(2, 5)
+
+    #: ``FullWidth``'s, and the gap between the flowed columns.
+    SPACING_TOKENS = (*FullWidth.SPACING_TOKENS, "gutter")
 
     def __init__(
         self,
@@ -303,8 +340,9 @@ class FlowedColumns(FullWidth):
         highlight: bool = False,
         align: str | TextAlign | None = None,
         anchor: str | None = None,
+        spacing: Spacing | Mapping[str, int | float] | None = None,
     ):
-        super().__init__(content, title, background_color, highlight, align, anchor)
+        super().__init__(content, title, background_color, highlight, align, anchor, spacing)
         if isinstance(count, bool) or count not in self.COUNTS:
             raise ValidationError(
                 f"FlowedColumns takes {self.COUNTS.start} to {self.COUNTS.stop - 1} "
@@ -313,6 +351,7 @@ class FlowedColumns(FullWidth):
         self.count = count
 
     def render(self, engine: Renderer) -> str:
+        engine = self._spaced(engine)
         ctx = self._base_context(engine)
         ctx["content"] = self.content.render(engine)
         ctx["flow_columns"] = self.count if engine.medium.paged else 0
@@ -342,7 +381,7 @@ class TwoColumn(_SplitContainer):
         right:            Component rendered in the right column.
         title:            Optional section heading.
         background_color: Optional hex background override (``#RRGGBB``).
-        anchor:           The title's ``id``; a slug of the title when unset.
+        anchor, spacing:  As on ``FullWidth``.
 
     Raises:
         ValidationError: On an unsupported ratio, a non-hex background color,
@@ -361,8 +400,9 @@ class TwoColumn(_SplitContainer):
         highlight: bool = False,
         align: str | TextAlign | None = None,
         anchor: str | None = None,
+        spacing: Spacing | Mapping[str, int | float] | None = None,
     ):
-        super().__init__(title, background_color, highlight, align, anchor)
+        super().__init__(title, background_color, highlight, align, anchor, spacing)
         self._check_ratio(ratio)
         if left is None and right is None:
             raise ValidationError("TwoColumn requires at least one of 'left' or 'right'.")
@@ -374,13 +414,14 @@ class TwoColumn(_SplitContainer):
         return [c for c in (self.left, self.right) if c is not None]
 
     def render(self, engine: Renderer) -> str:
+        engine = self._spaced(engine)
         # Every column is always present in the list: the template walks it
         # unconditionally, and an omitted column renders as an empty cell
         # rather than a missing one — the geometry has to hold either way.
         contents = [
             component.render(engine) if component else "" for component in (self.left, self.right)
         ]
-        ctx = self._column_context(engine, contents, self._scheme(engine))
+        ctx = self._column_context(engine, contents, scheme_of(engine))
         return engine.render(self.template_path, ctx)
 
 
@@ -410,7 +451,7 @@ class ThreeColumn(_SplitContainer):
         right:            Component rendered in the right column.
         title:            Optional section heading.
         background_color: Optional hex background override (``#RRGGBB``).
-        anchor:           The title's ``id``; a slug of the title when unset.
+        anchor, spacing:  As on ``FullWidth``.
 
     Raises:
         ValidationError: On an unsupported ratio, a non-hex background color,
@@ -430,8 +471,9 @@ class ThreeColumn(_SplitContainer):
         highlight: bool = False,
         align: str | TextAlign | None = None,
         anchor: str | None = None,
+        spacing: Spacing | Mapping[str, int | float] | None = None,
     ):
-        super().__init__(title, background_color, highlight, align, anchor)
+        super().__init__(title, background_color, highlight, align, anchor, spacing)
         self._check_ratio(ratio)
         if left is None and center is None and right is None:
             raise ValidationError(
@@ -446,11 +488,28 @@ class ThreeColumn(_SplitContainer):
         return [c for c in (self.left, self.center, self.right) if c is not None]
 
     def render(self, engine: Renderer) -> str:
+        engine = self._spaced(engine)
         # See TwoColumn.render() — an omitted column is an empty cell, not a
         # missing one, because the geometry has to hold either way.
         contents = [
             component.render(engine) if component else ""
             for component in (self.left, self.center, self.right)
         ]
-        ctx = self._column_context(engine, contents, self._scheme(engine))
+        ctx = self._column_context(engine, contents, scheme_of(engine))
         return engine.render(self.template_path, ctx)
+
+
+def section_spacing_tokens() -> tuple[str, ...]:
+    """
+    Every spacing token a section or component reads, across every class.
+
+    What a container of containers may move: a :class:`~svc.document.page.Page`
+    reaches every section on it, so its override may name any of them.
+    """
+    seen: set[str] = set()
+    pending: list[type] = [Container, Component]
+    while pending:
+        cls = pending.pop()
+        seen.update(getattr(cls, "SPACING_TOKENS", ()))
+        pending.extend(cls.__subclasses__())
+    return tuple(sorted(seen))

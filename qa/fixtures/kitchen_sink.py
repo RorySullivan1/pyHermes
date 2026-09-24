@@ -40,6 +40,7 @@ from svc.builder import (
     NumberedList,
     PullQuote,
     Rgba,
+    Spacing,
     TextBlock,
     ThreeColumn,
     TwoColumn,
@@ -267,6 +268,8 @@ def build(template_dir: Path | None = None, **metadata_overrides: Any) -> Email:
                         ),
                     ],
                     orientation=CardOrientation.HORIZONTAL,
+                    # A per-object override (#215), by a token the strip reads.
+                    spacing={"kpi_pad_y": 10},
                 ),
             )
         )
@@ -339,6 +342,8 @@ def build(template_dir: Path | None = None, **metadata_overrides: Any) -> Email:
         .section(
             FullWidth(
                 title="Factor Returns",
+                # A section tightened for itself (#214), and its table's rows (#215).
+                spacing=Spacing(content_top=10, content_bottom=8),
                 content=DataTable(
                     headers=["Factor", "1M", "YTD"],
                     rows=[
@@ -375,6 +380,7 @@ def build(template_dir: Path | None = None, **metadata_overrides: Any) -> Email:
                         "costs. Past performance is not indicative of future "
                         "results. Figures are estimates and subject to revision."
                     ),
+                    spacing={"table_cell_pad": 7},
                 ),
             )
         )
@@ -400,6 +406,7 @@ def build(template_dir: Path | None = None, **metadata_overrides: Any) -> Email:
             TwoColumn(
                 ratio=TwoColumnRatio.EQUAL,
                 title="Equal Columns",
+                spacing={"column_bottom": 14},
                 left=TextBlock(
                     '<p>The left half of a 50-50 split, below <a class="xref" '
                     'href="#exhibit-2">Exhibit 2</a>.</p>',

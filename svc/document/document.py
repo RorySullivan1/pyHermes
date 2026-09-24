@@ -9,6 +9,7 @@ variant that fills no slot.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any, ClassVar, Self
 
@@ -19,6 +20,7 @@ from svc.builder.engine import Renderer
 from svc.builder.enums import TextAlign
 from svc.builder.medium import Medium
 from svc.builder.models import DocumentMetadata
+from svc.builder.sizing import Spacing
 
 from .medium import PAGED_MEDIUM
 from .page import Page
@@ -114,6 +116,7 @@ class PagedDocument(Document):
         title: str | None = None,
         background_color: str | None = None,
         align: str | TextAlign | None = None,
+        spacing: Spacing | Mapping[str, int | float] | None = None,
     ) -> Self:
         """
         Append the sections as one :class:`Page`. Returns ``self`` for chaining.
@@ -122,7 +125,7 @@ class PagedDocument(Document):
         page is still a node in the tree, so the sections flatten as ever
         where a medium has no sheets.
         """
-        page = Page(sections, break_before, break_after, title, background_color, align)
+        page = Page(sections, break_before, break_after, title, background_color, align, spacing)
         return self.add_section(page)
 
     def leading_regions(self) -> tuple[RegionFacts, ...]:

@@ -1,0 +1,70 @@
+The Week in Rates
+-----------------
+
+UST 10Y: 4.21% (+6 bps)
+Bund 10Y: 2.46% (-3 bps)
+Gilt 10Y: 4.12% (+2 bps)
+JGB 10Y: 0.93% (+4 bps)
+
+Positioning
+-----------
+
+Front ends repriced the first cut later again, and five of the eight curves
+flattened from the front. Duration stays long.
+
+Japan is the exception: the long end sold off as the central bank stepped back
+from the market, and the curve steepened.
+
+Government Yields
+-----------------
+
+Yields and curve slope
+
+Market            3M    2Y    5Y   10Y   30Y  2s10s
+--------------  ----  ----  ----  ----  ----  -----
+United States   5.21  4.62  4.18  4.21  4.39    -41
+Germany         3.62  2.88  2.41  2.46  2.69    -42
+United Kingdom  5.08  4.31  3.99  4.12  4.61    -19
+Japan           0.08  0.36  0.62  0.93  2.07    +57
+Canada          4.71  3.94  3.41  3.38  3.36    -56
+Australia       4.38  3.79  3.83  4.18  4.61    +39
+France          3.66  2.94  2.79  3.03  3.51     +9
+Italy           3.71  3.21  3.28  3.81  4.47    +60
+
+Hermes Research, closing mid yields
+25 September 2026
+
+
+Yields a Week Earlier
+---------------------
+
+The same markets, one week before
+
+Market            3M    2Y    5Y   10Y   30Y  2s10s
+--------------  ----  ----  ----  ----  ----  -----
+United States   5.21  4.62  4.18  4.21  4.39    -41
+Germany         3.62  2.88  2.41  2.46  2.69    -42
+United Kingdom  5.08  4.31  3.99  4.12  4.61    -19
+Japan           0.08  0.36  0.62  0.93  2.07    +57
+Canada          4.71  3.94  3.41  3.38  3.36    -56
+Australia       4.38  3.79  3.83  4.18  4.61    +39
+France          3.66  2.94  2.79  3.03  3.51     +9
+Italy           3.71  3.21  3.28  3.81  4.47    +60
+
+Hermes Research, closing mid yields
+25 September 2026
+
+What We Are Watching
+--------------------
+
+1. Payrolls
+
+A soft print brings the cut forward.
+
+2. Bund supply
+
+Heavy issuance into quarter end.
+
+3. JGB auctions
+
+Demand at the long end is thin.

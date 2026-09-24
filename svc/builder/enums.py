@@ -47,16 +47,19 @@ class SizeTheme(StrEnum):
     """
     Density presets for the whole email.
 
-    The *entire* caller-facing sizing surface: ``EmailMetadata(size_theme=…)``
-    takes a member here or its bare string, and there is deliberately no
-    per-email or per-component px override anywhere in the builder. The
-    theme-to-values mapping lives in :mod:`svc.builder.sizing`, not here —
-    this enum holds only the vocabulary, per the note above.
+    The shipped densities: ``size_theme=`` takes a member here, its bare
+    string, or a :class:`~svc.builder.sizing.SizeScheme` derived from one.
+    There is no px override anywhere; an object moves a named token with
+    :class:`~svc.builder.sizing.Spacing`. The values live in
+    :mod:`svc.builder.sizing`; this enum holds only the vocabulary.
     """
 
     COMPACT = "compact"
     STANDARD = "standard"
     SPACIOUS = "spacious"
+    #: Tuned for print, and refused on the email medium until a client has
+    #: rendered it (#211).
+    DENSE = "dense"
 
 
 class EmbedStrategy(StrEnum):

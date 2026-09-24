@@ -16,16 +16,18 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Self
 
+from svc.config import get_config
+
 from .apparatus import check_unique, note_anchor, note_ref_anchor, references
 from .components import Component, Contents, Endnotes, Exhibit
 from .containers import Container, FullWidth
 from .engine import Renderer, TemplateEngine
-from .enums import EmbedStrategy
+from .enums import EmbedStrategy, SizeTheme
 from .exceptions import ValidationError
 from .images import EmailImage, ImageAsset, dedupe_assets
 from .medium import DEFAULT_MEDIUM, Medium
 from .models import DocumentMetadata, Footnote
-from .sizing import resolve_size_scheme
+from .sizing import PRINT_DENSITIES, SizeScheme, Spacing, resolve_size_scheme
 from .textgen import join_sections
 from .theming import resolve_theme
 from .typography import resolve_font_theme
@@ -84,6 +86,7 @@ class Document:
         # missing required field names itself instead of surfacing later as a
         # confusing render-time symptom.
         self._metadata.validate()
+        check_density(self._metadata.size_theme, self._medium)
         self._sections: list[Container] = []
 
     # ------------------------------------------------------------------
@@ -129,6 +132,8 @@ class Document:
             ValidationError: If the section claims an anchor the document already
                 has; the document is left as it was.
         """
+        for owner, spacing in _spacings(container):
+            spacing.check_medium(self._medium.paged, self._medium.name, owner)
         self._sections.append(container)
         try:
             self._walk()
@@ -381,3 +386,46 @@ def _flatten(section: Container) -> list[Container]:
 
 
 __all__ = ["Document", "RegionFacts", "Renderer"]
+
+
+def check_density(size_theme: SizeTheme | str | SizeScheme, medium: Medium) -> None:
+    """
+    Refuse a density the email medium has not been rendered at.
+
+    The shipped email densities are the ones checked against the clients; a
+    print density or a custom scheme is not, until the caller says it has
+    been, with ``Config.allow_custom_email_density``. Other media take any.
+
+    Raises:
+        ValidationError: Naming the density and the switch.
+    """
+    if not medium.email or get_config().allow_custom_email_density:
+        return
+    if isinstance(size_theme, SizeScheme):
+        what = "a custom SizeScheme"
+    elif SizeTheme(size_theme) in PRINT_DENSITIES:
+        what = f"the print density {str(size_theme)!r}"
+    else:
+        return
+    raise ValidationError(
+        f"{what} has not been rendered in an email client: Gmail's clipping limit, "
+        "Outlook's Word engine and the mobile collapse all meet the density at once. "
+        "Render it in the clients you send to, then set "
+        "Config.allow_custom_email_density (PYHERMES_ALLOW_CUSTOM_EMAIL_DENSITY)."
+    )
+
+
+def _spacings(container: Container) -> list[tuple[str, Spacing]]:
+    """Every spacing override in one section's subtree, with the object that owns it."""
+    found: list[tuple[str, Spacing]] = []
+    if container.spacing is not None:
+        found.append((container._owner(), container.spacing))
+    for inner in getattr(container, "sections", ()):
+        found.extend(_spacings(inner))
+    if not hasattr(container, "sections"):
+        found.extend(
+            (type(component).__name__, component.spacing)
+            for component in container.components()
+            if component.spacing is not None
+        )
+    return found

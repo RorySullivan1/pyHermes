@@ -9,14 +9,16 @@ nothing, and the sections inside simply run on. One tree, two outputs.
 from __future__ import annotations
 
 import copy
+from collections.abc import Mapping
 from typing import TYPE_CHECKING
 
 from svc.builder.components import Component
-from svc.builder.containers import Container
+from svc.builder.containers import Container, section_spacing_tokens
 from svc.builder.engine import Renderer
 from svc.builder.enums import TextAlign
 from svc.builder.exceptions import ValidationError
 from svc.builder.images import ImageAsset
+from svc.builder.sizing import Spacing
 from svc.builder.textgen import join_blocks, underline
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -49,6 +51,8 @@ class Page(Container):
         break_before: Start this page on a fresh sheet.
         break_after:  End it, so whatever follows starts on a fresh one.
         title:        An optional heading, as any container may carry.
+        spacing:      Spacing for every section on this page: any token a
+                      section or component reads.
     """
 
     template_path = "document/page.html"
@@ -61,8 +65,11 @@ class Page(Container):
         title: str | None = None,
         background_color: str | None = None,
         align: str | TextAlign | None = None,
+        spacing: Spacing | Mapping[str, int | float] | None = None,
     ):
-        super().__init__(title=title, background_color=background_color, align=align)
+        super().__init__(
+            title=title, background_color=background_color, align=align, spacing=spacing
+        )
         if not sections:
             raise ValidationError("a page needs at least one section")
         for section in sections:
@@ -77,6 +84,11 @@ class Page(Container):
         self.sections = list(sections)
         self.break_before = break_before
         self.break_after = break_after
+
+    @classmethod
+    def spacing_tokens(cls) -> tuple[str, ...]:
+        """Every token a section or component reads: a page reaches all of them."""
+        return section_spacing_tokens()
 
     def opening(self) -> Page:
         """This page without its leading break, for a body that already opens a sheet."""
@@ -118,7 +130,8 @@ class Page(Container):
         The flattening is byte-exact: what a non-paged medium gets is what
         the same sections would have produced without the ``Page`` at all.
         """
-        inner = "\n".join(section.render(engine) for section in self.sections)
+        spaced = self._spaced(engine)
+        inner = "\n".join(section.render(spaced) for section in self.sections)
         if not engine.medium.paged:
             return inner
         return engine.render(
