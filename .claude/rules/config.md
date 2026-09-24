@@ -124,6 +124,14 @@ offset norm, and a judgement call rather than a fact: a proof printer is content
 fine-art press wants more. Below it, a brochure prints a warning at construction; below half
 of it, construction raises. `PYHERMES_PRINT_DPI` sets it, like every other field.
 
+**`allow_custom_email_density` (#212) is a switch, off by default, and the first `bool` field.**
+An email refuses a custom `SizeScheme` and the print density `dense` until the caller has
+rendered theirs in the clients they send to; this is how they say so. It is a judgement call
+about one's own audience, which is what puts it here rather than in a constant.
+`PYHERMES_ALLOW_CUSTOM_EMAIL_DENSITY` takes `1`/`true`/`yes`/`on` or their opposites, and
+`from_env` refuses anything else by name, since a misspelt switch that silently reads as off is
+the failure `from_env` exists to prevent.
+
 **`attachment_limit_kb` and `attachment_warn_kb` (#198) are the whole message's budget once it
 carries a file**, 20 480 and 15 360 KB by default. Gmail refuses a message over 25 MB, and
 Microsoft 365 defaults to about 20 MB. The default is the lower of the two, because a sender

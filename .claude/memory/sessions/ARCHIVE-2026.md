@@ -272,3 +272,38 @@ Decisions and Log entries folded out of `INDEX.md` on 2026-08-29 (#143), verbati
   the epic and left all nine children open; a bare `#158` in a PR table cross-links but never
   closes. An epic PR lists `Closes` once per sub-issue —
   sessions/2026-09-17-2353-multi-medium-rescope.md
+
+## Folded in from INDEX.md on 2026-09-24 (decisions of 2026-09-21 and 2026-09-22, and three log lines)
+
+- [2026-09-21] **`disclosure` is plain text; the blessed raw-HTML set stays closed at five.**
+  No inline link, deliberately: widening plain text to HTML later is additive, narrowing is
+  not — sessions/2026-09-21-per-exhibit-disclosure.md
+- [2026-09-21] **A template may fix an alignment the caller-facing axis does not offer.**
+  `justify` sets the disclosure; `TextAlign` still excludes it, and a test pins that, because
+  widening a guard without pinning what it forbids turns it into a comment —
+  sessions/2026-09-21-per-exhibit-disclosure.md
+
+- [2026-09-22] **The distance to a brochure is a medium; the distance to a factsheet is not.**
+  A factsheet needs break discipline and document apparatus on the paged medium already shipped;
+  a brochure needs fold geometry, imposition and print prep, so it is `svc/brochure/`, not a page
+  preset — sessions/2026-09-22-1351-format-coverage-audit.md
+
+- [2026-09-22] **A page is a sheet with a margin; the frame is what the margin leaves.** No preset
+  frame may be 680px, or a template reading the email frame looks right on paper —
+  sessions/2026-09-22-1903-pagination-hardening.md
+
+- [2026-09-22] **Python numbers everything but the page; a forward reference is why one check
+  waits for the projection.** `Document.validate()` is the sanctioned exception to validation at
+  construction — sessions/2026-09-22-2200-document-apparatus.md
+
+- [2026-09-22 21:00] data-layer — **#170 shipped, PR #191**: formatters, tone, `svc.data` adapters.
+  No `from_frame`: the purity test wins. mypy's `follow_imports="skip"` is ignored for `.pyi`
+  unless `follow_imports_for_stubs=true` — sessions/2026-09-22-2100-data-layer.md
+
+- [2026-09-22 22:00] document-apparatus — **#171 shipped, PR #192** (5/5 closed): anchors, numbering,
+  contents, footnotes, xrefs, running section. Every mechanism probed under WeasyPrint 70 first
+  — sessions/2026-09-22-2200-document-apparatus.md
+
+- [2026-09-23] brochure-medium — **#172 shipped, PR #194** (4/4 closed, CI green first push): folds, panel, imposition,
+  bleed and marks, five editorial primitives. A test that reads the table it tests agrees with a
+  wrong one — sessions/2026-09-23-brochure-medium.md

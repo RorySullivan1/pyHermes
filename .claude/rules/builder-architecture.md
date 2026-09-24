@@ -454,15 +454,17 @@ reproduces today's output — so an existing email renders unchanged unless it o
   builds a theme; they never set a colour at a call site. The masthead has a second atom,
   `Banner.palette` (a `BannerPalette`), for the one surface a caller supplies — same shape,
   same rule, bounded to one region. See *Theming* in `design-axes.md`.
-- **Density is a parameter — but the atom is the whole `SizeScheme`, and only by name.**
-  `EmailMetadata(size_theme="compact")` is the entire caller-facing sizing surface. See
-  *Sizing* in `design-axes.md`.
+- **Density is a parameter — but the atom is the whole `SizeScheme`.** `size_theme` takes a
+  preset name or, since #212, a scheme derived from one, and an email gates the second. The
+  one finer control is `spacing=` on a container or component (#213), which moves named tokens
+  its template reads and never a px. See *Sizing* and *Spacing per object* in `design-axes.md`.
 - **The typeface is a parameter — but the atom is the whole `FontTheme`.**
   `EmailMetadata(font_theme="modern")`, or a `FontTheme` object, is the entire caller-facing
   typography surface. See *Typography* in `design-axes.md`.
 - **Not parameters, deliberately**: any individual px anywhere, and any individual face at a
   call site. Padding, the 680px frame and the faces are no longer *fixed* — a theme moves all
-  three — but none of them is something a caller sets per email or per component. That
+  three — but no caller sets one as a number. Padding per object is a named token moved by
+  `spacing=` (#209), validated like a preset, and the frame and the faces never are. That
   distinction is the whole of the rule: **callers pick a theme, never a px and never a
   family.** A `font_size=` or a `font_family=` on a call site would dissolve the design system
   one component at a time, exactly as a `title_color=` would dissolve the palette, and a

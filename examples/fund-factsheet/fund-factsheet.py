@@ -12,9 +12,9 @@ are unusual —
   file exits non-zero if the layout ever says otherwise, and
   ``tests/test_examples.py`` pins it so a builder change cannot move it
   quietly,
-- **density is the point.** Nearly every section is a ``TwoColumn``, so a
-  table and the chart that explains it sit side by side rather than one
-  scrolling past the other,
+- **density is the point.** It renders at ``dense``, the print density, and
+  its returns tables sit tighter still through ``spacing=`` (epic #209).
+  Nearly every section is a ``TwoColumn``, so two tables share a row,
 - **the numbers are the product**, so they come from one place at the top of
   this file and are referenced below — a factsheet whose figures are scattered
   through its layout code is one nobody dares update.
@@ -40,7 +40,15 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from svc.builder import CardGroup, Container, DataTable, FullWidth, TextBlock, TwoColumn
+from svc.builder import (
+    CardGroup,
+    Container,
+    DataTable,
+    FullWidth,
+    Spacing,
+    TextBlock,
+    TwoColumn,
+)
 from svc.builder.enums import CardOrientation, TwoColumnRatio
 from svc.builder.models import KpiItem, TableRow
 from svc.builder.sizing import LETTER_PORTRAIT
@@ -130,6 +138,58 @@ _CALENDAR = [
     ("2021", "28.61", "28.71"),
 ]
 
+#: Risk over three years, monthly returns, fund against benchmark.
+_RISK = [
+    ("Standard Deviation", "15.21%", "15.19%"),
+    ("Sharpe Ratio", "0.71", "0.72"),
+    ("Beta", "1.00", "1.00"),
+    ("Tracking Error", "0.04%", "-"),
+    ("Maximum Drawdown", "-24.83%", "-24.71%"),
+    ("Up / Down Capture", "99.8 / 100.1", "-"),
+]
+
+#: How the shares trade, as of AS_OF.
+_TRADING = [
+    ("Avg. Daily Volume (30D)", "2.14M shares"),
+    ("Median Bid/Ask Spread", "0.01%"),
+    ("Premium / Discount", "+0.02%"),
+    ("Shares Outstanding", "88.9M"),
+    ("Options Available", "Yes"),
+    ("Primary Listing", "NYSE Arca"),
+]
+
+#: What the portfolio holds, in aggregate.
+_CHARACTERISTICS = [
+    ("Price / Earnings", "24.8x"),
+    ("Price / Book", "4.6x"),
+    ("Wtd. Avg. Market Cap", "$982.4B"),
+    ("Dividend Yield", "1.38%"),
+    ("Return on Equity", "27.9%"),
+]
+
+#: The second row of characteristics: growth and balance sheet.
+_FUNDAMENTALS = [
+    ("EPS Growth (3Y)", "11.4%"),
+    ("Sales Growth (3Y)", "8.2%"),
+    ("Net Debt / EBITDA", "0.9x"),
+    ("Active Share", "0.6%"),
+    ("Turnover (12M)", "3.1%"),
+]
+
+#: The last four quarterly distributions, per share.
+_DISTRIBUTIONS = [
+    ("Q3 2026", "$0.182"),
+    ("Q2 2026", "$0.179"),
+    ("Q1 2026", "$0.171"),
+    ("Q4 2025", "$0.194"),
+    ("Trailing 12M", "$0.726"),
+]
+
+#: Both returns tables sit tighter than the dense preset (#215): a returns
+#: table is read across a row, and a row's padding is what it spends. The
+#: table beside the calendar returns takes it too, so the two end level.
+_RETURNS_SPACING = Spacing(table_cell_pad=3)
+
 _TOP_HOLDINGS = [
     ("Apple Inc.", "7.42"),
     ("Microsoft Corp.", "6.98"),
@@ -169,7 +229,7 @@ def _facts() -> dict[str, Any]:
             "are not a record of any real portfolio."
         ),
         "theme": "classic",
-        "size_theme": "compact",
+        "size_theme": "dense",
         "font_theme": "classic",
     }
 
@@ -207,7 +267,7 @@ def _growth_chart() -> Any:
     import matplotlib.pyplot as plt
     from matplotlib.ticker import FuncFormatter
 
-    figure, axes = plt.subplots(figsize=(9.6, 1.62))
+    figure, axes = plt.subplots(figsize=(9.6, 2.1))
     axes.plot(_GROWTH_YEARS, _GROWTH_FUND, color="#2C3E50", linewidth=1.8, label=f"Fund ({TICKER})")
     axes.plot(
         _GROWTH_YEARS,
@@ -246,7 +306,7 @@ def _sector_chart() -> Any:
     names = ["Other"] + [name for name, _ in reversed(shown)]
     weights = [other] + [weight for _, weight in reversed(shown)]
 
-    figure, axes = plt.subplots(figsize=(9.6, 1.42))
+    figure, axes = plt.subplots(figsize=(9.6, 1.8))
     positions = range(len(names))
     axes.barh(list(positions), weights, color="#2C3E50", height=0.62)
     for position, weight in zip(positions, weights, strict=True):
@@ -329,6 +389,19 @@ def _sheet_one() -> list[Container]:
                     for name, *values in _RETURNS
                 ],
                 as_of=AS_OF,
+                spacing=_RETURNS_SPACING,
+            ),
+        ),
+        TwoColumn(
+            ratio=TwoColumnRatio.EQUAL,
+            title="Risk Statistics (3 Year) and Trading",
+            left=DataTable(
+                headers=["Statistic", "Fund", "Benchmark"],
+                rows=[TableRow(cells=list(row)) for row in _RISK],
+            ),
+            right=DataTable(
+                headers=["Trading", "Value"],
+                rows=[TableRow(cells=list(row)) for row in _TRADING],
             ),
         ),
     ]
@@ -351,16 +424,24 @@ def _sheet_two() -> list[Container]:
                     )
                     for year, fund, bench in _CALENDAR
                 ],
+                spacing=_RETURNS_SPACING,
             ),
             right=DataTable(
                 headers=["Characteristic", "Value"],
-                rows=[
-                    TableRow(cells=["Price / Earnings", "24.8x"]),
-                    TableRow(cells=["Price / Book", "4.6x"]),
-                    TableRow(cells=["Wtd. Avg. Market Cap", "$982.4B"]),
-                    TableRow(cells=["Beta (3Y)", "1.00"]),
-                    TableRow(cells=["Std. Deviation (3Y)", "15.2%"]),
-                ],
+                rows=[TableRow(cells=list(row)) for row in _CHARACTERISTICS],
+                spacing=_RETURNS_SPACING,
+            ),
+        ),
+        TwoColumn(
+            ratio=TwoColumnRatio.EQUAL,
+            title="Fundamentals and Distributions",
+            left=DataTable(
+                headers=["Fundamental", "Value"],
+                rows=[TableRow(cells=list(row)) for row in _FUNDAMENTALS],
+            ),
+            right=DataTable(
+                headers=["Distribution", "Per Share"],
+                rows=[TableRow(cells=list(row)) for row in _DISTRIBUTIONS],
             ),
         ),
         # Ten holdings as two fives. The row is then as tall as

@@ -189,13 +189,16 @@ EmailBuilder().metadata({..., "size_theme": "compact"})     # or "standard" / "s
 `EmailMetadata.size_theme` → resolved **once** in `Email.render()` → four frozen layers
 (`type`, `space`, `component`, `frame`) → templates read `{{ size.type.body }}`.
 
-- **Callers pick a theme, never a px — and here that is stricter than colour.** `size_theme`
-  accepts a `SizeTheme` member or its bare string and **nothing else**, where `theme` also
-  accepts a custom `Theme` object. The asymmetry is deliberate: a palette is an email's voice
-  and a house style may legitimately need its own, whereas density interacts with the 102 KB
-  clipping limit, Outlook's Word engine and the mobile collapse all at once — a scheme nobody
-  has rendered in a real client is a compatibility claim nobody has tested. Widening this
-  later is additive; narrowing it would not be.
+- **Superseded (#212): "`size_theme` accepts a `SizeTheme` member or its bare string and
+  nothing else."** It was stricter than colour on purpose: density interacts with the 102 KB
+  clipping limit, Outlook's Word engine and the mobile collapse all at once, so a scheme nobody
+  has rendered in a real client is a compatibility claim nobody has tested. It also said
+  widening later is additive, and #209 is that widening. `size_theme` now takes a
+  `SizeScheme` as `theme` takes a `Theme`, and the reason survives as a **gate on the email
+  medium**: an `Email` refuses a custom scheme, and the print density `dense`, unless
+  `Config.allow_custom_email_density` says the caller has rendered it. A paged document and
+  a brochure take any scheme, because nothing clips a PDF and no Word engine reads one.
+  `Document.__init__` runs the gate, so it fails at construction. Callers still never pass a px.
 - **Tokens are named by role, not by number**, for the reason the colour epic learned the
   expensive way: a value-keyed vocabulary is byte-identical and useless, because changing the
   masthead would silently change every body heading that happened to share its size.
@@ -208,6 +211,24 @@ EmailBuilder().metadata({..., "size_theme": "compact"})     # or "standard" / "s
 - **The engine guarantees a scheme; the email chooses which** — the same floor as the theme.
   `TemplateEngine.render()` layers `STANDARD_SIZES` *under* the caller's context, so
   rendering a component on its own stays a one-liner, and `Email.render()`'s binding wins.
+
+**`dense` is the fourth preset, and the first tuned for paper (#211).** A printed factsheet
+spends 14 to 16px on a table row, and `compact` spent about 37. `DENSE_SIZES` is a derive of
+`COMPACT_SIZES`, so what it decides beyond compact is the literal content of its definition,
+and a test holds that no token it sets is roomier than compact's. Three rules shape it, in the
+shape of compact's four:
+
+- **The readability floor moves, and stops at 8px.** Compact held `label` and `micro`; on paper
+  `label` 9 is 6.75pt and `micro` 8.5 is 6.4pt, both above the 6pt below which fine print is not
+  read. A test pins the floor.
+- **Leading tightens less than type.** Body type gives up 2px of 13 and `body_line` 0.2 of 1.6,
+  the smaller share. The KPI value gives up the least of all, 17 against 19, for compact's reason.
+- **Most of the density is spacing, and a table row is where it is spent.** `table_cell_pad` 4
+  against 8, section rhythm about half, and a frame `pad_x` of 12, since a sheet already has a
+  printed margin and an email's padding is its only one.
+
+The probe in #209 (11px body, 3px cells) filled 60% and 63% of the factsheet's sheets. `dense`
+is tuned up from it and filled 65% and 68% before the factsheet spent the room.
 
 **Column geometry is arithmetic the builder owns.** A ratio's own *name* is its weights —
 `"25-25-50"` is `[25, 25, 50]` — and `column_layout()` splits the active scheme's content
@@ -271,7 +292,8 @@ as a hand-built one. Curate, do not multiply: a multiplier would shrink fine pri
 legibility, scale leading linearly with type when leading should move the other way, and
 treat a KPI number as ordinary body copy. Tests assert all three.
 
-**Non-goals, as decisions**: no free-form size parameters (`size_theme` is the whole surface);
+**Non-goals, as decisions**: no free-form size parameters (`size_theme` and a named-token
+`spacing` are the whole surface, below);
 **no narrow-frame theme** — all three keep the 680px frame, and #42 made width *derivable* so
 that shipping a different one becomes a deliberate act with its own client-testing burden and
 its own interplay with image `width=` attributes, rather than a side effect. **#159 made that
@@ -281,6 +303,68 @@ different one now means choosing where the document is read. The non-goal stands
 is that a frame width has an owner rather than a convention; one theme per
 email, since density is an email-level voice; and no font theming — which stopped being a
 non-goal when #56 landed, and is the axis below.
+
+### Spacing per object — a derive of the bound scheme, never a px (#209)
+
+**Two levels, and the second speaks the first's vocabulary.** The preset stays the general
+control: a document picks a density, or passes a scheme derived from one. An object carrying
+`spacing=` renders itself and its subtree through `engine.bound(size=...)` with the bound
+scheme derived again, which is the move a brochure `Panel` already made for its surface colour.
+Every template keeps reading `size.*`, so `TestNoScaleLiteralSurvives` never moved, and an
+override can only move a token the object already reads.
+
+```python
+DataTable(headers, rows, spacing=Spacing(table_cell_pad=3))
+FullWidth(content=table, spacing={"content_top": 6})
+Page(sections, spacing={"table_cell_pad": 3})       # every section on the sheet
+```
+
+- **A caller names a token, flat, and `Spacing` finds its layer.** `by_layer()` is the shape
+  `derive` takes. A name in two layers would be refused rather than guessed; none is today, and
+  a test holds both.
+- **Four kinds of name are refused whatever the object.** The width (`width`, `height`,
+  `margin`, `mobile_breakpoint`, `narrow_column`) is the medium's. The type layer and the
+  component leadings and `kpi_value` are the document's voice. `cta_width`, `cta_height` and
+  `list_ordinal_width` size a box rather than space it. And a bad value fails with the message
+  a bad preset would, because `Spacing` validates by applying itself to `STANDARD_SIZES`.
+- **`SPACING_TOKENS` is per class, and a test derives it from the template.** It renders each
+  container and component with each declared token set to a sentinel and finds the sentinel.
+  Then it perturbs every other eligible token at document level and asserts the markup does not
+  move. The second half is what caught the CTA and ordinal sizes, and a deliberately wrong
+  declaration fails both halves. A container declares only its own template's tokens. A `Page`
+  declares every token a section or component reads, because it reaches them all.
+- **The email refuses what its `@media` block reads.** That block reads the document's scheme,
+  never a subtree's, so a section moving `card_pad_*` or `mobile_*` would render one way wide
+  and another collapsed. `pad_x` joins them because the masthead, the footer and every section
+  share it on an email. `Document.add_section` refuses them on any medium that is not paged,
+  and the render refuses them again for a component rendered on its own. A test reads the
+  `@media` block and fails if it ever reads a token outside the named set.
+- **No override, no rebind.** `respaced()` returns the engine itself for `None`. A test renders
+  every fixture in all three galleries with the rebind patched to raise, and the goldens of
+  every fixture without an override were byte-identical through the whole epic.
+- **An override has no plain-text projection.** Spacing is a markup concern, as the three axes
+  are, and a test holds `text()` byte-identical with and without one.
+
+**Non-goals, as decisions**: no free pixel parameter on any template or constructor, and no
+`padding="4px 8px"` string anywhere; no per-object type scale, since a pull quote or KPI that
+needs a different size already has a component token; no CSS margin on sections, which Outlook
+drops on a `td` and a `tr`, so the section rhythm stays padding on cells; and no layout engine.
+Nothing computes a fit: the print engine breaks sheets, and the author trims content.
+
+**What the epic left.**
+
+- **A scheme on the metadata, a spacing on the tree, and one gate between them and the email.**
+  Every refusal names the switch or the medium, so a caller hitting one learns what to change.
+- **The reverse sentinel is the half worth copying.** Proving a declared token is read is the
+  obvious test. Proving every *undeclared* token is not read is what found two tokens the first
+  declarations missed, and it is the check a future template edit will trip.
+- **A local override hides a document-level token from a document-level test.** Once
+  `kitchen_sink` tightened its only table and its only KPI strip, `TestTheTokensAreLive` could
+  no longer see `table_cell_pad` or `kpi_pad_y` arrive. The fix was to strip the overrides in
+  that test, whose subject is the document's scheme, rather than to weaken it.
+- **The factsheet is the proof.** At `dense`, with its returns tables at `table_cell_pad` 3, it
+  carries a risk-statistics table, a trading table and a second row of characteristics, and
+  still fills 90% of each of its two sheets.
 
 ### Alignment — geometry, not a fourth design axis
 
