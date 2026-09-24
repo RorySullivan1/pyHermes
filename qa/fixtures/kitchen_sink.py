@@ -51,6 +51,7 @@ from svc.builder.images import EmailImage
 from svc.builder.models import (
     Card,
     Cell,
+    Column,
     FooterLink,
     KpiItem,
     LinkRow,
@@ -345,10 +346,16 @@ def build(template_dir: Path | None = None, **metadata_overrides: Any) -> Email:
                 # A section tightened for itself (#214), and its table's rows (#215).
                 spacing=Spacing(content_top=10, content_bottom=8),
                 content=DataTable(
-                    headers=["Factor", "1M", "YTD"],
+                    # A bar (#227): the exhaustive fixture is where every size
+                    # token must render, and the bar's thickness is one.
+                    headers=["Factor", "1M", Column("YTD", bar=True)],
                     rows=[
                         TableRow(
-                            cells=["Value", pct(0.018, 1, sign=True), pct(0.074, 1, sign=True)],
+                            cells=[
+                                "Value",
+                                pct(0.018, 1, sign=True),
+                                Cell(pct(0.074, 1, sign=True), value=0.074),
+                            ],
                             colors=["", _GAIN, _GAIN],
                         ),
                         # The first row keeps the flat `colors=` spelling; these

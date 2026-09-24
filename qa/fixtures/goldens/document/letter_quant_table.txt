@@ -1,0 +1,51 @@
+The Book
+--------
+
+Twenty strategies across four styles and five regions. The one-year column is
+tinted by the number itself, the weight is drawn as a bar, and every figure
+column lines up on its point.
+
+
+Returns
+-------
+
+Factor strategy returns and book weights
+
+   Style and region               Annualised              Book
+Strategy                   1Y      3Y     5Y       10Y    Weight
+                            %       %      %         %  % of NAV
+---------------------  ------  ------  -----  --------  --------
+Developed
+Value US                -9.0%   -5%    -2%    n/a[1]       0.10%
+Value Europe            +5.0%   -3.7%  -1.3%     +0.5%     1.20%
+Value Japan             -4.0%   -2.4%  -0.6%     +1%       2.30%
+Value EM               +10.0%   -1.1%  +0.1%     +1.5%     0.50%
+Value Global            +1.0%   +0.2%  +0.8%     +2%       1.60%
+Momentum US             -8.0%   +1.5%  +1.5%     +2.5%     2.70%
+Momentum Europe         +6.0%   +2.8%  +2.2%     +3%       0.90%
+Momentum Japan          -3.0%   +4.1%  +2.9%     +3.5%     2.00%
+Momentum EM            +11.0%   +5.4%  +3.6%     +4%       0.20%
+Momentum Global         +2.0%   +6.7%  +4.3%     +4.5%     1.30%
+Quality US              -7.0%   +8%    +5%       +5%       2.40%
+Quality Europe          +7.0%   +9.3%  +5.7%     +5.5%     0.60%
+Quality Japan           -2.0%  +10.6%  +6.4%     +6%       1.70%
+Quality EM             +12.0%  +11.9%  +7.1%     +6.5%     2.80%
+Quality Global          +3.0%   -3.8%  +7.8%     +7%       1.00%
+Low volatility US       -6.0%   -2.5%  +8.5%     +7.5%     2.10%
+Low volatility Europe   +8.0%   -1.2%  -1.8%     +8%       0.30%
+Low volatility Japan    -1.0%   +0.1%  -1.1%     +8.5%     1.40%
+Low volatility EM      +13.0%   +1.4%  -0.4%      0%       2.50%
+Low volatility Global   +4.0%   +2.7%  +0.3%     +0.5%     0.70%
+---------------------  ------  ------  -----  --------  --------
+Total                                                    100.00%
+
+Hermes Research, factor model
+25 September 2026
+
+Returns are gross of costs and shown for illustration only.
+
+
+Notes
+-----
+
+[1] Value US has no ten-year record; the series starts in 2019.

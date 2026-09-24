@@ -32,6 +32,7 @@ from . import (
     kitchen_sink,
     letter_dense,
     letter_landscape_report,
+    letter_quant_table,
     minimal,
     minimal_banner,
     minimal_footer,
@@ -115,6 +116,7 @@ def all_paged_fixtures() -> dict[str, PagedFixtureBuilder]:
         "slide_16_9": slide_16_9.build,
         "letter_landscape_report": letter_landscape_report.build,
         "letter_dense": letter_dense.build,
+        "letter_quant_table": letter_quant_table.build,
     }
 
 

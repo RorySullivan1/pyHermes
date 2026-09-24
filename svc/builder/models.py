@@ -8,7 +8,8 @@ metadata for the email skeleton, typed data for each component, etc.
 
 import re
 from collections.abc import Callable, Sequence
-from dataclasses import InitVar, dataclass, field, fields
+from dataclasses import InitVar, dataclass, field, fields, replace
+from decimal import Decimal
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from . import formats
@@ -590,12 +591,8 @@ class Column:
     One column of a :class:`~svc.builder.components.DataTable`.
 
     Replaces the bare header string, and with it the ``loop.first``
-    convention that used to decide four things at once — alignment, typeface,
-    weight, and (in another module entirely) the plain-text column alignment.
-    That convention was correct and compact; what it could not be was
-    *extended*, and the tell was that a fifth reader in
-    :mod:`svc.builder.textgen` had to re-derive it to keep the two
-    projections agreeing.
+    convention that decided alignment, typeface and weight in the template and
+    again in :mod:`svc.builder.textgen`; `data-table.md` records why.
 
     Both presentation fields default to empty, meaning **resolve** — and the
     resolution reproduces the old convention exactly, so a table built from
@@ -608,15 +605,37 @@ class Column:
                 :attr:`kind`.
         kind:   ``text`` or ``numeric``. Empty resolves from the column's
                 *position*: the first column is text, the rest are numeric —
-                which is what ``loop.first`` meant.
+                which is what ``loop.first`` meant. A ``format`` makes it numeric.
+        format: How a raw figure in this column is written (#225).
+        tone:   ``auto`` (the sign decides) or a ``Tone`` for its raw figures.
+        align_decimal: Pad the figures so their decimal points line up (#226).
+        unit:   Printed once, in a units row beneath the heads. Plain text.
+        scale:  A :class:`HeatScale` tinting each cell by its raw figure (#227).
+        bar:    Draw each raw figure as a bar in its cell (#227).
     """
 
     header: str
     align: str = ""
     kind: str = ""
+    format: Callable[[Any], str] | None = None
+    tone: str = ""
+    align_decimal: bool = False
+    unit: str = ""
+    scale: "HeatScale | None" = None
+    bar: bool = False
 
     def validate(self) -> None:
         _require(self.header, "column.header")
+        if self.format is not None and not callable(self.format):
+            raise ValidationError(f"'column.format' must be callable, got: {self.format!r}")
+        if self.tone != "auto":
+            _validate_tone(self.tone, "column.tone")
+        if not isinstance(self.unit, str):
+            raise ValidationError(f"'column.unit' must be text, got: {self.unit!r}")
+        if self.scale is not None:
+            if not isinstance(self.scale, HeatScale):
+                raise ValidationError(f"'column.scale' must be a HeatScale, got: {self.scale!r}")
+            self.scale.validate()
         if self.align and self.align not in tuple(ColumnAlign):
             raise ValidationError(
                 f"'column.align' must be one of {[a.value for a in ColumnAlign]}, "
@@ -636,6 +655,8 @@ class Column:
         """
         if self.kind:
             return ColumnKind(self.kind)
+        if self.format is not None:
+            return ColumnKind.NUMERIC
         return ColumnKind.TEXT if index == 0 else ColumnKind.NUMERIC
 
     def resolved_align(self, index: int) -> ColumnAlign:
@@ -655,11 +676,92 @@ class Column:
 
     def resolved(self, index: int) -> "Column":
         """This column with both presentation fields filled in."""
-        return Column(
-            header=self.header,
-            align=self.resolved_align(index),
-            kind=self.resolved_kind(index),
+        return replace(self, align=self.resolved_align(index), kind=self.resolved_kind(index))
+
+
+@dataclass(frozen=True)
+class HeatScale:
+    """
+    A numeric range a column's figures are tinted across (#227).
+
+    The ends are the theme's, never the caller's: a figure at ``low`` takes the
+    surface, one at ``high`` the positive token. With a ``mid``, figures below
+    it run from the surface to the negative token instead.
+
+    Attributes:
+        low, high: The range. A figure outside it is clamped to the nearer end.
+        mid:       Where a diverging scale turns, strictly between the two.
+    """
+
+    low: float
+    high: float
+    mid: float | None = None
+
+    def validate(self) -> None:
+        for name in ("low", "high", "mid"):
+            value = getattr(self, name)
+            if (value is not None or name != "mid") and not is_figure(value):
+                raise ValidationError(f"'heat_scale.{name}' must be a number, got: {value!r}")
+        if not self.low < self.high:
+            raise ValidationError(
+                f"'heat_scale.low' ({self.low}) must be below 'heat_scale.high' ({self.high})"
+            )
+        if self.mid is not None and not self.low < self.mid < self.high:
+            raise ValidationError(
+                f"'heat_scale.mid' ({self.mid}) must lie strictly between low and high"
+            )
+
+    def position(self, value: Any) -> tuple[float, Tone]:
+        """Where ``value`` sits, in ``[0, 1]``, and the token it runs toward."""
+        if self.mid is not None and value < self.mid:
+            return _clamp((self.mid - value) / (self.mid - self.low)), Tone.NEGATIVE
+        start = self.low if self.mid is None else self.mid
+        return _clamp((value - start) / (self.high - start)), Tone.POSITIVE
+
+
+def _clamp(fraction: Any) -> float:
+    return float(min(1, max(0, fraction)))
+
+
+@dataclass(frozen=True)
+class ColumnGroup:
+    """
+    A head spanning adjacent columns of a :class:`~svc.builder.components.DataTable`.
+
+    The header tier is the one place a span is admitted (#223): a body cell
+    stays unmerged, for the reasons `data-table.md` records.
+
+    Attributes:
+        label: The group's heading. Plain text, escaped on the way out.
+        span:  How many columns it covers, left to right. At least one.
+    """
+
+    label: str
+    span: int = 1
+
+    def validate(self) -> None:
+        _require(self.label, "column_group.label")
+        if isinstance(self.span, bool) or not isinstance(self.span, int) or self.span < 1:
+            raise ValidationError(f"'column_group.span' must be a positive int, got: {self.span!r}")
+
+
+def coerce_groups(groups: "Sequence[ColumnGroup] | None", width: int) -> list[ColumnGroup]:
+    """``groups`` validated, and required to cover exactly ``width`` columns."""
+    if not groups:
+        return []
+    for i, group in enumerate(groups):
+        if not isinstance(group, ColumnGroup):
+            raise ValidationError(
+                f"'data_table.groups[{i}]' must be a ColumnGroup, got: {type(group).__name__}"
+            )
+        group.validate()
+    total = sum(group.span for group in groups)
+    if total != width:
+        raise ValidationError(
+            f"'data_table.groups' span {total} columns but the table has {width}; "
+            "every column sits under exactly one group."
         )
+    return list(groups)
 
 
 def coerce_column(value: "str | Column", field_name: str = "column") -> Column:
@@ -711,8 +813,7 @@ class Cell:
     as *"the caller styles cells"*, the closed list has opened and the rule
     is dead — a ``title_color=`` with more steps.
 
-    The theme remains the fallback, and ``tone`` (#178) is that claim as a
-    word the theme resolves; `data-table.md` argues it.
+    ``tone`` (#178) is that claim as a word the theme resolves.
 
     Attributes:
         text:       The cell's contents. Plain text, escaped on the way out.
@@ -722,6 +823,7 @@ class Cell:
                     alternating tint in place.
         tone:       ``positive`` / ``negative`` / ``neutral``, as the live
                     theme's semantic token. Empty takes the column's kind.
+        value:      The raw figure ``text`` was formatted from (#225).
     """
 
     text: str = ""
@@ -729,6 +831,7 @@ class Cell:
     color: str = ""
     background: str = ""
     tone: str = ""
+    value: Any = None
 
     def validate(self) -> None:
         if self.align and self.align not in tuple(ColumnAlign):
@@ -760,7 +863,7 @@ class Cell:
         it instead — a falling VIX is good news.
         """
         resolved = tone_of(value, fmt) if tone == "auto" else tone
-        cell = cls(text=fmt(value), align=align, background=background, tone=resolved)
+        cell = cls(text=fmt(value), align=align, background=background, tone=resolved, value=value)
         cell.validate()
         return cell
 
@@ -795,7 +898,7 @@ def _validate_tone(value: str, field_name: str) -> None:
 
 def coerce_cell(value: "str | Cell", field_name: str = "cell") -> Cell:
     """
-    Accept either a :class:`Cell` or a bare string.
+    Accept a :class:`Cell`, a bare string, or a raw figure its column formats.
 
     ``TableRow(cells=["Value", "+1.8%"])`` keeps working untouched — the same
     union-coercion :func:`coerce_column` and
@@ -804,11 +907,18 @@ def coerce_cell(value: "str | Cell", field_name: str = "cell") -> Cell:
     if isinstance(value, Cell):
         value.validate()
         return value
+    if is_figure(value):
+        return Cell(value=value)
     if not isinstance(value, str):
         raise ValidationError(
-            f"{field_name!r} must be a Cell or a string, got: {type(value).__name__}"
+            f"{field_name!r} must be a Cell, a string or a number, got: {type(value).__name__}"
         )
     return Cell(text=value)
+
+
+def is_figure(value: Any) -> bool:
+    """Whether ``value`` is a raw number a column may format: never a bool."""
+    return isinstance(value, (int, float, Decimal)) and not isinstance(value, bool)
 
 
 @dataclass

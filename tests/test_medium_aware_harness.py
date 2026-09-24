@@ -46,17 +46,19 @@ class TestEveryRuleSaysWhereItApplies:
         # #165 must not quietly narrow what an email is judged by. The count
         # is a tripwire, not a target: it moved from ten to eleven when #150
         # added vml-fill-frame-without-src, which is a rule being *added* to
-        # what an email is judged by. Narrowing the set is what this guards.
+        # what an email is judged by, and to twelve when #223 added
+        # table-header-tier. Narrowing the set is what this guards.
         paged_only = {"page-size-declared", "paged-table-width", "table-structure"}
         print_only = {"print-marks", "rgb-only"}
         assert rules_for("email") == set(SOURCES) - paged_only - print_only
-        assert len(rules_for("email")) == 11
+        assert len(rules_for("email")) == 12
 
     def test_the_brochure_is_judged_as_print(self):
-        """Every paged rule, the neutral four, and the two about a press (#188)."""
+        """Every paged rule, the neutral five, and the two about a press (#188)."""
         assert rules_for("brochure") == {
             "img-alt",
             "table-role",
+            "table-header-tier",
             "empty-url",
             "no-external-css",
             "page-size-declared",
@@ -72,7 +74,7 @@ class TestEveryRuleSaysWhereItApplies:
 
     def test_the_neutral_rules_reach_every_medium(self):
         # Accessibility and unresolvable URLs are not client compatibility.
-        for rule in ("img-alt", "table-role", "empty-url", "no-external-css"):
+        for rule in ("img-alt", "table-role", "empty-url", "no-external-css", "table-header-tier"):
             assert RULE_MEDIA[rule] == SHIPPED_MEDIA, rule
 
 

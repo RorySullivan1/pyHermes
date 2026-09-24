@@ -151,6 +151,16 @@ SOURCES: dict[str, str] = {
         "screenshot could see it, because an email has no sheets. This rule "
         "reads the markup, so it holds without a PDF backend installed."
     ),
+    "table-header-tier": (
+        "A span is admitted in a table's header tier and nowhere else (#223). "
+        "A merged body cell splits badly across sheets and has no honest "
+        "plain-text projection (data-table.md). A spanning header cell names "
+        'its columns only with scope="colgroup" (W3C WAI, Tables Tutorial: '
+        "Multi-level Headers, w3.org/WAI/tutorials/tables/multi-level), and a "
+        "tier whose spans miscount the columns misplaces every head under it. "
+        "Outlook's handling of colspan is unverified in this repo; this rule "
+        "keeps the span where a render has been reasoned about."
+    ),
     "size-budget": (
         "Gmail clips a message above ~102 KB behind a 'View entire message' "
         "link. svc/config.Config.size_limit_kb; Email._validate_size enforces "
@@ -204,6 +214,9 @@ class _OpenTable:
     role: str
     has_header: bool = False
     has_thead: bool = False
+    in_thead: bool = False
+    row_widths: list[int] = field(default_factory=list)
+    head_rows: int = 0
 
 
 #: Which media each rule applies to, by ``Medium.name``.
@@ -248,6 +261,8 @@ RULE_MEDIA: dict[str, frozenset[str]] = {
     "page-size-declared": frozenset({"document", "brochure"}),
     "paged-table-width": frozenset({"document", "brochure"}),
     "table-structure": frozenset({"document", "brochure"}),
+    # Structure and accessibility, true of the markup in every medium (#223).
+    "table-header-tier": frozenset({"email", "document", "brochure", "html"}),
     # A folded sheet going to a press: true of nothing else this package builds.
     "print-marks": frozenset({"brochure"}),
     "rgb-only": frozenset({"brochure"}),
@@ -386,8 +401,13 @@ class _Linter(HTMLParser):
             # correctly rather than marking its ancestors as data too.
             if tag == "th":
                 self._tables[-1].has_header = True
+            self._check_span(tag, attributes)
         if tag == "thead" and self._tables:
             self._tables[-1].has_thead = True
+            self._tables[-1].in_thead = True
+        if tag == "tr" and self._tables:
+            self._tables[-1].row_widths.append(0)
+            self._tables[-1].head_rows += self._tables[-1].in_thead
         if tag == "img":
             self._check_image(attributes)
         if tag == "link":
@@ -403,8 +423,12 @@ class _Linter(HTMLParser):
     def handle_endtag(self, tag: str) -> None:
         if tag == "style":
             self._in_style = False
+        if tag == "thead" and self._tables:
+            self._tables[-1].in_thead = False
         if tag == "table" and self._tables:
-            self._check_table(self._tables.pop())
+            table = self._tables.pop()
+            self._check_table(table)
+            self._check_tier(table)
 
     def handle_data(self, data: str) -> None:
         if self._in_style:
@@ -457,6 +481,45 @@ class _Linter(HTMLParser):
                     "than falling back to color/opacity. Gate type with the src.",
                     tag[:60],
                 )
+
+    def _check_span(self, tag: str, attributes: dict[str, str]) -> None:
+        """A span sits in the header tier only, and a spanning head says so."""
+        table = self._tables[-1]
+        span = int(attributes["colspan"]) if attributes.get("colspan", "").isdigit() else 1
+        if table.row_widths:
+            table.row_widths[-1] += span
+        if "colspan" not in attributes:
+            return
+        if not table.in_thead:
+            self._report(
+                "table-header-tier",
+                Severity.ERROR,
+                f"<{tag} colspan> outside a <thead>; a merged body cell splits badly "
+                "across sheets and has no plain-text projection.",
+            )
+        elif span > 1 and attributes.get("scope", "") != "colgroup":
+            self._report(
+                "table-header-tier",
+                Severity.ERROR,
+                '<th colspan> without scope="colgroup", so its columns are not associated with it.',
+            )
+
+    def _check_tier(self, table: _OpenTable) -> None:
+        """Every header row covers the same columns as the body."""
+        widths = table.row_widths
+        if table.head_rows > 1 and len(set(widths)) > 1:
+            self.findings.append(
+                Finding(
+                    rule_id="table-header-tier",
+                    severity=Severity.ERROR,
+                    location=table.where,
+                    message=(
+                        f"the header tier covers {widths[: table.head_rows]} columns per row "
+                        f"but the table's rows are {sorted(set(widths))} wide; every head "
+                        "sits over the wrong columns."
+                    ),
+                )
+            )
 
     def _check_table(self, table: _OpenTable) -> None:
         """

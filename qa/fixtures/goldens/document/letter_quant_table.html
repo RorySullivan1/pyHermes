@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+  <meta charset="UTF-8">
+  <title>Factor Book</title>
+  <meta name="author" content="Hermes Research">
+  <meta name="description" content="Factor Book · Quantitative Strategies · September 2026">
+  <meta name="keywords" content="Quantitative Strategies, Book 09">
+  <style type="text/css">
+    @page {
+      size: 816px 1056px;
+      margin: 72px 72px 72px 72px;
+    }
+
+
+    @page {
+      @bottom-left {
+        content: "Hermes Research · Factor Book" " · " counter(page) " / " counter(pages);
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 9.5px;
+        color: #A09E97;
+      }
+    }
+    @page cover { @bottom-left { content: none; } }
+
+
+    @page cover { margin: 0; }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #FFFFFF;
+      font-family: Georgia, 'Times New Roman', serif;
+      color: #3B3B3B;
+      orphans: 2;
+      widows: 2;
+    }
+    table { border-collapse: collapse; }
+
+    table[width="100%"] { width: 100%; }
+    img { border: 0; }
+
+    .data-table tbody tr { break-inside: avoid; page-break-inside: avoid; }
+    .data-table tr.row-total { break-before: avoid; page-break-before: avoid; }
+    .data-table tr.row-subhead { break-after: avoid; page-break-after: avoid; }
+    .data-table > caption { break-after: avoid; page-break-after: avoid; }
+    .section-title { break-after: avoid; page-break-after: avoid; }
+    .subtitle { break-after: avoid; page-break-after: avoid; }
+    .fine-print { break-before: avoid; page-break-before: avoid; }
+    .figure { break-inside: avoid; page-break-inside: avoid; }
+
+    .contents-entry a::after {
+      content: leader(".") " " target-counter(attr(href), page);
+      color: #A09E97;
+    }
+
+    @page {
+      @footnote {
+        border-top: 1px solid #D6D2CB;
+        padding-top: 8px;
+      }
+    }
+    .footnote {
+      float: footnote;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 9.5px;
+      font-style: normal;
+      font-weight: normal;
+      letter-spacing: 0;
+      line-height: 140%;
+      color: #7A7A72;
+      text-align: left;
+    }
+    .section-title h2 {
+      string-set: running-header content(), running-footer content(),
+        running-header-fallback "", running-footer-fallback "";
+    }
+    .footnote::footnote-call { content: none; }
+    .footnote::footnote-marker { content: attr(data-note) ". "; }
+
+    .drop-cap {
+      float: left;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 56px;
+      line-height: 48px;
+      margin: 4px 8px 0 0;
+      color: #5B8A9A;
+    }
+    .flowed-columns p:first-child { margin-top: 0; }
+    .wrap-left { float: left; margin: 0 16px 8px 0; }
+    .wrap-right { float: right; margin: 0 0 8px 16px; }
+
+    a.xref::after {
+      content: " (p. " target-counter(attr(href), page) ")";
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 9.5px;
+      color: #A09E97;
+    }
+  </style>
+</head>
+<body>
+
+
+  <div class="running-header-start"></div><div class="running-footer-start"></div>
+
+
+  <table class="document-container" role="presentation" width="672"
+         cellpadding="0" cellspacing="0" border="0"
+         style="width:672px; background-color:#FFFFFF;">
+<tr>
+  <td style="padding:0; background-color:#FFFFFF;">
+    <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td style="padding:22px 32px 12px 32px;">
+          <h2 id="the-book" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:17px; font-weight:bold; color:#2C3E50; line-height:120%;">
+            The Book
+          </h2>
+        </td>
+      </tr>
+    </table>
+    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:16px 32px 14px 32px; font-family: Arial, Helvetica, sans-serif; font-size:14px; color:#3B3B3B; line-height:172%;">
+          <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: #3B3B3B; line-height: 172%; margin: 0 0 16px 0;"><p>Twenty strategies across four styles and five regions. The one-year column is tinted by the number itself, the weight is drawn as a bar, and every figure column lines up on its point.</p></div>
+
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+
+<tr>
+  <td style="padding:0; background-color:#FFFFFF;">
+    <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td style="padding:22px 32px 12px 32px;">
+          <h2 id="returns" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:17px; font-weight:bold; color:#2C3E50; line-height:120%;">
+            Returns
+          </h2>
+        </td>
+      </tr>
+    </table>
+    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:16px 32px 14px 32px; font-family: Arial, Helvetica, sans-serif; font-size:14px; color:#3B3B3B; line-height:172%;">
+          <table class="data-table" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
+  <caption style="caption-side: top; text-align: left; font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #2C3E50; letter-spacing: 0.5px; padding: 0 0 8px 0;">Factor strategy returns and book weights</caption>
+  <thead>
+  <tr style="border-top: 1px solid #D6D2CB;">
+    <th scope="colgroup" colspan="1" align="center" style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #2C3E50; text-transform: uppercase; line-height: 172%; text-align: center; padding: 12px; letter-spacing: 0.5px; border-bottom: 1px solid #D6D2CB;">Style and region</th>
+    <th scope="colgroup" colspan="4" align="center" style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #2C3E50; text-transform: uppercase; line-height: 172%; text-align: center; padding: 12px; letter-spacing: 0.5px; border-bottom: 1px solid #D6D2CB;">Annualised</th>
+    <th scope="colgroup" colspan="1" align="center" style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #2C3E50; text-transform: uppercase; line-height: 172%; text-align: center; padding: 12px; letter-spacing: 0.5px; border-bottom: 1px solid #D6D2CB;">Book</th>
+  </tr>
+  <tr style="border-top: 1px solid #D6D2CB; border-bottom: 1px solid #EAE8E4;">
+    <th scope="col" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 172%; text-align: left; padding: 12px; letter-spacing: 0.5px;">Strategy</th>
+    <th scope="col" align="right" style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 172%; text-align: right; padding: 12px; letter-spacing: 0.5px;">1Y</th>
+    <th scope="col" align="right" style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 172%; text-align: right; padding: 12px; letter-spacing: 0.5px;">3Y</th>
+    <th scope="col" align="right" style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 172%; text-align: right; padding: 12px; letter-spacing: 0.5px;">5Y</th>
+    <th scope="col" align="right" style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 172%; text-align: right; padding: 12px; letter-spacing: 0.5px;">10Y</th>
+    <th scope="col" align="right" style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 172%; text-align: right; padding: 12px; letter-spacing: 0.5px;">Weight</th>
+  </tr>
+  <tr style="border-bottom: 2px solid #2C3E50;">
+    <th scope="col" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: normal; color: #7A7A72; line-height: 172%; text-align: left; padding: 0 12px 12px 12px;"></th>
+    <th scope="col" align="right" style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: normal; color: #7A7A72; line-height: 172%; text-align: right; padding: 0 12px 12px 12px;">%</th>
+    <th scope="col" align="right" style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: normal; color: #7A7A72; line-height: 172%; text-align: right; padding: 0 12px 12px 12px;">%</th>
+    <th scope="col" align="right" style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: normal; color: #7A7A72; line-height: 172%; text-align: right; padding: 0 12px 12px 12px;">%</th>
+    <th scope="col" align="right" style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: normal; color: #7A7A72; line-height: 172%; text-align: right; padding: 0 12px 12px 12px;">%</th>
+    <th scope="col" align="right" style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: normal; color: #7A7A72; line-height: 172%; text-align: right; padding: 0 12px 12px 12px;">% of NAV</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr class="row-subhead" style="border-bottom: 1px solid #EAE8E4;">
+    <th scope="row" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: bold; line-height: 172%; color: #2C3E50; text-align: left; padding: 12px; background-color: #F8F7F5;">Developed</th>
+    <td align="right" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: bold; line-height: 172%; color: #2C3E50; text-align: right; padding: 12px; background-color: #F8F7F5;"></td>
+    <td align="right" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: bold; line-height: 172%; color: #2C3E50; text-align: right; padding: 12px; background-color: #F8F7F5;"></td>
+    <td align="right" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: bold; line-height: 172%; color: #2C3E50; text-align: right; padding: 12px; background-color: #F8F7F5;"></td>
+    <td align="right" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: bold; line-height: 172%; color: #2C3E50; text-align: right; padding: 12px; background-color: #F8F7F5;"></td>
+    <td align="right" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: bold; line-height: 172%; color: #2C3E50; text-align: right; padding: 12px; background-color: #F8F7F5;"></td>
+  </tr>
+  <tr style="border-bottom: 1px solid #EAE8E4;">
+    <th scope="row" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: normal; line-height: 172%; color: #3B3B3B; text-align: left; padding: 12px; background-color: #FFFFFF;">Value US</th>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #FFFFFF; text-align: right; padding: 12px; background-color: #BF6562;">-9.0%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #B85450; text-align: right; padding: 12px; background-color: #FFFFFF;">-5%&nbsp;&nbsp;</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #FFFFFF;">-2%&nbsp;&nbsp;</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #FFFFFF;">n/a<sup class="note-ref" style="line-height: 0;"><a href="#note-1" id="note-ref-1" style="color: #5B8A9A; text-decoration: none;">1</a></sup><span class="footnote" id="note-1" data-note="1">Value US has no ten-year record; the series starts in 2019.</span></td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #FFFFFF;">0.10%<table role="presentation" class="cell-bar" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;"><tr><td width="4%" style="background-color: #5B8A9A; height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td><td width="96%" style="height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td></tr></table>
+</td>
+  </tr>
+  <tr style="border-bottom: 1px solid #EAE8E4;">
+    <th scope="row" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: normal; line-height: 172%; color: #3B3B3B; text-align: left; padding: 12px; background-color: #F8F7F5;">Value Europe</th>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #3B3B3B; text-align: right; padding: 12px; background-color: #BED0C4;">+5.0%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #B85450; text-align: right; padding: 12px; background-color: #F8F7F5;">-3.7%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #F8F7F5;">-1.3%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #F8F7F5;">+0.5%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #F8F7F5;">1.20%<table role="presentation" class="cell-bar" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;"><tr><td width="43%" style="background-color: #5B8A9A; height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td><td width="57%" style="height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td></tr></table>
+</td>
+  </tr>
+  <tr style="border-bottom: 1px solid #EAE8E4;">
+    <th scope="row" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: normal; line-height: 172%; color: #3B3B3B; text-align: left; padding: 12px; background-color: #FFFFFF;">Value Japan</th>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #3B3B3B; text-align: right; padding: 12px; background-color: #E3BBB9;">-4.0%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #B85450; text-align: right; padding: 12px; background-color: #FFFFFF;">-2.4%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #FFFFFF;">-0.6%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #FFFFFF;">+1%&nbsp;&nbsp;</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #FFFFFF;">2.30%<table role="presentation" class="cell-bar" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;"><tr><td width="82%" style="background-color: #5B8A9A; height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td><td width="18%" style="height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td></tr></table>
+</td>
+  </tr>
+  <tr style="border-bottom: 1px solid #EAE8E4;">
+    <th scope="row" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: normal; line-height: 172%; color: #3B3B3B; text-align: left; padding: 12px; background-color: #F8F7F5;">Value EM</th>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #3B3B3B; text-align: right; padding: 12px; background-color: #7EA188;">+10.0%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #B85450; text-align: right; padding: 12px; background-color: #F8F7F5;">-1.1%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #F8F7F5;">+0.1%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #F8F7F5;">+1.5%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #F8F7F5;">0.50%<table role="presentation" class="cell-bar" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;"><tr><td width="18%" style="background-color: #5B8A9A; height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td><td width="82%" style="height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td></tr></table>
+</td>
+  </tr>
+  <tr style="border-bottom: 1px solid #EAE8E4;">
+    <th scope="row" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: normal; line-height: 172%; color: #3B3B3B; text-align: left; padding: 12px; background-color: #FFFFFF;">Value Global</th>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #3B3B3B; text-align: right; padding: 12px; background-color: #F2F6F3;">+1.0%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #4A7C59; text-align: right; padding: 12px; background-color: #FFFFFF;">+0.2%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #FFFFFF;">+0.8%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #FFFFFF;">+2%&nbsp;&nbsp;</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #FFFFFF;">1.60%<table role="presentation" class="cell-bar" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;"><tr><td width="57%" style="background-color: #5B8A9A; height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td><td width="43%" style="height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td></tr></table>
+</td>
+  </tr>
+  <tr style="border-bottom: 1px solid #EAE8E4;">
+    <th scope="row" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: normal; line-height: 172%; color: #3B3B3B; text-align: left; padding: 12px; background-color: #F8F7F5;">Momentum US</th>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #FFFFFF; text-align: right; padding: 12px; background-color: #C67673;">-8.0%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #4A7C59; text-align: right; padding: 12px; background-color: #F8F7F5;">+1.5%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #F8F7F5;">+1.5%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #F8F7F5;">+2.5%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #F8F7F5;">2.70%<table role="presentation" class="cell-bar" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;"><tr><td width="96%" style="background-color: #5B8A9A; height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td><td width="4%" style="height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td></tr></table>
+</td>
+  </tr>
+  <tr style="border-bottom: 1px solid #EAE8E4;">
+    <th scope="row" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: normal; line-height: 172%; color: #3B3B3B; text-align: left; padding: 12px; background-color: #FFFFFF;">Momentum Europe</th>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #3B3B3B; text-align: right; padding: 12px; background-color: #B1C7B8;">+6.0%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #4A7C59; text-align: right; padding: 12px; background-color: #FFFFFF;">+2.8%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #FFFFFF;">+2.2%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #FFFFFF;">+3%&nbsp;&nbsp;</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #FFFFFF;">0.90%<table role="presentation" class="cell-bar" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;"><tr><td width="32%" style="background-color: #5B8A9A; height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td><td width="68%" style="height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td></tr></table>
+</td>
+  </tr>
+  <tr style="border-bottom: 1px solid #EAE8E4;">
+    <th scope="row" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: normal; line-height: 172%; color: #3B3B3B; text-align: left; padding: 12px; background-color: #F8F7F5;">Momentum Japan</th>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #3B3B3B; text-align: right; padding: 12px; background-color: #EACCCB;">-3.0%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #4A7C59; text-align: right; padding: 12px; background-color: #F8F7F5;">+4.1%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #F8F7F5;">+2.9%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #F8F7F5;">+3.5%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #F8F7F5;">2.00%<table role="presentation" class="cell-bar" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;"><tr><td width="71%" style="background-color: #5B8A9A; height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td><td width="29%" style="height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td></tr></table>
+</td>
+  </tr>
+  <tr style="border-bottom: 1px solid #EAE8E4;">
+    <th scope="row" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: normal; line-height: 172%; color: #3B3B3B; text-align: left; padding: 12px; background-color: #FFFFFF;">Momentum EM</th>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #3B3B3B; text-align: right; padding: 12px; background-color: #71987D;">+11.0%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #4A7C59; text-align: right; padding: 12px; background-color: #FFFFFF;">+5.4%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #FFFFFF;">+3.6%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #FFFFFF;">+4%&nbsp;&nbsp;</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #FFFFFF;">0.20%<table role="presentation" class="cell-bar" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;"><tr><td width="7%" style="background-color: #5B8A9A; height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td><td width="93%" style="height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td></tr></table>
+</td>
+  </tr>
+  <tr style="border-bottom: 1px solid #EAE8E4;">
+    <th scope="row" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: normal; line-height: 172%; color: #3B3B3B; text-align: left; padding: 12px; background-color: #F8F7F5;">Momentum Global</th>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #3B3B3B; text-align: right; padding: 12px; background-color: #E5ECE7;">+2.0%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #4A7C59; text-align: right; padding: 12px; background-color: #F8F7F5;">+6.7%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #F8F7F5;">+4.3%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #F8F7F5;">+4.5%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #F8F7F5;">1.30%<table role="presentation" class="cell-bar" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;"><tr><td width="46%" style="background-color: #5B8A9A; height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td><td width="54%" style="height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td></tr></table>
+</td>
+  </tr>
+  <tr style="border-bottom: 1px solid #EAE8E4;">
+    <th scope="row" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: normal; line-height: 172%; color: #3B3B3B; text-align: left; padding: 12px; background-color: #FFFFFF;">Quality US</th>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #3B3B3B; text-align: right; padding: 12px; background-color: #CD8785;">-7.0%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #4A7C59; text-align: right; padding: 12px; background-color: #FFFFFF;">+8%&nbsp;&nbsp;</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #FFFFFF;">+5%&nbsp;&nbsp;</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #FFFFFF;">+5%&nbsp;&nbsp;</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #FFFFFF;">2.40%<table role="presentation" class="cell-bar" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;"><tr><td width="86%" style="background-color: #5B8A9A; height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td><td width="14%" style="height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td></tr></table>
+</td>
+  </tr>
+  <tr style="border-bottom: 1px solid #EAE8E4;">
+    <th scope="row" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: normal; line-height: 172%; color: #3B3B3B; text-align: left; padding: 12px; background-color: #F8F7F5;">Quality Europe</th>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #3B3B3B; text-align: right; padding: 12px; background-color: #A5BEAC;">+7.0%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #4A7C59; text-align: right; padding: 12px; background-color: #F8F7F5;">+9.3%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #F8F7F5;">+5.7%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #F8F7F5;">+5.5%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #F8F7F5;">0.60%<table role="presentation" class="cell-bar" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;"><tr><td width="21%" style="background-color: #5B8A9A; height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td><td width="79%" style="height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td></tr></table>
+</td>
+  </tr>
+  <tr style="border-bottom: 1px solid #EAE8E4;">
+    <th scope="row" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: normal; line-height: 172%; color: #3B3B3B; text-align: left; padding: 12px; background-color: #FFFFFF;">Quality Japan</th>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #3B3B3B; text-align: right; padding: 12px; background-color: #F1DDDC;">-2.0%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #4A7C59; text-align: right; padding: 12px; background-color: #FFFFFF;">+10.6%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #FFFFFF;">+6.4%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #FFFFFF;">+6%&nbsp;&nbsp;</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #FFFFFF;">1.70%<table role="presentation" class="cell-bar" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;"><tr><td width="61%" style="background-color: #5B8A9A; height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td><td width="39%" style="height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td></tr></table>
+</td>
+  </tr>
+  <tr style="border-bottom: 1px solid #EAE8E4;">
+    <th scope="row" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: normal; line-height: 172%; color: #3B3B3B; text-align: left; padding: 12px; background-color: #F8F7F5;">Quality EM</th>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #FFFFFF; text-align: right; padding: 12px; background-color: #648F71;">+12.0%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #4A7C59; text-align: right; padding: 12px; background-color: #F8F7F5;">+11.9%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #F8F7F5;">+7.1%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #F8F7F5;">+6.5%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #F8F7F5;">2.80%<table role="presentation" class="cell-bar" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;"><tr><td width="100%" style="background-color: #5B8A9A; height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td></tr></table>
+</td>
+  </tr>
+  <tr style="border-bottom: 1px solid #EAE8E4;">
+    <th scope="row" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: normal; line-height: 172%; color: #3B3B3B; text-align: left; padding: 12px; background-color: #FFFFFF;">Quality Global</th>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #3B3B3B; text-align: right; padding: 12px; background-color: #D8E3DB;">+3.0%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #B85450; text-align: right; padding: 12px; background-color: #FFFFFF;">-3.8%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #FFFFFF;">+7.8%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #FFFFFF;">+7%&nbsp;&nbsp;</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #FFFFFF;">1.00%<table role="presentation" class="cell-bar" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;"><tr><td width="36%" style="background-color: #5B8A9A; height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td><td width="64%" style="height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td></tr></table>
+</td>
+  </tr>
+  <tr style="border-bottom: 1px solid #EAE8E4;">
+    <th scope="row" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: normal; line-height: 172%; color: #3B3B3B; text-align: left; padding: 12px; background-color: #F8F7F5;">Low volatility US</th>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #3B3B3B; text-align: right; padding: 12px; background-color: #D49896;">-6.0%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #B85450; text-align: right; padding: 12px; background-color: #F8F7F5;">-2.5%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #F8F7F5;">+8.5%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #F8F7F5;">+7.5%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #F8F7F5;">2.10%<table role="presentation" class="cell-bar" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;"><tr><td width="75%" style="background-color: #5B8A9A; height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td><td width="25%" style="height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td></tr></table>
+</td>
+  </tr>
+  <tr style="border-bottom: 1px solid #EAE8E4;">
+    <th scope="row" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: normal; line-height: 172%; color: #3B3B3B; text-align: left; padding: 12px; background-color: #FFFFFF;">Low volatility Europe</th>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #3B3B3B; text-align: right; padding: 12px; background-color: #98B4A0;">+8.0%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #B85450; text-align: right; padding: 12px; background-color: #FFFFFF;">-1.2%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #FFFFFF;">-1.8%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #FFFFFF;">+8%&nbsp;&nbsp;</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #FFFFFF;">0.30%<table role="presentation" class="cell-bar" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;"><tr><td width="11%" style="background-color: #5B8A9A; height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td><td width="89%" style="height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td></tr></table>
+</td>
+  </tr>
+  <tr style="border-bottom: 1px solid #EAE8E4;">
+    <th scope="row" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: normal; line-height: 172%; color: #3B3B3B; text-align: left; padding: 12px; background-color: #F8F7F5;">Low volatility Japan</th>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #3B3B3B; text-align: right; padding: 12px; background-color: #F8EEEE;">-1.0%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #4A7C59; text-align: right; padding: 12px; background-color: #F8F7F5;">+0.1%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #F8F7F5;">-1.1%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #F8F7F5;">+8.5%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #F8F7F5;">1.40%<table role="presentation" class="cell-bar" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;"><tr><td width="50%" style="background-color: #5B8A9A; height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td><td width="50%" style="height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td></tr></table>
+</td>
+  </tr>
+  <tr style="border-bottom: 1px solid #EAE8E4;">
+    <th scope="row" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: normal; line-height: 172%; color: #3B3B3B; text-align: left; padding: 12px; background-color: #FFFFFF;">Low volatility EM</th>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #FFFFFF; text-align: right; padding: 12px; background-color: #578565;">+13.0%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #4A7C59; text-align: right; padding: 12px; background-color: #FFFFFF;">+1.4%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #FFFFFF;">-0.4%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #FFFFFF;">0%&nbsp;&nbsp;</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #FFFFFF;">2.50%<table role="presentation" class="cell-bar" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;"><tr><td width="89%" style="background-color: #5B8A9A; height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td><td width="11%" style="height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td></tr></table>
+</td>
+  </tr>
+  <tr style="border-bottom: 1px solid #EAE8E4;">
+    <th scope="row" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: normal; line-height: 172%; color: #3B3B3B; text-align: left; padding: 12px; background-color: #F8F7F5;">Low volatility Global</th>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #3B3B3B; text-align: right; padding: 12px; background-color: #CBDAD0;">+4.0%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #4A7C59; text-align: right; padding: 12px; background-color: #F8F7F5;">+2.7%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #F8F7F5;">+0.3%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #F8F7F5;">+0.5%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #F8F7F5;">0.70%<table role="presentation" class="cell-bar" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;"><tr><td width="25%" style="background-color: #5B8A9A; height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td><td width="75%" style="height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td></tr></table>
+</td>
+  </tr>
+  <tr class="row-total" style="border-bottom: 1px solid #D6D2CB; border-top: 2px solid #2C3E50;">
+    <th scope="row" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: bold; line-height: 172%; color: #3B3B3B; text-align: left; padding: 12px; background-color: #FFFFFF;">Total</th>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #FFFFFF;"></td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #FFFFFF;"></td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #FFFFFF;"></td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #FFFFFF;"></td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #FFFFFF;">100.00%</td>
+  </tr>
+  </tbody>
+</table>
+<p class="fine-print" style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #A09E97; font-style: italic; margin: 8px 0 0 0; line-height: 172%;">Hermes Research, factor model as of 25 September 2026</p>
+<p class="fine-print" align="justify" style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #A09E97; font-style: italic; text-align: justify; margin: 8px 0 0 0; line-height: 172%;">Returns are gross of costs and shown for illustration only.</p>
+
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+
+  </table>
+
+
+
+</body>
+</html>

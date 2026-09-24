@@ -232,9 +232,11 @@ class TestTheCellIsTheUnit:
         assert row.cells[0].text == "a"
         assert row.cells[1].color == "#00FF00"
 
-    def test_a_non_string_non_cell_raises_naming_where_it_came_from(self):
+    @pytest.mark.parametrize("value", [True, None, ["7"]])
+    def test_a_non_string_non_cell_raises_naming_where_it_came_from(self, value):
+        # A raw number is a figure its column formats (#225); a bool is not one.
         with pytest.raises(ValidationError, match=r"cells\[1\]"):
-            TableRow(["a", 7])
+            TableRow(["a", value])
 
     def test_a_bare_string_is_accepted(self):
         assert coerce_cell("x") == Cell(text="x")

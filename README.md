@@ -706,6 +706,38 @@ mixed freely — so every table written before these existed keeps working uncha
 - **The table is named and navigable**: the caption is its accessible name, the heading row is
   `scope="col"` and the label column is `scope="row"`.
 
+A quantitative table has more words (epic #217). Groups span the heads, a units row states each
+unit once, a column formats and tones the raw figures it is given, and the figures line up on
+the point:
+
+```python
+from svc.builder import ColumnGroup, HeatScale
+from svc.builder.formats import pct
+
+ret = lambda v: pct(v, 1, sign=True)
+DataTable(
+    headers=[
+        "Class",
+        Column("1Y", format=ret, tone="auto", unit="%", align_decimal=True),
+        Column("3Y", format=ret, tone="auto", unit="%", scale=HeatScale(0, 0.1)),
+        Column("Weight", format=lambda v: pct(v, 1), bar=True),
+    ],
+    groups=[ColumnGroup("Share class"), ColumnGroup("Annualised", 2), ColumnGroup("Book")],
+    rows=[TableRow(["Accumulation", 0.0452, 0.0612, 0.62]),
+          TableRow(["Income", -0.0031, Cell("4.1%[^1]", value=0.041), 0.38])],
+    notes=["The income class launched a year later."],
+)
+```
+
+- **Groups** are a second header row, `scope="colgroup"`, the one place a span is allowed. A
+  print engine repeats the whole head on every sheet.
+- **A raw figure** in a row is written by its column's `format` at construction. The markup
+  and the text part print that one string, and the number stays on the cell as `value`.
+- **A `[^n]` marker** in a cell or a head joins the table's notes, like one in its caption.
+- **`scale`** tints each cell from the theme's surface toward its positive token, or toward
+  negative below a `mid`. **`bar`** draws the figure as a bar in the accent colour. Neither
+  takes a colour from you, and neither changes the text part.
+
 ## Figures as numbers
 
 Pass numbers, not strings. `svc.builder.formats` formats a figure once, and both the HTML and

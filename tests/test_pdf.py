@@ -410,6 +410,13 @@ def _title_sheet(sheets) -> int:
     return next(i for i, (text, _) in enumerate(sheets) if pattern.search(text))
 
 
+#: Both head shapes, one row and the tiered head of #223 and #226: each boundary
+#: is re-measured under each, since the break rules were tuned on a one-row head.
+_HEADS = [long_table.build, long_table.build_grouped]
+_HEAD_IDS = ["one-row-head", "tiered-head"]
+_GROUPS = long_table.GROUPS
+
+
 def _table_sheets(sheets) -> list[int]:
     return [i for i, (text, _) in enumerate(sheets) if any(h in text for h in long_table.HOLDINGS)]
 
@@ -423,17 +430,21 @@ class TestALongTableCrossesSheetsIntact:
     out of the PDF's text, sheet by sheet.
     """
 
-    @pytest.fixture(scope="class")
-    def sheets(self):
-        return _sheets(long_table.build())
+    @pytest.fixture(scope="class", params=_HEADS, ids=_HEAD_IDS)
+    def sheets(self, request):
+        return _sheets(request.param())
 
     def test_the_table_spans_several_sheets(self, sheets):
         assert len(_table_sheets(sheets)) > 1
 
     def test_every_sheet_of_the_table_carries_its_headers(self, sheets):
+        grouped = any(g.label.upper() in sheets[_table_sheets(sheets)[0]][0] for g in _GROUPS)
+        heads = [h.upper() for h in long_table.HEADERS]
+        if grouped:
+            heads += [g.label.upper() for g in _GROUPS] + [u for u in long_table.UNITS if u]
         for index in _table_sheets(sheets):
             text = sheets[index][0]
-            missing = [h for h in long_table.HEADERS if h.upper() not in text]
+            missing = [h for h in heads if h not in text]
             assert not missing, f"sheet {index + 1} lost its column headers {missing}"
 
     def test_the_total_shares_a_sheet_with_the_row_above_it(self, sheets):
@@ -467,9 +478,9 @@ class TestTheFixtureIsEngineeredRatherThanLucky:
     these goes green, retune the paragraph counts in ``a4_long_table``.
     """
 
-    @pytest.fixture(scope="class")
-    def sheets(self):
-        return _sheets(long_table.build(), strip_break_rules=True)
+    @pytest.fixture(scope="class", params=_HEADS, ids=_HEAD_IDS)
+    def sheets(self, request):
+        return _sheets(request.param(), strip_break_rules=True)
 
     def test_without_its_rule_the_total_opens_a_sheet_alone(self, sheets):
         text = sheets[_sheet_of(sheets, long_table.TOTAL)][0]

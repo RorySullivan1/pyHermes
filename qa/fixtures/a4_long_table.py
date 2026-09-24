@@ -16,7 +16,7 @@ from pathlib import Path
 from svc.builder import ChartBlock, DataTable, FullWidth, TextBlock
 from svc.builder.document import Document
 from svc.builder.images import EmailImage
-from svc.builder.models import Column, TableRow
+from svc.builder.models import Column, ColumnGroup, TableRow
 from svc.document import PAGED_MEDIUM, PagedDocument
 
 from . import _paged
@@ -26,6 +26,13 @@ from ._png import solid_png
 #: occupies. Rendered upper-case by the template, and chosen so that no
 #: other copy in the document contains one of them in capitals.
 HEADERS = ["Issue", "Sector", "Weight", "Yield"]
+
+#: The header tier of the grouped variant (#223), which the PDF test also
+#: looks for on every sheet: a two-row ``thead`` must repeat whole.
+GROUPS = [ColumnGroup("Instrument", 2), ColumnGroup("Exposure", 2)]
+
+#: The same variant's units row (#226), a third ``thead`` row to repeat.
+UNITS = ["", "", "% of book", "% to worst"]
 
 _GOVERNMENT = [
     f"UKT {coupon}% {year}"
@@ -67,6 +74,10 @@ INTRO_PARAGRAPHS = 13
 LEAD_IN_PARAGRAPHS = 10
 RUN_ON_PARAGRAPHS = 12
 
+#: The same three counts retuned for the tiered head (#223, #226): groups and
+#: units repeat on every sheet, so each boundary moved up by their height.
+GROUPED_PARAGRAPHS = (7, 8, 11)
+
 _CHART_PNG = solid_png(600, 280, (74, 124, 89))
 
 
@@ -84,19 +95,23 @@ def _row(label: str, sector: str, n: int) -> TableRow:
     return TableRow(cells=[label, sector, f"{1 + n % 3}.{n % 10}%", f"{3 + n % 4}.{n % 7}%"])
 
 
-def _holdings_table() -> DataTable:
+def _holdings_table(groups: list[ColumnGroup] | None = None) -> DataTable:
     rows = [_row(label, "Government", n) for n, label in enumerate(_GOVERNMENT)]
     rows.append(TableRow(cells=[SUBHEAD], kind="subhead"))
     rows += [_row(label, "Corporate", n) for n, label in enumerate(_CREDIT)]
     rows.append(TableRow(cells=[TOTAL, "", "100.0%", "4.1%"], kind="total"))
+    headers: list[str | Column] = list(HEADERS)
+    if groups:
+        headers = [Column(h, unit=u) for h, u in zip(HEADERS, UNITS, strict=True)]
     return DataTable(
-        headers=list[str | Column](HEADERS),
+        headers=headers,
         rows=rows,
         caption="Model portfolio, by issue",
         subtitle="Sterling fixed income, weights at month end",
         source="Hermes Research",
         as_of="30 September 2026",
         disclosure="Weights are rounded and may not sum to the total shown.",
+        groups=groups,
     )
 
 
@@ -115,7 +130,11 @@ def regions() -> dict:
 
 
 def build_with(
-    intro: int, lead_in: int, run_on: int, template_dir: Path | None = None
+    intro: int,
+    lead_in: int,
+    run_on: int,
+    template_dir: Path | None = None,
+    groups: list[ColumnGroup] | None = None,
 ) -> PagedDocument:
     """The document with its three lead-in lengths as parameters, for tuning."""
     document = PagedDocument(
@@ -123,7 +142,7 @@ def build_with(
     )
     return (
         document.add_section(FullWidth(title="Portfolio", content=_paragraphs(intro, "Intro")))
-        .add_section(FullWidth(title="Holdings", content=_holdings_table()))
+        .add_section(FullWidth(title="Holdings", content=_holdings_table(groups)))
         .add_section(FullWidth(title="Curve", content=_paragraphs(lead_in, "Curve")))
         .add_section(
             FullWidth(
@@ -148,3 +167,8 @@ def build_with(
 def build(template_dir: Path | None = None) -> Document:
     """Build the long-table document. Deterministic: same bytes every call."""
     return build_with(INTRO_PARAGRAPHS, LEAD_IN_PARAGRAPHS, RUN_ON_PARAGRAPHS, template_dir)
+
+
+def build_grouped(template_dir: Path | None = None) -> Document:
+    """The same document under a three-row head: groups (#223) and units (#226)."""
+    return build_with(*GROUPED_PARAGRAPHS, template_dir, GROUPS)

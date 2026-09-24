@@ -111,8 +111,11 @@ tinted label band.
   row *below* a subhead specifically.
 - **A subhead is padded to the table's width.** One cell is the honest way to write a heading;
   making the caller spell out the empties would be ceremony. Between one and the full width is
-  still a mistake and still raises. **There is no colspan** — Outlook's Word engine handles it
-  poorly, and a merged cell has no honest plain-text projection.
+  still a mistake and still raises. **There is no colspan in a body row** — a merged body cell
+  splits badly across sheets and has no honest plain-text projection. *Superseded in part by
+  #223, scoped to body rows:* the header tier below is the one place a span is admitted. The
+  original line also said Outlook's Word engine handles `colspan` poorly; no render in this
+  repo has checked that either way, so it is recorded as unverified rather than as fact.
 - **Both kinds project in text**, which is the half most likely to be forgotten: a total gets
   a rule above it matching the header's, and a subhead gets its label alone on its own line,
   unpadded. A total indistinguishable from a data row in the text part is a total only half
@@ -170,6 +173,174 @@ screenshot could see that, because an email has no sheets.
   sheet and leaves a half-empty one behind.
 - **There is no `tfoot`.** A total repeated on every sheet would be false on all but the last.
 
+### The header tier — column groups (#223)
+
+`DataTable(groups=[ColumnGroup(label, span), …])` renders a second `thead` row above the
+column heads, each group a `th scope="colgroup" colspan="n"`, so 1Y / 3Y / 5Y / 10Y sit under
+one "Annualised" head instead of the unit going into the section title.
+
+- **The span lives in the header only.** A group has an honest plain-text projection — its
+  label centred over the width of its columns, on a line above the heads — where a merged
+  body cell has none. That asymmetry is the whole admission, and `table-header-tier` in
+  `qa/lint.py` enforces it in every medium: a `colspan` outside a `thead`, a tier whose spans
+  miscount the columns, and a spanning `th` without `scope="colgroup"` each fire.
+- **Every column sits under exactly one group,** and a group may cover one column. Spans that
+  do not sum to the column count raise at construction; a blank label raises too, so a label
+  column is given a group of its own rather than a hole. Nested tiers are out.
+- **A label wider than its columns widens the last of them** in the text part, rather than
+  overflowing into the neighbouring group.
+- **On paper the whole `thead` repeats.** WeasyPrint repeats a table-header-group whole, so
+  the tier needed no rule of its own. `a4_long_table.build_grouped()` is the same document
+  with a two-row head. Both shapes run through the crossing tests and the stripped-rules
+  tests. The extra row moved every engineered boundary, so the grouped variant carries its
+  own lead-in counts, `GROUPED_PARAGRAPHS`, against the one-row `(13, 10, 12)`. The variant
+  was `(8, 9, 11)` with groups alone. Since #226 it also carries a units row, and it is
+  `(7, 8, 11)`.
+- **Outlook is owed a render.** The tier ships as standard table markup. Neither the
+  `outlook-html-specifications` skill nor any rules file records how the Word engine lays
+  out a header `colspan`, and no Outlook render exists here (#150's posture). Until one is
+  looked at, the claim stays out of this file.
+
+### A marker in a cell or a column head (#224)
+
+A `[^n]` written in a cell's text or a column's header joins the exhibit's `notes`, is
+numbered by the document walk, and renders as the same `sup.note-ref` link a caption's marker
+does. On paper its note floats to the sheet foot, and in an email it goes to the endnotes.
+Either way it is the same span as a caption's marker. The text part prints `[n]` in the cell.
+
+- **The marker in the text is the one spelling.** The stub proposed a `Cell.note` field. It was
+  refused because the marker is already the apparatus's one way to say "a note is called here".
+  A second spelling would be exactly the drift `Column` and `textgen` were built to end. It
+  also adds no field, so `dataclasses.fields(Cell)` did not grow.
+- **The notes copy is the table in reading order**: caption, source, every head, every cell.
+  So `check_markers` sees a cell's marker like any other and refuses a marker with no note, a
+  note with no marker, and a marker called twice, wherever the extra call sits.
+- **The text part measures the spelled marker.** Heads and cells reach `textgen.table()`
+  already passed through `text_markers()`, so the column is as wide as `7.2%[3]` and never as
+  wide as the raw `7.2%[^2]`.
+- **A field with no marker is byte-identical.** The template renders each head and cell
+  through `marked()`, whose single unmarked run is `escape_html` of the text. Every golden
+  held.
+- **A group label carries no marker.** Add one when a real table wants it.
+
+### A column's format is a contract (#225)
+
+`Column(format=…, tone=…)` says once how a column's figures are written and toned. A
+`TableRow` may then carry raw `int`, `float` or `Decimal` figures, and the table writes each
+one through its column at construction. It calls `Cell.from_number`, the single-cell path
+that already existed.
+
+- **One string, made once, read by both projections.** The formatted `Cell.text` is what the
+  markup and `text()` both print, so the two cannot format a figure differently. The raw
+  figure stays beside it as `Cell.value`, because a heat scale (#227) needs the number rather
+  than the string. `Cell.value` is `None` on a hand-written cell. It is `Cell`'s one new field,
+  and it is data rather than styling.
+- **The contract lives in the builder, and the frame adapter defers to it.**
+  `table_from_frame` now puts its `formats` and `tones` mappings onto `Column`s and passes raw
+  figures. It no longer formats a cell itself. So a table built by hand and one built from a
+  frame take the same path, and the one-way dependency (#170) holds.
+- **A string is left as written**, so a "n/a" among figures is legal. A raw figure in a text
+  column with no format raises, naming the row, the figure and the column. A bool is not a
+  figure.
+- **Tone resolves cell, then column.** A cell's own `tone` wins, then the column's (`auto`
+  reads the sign through `tone_of` with the column's format, so a `0.0%` stays neutral), then
+  none. A cell's `color` and `background` survive formatting.
+- **A format makes a column numeric** unless `kind` says otherwise, and `resolved()` keeps the
+  format and tone (`dataclasses.replace`), so nothing downstream loses them.
+- **The field-completeness test had a hole.** It compared each field with its default, and
+  `DataTable` stores `groups=None` as `[]`, so an unused `groups` counted as exercised. An
+  empty collection now counts as unset.
+
+### Figures on the point, and the unit said once (#226)
+
+`Column(align_decimal=True)` lines a numeric column up on its decimal point, and
+`Column(unit="%")` prints the unit once, in a units row beneath the heads, instead of in every
+cell or in the section title.
+
+- **The padding is decided in Python, once.** `textgen.decimal_pads()` counts everything after
+  a cell's last `.`, suffix included, so `4.5%` and `12.25%` compare as 2 and 3. It pads each
+  cell on the right to the column's widest. `DataTable._pads()` runs it on the spelled text,
+  markers as the document's numbers, and hands the counts to both readers. The template emits
+  `&nbsp;` and the text part emits spaces, so a test finds one string in both. *One exception,
+  found by #228's raster:* a marker in an aligned cell hangs on paper. The markup measures the
+  figure with the marker removed, because a superscript is not three characters wide. The text
+  part counts the spelled `[n]`. Without it, the factsheet's `11.94¹` pulled `11.93` and `12.03`
+  three places left of their points.
+- **A figure with no point has one before its suffix.** The issue specified "the maximum plus
+  one", which is right for a bare `7` and wrong for `7%`. It would push the `%` one column
+  past the point. So the virtual point sits before the trailing non-digits: the `7` stands
+  over the units digit and the `%` stands in the point's column. With no suffix this is the
+  issue's rule exactly. Chromium measures the glyphs at both viewports and finds them in one
+  column.
+- **A proportional numeric face keeps the padding**, and a test pins it under a sans `numeric`
+  stack. A proportional numeric face is already the caller departing from the table's design,
+  and `&nbsp;` padding in it lands *near* the point rather than on it. Dropping the padding
+  would lose the alignment in the text part too, where the face does not matter.
+- **A text column refuses `align_decimal`** by name. A subhead is not padded, and an empty
+  cell pads by nothing.
+- **The units row is a third `thead` row, so it repeats on paper.** It holds one `th` per
+  column, empty where a column has no unit, set in the label face at normal weight, and not
+  upper-cased, because `bps` is not `BPS`. The 2px rule moves under it. The text part prints
+  the units on a line under the heads, before the rule. `table-header-tier` already counted
+  any number of `thead` rows, so it needed no change.
+
+### A heat scale and a bar, from the number (#227)
+
+`Column(scale=HeatScale(low, high, mid=None))` tints each cell by where its raw figure sits in
+the range, and `Column(bar=True)` draws each figure as a bar under it. Both read `Cell.value`
+(#225), and neither takes a colour from the caller.
+
+- **A scale is `tone`'s argument for a range.** `Cell.background` is admitted as the caller's
+  claim about a figure. A scale makes the same claim from the number, with no hex in it. The
+  ends are the live theme's: a figure at `low` takes `palette.surface` and one at `high` takes
+  `semantic.positive`. With a `mid`, figures below it run from the surface to
+  `semantic.negative`, and figures outside the range clamp to the nearer end.
+- **The position is decided in Python and the colour at render.** The theme is bound at
+  render, so `DataTable.context()` hands the template a position and a token name. The
+  `heat_color` filter interpolates in sRGB, rounds half up and emits uppercase `#RRGGBB`, so
+  a position pins one byte-exact colour: halfway from white to classic positive is `#A5BEAC`.
+  `slate_theme` carries a scaled column, and its golden moved three background lines, one per
+  cell, to slate's own tokens.
+- **Text on a tint takes the more legible of two theme tokens.** The first raster of #228's
+  fixture showed `-9.0%` in negative red on a negative-red tint, which is illegible. A scaled
+  cell's text is now `text.primary` or `text.on_accent`, whichever has the higher WCAG
+  contrast with the tint. The `readable_on` filter decides, at render, like the tint. That
+  outranks the cell's tone, because the tint already says what the tone would. A caller's
+  explicit `color` still wins.
+- **Precedence: subhead, then the cell's background, then the scale, then the striping.** A
+  total is chrome, so it takes neither a scale nor a bar. A data row's cell in a scaled or
+  barred column must carry a raw figure or construction raises, naming the row and the cell.
+  A text column refuses both.
+- **A bar is a nested presentation table**, the one markup every medium shares. It has a `td`
+  whose `width` attribute is the rounded percentage and whose background is
+  `palette.accent`, and a remainder `td` that takes the rest. Both carry a width because auto
+  layout otherwise shares an unsized row out: the first screenshot drew half a bar for a
+  negative figure. A zero bar emits only the remainder. A full bar is the scale's `high`, or
+  the column's largest figure when there is no scale, and a negative draws nothing (a
+  diverging bar is not in this epic). The thickness is the `table_bar_height` component token,
+  a box and not spacing. The mobile `@media` rule pads every `.data-table td` with
+  `!important`, so the bar's cells carry `padding: 0 !important` inline, which wins over a
+  stylesheet's `!important`. Changing that selector instead would have moved every email
+  golden.
+- **The bytes, measured on `rich_table`:** 275 for a full bar and 344 for a partial one,
+  which adds the remainder cell. A table of twenty barred rows spends about 7 KB of the
+  102 KB budget. `table-role` stays clean because the nested table is presentational and
+  holds no `th`.
+- **Neither projects to text.** The figure is the data, and its sign is already in the string
+  (#178's reasoning). A test asserts the text part is byte-identical with and without a scale
+  or a bar.
+
+### The proof: a factor book and the factsheet (#228)
+
+`letter_quant_table` is the paged fixture that carries every word above: Letter portrait,
+twenty strategies over two sheets, grouped heads, a units row, decimal-aligned trimmed
+figures, a marker on one figure, a diverging heat scale and a bar. `SHEETS = 2` is asserted
+from the PDF, the whole three-row head is read back from both sheets, the marked figure's note
+is found on its sheet, and each sheet is photographed. The fund factsheet's returns table now
+sets "Annualised" over the four periods, a units row of `%`, decimal-aligned raw figures and
+one marker on the since-inception figure. The unit left its section title, and the table
+still lays out to two sheets.
+
 [Card](../../svc/builder/models.py) is the unit: `label` (required), `value`, `color`,
 `sublabel`, and an optional `body` for prose. Either `value` or `body` must be present.
 `KpiItem` is a `Card` subclass that adds no fields but keeps the stricter rule — a KPI
@@ -201,3 +372,21 @@ non-fluent `Email` class works identically.
     by default in browsers *and* the Word engine, so every label cell had to start emitting
     `font-weight: normal` or a semantic change would have bolded a column in every shipped
     email.
+
+- **The table-semantics epic (#217) is complete.** #223 added groups, #224 markers, #225 the
+  format contract, #226 decimal alignment and units, #227 the scale and the bar, and #228 the
+  fixture, the factsheet and these docs. Four things it leaves:
+  - **Both defects the pixels found were invisible to every other check.** A red figure on
+    a red tint and a column pulled askew by a superscript were both byte-stable. Each passed
+    its golden and its lint, and each was right in the text part. Standing rule 3 has now
+    paid for itself on two more epics.
+  - **Each "one string for both projections" claim needed an exception, and it was
+    principled.** A marker is three characters in text and a superscript on paper, so the
+    padding counts what each medium actually draws. The single computation holds. It takes a
+    flag for the one thing a medium does differently.
+  - **A tripwire should fail for the right reason, and one failed for the wrong one.**
+    The field-completeness test passed on an unused `groups` because `[]` is not `None`. It
+    was exactly the vacuous pass #121 wrote the rule to prevent, one level down.
+  - **Every size token must render in `kitchen_sink`**, so a component token forces the
+    exhaustive fixture to draw the thing it sizes. That is why `kitchen_sink` carries a bar
+    and its A/B siblings moved with it. The rule held, and it was a cost worth paying.
