@@ -507,6 +507,7 @@ STRUCTURALLY_ALIGNED = {
     "KpiStrip": "the deprecated alias of CardGroup",
     "DataTable": "columns and cells resolve their own alignment (#117, #118)",
     "ImageBlock": "already has an align, and that one places a block (ImageAlign)",
+    "MathBlock": "an equation is an image, placed as a block like ImageBlock (#229)",
     "Contents": "an entry is a title, a leader and a page number, left to right (#183)",
 }
 

@@ -970,6 +970,100 @@ class ImageBlock(Exhibit, Component):
         }
 
 
+class MathBlock(Exhibit, Component):
+    """
+    A display equation: a rendered image and the LaTeX source it came from (#229).
+
+    The builder never renders LaTeX; ``svc.math`` does, behind the ``[math]``
+    extra, and hands the bytes here. The source is the image's alt text and the
+    text part's projection, so it survives every medium. `math.md` records why.
+
+    Args:
+        image:   PNG bytes, attached by ``cid:`` with the source as alt, or an
+                 :class:`~svc.builder.images.EmailImage` whose alt is the source.
+        latex:   The source, without ``$``. One expression; no newline.
+        width:   Display width in px, used only when ``image`` is bytes.
+        caption, disclosure, label, anchor, notes: as on :class:`ImageBlock`.
+        align:   ``"center"`` (default), ``"left"`` or ``"right"``.
+    """
+
+    template_path = "media/math-block.html"
+
+    SPACING_TOKENS = ("caption_gap",)
+
+    ALIGNMENTS = tuple(ImageAlign)
+
+    def __init__(
+        self,
+        image: bytes | EmailImage,
+        latex: str,
+        caption: str = "",
+        width: int | None = None,
+        align: str | ImageAlign = ImageAlign.CENTER,
+        disclosure: str = "",
+        label: str = "",
+        anchor: str = "",
+        notes: Sequence[Footnote | str] | None = None,
+        spacing: Spacing | Mapping[str, int | float] | None = None,
+    ):
+        self.spacing = self._coerce_spacing(spacing)
+        if not isinstance(latex, str) or not latex.strip():
+            raise ValidationError(f"'math_block.latex' is required, got: {latex!r}")
+        if "\n" in latex:
+            raise ValidationError(
+                "'math_block.latex' holds a newline; one expression per image. "
+                "For several lines, render them with math_block(lines=...)."
+            )
+        if align not in self.ALIGNMENTS:
+            raise ValidationError(
+                f"'math_block.align' must be one of {[a.value for a in self.ALIGNMENTS]}, "
+                f"got: {align!r}"
+            )
+        self.validate_exhibit(label, anchor)
+        self.notes = coerce_notes(notes, [caption], "MathBlock")
+        self.image = _equation_image(image, latex, width)
+        self.latex = latex
+        self.caption = caption
+        self.align = align
+        self.disclosure = disclosure
+
+    def images(self) -> list[EmailImage]:
+        return [self.image]
+
+    def text(self) -> str:
+        """The numbered caption, the source in ``$ $`` on its own line, the disclosure."""
+        caption = text_markers(self.numbered(self.caption), self.notes)
+        return self._with_subtitle(wrap(caption), f"${self.latex}$", wrap(self.disclosure))
+
+    def context(self) -> dict[str, Any]:
+        return {
+            "image_src": self.image.src,
+            "image_alt": self.image.alt,
+            "image_width": self.image.width or "",
+            "image_align": self.align,
+            "caption": self.numbered(self.caption),
+            "caption_parts": split_markers(self.numbered(self.caption), self.notes),
+            "anchor": self.resolved_anchor(),
+            "disclosure": self.disclosure,
+        }
+
+
+def _equation_image(image: bytes | EmailImage, latex: str, width: int | None) -> EmailImage:
+    """The equation's image, whose alt is its source by contract."""
+    if isinstance(image, bytes | bytearray):
+        return EmailImage.attached(bytes(image), alt=latex, width=width)
+    if not isinstance(image, EmailImage):
+        raise ValidationError(
+            f"'math_block.image' must be PNG bytes or an EmailImage, got {type(image).__name__}"
+        )
+    if image.decorative or image.alt != latex:
+        raise ValidationError(
+            f"'math_block.image' alt must be the source {latex!r}, got {image.alt!r}; "
+            "an equation's alt text is its LaTeX, so it is never decorative."
+        )
+    return image
+
+
 # ──────────────────────────────────────────────────────────────────────
 # Text components  (templates/text/)
 # ──────────────────────────────────────────────────────────────────────

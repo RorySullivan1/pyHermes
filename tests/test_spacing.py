@@ -16,6 +16,7 @@ from typing import Any
 import pytest
 
 from qa.fixtures import all_brochure_fixtures, all_fixtures, all_paged_fixtures, letter_dense
+from qa.fixtures._png import solid_png
 from svc.brochure import Brochure, Panel
 from svc.builder import (
     COMPACT_SIZES,
@@ -32,6 +33,7 @@ from svc.builder import (
     FlowedColumns,
     FullWidth,
     ImageBlock,
+    MathBlock,
     NumberedList,
     PullQuote,
     Spacing,
@@ -481,6 +483,11 @@ INSTANCES: dict[type, list[Any]] = {
     ],
     ImageBlock: [
         lambda s: ImageBlock(_image(), caption="Cap", subtitle="S", disclosure="Fine.", spacing=s)
+    ],
+    MathBlock: [
+        lambda s: MathBlock(
+            solid_png(40, 12, (0, 0, 0)), latex="x^2", caption="Cap", disclosure="Fine.", spacing=s
+        )
     ],
     TextBlock: [lambda s: TextBlock("<p>a</p><p>b</p>", subtitle="S", spacing=s)],
     PullQuote: [lambda s: PullQuote("Quoted.", attribution="Someone", spacing=s)],

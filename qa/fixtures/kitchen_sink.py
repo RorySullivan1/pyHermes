@@ -37,6 +37,7 @@ from svc.builder import (
     FullWidth,
     Header,
     ImageBlock,
+    MathBlock,
     NumberedList,
     PullQuote,
     Rgba,
@@ -71,6 +72,7 @@ _LOSS = "#B85450"
 _RETURN = partial(pct, dp=1, sign=True)
 
 _CHART_PNG = solid_png(320, 120, (42, 61, 84))
+_EQUATION_PNG = solid_png(440, 96, (59, 59, 59))
 _THUMB_PNG = solid_png(96, 96, (184, 84, 80))
 #: The wrapped figure's portrait (#189): its own bytes, so its asset is its own.
 _DESK_PNG = solid_png(120, 150, (91, 138, 154))
@@ -405,6 +407,25 @@ def build(template_dir: Path | None = None, **metadata_overrides: Any) -> Email:
                         "The chart above is indexed to 100 at inception and "
                         "excludes the effect of the 0.75% management fee."
                     ),
+                ),
+            )
+        )
+        # MathBlock (#229) — solid bytes, never a real render, so the golden
+        # does not depend on matplotlib. Every field is set.
+        .section(
+            FullWidth(
+                title="Portfolio Variance",
+                content=MathBlock(
+                    _EQUATION_PNG,
+                    latex=r"\sigma_p^2 = w^\top \Sigma w",
+                    width=110,
+                    caption="Portfolio variance[^1]",
+                    label="Equation",
+                    anchor="variance-identity",
+                    notes=["The covariance matrix is estimated over 36 months."],
+                    disclosure="The estimate assumes stable correlations.",
+                    align="left",
+                    spacing={"caption_gap": 5},
                 ),
             )
         )

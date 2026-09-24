@@ -203,6 +203,27 @@ class TestComponentFieldsAreExercised:
                 f"no gallery table sets DataTable({name}=…)"
             )
 
+    def test_every_math_block_argument_is_exercised(self):
+        """#229's fields, read off ``__init__`` as DataTable's are."""
+        from svc.builder import MathBlock
+
+        blocks = [
+            component
+            for section in _gallery_sections()
+            for component in section.components()
+            if isinstance(component, MathBlock)
+        ]
+        assert blocks, "the gallery builds no MathBlock"
+        aliases = {"width": lambda b: b.image.width, "image": lambda b: b.image}
+        for name, parameter in inspect.signature(MathBlock.__init__).parameters.items():
+            if name == "self":
+                continue
+            default = None if parameter.default is inspect.Parameter.empty else parameter.default
+            read = aliases.get(name, lambda b, n=name, d=default: getattr(b, n, d))
+            assert any(read(b) not in (default, [], None) for b in blocks), (
+                f"no gallery MathBlock sets {name}="
+            )
+
     def test_every_prose_component_exercises_its_alignment(self):
         """
         #124's axis. ``align`` is unset by default on all five, and an unset

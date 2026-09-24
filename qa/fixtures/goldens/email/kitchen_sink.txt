@@ -20,6 +20,7 @@ Desk Note
 Long Read
 Factor Returns
 Cumulative Performance
+Portfolio Variance
 Equal Columns
 Narrow then Wide
 Wide then Narrow
@@ -110,6 +111,16 @@ The chart above is indexed to 100 at inception and excludes the effect of the
 0.75% management fee.
 
 
+Portfolio Variance
+------------------
+
+Equation 1 · Portfolio variance[2]
+
+$\sigma_p^2 = w^\top \Sigma w$
+
+The estimate assumes stable correlations.
+
+
 Equal Columns
 -------------
 
@@ -123,7 +134,7 @@ Narrow then Wide
 
 [Thumbnail]
 
-Figure 1 · A 30% column[2]
+Figure 1 · A 30% column[3]
 
 Illustrative only; not a recommendation to buy or sell.
 
@@ -186,7 +197,7 @@ Three themes into next week
 
 01. Inflation prints
 
-Core services remain sticky.[3]
+Core services remain sticky.[4]
 
 02. Earnings revisions
 
@@ -208,8 +219,9 @@ Notes
 -----
 
 [1] Each factor is equal-weighted across the top and bottom quintiles.
-[2] The thumbnail is a placeholder, not a chart.
-[3] Core services excluding housing, three-month annualised.
+[2] The covariance matrix is estimated over 36 months.
+[3] The thumbnail is a placeholder, not a chart.
+[4] Core services excluding housing, three-month annualised.
 
 
 Distributed to registered recipients only.
