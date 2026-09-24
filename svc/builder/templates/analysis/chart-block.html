@@ -34,9 +34,17 @@
 {% endif %}
   <tr>
     <td{% if align %} align="{{ align | escape_html }}"{% endif %} style="padding: 0;{% if align %} text-align:{{ align }};{% endif %}">
+      {# An aligned chart is inline in a zero-leading line box, as image-block.html's
+         image is and for its reason; an unaligned one keeps the block image. #}
+      {% if align %}
+      <div align="{{ align | escape_html }}" style="font-size: 0; line-height: 0; text-align: {{ align }};">
+      {% endif %}
       <img src="{{ chart_image_url | escape_html }}" alt="{{ chart_alt_text | escape_html }}"
            {% if chart_image_width %}width="{{ chart_image_width }}"{% else %}width="100%"{% endif %}
-           style="display: block; width: 100%; max-width: {% if chart_image_width %}{{ chart_image_width }}px{% else %}100%{% endif %}; height: auto; border: 1px solid {{ theme.palette.rule }}; margin: 0;">
+           style="display: {% if align %}inline-block; vertical-align: top{% else %}block{% endif %}; width: 100%; max-width: {% if chart_image_width %}{{ chart_image_width }}px{% else %}100%{% endif %}; height: auto; border: 1px solid {{ theme.palette.rule }}; margin: 0;">
+      {% if align %}
+      </div>
+      {% endif %}
     </td>
   </tr>
 </table>

@@ -89,7 +89,7 @@ jobs:
       - name: Screenshot tests
         # The capture half of tests/test_screenshots.py skips without a
         # browser, so this job is the only place it actually runs.
-        run: pytest tests/test_screenshots.py
+        run: pytest tests/test_screenshots.py tests/test_image_centring.py
 
       - name: Render the gallery
         run: python -m qa.screenshots
@@ -151,7 +151,7 @@ jobs:
           tests/test_apparatus.py tests/test_brochure_pdf.py tests/test_examples.py
           tests/test_digital_pdf.py tests/test_pdf_profile.py tests/test_attachments.py
           tests/test_spacing.py tests/test_quant_fixture.py tests/test_math.py
-          tests/test_math_paged.py
+          tests/test_math_paged.py tests/test_image_centring.py
 
       - name: Render the paged and brochure galleries to PDF, and photograph every sheet
         run: |

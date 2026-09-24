@@ -117,9 +117,15 @@ and the lines align as one block. `latex` and `lines` together, or an empty `lin
 - **Its first raster found every equation stuck at the frame's left edge.** WeasyPrint
   resolves `margin: auto` against `width: 100%` before the `max-width` cap. The image is now
   `inline-block` in a zero-leading line box, placed by `text-align`, which keeps #201's
-  cap-on-100% semantics. A test reads each image's centre back from the PDF. `ImageBlock` has
-  the same markup and may have the same defect on paper; check it before relying on a centred
-  one there.
+  cap-on-100% semantics. A test reads each image's centre back from the PDF.
+- **`ImageBlock` and an aligned `ChartBlock` had it too, and in the browser as well.**
+  Measured after #235: a centred `ImageBlock` sat 189 px left of centre on A4 and 208 px left
+  of its cell's centre in Chromium. Its block image had no auto margin, and a block image
+  ignores `text-align`, so only Outlook's `td align` ever centred it. Both now use the same
+  wrapper. An unaligned chart keeps its block image and its bytes. On paper a decorative
+  image is a background `div` of fixed width, so auto margins place it. Sixteen images across
+  eight goldens moved, by that markup alone. `tests/test_image_centring.py` pins every
+  alignment in both media, and 8 of its 11 cases fail against the old templates.
 - **In the email**, `kitchen_sink` carries a labelled single-line equation and a two-line
   display. A real render substituted for the screenshot only (Chromium 141.0.7390.37) showed
   them crisp at 1000 and 375 px. At 320 px both keep their display widths (80 and 137 px)
