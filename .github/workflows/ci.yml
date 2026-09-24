@@ -196,7 +196,7 @@ jobs:
           cache-dependency-path: pyproject.toml
 
       - name: Install (with the data extras)
-        run: pip install -e ".[dev,data,charts]"
+        run: pip install -e ".[dev,data,charts,math]"
 
       - name: Adapter tests
         # test_examples.py runs here as well as in `check`: the
@@ -204,7 +204,7 @@ jobs:
         # only job where it actually builds rather than skipping.
         run: |
           pytest tests/test_frames.py tests/test_charts.py tests/test_data_layer.py \
-                 tests/test_examples.py
+                 tests/test_examples.py tests/test_math.py
 
       - name: Type-check with the backends present
         # mypy must be green whether or not the extras are installed; `check`
