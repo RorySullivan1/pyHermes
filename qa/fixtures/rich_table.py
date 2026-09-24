@@ -6,14 +6,15 @@ Every ``DataTable`` axis at once (#116), so a cross-axis regression is visible.
 and row headers. The other is a plain table of bare strings, which is what
 pins that none of the new machinery changed the default rendering. A third,
 the quantitative table, carries epic #217's words: groups, a marked cell,
-columns that format their own raw figures, a decimal-aligned column and units.
+columns that format their own raw figures, a decimal-aligned column, units,
+a bar and a diverging heat scale.
 """
 
 from __future__ import annotations
 
 from pathlib import Path
 
-from svc.builder import DataTable, Email, EmailBuilder, FullWidth, TextBlock
+from svc.builder import DataTable, Email, EmailBuilder, FullWidth, HeatScale, TextBlock
 from svc.builder.formats import pct
 from svc.builder.models import Cell, Column, ColumnGroup, TableRow
 
@@ -37,9 +38,14 @@ def _quantitative_table() -> DataTable:
         caption="Annualised returns by share class",
         headers=[
             "Class",
-            Column("1Y", format=_annualised, tone="auto", unit="%"),
+            Column("1Y", format=_annualised, tone="auto", unit="%", bar=True),
             Column("3Y", format=_annualised, tone="auto", align_decimal=True),
-            Column("Since launch[^1]", format=_annualised, unit="% pa"),
+            Column(
+                "Since launch[^1]",
+                format=_annualised,
+                unit="% pa",
+                scale=HeatScale(0.04, 0.08, mid=0.06),
+            ),
         ],
         groups=[ColumnGroup("Share class"), ColumnGroup("Annualised", 3)],
         rows=[

@@ -591,12 +591,8 @@ class Column:
     One column of a :class:`~svc.builder.components.DataTable`.
 
     Replaces the bare header string, and with it the ``loop.first``
-    convention that used to decide four things at once — alignment, typeface,
-    weight, and (in another module entirely) the plain-text column alignment.
-    That convention was correct and compact; what it could not be was
-    *extended*, and the tell was that a fifth reader in
-    :mod:`svc.builder.textgen` had to re-derive it to keep the two
-    projections agreeing.
+    convention that decided alignment, typeface and weight in the template and
+    again in :mod:`svc.builder.textgen`; `data-table.md` records why.
 
     Both presentation fields default to empty, meaning **resolve** — and the
     resolution reproduces the old convention exactly, so a table built from
@@ -614,6 +610,8 @@ class Column:
         tone:   ``auto`` (the sign decides) or a ``Tone`` for its raw figures.
         align_decimal: Pad the figures so their decimal points line up (#226).
         unit:   Printed once, in a units row beneath the heads. Plain text.
+        scale:  A :class:`HeatScale` tinting each cell by its raw figure (#227).
+        bar:    Draw each raw figure as a bar in its cell (#227).
     """
 
     header: str
@@ -623,6 +621,8 @@ class Column:
     tone: str = ""
     align_decimal: bool = False
     unit: str = ""
+    scale: "HeatScale | None" = None
+    bar: bool = False
 
     def validate(self) -> None:
         _require(self.header, "column.header")
@@ -632,6 +632,10 @@ class Column:
             _validate_tone(self.tone, "column.tone")
         if not isinstance(self.unit, str):
             raise ValidationError(f"'column.unit' must be text, got: {self.unit!r}")
+        if self.scale is not None:
+            if not isinstance(self.scale, HeatScale):
+                raise ValidationError(f"'column.scale' must be a HeatScale, got: {self.scale!r}")
+            self.scale.validate()
         if self.align and self.align not in tuple(ColumnAlign):
             raise ValidationError(
                 f"'column.align' must be one of {[a.value for a in ColumnAlign]}, "
@@ -673,6 +677,50 @@ class Column:
     def resolved(self, index: int) -> "Column":
         """This column with both presentation fields filled in."""
         return replace(self, align=self.resolved_align(index), kind=self.resolved_kind(index))
+
+
+@dataclass(frozen=True)
+class HeatScale:
+    """
+    A numeric range a column's figures are tinted across (#227).
+
+    The ends are the theme's, never the caller's: a figure at ``low`` takes the
+    surface, one at ``high`` the positive token. With a ``mid``, figures below
+    it run from the surface to the negative token instead.
+
+    Attributes:
+        low, high: The range. A figure outside it is clamped to the nearer end.
+        mid:       Where a diverging scale turns, strictly between the two.
+    """
+
+    low: float
+    high: float
+    mid: float | None = None
+
+    def validate(self) -> None:
+        for name in ("low", "high", "mid"):
+            value = getattr(self, name)
+            if (value is not None or name != "mid") and not is_figure(value):
+                raise ValidationError(f"'heat_scale.{name}' must be a number, got: {value!r}")
+        if not self.low < self.high:
+            raise ValidationError(
+                f"'heat_scale.low' ({self.low}) must be below 'heat_scale.high' ({self.high})"
+            )
+        if self.mid is not None and not self.low < self.mid < self.high:
+            raise ValidationError(
+                f"'heat_scale.mid' ({self.mid}) must lie strictly between low and high"
+            )
+
+    def position(self, value: Any) -> tuple[float, Tone]:
+        """Where ``value`` sits, in ``[0, 1]``, and the token it runs toward."""
+        if self.mid is not None and value < self.mid:
+            return _clamp((self.mid - value) / (self.mid - self.low)), Tone.NEGATIVE
+        start = self.low if self.mid is None else self.mid
+        return _clamp((value - start) / (self.high - start)), Tone.POSITIVE
+
+
+def _clamp(fraction: Any) -> float:
+    return float(min(1, max(0, fraction)))
 
 
 @dataclass(frozen=True)

@@ -225,6 +225,9 @@ class TestTheAuditIsTrue:
                     offenders.setdefault(path.name, []).append(stripped)
         assert offenders == {}
 
+    def test_a_colour_off_the_scale_is_still_caught(self):
+        assert _heat_colours({"#123456"}) == set()
+
     def test_the_audit_covers_every_colour_the_gallery_renders(self):
         """
         The completeness half, now measured on output: a colour in a
@@ -245,7 +248,8 @@ class TestTheAuditIsTrue:
         # about a *figure*; the palette's authority is over surfaces the theme
         # owns, which is why these sit outside the audit rather than in it.
         caller_data = {"#4A7C59", "#B85450", "#8B6F47", "#2E5F7F", "#FBF3E2"}
-        assert used - known - caller_data - _region_colours() - _container_colours() == set()
+        unexplained = used - known - caller_data - _region_colours() - _container_colours()
+        assert unexplained - _heat_colours(unexplained) == set()
 
     def test_the_stale_palette_comment_is_gone(self):
         """
@@ -918,3 +922,22 @@ class TestTheSlatePreset:
     def test_the_registry_is_not_mutated_at_runtime(self):
         """Presets are repo-owned decisions; a user theme is passed, not registered."""
         assert sorted(THEMES) == ["classic", "slate"]
+
+
+def _heat_colours(candidates: set[str]) -> set[str]:
+    """
+    The candidates a heat scale (#227) derives from a theme's own tokens.
+
+    A tint is interpolated from ``palette.surface`` toward a semantic token, so
+    it is theme-derived without being a token; one the filter cannot produce
+    from some theme's pair is still a colour that bypassed the theme.
+    """
+    from svc.builder.filters import heat_color
+
+    derived = {
+        heat_color(step / 1000, theme.palette.surface, getattr(theme.semantic, toward))
+        for theme in (DEFAULT_THEME, SLATE_THEME)
+        for toward in ("positive", "negative")
+        for step in range(1001)
+    }
+    return candidates & derived

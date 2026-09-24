@@ -1,0 +1,8 @@
+{#
+  CELL BAR (#227) — a figure drawn as a bar under it, filling `cell.bar` percent
+  of the cell. Both cells carry a width, or auto layout shares the row out; a
+  zero bar emits only the remainder. A nested presentation table because the Word engine honours a
+  td's `width` attribute and nothing else; `padding: 0 !important` inline
+  beats the mobile rule that pads every `.data-table td`.
+#}
+<table role="presentation" class="cell-bar" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;"><tr>{% if cell.bar > 0 %}<td width="{{ cell.bar }}%" style="background-color: {{ theme.palette.accent }}; height: {{ size.component.table_bar_height }}px; font-size: 0; line-height: 0; padding: 0 !important;"></td>{% endif %}{% if cell.bar < 100 %}<td width="{{ 100 - cell.bar }}%" style="height: {{ size.component.table_bar_height }}px; font-size: 0; line-height: 0; padding: 0 !important;"></td>{% endif %}</tr></table>

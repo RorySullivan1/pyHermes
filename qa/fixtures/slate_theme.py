@@ -23,7 +23,7 @@ from svc.builder import (
     ThreeColumn,
     TwoColumn,
 )
-from svc.builder.models import Card, Cell, NumberedItem, TableRow
+from svc.builder.models import Card, Cell, Column, HeatScale, NumberedItem, TableRow
 
 
 def build(template_dir: Path | None = None) -> Email:
@@ -83,12 +83,18 @@ def build(template_dir: Path | None = None) -> Email:
                     ]
                 ),
                 right=DataTable(
-                    headers=["Metric", "Level", "Change"],
+                    # A heat scale (#227): the tint is slate's, as the tone below is.
+                    headers=["Metric", Column("Level", scale=HeatScale(0, 5)), "Change"],
                     rows=[
-                        TableRow(["Policy rate", "4.25%", "unch"]),
-                        TableRow(["Core CPI", "2.8%", "-0.1"], colors=["", "", "#3F7A63"]),
+                        TableRow(["Policy rate", Cell("4.25%", value=4.25), "unch"]),
+                        TableRow(
+                            ["Core CPI", Cell("2.8%", value=2.8), "-0.1"],
+                            colors=["", "", "#3F7A63"],
+                        ),
                         # A tone, not a hex: it renders as slate's own negative (#178).
-                        TableRow(["Unemployment", "4.1%", Cell("+0.1", tone="negative")]),
+                        TableRow(
+                            ["Unemployment", Cell("4.1%", value=4.1), Cell("+0.1", tone="negative")]
+                        ),
                     ],
                     source="Hermes Research",
                     as_of="7 September 2026",

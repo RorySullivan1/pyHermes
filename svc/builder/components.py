@@ -514,6 +514,7 @@ class DataTable(Exhibit, Component):
                 _formatted(cell, column, index, i)
                 for index, (cell, column) in enumerate(zip(row.cells, columns, strict=True))
             ]
+        _check_figures(columns, rows)
         # Reading order, so a marker anywhere in the table is checked once (#224).
         copy = [caption, source, *(c.header for c in columns)]
         self.notes = coerce_notes(
@@ -584,6 +585,28 @@ class DataTable(Exhibit, Component):
                     pads[r][c] = pad
         return pads
 
+    def _bar_ends(self) -> list[float]:
+        """Per column, the figure a full bar stands for: the scale's top, or the largest."""
+        ends: list[float] = []
+        for index, column in enumerate(self.columns):
+            figures = [r.cells[index].value for r in self.rows if r.kind == RowKind.DATA]
+            if not column.bar:
+                ends.append(0)
+            else:
+                ends.append(column.scale.high if column.scale else max(figures, default=0))
+        return ends
+
+    def _figure(self, row: TableRow, cell: Cell, column: Column, end: float) -> dict[str, Any]:
+        """A data cell's heat and bar (#227); neither on a total or a subhead."""
+        heat = bar = None
+        if row.kind == RowKind.DATA and column.scale is not None:
+            position, toward = column.scale.position(cell.value)
+            heat = {"position": position, "toward": str(toward)}
+        if row.kind == RowKind.DATA and column.bar:
+            fraction = min(1, max(0, cell.value / end)) if end > 0 else 0
+            bar = round(fraction * 100)
+        return {"heat": heat, "bar": bar}
+
     def _units(self) -> list[str]:
         """One unit per column, or none at all when no column names one."""
         units = [column.unit for column in self.columns]
@@ -605,6 +628,7 @@ class DataTable(Exhibit, Component):
         columns = self.resolved_columns()
         alt_by_row = self._striping()
         pads = self._pads()
+        ends = self._bar_ends()
         return {
             "columns": [
                 {
@@ -625,6 +649,7 @@ class DataTable(Exhibit, Component):
                             "text": cell.text,
                             "parts": split_markers(cell.text, self.notes),
                             "pad": pad,
+                            **self._figure(r, cell, self.columns[index], ends[index]),
                             # The chain completes here: cell → column → position.
                             "align": cell.resolved_align(column.align),
                             "color": cell.color,
@@ -658,6 +683,24 @@ class DataTable(Exhibit, Component):
             "anchor": self.resolved_anchor(),
             "disclosure": self.disclosure,
         }
+
+
+def _check_figures(columns: list[Column], rows: list[TableRow]) -> None:
+    """A scale or a bar reads each data row's raw figure, so each must have one."""
+    for index, column in enumerate(columns):
+        if column.scale is None and not column.bar:
+            continue
+        if column.resolved_kind(index) is ColumnKind.TEXT:
+            raise ValidationError(
+                f"the text column {column.header!r} carries a scale or a bar; "
+                "only figures can be tinted or drawn."
+            )
+        for i, row in enumerate(rows):
+            if row.kind == RowKind.DATA and row.cells[index].value is None:
+                raise ValidationError(
+                    f"DataTable row {i}, column {column.header!r}: the cell "
+                    f"{row.cells[index].text!r} has no raw figure for its scale or bar to read."
+                )
 
 
 def _formatted(cell: Cell, column: Column, index: int, row: int) -> Cell:

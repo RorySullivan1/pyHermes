@@ -14,6 +14,7 @@ Autoescape is **off**, so escaping is explicit and splits three ways:
 """
 
 import html
+import math
 import re
 from typing import Any
 
@@ -174,6 +175,27 @@ def percent(value: Any) -> str:
     return f"{value * 100:.10g}%"
 
 
+def heat_color(position: Any, low: str, high: str) -> str:
+    """
+    The colour ``position`` of the way from ``low`` to ``high``, as ``#RRGGBB``.
+
+    Interpolated per channel in sRGB and rounded half up, so a position pins
+    one byte-exact colour. Both ends come from the theme (#227).
+
+    Raises:
+        ValidationError: If an end is not ``#RRGGBB`` or the position is not
+            a number in ``[0, 1]``.
+    """
+    ends = [validate_hex_color(low), validate_hex_color(high)]
+    if isinstance(position, bool) or not isinstance(position, (int, float)):
+        raise ValidationError(f"heat_color() needs a number, got: {position!r}")
+    if not 0 <= position <= 1:
+        raise ValidationError(f"heat_color() needs a position in [0, 1], got: {position!r}")
+    start, end = ([int(hexa[i : i + 2], 16) for i in (1, 3, 5)] for hexa in ends)
+    channels = (math.floor(a + (b - a) * position + 0.5) for a, b in zip(start, end, strict=True))
+    return "#" + "".join(f"{channel:02X}" for channel in channels)
+
+
 def register_all(env: jinja2.Environment) -> None:
     """
     Register all custom filters and tests on a Jinja2 Environment.
@@ -187,3 +209,4 @@ def register_all(env: jinja2.Environment) -> None:
     env.filters["size_kb"] = size_kb
     env.filters["default_color"] = default_color
     env.filters["percent"] = percent
+    env.filters["heat_color"] = heat_color

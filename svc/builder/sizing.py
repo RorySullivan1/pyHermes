@@ -176,6 +176,8 @@ class ComponentScale:
     #: frame's own mobile tightening is 18px against 32, and these follow
     #: that ratio rather than a multiplier.
     table_cell_pad_mobile: int | float = 6
+    #: The thickness of a figure's in-cell bar (#227). A box, not spacing.
+    table_bar_height: int | float = 6
 
     list_ordinal_width: int | float = 22
     list_ordinal_gap: int | float = 12
@@ -841,9 +843,11 @@ _COMPONENT_TYPE_TOKENS: frozenset[str] = frozenset(
     {"kpi_value", "card_body_line", "list_body_line", "contact_line", "legal_line"}
 )
 
-#: Component tokens that size a box rather than space it: the button, and
-#: the column a list's ordinals sit in.
-_COMPONENT_BOX_TOKENS: frozenset[str] = frozenset({"cta_width", "cta_height", "list_ordinal_width"})
+#: Component tokens that size a box rather than space it: the button, the
+#: column a list's ordinals sit in, and a table cell's bar.
+_COMPONENT_BOX_TOKENS: frozenset[str] = frozenset(
+    {"cta_width", "cta_height", "list_ordinal_width", "table_bar_height"}
+)
 
 #: Tokens a subtree may not move on a medium that is not paged. The email's
 #: ``@media`` block reads the document's scheme, never a subtree's, so each

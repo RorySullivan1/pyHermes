@@ -280,6 +280,46 @@ cell or in the section title.
   the units on a line under the heads, before the rule. `table-header-tier` already counted
   any number of `thead` rows, so it needed no change.
 
+### A heat scale and a bar, from the number (#227)
+
+`Column(scale=HeatScale(low, high, mid=None))` tints each cell by where its raw figure sits in
+the range, and `Column(bar=True)` draws each figure as a bar under it. Both read `Cell.value`
+(#225), and neither takes a colour from the caller.
+
+- **A scale is `tone`'s argument for a range.** `Cell.background` is admitted as the caller's
+  claim about a figure. A scale makes the same claim from the number, with no hex in it. The
+  ends are the live theme's: a figure at `low` takes `palette.surface` and one at `high` takes
+  `semantic.positive`. With a `mid`, figures below it run from the surface to
+  `semantic.negative`, and figures outside the range clamp to the nearer end.
+- **The position is decided in Python and the colour at render.** The theme is bound at
+  render, so `DataTable.context()` hands the template a position and a token name. The
+  `heat_color` filter interpolates in sRGB, rounds half up and emits uppercase `#RRGGBB`, so
+  a position pins one byte-exact colour: halfway from white to classic positive is `#A5BEAC`.
+  `slate_theme` carries a scaled column, and its golden moved three background lines, one per
+  cell, to slate's own tokens.
+- **Precedence: subhead, then the cell's background, then the scale, then the striping.** A
+  total is chrome, so it takes neither a scale nor a bar. A data row's cell in a scaled or
+  barred column must carry a raw figure or construction raises, naming the row and the cell.
+  A text column refuses both.
+- **A bar is a nested presentation table**, the one markup every medium shares. It has a `td`
+  whose `width` attribute is the rounded percentage and whose background is
+  `palette.accent`, and a remainder `td` that takes the rest. Both carry a width because auto
+  layout otherwise shares an unsized row out: the first screenshot drew half a bar for a
+  negative figure. A zero bar emits only the remainder. A full bar is the scale's `high`, or
+  the column's largest figure when there is no scale, and a negative draws nothing (a
+  diverging bar is not in this epic). The thickness is the `table_bar_height` component token,
+  a box and not spacing. The mobile `@media` rule pads every `.data-table td` with
+  `!important`, so the bar's cells carry `padding: 0 !important` inline, which wins over a
+  stylesheet's `!important`. Changing that selector instead would have moved every email
+  golden.
+- **The bytes, measured on `rich_table`:** 275 for a full bar and 344 for a partial one,
+  which adds the remainder cell. A table of twenty barred rows spends about 7 KB of the
+  102 KB budget. `table-role` stays clean because the nested table is presentational and
+  holds no `th`.
+- **Neither projects to text.** The figure is the data, and its sign is already in the string
+  (#178's reasoning). A test asserts the text part is byte-identical with and without a scale
+  or a bar.
+
 [Card](../../svc/builder/models.py) is the unit: `label` (required), `value`, `color`,
 `sublabel`, and an optional `body` for prose. Either `value` or `body` must be present.
 `KpiItem` is a `Card` subclass that adds no fields but keeps the stricter rule — a KPI
