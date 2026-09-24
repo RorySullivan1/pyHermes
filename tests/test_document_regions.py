@@ -93,6 +93,32 @@ class TestAPageFlattensWherePagesDoNotExist:
         assert "break-after:page" in html
         assert first.break_before is True
 
+    def test_add_page_is_add_section_of_a_page(self):
+        # Every argument at a non-default value, so none can be dropped quietly.
+        options = {
+            "break_before": False,
+            "break_after": True,
+            "title": "Appendix",
+            "background_color": "#F4F1EA",
+            "align": "center",
+        }
+
+        def build() -> PagedDocument:
+            return PagedDocument(_paged.facts(), cover=EmptyCover()).add_section(section())
+
+        shortcut = build().add_page([section("<p>Two.</p>")], **options)
+        spelled = build().add_section(Page([section("<p>Two.</p>")], **options))
+        assert shortcut.render() == spelled.render()
+        assert shortcut.text() == spelled.text()
+
+    def test_add_page_chains(self):
+        document = PagedDocument(_paged.facts())
+        assert document.add_page([section()]) is document
+
+    def test_only_the_paged_medium_offers_add_page(self):
+        # An email has no sheets; its callers put a Page in the tree, which flattens.
+        assert not hasattr(Email, "add_page")
+
     def test_its_wrapper_declares_itself_a_layout_table(self, engine):
         # Standing rule 8, on the one template this phase adds to the body.
         html = Page([section()]).render(engine.bound(medium=PAGED_MEDIUM))

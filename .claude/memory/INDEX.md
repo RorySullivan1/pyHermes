@@ -42,7 +42,7 @@
 - [2026-09-23] **An image's CSS width is a cap on 100%, never a fixed px.** A px width is WeasyPrint's
   min-content, so a 600px chart in a half column widened the frame and added a sheet — `media.md` (#201)
 - [2026-09-24] **A page opening the body drops its leading break.** The seed leaves ahead of the body
-  table made it open a blank sheet, so the factsheet's first sheet could not be a `Page` — `media.md`
+  table made it open a blank sheet. `add_page` is paged-only shorthand; the `Page` node stays — `media.md`
 
 ## Threads          (open items; remove when closed)
 - **Every issue or PR body is written without angle brackets** — GitHub's sanitizer has

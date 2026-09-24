@@ -172,6 +172,13 @@ a blank sheet whenever no contents sheet came first. The factsheet found it: its
 could not be a `Page`, so its two sheets were written two different ways. The caller's `Page`
 is not mutated; the body renders `Page.opening()`, a copy.
 
+**`PagedDocument.add_page(sections)` is shorthand for `add_section(Page(sections))`**, with
+`Page`'s own arguments. It adds no second model: the page is still a node in the tree, which is
+what lets the same sections flatten in an email and lets the apparatus walk read through it.
+So it lives on the paged medium only, and the `Page` class stays. A page is not a sheet: it
+*starts* one, and its sections flow on across as many as they need. Only a document built to
+fit, like the factsheet, has one page per sheet, so the document is never a list of pages.
+
 ## Where a sheet may not end — the paged skeleton's break rules
 
 Epic #169 gave the paged medium break discipline inside the content. Before it, the only

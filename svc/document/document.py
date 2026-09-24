@@ -10,12 +10,13 @@ variant that fills no slot.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Self
 
 from svc.builder.components import contents_entries
 from svc.builder.containers import Container
 from svc.builder.document import Document, RegionFacts
 from svc.builder.engine import Renderer
+from svc.builder.enums import TextAlign
 from svc.builder.medium import Medium
 from svc.builder.models import DocumentMetadata
 
@@ -104,6 +105,25 @@ class PagedDocument(Document):
     def back_matter(self) -> BackMatter:
         """The closing sheet."""
         return self._back_matter
+
+    def add_page(
+        self,
+        sections: list[Container],
+        break_before: bool = True,
+        break_after: bool = False,
+        title: str | None = None,
+        background_color: str | None = None,
+        align: str | TextAlign | None = None,
+    ) -> Self:
+        """
+        Append the sections as one :class:`Page`. Returns ``self`` for chaining.
+
+        Shorthand for ``add_section(Page(...))``, with the same arguments. The
+        page is still a node in the tree, so the sections flatten as ever
+        where a medium has no sheets.
+        """
+        page = Page(sections, break_before, break_after, title, background_color, align)
+        return self.add_section(page)
 
     def leading_regions(self) -> tuple[RegionFacts, ...]:
         """The cover, the contents and the two margin boxes, each with what it renders."""
