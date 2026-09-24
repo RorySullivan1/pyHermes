@@ -103,3 +103,133 @@ class TestTheArgumentsAreValidated:
 
     def test_an_escaped_dollar_is_a_symbol(self):
         assert _render(r"\$5").width_px > 0
+
+
+# ----------------------------------------------------------------------
+# #231 — math_block, painted for the caller's theme and density
+# ----------------------------------------------------------------------
+
+from svc.math import (  # noqa: E402
+    DEFAULT_MATH_FONTSET,
+    DEFAULT_MATH_SCALE,
+    image_from_math,
+    math_block,
+)
+
+
+def _darkest(png: bytes) -> tuple[int, int, int]:
+    """The darkest fully opaque pixel: the glyph's own colour, free of antialiasing."""
+    import io
+
+    from PIL import Image
+
+    image = Image.open(io.BytesIO(png)).convert("RGBA")
+    opaque = [px[:3] for px in image.getdata() if px[3] == 255]
+    return min(opaque, key=sum)
+
+
+def _near(rgb: tuple[int, int, int], hexa: str, tolerance: int = 8) -> bool:
+    target = [int(hexa[i : i + 2], 16) for i in (1, 3, 5)]
+    return all(abs(a - b) <= tolerance for a, b in zip(rgb, target, strict=True))
+
+
+class TestTheBlockIsPaintedForItsTheme:
+    def test_the_default_is_classic_body_text(self):
+        from svc.builder.theming import DEFAULT_THEME
+
+        block = math_block(SOURCE, label="Equation")
+        assert block.image.src.startswith("cid:") and block.image.alt == SOURCE
+        assert _near(_darkest(block.image.data), DEFAULT_THEME.text.primary)
+
+    def test_the_width_is_the_pixel_width_over_the_scale(self):
+        rendered = render_math(
+            SOURCE, font_px=14, color="#3B3B3B", scale=DEFAULT_MATH_SCALE, fontset="cm"
+        )
+        image = image_from_math(SOURCE)
+        assert image.width == round(rendered.width_px / DEFAULT_MATH_SCALE)
+
+    def test_slate_paints_another_picture(self):
+        from svc.builder.theming import SLATE_THEME
+
+        classic, slate = image_from_math(SOURCE), image_from_math(SOURCE, theme="slate")
+        assert classic.content_id != slate.content_id
+        assert _near(_darkest(slate.data), SLATE_THEME.text.primary)
+
+    def test_a_denser_scheme_draws_smaller_type(self):
+        compact = image_from_math(SOURCE, size_theme="compact")
+        spacious = image_from_math(SOURCE, size_theme="spacious")
+        assert spacious.width > compact.width
+
+    def test_one_source_twice_is_attached_once(self):
+        from svc.builder import FullWidth
+        from svc.builder.email import Email
+
+        email = Email({"email_subject": "S", "firm_name": "F", "campaign_name": "C"})
+        email.add_section(FullWidth(content=math_block(SOURCE, label="Equation")))
+        email.add_section(FullWidth(content=math_block(SOURCE, label="Equation")))
+        assert len(email.assets()) == 1
+
+
+class TestTheDefaultsAreDecisions:
+    def test_the_fontset_is_computer_modern(self):
+        assert DEFAULT_MATH_FONTSET == "cm"
+
+    def test_the_scale_covers_print(self):
+        from svc.config import get_config
+
+        assert DEFAULT_MATH_SCALE == 4
+        assert DEFAULT_MATH_SCALE * 96 >= get_config().print_dpi
+
+    def test_no_colour_size_or_font_parameter_is_exposed(self):
+        import inspect
+
+        banned = {"color", "colour", "font_px", "font_size", "font", "line_height", "size_px"}
+        for function in (math_block, image_from_math):
+            assert not banned & set(inspect.signature(function).parameters), function.__name__
+
+
+def test_print_keeps_the_pixels_and_screen_caps_them():
+    pytest.importorskip("weasyprint")
+    pypdfium2 = pytest.importorskip("pypdfium2")
+    import pypdfium2.raw as pdfium_raw
+
+    from svc.builder import FullWidth
+    from svc.document import PagedDocument
+    from svc.pdf import PRINT, SCREEN, render_pdf
+
+    document = PagedDocument({"firm_name": "F", "campaign_name": "C"})
+    block = math_block(r"\hat{\beta} = (X^\top X)^{-1} X^\top y", label="Equation")
+    document.add_section(FullWidth(content=block))
+
+    def placed(profile):
+        pdf = pypdfium2.PdfDocument(render_pdf(document, profile))
+        [image] = [
+            obj for page in pdf for obj in page.get_objects(filter=[pdfium_raw.FPDF_PAGEOBJ_IMAGE])
+        ]
+        left, _, right, _ = image.get_bounds()
+        return image.get_px_size(), (right - left) * 96 / 72
+
+    (print_px, _), (screen_px, shown) = placed(PRINT), placed(SCREEN)
+    rendered = render_math(
+        block.latex, font_px=14, color="#3B3B3B", scale=DEFAULT_MATH_SCALE, fontset="cm"
+    )
+    assert print_px == (rendered.width_px, rendered.height_px)
+    assert screen_px[0] <= round(shown / 96 * 150) + 1 < print_px[0]
+
+
+#: Pixel sizes under the defaults at 14px, measured locally (matplotlib 3.11.2,
+#: Python 3.11). CI's runners render the same within this tolerance, or the
+#: fonts differ between machines and `math.md` must say so.
+MEASURED = {
+    r"\sigma_p^2 = w^\top \Sigma w": (319, 87),
+    r"\hat{\beta} = (X^\top X)^{-1} X^\top y": (496, 85),
+    r"\text{VaR}_{99\%} = -q_{0.01}(r)": (480, 71),
+}
+
+
+@pytest.mark.parametrize(("latex", "size"), MEASURED.items())
+def test_the_render_size_matches_what_was_measured(latex, size):
+    rendered = render_math(
+        latex, font_px=14, color="#3B3B3B", scale=DEFAULT_MATH_SCALE, fontset=DEFAULT_MATH_FONTSET
+    )
+    assert abs(rendered.width_px - size[0]) <= 4 and abs(rendered.height_px - size[1]) <= 4

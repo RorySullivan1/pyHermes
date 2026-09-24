@@ -140,7 +140,7 @@ jobs:
         # photographed from its PDF rather than through a browser, because a
         # browser renders a paged document as one long scroll and so cannot
         # show the one property the medium exists for.
-        run: pip install -e ".[dev,pdf,qa]"
+        run: pip install -e ".[dev,pdf,qa,math]"
 
       - name: PDF tests
         # Every module that reads a PDF back. Each skips without the extras,
@@ -150,7 +150,7 @@ jobs:
           pytest tests/test_pdf.py tests/test_medium_aware_harness.py
           tests/test_apparatus.py tests/test_brochure_pdf.py tests/test_examples.py
           tests/test_digital_pdf.py tests/test_pdf_profile.py tests/test_attachments.py
-          tests/test_spacing.py tests/test_quant_fixture.py
+          tests/test_spacing.py tests/test_quant_fixture.py tests/test_math.py
 
       - name: Render the paged and brochure galleries to PDF, and photograph every sheet
         run: |
