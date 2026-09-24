@@ -83,6 +83,42 @@ class TestAPageFlattensWherePagesDoNotExist:
         )
         assert "break-before" not in html and "break-after" not in html
 
+    def test_a_page_opening_the_body_drops_only_its_leading_break(self):
+        # The body starts a sheet already. The second page keeps its break,
+        # the first keeps its trailing one, and the caller's page is untouched.
+        first = Page([section()], break_after=True)
+        document = PagedDocument(_paged.facts(), cover=EmptyCover(), back_matter=EmptyBackMatter())
+        html = document.add_section(first).add_section(Page([section()])).render()
+        assert html.count("break-before:page") == 1
+        assert "break-after:page" in html
+        assert first.break_before is True
+
+    def test_add_page_is_add_section_of_a_page(self):
+        # Every argument at a non-default value, so none can be dropped quietly.
+        options = {
+            "break_before": False,
+            "break_after": True,
+            "title": "Appendix",
+            "background_color": "#F4F1EA",
+            "align": "center",
+        }
+
+        def build() -> PagedDocument:
+            return PagedDocument(_paged.facts(), cover=EmptyCover()).add_section(section())
+
+        shortcut = build().add_page([section("<p>Two.</p>")], **options)
+        spelled = build().add_section(Page([section("<p>Two.</p>")], **options))
+        assert shortcut.render() == spelled.render()
+        assert shortcut.text() == spelled.text()
+
+    def test_add_page_chains(self):
+        document = PagedDocument(_paged.facts())
+        assert document.add_page([section()]) is document
+
+    def test_only_the_paged_medium_offers_add_page(self):
+        # An email has no sheets; its callers put a Page in the tree, which flattens.
+        assert not hasattr(Email, "add_page")
+
     def test_its_wrapper_declares_itself_a_layout_table(self, engine):
         # Standing rule 8, on the one template this phase adds to the body.
         html = Page([section()]).render(engine.bound(medium=PAGED_MEDIUM))

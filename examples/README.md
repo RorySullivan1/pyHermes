@@ -10,6 +10,15 @@ examples render through `svc.email`'s four-slot skeleton, and
 `svc.document` — a cover, a folio in every margin, a real page break, and a
 closing disclosures sheet, plus a PDF when the `[pdf]` extra is installed.
 
+`fund-factsheet` is the paged medium's other extreme, and the pair is the
+point. Where `quarterly-review` shows the managed elements, the factsheet
+turns nearly all of them **off** — `EmptyCover`, `EmptyContentsPage`,
+`EmptyBackMatter` — because its specification is *two sheets*, and a cover
+would spend half of one. It is the density case: paired columns throughout,
+ten holdings set as two fives so the row is five rows tall instead of ten,
+and two matplotlib charts through `svc.data.chart_from_figure`. The fund is
+fictional and the figures are invented sample data.
+
 ## Layout
 
 ```

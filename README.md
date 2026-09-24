@@ -88,6 +88,7 @@ save_pdf(document, "review.pdf")   # ...and so is the PDF  (needs the [pdf] extr
 running header and footer print inside that margin. For a margin of your own, pass
 `PageFormat(width, height, margin=PageMargin(...))` to `paged_medium`. A `Page` **flattens**
 in the email medium — one tree, two outputs — so the same sections can go to both.
+`PagedDocument.add_page([...])` is shorthand for `add_section(Page([...]))`.
 
 A printed document does not split what belongs together. A table repeats its column headers
 on every sheet it crosses, and a row never splits. A total never opens a sheet alone. A
