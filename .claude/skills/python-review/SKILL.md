@@ -94,6 +94,10 @@ Organize every review using these four levels. Skip levels with no items rather 
 - Type hints missing or incorrect (`Any` everywhere defeats the purpose)
 - Inconsistent naming (mixing `snake_case` and `camelCase`)
 - Comments explaining *what* (redundant) instead of *why* (useful)
+- Prose over its scope — a docstring recounting history instead of contract, a function
+  docstring longer than the function, an essay-length comment block. The per-scope ceiling
+  is `coding-standards` § *How much, by scope*; displaced reasoning gets **routed** (per
+  `knowledge-router`), not deleted — losing the content is a regression that looks like progress
 - Dead code, commented-out code
 
 ## Review output format

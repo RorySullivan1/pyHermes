@@ -20,7 +20,7 @@ produces exactly that. Two rules settle it:
   not a fallback; it is a second copy that cannot be corrected because nobody
   reads it.
 
-This tier is empty today. `python-project-instructions.md` was removed in #145
+The tier holds no stack brief today (it holds the project's verification record, below). `python-project-instructions.md` was removed in #145
 after measurement: 71% of its substantive lines echoed `python-development`,
 `python-review`, `python-deployment` or `coding-standards` outright, every
 remaining line was carried by one of them, and nothing referenced the file — this
@@ -34,6 +34,12 @@ copy is also the stale one.
    read only when its topic is relevant. The `knowledge-router` skill decides what earns a
    note, and its `context.py` engine creates notes and regenerates the catalog so it can't
    drift. Run `python ../skills/knowledge-router/scripts/context.py list` to see them.
+
+## Manifest
+
+| File | What it's for |
+|---|---|
+| `verification-surface.md` | Who can confirm each pyHermes surface worked — the per-surface `agent-runnable` / `human-gated` / `unverified` table, written by the `establish-verification` workflow. |
 
 Reference notes are catalogued automatically in `INDEX.md` (created on demand by
 `knowledge-router`) — not listed here.

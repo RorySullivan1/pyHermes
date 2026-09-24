@@ -1,0 +1,204 @@
+<!-- ======================================================================
+probe-a-baseline · outlook-html-specifications live-host probe (issue #43)
+The UNMITIGATED variant: no DPI block, no [if mso] font gate, one tall
+single table. Send alongside probe-b-mitigated.html (identical body, the
+mitigations added) — the DIFFERENCES between the two received emails are
+the evidence. See PROBES.md for the send procedure and checklist.
+Replace the two {{...}} placeholders before sending.
+====================================================================== -->
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>probe-a-baseline</title>
+</head>
+<body style="margin:0; padding:0; background-color:#F5F5F5;">
+  <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" align="center" bgcolor="#FFFFFF">
+
+    <!-- S0 · header -->
+    <tr><td style="padding:16px; font-family:Arial,sans-serif; font-size:20px; line-height:26px; mso-line-height-rule:exactly; background-color:#1A1A1A; color:#F5F5F5;">
+      PROBE A — baseline (no mitigations)
+    </td></tr>
+
+    <!-- S1 · font fallback-skip. CLAIM: with no [if mso] gate, classic Outlook
+         skips the fallback stack and lands on Times New Roman. -->
+    <tr><td style="padding:16px; font-family:'Zothique Display', Georgia, serif; font-size:15px; line-height:22px; mso-line-height-rule:exactly; color:#1A1A1A;">
+      <b>S1 · font:</b> This paragraph asks for the nonexistent font “Zothique Display”
+      with Georgia as fallback. Georgia has serifs and round, wide letterforms; Times New
+      Roman is narrower. Record which one you actually see. Reference letters: Igq10
+    </td></tr>
+
+    <!-- S2 · base64 image. CLAIM: classic Outlook does not display data-URI images.
+         The red box below is a 1x1 base64 PNG stretched to 120x40. -->
+    <tr><td style="padding:16px; font-family:Arial,sans-serif; font-size:15px; line-height:22px; mso-line-height-rule:exactly; color:#1A1A1A;">
+      <b>S2 · base64 image</b> (expect: missing in classic Outlook):<br>
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==" width="120" height="40" alt="BASE64 BOX MISSING — alt text shown instead" style="display:block; background-color:#FFEEEE; color:#CC0000; font-family:Arial,sans-serif;">
+      For contrast, a hosted image (expect: shows once images are allowed):<br>
+      <img src="{{HOSTED_IMAGE_URL}}" width="120" height="40" alt="hosted control image" style="display:block;">
+    </td></tr>
+
+    <!-- S3 · animated GIF. CLAIM: classic Outlook renders the first frame only.
+         Use a GIF whose FIRST frame is visibly different from the animation
+         (e.g. a countdown starting at 9). -->
+    <tr><td style="padding:16px; font-family:Arial,sans-serif; font-size:15px; line-height:22px; mso-line-height-rule:exactly; color:#1A1A1A;">
+      <b>S3 · animated GIF</b> (expect: frozen on frame 1 in classic Outlook):<br>
+      <img src="{{HOSTED_ANIMATED_GIF_URL}}" width="120" height="90" alt="animated gif control" style="display:block;">
+    </td></tr>
+
+    <!-- S4 · DPI canary. With no <o:PixelsPerInch> block, at 125%/150% Windows
+         display scaling the CSS-only-width cell and the attribute-width cell
+         may render at DIFFERENT widths, tearing the two bars out of alignment. -->
+    <tr><td style="padding:16px 16px 4px 16px; font-family:Arial,sans-serif; font-size:15px; line-height:22px; mso-line-height-rule:exactly; color:#1A1A1A;">
+      <b>S4 · scaling canary</b> — the two bars below are both 300 wide (one by
+      attribute, one by CSS). At 125%/150% scaling, do they still align?
+    </td></tr>
+    <tr><td style="padding:0 16px 4px 16px;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td width="300" height="14" bgcolor="#336699" style="font-size:1px; line-height:14px; mso-line-height-rule:exactly;">&nbsp;</td>
+      </tr></table>
+    </td></tr>
+    <tr><td style="padding:0 16px 16px 16px;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td style="width:300px; height:14px; background-color:#993333; font-size:1px; line-height:14px; mso-line-height-rule:exactly;">&nbsp;</td>
+      </tr></table>
+    </td></tr>
+
+  </table>
+
+  <!-- S5 · tall-table split. CLAIM: a single table taller than ~1790px gets
+       paginated by the Word engine with a visible seam. This 120-row striped
+       table is ~1920px tall ON ITS OWN (deliberately a separate, single table).
+       Scan the numbered rows for a horizontal white seam / misalignment and
+       record the row number where it appears. -->
+  <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" align="center" bgcolor="#FFFFFF">
+    <tr><td style="padding:16px; font-family:Arial,sans-serif; font-size:15px; line-height:22px; mso-line-height-rule:exactly; color:#1A1A1A;">
+      <b>S5 · tall single table</b> (120 rows × 16px ≈ 1920px — expect a seam past ~row 110):
+    </td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 001</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 002</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 003</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 004</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 005</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 006</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 007</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 008</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 009</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 010</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 011</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 012</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 013</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 014</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 015</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 016</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 017</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 018</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 019</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 020</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 021</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 022</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 023</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 024</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 025</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 026</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 027</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 028</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 029</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 030</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 031</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 032</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 033</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 034</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 035</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 036</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 037</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 038</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 039</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 040</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 041</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 042</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 043</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 044</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 045</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 046</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 047</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 048</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 049</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 050</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 051</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 052</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 053</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 054</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 055</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 056</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 057</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 058</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 059</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 060</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 061</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 062</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 063</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 064</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 065</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 066</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 067</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 068</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 069</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 070</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 071</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 072</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 073</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 074</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 075</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 076</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 077</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 078</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 079</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 080</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 081</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 082</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 083</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 084</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 085</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 086</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 087</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 088</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 089</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 090</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 091</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 092</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 093</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 094</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 095</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 096</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 097</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 098</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 099</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 100</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 101</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 102</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 103</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 104</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 105</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 106</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 107</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 108</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 109</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 110</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 111</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 112</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 113</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 114</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 115</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 116</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 117</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 118</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#EEF2F7; color:#333333;">row 119</td></tr>
+    <tr><td style="padding:0 16px; font-family:Arial,sans-serif; font-size:11px; height:16px; line-height:16px; mso-line-height-rule:exactly; background-color:#FFFFFF; color:#333333;">row 120</td></tr>
+  </table>
+
+  <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" align="center" bgcolor="#FFFFFF">
+    <tr><td style="padding:16px; font-family:Arial,sans-serif; font-size:12px; line-height:18px; mso-line-height-rule:exactly; color:#666666;">
+      end of probe A · record observations per PROBES.md
+    </td></tr>
+  </table>
+</body>
+</html>

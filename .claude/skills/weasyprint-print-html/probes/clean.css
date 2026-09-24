@@ -1,0 +1,17 @@
+/* Positive-control stylesheet: a minimal print-first sheet with nothing for lint to flag. */
+@font-face {
+  font-family: "Control Sans";
+  src: url("../assets/fonts/control-sans.woff2") format("woff2");
+  font-weight: 400;
+}
+@page {
+  size: A4;
+  margin: 18mm 16mm 20mm 16mm;
+  @bottom-center { content: "Page " counter(page) " of " counter(pages); font-size: 8pt; }
+}
+body { font-family: "Control Sans", sans-serif; font-size: 9.5pt; }
+.keep-together { break-inside: avoid; }
+.stat-row { display: flex; gap: 4mm; break-inside: avoid; }
+table { border-collapse: collapse; width: 100%; }
+thead { display: table-header-group; }
+tr { break-inside: avoid; }

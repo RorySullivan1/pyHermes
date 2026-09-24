@@ -21,5 +21,11 @@ stateless, instant, one invocation. Invoked as `/<name>`.
 **Defined:**
 - `/reindex` — regenerate `.claude/CATALOG.md` (runs `.claude/hooks/catalog.py`).
 - `/version-set`, `/version-ship` — the version-labeling flow (see `.meta/version`).
+- `/prose-review` — audit comments/docstrings against the prose scope discipline via the
+  `prose-auditor` agent (findings only; `--apply` to also fix, route-then-trim).
+- `/epic` — plan a body of work (no code) and file it on the remote as an epic with ordered,
+  templated sub-issues; offers the `epic-autoclose` Actions workflow. Standard: `github-issues`.
+- `/issue` — file one templated issue (task/bug/feature), optionally `--parent #N` under an
+  epic, with a ready-to-paste `Closes #n` line.
 
 Drop a `<name>.md` here to add another.

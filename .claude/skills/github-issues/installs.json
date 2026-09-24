@@ -1,0 +1,7 @@
+{
+  "assets/epic-autoclose.yml": ".github/workflows/epic-autoclose.yml",
+  "references/templates/epic.md": ".github/ISSUE_TEMPLATE/epic.md",
+  "references/templates/task.md": ".github/ISSUE_TEMPLATE/task.md",
+  "references/templates/bug.md": ".github/ISSUE_TEMPLATE/bug.md",
+  "references/templates/feature.md": ".github/ISSUE_TEMPLATE/feature.md"
+}

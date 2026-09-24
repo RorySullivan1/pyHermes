@@ -25,7 +25,8 @@ with the PR URL recorded back into `.meta/version`.
      the standard trailers),
    - pushes (retry/backoff per the repo's git convention),
    - opens the PR via `mcp__github__create_pull_request` — **title** `<version>: <theme>`,
-     **body** built from the Goals/Objectives,
+     **body** = the repo's PR template (else `github-pull-requests`' own) filled from the
+     version: Goals → Summary, Objectives → Verification (each verified or not, with why),
    - writes the PR URL into `.meta/version` and leaves `status: in-progress`.
 
 4. **On merge.** Set `.meta/version` `status: shipped` (and start the next version with
@@ -44,4 +45,5 @@ with the PR URL recorded back into `.meta/version`.
 ## Invokes
 - Commands: `../commands/version-set.md`, `../commands/version-ship.md`.
 - Hook: `../hooks/version_guard.py` (PreToolUse·Bash; advisory at push time).
+- Skill: `github-pull-requests` (the PR template the body fills).
 - Tool: `mcp__github__create_pull_request` (PR creation).

@@ -8,7 +8,9 @@ description: >
   the diff reviewable, setting reviewers/labels, or updating an existing PR's
   description. Trigger on "open a PR", "create a pull request", "write the PR
   description", "format this PR", "fill the PR template", "link this to issue #N",
-  "mark ready for review", "should this be draft". Prefers the GitHub MCP tools
+  "mark ready for review", "should this be draft". Ships the house PR template
+  (Summary · Closes · Changes · Verification · Notes), installable as
+  `.github/pull_request_template.md`. Prefers the GitHub MCP tools
   (`mcp__github__create_pull_request` / `update_pull_request`) where present, else the
   `gh` CLI. Pairs with github-comments (review threads), github-issues (what the PR
   closes), and github-releases (shipping merged work). Never open a PR unless the user
@@ -52,24 +54,21 @@ secrets, tokens, env vars, or internal hostnames; describe only the code change.
 - Name the *what*, not the file. "Fix off-by-one in pagination" beats "Update utils.py".
 
 ## Body — answer the reviewer's questions
-When there's no template, default to this shape (scale down for tiny PRs):
+When the repo has no template, use this skill's own:
+`references/templates/pull_request.md` (Summary · Closes · Changes · Verification ·
+Notes). Scale it down for a tiny PR, but keep **Closes** and **Verification**.
+- **Closes** is the counterpart of an issue's *Done when* line (`github-issues`): paste
+  it as is. Never close an epic from a PR, because epics close from their sub-issues.
+- **Verification** has two halves, *Verified* and *Not verified*. A check counts only if it
+  could have failed, and an untested surface is named rather than left out. A body that
+  claims only successes invites the reviewer to trust what nobody ran.
+- Replace every `<!-- guidance -->` comment with content. They're invisible when rendered
+  but stay in the body, and an unfilled section reads as unfinished.
 
-```markdown
-## Summary
-1–3 sentences: what this changes and why. Lead with the user-visible effect.
-
-## Changes
-- The substantive changes, grouped logically (not a file-by-file dump).
-- Call out anything non-obvious: a design choice, a tradeoff, a follow-up deferred.
-
-## Testing
-How you verified it — tests added/run, manual steps, before/after output.
-
-## Notes
-Risks, migration steps, or things reviewers should look at hardest. Omit if none.
-
-Closes #123
-```
+**Install it** so humans and Claude write to the same form: copy the template to
+`.github/pull_request_template.md` as a byte-identical copy. `installs.json` declares
+that target, and the `asset_integrity` hook flags drift at commit time. GitHub offers
+the template only once it is on the default branch.
 
 - **Link issues with closing keywords** so merge auto-closes them: `Closes #12`,
   `Fixes #12`, `Resolves #12` (one per issue; `Closes #12, closes #13` for several).

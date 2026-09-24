@@ -24,6 +24,8 @@ command is one shot, a workflow is a whole pipeline.
 - `verify-claims` — the **truth gate** for assets that assert facts about an external
   system (engine: the `claim-grounding` skill; independent of `skill-creator`'s
   performance evals).
+- `establish-verification` — answer per surface whether the agent can confirm it or a human
+  must, prove each candidate check can fail, and write `../context/verification-surface.md`.
 
 To add one, create a `<name>.md` describing the sequence (see Format above); the
 auto-generated `../CATALOG.md` is the always-current inventory.

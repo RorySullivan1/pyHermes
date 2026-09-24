@@ -1,0 +1,183 @@
+{#-
+  factsheet.html.j2 — two-page QIS index factsheet.
+
+  Render with StrictUndefined so a missing field raises instead of producing a silently
+  incomplete PDF:
+
+      from jinja2 import Environment, FileSystemLoader, StrictUndefined
+      env = Environment(loader=FileSystemLoader(asset_dir), undefined=StrictUndefined,
+                        autoescape=True)
+      html = env.get_template("factsheet.html.j2").render(**context)
+
+  Run scripts/validate_context.py first regardless: StrictUndefined only fires on a field
+  the template actually references, and reports one problem at a time.
+
+  THE MANDATORY BLOCKS ARE STRUCTURAL. The audience label, the as-of date, the product
+  identifier and the disclaimer are part of this layout, not optional fields — there is no
+  code path that omits them. That is the point: a factsheet without them is not a
+  lighter-weight factsheet, it is a compliance incident.
+
+  The template renders numbers; it never computes them. No arithmetic beyond the composition
+  bar's width, which is presentation. Returns, statistics and weights arrive finished.
+-#}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{{ product.name }} — factsheet {{ as_of_date }}</title>
+  <link rel="stylesheet" href="factsheet.css">
+</head>
+<body>
+
+{#- Carries the audience restriction into the @page footer on EVERY page via string-set. -#}
+<div class="running-footer-label">{{ audience_label }} · {{ product.identifier }}</div>
+
+{# ============================== PAGE 1 ============================== #}
+
+<header class="masthead">
+  <div class="identity">
+    <h1>{{ product.name }}</h1>
+    <div class="identifier">{{ product.identifier }} · {{ product.currency }}</div>
+  </div>
+  <div>
+    <div class="as-of">Data as of {{ as_of_date }}</div>
+    {%- if product.inception_date is defined %}
+    <div class="identifier">Inception {{ product.inception_date }}</div>
+    {%- endif %}
+    {%- if product.rebalance is defined %}
+    <div class="identifier">Rebalance {{ product.rebalance }}</div>
+    {%- endif %}
+  </div>
+  {%- if logo_path is defined %}
+  <div class="logo"><img src="{{ logo_path }}" alt=""></div>
+  {%- endif %}
+</header>
+
+<div class="columns">
+  <div class="main">
+    <h2>Strategy</h2>
+    <p>{{ strategy.description }}</p>
+  </div>
+  <div class="side">
+    <h2>Key facts</h2>
+    <table class="key-facts">
+      <thead><tr><th>Item</th><th>Value</th></tr></thead>
+      <tbody>
+      {%- for fact in key_facts %}
+        <tr><th scope="row">{{ fact.label }}</th><td>{{ fact.value }}</td></tr>
+      {%- endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<h2>Performance</h2>
+<figure class="figure">
+  <img src="{{ performance.chart_path }}" alt="{{ performance.chart_caption | default('Index performance', true) }}">
+  {%- if performance.chart_caption is defined %}
+  <figcaption>{{ performance.chart_caption }}</figcaption>
+  {%- endif %}
+</figure>
+
+{#- Returns and risk sit side by side: both are short, and stacking them pushed page 1
+    over its printable height, which stranded the risk table alone on a page of its own.
+    Both tables are short BY CONTRACT (a closed period list, a handful of statistics), so
+    break-inside: avoid on the row is safe here. -#}
+<div class="columns">
+  <div class="main">
+    <h3>Period returns</h3>
+    <table class="returns">
+      <thead>
+        <tr><th>Period</th><th class="num">Return</th><th>As of</th></tr>
+      </thead>
+      <tbody>
+      {%- for row in performance.periods %}
+        <tr>
+          <td class="period">{{ row.period }}</td>
+          <td class="num">{{ '%+.2f'|format(row.return_pct) }}%</td>
+          <td class="asof">{{ row.as_of }}</td>
+        </tr>
+      {%- endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="side">
+    <h3>Risk statistics</h3>
+    <table class="risk">
+      <thead>
+        <tr><th>Statistic</th><th class="num">Value</th><th>As of</th></tr>
+      </thead>
+      <tbody>
+      {%- for stat in risk_stats %}
+        <tr>
+          <td>{{ stat.label }}</td>
+          <td class="num">{{ stat.value }}</td>
+          <td class="asof">{{ stat.period }} · {{ stat.as_of }}</td>
+        </tr>
+      {%- endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{# ============================== PAGE 2 ============================== #}
+
+<section class="page-break-before">
+  <h2>Methodology</h2>
+  {%- if methodology is string %}
+  <p>{{ methodology }}</p>
+  {%- else %}
+    {%- for note in methodology %}
+  <p>{{ note }}</p>
+    {%- endfor %}
+  {%- endif %}
+
+  <h2>Composition</h2>
+  <table class="composition">
+    <thead>
+      <tr><th>Constituent</th><th class="num">Weight</th><th class="bar"></th></tr>
+    </thead>
+    <tbody>
+    {%- for holding in composition %}
+      <tr>
+        <td>{{ holding.name }}</td>
+        <td class="weight">{{ '%.2f'|format(holding.weight_pct) }}%</td>
+        <td class="bar">
+          <div class="bar-track">
+            {#- Presentation only: clamped so a >100% figure cannot overflow the cell. -#}
+            <div class="bar-fill" style="width: {{ [holding.weight_pct, 100] | min }}%"></div>
+          </div>
+        </td>
+      </tr>
+    {%- endfor %}
+    </tbody>
+  </table>
+
+  {%- if footnotes is defined %}
+  <h2>Notes</h2>
+  {%- if footnotes is string %}
+  <p class="micro">{{ footnotes }}</p>
+  {%- else %}
+    {%- for note in footnotes %}
+  <p class="micro">{{ loop.index }}. {{ note }}</p>
+    {%- endfor %}
+  {%- endif %}
+  {%- endif %}
+</section>
+
+<section class="disclaimer">
+  <h2>Important information</h2>
+  {#- Approved copy only, read from assets/compliance/ by the caller and passed through
+      verbatim. A block still carrying PLACEHOLDER is marked visibly so an unapproved draft
+      cannot be mistaken for a finished document. -#}
+  {%- for block in disclaimer_text %}
+    {%- if 'PLACEHOLDER' in block %}
+  <div class="placeholder">{{ block }}</div>
+    {%- else %}
+  <p>{{ block }}</p>
+    {%- endif %}
+  {%- endfor %}
+</section>
+
+</body>
+</html>
