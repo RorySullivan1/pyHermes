@@ -199,6 +199,28 @@ one "Annualised" head instead of the unit going into the section title.
   out a header `colspan`, and no Outlook render exists here (#150's posture). Until one is
   looked at, the claim stays out of this file.
 
+### A marker in a cell or a column head (#224)
+
+A `[^n]` written in a cell's text or a column's header joins the exhibit's `notes`, is
+numbered by the document walk, and renders as the same `sup.note-ref` link a caption's marker
+does. On paper its note floats to the sheet foot, and in an email it goes to the endnotes.
+Either way it is the same span as a caption's marker. The text part prints `[n]` in the cell.
+
+- **The marker in the text is the one spelling.** The stub proposed a `Cell.note` field. It was
+  refused because the marker is already the apparatus's one way to say "a note is called here".
+  A second spelling would be exactly the drift `Column` and `textgen` were built to end. It
+  also adds no field, so `dataclasses.fields(Cell)` did not grow.
+- **The notes copy is the table in reading order**: caption, source, every head, every cell.
+  So `check_markers` sees a cell's marker like any other and refuses a marker with no note, a
+  note with no marker, and a marker called twice, wherever the extra call sits.
+- **The text part measures the spelled marker.** Heads and cells reach `textgen.table()`
+  already passed through `text_markers()`, so the column is as wide as `7.2%[3]` and never as
+  wide as the raw `7.2%[^2]`.
+- **A field with no marker is byte-identical.** The template renders each head and cell
+  through `marked()`, whose single unmarked run is `escape_html` of the text. Every golden
+  held.
+- **A group label carries no marker.** Add one when a real table wants it.
+
 [Card](../../svc/builder/models.py) is the unit: `label` (required), `value`, `color`,
 `sublabel`, and an optional `body` for prose. Either `value` or `body` must be present.
 `KpiItem` is a `Card` subclass that adds no fields but keeps the stricter rule — a KPI

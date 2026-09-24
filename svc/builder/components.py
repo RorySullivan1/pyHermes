@@ -434,7 +434,8 @@ class DataTable(Exhibit, Component):
         disclosure: Optional compliance copy beneath the attribution; plain
                   text, escaped. `disclosure.md` says when to use it.
         label, anchor: Numbering and its ``id``; see :class:`Exhibit`.
-        notes:    Footnotes called by ``[^n]`` in ``caption`` or ``source``.
+        notes:    Footnotes called by ``[^n]`` in the caption, the source, a
+                  column's header or a cell's text (#224).
         groups:   Optional :class:`ColumnGroup` heads spanning the columns,
                   left to right (#223); their spans sum to the column count.
 
@@ -482,7 +483,6 @@ class DataTable(Exhibit, Component):
     ):
         self.spacing = self._coerce_spacing(spacing)
         self.validate_exhibit(label, anchor)
-        self.notes = coerce_notes(notes, [caption, source], "DataTable")
         if not headers:
             raise ValidationError("DataTable requires at least one header.")
         if not rows:
@@ -501,6 +501,11 @@ class DataTable(Exhibit, Component):
                     f"DataTable row {i} has {len(row.cells)} cells but there are "
                     f"{len(columns)} headers; the table would render misaligned."
                 )
+        # Reading order, so a marker anywhere in the table is checked once (#224).
+        copy = [caption, source, *(c.header for c in columns)]
+        self.notes = coerce_notes(
+            notes, copy + [cell.text for row in rows for cell in row.cells], "DataTable"
+        )
         self.columns = columns
         self.groups = coerce_groups(groups, len(columns))
         self.rows = rows
@@ -531,8 +536,8 @@ class DataTable(Exhibit, Component):
         return self._with_subtitle(
             wrap(text_markers(self.numbered(self.caption), self.notes)),
             table(
-                self.headers,
-                [[cell.text for cell in row.cells] for row in self.rows],
+                [text_markers(header, self.notes) for header in self.headers],
+                [[text_markers(cell.text, self.notes) for cell in row.cells] for row in self.rows],
                 aligns=[column.align for column in self.resolved_columns()],
                 kinds=[row.kind for row in self.rows],
                 groups=[(group.label, group.span) for group in self.groups],
@@ -557,7 +562,15 @@ class DataTable(Exhibit, Component):
         columns = self.resolved_columns()
         alt_by_row = self._striping()
         return {
-            "columns": [{"header": c.header, "align": c.align, "kind": c.kind} for c in columns],
+            "columns": [
+                {
+                    "header": c.header,
+                    "parts": split_markers(c.header, self.notes),
+                    "align": c.align,
+                    "kind": c.kind,
+                }
+                for c in columns
+            ],
             "groups": [{"label": g.label, "span": g.span} for g in self.groups],
             "rows": [
                 {
@@ -565,6 +578,7 @@ class DataTable(Exhibit, Component):
                     "cells": [
                         {
                             "text": cell.text,
+                            "parts": split_markers(cell.text, self.notes),
                             # The chain completes here: cell → column → position.
                             "align": cell.resolved_align(column.align),
                             "color": cell.color,
