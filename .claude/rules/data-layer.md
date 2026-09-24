@@ -57,7 +57,9 @@ The tone's own argument lives in `data-table.md`, beside the colour exception it
 
 `svc/data/` is a sibling of `svc/pdf/` on the same terms: it imports the builder, the builder
 never imports it, and each backend is imported inside a function, so `import svc.data` works
-with neither extra installed.
+with neither extra installed. **`svc/math/` (#221) is the third sibling on exactly these
+terms**: `MathBlock` takes bytes and the `[math]` extra renders them, so the purity tests cover
+it both ways. `math.md` carries its decisions.
 
 - **There is no `DataTable.from_frame` or `ChartBlock.from_figure`.** #179 and #180 asked for
   both classmethods *and* for a purity test that `svc/builder` never imports `svc.data`. The

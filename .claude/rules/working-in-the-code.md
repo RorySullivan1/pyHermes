@@ -91,6 +91,10 @@ svc/
 │   ├── frames.py       — table_from_frame: a DataFrame as a DataTable
 │   ├── charts.py       — image_from_figure / chart_from_figure: a Figure as an image
 │   └── exceptions.py   — DataError, BackendMissingError (a sibling of EmailBuilderError)
+├── math/               ← the equation renderer (#221); "[math]" extra. `math.md`
+│   ├── render.py       — render_math: LaTeX → PNG through mathtext, lazily imported
+│   ├── adapter.py      — math_block / image_from_math: painted for a theme and a density
+│   └── exceptions.py   — MathError, BackendMissingError, MathSyntaxError
 ├── pdf/                ← the PDF exporter, on the adapters' contract; "[pdf]" extra
 │   ├── exporter.py     — render_pdf / save_pdf / layout / page_count / available; lazy backend
 │   ├── profile.py      — PdfProfile, PRINT (render_pdf's default) and SCREEN (#196). `digital-pdf.md`

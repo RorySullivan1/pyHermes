@@ -18,7 +18,11 @@ from pathlib import Path
 
 import pytest
 
-from svc.data.exceptions import BackendMissingError as DataBackendMissing
+from svc.data.exceptions import BackendMissingError as _DataMissing
+from svc.math.exceptions import BackendMissingError as _MathMissing
+
+#: An example that needs an extra skips without it: [charts] or [math] (#233).
+DataBackendMissing = (_DataMissing, _MathMissing)
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 EXAMPLES = sorted(REPO_ROOT.glob("examples/*/*.py"))

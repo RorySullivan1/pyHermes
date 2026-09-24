@@ -78,7 +78,8 @@ attribute.
 - `label=` opts in. Unset renders byte-identically, and every golden stayed put until the
   fixtures opted in. That made the mechanism reviewable separately from the diff it causes.
 - The number prefixes the **heading line**: the caption on `DataTable` and `ImageBlock`, and a
-  new `ChartBlock.caption`. The chart's caption is the figure table's first row rather than a
+  new `ChartBlock.caption`. `MathBlock` (#229) is the fourth exhibit kind, and
+  `label="Equation"` gives "Equation 2" and `id="equation-2"` by the same walk (`math.md`). The chart's caption is the figure table's first row rather than a
   paragraph above it, so the `.figure` break rule keeps it with its chart and the table's
   `id` lands on the heading a reader was sent to.
 - The separator is **house style**, so it lives in `Config.exhibit_separator` (" · ") and is

@@ -216,10 +216,11 @@ pip install -e ".[pdf]"     # optional: WeasyPrint, to print a document
 pip install -e ".[qa]"      # optional: Playwright + pypdfium2, for screenshots
 pip install -e ".[data]"    # optional: pandas, to build a table from a DataFrame
 pip install -e ".[charts]"  # optional: matplotlib, to build a chart from a Figure
+pip install -e ".[math]"    # optional: matplotlib, to render an equation from LaTeX
 ```
 
-**The optional extras are genuinely optional**, and the suite proves it rather than
-claiming it: their tests *skip* when the extra is absent, so `pip install -e ".[dev]"` and
+**The optional extras are genuinely optional**, all five of them, and the suite proves it
+rather than claiming it: their tests *skip* when the extra is absent, so `pip install -e ".[dev]"` and
 `pytest` run anywhere. `[pdf]` needs Pango and Cairo from the system, which is exactly why
 it is not in the floor.
 
@@ -787,6 +788,26 @@ chart = chart_from_figure(fig, alt="Cumulative returns", width=320,
 The frame's dtypes decide each column's kind, and a named index becomes the row-header
 column. The chart is rendered at twice its display width and attached by `cid:`. pyHermes
 never styles the plot; it takes the Figure you drew.
+
+**An equation is written in LaTeX**, through `svc.math` (`[math]` above). It renders to an
+image in every medium, because no mail client shows MathML, and the source stays with it as
+the alt text and the plain-text projection:
+
+```python
+from svc.math import math_block
+
+variance = math_block(r"\sigma_p^2 = w^\top \Sigma w", label="Equation",
+                      caption="Portfolio variance", theme="classic", size_theme="standard")
+tails = math_block(lines=[r"\text{VaR}_{99\%} = -q_{0.01}(r)",
+                          r"\text{ES}_{99\%} = \mathbb{E}[r \mid r \leq q_{0.01}]"],
+                   label="Equation", caption="Tail risk")
+```
+
+It is numbered like any exhibit ("Equation 2", `#equation-2`), and on paper it never splits
+from its caption. The glyphs are painted at build time in the theme and density you pass, so
+render them for the theme the document uses. mathtext is a subset of TeX: `\leq` rather than
+`\le`, `\dfrac` for a display fraction, and no `aligned` environment. Several lines are set
+as one block.
 
 ## What it enforces
 

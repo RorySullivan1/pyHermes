@@ -20,7 +20,14 @@ are unusual —
   through its layout code is one nobody dares update.
 
 The two charts are matplotlib Figures through ``svc.data.chart_from_figure``,
-which is the adapter's reason to exist: the builder never learns to plot.
+which is the adapter's reason to exist: the builder never learns to plot. The
+Sharpe ratio beneath the risk table is ``svc.math.math_block`` (#233), painted
+for the factsheet's own theme and density.
+
+**The fill, measured from the PDF** (#233): sheet one runs to its footnotes,
+and sheet two to about 88%. The equation cost the growth chart 0.9 in of height
+(2.1 to 1.2): a taller chart, or an equation note that did not fit, pushed the
+note to sheet two, away from its marker, before the sheet count moved.
 
 **The fund is fictional.** ``HERMES CORE US EQUITY ETF`` does not exist, and
 every figure here is illustrative sample data chosen to be internally
@@ -304,7 +311,7 @@ def _growth_chart() -> Any:
     import matplotlib.pyplot as plt
     from matplotlib.ticker import FuncFormatter
 
-    figure, axes = plt.subplots(figsize=(9.6, 2.1))
+    figure, axes = plt.subplots(figsize=(9.6, 1.2))
     axes.plot(_GROWTH_YEARS, _GROWTH_FUND, color="#2C3E50", linewidth=1.8, label=f"Fund ({TICKER})")
     axes.plot(
         _GROWTH_YEARS,
@@ -433,7 +440,28 @@ def _sheet_one() -> list[Container]:
                 rows=[TableRow(cells=list(row)) for row in _TRADING],
             ),
         ),
+        FullWidth(content=_sharpe_equation(), spacing={"content_top": 2, "content_bottom": 2}),
     ]
+
+
+def _sharpe_equation() -> Any:
+    """
+    The identity the risk table's Sharpe ratio quotes (#233), rendered by ``[math]``.
+
+    Painted for the factsheet's own theme and density: the picture's pixels
+    are fixed here, so it takes the document's facts rather than a default.
+    """
+    from svc.math import math_block
+
+    facts = _facts()
+    return math_block(
+        r"S = \dfrac{\mathbb{E}[r_p - r_f]}{\sigma_p}",
+        theme=facts["theme"],
+        size_theme=facts["size_theme"],
+        label="Equation",
+        caption="The Sharpe ratio, as the risk table quotes it[^1]",
+        notes=["Monthly returns over three years, annualised; r_f is the 3-month T-bill."],
+    )
 
 
 def _sheet_two() -> list[Container]:

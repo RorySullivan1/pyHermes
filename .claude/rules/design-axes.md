@@ -12,6 +12,11 @@ paths:
 
 ### Theming — colour is one validated object
 
+**One thing the theme cannot reach: a rendered picture.** An equation's glyphs (#231) are
+painted at construction for the theme the caller passes to `math_block`, because the theme is
+bound only at render. A document under another theme needs its equations rendered for it
+(`math.md`).
+
 Colour was 18 hex values in 245 occurrences across all 20 template files, three `rgba()`
 literals and three Python fallbacks, described by a palette *comment* in `base.html` that
 nothing could read — and that had already drifted, naming a row-alt colour the data table
