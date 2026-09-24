@@ -40,7 +40,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from svc.builder import CardGroup, DataTable, FullWidth, TextBlock, TwoColumn
+from svc.builder import CardGroup, Container, DataTable, FullWidth, TextBlock, TwoColumn
 from svc.builder.enums import CardOrientation, TwoColumnRatio
 from svc.builder.models import KpiItem, TableRow
 from svc.builder.sizing import LETTER_PORTRAIT
@@ -49,7 +49,6 @@ from svc.document import (
     EmptyBackMatter,
     EmptyContentsPage,
     EmptyCover,
-    Page,
     PagedDocument,
     RunningFooter,
     RunningHeader,
@@ -271,10 +270,144 @@ def _sector_chart() -> Any:
 # --------------------------------------------------------------------------
 
 
-def build(template_dir: Path | None = None) -> PagedDocument:
-    """The two-sheet factsheet. Deterministic: same bytes every call."""
+def _sheet_one() -> list[Container]:
+    """The first sheet's sections: the fund at a glance, its growth and its returns."""
     from svc.data import chart_from_figure
 
+    return [
+        FullWidth(
+            title=f"{FUND} ({TICKER})",
+            highlight=True,
+            content=CardGroup(
+                [
+                    KpiItem("NAV", "$54.18", "", "as of 30 Sep"),
+                    KpiItem("YTD Return", "+12.45%", _GAIN, "NAV basis"),
+                    KpiItem("Net Assets", "$4.82B", "", "fund total"),
+                    KpiItem("Expense Ratio", "0.04%", "", "net, annual"),
+                ],
+                orientation=CardOrientation.HORIZONTAL,
+            ),
+        ),
+        TwoColumn(
+            ratio=TwoColumnRatio.EQUAL,
+            title="Investment Objective and Fund Facts",
+            left=TextBlock(
+                "<p>The Fund seeks to track the investment results of an index "
+                "composed of large-capitalization U.S. equities. It invests at "
+                "least 90% of its assets in the securities of its benchmark and "
+                "is rebalanced quarterly.</p>"
+            ),
+            right=DataTable(
+                headers=["Fund Fact", "Value"],
+                rows=[
+                    TableRow(cells=["Ticker / Exchange", f"{TICKER} · NYSE Arca"]),
+                    TableRow(cells=["Inception", "14 March 2012"]),
+                    TableRow(cells=["Benchmark", "Hermes US Large-Cap Index"]),
+                    TableRow(cells=["Holdings", "503"]),
+                    TableRow(cells=["30-Day SEC Yield", "1.21%"]),
+                    TableRow(cells=["Distributions", "Quarterly"]),
+                ],
+            ),
+        ),
+        FullWidth(
+            title="Growth of $10,000",
+            content=chart_from_figure(
+                _growth_chart(),
+                alt=(
+                    "Growth of a $10,000 investment from 2016 to 2026, fund and "
+                    "benchmark, rising from $10,000 to approximately $35,900"
+                ),
+                width=690,
+            ),
+        ),
+        FullWidth(
+            title="Average Annual Total Returns (%)",
+            content=DataTable(
+                headers=["Basis", "1 Year", "3 Year", "5 Year", "10 Year", "Since Incept."],
+                rows=[
+                    TableRow(cells=[name, *values], colors=["", *map(_sign, values)])
+                    for name, *values in _RETURNS
+                ],
+                as_of=AS_OF,
+            ),
+        ),
+    ]
+
+
+def _sheet_two() -> list[Container]:
+    """The second sheet's: what the fund holds, then the disclosures, which must fit here."""
+    from svc.data import chart_from_figure
+
+    return [
+        TwoColumn(
+            ratio=TwoColumnRatio.EQUAL,
+            title="Calendar Year Returns and Characteristics",
+            left=DataTable(
+                headers=["Year", "Fund", "Benchmark"],
+                rows=[
+                    TableRow(
+                        cells=[year, fund, bench],
+                        colors=["", _sign(fund), _sign(bench)],
+                    )
+                    for year, fund, bench in _CALENDAR
+                ],
+            ),
+            right=DataTable(
+                headers=["Characteristic", "Value"],
+                rows=[
+                    TableRow(cells=["Price / Earnings", "24.8x"]),
+                    TableRow(cells=["Price / Book", "4.6x"]),
+                    TableRow(cells=["Wtd. Avg. Market Cap", "$982.4B"]),
+                    TableRow(cells=["Beta (3Y)", "1.00"]),
+                    TableRow(cells=["Std. Deviation (3Y)", "15.2%"]),
+                ],
+            ),
+        ),
+        # Ten holdings as two fives. The row is then as tall as
+        # five rows instead of ten, which is the whole reason the
+        # disclosures still fit on this sheet.
+        TwoColumn(
+            ratio=TwoColumnRatio.EQUAL,
+            title="Top 10 Holdings",
+            left=DataTable(
+                headers=["Holding", "Weight (%)"],
+                rows=[TableRow(cells=[name, weight]) for name, weight in _TOP_HOLDINGS[:5]],
+            ),
+            right=DataTable(
+                headers=["Holding", "Weight (%)"],
+                rows=[TableRow(cells=[name, weight]) for name, weight in _TOP_HOLDINGS[5:]],
+            ),
+        ),
+        FullWidth(
+            title="Sector Weights (%) — top eight, remainder grouped",
+            content=chart_from_figure(
+                _sector_chart(),
+                alt=(
+                    "Sector weights: Information Technology 32.4%, "
+                    "Financials 13.1%, Health Care 11.2%, and eight "
+                    "further sectors totalling 100%"
+                ),
+                width=690,
+            ),
+        ),
+        FullWidth(
+            title="Important Information",
+            content=TextBlock(
+                "<p><strong>Illustrative sample only.</strong> The Hermes Core "
+                "US Equity ETF does not exist; every figure is invented sample "
+                "data chosen to be internally consistent. Nothing here is a "
+                "record of any real portfolio, nor investment advice.</p>"
+                "<p>Consider a fund's objectives, risks, charges and expenses before "
+                "investing. One cannot invest directly in an index; ETF shares "
+                "trade at market price, not NAV. Past performance does not "
+                "guarantee future results.</p>"
+            ),
+        ),
+    ]
+
+
+def build(template_dir: Path | None = None) -> PagedDocument:
+    """The two-sheet factsheet. Deterministic: same bytes every call."""
     document = PagedDocument(
         _facts(),
         template_dir=template_dir,
@@ -298,150 +431,9 @@ def build(template_dir: Path | None = None) -> PagedDocument:
         ),
     )
 
-    return (
-        document
-        # ---------------------------------------------------------- sheet 1
-        .add_section(
-            FullWidth(
-                title=f"{FUND} ({TICKER})",
-                highlight=True,
-                content=CardGroup(
-                    [
-                        KpiItem("NAV", "$54.18", "", "as of 30 Sep"),
-                        KpiItem("YTD Return", "+12.45%", _GAIN, "NAV basis"),
-                        KpiItem("Net Assets", "$4.82B", "", "fund total"),
-                        KpiItem("Expense Ratio", "0.04%", "", "net, annual"),
-                    ],
-                    orientation=CardOrientation.HORIZONTAL,
-                ),
-            )
-        )
-        .add_section(
-            TwoColumn(
-                ratio=TwoColumnRatio.EQUAL,
-                title="Investment Objective and Fund Facts",
-                left=TextBlock(
-                    "<p>The Fund seeks to track the investment results of an index "
-                    "composed of large-capitalization U.S. equities. It invests at "
-                    "least 90% of its assets in the securities of its benchmark and "
-                    "is rebalanced quarterly.</p>"
-                ),
-                right=DataTable(
-                    headers=["Fund Fact", "Value"],
-                    rows=[
-                        TableRow(cells=["Ticker / Exchange", f"{TICKER} · NYSE Arca"]),
-                        TableRow(cells=["Inception", "14 March 2012"]),
-                        TableRow(cells=["Benchmark", "Hermes US Large-Cap Index"]),
-                        TableRow(cells=["Holdings", "503"]),
-                        TableRow(cells=["30-Day SEC Yield", "1.21%"]),
-                        TableRow(cells=["Distributions", "Quarterly"]),
-                    ],
-                ),
-            )
-        )
-        .add_section(
-            FullWidth(
-                title="Growth of $10,000",
-                content=chart_from_figure(
-                    _growth_chart(),
-                    alt=(
-                        "Growth of a $10,000 investment from 2016 to 2026, fund and "
-                        "benchmark, rising from $10,000 to approximately $35,900"
-                    ),
-                    width=690,
-                ),
-            )
-        )
-        .add_section(
-            FullWidth(
-                title="Average Annual Total Returns (%)",
-                content=DataTable(
-                    headers=["Basis", "1 Year", "3 Year", "5 Year", "10 Year", "Since Incept."],
-                    rows=[
-                        TableRow(cells=[name, *values], colors=["", *map(_sign, values)])
-                        for name, *values in _RETURNS
-                    ],
-                    as_of=AS_OF,
-                ),
-            )
-        )
-        # ---------------------------------------------------------- sheet 2
-        .add_section(
-            Page(
-                [
-                    TwoColumn(
-                        ratio=TwoColumnRatio.EQUAL,
-                        title="Calendar Year Returns and Characteristics",
-                        left=DataTable(
-                            headers=["Year", "Fund", "Benchmark"],
-                            rows=[
-                                TableRow(
-                                    cells=[year, fund, bench],
-                                    colors=["", _sign(fund), _sign(bench)],
-                                )
-                                for year, fund, bench in _CALENDAR
-                            ],
-                        ),
-                        right=DataTable(
-                            headers=["Characteristic", "Value"],
-                            rows=[
-                                TableRow(cells=["Price / Earnings", "24.8x"]),
-                                TableRow(cells=["Price / Book", "4.6x"]),
-                                TableRow(cells=["Wtd. Avg. Market Cap", "$982.4B"]),
-                                TableRow(cells=["Beta (3Y)", "1.00"]),
-                                TableRow(cells=["Std. Deviation (3Y)", "15.2%"]),
-                            ],
-                        ),
-                    ),
-                    # Ten holdings as two fives. The row is then as tall as
-                    # five rows instead of ten, which is the whole reason the
-                    # disclosures still fit on this sheet.
-                    TwoColumn(
-                        ratio=TwoColumnRatio.EQUAL,
-                        title="Top 10 Holdings",
-                        left=DataTable(
-                            headers=["Holding", "Weight (%)"],
-                            rows=[
-                                TableRow(cells=[name, weight]) for name, weight in _TOP_HOLDINGS[:5]
-                            ],
-                        ),
-                        right=DataTable(
-                            headers=["Holding", "Weight (%)"],
-                            rows=[
-                                TableRow(cells=[name, weight]) for name, weight in _TOP_HOLDINGS[5:]
-                            ],
-                        ),
-                    ),
-                    FullWidth(
-                        title="Sector Weights (%) — top eight, remainder grouped",
-                        content=chart_from_figure(
-                            _sector_chart(),
-                            alt=(
-                                "Sector weights: Information Technology 32.4%, "
-                                "Financials 13.1%, Health Care 11.2%, and eight "
-                                "further sectors totalling 100%"
-                            ),
-                            width=690,
-                        ),
-                    ),
-                    FullWidth(
-                        title="Important Information",
-                        content=TextBlock(
-                            "<p><strong>Illustrative sample only.</strong> The Hermes Core "
-                            "US Equity ETF does not exist; every figure is invented sample "
-                            "data chosen to be internally consistent. Nothing here is a "
-                            "record of any real portfolio, nor investment advice.</p>"
-                            "<p>Consider a fund's objectives, risks, charges and expenses before "
-                            "investing. One cannot invest directly in an index; ETF shares "
-                            "trade at market price, not NAV. Past performance does not "
-                            "guarantee future results.</p>"
-                        ),
-                    ),
-                ],
-                break_before=True,
-            )
-        )
-    )
+    # One page per sheet. A page opening the body never breaks before it,
+    # so both are written the same way and the tree reads as the format does.
+    return document.add_page(_sheet_one()).add_page(_sheet_two())
 
 
 def main() -> None:

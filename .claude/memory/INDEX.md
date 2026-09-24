@@ -5,19 +5,12 @@
   shared kit, `svc/email`, `svc/document` and `svc/brochure` are the media, and exporters sit on
   one contract — `svc/delivery`+`gmail`+`outlook`, and `svc/pdf`. Rationale: CLAUDE.md and
   `.claude/rules/media.md`; do not restate it here.
-- **Shipped and closed**: #157 (PR #167), #153 (PR #168), #169 (PR #190), #170 (PR #191),
-  #171 apparatus (PR #192), #172 brochure (PR #194, #186–#189), #193 digital PDF (PR #203, #195–#200).
-- **#201 fixed** on `claude/gifted-ritchie-7dkp5g` (not yet a PR). Open issues: #150 needs Outlook; #202 the PDF/UA
-  tagger keeps `SCREEN` untagged.
+- **Shipped**: #157, #153, #169, #170, #171, #172, #193 (PRs #167–#203); #201 (PR #204), #150 (PR #205),
+  #202 (PR #206). **Open**: PR #207, the fund factsheet; `claude/gifted-ritchie-7dkp5g` stacks the leading-break fix on it.
 - The prose budget is live; the baseline is 45 and may only shrink.
 
 ## Decisions        (append-only; supersede, never delete)
 - Older entries, and epic #157's, are in sessions/ARCHIVE-2026.md.
-
-- [2026-09-21] **GitHub closing keywords do not cascade to sub-issues.** `Closes #157` closed
-  the epic and left all nine children open; a bare `#158` in a PR table cross-links but never
-  closes. An epic PR lists `Closes` once per sub-issue —
-  sessions/2026-09-17-2353-multi-medium-rescope.md
 
 - [2026-09-21] **`disclosure` is plain text; the blessed raw-HTML set stays closed at five.**
   No inline link, deliberately: widening plain text to HTML later is additive, narrowing is
@@ -48,6 +41,8 @@
 
 - [2026-09-23] **An image's CSS width is a cap on 100%, never a fixed px.** A px width is WeasyPrint's
   min-content, so a 600px chart in a half column widened the frame and added a sheet — `media.md` (#201)
+- [2026-09-24] **A page opening the body drops its leading break.** The seed leaves ahead of the body
+  table made it open a blank sheet. `add_page` is paged-only shorthand; the `Page` node stays — `media.md`
 
 ## Threads          (open items; remove when closed)
 - **Every issue or PR body is written without angle brackets** — GitHub's sanitizer has

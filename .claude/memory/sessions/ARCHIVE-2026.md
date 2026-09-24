@@ -267,3 +267,8 @@ Decisions and Log entries folded out of `INDEX.md` on 2026-08-29 (#143), verbati
   trap.** Four times in one epic: the theme test scanned one module, the golden harness made
   one directory, `page.html` used the wrong colour idiom, and a README-block check would have
   demanded prose parse as Python — sessions/2026-09-17-2353-multi-medium-rescope.md
+
+- [2026-09-21] **GitHub closing keywords do not cascade to sub-issues.** `Closes #157` closed
+  the epic and left all nine children open; a bare `#158` in a PR table cross-links but never
+  closes. An epic PR lists `Closes` once per sub-issue —
+  sessions/2026-09-17-2353-multi-medium-rescope.md
