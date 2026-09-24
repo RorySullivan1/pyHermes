@@ -1,0 +1,205 @@
+/* print-base.css — the print-first floor for WeasyPrint documents.
+ *
+ * Brand and report layers override the CUSTOM PROPERTIES below; they should not need to
+ * override the rules. If you find yourself restating a rule in a brand sheet, the variable
+ * is missing — add it here instead.
+ *
+ * PAGE SIZE: A4 is the shipped default. To switch a document to US Letter, set the two
+ * variables in your own sheet AND restate the @page size (a variable cannot be used in
+ * the `size` descriptor — WeasyPrint resolves @page descriptors before custom properties):
+ *     :root { --page-width: 216mm; --page-height: 279mm; }
+ *     @page { size: Letter; }
+ * The variables exist so mm-sized figures stay correct; `size` is the one place you repeat
+ * yourself. Nothing else in this file assumes A4.
+ */
+
+:root {
+  /* Page geometry */
+  --page-width: 210mm;
+  --page-height: 297mm;
+  --margin-top: 16mm;
+  --margin-right: 15mm;
+  --margin-bottom: 18mm;
+  --margin-left: 15mm;
+  /* Printable width, for sizing figures against the text column */
+  --content-width: 180mm;      /* page-width - left - right */
+
+  /* Type scale, in points — print units, not px */
+  --font-body: 9.5pt;
+  --font-small: 8pt;
+  --font-micro: 7pt;
+  --font-h1: 18pt;
+  --font-h2: 12pt;
+  --font-h3: 10pt;
+  --line-height: 1.38;
+
+  /* Families. A brand layer redefines these AND ships the @font-face rules. */
+  --family-text: serif;
+  --family-display: sans-serif;
+  --family-mono: monospace;
+
+  /* Ink */
+  --ink: #1a1a1a;
+  --ink-muted: #565656;
+  --rule: #c8ccd2;
+  --rule-strong: #8a9099;
+  --band: #f2f4f7;
+  --accent: #1f4e79;
+
+  /* Spacing, in mm so it survives the page grid */
+  --space-1: 1.5mm;
+  --space-2: 3mm;
+  --space-3: 5mm;
+  --space-4: 8mm;
+}
+
+@page {
+  size: A4;
+  margin: 16mm 15mm 18mm 15mm;
+
+  @bottom-left {
+    content: string(footer-label);
+    font-family: var(--family-display);
+    font-size: 7pt;
+    color: #565656;
+    vertical-align: top;
+  }
+  @bottom-right {
+    content: "Page " counter(page) " of " counter(pages);
+    font-family: var(--family-display);
+    font-size: 7pt;
+    color: #565656;
+    vertical-align: top;
+  }
+}
+
+/* An element with this class sets the running footer label for every page from here on.
+ * `string-set` is the paged-media way to get running content; a position:fixed header is
+ * not. Put it once near the top of <body>. */
+.running-footer-label {
+  string-set: footer-label content();
+  /* The source element itself is not meant to be seen. */
+  position: absolute;
+  left: -9999mm;
+  height: 0;
+}
+
+/* ---------- Base flow ---------- */
+
+html {
+  font-family: var(--family-text);
+  font-size: var(--font-body);
+  line-height: var(--line-height);
+  color: var(--ink);
+}
+
+body {
+  margin: 0;
+  /* Widow/orphan control applies through inheritance; two lines is the practical floor. */
+  orphans: 3;
+  widows: 3;
+}
+
+p { margin: 0 0 var(--space-2); }
+
+/* ---------- Headings ---------- */
+
+h1, h2, h3, h4 {
+  font-family: var(--family-display);
+  color: var(--ink);
+  margin: 0 0 var(--space-2);
+  /* A heading stranded at the foot of a page with its content overleaf is the single most
+   * common paged-media defect. break-after: avoid is the fix, and it must be on every
+   * heading level, not just h1. */
+  break-after: avoid;
+  break-inside: avoid;
+}
+
+h1 { font-size: var(--font-h1); line-height: 1.15; }
+h2 { font-size: var(--font-h2); margin-top: var(--space-4); }
+h3 { font-size: var(--font-h3); margin-top: var(--space-3); }
+
+/* ---------- Tables: the only layout that fragments well ---------- */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-small);
+  /* Not `break-inside: avoid` — a long table SHOULD split. Rows must not. */
+}
+
+/* Makes the header repeat on every continuation page. Without <thead> in the markup this
+ * rule has nothing to act on, which is why lint treats a missing <thead> as a finding. */
+thead { display: table-header-group; }
+tfoot { display: table-footer-group; }
+tr { break-inside: avoid; }
+
+th, td {
+  padding: var(--space-1) var(--space-2);
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 0.4pt solid var(--rule);
+}
+
+th {
+  font-family: var(--family-display);
+  font-size: var(--font-micro);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-muted);
+  border-bottom: 0.8pt solid var(--rule-strong);
+}
+
+/* Numeric columns line up only if the figures are tabular and right-aligned. */
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+tbody tr:last-child td { border-bottom: 0.8pt solid var(--rule-strong); }
+
+/* ---------- Utilities ---------- */
+
+/* Anything that must not be split across a page boundary. Must fit within one page's
+ * printable height or it will overflow rather than break. */
+.keep-together { break-inside: avoid; }
+.page-break-before { break-before: page; }
+.page-break-after { break-after: page; }
+
+/* Figures are sized in mm against the printable area, never in px or %, so a chart's
+ * aspect ratio survives the page grid. */
+.figure {
+  break-inside: avoid;
+  margin: 0 0 var(--space-3);
+  width: var(--content-width);
+}
+.figure > img,
+.figure > svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.figure figcaption {
+  font-family: var(--family-display);
+  font-size: var(--font-micro);
+  color: var(--ink-muted);
+  margin-top: var(--space-1);
+}
+
+/* A shaded band for callouts and key-facts blocks: borders and background-color are
+ * supported and predictable, unlike box-shadow. */
+.band {
+  background-color: var(--band);
+  border-left: 1.2pt solid var(--accent);
+  padding: var(--space-2) var(--space-3);
+  break-inside: avoid;
+}
+
+.muted { color: var(--ink-muted); }
+.small { font-size: var(--font-small); }
+.micro { font-size: var(--font-micro); }
+
+/* Fixed-height row of side-by-side blocks. Flex is safe ONLY because break-inside is
+ * avoided and the row is small enough to fit on one page — see references/pagination.md. */
+.row {
+  display: flex;
+  gap: var(--space-3);
+  break-inside: avoid;
+}
+.row > * { flex: 1 1 0; }

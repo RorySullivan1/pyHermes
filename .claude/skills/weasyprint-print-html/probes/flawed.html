@@ -1,0 +1,28 @@
+<!doctype html>
+<!-- NEGATIVE CONTROL for lint_print_html.py. Every defect below is deliberate.
+     Expected: E001 script, E002 remote x3, E003 no @page, W001 x3, W002, W003, W004, W005.
+     If lint reports this file clean, the linter is broken — do not trust a clean verdict
+     on a real template until this fixture still fails. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter">
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+  <style>
+    @media screen { body { background: #eee; } }
+    body { font-family: "Brand Sans", sans-serif; }
+    .card { display: flex; gap: 4mm; box-shadow: 0 2px 6px rgba(0,0,0,.2); }
+    .hero { background-image: url(https://example.invalid/hero.png); filter: blur(2px); }
+    .sidebar { position: sticky; top: 0; transition: all .2s ease; }
+  </style>
+</head>
+<body>
+  <div class="card"><div id="chart"></div></div>
+  <img src="https://example.invalid/logo.png" alt="logo">
+  <table>
+    <tr><th>Period</th><th>Return</th></tr>
+    <tr><td>1M</td><td>1.2%</td></tr>
+  </table>
+  <script>Plotly.newPlot('chart', [{y:[1,2,3]}]);</script>
+</body>
+</html>

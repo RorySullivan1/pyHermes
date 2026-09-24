@@ -62,7 +62,9 @@ keeps it all consistent across decks, print, web, social, email, and signage.
    room: explicit tokens, rules, and do/don't examples, so any artifact can be made on-brand without
    guessing.
 6. **Accessible by default.** Color contrast, legible type, and inclusive imagery are part of the
-   identity, not an afterthought.
+   identity, not an afterthought. The contrast bar is **WCAG 2.2 Level AA**, stated with its
+   thresholds and exceptions below — an instruction to "check contrast" without a number is
+   not a standard.
 
 ## The four pillars
 
@@ -88,7 +90,8 @@ A complete brand covers all four. Smaller brands get shorter versions of each, n
   approved color treatments, and explicit misuse rules (don't stretch/recolor/add effects).
 - **Color** — a defined palette as reusable **tokens**: primary, secondary, accents, and neutrals,
   each with exact values (HEX/RGB; CMYK + Pantone for print) and a stated role (when to use which).
-  Verify contrast pairings for accessibility.
+  Verify contrast pairings against the **WCAG AA** bar below and record each approved pair
+  with its measured ratio (`references/contrast.py`).
 - **Typography** — the type system: heading and body typefaces (with web/system fallbacks), the
   weights in use, and a scale with roles — reused across artifacts rather than re-chosen each time.
 - **Imagery & iconography** — the photography/illustration style, the icon style, and treatment rules
@@ -102,6 +105,63 @@ A complete brand covers all four. Smaller brands get shorter versions of each, n
 - **Asset kit** — where the logo files, fonts, color swatches/tokens, and templates live.
 - **On-brand review** — how to check a given artifact against the identity (the audit below).
 
+## Contrast — the accessibility floor
+
+**This library's bar is WCAG 2.2 Level AA.** "Accessible by default" is a principle above;
+this is the number it cashes out to, so nobody has to guess and no two artifacts pick
+different bars. The thresholds are normative text from the W3C Recommendation (WCAG 2.2,
+12 December 2024) — quoted, not paraphrased:
+
+| What | AA (this library's bar) | AAA (stricter tier) |
+|---|---|---|
+| Normal text | **4.5:1** | 7:1 |
+| **Large** text | **3:1** | 4.5:1 |
+| UI components + graphical objects | **3:1** (SC 1.4.11) | *no AAA criterion exists* |
+
+**"Large" is 18pt, or 14pt bold** (WCAG's normative wording is points; at the CSS
+convention of 1pt = 4/3px that derives to 24px and ~18.7px bold — the conversion is
+arithmetic, the points are the standard). Note that a font with "extraordinarily thin
+strokes" is called out as harder to read at low contrast: passing the ratio is the floor,
+not proof of legibility.
+
+**Three exceptions have no contrast requirement at all** — and one of them is a brand
+matter people get wrong:
+
+- **Logotypes.** "Text that is part of a logo or brand name has no contrast requirement."
+  Do **not** repaint a wordmark to hit 4.5:1. Constrain where it may be *placed* instead.
+- **Incidental** — inactive components, pure decoration, invisible text, or text inside a
+  picture with significant other visual content.
+- Disabled/inactive UI components (the same exception, in SC 1.4.11's wording).
+
+### Check it, don't eyeball it
+
+Ratios are computed, not judged: `(L1 + 0.05) / (L2 + 0.05)`, L being relative luminance.
+Run the pairs through **`references/contrast.py`**:
+
+```
+python3 references/contrast.py "#1A1A1A on #F5F5F5"    # 15.96:1 — passes AA and AAA
+python3 references/contrast.py --self-test             # controls, incl. the 4.5:1 boundary
+```
+
+Its `--self-test` includes a **boundary control** (`#767676` passes AA on white, `#777777`
+misses it) because an implementation that gets the luminance curve wrong still gets
+black-on-white right — the extremes alone would prove nothing.
+
+### What the brand records
+
+A verified pairing is a **token fact, not a note**: record each approved
+foreground/background pair with its measured ratio and what it is cleared for, so an
+artifact author inherits a decision instead of re-deriving one.
+
+| Pair | Ratio | Cleared for |
+|---|---|---|
+| `ink` `#1A1A1A` on `paper` `#F5F5F5` | 15.96:1 | all text, UI, graphics |
+| `accent` on `paper` | *measure it* | state the sizes it passes |
+
+**Where the palette can't reach the bar, the palette changes** — the bar does not. If a
+brand colour only works as a large-display colour, say exactly that in the guidelines
+rather than leaving a trap for whoever builds the next artifact.
+
 ## Workflow
 
 1. **Anchor in strategy.** Establish (or read) positioning, personality adjectives, and audience.
@@ -110,8 +170,10 @@ A complete brand covers all four. Smaller brands get shorter versions of each, n
    choice must trace back to a personality adjective ("bold reds because the brand is *confident*").
 3. **Express as reusable tokens & rules.** Capture color/type/spacing as named tokens and logo/voice
    as explicit rules — concrete enough to apply without the author present.
-4. **Check accessibility & distinctiveness.** Validate contrast and legibility; sanity-check that the
-   identity is recognizably distinct, not generic or look-alike to a competitor.
+4. **Check accessibility & distinctiveness.** Measure every text/UI pairing with
+   `references/contrast.py` against the AA bar — recording the ratios, not just a verdict —
+   and confirm type legibility. Sanity-check that the identity is recognizably distinct, not
+   generic or look-alike to a competitor.
 5. **Document & hand off.** Produce the brand-guidelines artifact + asset kit. Then it's *applied*:
    `presentation-design` inherits the tokens/voice for a specific piece; the builders render it.
 6. **Audit on demand ("is this on-brand?").** Compare an existing artifact against the guidelines —
@@ -145,7 +207,9 @@ A **brand system**, not a single artifact:
 - **Un-appliable guidelines** — vibes instead of tokens, rules, and do/don't examples; others can't
   reproduce it.
 - **Generic or look-alike identity** — indistinguishable from competitors or from a default template.
-- **Ignoring accessibility** — low-contrast palettes or illegible type baked into the identity.
+- **Ignoring accessibility** — low-contrast palettes or illegible type baked into the identity;
+  or an unmeasured "looks fine to me" where a ratio was owed. Repainting a **logotype** to chase
+  a ratio is the opposite error: it is exempt, so constrain its placement instead.
 - **Duplicating artifact design** — re-specifying one deck's layout here instead of deferring to
   `presentation-design`.
 </content>

@@ -3,9 +3,11 @@
 
 Checks the structural invariants that are cheap to break and expensive to notice later:
 a skill folder that no longer matches its `name:` frontmatter, an asset missing `name:` or
-`description:`, a `references/` file cited by a SKILL.md that isn't there, and broken
+`description:`, a `references/` file cited by a SKILL.md that isn't there, broken
 symlinks (this repo single-sources some assets, so a moved canonical file silently breaks
-the link).
+the link), and an installed copy that has drifted from its skill's source. A skill declares
+those copies in `installs.json`, as {skill-relative source: project-relative target}. Only
+targets that exist are compared: a copy that isn't installed is not a defect.
 
 Opt-in BY PRESENCE: silent in a project with no `.claude/skills` or `.claude/agents`.
 
@@ -95,7 +97,29 @@ def check_frontmatter(text: str, rel: str, expected_name: str, out: list[str]) -
         out.append(f"{rel} frontmatter `name: {name}` != `{expected_name}` (they must match)")
 
 
-def check_skill(folder: Path, rel: str, out: list[str]) -> None:
+def check_installs(folder: Path, rel: str, root: Path, out: list[str]) -> None:
+    """Installed copies must be byte-identical to their source. They are copies, not
+    symlinks, because the host that reads them (GitHub) may not follow a link."""
+    manifest = folder / "installs.json"
+    if not manifest.is_file():
+        return
+    try:
+        pairs = json.loads(manifest.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        out.append(f"{rel}/installs.json is not valid JSON")
+        return
+    if not isinstance(pairs, dict):
+        out.append(f"{rel}/installs.json must be an object of source -> target paths")
+        return
+    for src, dst in pairs.items():
+        source, target = folder / str(src), root / str(dst)
+        if not source.is_file():
+            out.append(f"{rel}/installs.json lists `{src}` but that file does not exist")
+        elif target.is_file() and target.read_bytes() != source.read_bytes():
+            out.append(f"{dst} has drifted from {rel}/{src}; re-copy it from the source")
+
+
+def check_skill(folder: Path, rel: str, out: list[str], root: Path) -> None:
     skill = folder / "SKILL.md"
     if not skill.is_file():
         out.append(f"{rel}/ has no SKILL.md")
@@ -107,6 +131,7 @@ def check_skill(folder: Path, rel: str, out: list[str]) -> None:
     for ref in set(REF_RE.findall(text)):
         if not (folder / ref).exists():
             out.append(f"{rel}/SKILL.md cites `{ref}` but that file does not exist")
+    check_installs(folder, rel, root, out)
 
 
 def scan(root: Path, dirs: list[Path]) -> list[str]:
@@ -133,7 +158,7 @@ def scan(root: Path, dirs: list[Path]) -> list[str]:
         if skills.is_dir():
             for folder in sorted(skills.iterdir()):
                 if folder.is_dir() and first_visit(folder):
-                    check_skill(folder, str(folder.relative_to(root)), out)
+                    check_skill(folder, str(folder.relative_to(root)), out, root)
         agents = cdir / "agents"
         if agents.is_dir():
             for path in sorted(agents.glob("*.md")):

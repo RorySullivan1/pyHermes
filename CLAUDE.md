@@ -175,7 +175,13 @@ these rather than improvising:
 - **Python work** → `python-development` / `-review` / `-maintenance` / `-deployment` plus
   `coding-standards`. For isolated, summary-returning implementation, the `python-developer`
   agent is already scoped to `svc/` and this repo's `pytest`.
-- **GitHub** → the `github-*` skills, or the `github-operator` agent.
+- **GitHub** → the `github-*` skills, or the `github-operator` agent; `/epic` and `/issue` file
+  templated issues (the templates in `.github/` are byte-copies the `asset_integrity` hook checks).
+- **Media craft** → `outlook-html-specifications` (and the `outlook-html-designer` agent) for the
+  Word engine, `weasyprint-print-html` for paged output, `brochure-builder` / `factsheet-template`
+  for the print forms. `/prose-review` runs the `prose-auditor` agent against rule 11.
+- **Verification** → [.claude/context/verification-surface.md](.claude/context/verification-surface.md)
+  says which surfaces a session can confirm and which need a human.
 - **Verbose output** (test runs, large files, doc fetches) → the `token-manager` agent.
 - **Shipping** → `/version-set` then `/version-ship`. **Acceptance** → the `goal-auditor`
   agent. **Fact-checking a claim** → `claim-grounding`.

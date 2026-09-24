@@ -22,6 +22,7 @@ See `.claude/hooks/README.md` for the config keys and the baseline format.
 from __future__ import annotations
 
 import ast
+import hashlib
 import io
 import json
 import re
@@ -59,6 +60,7 @@ class Finding:
     line: int
     measured: int
     budget: int
+    unit: str = "lines"
 
     @property
     def location(self) -> str:
@@ -66,7 +68,7 @@ class Finding:
 
     def describe(self) -> str:
         return (f"{self.path}:{self.line} {self.scope} {self.name} — "
-                f"{self.measured} lines, budget {self.budget}")
+                f"{self.measured:,} {self.unit}, budget {self.budget:,}")
 
 
 @dataclass(frozen=True)
@@ -84,6 +86,8 @@ class Budgets:
     function: int = DEFAULT_BUDGETS["function"]
     comment_run: int = DEFAULT_BUDGETS["comment_run"]
     attribute: int = DEFAULT_BUDGETS["attribute"]
+    claude_md_lines: int = 0
+    claude_md_chars: int = 0
     baseline: frozenset[str] = frozenset()
     include: tuple[str, ...] = ()
 
@@ -119,6 +123,14 @@ def load_budgets(root: Path | None = None) -> Budgets | None:
         value = raw.get(key)
         if isinstance(value, int) and value > 0:
             budgets = replace(budgets, **{field: value})
+
+    claude_md = raw.get("claude_md")
+    if isinstance(claude_md, dict):
+        lines_cap, chars_cap = claude_md.get("lines"), claude_md.get("chars")
+        if isinstance(lines_cap, int) and lines_cap > 0:
+            budgets = replace(budgets, claude_md_lines=lines_cap)
+        if isinstance(chars_cap, int) and chars_cap > 0:
+            budgets = replace(budgets, claude_md_chars=chars_cap)
 
     baseline: frozenset[str] = frozenset()
     baseline_ref = raw.get("baseline")
@@ -188,12 +200,12 @@ def _comment_runs(source: str, scopes: list[tuple[str, str, ast.AST]]) -> list[t
     a run of them is not a prose block. `tokenize` is what distinguishes the two — a
     line-based scan cannot, because a `#` inside a string looks identical.
     """
+    lines = source.splitlines()
     own_line: list[int] = []
     for token in tokenize.generate_tokens(io.StringIO(source).readline):
-        if token.type == tokenize.COMMENT and not source.splitlines()[token.start[0] - 1][:token.start[1]].strip():
+        if token.type == tokenize.COMMENT and not lines[token.start[0] - 1][:token.start[1]].strip():
             own_line.append(token.start[0])
 
-    text = source.splitlines()
     runs: list[tuple[str, int, int]] = []
     start = previous = None
 
@@ -212,13 +224,26 @@ def _comment_runs(source: str, scopes: list[tuple[str, str, ast.AST]]) -> list[t
     return runs
 
 
+def _run_slug(source: str, line: int, length: int) -> str:
+    """A short content hash identifying one comment run, for its baseline key.
+
+    Content-derived so the key survives line moves and neighbouring runs being
+    added or removed — it churns only when the comment itself is rewritten, which
+    is when re-baselining is the correct answer anyway. Two byte-identical runs in
+    one scope share a key; a baseline entry then exempts both, which is acceptable
+    for an exemption that names the text it exempts.
+    """
+    block = "\n".join(l.strip() for l in source.splitlines()[line - 1 : line - 1 + length])
+    return hashlib.sha1(block.encode("utf-8")).hexdigest()[:8]
+
+
 def _is_attribute_doc(source: str, line: int, length: int) -> str | None:
     """The name a ``#:`` run documents, or None when it is an ordinary comment block.
 
     ``#:`` before an assignment is Sphinx's way of documenting a module constant —
     API documentation, not inline prose, and measuring it as a comment block would
-    force correct documentation to be deleted. Its name is also a stabler baseline
-    key than an ordinal, for `Finding.location`'s reason.
+    force correct documentation to be deleted. Its name is also a stable baseline
+    key, for `Finding.location`'s reason.
     """
     lines = source.splitlines()
     block = lines[line - 1 : line - 1 + length]
@@ -244,15 +269,15 @@ def scan_python(source: str, path: str, budgets: Budgets) -> list[Finding]:
         if span and span[1] > budgets.cap(scope):
             findings.append(Finding(path, scope, name, span[0], span[1], budgets.cap(scope)))
 
-    ordinals: dict[str, int] = {}
     for enclosing, line, length in _comment_runs(source, scopes):
         attribute = _is_attribute_doc(source, line, length)
         scope = "attribute" if attribute else "comment_run"
         if attribute:
-            name = attribute
+            # Qualified by the enclosing scope: two classes may document
+            # same-named attributes, and their exemptions must not collide.
+            name = attribute if enclosing == "module" else f"{enclosing}.{attribute}"
         else:
-            ordinals[enclosing] = ordinals.get(enclosing, 0) + 1
-            name = f"{enclosing}#{ordinals[enclosing]}"
+            name = f"{enclosing}#{_run_slug(source, line, length)}"
         if length > budgets.cap(scope):
             findings.append(Finding(path, scope, name, line, length, budgets.cap(scope)))
 
@@ -276,6 +301,26 @@ def scan_source(source: str, path: str, budgets: Budgets) -> list[Finding]:
         return []
 
 
+def scan_claude_md(source: str, path: str, budgets: Budgets) -> list[Finding]:
+    """Measure a CLAUDE.md against the always-loaded-file caps. [] unless adopted.
+
+    CLAUDE.md is prose that loads into every session, so its size is a per-session
+    tax — the same argument session-memory's BUDGETS make for the memory index,
+    which has its own check in memory.py. Whole-file caps only: scope tables are
+    for code, and a markdown "scope" would be a guess.
+    """
+    findings: list[Finding] = []
+    name = Path(path).name
+    if budgets.claude_md_lines:
+        measured = len(source.splitlines())
+        if measured > budgets.claude_md_lines:
+            findings.append(Finding(path, "claude_md", name, 1, measured, budgets.claude_md_lines))
+    if budgets.claude_md_chars:
+        if len(source) > budgets.claude_md_chars:
+            findings.append(Finding(path, "claude_md", name, 1, len(source), budgets.claude_md_chars, unit="chars"))
+    return [f for f in findings if f.location not in budgets.baseline]
+
+
 def scan_tree(root: Path | None = None, budgets: Budgets | None = None) -> list[Finding]:
     """Measure every supported file under the configured roots. The CI gate's entry point."""
     root = root or project_root()
@@ -285,6 +330,15 @@ def scan_tree(root: Path | None = None, budgets: Budgets | None = None) -> list[
     bases = [root / p for p in budgets.include] if budgets.include else [root]
     findings: list[Finding] = []
     for base in bases:
+        if budgets.claude_md_lines or budgets.claude_md_chars:
+            for path in sorted(base.rglob("CLAUDE.md")):
+                if SKIP_DIRS & set(path.parts):
+                    continue
+                try:
+                    source = path.read_text(encoding="utf-8")
+                except (OSError, UnicodeDecodeError):
+                    continue
+                findings.extend(scan_claude_md(source, path.relative_to(root).as_posix(), budgets))
         for suffix in _SCANNERS:
             for path in sorted(base.rglob(f"*{suffix}")):
                 if SKIP_DIRS & set(path.parts):
@@ -308,10 +362,13 @@ def main() -> int:
         if budgets is None:
             return 0
         path = Path(file_path)
-        if path.suffix not in _SCANNERS:
-            return 0
         relative = path.relative_to(root).as_posix() if path.is_absolute() else path.as_posix()
-        findings = scan_source(path.read_text(encoding="utf-8"), relative, budgets)
+        if path.name == "CLAUDE.md":
+            findings = scan_claude_md(path.read_text(encoding="utf-8"), relative, budgets)
+        elif path.suffix in _SCANNERS:
+            findings = scan_source(path.read_text(encoding="utf-8"), relative, budgets)
+        else:
+            return 0
     except Exception:
         return 0
 

@@ -11,14 +11,20 @@
 - agent-finder — Find and delegate to the optimal Claude Code subagent(s) for a task instead of defaulting to … -> skills/agent-finder/SKILL.md
 - backtesting-validation — Backtest correctness and quant-model validation in Python — point-in-time data, … -> skills/backtesting-validation/SKILL.md
 - branding — Expert at defining and applying a brand identity — the durable, reusable system that every artifact … -> skills/branding/SKILL.md
+- brochure-builder — Expert at building a folded brochure — the execution tier that turns a design spec into a finished, … -> skills/brochure-builder/SKILL.md
 - claim-grounding — Establish whether a factual claim is actually true, and record the judgment so it isn't … -> skills/claim-grounding/SKILL.md
 - coding-standards — Baseline cross-project coding conventions — descriptive naming, readability, immutability, error … -> skills/coding-standards/SKILL.md
+- deck-builder — Expert at assembling a real slide deck in a concrete tool — the execution tier that turns a design … -> skills/deck-builder/SKILL.md
+- factsheet-template — Building a branded, standardized product factsheet as a PDF — the layout, the brand tokens, the … -> skills/factsheet-template/SKILL.md
 - financial-timeseries-analysis — Financial time-series hygiene in pandas/numpy — returns vs prices, resampling/alignment, market … -> skills/financial-timeseries-analysis/SKILL.md
 - github-comments — Expert at commenting on GitHub well — PR reviews, inline code comments, issue comments, and replies … -> skills/github-comments/SKILL.md
 - github-issues — Expert at handling GitHub issues — writing, triaging, organizing, and closing them well. Use this … -> skills/github-issues/SKILL.md
 - github-pull-requests — Expert at opening and formatting GitHub pull requests well — turning a finished branch into a … -> skills/github-pull-requests/SKILL.md
 - github-releases — Expert at cutting GitHub releases — versioning, tagging, and writing release notes that tell users … -> skills/github-releases/SKILL.md
 - knowledge-router — When durable, reusable knowledge surfaces in a conversation — a concept, a key fact, a domain or … -> skills/knowledge-router/SKILL.md
+- one-pager-builder — Expert at building a single-page document — the execution tier that turns a design spec into a … -> skills/one-pager-builder/SKILL.md
+- outlook-html-specifications — The rendering contract for HTML email in Microsoft Outlook — what classic Outlook's Word-based … -> skills/outlook-html-specifications/SKILL.md
+- pamphlet-builder — Expert at building a multi-page pamphlet or booklet — the execution tier that turns a design spec … -> skills/pamphlet-builder/SKILL.md
 - presentation-design — Expert visual-design and copy craft for communication artifacts — the subjective *how* that turns a … -> skills/presentation-design/SKILL.md
 - python-deployment — Expert Python deployment, packaging, and operations — preparing Python code to ship to production, … -> skills/python-deployment/SKILL.md
 - python-development — Expert Python development for new code — writing modules, functions, classes, scripts, APIs, and … -> skills/python-development/SKILL.md
@@ -29,21 +35,32 @@
 - report-builder — Expert at building a long-form report or document — the execution tier that turns a structure + … -> skills/report-builder/SKILL.md
 - session-memory — Persist and recall project state across Claude Code sessions via a .claude/memory/ directory — a … -> skills/session-memory/SKILL.md
 - skill-distiller — Spot reusable know-how produced during a plan or conversation and decide whether to promote it into … -> skills/skill-distiller/SKILL.md
+- technical-documentation-drafter — Expert technical writer for developer-facing documentation. Use this skill whenever the user wants … -> skills/technical-documentation-drafter/SKILL.md
 - token-optimizer — Keep a Claude Code session token-efficient by deciding where work runs before it floods the main … -> skills/token-optimizer/SKILL.md
+- user-guide-drafter — Expert technical writer for end-user documentation. Use this skill whenever the user wants to … -> skills/user-guide-drafter/SKILL.md
+- weasyprint-print-html — Authoring HTML and CSS that is rendered to PDF by WeasyPrint — print-first markup, paged-media CSS, … -> skills/weasyprint-print-html/SKILL.md
 
 ## Agents (agents/*.md)
+- data-analyst — Objective data-analysis brain — frames a question against a dataset, plans the exploration, … -> agents/data-analyst.md
 - finance-quantitative-developer — Senior Python quantitative-finance engineer for any analytics/data layer added to this repo (the … -> agents/finance-quantitative-developer.md
 - github-operator — GitHub workflow operator for this repo — opens and formats pull requests, files and triages issues, … -> agents/github-operator.md
 - goal-auditor — Acceptance/goal auditor — judges whether an implemented change actually achieves the goals and … -> agents/goal-auditor.md
+- outlook-html-designer — HTML email designer-builder specialized for Microsoft Outlook — produces complete, Outlook-safe … -> agents/outlook-html-designer.md
+- presentation-architect — Objective presentation-flow brain — designs how a communication artifact is structured to land its … -> agents/presentation-architect.md
+- prose-auditor — Comment-and-docstring auditor — reviews code prose against the agreed scope discipline … -> agents/prose-auditor.md
 - python-developer — Senior Python engineer for this repo's `pyhermes` package (the `svc/` HTML-email builder). Use … -> agents/python-developer.md
 - software-architect — Objective software-architecture brain — designs how a project is structured to serve its objective, … -> agents/software-architect.md
 - token-manager — Delegate verbose or high-volume operations here so the bulk stays out of the main conversation and … -> agents/token-manager.md
 
 ## Commands (commands/*.md)
+- epic — Plan a body of work WITHOUT writing code and file it on the git remote as an epic with ordered, … -> commands/epic.md
+- issue — File one templated GitHub issue (task, bug, or feature) on the git remote, optionally as a … -> commands/issue.md
+- prose-review — Audit comments and docstrings against the prose scope discipline — dispatches the prose-auditor … -> commands/prose-review.md
 - reindex — Regenerate .claude/CATALOG.md — the on-demand inventory of this project's skills, agents, commands, … -> commands/reindex.md
 - version-set — Define or update the current version in .meta/version — a semver label plus the goals/objectives of … -> commands/version-set.md
 - version-ship — Name and ship the PR from .meta/version — branch, commit, push, and open the PR with a title/body … -> commands/version-ship.md
 
 ## Workflows (workflows/*.md)
+- establish-verification — establish-verification -> workflows/establish-verification.md
 - ship-version — ship-version -> workflows/ship-version.md
 - verify-claims — verify-claims -> workflows/verify-claims.md

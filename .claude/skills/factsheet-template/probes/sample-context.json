@@ -1,0 +1,134 @@
+{
+  "_sample": "SAMPLE DATA \u2014 synthetic, not real performance. Regression fixture only.",
+  "product": {
+    "name": "Example Systematic Index",
+    "identifier": "EXAMPLE1 Index",
+    "currency": "USD",
+    "inception_date": "2020-01-31",
+    "rebalance": "Monthly"
+  },
+  "as_of_date": "2026-08-31",
+  "audience_label": "Professional investors only \u2014 not for retail distribution",
+  "strategy": {
+    "description": "A synthetic example used to exercise the factsheet layout. The described strategy takes systematic exposure to a single risk premium, scales that exposure to a fixed volatility target, and reduces it as drawdown deepens. No figure on this sheet is a real measurement."
+  },
+  "key_facts": [
+    {
+      "label": "Asset class",
+      "value": "Example"
+    },
+    {
+      "label": "Underlying",
+      "value": "Example underlying"
+    },
+    {
+      "label": "Volatility target",
+      "value": "10%"
+    },
+    {
+      "label": "Rebalance",
+      "value": "Monthly"
+    },
+    {
+      "label": "Calculation agent",
+      "value": "Example sponsor"
+    },
+    {
+      "label": "Bloomberg",
+      "value": "EXAMPLE1 Index"
+    }
+  ],
+  "performance": {
+    "chart_path": "probes/sample-performance.svg",
+    "chart_caption": "PLACEHOLDER CHART \u2014 geometric stand-in sized to the real figure footprint, not data.",
+    "periods": [
+      {
+        "period": "1M",
+        "return_pct": 1.0,
+        "as_of": "2026-08-31"
+      },
+      {
+        "period": "3M",
+        "return_pct": 2.0,
+        "as_of": "2026-08-31"
+      },
+      {
+        "period": "YTD",
+        "return_pct": 5.0,
+        "as_of": "2026-08-31"
+      },
+      {
+        "period": "1Y",
+        "return_pct": 10.0,
+        "as_of": "2026-08-31"
+      },
+      {
+        "period": "3Y",
+        "return_pct": 20.0,
+        "as_of": "2026-08-31"
+      },
+      {
+        "period": "SI",
+        "return_pct": 50.0,
+        "as_of": "2026-08-31"
+      }
+    ]
+  },
+  "risk_stats": [
+    {
+      "label": "Realised volatility",
+      "value": "10.0%",
+      "period": "1Y",
+      "as_of": "2026-08-31"
+    },
+    {
+      "label": "Sharpe ratio",
+      "value": "1.00",
+      "period": "3Y",
+      "as_of": "2026-08-31"
+    },
+    {
+      "label": "Maximum drawdown",
+      "value": "-10.0%",
+      "period": "SI",
+      "as_of": "2026-08-31"
+    },
+    {
+      "label": "Skewness",
+      "value": "-0.50",
+      "period": "3Y",
+      "as_of": "2026-08-31"
+    }
+  ],
+  "methodology": [
+    "Exposure is set monthly from a trailing realised-volatility estimate and targets a fixed annualised index volatility, subject to a notional cap.",
+    "A de-risking overlay reduces exposure as the trailing peak-to-trough decline deepens.",
+    "Every figure in this fixture is synthetic. Nothing here was simulated, back-tested or measured; the numbers are round so that they cannot be mistaken for results."
+  ],
+  "composition": [
+    {
+      "name": "Example sleeve A",
+      "weight_pct": 50.0
+    },
+    {
+      "name": "Example sleeve B",
+      "weight_pct": 25.0
+    },
+    {
+      "name": "Cash and collateral",
+      "weight_pct": 20.0
+    },
+    {
+      "name": "De-risking reserve",
+      "weight_pct": 5.0
+    }
+  ],
+  "disclaimer_blocks": [
+    "general-disclaimer.txt",
+    "past-performance.txt",
+    "index-provider.txt"
+  ],
+  "footnotes": [
+    "Synthetic fixture data. SI = since inception."
+  ]
+}

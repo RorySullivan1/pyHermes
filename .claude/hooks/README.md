@@ -86,9 +86,14 @@ so a plain `ls` pays one fast Python startup, not three. To add a git guard, giv
 
 `prose_budget.py` is also a **library**, and that is the point of its shape: `scan_source()` and `scan_tree()` return `Finding`s, so a project's CI gate measures with the same code the edit-time note uses. An advisory hook cannot be a gate — it must never block — and a second measurer written for the gate is how the two come to disagree about what the rule is.
 
-It reads `.claude/prose-budget.json`, and **that file is the adoption marker**: absent, every entry point returns nothing. Keys are `module`, `class`, `function`, `attribute` and `comment_run` (line caps), `include` (roots to scan), and `baseline` (a path to a location-to-reason mapping whose entries are exempt). Baseline keys are qualified names rather than line numbers, so an edit above a docstring does not invalidate an entry and fail the gate for an unrelated reason.
+It reads `.claude/prose-budget.json`, and **that file is the adoption marker**: absent, every entry point returns nothing, so a project that vendors this and adopts nothing sees no output. Keys are `module`, `class`, `function`, `attribute` and `comment_run` (line caps), `claude_md` (`{"lines": N, "chars": N}` — whole-file caps on `CLAUDE.md`, the other always-loaded prose; the memory INDEX has its own check in `memory.py`, and a whole-file cap is deliberate: scope tables are for code, and a markdown "scope" would be a guess), `include` (roots to scan), and `baseline` (a path to a location-to-reason mapping whose entries are exempt — a `CLAUDE.md` entry exempts both its line and char findings, since a whole-file scope has one location). Baseline keys are qualified names rather than line numbers — a comment run, which has no name, is keyed by a short content hash of its own text — so an edit above a docstring does not invalidate an entry and fail the gate for an unrelated reason; a comment-run key churns only when that comment is rewritten.
 
-Python only, via `ast` and `tokenize`. `_SCANNERS` is the extension point; a language with no entry is skipped rather than guessed at.
+A `#:` run before an assignment is measured as **`attribute`**, not as a comment block: that is
+Sphinx's way of documenting a module constant, so scoring it as inline prose would force correct
+API documentation to be deleted. It is keyed by the constant's name, which survives a line move.
+
+Python only, via `ast` and `tokenize`. `_SCANNERS` is the extension point; a language with no
+entry is skipped rather than guessed at.
 
 ## Self-maintaining (the drift guard)
 
@@ -112,6 +117,14 @@ commands, and workflows. It is kept fresh by two fragments and the `/reindex` co
 |---|---|---|---|
 | `post-tool-use-catalog.json` | `PostToolUse` (Edit/Write/MultiEdit) | `catalog.py --on-edit` | Rebuilds `CATALOG.md` when an asset file (`SKILL.md`, an agent/command/workflow `.md`) is edited. |
 | `session-start-catalog-check.json` | `SessionStart` | `catalog.py --warn-if-stale` | Warns at session start if `CATALOG.md` is stale (catches git/IDE changes). It only *warns* — the catalog is on-demand, never printed into every session. |
+
+## probes/
+
+`probes/` holds probe kits for the hooks themselves — a hook is a check, and a check nobody has
+watched fail is not a check. `probe_parallel_state.py` (+ `PROBES.md`) is the controls-first kit
+behind the single-cursor decision: it reproduces what happens when two units of work are in
+flight, and its 2026-09-10 run **refuted** two of the three claims that motivated it. Run it
+before changing `roadmap_guard.py`, `.meta/version`'s shape, or `memory/INDEX.md`'s sections.
 
 `CATALOG.md` is per-tree and **not** symlinked (its content differs per tree, like
 `settings.json`); regenerate it in each tree with `python .claude/hooks/catalog.py` or `/reindex`.

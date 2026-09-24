@@ -16,8 +16,18 @@ fill a PR. Extract: the `version:` label, the `branch:`, the Goals, and the Obje
 - **Theme** — a short phrase capturing the goals (use `$ARGUMENTS` as an override if given).
 - **Branch** — the file's `branch:`, else `claude/<version>-<slug>`.
 - **PR title** — `<version>: <theme>` (e.g. `v0.4.0: harden the auth flow`).
-- **PR body** — built from the Goals (as the summary) and Objectives (as the acceptance /
-  checklist), plus a one-line pointer to `.meta/version`.
+- **PR body**: fill the PR template, not a shape of your own. Use the repo's
+  `.github/pull_request_template.md` if present, else the `github-pull-requests` skill's
+  `references/templates/pull_request.md`. Map the version onto its sections:
+  - **Summary**: the Goals, plus a one-line pointer to `.meta/version`.
+  - **Closes**: the issues this version finishes.
+  - **Changes**: what actually landed, read from the diff rather than the goals.
+  - **Verification**: each Objective, marked verified (with the check that showed it) or
+    not verified (with the reason).
+  - **Notes**: as the template says.
+
+  Replace every guidance comment. A goal that didn't land goes in **Not verified**. Don't
+  drop it silently.
 
 ## 3. Branch, commit, push
 

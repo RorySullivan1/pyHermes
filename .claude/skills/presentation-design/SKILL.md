@@ -81,8 +81,10 @@ set an ad-hoc system for this one piece — but a recurring need for one is the 
   for the medium (presented slides need far larger type than a read-alone report).
 - **Color palette.** Use the brand's color tokens and their roles. Absent a brand: one primary, one or
   two accents, a neutral range for text/backgrounds. Reserve a saturated accent for *emphasis only* —
-  if everything is colored, nothing is emphasized. Check contrast for legibility (mind colorblind-safe
-  pairings).
+  if everything is colored, nothing is emphasized. **Contrast is inherited, not re-decided:** the
+  bar is WCAG AA per `branding` § *Contrast* (4.5:1 normal text, 3:1 large text and UI/graphics) —
+  measure with `branding/references/contrast.py` rather than judging by eye, and mind colorblind-safe
+  pairings, which a ratio does not cover.
 - **Spacing rhythm.** A consistent spacing unit (e.g. multiples of 8px) for gaps and padding so
   rhythm is even across units.
 - **Element styles.** Consistent treatment for bullets, captions, callouts, quotes, and especially
@@ -95,7 +97,9 @@ The principles are constant; the canvas changes.
 - **Slides (deck).** One idea per slide. Assertion-style title that states the takeaway as a sentence
   ("Revenue doubled after launch"), not a topic label ("Revenue"). Big visual or a few words — never
   a wall of bullets; if you have paragraphs, they belong in a doc, not a slide. Built for viewing at
-  distance: large type, high contrast, minimal text.
+  distance: large type, high contrast, minimal text. Projector washout is real: AA is the floor
+  here, not the target — a deck that only just clears 4.5:1 on a monitor can be unreadable in a
+  bright room.
 - **One-pager.** A single eye-path: dominant headline/hero, then a scannable hierarchy down/across the
   page. Designed to be grasped in ~30 seconds and to stand alone. Use sections, not a stream. The most
   important takeaway is the largest thing on the page.
@@ -138,8 +142,9 @@ This skill writes the **final wording**, working from the content spec's key mes
 3. **Design each unit.** For each slide/panel/page: identify its one message → choose a layout that
    makes that message dominant → place content into the hierarchy → write the final copy → style any
    chart. Note what asset is needed (image, icon, data) where it's missing.
-4. **Pass for consistency & honesty.** Check alignment, repeated styles, contrast/legibility, and that
-   no chart misleads. Cut anything that isn't earning its place.
+4. **Pass for consistency & honesty.** Check alignment, repeated styles, and that no chart misleads.
+   Contrast is measured against the AA bar (`branding` § *Contrast*), not eyeballed — including
+   text over images and chart series against their background. Cut anything that isn't earning its place.
 5. **Hand off to build.** Emit the design spec — system + per-unit layout/copy/asset notes — for the
    format-specific builder (`deck-builder` / `one-pager-builder` / `brochure-builder` /
    `pamphlet-builder` / `report-builder`) or the user to assemble in a tool. Flag missing assets and

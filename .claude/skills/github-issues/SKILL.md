@@ -4,11 +4,14 @@ description: >
   Expert at handling GitHub issues — writing, triaging, organizing, and closing them
   well. Use this skill whenever the user wants to create, file, triage, label, assign,
   link, break down, or close issues: writing a clear bug report or feature request,
-  applying labels/types/milestones, splitting an epic into sub-issues, linking issues
-  to PRs, searching/deduplicating existing issues, or curating a backlog. Trigger on
-  "open an issue", "file a bug", "write a feature request", "triage these issues",
-  "label this", "break this into sub-issues", "is there a duplicate", "close issue
-  #N", "link this issue to the PR". Prefers the GitHub MCP tools (`issue_write`,
+  applying labels/types/milestones, planning an epic and splitting it into sub-issues,
+  linking issues to PRs so merges auto-close them, searching/deduplicating existing
+  issues, or curating a backlog. Ships fill-in templates (epic, task, bug, feature), a
+  render/check script, and an epic auto-close GitHub Actions workflow; the `/epic` and
+  `/issue` commands drive it. Trigger on "open an issue", "file a bug", "write a feature
+  request", "plan this as an epic", "triage these issues", "label this", "break this
+  into sub-issues", "is there a duplicate", "close issue #N", "link this issue to the
+  PR". Prefers the GitHub MCP tools (`issue_write`,
   `issue_read`, `list_issues`, `search_issues`, `sub_issue_write`) where present, else
   the `gh` CLI. Pairs with github-pull-requests (the PR that closes the issue) and
   github-comments (discussion on the issue). Be frugal — don't file noise.
@@ -27,32 +30,40 @@ discussion and annoy maintainers. If you find one, comment/upvote there (see
 github-comments) instead of filing again; if filing a genuine near-duplicate, link it
 ("Related to #45").
 
-## Honor the issue templates
-Check `.github/ISSUE_TEMPLATE/` for forms (`*.yml`) or markdown templates and fill the
-matching one (bug vs. feature vs. question). If the repo uses **issue types** or a
-required-fields config, set them. A template's headings are the maintainer's expected
-shape — match them.
+## Templates — one source for GitHub and for Claude
+This skill's templates in `references/templates/` are **also valid GitHub markdown issue
+templates**. `installs.json` installs them verbatim at `.github/ISSUE_TEMPLATE/`, so a
+human clicking "New issue" and Claude filing through the API produce the same shape. The
+`asset_integrity` hook flags an installed copy that drifts.
+
+Check `.github/ISSUE_TEMPLATE/` first:
+- **Our installed copies** (identical to `references/templates/`): they're the same form, so
+  render from the skill's copy as usual.
+- **A template that isn't ours**, a YAML form (`*.yml`) or a markdown template: the repo's
+  wins. Fill it, matching its headings, because they're the maintainer's expected shape.
+- **None:** use the skill's own.
+
+If the repo uses **issue types** or a required-fields config, set them.
+
+| Kind | Template | Use for |
+|---|---|---|
+| `epic` | `epic.md` | A parent: Problem, Outcome, ordered Sub-issues, Acceptance, Non-goals |
+| `task` | `task.md` | A unit of work, the default sub-issue: Goal, Context, Scope in/out, Acceptance, Depends on |
+| `bug` | `bug.md` | What happened, Steps, Expected, Environment, Evidence, regression Acceptance |
+| `feature` | `feature.md` | Problem before Proposal, Acceptance, Non-goals |
+
+Each section holds a **slot**, a guidance comment that names its field
+(`<!-- goal: … -->`). A human sees the guidance in GitHub's editor, and the script fills
+the field. Every non-epic template ends in **Done when** with a `Closes #N` line that becomes
+the real number after filing. Fill templates through `scripts/issue_body.py`
+(`render` → `check --allow-self` → file → `fill-self` → `check`), never by hand. The
+script refuses missing or misspelled fields, leftover slots, left-in frontmatter, and
+empty sections. `lint-templates` confirms that every template still works as a GitHub
+template. Call order, the `gh`
+fallback, and the traps are in `references/mechanics.md`.
 
 ## Writing a bug report
-Lead with what's broken and how to see it:
-
-```markdown
-### What happened
-The upload retries forever when the server returns 503.
-
-### Steps to reproduce
-1. Call `upload(path)` against a server returning 503
-2. Observe: it loops without backoff or limit
-
-### Expected
-Retry with backoff, give up after N attempts, surface the error.
-
-### Environment
-v2.3.1 · Python 3.12 · Linux
-
-### Evidence
-<log excerpt / stack trace / failing test>
-```
+Lead with what's broken and how to see it (`references/templates/bug.md` is the shape).
 
 - **Title = the symptom**, specific and searchable: "Upload retries forever on 503",
   not "bug in uploader".
@@ -74,13 +85,28 @@ A feature framed as a problem invites better solutions than one framed as a dema
   rather than letting it rot.
 
 ## Break big work into sub-issues
-For an epic, create a parent issue and link children with `sub_issue_write` (or a task
-list `- [ ] #123` in the body where sub-issues aren't available). Each child should be
+An epic is a parent issue whose children are real sub-issues. Each child should be
 independently shippable and pass the same "can someone pick this up cold?" bar.
+- **Plan before filing.** Settle the breakdown and its dependency order first, then file
+  the children **in that order** so each `Depends on #M` already exists.
+- **Parent at creation.** `issue_write` with `parent_issue_number` creates and links in
+  one call. The standalone link (`sub_issue_write`) takes the child's **id, not its
+  number** — the most common way to link the wrong issue.
+- **The epic body records order and dependencies**; GitHub's sub-issue panel records
+  progress. Keep both: the panel can't say "#50 depends on #49".
+- **Limits:** 100 sub-issues per parent, 8 levels deep. An epic nearing either is two
+  epics.
+- Where sub-issues aren't available, fall back to a list of `#N` lines in the body.
 
 ## Linking and closing
 - **Link to the PR that fixes it:** the PR body's `Closes #N` (see
   github-pull-requests) auto-closes the issue on merge — prefer that over manual closing.
+  It fires only for a PR into the **default branch**; one keyword per issue.
+- **Epics close from their children, not from a PR.** Never put the epic's number in a
+  child's closing line (the first merge would close the epic). Install
+  `assets/epic-autoclose.yml` as `.github/workflows/epic-autoclose.yml` to close the
+  parent when its last child closes and reopen it when a child reopens; without it,
+  close the epic by hand with a pointer to the last PR.
 - **Close with a reason and a pointer:** "Fixed in #210" or "Closing as won't-fix
   because …". Never close silently — the next person needs the trail.
 - **Reopen** rather than file a fresh issue when a regression recurs.

@@ -1,0 +1,154 @@
+/* factsheet.css — the brand + layout layer over print-base.css.
+ *
+ * Overrides print-base's CUSTOM PROPERTIES and adds only factsheet-specific structure.
+ * If you find yourself restating a print-base RULE here, a variable is missing upstream —
+ * add it there instead.
+ *
+ * The @import path assumes the two skills sit side by side in .claude/skills/. When the
+ * factsheet is staged into a render directory (which --strict-fetch requires, because the
+ * base URL is both the fetch root and the relative-path root), copy print-base.css in
+ * beside factsheet.css and the import resolves unchanged.
+ */
+@import url("print-base.css");
+
+/* ---------- Brand faces. fonts/ ships EMPTY: see fonts/README.md. ---------- */
+
+@font-face {
+  font-family: "Brand Sans";
+  src: url("fonts/brand-sans-400.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Brand Sans";
+  src: url("fonts/brand-sans-600.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Brand Text";
+  src: url("fonts/brand-text-400.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Brand Text";
+  src: url("fonts/brand-text-600.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+}
+
+:root {
+  /* The generic keyword at the end of each stack is load-bearing: it is what renders while
+   * fonts/ is empty. It is NOT a licence to ship without the brand faces — lint W004 and
+   * the render's fonts bucket both stay noisy until the files are present. */
+  --family-display: "Brand Sans", sans-serif;
+  --family-text: "Brand Text", serif;
+
+  --accent: #1f4e79;
+  --ink: #16191d;
+  --ink-muted: #5a6068;
+  --band: #eef2f7;
+  --rule: #ccd2da;
+  --rule-strong: #7c848f;
+
+  --font-body: 8.8pt;
+  --font-h1: 17pt;
+  --font-h2: 11pt;
+}
+
+/* ---------- Masthead ---------- */
+
+.masthead {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  border-bottom: 1.6pt solid var(--accent);
+  padding-bottom: var(--space-2);
+  margin-bottom: var(--space-3);
+  break-inside: avoid;           /* fits on one page by construction */
+}
+.masthead .identity { flex: 1 1 auto; }
+.masthead h1 { margin: 0; color: var(--accent); }
+.masthead .identifier {
+  font-family: var(--family-display);
+  font-size: var(--font-small);
+  color: var(--ink-muted);
+  letter-spacing: 0.04em;
+}
+.masthead .logo { flex: 0 0 auto; width: 32mm; }
+.masthead .logo img { width: 100%; height: auto; display: block; }
+
+/* The as-of date is structural, not decorative: every figure on the page is only true as
+ * of this date, so it sits in the masthead and in the data contract as a required field. */
+.as-of {
+  font-family: var(--family-display);
+  font-size: var(--font-small);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* ---------- Two-column body band for page 1 ---------- */
+
+.columns {
+  display: flex;
+  gap: var(--space-4);
+  break-inside: avoid;
+}
+.columns .main { flex: 1 1 62%; }
+.columns .side { flex: 1 1 38%; }
+
+/* ---------- Key facts ---------- */
+
+.key-facts th { width: 42%; }
+.key-facts td { font-variant-numeric: tabular-nums; }
+
+/* ---------- Returns and risk ---------- */
+
+/* Period and as-of travel WITH the figure, per the data contract — a return without its
+ * period and date is not a fact, it is a number. */
+.returns td.period { font-family: var(--family-display); font-weight: 600; }
+.returns td.asof, .risk td.asof {
+  font-size: var(--font-micro);
+  color: var(--ink-muted);
+  white-space: nowrap;
+}
+
+/* ---------- Composition ---------- */
+
+.composition td.weight { text-align: right; font-variant-numeric: tabular-nums; }
+/* A bar drawn with a background gradient: supported, unlike box-shadow, and needs no image. */
+.composition td.bar {
+  width: 34%;
+  padding-right: 0;
+}
+.composition .bar-track {
+  background-color: #dfe5ec;
+  height: 2.4mm;
+}
+.composition .bar-fill {
+  background-color: var(--accent);
+  height: 2.4mm;
+}
+
+/* ---------- Disclaimer ---------- */
+
+.disclaimer {
+  font-size: var(--font-micro);
+  color: var(--ink-muted);
+  line-height: 1.3;
+  border-top: 0.8pt solid var(--rule-strong);
+  padding-top: var(--space-2);
+}
+.disclaimer h2 { font-size: var(--font-small); color: var(--ink); }
+/* Long legal copy MUST be allowed to fragment — do not add break-inside: avoid here. */
+.disclaimer p { margin-bottom: var(--space-1); }
+
+/* An unapproved block is marked so an unreviewed draft cannot pass for a final document. */
+.disclaimer .placeholder {
+  background-color: #fff3cd;
+  border-left: 1.2pt solid #8a6d00;
+  padding: var(--space-1) var(--space-2);
+  color: #4a3b00;
+  font-family: var(--family-display);
+}

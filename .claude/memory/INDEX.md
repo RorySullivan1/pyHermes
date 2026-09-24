@@ -49,6 +49,9 @@
 - [2026-09-23] **An image's CSS width is a cap on 100%, never a fixed px.** A px width is WeasyPrint's
   min-content, so a 600px chart in a half column widened the frame and added a sheet — `media.md` (#201)
 
+- [2026-09-24] **Re-syncing from claudeBrain is a 3-way merge, never a copy.** Base = the factory
+  blob nearest our file; pyHermes-adapted agents/hooks stay ours — sessions/2026-09-24-sync-claudebrain-assets.md
+
 ## Threads          (open items; remove when closed)
 - **Every issue or PR body is written without angle brackets** — GitHub's sanitizer has
   emptied three.
