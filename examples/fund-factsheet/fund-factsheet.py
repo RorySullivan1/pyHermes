@@ -50,7 +50,8 @@ from svc.builder import (
     TwoColumn,
 )
 from svc.builder.enums import CardOrientation, TwoColumnRatio
-from svc.builder.models import KpiItem, TableRow
+from svc.builder.formats import number
+from svc.builder.models import Cell, Column, ColumnGroup, KpiItem, TableRow
 from svc.builder.sizing import LETTER_PORTRAIT
 from svc.data.exceptions import BackendMissingError
 from svc.document import (
@@ -122,12 +123,16 @@ _SECTORS = [
     ("Materials", 1.8),
 ]
 
-#: Average annual total returns, in percent, as of AS_OF.
+#: Average annual total returns, in percent, as of AS_OF. Raw figures: the
+#: table's columns write them (#225), so no cell spells its own format.
 _RETURNS = [
-    ("Fund (NAV)", "18.42", "11.87", "14.03", "12.51", "11.94"),
-    ("Fund (Market Price)", "18.39", "11.85", "14.02", "12.50", "11.93"),
-    ("Hermes US Large-Cap Index", "18.51", "11.96", "14.12", "12.60", "12.03"),
+    ("Fund (NAV)", 18.42, 11.87, 14.03, 12.51, 11.94),
+    ("Fund (Market Price)", 18.39, 11.85, 14.02, 12.50, 11.93),
+    ("Hermes US Large-Cap Index", 18.51, 11.96, 14.12, 12.60, 12.03),
 ]
+
+#: The one figure the returns table flags, rather than the whole table (#224).
+_INCEPTION_NOTE = "Annualised from the fund's inception on 14 March 2012."
 
 #: Calendar-year total returns, fund against benchmark.
 _CALENDAR = [
@@ -202,6 +207,38 @@ _TOP_HOLDINGS = [
     ("Berkshire Hathaway Inc. Class B", "1.71"),
     ("Eli Lilly & Co.", "1.44"),
 ]
+
+
+def _percent(value: float) -> str:
+    return number(value, 2)
+
+
+def _returns_table() -> DataTable:
+    """
+    The returns table in the words a desk writes one in (#217).
+
+    "Annualised" spans the four periods, the units row says "%" once, and the
+    columns write and tone the raw figures, aligned on the point.
+    """
+    columns = [
+        Column(head, format=_percent, tone="auto", align_decimal=True, unit="%")
+        for head in ("1 Year", "3 Year", "5 Year", "10 Year", "Since Incept.")
+    ]
+    rows = [TableRow(cells=[name, *values]) for name, *values in _RETURNS]
+    nav_since = rows[0].cells[-1].value
+    rows[0].cells[-1] = Cell(f"{_percent(nav_since)}[^1]", value=nav_since, tone="positive")
+    return DataTable(
+        headers=["Basis", *columns],
+        groups=[
+            ColumnGroup("Share class"),
+            ColumnGroup("Annualised", 4),
+            ColumnGroup("Since launch"),
+        ],
+        rows=rows,
+        notes=[_INCEPTION_NOTE],
+        as_of=AS_OF,
+        spacing=_RETURNS_SPACING,
+    )
 
 
 def _sign(value: str) -> str:
@@ -381,16 +418,8 @@ def _sheet_one() -> list[Container]:
             ),
         ),
         FullWidth(
-            title="Average Annual Total Returns (%)",
-            content=DataTable(
-                headers=["Basis", "1 Year", "3 Year", "5 Year", "10 Year", "Since Incept."],
-                rows=[
-                    TableRow(cells=[name, *values], colors=["", *map(_sign, values)])
-                    for name, *values in _RETURNS
-                ],
-                as_of=AS_OF,
-                spacing=_RETURNS_SPACING,
-            ),
+            title="Average Annual Total Returns",
+            content=_returns_table(),
         ),
         TwoColumn(
             ratio=TwoColumnRatio.EQUAL,

@@ -5,9 +5,9 @@
   shared kit, `svc/email`, `svc/document` and `svc/brochure` are the media, and exporters sit on
   one contract — `svc/delivery`+`gmail`+`outlook`, and `svc/pdf`. Rationale: CLAUDE.md and
   `.claude/rules/media.md`; do not restate it here.
-- **Shipped**: #157, #153, #169, #170, #171, #172, #193 (PRs #167–#203); #201, #150, #202 (PRs #204–#206).
-  **In review**: epic #209 (spacing at two levels, #211–#216) as PR #222 from `claude/gifted-ritchie-7dkp5g`, which
-  also carries the fund factsheet from the closed PR #207.
+- **Shipped**: #157, #153, #169, #170, #171, #172, #193 (PRs #167–#203); #201, #150, #202 (PRs #204–#206);
+  #209 (PR #222). **In review**: epic #217 (table semantics, #223–#228) from
+  `claude/integrate-claude-assets-pyhermes-d4spzb`.
 - The prose budget is live; the baseline is 45 and may only shrink.
 
 ## Decisions        (append-only; supersede, never delete)
@@ -31,7 +31,13 @@
   derive of the bound scheme.** The email gates both; no px enters the API — `design-axes.md`,
   sessions/2026-09-24-spacing-two-levels.md
 
+- [2026-09-24] **A cell's text on its own heat tint takes the more legible theme token, and a
+  marker hangs past the point on paper.** Both were found only by the #228 rasters —
+  sessions/2026-09-24-table-semantics.md
+
 ## Threads          (open items; remove when closed)
+- **In this container, PDF byte-determinism tests flake** (no HarfBuzz-Subset), and screenshot
+  tests skip unless `PYHERMES_CHROMIUM=/opt/pw-browsers/chromium-1194/chrome-linux/chrome`.
 - **Every issue or PR body is written without angle brackets** — GitHub's sanitizer has
   emptied three.
 - **A closing keyword closes only the issue it names, and this is now proven both ways.**
@@ -56,3 +62,5 @@
   px width each put a4_portrait on six sheets; email screenshots pixel-identical — `media.md`
 - [2026-09-24] spacing-two-levels — **#209 implemented** (#211–#216): `dense`, `SizeScheme` as `size_theme`,
   `Spacing` + `SPACING_TOKENS`, the factsheet at 90% of two sheets — sessions/2026-09-24-spacing-two-levels.md
+- [2026-09-24] table-semantics — **#217 implemented** (#223–#228): groups, cell markers, `Column.format`,
+  decimal alignment and units, `HeatScale` and bars; `letter_quant_table` — sessions/2026-09-24-table-semantics.md

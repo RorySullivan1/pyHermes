@@ -22,6 +22,7 @@ from svc.config import get_config
 
 from . import formats
 from .apparatus import (
+    MARKER,
     note_anchor,
     note_ref_anchor,
     slugify,
@@ -568,14 +569,17 @@ class DataTable(Exhibit, Component):
         """Every cell's text with its markers spelled as the document's numbers."""
         return [[text_markers(cell.text, self.notes) for cell in row.cells] for row in self.rows]
 
-    def _pads(self) -> list[list[int]]:
+    def _pads(self, hang_markers: bool = False) -> list[list[int]]:
         """
         Per cell, the spaces that line a column's points up (#226).
 
-        Computed once from the spelled text and handed to both projections, so
-        the markup's ``&nbsp;`` run and the text part's spaces are one count.
+        One count for both projections, from the spelled text. On a page a
+        marker is a superscript that hangs past the point, so the markup asks
+        with ``hang_markers`` and a marked cell is measured without it.
         """
         spelled = self._spelled()
+        if hang_markers:
+            spelled = [[MARKER.sub("", cell.text) for cell in row.cells] for row in self.rows]
         pads = [[0] * len(self.columns) for _ in self.rows]
         figures = [i for i, row in enumerate(self.rows) if row.kind != RowKind.SUBHEAD]
         for c, column in enumerate(self.columns):
@@ -627,7 +631,7 @@ class DataTable(Exhibit, Component):
     def context(self) -> dict[str, Any]:
         columns = self.resolved_columns()
         alt_by_row = self._striping()
-        pads = self._pads()
+        pads = self._pads(hang_markers=True)
         ends = self._bar_ends()
         return {
             "columns": [

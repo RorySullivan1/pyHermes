@@ -225,6 +225,7 @@ test (#60). `lint_html(html)` returns `Finding(rule_id, severity, location, mess
 | `empty-url` | error | `url()` with nothing in it; a client may resolve it against the message body |
 | `table-role` | error | A layout table with no `role`, **and** a data table carrying one (#114) |
 | `table-structure` | error | A data table with no `thead`, **paged documents only** (#176). A print engine repeats only a `thead` on each sheet |
+| `table-header-tier` | error | A `colspan` outside a `thead`, a header tier whose spans miscount the columns, or a spanning `th` without `scope="colgroup"` — every medium (#223) |
 | `vml-fill-empty-src` | error | A `v:fill` with `src=""` inside `[if mso]` (#150) — `empty-url`'s case, in the one place that rule cannot reach |
 | `vml-fill-frame-without-src` | error | A `v:fill` claiming `type="frame"` with no `src` (#150). Outlook paints a broken-image placeholder over the shape rather than falling back to `color`/`opacity` |
 | `size-budget` | warn/error | The 90/102 KB thresholds, **attributing the bytes to section-marker regions** |
@@ -1062,3 +1063,14 @@ eight-column table, a wrapped figure, a pull quote and a disclosures sheet, in c
 It exists to show the landscape reading layout, not to A/B against A4. It is also the gallery's
 first centred cover, and its first raster found the cover logo stranded at the left, fixed in
 `document/regions/cover.html`. `digital-pdf.md` has the tests that read it back.
+
+
+## The factor book (#228)
+
+`letter_quant_table` is the seventh paged fixture and epic #217's proof. It is a Letter portrait
+returns table that crosses from sheet one to sheet two with a three-row head: groups, column
+heads and units. It uses every table word the epic added. `tests/test_quant_fixture.py` asserts
+`SHEETS = 2` from the PDF and reads the whole head back from every sheet the table occupies. It
+photographs each sheet too, and CI's `pdf` job runs it. `a4_long_table.build_grouped()` is the
+other half: the same engineered boundaries, re-measured under the tiered head, with its own
+`GROUPED_PARAGRAPHS`.

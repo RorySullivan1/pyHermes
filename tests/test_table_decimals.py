@@ -147,3 +147,27 @@ def test_chromium_puts_the_points_in_one_column(viewport):
     four, twelve, seven = points
     assert four == pytest.approx(twelve, abs=0.5)
     assert seven == pytest.approx(twelve, abs=0.5)
+
+
+class TestAMarkerHangsPastThePoint:
+    """Found on the factsheet's first raster (#228): ``11.94¹`` pulled its column askew."""
+
+    def _table(self) -> DataTable:
+        return DataTable(
+            ["Basis", Column("Since", align_decimal=True)],
+            [TableRow(["NAV", "11.94[^1]"]), TableRow(["Price", "11.9"])],
+            notes=["Annualised from inception."],
+        )
+
+    def test_the_markup_measures_the_figure_without_its_superscript(self):
+        cells = _cells_with_markers(self._table().render(TemplateEngine()))
+        assert cells == ["11.94", "11.9&nbsp;"]
+
+    def test_the_text_part_counts_the_spelled_marker(self):
+        _, _, nav, price = self._table().text().splitlines()
+        assert nav.index(".") == price.index(".")
+
+
+def _cells_with_markers(html: str) -> list[str]:
+    body = html[html.index("<tbody>") :]
+    return re.findall(r"<td [^>]*>([^<]*)", body)

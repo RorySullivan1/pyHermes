@@ -261,7 +261,11 @@ cell or in the section title.
   a cell's last `.`, suffix included, so `4.5%` and `12.25%` compare as 2 and 3. It pads each
   cell on the right to the column's widest. `DataTable._pads()` runs it on the spelled text,
   markers as the document's numbers, and hands the counts to both readers. The template emits
-  `&nbsp;` and the text part emits spaces, so a test finds one string in both.
+  `&nbsp;` and the text part emits spaces, so a test finds one string in both. *One exception,
+  found by #228's raster:* a marker in an aligned cell hangs on paper. The markup measures the
+  figure with the marker removed, because a superscript is not three characters wide. The text
+  part counts the spelled `[n]`. Without it, the factsheet's `11.94¹` pulled `11.93` and `12.03`
+  three places left of their points.
 - **A figure with no point has one before its suffix.** The issue specified "the maximum plus
   one", which is right for a bare `7` and wrong for `7%`. It would push the `%` one column
   past the point. So the virtual point sits before the trailing non-digits: the `7` stands
@@ -297,6 +301,12 @@ the range, and `Column(bar=True)` draws each figure as a bar under it. Both read
   a position pins one byte-exact colour: halfway from white to classic positive is `#A5BEAC`.
   `slate_theme` carries a scaled column, and its golden moved three background lines, one per
   cell, to slate's own tokens.
+- **Text on a tint takes the more legible of two theme tokens.** The first raster of #228's
+  fixture showed `-9.0%` in negative red on a negative-red tint, which is illegible. A scaled
+  cell's text is now `text.primary` or `text.on_accent`, whichever has the higher WCAG
+  contrast with the tint. The `readable_on` filter decides, at render, like the tint. That
+  outranks the cell's tone, because the tint already says what the tone would. A caller's
+  explicit `color` still wins.
 - **Precedence: subhead, then the cell's background, then the scale, then the striping.** A
   total is chrome, so it takes neither a scale nor a bar. A data row's cell in a scaled or
   barred column must carry a raw figure or construction raises, naming the row and the cell.
@@ -319,6 +329,17 @@ the range, and `Column(bar=True)` draws each figure as a bar under it. Both read
 - **Neither projects to text.** The figure is the data, and its sign is already in the string
   (#178's reasoning). A test asserts the text part is byte-identical with and without a scale
   or a bar.
+
+### The proof: a factor book and the factsheet (#228)
+
+`letter_quant_table` is the paged fixture that carries every word above: Letter portrait,
+twenty strategies over two sheets, grouped heads, a units row, decimal-aligned trimmed
+figures, a marker on one figure, a diverging heat scale and a bar. `SHEETS = 2` is asserted
+from the PDF, the whole three-row head is read back from both sheets, the marked figure's note
+is found on its sheet, and each sheet is photographed. The fund factsheet's returns table now
+sets "Annualised" over the four periods, a units row of `%`, decimal-aligned raw figures and
+one marker on the since-inception figure. The unit left its section title, and the table
+still lays out to two sheets.
 
 [Card](../../svc/builder/models.py) is the unit: `label` (required), `value`, `color`,
 `sublabel`, and an optional `body` for prose. Either `value` or `body` must be present.
@@ -351,3 +372,21 @@ non-fluent `Email` class works identically.
     by default in browsers *and* the Word engine, so every label cell had to start emitting
     `font-weight: normal` or a semantic change would have bolded a column in every shipped
     email.
+
+- **The table-semantics epic (#217) is complete.** #223 added groups, #224 markers, #225 the
+  format contract, #226 decimal alignment and units, #227 the scale and the bar, and #228 the
+  fixture, the factsheet and these docs. Four things it leaves:
+  - **Both defects the pixels found were invisible to every other check.** A red figure on
+    a red tint and a column pulled askew by a superscript were both byte-stable. Each passed
+    its golden and its lint, and each was right in the text part. Standing rule 3 has now
+    paid for itself on two more epics.
+  - **Each "one string for both projections" claim needed an exception, and it was
+    principled.** A marker is three characters in text and a superscript on paper, so the
+    padding counts what each medium actually draws. The single computation holds. It takes a
+    flag for the one thing a medium does differently.
+  - **A tripwire should fail for the right reason, and one failed for the wrong one.**
+    The field-completeness test passed on an unused `groups` because `[]` is not `None`. It
+    was exactly the vacuous pass #121 wrote the rule to prevent, one level down.
+  - **Every size token must render in `kitchen_sink`**, so a component token forces the
+    exhaustive fixture to draw the thing it sizes. That is why `kitchen_sink` carries a bar
+    and its A/B siblings moved with it. The rule held, and it was a cost worth paying.

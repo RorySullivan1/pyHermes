@@ -167,3 +167,26 @@ class TestTheTextPartIsUntouched:
         plain = _table(scale=None).text()
         assert _table().text() == plain
         assert _table(bar=True).text() == plain
+
+
+class TestTextOnATintStaysLegible:
+    """Found in the first raster (#228): a toned figure on its own tint vanished."""
+
+    def test_the_filter_picks_the_higher_contrast(self):
+        from svc.builder.filters import readable_on
+
+        assert readable_on("#B85450", "#3B3B3B", "#FFFFFF") == "#FFFFFF"
+        assert readable_on("#F4F6F8", "#3B3B3B", "#FFFFFF") == "#3B3B3B"
+
+    def test_a_scaled_cell_takes_a_readable_token_over_its_tone(self):
+        rows = [TableRow(["High", 0.10]), TableRow(["Low", 0.0])]
+        table = DataTable(["Fund", Column("1Y", format=one_place, tone="auto", scale=SCALE)], rows)
+        body = table.render(TemplateEngine())
+        body = body[body.index("<tbody>") :]
+        colours = re.findall(r'<td align="right" style="[^"]*; color: (#[0-9A-F]{6});', body)
+        assert colours == [DEFAULT_THEME.text.on_accent, DEFAULT_THEME.text.primary]
+
+    def test_an_explicit_colour_still_wins(self):
+        rows = [TableRow(["High", Cell(value=0.10, color="#112233")])]
+        body = _table(rows=rows).render(TemplateEngine())
+        assert "color: #112233" in body
