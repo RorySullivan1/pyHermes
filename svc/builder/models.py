@@ -8,7 +8,8 @@ metadata for the email skeleton, typed data for each component, etc.
 
 import re
 from collections.abc import Callable, Sequence
-from dataclasses import InitVar, dataclass, field, fields
+from dataclasses import InitVar, dataclass, field, fields, replace
+from decimal import Decimal
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from . import formats
@@ -608,15 +609,23 @@ class Column:
                 :attr:`kind`.
         kind:   ``text`` or ``numeric``. Empty resolves from the column's
                 *position*: the first column is text, the rest are numeric —
-                which is what ``loop.first`` meant.
+                which is what ``loop.first`` meant. A ``format`` makes it numeric.
+        format: How a raw figure in this column is written (#225).
+        tone:   ``auto`` (the sign decides) or a ``Tone`` for its raw figures.
     """
 
     header: str
     align: str = ""
     kind: str = ""
+    format: Callable[[Any], str] | None = None
+    tone: str = ""
 
     def validate(self) -> None:
         _require(self.header, "column.header")
+        if self.format is not None and not callable(self.format):
+            raise ValidationError(f"'column.format' must be callable, got: {self.format!r}")
+        if self.tone != "auto":
+            _validate_tone(self.tone, "column.tone")
         if self.align and self.align not in tuple(ColumnAlign):
             raise ValidationError(
                 f"'column.align' must be one of {[a.value for a in ColumnAlign]}, "
@@ -636,6 +645,8 @@ class Column:
         """
         if self.kind:
             return ColumnKind(self.kind)
+        if self.format is not None:
+            return ColumnKind.NUMERIC
         return ColumnKind.TEXT if index == 0 else ColumnKind.NUMERIC
 
     def resolved_align(self, index: int) -> ColumnAlign:
@@ -655,11 +666,7 @@ class Column:
 
     def resolved(self, index: int) -> "Column":
         """This column with both presentation fields filled in."""
-        return Column(
-            header=self.header,
-            align=self.resolved_align(index),
-            kind=self.resolved_kind(index),
-        )
+        return replace(self, align=self.resolved_align(index), kind=self.resolved_kind(index))
 
 
 @dataclass(frozen=True)
@@ -752,8 +759,7 @@ class Cell:
     as *"the caller styles cells"*, the closed list has opened and the rule
     is dead — a ``title_color=`` with more steps.
 
-    The theme remains the fallback, and ``tone`` (#178) is that claim as a
-    word the theme resolves; `data-table.md` argues it.
+    ``tone`` (#178) is that claim as a word the theme resolves.
 
     Attributes:
         text:       The cell's contents. Plain text, escaped on the way out.
@@ -763,6 +769,7 @@ class Cell:
                     alternating tint in place.
         tone:       ``positive`` / ``negative`` / ``neutral``, as the live
                     theme's semantic token. Empty takes the column's kind.
+        value:      The raw figure ``text`` was formatted from (#225).
     """
 
     text: str = ""
@@ -770,6 +777,7 @@ class Cell:
     color: str = ""
     background: str = ""
     tone: str = ""
+    value: Any = None
 
     def validate(self) -> None:
         if self.align and self.align not in tuple(ColumnAlign):
@@ -801,7 +809,7 @@ class Cell:
         it instead — a falling VIX is good news.
         """
         resolved = tone_of(value, fmt) if tone == "auto" else tone
-        cell = cls(text=fmt(value), align=align, background=background, tone=resolved)
+        cell = cls(text=fmt(value), align=align, background=background, tone=resolved, value=value)
         cell.validate()
         return cell
 
@@ -836,7 +844,7 @@ def _validate_tone(value: str, field_name: str) -> None:
 
 def coerce_cell(value: "str | Cell", field_name: str = "cell") -> Cell:
     """
-    Accept either a :class:`Cell` or a bare string.
+    Accept a :class:`Cell`, a bare string, or a raw figure its column formats.
 
     ``TableRow(cells=["Value", "+1.8%"])`` keeps working untouched — the same
     union-coercion :func:`coerce_column` and
@@ -845,11 +853,18 @@ def coerce_cell(value: "str | Cell", field_name: str = "cell") -> Cell:
     if isinstance(value, Cell):
         value.validate()
         return value
+    if is_figure(value):
+        return Cell(value=value)
     if not isinstance(value, str):
         raise ValidationError(
-            f"{field_name!r} must be a Cell or a string, got: {type(value).__name__}"
+            f"{field_name!r} must be a Cell, a string or a number, got: {type(value).__name__}"
         )
     return Cell(text=value)
+
+
+def is_figure(value: Any) -> bool:
+    """Whether ``value`` is a raw number a column may format: never a bool."""
+    return isinstance(value, (int, float, Decimal)) and not isinstance(value, bool)
 
 
 @dataclass

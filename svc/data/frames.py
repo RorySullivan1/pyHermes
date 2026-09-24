@@ -1,9 +1,9 @@
 """
 A pandas DataFrame, as a :class:`~svc.builder.components.DataTable`.
 
-Column kinds come from dtypes, figures go through :mod:`svc.builder.formats`,
-and a sign can become a tone, all in one call. pandas is the ``[data]`` extra,
-imported only when a frame is actually adapted.
+Column kinds come from dtypes, and each numeric column carries its format and
+tone for the table to apply (#225), so a frame and a hand-built table agree.
+pandas is the ``[data]`` extra, imported only when a frame is actually adapted.
 """
 
 from __future__ import annotations
@@ -93,7 +93,9 @@ def table_from_frame(
 
     with_index = _is_meaningful(frame.index, pd) if index is None else index
     columns = [
-        Column(str(name), kind=ColumnKind.NUMERIC if numeric[name] else ColumnKind.TEXT)
+        Column(str(name), kind=ColumnKind.NUMERIC, format=fmt[name], tone=tones.get(name, ""))
+        if numeric[name]
+        else Column(str(name), kind=ColumnKind.TEXT)
         for name in frame.columns
     ]
     if with_index:
@@ -110,15 +112,14 @@ def table_from_frame(
     for position, (label, *values) in enumerate(frame.itertuples(index=True, name=None)):
         if label in subheads:
             rows.append(TableRow([subheads[label]], kind=RowKind.SUBHEAD))
-        cells = [_text_cell(label, missing, pd)] if with_index else []
+        cells: list[Any] = [_text_cell(label, missing, pd)] if with_index else []
         for name, value in zip(frame.columns, values, strict=True):
             if not numeric[name]:
                 cells.append(_text_cell(value, missing, pd))
             elif pd.isna(value):
                 cells.append(Cell(missing))
             else:
-                figure = value.item() if hasattr(value, "item") else value
-                cells.append(Cell.from_number(figure, fmt[name], tone=tones.get(name, "")))
+                cells.append(value.item() if hasattr(value, "item") else value)
         last = position == len(frame) - 1
         rows.append(TableRow(cells, kind=RowKind.TOTAL if total_row and last else RowKind.DATA))
 

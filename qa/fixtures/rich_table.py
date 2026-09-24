@@ -4,7 +4,9 @@ Every ``DataTable`` axis at once (#116), so a cross-axis regression is visible.
 **Two tables on purpose.** One carries the expressive surface — per-column
 ``kind`` and ``align``, per-cell colour and background, row kinds, a caption
 and row headers. The other is a plain table of bare strings, which is what
-pins that none of the new machinery changed the default rendering.
+pins that none of the new machinery changed the default rendering. A third,
+the quantitative table, carries epic #217's words: groups, a marked cell, and
+columns that format their own raw figures.
 """
 
 from __future__ import annotations
@@ -12,7 +14,8 @@ from __future__ import annotations
 from pathlib import Path
 
 from svc.builder import DataTable, Email, EmailBuilder, FullWidth, TextBlock
-from svc.builder.models import Cell, Column, TableRow
+from svc.builder.formats import pct
+from svc.builder.models import Cell, Column, ColumnGroup, TableRow
 
 #: Gains and losses, as the caller's claim about a figure rather than a
 #: styling choice — the justification that admits #118's colours at all.
@@ -22,6 +25,31 @@ _LOSS = "#B85450"
 #: A shaded cell says something the number alone does not: this mark is
 #: stale. Same channel as the text colour, same kind of claim.
 _STALE = "#FBF3E2"
+
+
+def _annualised(value: float) -> str:
+    return pct(value, 1)
+
+
+def _quantitative_table() -> DataTable:
+    """Epic #217's table: the words a quantitative desk writes a table in."""
+    return DataTable(
+        caption="Annualised returns by share class",
+        headers=[
+            "Class",
+            Column("1Y", format=_annualised, tone="auto"),
+            Column("3Y", format=_annualised, tone="auto"),
+            Column("Since launch[^1]", format=_annualised),
+        ],
+        groups=[ColumnGroup("Share class"), ColumnGroup("Annualised", 3)],
+        rows=[
+            TableRow(["Accumulation", 0.0452, 0.0612, 0.0725]),
+            TableRow(["Income", -0.0031, 0.0405, Cell("6.9%[^2]", value=0.069)]),
+            TableRow(["Hedged", 0.0118, "n/a", 0.0512]),
+        ],
+        notes=["Launched 3 March 2014.", "The income class launched a year later."],
+        source="Hermes Research",
+    )
 
 
 def build(template_dir: Path | None = None) -> Email:
@@ -121,6 +149,7 @@ def build(template_dir: Path | None = None) -> Email:
                 ),
             )
         )
+        .section(FullWidth(title="Share Class Returns", content=_quantitative_table()))
         .section(
             FullWidth(
                 content=TextBlock(

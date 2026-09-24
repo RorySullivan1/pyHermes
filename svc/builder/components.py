@@ -20,6 +20,7 @@ from typing import Any, ClassVar
 
 from svc.config import get_config
 
+from . import formats
 from .apparatus import (
     note_anchor,
     note_ref_anchor,
@@ -501,6 +502,11 @@ class DataTable(Exhibit, Component):
                     f"DataTable row {i} has {len(row.cells)} cells but there are "
                     f"{len(columns)} headers; the table would render misaligned."
                 )
+        for i, row in enumerate(rows):
+            row.cells = [
+                _formatted(cell, column, index, i)
+                for index, (cell, column) in enumerate(zip(row.cells, columns, strict=True))
+            ]
         # Reading order, so a marker anywhere in the table is checked once (#224).
         copy = [caption, source, *(c.header for c in columns)]
         self.notes = coerce_notes(
@@ -610,6 +616,31 @@ class DataTable(Exhibit, Component):
             "anchor": self.resolved_anchor(),
             "disclosure": self.disclosure,
         }
+
+
+def _formatted(cell: Cell, column: Column, index: int, row: int) -> Cell:
+    """
+    ``cell``, written through its column's format when it holds only a raw figure.
+
+    The single place a figure becomes text (#225), so the markup and ``text()``
+    read one string. A string, or a figure already written, is left as it is.
+    """
+    if cell.value is None or cell.text:
+        return cell
+    if column.format is None and column.resolved_kind(index) is ColumnKind.TEXT:
+        raise ValidationError(
+            f"DataTable row {row} holds the raw figure {cell.value!r} in the text column "
+            f"{column.header!r}; give the column a format or write the cell as text."
+        )
+    formatted = Cell.from_number(
+        cell.value,
+        column.format or formats.number,
+        tone=cell.tone or column.tone,
+        align=cell.align,
+        background=cell.background,
+    )
+    formatted.color = cell.color
+    return formatted
 
 
 class ChartBlock(Exhibit, CopyAlignment, Component):

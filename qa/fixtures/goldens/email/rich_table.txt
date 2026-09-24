@@ -42,8 +42,30 @@ Rank  Sleeve       bps
    3  Credit        -8
 
 
+Share Class Returns
+-------------------
+
+Annualised returns by share class
+
+Share class            Annualised
+Class            1Y    3Y  Since launch[1]
+------------  -----  ----  ---------------
+Accumulation   4.5%  6.1%             7.3%
+Income        -0.3%  4.1%          6.9%[2]
+Hedged         1.2%   n/a             5.1%
+
+Hermes Research
+
+
 Weights are as of the close on the as-of date. A shaded cell marks a stale
 valuation.
+
+
+Notes
+-----
+
+[1] Launched 3 March 2014.
+[2] The income class launched a year later.
 
 
 © 2026 Hermes Research

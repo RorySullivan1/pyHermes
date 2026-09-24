@@ -158,7 +158,12 @@ class TestComponentFieldsAreExercised:
     def _observed(instances, name, default):
         """Whether any instance sets this field to something other than its default."""
         attribute = TABLE_ATTRIBUTE_ALIASES.get(name, name)
-        return any(getattr(instance, attribute, default) != default for instance in instances)
+        # An empty collection is how a ``None`` default is stored (``groups``),
+        # so it counts as unset rather than passing vacuously.
+        return any(
+            value != default and not (isinstance(value, list | tuple) and not value)
+            for value in (getattr(instance, attribute, default) for instance in instances)
+        )
 
     def test_every_column_field_is_exercised(self):
         columns = [column for table in _tables_in_gallery() for column in table.columns]

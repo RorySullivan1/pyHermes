@@ -221,6 +221,34 @@ Either way it is the same span as a caption's marker. The text part prints `[n]`
   held.
 - **A group label carries no marker.** Add one when a real table wants it.
 
+### A column's format is a contract (#225)
+
+`Column(format=…, tone=…)` says once how a column's figures are written and toned. A
+`TableRow` may then carry raw `int`, `float` or `Decimal` figures, and the table writes each
+one through its column at construction. It calls `Cell.from_number`, the single-cell path
+that already existed.
+
+- **One string, made once, read by both projections.** The formatted `Cell.text` is what the
+  markup and `text()` both print, so the two cannot format a figure differently. The raw
+  figure stays beside it as `Cell.value`, because a heat scale (#227) needs the number rather
+  than the string. `Cell.value` is `None` on a hand-written cell. It is `Cell`'s one new field,
+  and it is data rather than styling.
+- **The contract lives in the builder, and the frame adapter defers to it.**
+  `table_from_frame` now puts its `formats` and `tones` mappings onto `Column`s and passes raw
+  figures. It no longer formats a cell itself. So a table built by hand and one built from a
+  frame take the same path, and the one-way dependency (#170) holds.
+- **A string is left as written**, so a "n/a" among figures is legal. A raw figure in a text
+  column with no format raises, naming the row, the figure and the column. A bool is not a
+  figure.
+- **Tone resolves cell, then column.** A cell's own `tone` wins, then the column's (`auto`
+  reads the sign through `tone_of` with the column's format, so a `0.0%` stays neutral), then
+  none. A cell's `color` and `background` survive formatting.
+- **A format makes a column numeric** unless `kind` says otherwise, and `resolved()` keeps the
+  format and tone (`dataclasses.replace`), so nothing downstream loses them.
+- **The field-completeness test had a hole.** It compared each field with its default, and
+  `DataTable` stores `groups=None` as `[]`, so an unused `groups` counted as exercised. An
+  empty collection now counts as unset.
+
 [Card](../../svc/builder/models.py) is the unit: `label` (required), `value`, `color`,
 `sublabel`, and an optional `body` for prose. Either `value` or `body` must be present.
 `KpiItem` is a `Card` subclass that adds no fields but keeps the stricter rule — a KPI
