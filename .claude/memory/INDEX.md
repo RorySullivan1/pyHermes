@@ -6,8 +6,8 @@
   one contract — `svc/delivery`+`gmail`+`outlook`, and `svc/pdf`. Rationale: CLAUDE.md and
   `.claude/rules/media.md`; do not restate it here.
 - **Shipped**: #157, #153, #169, #170, #171, #172, #193 (PRs #167–#203); #201, #150, #202 (PRs #204–#206);
-  #209 (PR #222). **In review**: epic #217 (table semantics, #223–#228) from
-  `claude/integrate-claude-assets-pyhermes-d4spzb` as PR #234.
+  #209 (PR #222); #217 (PR #234). **In review**: epic #221 (equations, #229–#233) from
+  `claude/integrate-claude-assets-pyhermes-d4spzb`.
 - The prose budget is live; the baseline is 45 and may only shrink.
 
 ## Decisions        (append-only; supersede, never delete)
@@ -34,6 +34,9 @@
 - [2026-09-24] **A cell's text on its own heat tint takes the more legible theme token, and a
   marker hangs past the point on paper.** Both were found only by the #228 rasters —
   sessions/2026-09-24-table-semantics.md
+
+- [2026-09-24] **An equation's component takes bytes and the [math] extra renders them**, because the
+  builder never imports a backend; **the picture is painted for the theme the caller passes** — `math.md`
 
 ## Threads          (open items; remove when closed)
 - **In this container, PDF byte-determinism tests flake** (no HarfBuzz-Subset), and screenshot
@@ -64,3 +67,5 @@
   `Spacing` + `SPACING_TOKENS`, the factsheet at 90% of two sheets — sessions/2026-09-24-spacing-two-levels.md
 - [2026-09-24] table-semantics — **#217 implemented** (#223–#228): groups, cell markers, `Column.format`,
   decimal alignment and units, `HeatScale` and bars; `letter_quant_table` — sessions/2026-09-24-table-semantics.md
+- [2026-09-24] equations — **#221 implemented** (#229–#233): `MathBlock`, `svc/math` + `[math]`, `math_block`,
+  lines shim, `a4_equations`, the factsheet's Sharpe ratio — sessions/2026-09-24-equations.md

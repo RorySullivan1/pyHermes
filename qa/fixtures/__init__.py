@@ -22,6 +22,7 @@ from svc.builder.document import Document
 
 from . import (
     a4_editorial,
+    a4_equations,
     a4_long_table,
     a4_portrait,
     aligned_layout,
@@ -117,6 +118,7 @@ def all_paged_fixtures() -> dict[str, PagedFixtureBuilder]:
         "letter_landscape_report": letter_landscape_report.build,
         "letter_dense": letter_dense.build,
         "letter_quant_table": letter_quant_table.build,
+        "a4_equations": a4_equations.build,
     }
 
 

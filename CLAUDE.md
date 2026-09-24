@@ -21,7 +21,8 @@ on one contract — `svc/delivery/` + `svc/gmail/` + `svc/outlook/` for MIME, `s
 PDF — and a PDF can ride a message as an attachment, rendered under a screen profile. Each owns its wire format and **never** authentication, so the core still depends on
 Jinja2 alone. Figures arrive as numbers:
 `svc/builder/formats.py` formats them and `svc/data/` adapts a DataFrame or a Figure, each
-adapter behind an optional extra.
+adapter behind an optional extra. Equations arrive as LaTeX: `svc/math/` renders them to the
+image a `MathBlock` takes, behind the `[math]` extra.
 
 ## Commands
 
@@ -35,6 +36,7 @@ pip install -e ".[qa]"        # optional: Playwright + pypdfium2 for screenshots
 pip install -e ".[pdf]"       # optional: WeasyPrint, for PDF (needs Pango/Cairo)
 pip install -e ".[data]"      # optional: pandas, for DataFrame -> DataTable
 pip install -e ".[charts]"    # optional: matplotlib, for Figure -> chart image
+pip install -e ".[math]"      # optional: matplotlib, for LaTeX -> equation image
 python -m qa.screenshots      # gallery → output/screenshots/ (gitignored)
 pytest --update-goldens       # the ONLY way to regenerate a golden (#58)
 python -m qa.preview kitchen_sink --lint --screenshot --open   # an email
@@ -63,6 +65,7 @@ applies to and loads **only when a matching file is read** — so a session that
 | `data-table.md` | `models.py`, `components.py`, `templates/analysis/**` | Columns, cells, row kinds, caption and row headers; groups, units, markers, formats, decimal alignment, scales and bars (#217) |
 | `disclosure.md` | `components.py`, `templates/analysis/**` + `media/**`, the shared partial | An exhibit's two kinds of fine print: attribution, and the compliance copy beneath it |
 | `data-layer.md` | `formats.py`, `svc/data/**` | Figures as numbers: the formatters, the two adapters, why the dependency runs one way |
+| `math.md` | `svc/math/**`, the math tests, `templates/media/math-block.html` | Equations: the component takes bytes and the extra renders them, the fontset and scale, the mathtext subset, the multi-line shim, the theme limitation, the Outlook gap |
 | `plain-text.md` | `textgen.py`, `email.py` | The second projection of the section tree |
 | `apparatus.md` | `apparatus.py`, `document.py`, the notes / contents / running-box templates | Exhibit numbers, footnotes, contents, cross-references, the running section — Python numbers all but the page |
 | `media.md` | `svc/email/`, `svc/document/`, `svc/pdf/`, `medium.py`, `document.py`, `templates/document/**` | The medium model, the page, the template fork rule, each medium's regions, the exporter's resource policy |
@@ -205,8 +208,8 @@ these rather than improvising:
   with sub-issues. Complete: **#157** (rescope to media), **#153** (per-exhibit disclosure),
   **#169** (pagination hardening), **#170** (the data layer, #177–#180), **#171** (document
   apparatus, #181–#185), **#172** (the brochure medium, #186–#189), **#193** (the digital PDF, #195–#200),
-  **#209** (spacing at two levels, #211–#216) and **#217** (table semantics for quantitative
-  material, #223–#228).
+  **#209** (spacing at two levels, #211–#216), **#217** (table semantics for quantitative
+  material, #223–#228) and **#221** (equations from LaTeX, #229–#233).
   **#201** (an image's width in a paged layout) is fixed: the CSS repeats it as a cap. **#150** (the banner's VML
   fill) is closed: gating `src` while keeping `type="frame"` left the Word engine painting a
   broken-image placeholder over the masthead, so the two are now gated together. **#202** is

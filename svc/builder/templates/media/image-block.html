@@ -8,8 +8,9 @@
     * The same width is stated again as CSS, as a cap on `width:100%`: a
       print engine maps no presentational hint, and a fixed CSS width would
       widen a column narrower than it rather than shrink to fit (#201).
-    * `display:block` kills the descender gap under an inline image, and
-      `border:0` kills the blue border Outlook draws around a linked one.
+    * The image is inline-block in a zero-leading line box, so `text-align`
+      places it and no descender gap opens under it; `border:0` kills the
+      blue border Outlook draws around a linked one.
     * The caption sits outside the <a>, so tapping it does not navigate.
 
   Context:
@@ -31,6 +32,11 @@
 <table class="figure"{% if anchor %} id="{{ anchor | escape_html }}"{% endif %} role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
   <tr>
     <td align="{{ image_align | escape_html }}" style="padding: 0; text-align: {{ image_align }};">
+      {# Inline, in a zero-leading line box placed by text-align: a block image
+         ignores text-align, so a centred one sat at the left edge in every
+         client but Outlook, and WeasyPrint resolves margin:auto against
+         width:100% before the cap. The fix and its measurements are math.md's. #}
+      <div align="{{ image_align | escape_html }}" style="font-size: 0; line-height: 0; text-align: {{ image_align }};">
       {% if link_url %}
       <a href="{{ link_url | escape_html }}" style="text-decoration: none; border: 0;">
       {% endif %}
@@ -47,7 +53,7 @@
          image, and a guessed one would crop the mark — so that case keeps the
          img and the Figure, which is a smaller fault than a misdrawn rule. #}
       {% if medium.paged and image_decorative and image_height %}
-      <div role="presentation" style="width: {{ image_width }}px; height: {{ image_height }}px; max-width: 100%;
+      <div role="presentation" style="width: {{ image_width }}px; height: {{ image_height }}px; max-width: 100%; margin: {% if image_align == "center" %}0 auto{% elif image_align == "right" %}0 0 0 auto{% else %}0{% endif %};
            background-image: url('{{ image_src | escape_html }}'); background-repeat: no-repeat;
            background-size: contain; background-position: {{ image_align }} center;"></div>
       {% else %}
@@ -57,11 +63,12 @@
          layout table, and what the img-alt lint rule reads (#149). #}
       <img src="{{ image_src | escape_html }}" alt="{{ image_alt | escape_html }}"{% if image_decorative %} role="presentation"{% endif +%}
            {% if image_width %}width="{{ image_width }}"{% else %}width="100%"{% endif %}
-           style="display: block; border: 0; outline: none; text-decoration: none; width: 100%; max-width: {% if image_width %}{{ image_width }}px{% else %}100%{% endif %}; height: auto;">
+           style="display: inline-block; vertical-align: top; border: 0; outline: none; text-decoration: none; width: 100%; max-width: {% if image_width %}{{ image_width }}px{% else %}100%{% endif %}; height: auto;">
       {% endif %}
       {% if link_url %}
       </a>
       {% endif %}
+      </div>
       {% if caption %}
       <p style="font-family: {{ font.label }}; font-size: {{ size.type.micro }}px; color: {{ theme.text.light }}; font-style: italic; margin: {{ size.space.caption_gap }}px 0 0 0; line-height: {{ size.type.body_line | percent }};">{{ marked(caption_parts) }}</p>
       {% endif %}

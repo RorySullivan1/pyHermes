@@ -1065,6 +1065,13 @@ first centred cover, and its first raster found the cover logo stranded at the l
 `document/regions/cover.html`. `digital-pdf.md` has the tests that read it back.
 
 
+## The equations sheet (#232)
+
+`a4_equations` is the eighth paged fixture: three labelled equations on `solid_png` bytes at a
+real render's pixel size, so no golden depends on matplotlib. `LEAD_IN_PARAGRAPHS` engineers the
+second at a sheet's foot. `tests/test_math_paged.py` holds image and caption on one sheet,
+splits them with `.figure` stripped, and checks each equation is centred. `math.md` has the rest.
+
 ## The factor book (#228)
 
 `letter_quant_table` is the seventh paged fixture and epic #217's proof. It is a Letter portrait

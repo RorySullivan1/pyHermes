@@ -45,10 +45,13 @@ class TestTheCoreNeverImportsTheAdapters:
         for path in sorted(pathlib.Path(package).rglob("*.py")):
             roots = {name.split(".")[0] for name in _imports(path)}
             assert not roots & _OPTIONAL, f"{path} imports {roots & _OPTIONAL}"
-            assert not any(name.startswith("svc.data") for name in _imports(path)), path
+            assert not any(name.startswith(("svc.data", "svc.math")) for name in _imports(path)), (
+                path
+            )
 
-    def test_the_adapters_import_their_backends_lazily(self):
-        for path in sorted(pathlib.Path("svc/data").glob("*.py")):
+    @pytest.mark.parametrize("package", ["svc/data", "svc/math"])
+    def test_the_adapters_import_their_backends_lazily(self, package):
+        for path in sorted(pathlib.Path(package).glob("*.py")):
             roots = {name.split(".")[0] for name in _imports(path, module_level_only=True)}
             assert not roots & _OPTIONAL, f"{path} imports {roots & _OPTIONAL} at module level"
 
@@ -84,6 +87,18 @@ class TestAMissingBackendNamesTheInstall:
         with pytest.raises(BackendMissingError, match=r"pyhermes\[charts\]"):
             image_from_figure(object(), alt="Chart", width=320)
 
+    def test_an_equation_without_matplotlib_says_install_math(self, refuse):
+        import importlib
+
+        import svc.math
+
+        importlib.reload(svc.math)
+        from svc.math import BackendMissingError, render_math
+
+        with pytest.raises(BackendMissingError, match=r"pyhermes\[math\]"):
+            render_math("x", font_px=14, color="#3B3B3B", scale=2, fontset="cm")
+        assert svc.math.available() is False
+
     def test_availability_reports_each_backend(self, refuse):
         from svc.data import charts_available, frames_available
 
@@ -102,6 +117,9 @@ def test_the_extras_are_declared_separately():
     assert not any(dep.startswith("matplotlib") for dep in extras["data"])
     assert any(dep.startswith("matplotlib") for dep in extras["charts"])
     assert not any(dep.startswith("pandas") for dep in extras["charts"])
+    # An equation author is not a chart author (#230): same pin, separate extra.
+    assert extras["math"] == extras["charts"]
+    assert not any(dep.startswith("pandas") for dep in extras["math"])
 
 
 def test_mypy_ignores_both_spellings_of_each_backend():

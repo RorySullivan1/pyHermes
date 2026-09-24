@@ -76,6 +76,12 @@ charts = [
     "matplotlib~=3.11",
 ]
 
+# The equation renderer (svc/math, #230). Its own extra for the [data]/[charts]
+# reason: an equation author is not a chart author. Same pin as [charts].
+math = [
+    "matplotlib~=3.11",
+]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
