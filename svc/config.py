@@ -90,6 +90,12 @@ class Config:
     #: Where a message with an attachment starts printing a warning.
     attachment_warn_kb: int = 15360
 
+    #: Let an email take a density no client has rendered: a custom
+    #: ``SizeScheme``, or a print density such as ``dense``. Off, because the
+    #: shipped email densities are the ones checked against Gmail and Outlook;
+    #: set it once you have rendered yours in the clients you send to (#212).
+    allow_custom_email_density: bool = False
+
     def __post_init__(self) -> None:
         # Validation at construction, as everywhere else in this codebase --
         # a bad limit should name itself here, not surface later as a
@@ -147,6 +153,11 @@ class Config:
                 f"exhibit_separator must show something between the number and the "
                 f"caption, got {self.exhibit_separator!r}"
             )
+        if not isinstance(self.allow_custom_email_density, bool):
+            raise ValueError(
+                "allow_custom_email_density must be a bool, "
+                f"got {self.allow_custom_email_density!r}"
+            )
         if self.error_body_excerpt_chars < 0:
             raise ValueError(
                 f"error_body_excerpt_chars must not be negative, "
@@ -184,6 +195,9 @@ class Config:
             if field.name == "request_timeout_seconds" and text.lower() == "none":
                 overrides[field.name] = None
                 continue
+            if field.type == "bool":
+                overrides[field.name] = _parse_bool(text, f"{prefix}{field.name.upper()}")
+                continue
             caster: type = {"int": int, "str": str}.get(str(field.type), float)
             try:
                 overrides[field.name] = caster(text)
@@ -194,6 +208,20 @@ class Config:
                 ) from exc
 
         return replace(source, **overrides)  # type: ignore[arg-type]
+
+
+_TRUE = frozenset({"1", "true", "yes", "on"})
+_FALSE = frozenset({"0", "false", "no", "off"})
+
+
+def _parse_bool(text: str, variable: str) -> bool:
+    """A switch from its variable, refusing anything that is not plainly on or off."""
+    lowered = text.lower()
+    if lowered in _TRUE or lowered in _FALSE:
+        return lowered in _TRUE
+    raise ValueError(
+        f"{variable}={text!r} is not a valid bool; use one of {sorted(_TRUE | _FALSE)}"
+    )
 
 
 #: The process-wide active configuration. Read through :func:`get_config`

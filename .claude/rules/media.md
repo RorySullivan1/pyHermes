@@ -165,6 +165,20 @@ than left to CSS because `break-before` is inert in a mail client and so would *
 harmless — while the wrapper element around it is not. The break lands on a table `tr`:
 containers emit `tr` blocks, and CSS break properties do not apply to a `td`.
 
+**A page that opens the body drops its leading break**, in `PagedDocument._body_context`. The
+body always starts a sheet, whether the first or the one after a cover or contents sheet. But
+the running boxes' two seed leaves sit ahead of the body table, so a forced break there opened
+a blank sheet whenever no contents sheet came first. The factsheet found it: its first sheet
+could not be a `Page`, so its two sheets were written two different ways. The caller's `Page`
+is not mutated; the body renders `Page.opening()`, a copy.
+
+**`PagedDocument.add_page(sections)` is shorthand for `add_section(Page(sections))`**, with
+`Page`'s own arguments. It adds no second model: the page is still a node in the tree, which is
+what lets the same sections flatten in an email and lets the apparatus walk read through it.
+So it lives on the paged medium only, and the `Page` class stays. A page is not a sheet: it
+*starts* one, and its sections flow on across as many as they need. Only a document built to
+fit, like the factsheet, has one page per sheet, so the document is never a list of pages.
+
 ## Where a sheet may not end — the paged skeleton's break rules
 
 Epic #169 gave the paged medium break discipline inside the content. Before it, the only

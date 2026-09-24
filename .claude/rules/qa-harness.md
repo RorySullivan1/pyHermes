@@ -1045,6 +1045,15 @@ stated once per brochure and never failing a build. Both apply to the brochure o
 paged rules all apply to it too, because the same engine prints it.
 
 
+## The dense monitor (#209)
+
+`letter_dense` is the sixth paged fixture: two Letter portrait sheets at `size_theme="dense"`,
+with `spacing` on a page, a section (including `pad_x`, which only paper allows), a split, a
+KPI strip, a list and one of its two identical tables. The other table keeps the preset, so
+the raster shows the override against the density it derives from. `SHEETS = 2` is asserted
+from the PDF in `test_spacing.py`, and the sheets are photographed there as well as in CI's
+`pdf` job. Its facts hold `dense` because the email gallery cannot: an `Email` refuses it.
+
 ## The landscape report (#200)
 
 `letter_landscape_report` is the fifth paged fixture and the digital PDF's (#193): US Letter

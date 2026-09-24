@@ -203,6 +203,15 @@ class TestTheWiringIsLive:
             with pytest.raises(MessageError, match="32 KB"):
                 build_message(email.build(), **envelope, attachments=[big])
 
+    def test_the_email_density_switch_is_read_from_config(self, valid_metadata):
+        from svc.builder import Email
+        from svc.builder.exceptions import ValidationError
+
+        with pytest.raises(ValidationError, match="allow_custom_email_density"):
+            Email({**valid_metadata, "size_theme": "dense"})
+        with config_override(allow_custom_email_density=True):
+            Email({**valid_metadata, "size_theme": "dense"})
+
     def test_inline_image_cap_is_read_from_config(self, png_bytes):
         EmailImage.inline(png_bytes, alt="Chart")  # fine by default
         with config_override(inline_image_limit_kb=1, size_limit_kb=102):

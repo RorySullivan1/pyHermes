@@ -15,8 +15,8 @@ from __future__ import annotations
 
 import textwrap
 import warnings
-from collections.abc import Sequence
-from typing import Any
+from collections.abc import Mapping, Sequence
+from typing import Any, ClassVar
 
 from svc.config import get_config
 
@@ -28,7 +28,7 @@ from .apparatus import (
     text_markers,
     validate_anchor,
 )
-from .engine import Renderer
+from .engine import Renderer, respaced
 from .enums import CardOrientation, ColumnKind, ImageAlign, RowKind
 from .exceptions import ValidationError
 from .images import EmailImage, ImageAsset, _displayed_height, coerce_image
@@ -44,6 +44,7 @@ from .models import (
     coerce_column,
     coerce_notes,
 )
+from .sizing import Spacing, coerce_spacing
 from .textgen import (
     LINE_WIDTH,
     format_link,
@@ -169,9 +170,25 @@ class Component:
 
     Subclasses must set ``template_path`` and implement ``context()``.
     A component that renders an image also overrides ``images()``.
+
+    Every public component takes ``spacing=``: a
+    :class:`~svc.builder.sizing.Spacing`, or a mapping, moving only the
+    ``SPACING_TOKENS`` its own template reads.
     """
 
     template_path: str = ""  # e.g. "analysis/kpi-strip.html"
+
+    #: The spacing tokens this component's template reads (#215).
+    SPACING_TOKENS: ClassVar[tuple[str, ...]] = ()
+
+    #: This component's spacing override, or ``None`` for the bound scheme's.
+    spacing: Spacing | None = None
+
+    def _coerce_spacing(
+        self, spacing: Spacing | Mapping[str, int | float] | None
+    ) -> Spacing | None:
+        """``spacing`` checked against this class's ``SPACING_TOKENS``."""
+        return coerce_spacing(spacing, self.SPACING_TOKENS, type(self).__name__)
 
     def context(self) -> dict[str, Any]:
         """Return the template context dict for this component."""
@@ -263,6 +280,7 @@ class Component:
         """
         if not self.template_path:
             raise ValidationError(f"{self.__class__.__name__} has no template_path set.")
+        engine = respaced(engine, self.spacing, type(self).__name__)
         return engine.render(self.template_path, self.context())
 
 
@@ -291,6 +309,17 @@ class CardGroup(Component):
 
     template_path = "analysis/card-group.html"
 
+    SPACING_TOKENS = (
+        "card_pad_y",
+        "card_pad_x",
+        "kpi_pad_y",
+        "kpi_pad_x",
+        "card_label_gap",
+        "card_value_gap",
+        "caption_gap",
+        "subtitle_gap",
+    )
+
     # Members equal and hash as their string value, so membership tests and
     # equality checks below accept both a CardOrientation and a bare string.
     ORIENTATIONS = tuple(CardOrientation)
@@ -300,7 +329,9 @@ class CardGroup(Component):
         cards: list[Card],
         orientation: str | CardOrientation = CardOrientation.HORIZONTAL,
         subtitle: str | None = None,
+        spacing: Spacing | Mapping[str, int | float] | None = None,
     ):
+        self.spacing = self._coerce_spacing(spacing)
         if orientation not in self.ORIENTATIONS:
             raise ValidationError(
                 f"Unsupported orientation '{orientation}'. "
@@ -424,6 +455,12 @@ class DataTable(Exhibit, Component):
 
     template_path = "analysis/data-table.html"
 
+    SPACING_TOKENS = (
+        "table_cell_pad",
+        "caption_gap",
+        "subtitle_gap",
+    )
+
     def __init__(
         self,
         headers: list[str | Column],
@@ -436,7 +473,9 @@ class DataTable(Exhibit, Component):
         label: str = "",
         anchor: str = "",
         notes: Sequence[Footnote | str] | None = None,
+        spacing: Spacing | Mapping[str, int | float] | None = None,
     ):
+        self.spacing = self._coerce_spacing(spacing)
         self.validate_exhibit(label, anchor)
         self.notes = coerce_notes(notes, [caption, source], "DataTable")
         if not headers:
@@ -582,6 +621,11 @@ class ChartBlock(Exhibit, CopyAlignment, Component):
 
     template_path = "analysis/chart-block.html"
 
+    SPACING_TOKENS = (
+        "caption_gap",
+        "subtitle_gap",
+    )
+
     def __init__(
         self,
         image_url: str | EmailImage,
@@ -595,7 +639,9 @@ class ChartBlock(Exhibit, CopyAlignment, Component):
         label: str = "",
         anchor: str = "",
         notes: Sequence[Footnote | str] | None = None,
+        spacing: Spacing | Mapping[str, int | float] | None = None,
     ):
+        self.spacing = self._coerce_spacing(spacing)
         if not image_url:
             raise ValidationError("ChartBlock requires an image_url.")
         self.validate_exhibit(label, anchor)
@@ -686,6 +732,11 @@ class ImageBlock(Exhibit, Component):
 
     template_path = "media/image-block.html"
 
+    SPACING_TOKENS = (
+        "caption_gap",
+        "subtitle_gap",
+    )
+
     #: The sides a figure may float to; empty means it does not float.
     WRAPS = ("", "left", "right")
 
@@ -706,7 +757,9 @@ class ImageBlock(Exhibit, Component):
         anchor: str = "",
         notes: Sequence[Footnote | str] | None = None,
         wrap: str = "",
+        spacing: Spacing | Mapping[str, int | float] | None = None,
     ):
+        self.spacing = self._coerce_spacing(spacing)
         if not image:
             raise ValidationError("ImageBlock requires an image.")
         if wrap not in self.WRAPS:
@@ -801,6 +854,11 @@ class TextBlock(CopyAlignment, Component):
 
     template_path = "text/text-block.html"
 
+    SPACING_TOKENS = (
+        "block_gap",
+        "subtitle_gap",
+    )
+
     def __init__(
         self,
         content: str,
@@ -809,7 +867,9 @@ class TextBlock(CopyAlignment, Component):
         notes: Sequence[Footnote | str] | None = None,
         drop_cap: bool = False,
         figure: ImageBlock | None = None,
+        spacing: Spacing | Mapping[str, int | float] | None = None,
     ):
+        self.spacing = self._coerce_spacing(spacing)
         if not content:
             raise ValidationError("TextBlock requires content.")
         if figure is not None and not isinstance(figure, ImageBlock):
@@ -837,6 +897,7 @@ class TextBlock(CopyAlignment, Component):
         over the letter it should have wrapped. The caller's markup is otherwise
         untouched. A figure floats on paper and sits above the prose elsewhere.
         """
+        engine = respaced(engine, self.spacing, type(self).__name__)
         ctx = self.context()
         paged = engine.medium.paged
         if self.drop_cap and paged:
@@ -888,7 +949,20 @@ class PullQuote(CopyAlignment, Component):
 
     template_path = "text/pull-quote.html"
 
-    def __init__(self, text: str, attribution: str | None = None, align: str | None = None):
+    SPACING_TOKENS = (
+        "block_gap",
+        "caption_gap",
+        "column_pad_x",
+    )
+
+    def __init__(
+        self,
+        text: str,
+        attribution: str | None = None,
+        align: str | None = None,
+        spacing: Spacing | Mapping[str, int | float] | None = None,
+    ):
+        self.spacing = self._coerce_spacing(spacing)
         if not text:
             raise ValidationError("PullQuote requires text.")
         self.align = self.validate_alignment(align)
@@ -937,6 +1011,13 @@ class ContactBlock(CopyAlignment, Component):
 
     template_path = "text/contact-block.html"
 
+    SPACING_TOKENS = (
+        "contact_pad_y",
+        "contact_pad_x",
+        "contact_heading_gap",
+        "contact_cta_gap",
+    )
+
     def __init__(
         self,
         heading: str,
@@ -944,7 +1025,9 @@ class ContactBlock(CopyAlignment, Component):
         cta_label: str = "Contact Us",
         cta_url: str = "",
         align: str | None = None,
+        spacing: Spacing | Mapping[str, int | float] | None = None,
     ):
+        self.spacing = self._coerce_spacing(spacing)
         if not heading:
             raise ValidationError("ContactBlock requires a heading.")
         self.align = self.validate_alignment(align)
@@ -992,12 +1075,21 @@ class NumberedList(CopyAlignment, Component):
 
     template_path = "text/numbered-list.html"
 
+    SPACING_TOKENS = (
+        "block_gap",
+        "subtitle_gap",
+        "list_ordinal_gap",
+        "list_title_gap",
+    )
+
     def __init__(
         self,
         items: list[NumberedItem],
         subtitle: str | None = None,
         align: str | None = None,
+        spacing: Spacing | Mapping[str, int | float] | None = None,
     ):
+        self.spacing = self._coerce_spacing(spacing)
         if not items:
             raise ValidationError("NumberedList requires at least one item.")
         self.align = self.validate_alignment(align)
@@ -1062,6 +1154,13 @@ class AuthorBlock(CopyAlignment, Component):
 
     template_path = "text/author-block.html"
 
+    SPACING_TOKENS = (
+        "author_name_gap",
+        "author_sep_gap",
+        "author_rule_gap",
+        "subtitle_gap",
+    )
+
     def __init__(
         self,
         name: str,
@@ -1069,7 +1168,9 @@ class AuthorBlock(CopyAlignment, Component):
         email: str = "",
         subtitle: str | None = None,
         align: str | None = None,
+        spacing: Spacing | Mapping[str, int | float] | None = None,
     ):
+        self.spacing = self._coerce_spacing(spacing)
         if not name:
             raise ValidationError("AuthorBlock requires a name.")
         self.align = self.validate_alignment(align)
@@ -1115,7 +1216,17 @@ class Contents(Component):
 
     template_path = "text/contents.html"
 
-    def __init__(self, subtitle: str | None = None):
+    SPACING_TOKENS = (
+        "caption_gap",
+        "subtitle_gap",
+    )
+
+    def __init__(
+        self,
+        subtitle: str | None = None,
+        spacing: Spacing | Mapping[str, int | float] | None = None,
+    ):
+        self.spacing = self._coerce_spacing(spacing)
         self.subtitle = subtitle
         #: ``(title, anchor)`` per listed section, assigned by the document.
         self.entries: list[tuple[str, str]] = []

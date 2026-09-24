@@ -20,6 +20,7 @@ from svc.builder.enums import SizeTheme
 from svc.builder.exceptions import ValidationError
 from svc.builder.filters import percent
 from svc.builder.sizing import (
+    PRINT_DENSITIES,
     SIZE_SCHEMES,
     STANDARD_SIZES,
     ComponentScale,
@@ -371,8 +372,12 @@ class TestResolve:
             resolve_size_scheme("huge")
 
     def test_wrong_type(self) -> None:
-        with pytest.raises(ValidationError, match="must be a SizeTheme or its name"):
+        with pytest.raises(ValidationError, match="must be a SizeTheme, its name, or a SizeScheme"):
             resolve_size_scheme(28)  # type: ignore[arg-type]
+
+    def test_a_scheme_is_returned_unchanged(self) -> None:
+        house = STANDARD_SIZES.derive(space={"content_top": 8})
+        assert resolve_size_scheme(house) is house
 
 
 # ----------------------------------------------------------------------
@@ -618,6 +623,11 @@ class TestTheTokensAreLive:
         scheme = _sentinel_scheme()
         monkeypatch.setitem(sizing.SIZE_SCHEMES, SizeTheme.SPACIOUS, scheme)
         builder = kitchen_sink.build()
+        # The document's own tokens are under test, and a per-object override
+        # (#213) replaces one by design, so the fixture's overrides step aside.
+        for section in builder._sections:
+            for node in [section, *section.components()]:
+                node.spacing = None
         builder._metadata.size_theme = SizeTheme.SPACIOUS  # type: ignore[union-attr]
         # The page is the medium's since #159, so the sentinel has to reach
         # the render the way a real one would rather than through the scheme.
@@ -1044,6 +1054,37 @@ class TestTheSchemesAreCuratedNotScaled:
         for theme, scheme in SIZE_SCHEMES.items():
             assert scheme.frame.width == 680, theme
 
+    def test_dense_holds_fine_print_at_the_print_floor(self) -> None:
+        """#211: label and micro may move in print, and never below 8px (6pt)."""
+        from svc.builder.sizing import DENSE_SIZES
+
+        assert min(DENSE_SIZES.type.label, DENSE_SIZES.type.micro) >= 8
+        assert DENSE_SIZES.type.micro < STANDARD_SIZES.type.micro
+
+    def test_dense_tightens_leading_less_than_type(self) -> None:
+        from svc.builder.sizing import COMPACT_SIZES, DENSE_SIZES
+
+        type_drop = DENSE_SIZES.type.body / COMPACT_SIZES.type.body
+        leading_drop = DENSE_SIZES.type.body_line / COMPACT_SIZES.type.body_line
+        assert leading_drop > type_drop
+
+    def test_dense_gives_up_the_kpi_value_least(self) -> None:
+        from svc.builder.sizing import COMPACT_SIZES, DENSE_SIZES
+
+        kpi = DENSE_SIZES.component.kpi_value / COMPACT_SIZES.component.kpi_value
+        body = DENSE_SIZES.type.body / COMPACT_SIZES.type.body
+        assert kpi > body
+
+    def test_dense_is_denser_than_compact_everywhere_it_decides(self) -> None:
+        """Written as a derive of compact, so no token it sets may be roomier."""
+        from svc.builder.sizing import COMPACT_SIZES, DENSE_SIZES
+
+        for layer in ("type", "space", "component"):
+            for spec in fields(SizeScheme.LAYERS[layer]):
+                dense = getattr(getattr(DENSE_SIZES, layer), spec.name)
+                compact = getattr(getattr(COMPACT_SIZES, layer), spec.name)
+                assert dense <= compact, f"{layer}.{spec.name}"
+
     def test_spacious_moves_the_narrow_column_threshold_down(self) -> None:
         """
         The one token that moves the *other* way in the roomiest theme, and
@@ -1061,7 +1102,7 @@ class TestTheSchemesAreCuratedNotScaled:
 
 
 class TestEveryThemeRendersAWholeEmail:
-    @pytest.fixture(params=[t.value for t in SizeTheme])
+    @pytest.fixture(params=[t.value for t in SizeTheme if t not in PRINT_DENSITIES])
     def rendered(self, request: pytest.FixtureRequest) -> tuple[SizeScheme, str]:
         from qa.fixtures import kitchen_sink
 
@@ -1130,15 +1171,13 @@ class TestTheCallerFacingSurfaceStaysClosed:
             offenders += [f"{name}({parameter})" for parameter in parameters if parameter in banned]
         assert not offenders, f"per-call-site size parameters appeared: {offenders}"
 
-    def test_a_scheme_object_is_not_accepted_as_a_size_theme(self) -> None:
+    def test_a_scheme_object_is_accepted_as_a_size_theme(self) -> None:
         """
-        Deliberately narrower than ``theme``, which does take a custom
-        object. Density interacts with the clipping limit, the Word engine
-        and the mobile collapse at once, so an unrendered scheme is a
-        compatibility claim nobody has tested. Widening this later is
-        additive.
+        Superseded by #212: the narrow rule recorded that widening was
+        additive, and this is that widening. The reason it existed survives
+        as a gate on the email medium, pinned in ``test_spacing.py``.
         """
         from svc.builder.models import EmailMetadata
 
-        with pytest.raises(ValidationError, match="must be a SizeTheme or its name"):
-            EmailMetadata(size_theme=STANDARD_SIZES)  # type: ignore[arg-type]
+        house = STANDARD_SIZES.derive(space={"content_top": 8})
+        assert EmailMetadata(size_theme=house).size_theme is house

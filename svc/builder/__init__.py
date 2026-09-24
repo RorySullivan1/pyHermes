@@ -105,6 +105,7 @@ from .regions import (
 from .sizing import (
     COMPACT_SIZES,
     DEFAULT_PAGE,
+    DENSE_SIZES,
     SIZE_SCHEMES,
     SPACIOUS_SIZES,
     STANDARD_SIZES,
@@ -113,6 +114,7 @@ from .sizing import (
     PageFormat,
     PageMargin,
     SizeScheme,
+    Spacing,
     SpacingScale,
     TypeScale,
 )
@@ -175,7 +177,9 @@ __all__ = [
     "STANDARD_SIZES",
     "COMPACT_SIZES",
     "SPACIOUS_SIZES",
+    "DENSE_SIZES",
     "SIZE_SCHEMES",
+    "Spacing",
     # Regions
     "Region",
     "Banner",

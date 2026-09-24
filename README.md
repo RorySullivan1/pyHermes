@@ -88,6 +88,7 @@ save_pdf(document, "review.pdf")   # ...and so is the PDF  (needs the [pdf] extr
 running header and footer print inside that margin. For a margin of your own, pass
 `PageFormat(width, height, margin=PageMargin(...))` to `paged_medium`. A `Page` **flattens**
 in the email medium — one tree, two outputs — so the same sections can go to both.
+`PagedDocument.add_page([...])` is shorthand for `add_section(Page([...]))`.
 
 A printed document does not split what belongs together. A table repeats its column headers
 on every sheet it crosses, and a row never splits. A total never opens a sheet alone. A
@@ -613,16 +614,38 @@ Density works the same way, from one more metadata field:
 EmailBuilder().metadata({..., "size_theme": "compact"})   # or "standard" / "spacious"
 ```
 
-Three curated presets. `compact` fits the same letter into about 17% less height, `spacious`
+Three curated email presets. `compact` fits the same letter into about 17% less height, `spacious`
 gives it 23% more, and every font size, line-height, padding, gutter and column width follows
 — including the mobile `@media` overrides, so an email is never desktop-themed and
 mobile-standard. Column widths are computed from the frame rather than hardcoded, so they
 still fill the content width to the pixel at any density.
 
-Unlike `theme`, `size_theme` takes a preset name only. Density interacts with the clipping
-limit, Outlook's Word engine and the mobile collapse all at once, so a scheme nobody has
-rendered in a real client is a compatibility claim nobody has tested. There is no per-email
-or per-component size override: you pick a theme, never a px.
+A fourth preset, `dense`, is tuned for print: a table row about 21px tall where `compact`
+gives it 37, which is what a two-sheet factsheet needs. You set spacing with three controls,
+from the general to the particular, and none of them takes a px string:
+
+```python
+# 1. A preset for the whole document.
+PagedDocument({..., "size_theme": "dense"})
+
+# 2. A house density, derived from a shipped one, passed as the object.
+HOUSE = COMPACT_SIZES.derive(space={"content_top": 8}, component={"table_cell_pad": 5})
+PagedDocument({..., "size_theme": HOUSE})
+
+# 3. One object, and everything inside it, moving named tokens.
+DataTable(headers, rows, spacing=Spacing(table_cell_pad=3))
+FullWidth(content=table, title="Returns", spacing={"content_top": 6})
+```
+
+An override can name only the tokens that object's template reads. It cannot change a width,
+a type size or a line-height. `Page(..., spacing=...)` reaches every section on the sheet.
+
+The email takes more care, because its density meets the clipping limit, Outlook's Word
+engine and the mobile collapse at once. An `Email` refuses `dense` and a custom scheme until
+you have rendered yours in the clients you send to and set
+`Config(allow_custom_email_density=True)` or `PYHERMES_ALLOW_CUSTOM_EMAIL_DENSITY=1`. It also
+refuses an override of a token its mobile `@media` block reads (`pad_x` and the card padding),
+which would render one way wide and another collapsed.
 
 ## Typeface
 

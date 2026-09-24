@@ -8,16 +8,16 @@ the padding inside it, from which column widths are computed). ``frame``
 is the one layer with **two** owners: its page comes from the medium's
 :class:`PageFormat`, its paddings from the density.
 
-``EmailMetadata.size_theme`` names a density; :meth:`Email.render` resolves
-it, lays the medium's page over it (:meth:`SizeScheme.with_page`) and binds
-the result as ``size``, so templates read ``{{ size.type.body }}``.
+``size_theme`` names a density or passes a derived :class:`SizeScheme`;
+``render()`` lays the medium's page over it and binds it as ``size``, which
+templates read. :class:`Spacing` derives it again for one object's subtree.
 
 `.claude/rules/design-axes.md` carries why, and the token audit.
 """
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, fields, replace
 from typing import Any, ClassVar
 
@@ -699,29 +699,114 @@ SPACIOUS_SIZES = SizeScheme().derive(
     frame={"pad_x": 40, "outer_pad_y": 36, "narrow_column": 260},
 )
 
+#: Packed for print (#211): a quantitative sheet at a printed factsheet's
+#: density, where ``compact`` is still tuned for a screen.
+#:
+#: Derived from ``COMPACT`` rather than ``STANDARD``, so what dense decides
+#: *beyond* compact is the literal content below. Three rules, in the shape
+#: of compact's four:
+#:
+#: * **The readability floor moves, and stops at 8px.** ``label`` and
+#:   ``micro`` held in compact; on paper 9px is 6.75pt and 8.5px is 6.4pt,
+#:   both above the 6pt below which fine print is not read.
+#: * **Leading tightens less than type.** Body type gives up 2px of 13;
+#:   ``body_line`` gives up 0.2 of 1.6, the smaller share.
+#: * **Most of the density is still spacing**, and a table row is where it
+#:   is spent: ``table_cell_pad`` 4 against compact's 8 is the move that
+#:   takes a row from about 37px to about 21px.
+#:
+#: The frame's ``pad_x`` is 12 because a sheet already has a printed margin;
+#: an email's padding is the only margin it has.
+DENSE_SIZES = COMPACT_SIZES.derive(
+    type={
+        "title": 20,
+        "title_mobile": 18,
+        "section": 13,
+        "subheading": 12,
+        "item_title": 12,
+        "body": 11,
+        "secondary": 10.5,
+        "small": 9.5,
+        "label": 9,
+        "micro": 8.5,
+        "title_line": 1.15,
+        "heading_line": 1.2,
+        "body_line": 1.4,
+        "secondary_line": 1.3,
+    },
+    space={
+        "gutter": 10,
+        "section_title_top": 10,
+        "section_title_bottom": 5,
+        "content_top": 6,
+        "content_bottom": 6,
+        "column_bottom": 8,
+        "column_pad_x": 10,
+        "column_pad_x_narrow": 8,
+        "block_gap": 8,
+        "subtitle_gap": 5,
+        "caption_gap": 4,
+        "masthead_top": 8,
+        "masthead_meta_top": 6,
+        "masthead_meta_bottom": 8,
+        "footer_contact_bottom": 12,
+        "footer_legal_top": 8,
+        "footer_copyright_bottom": 10,
+    },
+    component={
+        "kpi_value": 17,
+        "card_pad_y": 6,
+        "card_pad_x": 8,
+        "kpi_pad_y": 6,
+        "kpi_pad_x": 8,
+        "card_label_gap": 3,
+        "card_value_gap": 2,
+        "card_body_line": 1.35,
+        "table_cell_pad": 4,
+        "table_cell_pad_mobile": 3,
+        "list_ordinal_width": 18,
+        "list_ordinal_gap": 8,
+        "list_title_gap": 3,
+        "list_body_line": 1.4,
+        "author_name_gap": 2,
+        "author_sep_gap": 3,
+        "author_rule_gap": 8,
+        "contact_pad_y": 10,
+        "contact_pad_x": 12,
+        "contact_heading_gap": 3,
+        "contact_cta_gap": 8,
+        "contact_line": 1.35,
+        "legal_line": 1.35,
+    },
+    frame={"pad_x": 12, "outer_pad_y": 10},
+)
+
 #: Every scheme the repo ships, by name. Repo-owned and never mutated at
-#: runtime — a caller selects one by name; there is no register-your-own
-#: path, for the reason in this module's docstring.
+#: runtime: a house density is a ``derive`` passed as an object (#212), not
+#: a name registered here.
 SIZE_SCHEMES: dict[SizeTheme, SizeScheme] = {
     SizeTheme.COMPACT: COMPACT_SIZES,
     SizeTheme.STANDARD: STANDARD_SIZES,
     SizeTheme.SPACIOUS: SPACIOUS_SIZES,
+    SizeTheme.DENSE: DENSE_SIZES,
 }
 
+#: The shipped densities no email client has rendered. The email medium
+#: refuses them, as it refuses a custom scheme, unless
+#: ``Config.allow_custom_email_density`` says the caller has.
+PRINT_DENSITIES: frozenset[SizeTheme] = frozenset({SizeTheme.DENSE})
 
-def resolve_size_scheme(value: SizeTheme | str) -> SizeScheme:
+
+def resolve_size_scheme(value: SizeTheme | str | SizeScheme) -> SizeScheme:
     """
     Turn whatever a caller supplied into a concrete :class:`SizeScheme`.
 
-    Accepts a :class:`~svc.builder.enums.SizeTheme` member or its bare
-    string, and nothing else — see this module's docstring for why a custom
-    scheme object is deliberately not accepted here the way a custom
-    ``Theme`` is.
-
-    Called from :meth:`svc.builder.email.Email.render` and from
-    :meth:`svc.builder.models.EmailMetadata.__post_init__`; the latter is
-    what makes a bad theme name fail at construction rather than at render.
+    Accepts a :class:`~svc.builder.enums.SizeTheme` member, its bare string,
+    or a :class:`SizeScheme`, which is returned unchanged. Anything else is
+    refused. Which medium may take which density is the document's check.
     """
+    if isinstance(value, SizeScheme):
+        return value
     if isinstance(value, str):
         try:
             return SIZE_SCHEMES[SizeTheme(value)]
@@ -736,8 +821,161 @@ def resolve_size_scheme(value: SizeTheme | str) -> SizeScheme:
                 f"{sorted(t.value for t in SIZE_SCHEMES)}"
             ) from None
     raise ValidationError(
-        f"'size_theme' must be a SizeTheme or its name, got: {type(value).__name__}"
+        f"'size_theme' must be a SizeTheme, its name, or a SizeScheme, got: {type(value).__name__}"
     )
+
+
+# ----------------------------------------------------------------------
+# Spacing — the per-object override, as a derive of the bound scheme (#213)
+# ----------------------------------------------------------------------
+
+#: Tokens no object may move: the medium's page, and the column threshold
+#: that follows from it. ``frame.inner`` is a property and so already unnamed.
+WIDTH_TOKENS: frozenset[str] = frozenset(
+    {"width", "height", "margin", "mobile_breakpoint", "narrow_column"}
+)
+
+#: Component tokens that are type rather than spacing: a font size and the
+#: leadings. The ``type`` layer is refused whole.
+_COMPONENT_TYPE_TOKENS: frozenset[str] = frozenset(
+    {"kpi_value", "card_body_line", "list_body_line", "contact_line", "legal_line"}
+)
+
+#: Component tokens that size a box rather than space it: the button, and
+#: the column a list's ordinals sit in.
+_COMPONENT_BOX_TOKENS: frozenset[str] = frozenset({"cta_width", "cta_height", "list_ordinal_width"})
+
+#: Tokens a subtree may not move on a medium that is not paged. The email's
+#: ``@media`` block reads the document's scheme, never a subtree's, so each
+#: of these would render one way wide and another way collapsed. ``pad_x``
+#: joins them because every section, the masthead and the footer share it.
+UNPAGED_UNSAFE_TOKENS: frozenset[str] = frozenset(
+    {"pad_x", "mobile_pad_x", "mobile_pad_y", "card_pad_x", "card_pad_y", "table_cell_pad_mobile"}
+)
+
+
+def _token_owners() -> dict[str, tuple[str, ...]]:
+    """Every token name, and the layer or layers that declare it."""
+    owners: dict[str, tuple[str, ...]] = {}
+    for layer, layer_cls in SizeScheme.LAYERS.items():
+        for spec in fields(layer_cls):
+            owners[spec.name] = owners.get(spec.name, ()) + (layer,)
+    return owners
+
+
+#: Token name to the layers declaring it. One layer each today; a name that
+#: ever appears in two is refused by :class:`Spacing` rather than guessed.
+TOKEN_LAYERS: dict[str, tuple[str, ...]] = _token_owners()
+
+
+@dataclass(frozen=True, init=False)
+class Spacing:
+    """
+    Named spacing tokens one object moves for itself and everything inside it.
+
+    ``Spacing(content_top=6)`` or ``Spacing({"table_cell_pad": 3})``. A token
+    is named flat and its layer is found for the caller. The width, the type
+    scale and every leading are refused: an object moves its spacing, never
+    its measure or its voice.
+
+    Validated at construction by applying it to ``STANDARD_SIZES``, so a bad
+    value fails with the same message a bad preset would.
+    """
+
+    items: tuple[tuple[str, int | float], ...]
+
+    def __init__(self, tokens: Mapping[str, int | float] | None = None, /, **named: int | float):
+        if tokens is not None and not isinstance(tokens, Mapping):
+            raise ValidationError(
+                f"Spacing takes a mapping of token names, got: {type(tokens).__name__}"
+            )
+        merged = {**(tokens or {}), **named}
+        if not merged:
+            raise ValidationError("a Spacing names at least one token; pass None for none")
+        for name in merged:
+            _check_spacing_token(name)
+        object.__setattr__(self, "items", tuple(sorted(merged.items())))
+        self.applied_to(STANDARD_SIZES)
+
+    @property
+    def tokens(self) -> dict[str, int | float]:
+        """The tokens this override moves, by name."""
+        return dict(self.items)
+
+    def by_layer(self) -> dict[str, dict[str, int | float]]:
+        """The same tokens grouped by layer, in the shape :meth:`SizeScheme.derive` takes."""
+        grouped: dict[str, dict[str, int | float]] = {}
+        for name, value in self.items:
+            grouped.setdefault(TOKEN_LAYERS[name][0], {})[name] = value
+        return grouped
+
+    def applied_to(self, scheme: SizeScheme) -> SizeScheme:
+        """``scheme`` with these tokens moved, and every other inherited."""
+        return scheme.derive(**self.by_layer())
+
+    def check_medium(self, paged: bool, medium: str, owner: str) -> None:
+        """
+        Refuse the tokens a non-paged medium cannot honour in a subtree.
+
+        Raises:
+            ValidationError: Naming the tokens, the owner and the medium.
+        """
+        unsafe = [name for name, _ in self.items if name in UNPAGED_UNSAFE_TOKENS]
+        if unsafe and not paged:
+            raise ValidationError(
+                f"{owner} moves {', '.join(repr(name) for name in unsafe)} on the "
+                f"'{medium}' medium, whose mobile collapse reads the document's scheme "
+                "and not a subtree's, so it would render one way wide and another "
+                "collapsed. Move it on a paged medium, or for the whole document."
+            )
+
+    def __repr__(self) -> str:
+        return f"Spacing({', '.join(f'{name}={value!r}' for name, value in self.items)})"
+
+
+def _check_spacing_token(name: object) -> None:
+    """Refuse a name no object may move, saying which rule it breaks."""
+    if not isinstance(name, str):
+        raise ValidationError(f"a spacing token is named by a string, got: {name!r}")
+    if name in WIDTH_TOKENS:
+        raise ValidationError(
+            f"'{name}' is the medium's width, and never a spacing token: the page "
+            "belongs to the PageFormat and the columns to column_layout"
+        )
+    owners = TOKEN_LAYERS.get(name)
+    if owners is None:
+        raise ValidationError(f"unknown spacing token {name!r}")
+    if len(owners) > 1:
+        raise ValidationError(f"spacing token {name!r} is ambiguous: layers {list(owners)}")
+    if owners[0] == "type" or name in _COMPONENT_TYPE_TOKENS:
+        raise ValidationError(
+            f"'{name}' is type, not spacing: an object may move its spacing, "
+            "and the type scale is the document's"
+        )
+    if name in _COMPONENT_BOX_TOKENS:
+        raise ValidationError(f"'{name}' sizes a box, and is not spacing")
+
+
+def coerce_spacing(
+    value: Spacing | Mapping[str, int | float] | None, allowed: Sequence[str], owner: str
+) -> Spacing | None:
+    """
+    ``value`` as a :class:`Spacing`, checked against the tokens ``owner`` reads.
+
+    A token outside ``allowed`` is refused by name: moving a token the
+    object's template never reads would be a silent no-op.
+    """
+    if value is None:
+        return None
+    spacing = value if isinstance(value, Spacing) else Spacing(value)
+    unread = [name for name, _ in spacing.items if name not in allowed]
+    if unread:
+        readable = ", ".join(allowed) if allowed else "none"
+        raise ValidationError(
+            f"{owner} reads no {', '.join(repr(name) for name in unread)}; "
+            f"the spacing it may move: {readable}"
+        )
+    return spacing
 
 
 # ----------------------------------------------------------------------

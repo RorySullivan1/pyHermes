@@ -251,6 +251,15 @@ Usage::
    **The baseline may only shrink.** A decision that leaves a docstring is *moved* — to a
    rules file, or to the code it concerns — never deleted; `knowledge-router` decides which.
 
+12. **A spacing override names a token its object reads; a pixel in a template is still a
+   bug.** Added by epic #209. Every container and component declares `SPACING_TOKENS`, and
+   `Spacing` refuses a name outside it at construction, so moving a token the template never
+   reads cannot be a silent no-op. The teeth are two sentinel tests in `tests/test_spacing.py`:
+   one sets each declared token to a sentinel and finds it in the markup, the other perturbs
+   every undeclared token at document level and asserts the markup does not move. A wrong
+   declaration fails both. Rule 5 is untouched: the override is a derive of the bound scheme,
+   so every template still reads `size.*`.
+
 ## Epic #134 — what the prose clean-up found
 
 Two findings outlive the epic, and both are about mechanisms rather than taste.

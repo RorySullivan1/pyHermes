@@ -218,7 +218,7 @@ class TestComponentFieldsAreExercised:
         )
 
     @pytest.mark.parametrize(
-        "field_name", ["title", "background_color", "highlight", "align", "anchor"]
+        "field_name", ["title", "background_color", "highlight", "align", "anchor", "spacing"]
     )
     def test_every_container_field_is_exercised(self, field_name):
         """
@@ -234,11 +234,38 @@ class TestComponentFieldsAreExercised:
             "highlight": False,
             "align": None,
             "anchor": None,
+            "spacing": None,
         }
         assert any(
             getattr(section, field_name, defaults[field_name]) != defaults[field_name]
             for section in sections
         ), f"no gallery container sets {field_name}; a field at its default cannot be pinned"
+
+    @pytest.mark.parametrize("component_name", ["DataTable", "CardGroup"])
+    def test_the_components_a_document_tightens_first_carry_spacing(self, component_name):
+        """
+        #215's rule 9: the two components a quantitative document reaches for
+        first each carry a ``spacing`` in the email gallery, and a paged
+        fixture carries one on a table, so a golden pins each.
+        """
+        spaced = {
+            type(component).__name__
+            for section in _gallery_sections()
+            for component in section.components()
+            if component.spacing is not None
+        }
+        assert component_name in spaced
+
+    def test_a_paged_fixture_tightens_a_table_and_a_page(self):
+        from qa.fixtures import all_paged_fixtures
+
+        sections = [s for build in all_paged_fixtures().values() for s in build()._sections]
+        assert any(section.spacing is not None for section in sections)
+        assert any(
+            type(component).__name__ == "DataTable" and component.spacing is not None
+            for section in sections
+            for component in section.components()
+        )
 
     def test_the_flat_colors_spelling_is_exercised(self):
         """

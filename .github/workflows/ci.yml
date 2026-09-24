@@ -150,6 +150,7 @@ jobs:
           pytest tests/test_pdf.py tests/test_medium_aware_harness.py
           tests/test_apparatus.py tests/test_brochure_pdf.py tests/test_examples.py
           tests/test_digital_pdf.py tests/test_pdf_profile.py tests/test_attachments.py
+          tests/test_spacing.py
 
       - name: Render the paged and brochure galleries to PDF, and photograph every sheet
         run: |
@@ -198,7 +199,12 @@ jobs:
         run: pip install -e ".[dev,data,charts]"
 
       - name: Adapter tests
-        run: pytest tests/test_frames.py tests/test_charts.py tests/test_data_layer.py
+        # test_examples.py runs here as well as in `check`: the
+        # fund-factsheet example plots through [charts], so this is the
+        # only job where it actually builds rather than skipping.
+        run: |
+          pytest tests/test_frames.py tests/test_charts.py tests/test_data_layer.py \
+                 tests/test_examples.py
 
       - name: Type-check with the backends present
         # mypy must be green whether or not the extras are installed; `check`

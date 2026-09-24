@@ -59,7 +59,7 @@ applies to and loads **only when a matching file is read** — so a session that
 |---|---|---|
 | `working-in-the-code.md` | any of `svc/`, `qa/`, `tests/` | The annotated repo map, and the ten standing rules in full |
 | `builder-architecture.md` | `svc/builder/**` | The four-layer model, the facts-flow-down ownership rule, the public API, images and the asset manifest, parameters, validation, exceptions, the hard constraints in full |
-| `design-axes.md` | theming / sizing / typography / enums / containers / `templates/**` | Colour, density, typeface and alignment — the three themes plus the axis that deliberately is not one |
+| `design-axes.md` | theming / sizing / typography / enums / containers / `templates/**` | Colour, density, typeface and alignment — the three themes plus the axis that deliberately is not one — and spacing per object |
 | `data-table.md` | `models.py`, `components.py`, `templates/analysis/**` | Columns, cells, row kinds, caption and row headers |
 | `disclosure.md` | `components.py`, `templates/analysis/**` + `media/**`, the shared partial | An exhibit's two kinds of fine print: attribution, and the compliance copy beneath it |
 | `data-layer.md` | `formats.py`, `svc/data/**` | Figures as numbers: the formatters, the two adapters, why the dependency runs one way |
@@ -105,6 +105,11 @@ The rules themselves. `builder-architecture.md` carries why each exists.
 - **A brochure is checked for print at construction.** A panel inset inside the fold's safe
   distance raises; an image below half its 300 dpi pixel count raises, and below the full
   count warns. Its PDF is RGB, by decision (`brochure.md`).
+- **An email refuses a density no client has rendered.** A custom `SizeScheme` or the print
+  density `dense` raises at construction unless `Config.allow_custom_email_density` is set; a
+  paged document and a brochure take any. A per-object `spacing` that moves a token the
+  email's `@media` block reads (`pad_x`, `card_pad_*`, `mobile_*`) is refused off paper
+  (`design-axes.md`).
 - **Colours are `#RRGGBB`**, validated at construction and again in the templates.
 - **Validation runs at construction time, never at render time.** By the time `.render()`
   is called the data shape is already known good. Preserve this when adding a component.
@@ -144,6 +149,9 @@ that enforces each, is in `working-in-the-code.md`.
     argue its design; a function states its contract; a comment marks a trap. The check
     ships with a baseline that **may only shrink**, and a decision is *moved* to the docs
     rather than deleted.
+12. **A spacing override names a token its object reads; a pixel in a template is still a
+    bug.** Each class declares `SPACING_TOKENS`, and a sentinel test in `test_spacing.py`
+    checks the declaration against the template both ways.
 
 ## Prose discipline
 
@@ -196,8 +204,9 @@ these rather than improvising:
 - Tracked in [GitHub issues](https://github.com/RorySullivan1/pyHermes/issues), as epics
   with sub-issues. Complete: **#157** (rescope to media), **#153** (per-exhibit disclosure),
   **#169** (pagination hardening), **#170** (the data layer, #177–#180), **#171** (document
-  apparatus, #181–#185), **#172** (the brochure medium, #186–#189) and **#193** (the digital PDF, #195–#200).
-  Open: **#201** (an image's width attribute in a paged layout). **#150** (the banner's VML
+  apparatus, #181–#185), **#172** (the brochure medium, #186–#189), **#193** (the digital PDF, #195–#200) and
+  **#209** (spacing at two levels, #211–#216).
+  **#201** (an image's width in a paged layout) is fixed: the CSS repeats it as a cap. **#150** (the banner's VML
   fill) is closed: gating `src` while keeping `type="frame"` left the Word engine painting a
   broken-image placeholder over the masthead, so the two are now gated together. **#202** is
   fixed: the PDF/UA tagger's two defects are corrected in the two places they are caused —
