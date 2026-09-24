@@ -7,7 +7,7 @@
   `.claude/rules/media.md`; do not restate it here.
 - **Shipped**: #157, #153, #169, #170, #171, #172, #193 (PRs #167–#203); #201, #150, #202 (PRs #204–#206);
   #209 (PR #222). **In review**: epic #217 (table semantics, #223–#228) from
-  `claude/integrate-claude-assets-pyhermes-d4spzb`.
+  `claude/integrate-claude-assets-pyhermes-d4spzb` as PR #234.
 - The prose budget is live; the baseline is 45 and may only shrink.
 
 ## Decisions        (append-only; supersede, never delete)
