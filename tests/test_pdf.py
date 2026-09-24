@@ -22,6 +22,7 @@ from qa.fixtures import all_paged_fixtures
 from svc.builder import FullWidth, TextBlock
 from svc.builder.images import EmailImage
 from svc.document import (
+    Cover,
     EmptyBackMatter,
     EmptyCover,
     EmptyRunningFooter,
@@ -203,6 +204,21 @@ class TestThePagesBreakWhereTheTreeSaysTheyDo:
             Page([FullWidth(content=TextBlock("<p>Next.</p>"))], break_before=False),
         )
         assert page_count(broken) == page_count(unbroken) + 1
+
+    def test_a_page_opening_the_body_opens_no_blank_sheet(self):
+        # The body already starts a sheet, so a page's leading break there is
+        # redundant, and the running boxes' seed leaves ahead of the body
+        # table once made it open a blank one. Found by the factsheet, whose
+        # first sheet could not be a Page.
+        body = [FullWidth(content=TextBlock("<p>Short.</p>"))]
+        assert page_count(document(Page(body))) == page_count(document(*body)) == 1
+
+    def test_a_page_opening_the_body_after_a_cover_opens_no_blank_sheet(self):
+        body = [FullWidth(content=TextBlock("<p>Short.</p>"))]
+        covered = {**BARE, "cover": Cover()}
+        paged = PagedDocument(FACTS, **covered).add_section(Page(body))
+        bare = PagedDocument(FACTS, **covered).add_section(body[0])
+        assert page_count(paged) == page_count(bare) == 2
 
     def test_the_gallery_paginates_as_its_page_format_implies(self):
         # The same content on a shorter page needs more sheets. Each count

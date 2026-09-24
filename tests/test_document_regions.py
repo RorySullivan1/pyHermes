@@ -83,6 +83,16 @@ class TestAPageFlattensWherePagesDoNotExist:
         )
         assert "break-before" not in html and "break-after" not in html
 
+    def test_a_page_opening_the_body_drops_only_its_leading_break(self):
+        # The body starts a sheet already. The second page keeps its break,
+        # the first keeps its trailing one, and the caller's page is untouched.
+        first = Page([section()], break_after=True)
+        document = PagedDocument(_paged.facts(), cover=EmptyCover(), back_matter=EmptyBackMatter())
+        html = document.add_section(first).add_section(Page([section()])).render()
+        assert html.count("break-before:page") == 1
+        assert "break-after:page" in html
+        assert first.break_before is True
+
     def test_its_wrapper_declares_itself_a_layout_table(self, engine):
         # Standing rule 8, on the one template this phase adds to the body.
         html = Page([section()]).render(engine.bound(medium=PAGED_MEDIUM))

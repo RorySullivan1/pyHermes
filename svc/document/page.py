@@ -8,6 +8,7 @@ nothing, and the sections inside simply run on. One tree, two outputs.
 
 from __future__ import annotations
 
+import copy
 from typing import TYPE_CHECKING
 
 from svc.builder.components import Component
@@ -76,6 +77,12 @@ class Page(Container):
         self.sections = list(sections)
         self.break_before = break_before
         self.break_after = break_after
+
+    def opening(self) -> Page:
+        """This page without its leading break, for a body that already opens a sheet."""
+        opened = copy.copy(self)
+        opened.break_before = False
+        return opened
 
     def resolved_anchor(self) -> str:
         """None: a page's title is never rendered, so there is no heading to land on."""

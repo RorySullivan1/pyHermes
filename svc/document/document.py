@@ -13,11 +13,14 @@ from pathlib import Path
 from typing import Any, ClassVar
 
 from svc.builder.components import contents_entries
+from svc.builder.containers import Container
 from svc.builder.document import Document, RegionFacts
+from svc.builder.engine import Renderer
 from svc.builder.medium import Medium
 from svc.builder.models import DocumentMetadata
 
 from .medium import PAGED_MEDIUM
+from .page import Page
 from .regions import (
     BackMatter,
     ContentsPage,
@@ -115,6 +118,19 @@ class PagedDocument(Document):
     def trailing_regions(self) -> tuple[RegionFacts, ...]:
         """The closing sheet, on the same terms."""
         return ((self._back_matter, self._facts(BACK_MATTER_FACTS)),)
+
+    def _body_context(self, engine: Renderer, sections: list[Container]) -> dict[str, Any]:
+        """
+        The body, less the leading break of a page that opens it.
+
+        The body always starts a sheet: the first, or the one after the cover
+        or the contents. A break before its first section is redundant there,
+        and the running boxes' seed leaves ahead of the body table make it
+        open a blank sheet instead.
+        """
+        if sections and isinstance(sections[0], Page):
+            sections = [sections[0].opening(), *sections[1:]]
+        return super()._body_context(engine, sections)
 
     def _facts(self, names: tuple[str, ...]) -> dict[str, Any]:
         """The named facts, read off the metadata this document was built from."""
