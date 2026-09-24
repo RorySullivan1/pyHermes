@@ -6,7 +6,7 @@
   one contract — `svc/delivery`+`gmail`+`outlook`, and `svc/pdf`. Rationale: CLAUDE.md and
   `.claude/rules/media.md`; do not restate it here.
 - **Shipped**: #157, #153, #169, #170, #171, #172, #193 (PRs #167–#203); #201, #150, #202 (PRs #204–#206).
-  **In review**: epic #209 (spacing at two levels, #211–#216) on `claude/gifted-ritchie-7dkp5g`, which
+  **In review**: epic #209 (spacing at two levels, #211–#216) as PR #222 from `claude/gifted-ritchie-7dkp5g`, which
   also carries the fund factsheet from the closed PR #207.
 - The prose budget is live; the baseline is 45 and may only shrink.
 

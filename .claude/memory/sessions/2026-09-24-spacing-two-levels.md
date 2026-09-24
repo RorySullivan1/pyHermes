@@ -43,3 +43,6 @@ leading-break fix and `add_page` from #207 and #208.
 Full suite, ruff, format and mypy clean. Goldens moved: `kitchen_sink` and its three
 derivatives (only the four overridden tokens), plus the new `letter_dense`. Email screenshots
 inspected at both viewports; lint clean. `tests/test_spacing.py` joined CI's `pdf` job.
+
+**Next:** PR #222 is open onto `main`; watch its CI and review. If #207 is reopened and merged
+first, the factsheet commits drop out of #222's diff.
