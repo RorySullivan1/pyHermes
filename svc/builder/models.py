@@ -612,6 +612,8 @@ class Column:
                 which is what ``loop.first`` meant. A ``format`` makes it numeric.
         format: How a raw figure in this column is written (#225).
         tone:   ``auto`` (the sign decides) or a ``Tone`` for its raw figures.
+        align_decimal: Pad the figures so their decimal points line up (#226).
+        unit:   Printed once, in a units row beneath the heads. Plain text.
     """
 
     header: str
@@ -619,6 +621,8 @@ class Column:
     kind: str = ""
     format: Callable[[Any], str] | None = None
     tone: str = ""
+    align_decimal: bool = False
+    unit: str = ""
 
     def validate(self) -> None:
         _require(self.header, "column.header")
@@ -626,6 +630,8 @@ class Column:
             raise ValidationError(f"'column.format' must be callable, got: {self.format!r}")
         if self.tone != "auto":
             _validate_tone(self.tone, "column.tone")
+        if not isinstance(self.unit, str):
+            raise ValidationError(f"'column.unit' must be text, got: {self.unit!r}")
         if self.align and self.align not in tuple(ColumnAlign):
             raise ValidationError(
                 f"'column.align' must be one of {[a.value for a in ColumnAlign]}, "

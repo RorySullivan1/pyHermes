@@ -410,10 +410,10 @@ def _title_sheet(sheets) -> int:
     return next(i for i, (text, _) in enumerate(sheets) if pattern.search(text))
 
 
-#: Both head shapes, one row and the two-row tier of #223: each boundary is
-#: re-measured under each, since the break rules were tuned on a one-row head.
+#: Both head shapes, one row and the tiered head of #223 and #226: each boundary
+#: is re-measured under each, since the break rules were tuned on a one-row head.
 _HEADS = [long_table.build, long_table.build_grouped]
-_HEAD_IDS = ["one-row-head", "two-row-head"]
+_HEAD_IDS = ["one-row-head", "tiered-head"]
 _GROUPS = long_table.GROUPS
 
 
@@ -439,10 +439,12 @@ class TestALongTableCrossesSheetsIntact:
 
     def test_every_sheet_of_the_table_carries_its_headers(self, sheets):
         grouped = any(g.label.upper() in sheets[_table_sheets(sheets)[0]][0] for g in _GROUPS)
-        heads = long_table.HEADERS + ([g.label for g in _GROUPS] if grouped else [])
+        heads = [h.upper() for h in long_table.HEADERS]
+        if grouped:
+            heads += [g.label.upper() for g in _GROUPS] + [u for u in long_table.UNITS if u]
         for index in _table_sheets(sheets):
             text = sheets[index][0]
-            missing = [h for h in heads if h.upper() not in text]
+            missing = [h for h in heads if h not in text]
             assert not missing, f"sheet {index + 1} lost its column headers {missing}"
 
     def test_the_total_shares_a_sheet_with_the_row_above_it(self, sheets):

@@ -5,8 +5,8 @@ Every ``DataTable`` axis at once (#116), so a cross-axis regression is visible.
 ``kind`` and ``align``, per-cell colour and background, row kinds, a caption
 and row headers. The other is a plain table of bare strings, which is what
 pins that none of the new machinery changed the default rendering. A third,
-the quantitative table, carries epic #217's words: groups, a marked cell, and
-columns that format their own raw figures.
+the quantitative table, carries epic #217's words: groups, a marked cell,
+columns that format their own raw figures, a decimal-aligned column and units.
 """
 
 from __future__ import annotations
@@ -37,14 +37,15 @@ def _quantitative_table() -> DataTable:
         caption="Annualised returns by share class",
         headers=[
             "Class",
-            Column("1Y", format=_annualised, tone="auto"),
-            Column("3Y", format=_annualised, tone="auto"),
-            Column("Since launch[^1]", format=_annualised),
+            Column("1Y", format=_annualised, tone="auto", unit="%"),
+            Column("3Y", format=_annualised, tone="auto", align_decimal=True),
+            Column("Since launch[^1]", format=_annualised, unit="% pa"),
         ],
         groups=[ColumnGroup("Share class"), ColumnGroup("Annualised", 3)],
         rows=[
-            TableRow(["Accumulation", 0.0452, 0.0612, 0.0725]),
-            TableRow(["Income", -0.0031, 0.0405, Cell("6.9%[^2]", value=0.069)]),
+            # Written to two places, so the aligned column has a point to align.
+            TableRow(["Accumulation", 0.0452, Cell("6.12%", value=0.0612), 0.0725]),
+            TableRow(["Income", -0.0031, 0.1405, Cell("6.9%[^2]", value=0.069)]),
             TableRow(["Hedged", 0.0118, "n/a", 0.0512]),
         ],
         notes=["Launched 3 March 2014.", "The income class launched a year later."],

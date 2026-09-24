@@ -31,6 +31,9 @@ HEADERS = ["Issue", "Sector", "Weight", "Yield"]
 #: looks for on every sheet: a two-row ``thead`` must repeat whole.
 GROUPS = [ColumnGroup("Instrument", 2), ColumnGroup("Exposure", 2)]
 
+#: The same variant's units row (#226), a third ``thead`` row to repeat.
+UNITS = ["", "", "% of book", "% to worst"]
+
 _GOVERNMENT = [
     f"UKT {coupon}% {year}"
     for coupon, year in zip(
@@ -71,9 +74,9 @@ INTRO_PARAGRAPHS = 13
 LEAD_IN_PARAGRAPHS = 10
 RUN_ON_PARAGRAPHS = 12
 
-#: The same three counts retuned for the two-row head (#223): the header tier
-#: repeats on every sheet, so each boundary moved up by its height.
-GROUPED_PARAGRAPHS = (8, 9, 11)
+#: The same three counts retuned for the tiered head (#223, #226): groups and
+#: units repeat on every sheet, so each boundary moved up by their height.
+GROUPED_PARAGRAPHS = (7, 8, 11)
 
 _CHART_PNG = solid_png(600, 280, (74, 124, 89))
 
@@ -97,8 +100,11 @@ def _holdings_table(groups: list[ColumnGroup] | None = None) -> DataTable:
     rows.append(TableRow(cells=[SUBHEAD], kind="subhead"))
     rows += [_row(label, "Corporate", n) for n, label in enumerate(_CREDIT)]
     rows.append(TableRow(cells=[TOTAL, "", "100.0%", "4.1%"], kind="total"))
+    headers: list[str | Column] = list(HEADERS)
+    if groups:
+        headers = [Column(h, unit=u) for h, u in zip(HEADERS, UNITS, strict=True)]
     return DataTable(
-        headers=list[str | Column](HEADERS),
+        headers=headers,
         rows=rows,
         caption="Model portfolio, by issue",
         subtitle="Sterling fixed income, weights at month end",
@@ -164,5 +170,5 @@ def build(template_dir: Path | None = None) -> Document:
 
 
 def build_grouped(template_dir: Path | None = None) -> Document:
-    """The same document with a two-row head, at the same tuned counts (#223)."""
+    """The same document under a three-row head: groups (#223) and units (#226)."""
     return build_with(*GROUPED_PARAGRAPHS, template_dir, GROUPS)

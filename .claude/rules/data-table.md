@@ -193,7 +193,9 @@ one "Annualised" head instead of the unit going into the section title.
   the tier needed no rule of its own. `a4_long_table.build_grouped()` is the same document
   with a two-row head. Both shapes run through the crossing tests and the stripped-rules
   tests. The extra row moved every engineered boundary, so the grouped variant carries its
-  own lead-in counts, `GROUPED_PARAGRAPHS = (8, 9, 11)`, against the one-row `(13, 10, 12)`.
+  own lead-in counts, `GROUPED_PARAGRAPHS`, against the one-row `(13, 10, 12)`. The variant
+  was `(8, 9, 11)` with groups alone. Since #226 it also carries a units row, and it is
+  `(7, 8, 11)`.
 - **Outlook is owed a render.** The tier ships as standard table markup. Neither the
   `outlook-html-specifications` skill nor any rules file records how the Word engine lays
   out a header `colspan`, and no Outlook render exists here (#150's posture). Until one is
@@ -248,6 +250,35 @@ that already existed.
 - **The field-completeness test had a hole.** It compared each field with its default, and
   `DataTable` stores `groups=None` as `[]`, so an unused `groups` counted as exercised. An
   empty collection now counts as unset.
+
+### Figures on the point, and the unit said once (#226)
+
+`Column(align_decimal=True)` lines a numeric column up on its decimal point, and
+`Column(unit="%")` prints the unit once, in a units row beneath the heads, instead of in every
+cell or in the section title.
+
+- **The padding is decided in Python, once.** `textgen.decimal_pads()` counts everything after
+  a cell's last `.`, suffix included, so `4.5%` and `12.25%` compare as 2 and 3. It pads each
+  cell on the right to the column's widest. `DataTable._pads()` runs it on the spelled text,
+  markers as the document's numbers, and hands the counts to both readers. The template emits
+  `&nbsp;` and the text part emits spaces, so a test finds one string in both.
+- **A figure with no point has one before its suffix.** The issue specified "the maximum plus
+  one", which is right for a bare `7` and wrong for `7%`. It would push the `%` one column
+  past the point. So the virtual point sits before the trailing non-digits: the `7` stands
+  over the units digit and the `%` stands in the point's column. With no suffix this is the
+  issue's rule exactly. Chromium measures the glyphs at both viewports and finds them in one
+  column.
+- **A proportional numeric face keeps the padding**, and a test pins it under a sans `numeric`
+  stack. A proportional numeric face is already the caller departing from the table's design,
+  and `&nbsp;` padding in it lands *near* the point rather than on it. Dropping the padding
+  would lose the alignment in the text part too, where the face does not matter.
+- **A text column refuses `align_decimal`** by name. A subhead is not padded, and an empty
+  cell pads by nothing.
+- **The units row is a third `thead` row, so it repeats on paper.** It holds one `th` per
+  column, empty where a column has no unit, set in the label face at normal weight, and not
+  upper-cased, because `bps` is not `BPS`. The 2px rule moves under it. The text part prints
+  the units on a line under the heads, before the rule. `table-header-tier` already counted
+  any number of `thead` rows, so it needed no change.
 
 [Card](../../svc/builder/models.py) is the unit: `label` (required), `value`, `color`,
 `sublabel`, and an optional `body` for prose. Either `value` or `body` must be present.

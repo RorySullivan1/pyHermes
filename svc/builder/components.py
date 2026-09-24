@@ -50,6 +50,7 @@ from .models import (
 from .sizing import Spacing, coerce_spacing
 from .textgen import (
     LINE_WIDTH,
+    decimal_pads,
     format_link,
     html_to_text,
     join_blocks,
@@ -502,6 +503,12 @@ class DataTable(Exhibit, Component):
                     f"DataTable row {i} has {len(row.cells)} cells but there are "
                     f"{len(columns)} headers; the table would render misaligned."
                 )
+        for index, column in enumerate(columns):
+            if column.align_decimal and column.resolved_kind(index) is ColumnKind.TEXT:
+                raise ValidationError(
+                    f"'column.align_decimal' is set on the text column {column.header!r}; "
+                    "only figures have a decimal point to align."
+                )
         for i, row in enumerate(rows):
             row.cells = [
                 _formatted(cell, column, index, i)
@@ -543,14 +550,44 @@ class DataTable(Exhibit, Component):
             wrap(text_markers(self.numbered(self.caption), self.notes)),
             table(
                 [text_markers(header, self.notes) for header in self.headers],
-                [[text_markers(cell.text, self.notes) for cell in row.cells] for row in self.rows],
+                [
+                    [text + " " * pad for text, pad in zip(texts, pads, strict=True)]
+                    for texts, pads in zip(self._spelled(), self._pads(), strict=True)
+                ],
                 aligns=[column.align for column in self.resolved_columns()],
                 kinds=[row.kind for row in self.rows],
                 groups=[(group.label, group.span) for group in self.groups],
+                units=self._units(),
             ),
             wrap("\n".join(filter(None, (text_markers(self.source, self.notes), self.as_of)))),
             wrap(self.disclosure),
         )
+
+    def _spelled(self) -> list[list[str]]:
+        """Every cell's text with its markers spelled as the document's numbers."""
+        return [[text_markers(cell.text, self.notes) for cell in row.cells] for row in self.rows]
+
+    def _pads(self) -> list[list[int]]:
+        """
+        Per cell, the spaces that line a column's points up (#226).
+
+        Computed once from the spelled text and handed to both projections, so
+        the markup's ``&nbsp;`` run and the text part's spaces are one count.
+        """
+        spelled = self._spelled()
+        pads = [[0] * len(self.columns) for _ in self.rows]
+        figures = [i for i, row in enumerate(self.rows) if row.kind != RowKind.SUBHEAD]
+        for c, column in enumerate(self.columns):
+            if column.align_decimal:
+                column_pads = decimal_pads([spelled[r][c] for r in figures])
+                for r, pad in zip(figures, column_pads, strict=True):
+                    pads[r][c] = pad
+        return pads
+
+    def _units(self) -> list[str]:
+        """One unit per column, or none at all when no column names one."""
+        units = [column.unit for column in self.columns]
+        return units if any(units) else []
 
     def _striping(self) -> dict[int, bool]:
         """Which rows take the alternating tint, counting data rows only."""
@@ -567,6 +604,7 @@ class DataTable(Exhibit, Component):
     def context(self) -> dict[str, Any]:
         columns = self.resolved_columns()
         alt_by_row = self._striping()
+        pads = self._pads()
         return {
             "columns": [
                 {
@@ -578,6 +616,7 @@ class DataTable(Exhibit, Component):
                 for c in columns
             ],
             "groups": [{"label": g.label, "span": g.span} for g in self.groups],
+            "units": self._units(),
             "rows": [
                 {
                     "kind": r.kind,
@@ -585,6 +624,7 @@ class DataTable(Exhibit, Component):
                         {
                             "text": cell.text,
                             "parts": split_markers(cell.text, self.notes),
+                            "pad": pad,
                             # The chain completes here: cell → column → position.
                             "align": cell.resolved_align(column.align),
                             "color": cell.color,
@@ -599,13 +639,15 @@ class DataTable(Exhibit, Component):
                             # does not claim to head its row.
                             "row_header": index == 0 and column.kind == ColumnKind.TEXT,
                         }
-                        for index, (cell, column) in enumerate(zip(r.cells, columns, strict=True))
+                        for index, (cell, column, pad) in enumerate(
+                            zip(r.cells, columns, row_pads, strict=True)
+                        )
                     ],
                     # Striping counts *data* rows: a subhead in the middle of a
                     # table must not invert the tint of everything beneath it.
                     "alt": alt_by_row[id(r)],
                 }
-                for r in self.rows
+                for r, row_pads in zip(self.rows, pads, strict=True)
             ],
             "source": self.source,
             "source_parts": split_markers(self.source, self.notes),

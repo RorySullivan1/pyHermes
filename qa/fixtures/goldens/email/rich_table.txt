@@ -47,12 +47,13 @@ Share Class Returns
 
 Annualised returns by share class
 
-Share class            Annualised
-Class            1Y    3Y  Since launch[1]
-------------  -----  ----  ---------------
-Accumulation   4.5%  6.1%             7.3%
-Income        -0.3%  4.1%          6.9%[2]
-Hedged         1.2%   n/a             5.1%
+Share class             Annualised
+Class            1Y      3Y  Since launch[1]
+                  %                     % pa
+------------  -----  ------  ---------------
+Accumulation   4.5%   6.12%             7.3%
+Income        -0.3%  14.1%           6.9%[2]
+Hedged         1.2%    n/a              5.1%
 
 Hermes Research
 

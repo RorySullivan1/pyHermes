@@ -8,6 +8,7 @@
                on reaching it. Distinct from `subtitle`, which is copy that
                merely sits above.
     groups   — List of dicts with keys: label, span. Empty for no header tier.
+    units    — One unit per column, or empty for no units row.
     columns  — List of dicts with keys: header, parts, align, kind — already
                resolved (#117), so this template decides neither. A column's
                position means nothing here; its `kind` carries the face and
@@ -16,7 +17,7 @@
                `total` is ruled off above and bold across; a `subhead` is a
                tinted label band. Both draw from theme tokens only — a row's
                kind is chrome, unlike a cell's colour, which is data. Each cell
-               carries text, parts, align, color, background and is_text — all
+               carries text, parts, pad, align, color, background, is_text — all
                resolved (#118), so this template chooses none of them. An
                empty color or background means "the theme's". `row_header`
                marks the cell a screen reader navigates the row by — the
@@ -56,11 +57,19 @@
 {% endfor %}
   </tr>
 {% endif %}
-  <tr style="border-top: 1px solid {{ theme.palette.rule }}; border-bottom: 2px solid {{ theme.palette.rule_dark }};">
+  <tr style="border-top: 1px solid {{ theme.palette.rule }}; border-bottom: {% if units %}1px solid {{ theme.palette.rule_subtle }}{% else %}2px solid {{ theme.palette.rule_dark }}{% endif %};">
 {% for column in columns %}
     <th scope="col" align="{{ column.align | escape_html }}" style="font-family: {{ font.label }}; font-size: {{ size.type.label }}px; font-weight: bold; color: {{ theme.semantic.neutral }}; text-transform: uppercase; line-height: {{ size.type.body_line | percent }}; text-align: {{ column.align }}; padding: {{ size.component.table_cell_pad }}px; letter-spacing: 0.5px;">{{ marked(column.parts) }}</th>
 {% endfor %}
   </tr>
+{% if units %}
+  {# The units row (#226): each unit once, beneath its head. #}
+  <tr style="border-bottom: 2px solid {{ theme.palette.rule_dark }};">
+{% for column in columns %}
+    <th scope="col" align="{{ column.align | escape_html }}" style="font-family: {{ font.label }}; font-size: {{ size.type.label }}px; font-weight: normal; color: {{ theme.text.secondary }}; line-height: {{ size.type.body_line | percent }}; text-align: {{ column.align }}; padding: 0 {{ size.component.table_cell_pad }}px {{ size.component.table_cell_pad }}px {{ size.component.table_cell_pad }}px;">{{ units[loop.index0] | escape_html }}</th>
+{% endfor %}
+  </tr>
+{% endif %}
   </thead>
   {# Data rows #}
   <tbody>
@@ -68,7 +77,7 @@
   <tr{% if row.kind == "total" %} class="row-total"{% elif row.kind == "subhead" %} class="row-subhead"{% endif %} style="border-bottom: 1px solid {% if loop.last %}{{ theme.palette.rule }}{% else %}{{ theme.palette.rule_subtle }}{% endif %};{% if row.kind == "total" %} border-top: 2px solid {{ theme.palette.rule_dark }};{% endif %}">
 {% for cell in row.cells %}
 {% set subhead = row.kind == "subhead" %}{% set bold = subhead or row.kind == "total" or not cell.is_text %}
-    <{% if cell.row_header %}th scope="row"{% else %}td{% endif %} align="{{ cell.align | escape_html }}" style="font-family: {% if subhead or cell.is_text %}{{ font.label }}{% else %}{{ font.numeric }}{% endif %}; font-size: {{ size.type.secondary }}px; font-weight: {% if bold %}bold{% else %}normal{% endif %}; line-height: {{ size.type.body_line | percent }}; color: {% if subhead %}{{ theme.text.heading }}{% elif cell.color %}{{ cell.color | validate_hex_color }}{% elif cell.tone %}{{ theme.semantic[cell.tone] }}{% elif cell.is_text %}{{ theme.text.primary }}{% else %}{{ theme.semantic.neutral }}{% endif %}; text-align: {{ cell.align }}; padding: {{ size.component.table_cell_pad }}px; background-color: {% if subhead %}{{ theme.palette.highlight_tint }}{% elif cell.background %}{{ cell.background | validate_hex_color }}{% elif row.alt %}{{ theme.palette.row_alt }}{% else %}{{ theme.palette.surface }}{% endif %};">{{ marked(cell.parts) }}</{% if cell.row_header %}th{% else %}td{% endif %}>
+    <{% if cell.row_header %}th scope="row"{% else %}td{% endif %} align="{{ cell.align | escape_html }}" style="font-family: {% if subhead or cell.is_text %}{{ font.label }}{% else %}{{ font.numeric }}{% endif %}; font-size: {{ size.type.secondary }}px; font-weight: {% if bold %}bold{% else %}normal{% endif %}; line-height: {{ size.type.body_line | percent }}; color: {% if subhead %}{{ theme.text.heading }}{% elif cell.color %}{{ cell.color | validate_hex_color }}{% elif cell.tone %}{{ theme.semantic[cell.tone] }}{% elif cell.is_text %}{{ theme.text.primary }}{% else %}{{ theme.semantic.neutral }}{% endif %}; text-align: {{ cell.align }}; padding: {{ size.component.table_cell_pad }}px; background-color: {% if subhead %}{{ theme.palette.highlight_tint }}{% elif cell.background %}{{ cell.background | validate_hex_color }}{% elif row.alt %}{{ theme.palette.row_alt }}{% else %}{{ theme.palette.surface }}{% endif %};">{{ marked(cell.parts) }}{{ "&nbsp;" * cell.pad }}</{% if cell.row_header %}th{% else %}td{% endif %}>
 {% endfor %}
   </tr>
 {% endfor %}

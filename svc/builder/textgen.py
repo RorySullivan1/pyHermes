@@ -276,12 +276,33 @@ def join_sections(*sections: str) -> str:
     return "\n\n\n".join(section for section in sections if section)
 
 
+_NOT_DIGITS = "".join(chr(c) for c in range(32, 127) if not chr(c).isdigit())
+
+
+def decimal_pads(cells: list[str]) -> list[int]:
+    """
+    Spaces to append to each cell so a column's decimal points line up (#226).
+
+    Everything after the last ``.`` counts, suffix included, so ``4.5%`` and
+    ``12.25%`` compare as 2 and 3. A figure with no point has one before its
+    suffix, so ``7`` pads by the widest plus one and ``7%`` sits under the
+    units digit; an empty cell pads by nothing.
+    """
+    fractions = [
+        len(c) - c.rindex(".") - 1 if "." in c else len(c) - len(c.rstrip(_NOT_DIGITS)) - 1
+        for c in cells
+    ]
+    widest = max((f for c, f in zip(cells, fractions, strict=True) if c), default=-1)
+    return [widest - f if c else 0 for c, f in zip(cells, fractions, strict=True)]
+
+
 def table(
     headers: list[str],
     rows: list[list[str]],
     aligns: list[str] | None = None,
     kinds: list[str] | None = None,
     groups: list[tuple[str, int]] | None = None,
+    units: list[str] | None = None,
 ) -> str:
     """
     Aligned monospace columns.
@@ -303,6 +324,7 @@ def table(
                  (first column left, the rest right).
         kinds:   One :class:`~svc.builder.enums.RowKind` per row, or ``None``.
         groups:  ``(label, span)`` pairs, each label centred over its columns.
+        units:   One unit per column, printed on a line under the headers.
 
     Returns:
         The header row, a rule, and one line per row. Empty without headers.
@@ -311,10 +333,8 @@ def table(
         return ""
     if aligns is None:
         aligns = ["left" if i == 0 else "right" for i in range(len(headers))]
-    widths = [
-        max(len(headers[i]), *(len(row[i]) for row in rows)) if rows else len(headers[i])
-        for i in range(len(headers))
-    ]
+    head_rows = [headers, *([units] if units else [])]
+    widths = [max(len(cells[i]) for cells in head_rows + rows) for i in range(len(headers))]
     start = 0
     for label, span in groups or []:
         covered = sum(widths[start : start + span]) + 2 * (span - 1)
@@ -337,7 +357,7 @@ def table(
         if kind == "total":
             body.append(rule)
         body.append(line(cells))
-    head = [line(headers)]
+    head = [line(cells) for cells in head_rows]
     if groups:
         spans, start = [], 0
         for label, span in groups:
@@ -354,6 +374,7 @@ __all__ = [
     "join_blocks",
     "join_sections",
     "link_line",
+    "decimal_pads",
     "table",
     "underline",
     "wrap",
