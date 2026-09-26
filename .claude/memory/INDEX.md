@@ -6,8 +6,8 @@
   one contract — `svc/delivery`+`gmail`+`outlook`, and `svc/pdf`. Rationale: CLAUDE.md and
   `.claude/rules/media.md`; do not restate it here.
 - **Shipped**: #157, #153, #169, #170, #171, #172, #193 (PRs #167–#203); #201, #150, #202 (PRs #204–#206);
-  #209 (PR #222); #217 (PR #234). **In review**: epic #221 (equations, #229–#233) from
-  `claude/integrate-claude-assets-pyhermes-d4spzb`.
+  #209 (PR #222); #217 (PR #234); #221 (PR #235). Stubs #218–#220 are still undefined; each was
+  filed against `main` @ `0ac949a` and is defined in place with the `epic` skill, as #217 and #221 were.
 - The prose budget is live; the baseline is 45 and may only shrink.
 
 ## Decisions        (append-only; supersede, never delete)
@@ -30,6 +30,8 @@
 - [2026-09-24] **Spacing has two levels: a preset (or a derived scheme), then `spacing=` per object as a
   derive of the bound scheme.** The email gates both; no px enters the API — `design-axes.md`,
   sessions/2026-09-24-spacing-two-levels.md
+- [2026-09-24] **A `colspan` is admitted in a `thead` only, and Outlook's handling of it is unverified
+  here.** A cell note is the `[^n]` marker, never a field — #217, sessions/2026-09-24-1208-define-epic-217.md
 
 - [2026-09-24] **A cell's text on its own heat tint takes the more legible theme token, and a
   marker hangs past the point on paper.** Both were found only by the #228 rasters —
@@ -65,6 +67,10 @@
   px width each put a4_portrait on six sheets; email screenshots pixel-identical — `media.md`
 - [2026-09-24] spacing-two-levels — **#209 implemented** (#211–#216): `dense`, `SizeScheme` as `size_theme`,
   `Spacing` + `SPACING_TOKENS`, the factsheet at 90% of two sheets — sessions/2026-09-24-spacing-two-levels.md
+- [2026-09-24] define-epic-217 — **#217 defined, #223–#228 filed** via the github-issues pipeline. `fill-self`
+  rewrites the Done-when sentence too; print the diff — sessions/2026-09-24-1208-define-epic-217.md
+- [2026-09-24] define-epic-221 — **#221 defined, #229–#233 filed**. mathtext measured: deterministic, no `aligned`,
+  `\le` unknown; two stub claims corrected (purity, theme recolour) — sessions/2026-09-24-1312-define-epic-221.md
 - [2026-09-24] table-semantics — **#217 implemented** (#223–#228): groups, cell markers, `Column.format`,
   decimal alignment and units, `HeatScale` and bars; `letter_quant_table` — sessions/2026-09-24-table-semantics.md
 - [2026-09-24] equations — **#221 implemented** (#229–#233): `MathBlock`, `svc/math` + `[math]`, `math_block`,
