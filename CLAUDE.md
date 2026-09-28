@@ -113,6 +113,8 @@ The rules themselves. `builder-architecture.md` carries why each exists.
   paged document and a brochure take any. A per-object `spacing` that moves a token the
   email's `@media` block reads (`pad_x`, `card_pad_*`, `mobile_*`) is refused off paper
   (`design-axes.md`).
+- **The package never prints.** A soft limit is a `SizeWarning` or `PrintQualityWarning` a host
+  can filter or promote; an AST test holds `svc/` free of `print` (`config.md`).
 - **Colours are `#RRGGBB`**, validated at construction and again in the templates.
 - **Validation runs at construction time, never at render time.** By the time `.render()`
   is called the data shape is already known good. Preserve this when adding a component.
@@ -172,10 +174,13 @@ itself — file purpose, verbose class, limited function, inline-for-traps — i
   builds the wheel and renders an email from a clean venv to keep it that way.
 - **Import path.** `from svc.builder import …` / `from svc.builder.models import …`.
   `svc/__init__.py` re-exports nothing, and there is no `svc.models`.
+- **Config has three levels, innermost wins**: a document's or message's `config=`, then a
+  context's `config_override`, then `set_config`'s default. An override is per thread or task.
 - **The skeleton is the medium's, and the email one is `templates/base.html`.** The engine
   loads it through a `ChoiceLoader`: each of the medium's `template_search_path` directories
   first, that root last — so a medium can fork one template without forking the tree, and a
-  declared directory that does not exist is the normal, unforked case.
+  declared directory that does not exist is the normal, unforked case. A caller's
+  `template_overlay=` is searched ahead of both (`media.md`).
 
 ## Working in this repo — the `.claude/` tooling
 

@@ -307,3 +307,7 @@ Decisions and Log entries folded out of `INDEX.md` on 2026-08-29 (#143), verbati
 - [2026-09-23] brochure-medium — **#172 shipped, PR #194** (4/4 closed, CI green first push): folds, panel, imposition,
   bleed and marks, five editorial primitives. A test that reads the table it tests agrees with a
   wrong one — sessions/2026-09-23-brochure-medium.md
+- [2026-09-23] digital-pdf — **#193 shipped, PR #203** (6/6 closed). PDF determinism needs
+  HarfBuzz-Subset; findings #201, #202 filed — sessions/2026-09-23-digital-pdf.md
+- [2026-09-23] image-width — **#201 fixed**: `width:100%; max-width:Npx` beside the attribute. Hints and a fixed
+  px width each put a4_portrait on six sheets; email screenshots pixel-identical — `media.md`
