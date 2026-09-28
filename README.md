@@ -878,11 +878,17 @@ Every judgment-call number is a field on one frozen `Config`:
 from svc.config import Config, get_config, set_config, config_override
 
 get_config().inline_image_limit_kb               # what is actually in force
-set_config(Config(inline_image_limit_kb=64))     # install process-wide
-set_config(Config.from_env())                    # or read PYHERMES_*
-with config_override(retry_max_attempts=1):      # scoped, restores on exit
+set_config(Config.from_env())                    # the process-wide default, at startup
+with config_override(retry_max_attempts=1):      # this thread or task only
     ...
+Email(facts, config=Config(size_limit_kb=500))   # this document only
+build_message(email, sender=..., to=..., config=Config(attachment_limit_kb=10240))
 ```
+
+Three levels, and the innermost wins: a document's or a message's own `config`, then the
+context's `config_override`, then the default `set_config` installed. An override belongs to
+the thread or asyncio task that entered it, so two renders in one service cannot read each
+other's limits; a thread you start begins from the default, so hand it a `Config` explicitly.
 
 The line it draws is between **a judgment call and a fact about the world**. The inline-image
 cap, the retry ladder and the request timeout were picked by someone, and a picked number you

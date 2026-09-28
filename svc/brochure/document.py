@@ -18,6 +18,7 @@ from svc.builder.document import Document
 from svc.builder.engine import Renderer
 from svc.builder.exceptions import ValidationError
 from svc.builder.models import DocumentMetadata
+from svc.config import Config
 
 from .checks import validate_image_resolution, validate_safe_area
 from .fold import TRI_FOLD_LETTER, FoldFormat, _px
@@ -48,6 +49,7 @@ class Brochure(Document):
         panels:       Every face of the sheet, in reader order.
         fold:         The sheet and its fold. Defaults to a letter tri-fold.
         template_dir: Root of the templates. Defaults to the packaged copy.
+        config:       This brochure's own limits, print dpi included.
 
     Raises:
         ValidationError: If the panel count is not the fold's, a panel is not
@@ -63,8 +65,10 @@ class Brochure(Document):
         panels: list[Panel],
         fold: FoldFormat = TRI_FOLD_LETTER,
         template_dir: Path | None = None,
+        *,
+        config: Config | None = None,
     ):
-        super().__init__(metadata, template_dir, brochure_medium(fold))
+        super().__init__(metadata, template_dir, brochure_medium(fold), config=config)
         self._fold = fold
         self._proof = False
         if len(panels) != fold.faces:
@@ -90,12 +94,13 @@ class Brochure(Document):
             for box, panel in zip(impose(fold), panels, strict=True)
             if panel.background_image is not None
         }
-        validate_image_resolution(
-            [
-                (image, grounds[id(image)]) if id(image) in grounds else image
-                for image in self.images()
-            ]
-        )
+        with self.configured():
+            validate_image_resolution(
+                [
+                    (image, grounds[id(image)]) if id(image) in grounds else image
+                    for image in self.images()
+                ]
+            )
 
     @property
     def fold(self) -> FoldFormat:
