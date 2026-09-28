@@ -20,10 +20,21 @@ class PdfError(Exception):
 
 
 class BackendMissingError(PdfError):
-    """Raised when WeasyPrint is not installed.
+    """Raised when WeasyPrint is not installed, or cannot load its system libraries.
 
     The exporter is an optional extra, so this is a setup problem rather than
-    a data problem, and the message names the install that fixes it.
+    a data problem, and the message names the install that fixes it. A wheel
+    whose Pango, Cairo or HarfBuzz is absent fails at import with ``OSError``
+    rather than ``ImportError``, and is the same setup problem.
+    """
+
+
+class BackendError(PdfError):
+    """Raised when WeasyPrint fails for any reason the exporter does not name itself.
+
+    The exporter owns its exception tree, so a backend failure that is neither
+    a refused resource nor a missing install still arrives as a ``PdfError``,
+    with the original chained as the cause.
     """
 
 

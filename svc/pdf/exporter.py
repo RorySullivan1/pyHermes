@@ -15,7 +15,7 @@ from typing import Any
 
 from svc.builder.document import Document
 
-from .exceptions import BackendMissingError, UnreachableResourceError
+from .exceptions import BackendError, BackendMissingError, PdfError, UnreachableResourceError
 from .fetcher import build_fetcher
 from .profile import PRINT, PdfProfile
 from .tagging import retag_layout_tables
@@ -25,7 +25,9 @@ def available() -> bool:
     """Whether the PDF backend is installed, for a caller that wants to skip."""
     try:
         import weasyprint  # noqa: F401
-    except ImportError:
+    except (ImportError, OSError):
+        # OSError: the wheel is installed but cffi could not load Pango,
+        # Cairo or HarfBuzz from the system. Unavailable either way.
         return False
     return True
 
@@ -42,15 +44,18 @@ def render_pdf(document: Document, profile: PdfProfile = PRINT) -> bytes:
     ``PRINT`` leaves every image as it arrived; ``SCREEN`` downsamples.
 
     Raises:
-        BackendMissingError: If WeasyPrint is not installed.
+        BackendMissingError: If WeasyPrint is not installed, or its system
+            libraries will not load.
         UnreachableResourceError: If the document references a resource this
             exporter will not fetch.
+        BackendError: On any other failure inside WeasyPrint.
     """
     weasyprint = _backend()
     html = document.render()
+    fetcher = build_fetcher(document.assets())
     with _own_errors():
         return bytes(
-            weasyprint.HTML(string=html, url_fetcher=build_fetcher(document.assets())).write_pdf(
+            weasyprint.HTML(string=html, url_fetcher=fetcher).write_pdf(
                 finisher=_finisher(profile), **profile.options()
             )
         )
@@ -94,10 +99,12 @@ def layout(document: Document, profile: PdfProfile = PRINT) -> Any:
     ``profile`` so its own ``write_pdf()`` writes what :func:`render_pdf` would.
     """
     weasyprint = _backend()
+    # The document renders outside the guard: a builder error is the
+    # document's, and must not be reported as the backend's.
+    html = document.render()
+    fetcher = build_fetcher(document.assets())
     with _own_errors():
-        return weasyprint.HTML(
-            string=document.render(), url_fetcher=build_fetcher(document.assets())
-        ).render(**profile.options())
+        return weasyprint.HTML(string=html, url_fetcher=fetcher).render(**profile.options())
 
 
 def save_pdf(document: Document, output_path: str | Path, profile: PdfProfile = PRINT) -> Path:
@@ -128,6 +135,10 @@ def _own_errors() -> Iterator[None]:
         if isinstance(cause, UnreachableResourceError):
             raise cause from exc
         raise UnreachableResourceError(str(exc)) from exc
+    except PdfError:
+        raise
+    except Exception as exc:
+        raise BackendError(f"WeasyPrint failed: {exc}") from exc
 
 
 def _backend() -> Any:
@@ -149,5 +160,13 @@ def _backend() -> Any:
         raise BackendMissingError(
             "Rendering a PDF needs WeasyPrint, which is an optional extra. "
             'Install it with: pip install "pyhermes[pdf]"'
+        ) from exc
+    except OSError as exc:  # pragma: no cover - exercised by a monkeypatched test
+        # The wheel is present; a shared library it needs is not. cffi
+        # raises OSError, not ImportError, and the fix is a system package.
+        raise BackendMissingError(
+            "WeasyPrint is installed but could not load a system library it needs "
+            f"({exc}). It needs Pango, Cairo and HarfBuzz from the system; "
+            "see the README's note on the [pdf] extra."
         ) from exc
     return weasyprint

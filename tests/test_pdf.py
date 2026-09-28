@@ -31,6 +31,7 @@ from svc.document import (
     PagedDocument,
 )
 from svc.pdf import (
+    BackendError,
     BackendMissingError,
     PdfError,
     UnreachableResourceError,
@@ -39,7 +40,7 @@ from svc.pdf import (
     render_pdf,
     save_pdf,
 )
-from svc.pdf.exporter import _backend
+from svc.pdf.exporter import _backend, _own_errors
 
 requires_backend = pytest.mark.skipif(
     not available(),
@@ -127,9 +128,41 @@ class TestTheCoreNeverImportsTheBackend:
         with pytest.raises(BackendMissingError, match=r"pyhermes\[pdf\]"):
             _backend()
 
+    def test_a_backend_that_cannot_load_its_libraries_is_unavailable(self, monkeypatch):
+        # A WeasyPrint wheel without Pango fails at import with OSError from
+        # cffi, not ImportError; available() must still answer False (#241).
+        import builtins
+
+        real_import = builtins.__import__
+
+        def refuse(name, *args, **kwargs):
+            if name == "weasyprint":
+                raise OSError("cannot load library 'libpango-1.0-0'")
+            return real_import(name, *args, **kwargs)
+
+        monkeypatch.setattr(builtins, "__import__", refuse)
+        assert available() is False
+
+    def test_a_backend_that_cannot_load_its_libraries_names_the_system_packages(self, monkeypatch):
+        import builtins
+
+        real_import = builtins.__import__
+
+        def refuse(name, *args, **kwargs):
+            if name == "weasyprint":
+                raise OSError("cannot load library 'libpango-1.0-0'")
+            return real_import(name, *args, **kwargs)
+
+        monkeypatch.setattr(builtins, "__import__", refuse)
+        with pytest.raises(BackendMissingError, match="Pango") as info:
+            _backend()
+        assert isinstance(info.value.__cause__, OSError)
+        assert "libpango" in str(info.value)
+
     def test_every_failure_is_catchable_as_one_base(self):
         assert issubclass(BackendMissingError, PdfError)
         assert issubclass(UnreachableResourceError, PdfError)
+        assert issubclass(BackendError, PdfError)
 
     def test_it_is_not_a_delivery_failure(self):
         # A document that will not print is neither a build failure nor a
@@ -138,6 +171,28 @@ class TestTheCoreNeverImportsTheBackend:
         from svc.delivery.exceptions import DeliveryError
 
         assert not issubclass(PdfError, (EmailBuilderError, DeliveryError))
+
+
+@requires_backend
+class TestTheExporterOwnsEveryBackendFailure:
+    """
+    ``except PdfError`` is the documented contract, so nothing WeasyPrint
+    raises may escape it (#241).
+    """
+
+    def test_an_unnamed_backend_failure_arrives_as_a_pdf_error_with_its_cause(self):
+        with pytest.raises(BackendError, match="synthetic") as info:
+            with _own_errors():
+                raise RuntimeError("synthetic backend failure")
+        assert isinstance(info.value, PdfError)
+        assert isinstance(info.value.__cause__, RuntimeError)
+
+    def test_the_exporters_own_errors_pass_through_unchanged(self):
+        original = UnreachableResourceError("https://example.com/chart.png")
+        with pytest.raises(UnreachableResourceError) as info:
+            with _own_errors():
+                raise original
+        assert info.value is original
 
 
 @requires_backend
