@@ -55,7 +55,9 @@ Rules the module holds to, each for a specific reason:
   factor of at least 1). These raise plain `ValueError`, **not** `EmailBuilderError` or
   `DeliveryError`: a bad limit is a programming error in setup, not rejected email data.
 - **`None` means no timeout**, so it cannot double as "unspecified" —
-  `GraphApiTransport(timeout=...)` uses a private sentinel for the latter.
+  `GraphApiTransport(timeout=...)` uses a private sentinel for the latter. The sentinel is kept on the
+  transport and resolved at each send, never at construction: a transport built at start-up must
+  see an override installed later, as the retry ladder around it does (#242).
 
 **Adding a tunable**: add the field (with today's literal as its default, so nothing
 re-renders or re-retries differently), validate it in `__post_init__`, read it via

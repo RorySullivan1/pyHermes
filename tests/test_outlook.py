@@ -17,6 +17,7 @@ import requests
 
 from svc.builder import EmailBuilder, FullWidth, ImageBlock
 from svc.builder.images import EmailImage
+from svc.config import config_override
 from svc.delivery import build_message, save_eml
 from svc.delivery.exceptions import DeliveryError, TransportError
 from svc.outlook import (
@@ -386,6 +387,30 @@ class TestTimeout:
         session = _RecordingSession()
         GraphApiTransport(session, timeout=None).send_mime("Zm9v")
         assert session.timeouts[0] is None
+
+    def test_the_configured_timeout_is_read_at_each_send_not_at_construction(self):
+        # A transport is built once at start-up; the config may change after
+        # (#242). The retry ladder around the same send already honours a
+        # later override, so the transport it drives must too.
+        session = _RecordingSession()
+        transport = GraphApiTransport(session)
+        with config_override(request_timeout_seconds=120.0):
+            transport.send_mime("Zm9v")
+        transport.send_mime("Zm9v")
+        assert session.timeouts == [120.0, DEFAULT_TIMEOUT_SECONDS]
+
+    def test_an_explicit_timeout_is_pinned_against_a_later_override(self):
+        session = _RecordingSession()
+        transport = GraphApiTransport(session, timeout=5.0)
+        with config_override(request_timeout_seconds=120.0):
+            transport.send_mime("Zm9v")
+        assert session.timeouts[0] == 5.0
+
+    def test_the_timeout_property_reports_what_the_next_send_will_use(self):
+        transport = GraphApiTransport(_RecordingSession())
+        assert transport.timeout == DEFAULT_TIMEOUT_SECONDS
+        with config_override(request_timeout_seconds=None):
+            assert transport.timeout is None
 
 
 class TestMaxAttemptsIsAProgrammingError:
