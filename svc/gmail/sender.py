@@ -197,7 +197,7 @@ def send_message(
     *,
     transport: GmailTransport,
     user_id: str = "me",
-    max_attempts: int = 3,
+    max_attempts: int | None = None,
     sleep: Callable[[float], None] = time.sleep,
 ) -> str:
     """
@@ -211,7 +211,8 @@ def send_message(
         user_id:      Gmail's mailbox selector; ``"me"`` is the authenticated
             user and is almost always what you want.
         max_attempts: Total attempts including the first. ``1`` disables
-            retrying.
+            retrying. ``None`` takes ``Config.retry_max_attempts``, as every
+            other rung of the ladder takes its own setting.
         sleep:        Injected for tests, so the retry ladder can be exercised
             without spending the backoff in real time.
 
@@ -237,7 +238,7 @@ def send_message(
     # reported as "Gmail refused the message" -- a bad call is not a send
     # failure, so it is checked here, before any attempt, instead of
     # relying on that wrapping to let it through unwrapped.
-    if max_attempts < 1:
+    if max_attempts is not None and max_attempts < 1:
         raise ValueError(f"max_attempts must be at least 1, got {max_attempts}")
 
     raw = base64.urlsafe_b64encode(to_wire_bytes(message)).decode("ascii")

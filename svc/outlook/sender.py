@@ -273,7 +273,7 @@ def send_message(
     *,
     transport: OutlookTransport,
     user_id: str = "me",
-    max_attempts: int = 3,
+    max_attempts: int | None = None,
     sleep: Callable[[float], None] = time.sleep,
 ) -> None:
     """
@@ -287,7 +287,8 @@ def send_message(
         user_id:      ``"me"`` for the signed-in user, or a mailbox id /
             userPrincipalName to send as a specific user.
         max_attempts: Total attempts including the first. ``1`` disables
-            retrying.
+            retrying. ``None`` takes ``Config.retry_max_attempts``, as every
+            other rung of the ladder takes its own setting.
         sleep:        Injected for tests, so the retry ladder runs without
             spending the backoff in real time.
 
