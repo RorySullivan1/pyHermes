@@ -8,7 +8,7 @@ and the one check that is email-specific rather than universal.
 
 from __future__ import annotations
 
-from svc.builder.exceptions import SizeError
+from svc.builder.exceptions import SizeError, SizeWarning, warn_caller
 from svc.builder.medium import Medium
 from svc.builder.regions import Banner, Footer, Header
 from svc.config import Config, get_config
@@ -42,9 +42,7 @@ def validate_gmail_size(html: str, hint: str = "") -> None:
             f"exceeds {config.size_limit_kb} KB Gmail clipping limit.{hint}"
         )
     if size_kb > config.size_warn_kb:
-        print(f"WARNING: Email size {size_kb:.1f} KB (target < {config.size_warn_kb} KB)")
-    else:
-        print(f"Email size: {size_kb:.1f} KB (OK)")
+        warn_caller(f"Email size {size_kb:.1f} KB (target < {config.size_warn_kb} KB)", SizeWarning)
 
 
 #: The shipped email medium. Its region order is the skeleton's own, which is

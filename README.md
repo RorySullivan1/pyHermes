@@ -51,7 +51,7 @@ email = (
     .build()
 )
 
-email.save("output/weekly-wrap.html")   # prints the rendered size, or raises above 102 KB
+email.save("output/weekly-wrap.html")   # warns above 90 KB, raises above 102 KB
 ```
 
 ## The same content, printed
@@ -147,7 +147,7 @@ an attachment. The cover email's own `cid:` images still render in place.
 - **A message with an attachment has a size budget.** Above 20 MB on the wire,
   `build_message` raises and names each file with its size. That is Microsoft 365's default
   limit, below Gmail's 25 MB, and base64 makes a 16 MB PDF a 22 MB message. A PDF rendered
-  under `PRINT` is named with the fix. Above 15 MB it prints a warning. Both numbers are in
+  under `PRINT` is named with the fix. Above 15 MB it warns. Both numbers are in
   `Config`.
 - **The PDF's Author, Subject and Keywords come from the document's facts**: the firm, then
   the campaign with the department and dates, then the department and issue. It carries no
@@ -197,8 +197,8 @@ that overflows it is clipped, never carried onto another panel, and
 **The PDF is print-ready but RGB.** Each side carries 1/8in of bleed, with each panel's colour
 or picture running into it, and crop and registration marks outside that. A panel whose copy
 sits nearer the trim than the fold's safe distance raises. So does an image with fewer than
-half the pixels it needs to print at 300 dpi, and one short of the full count prints a
-warning. Converting colour for a press is the print house's step, and the lint pass says so
+half the pixels it needs to print at 300 dpi, and one short of the full count warns
+with a `PrintQualityWarning`. Converting colour for a press is the print house's step, and the lint pass says so
 once per brochure.
 
 The editorial pieces are shared, so a report can use them too: `PullQuote`,
@@ -815,7 +815,7 @@ These are the failures that are invisible until a reader reports them, so they a
 rather than documented:
 
 - **The 102 KB Gmail clipping limit.** `render()` raises `SizeError` above it and warns above
-  90 KB. Both thresholds are configurable, so a non-Gmail channel can raise them deliberately
+  90 KB with a `SizeWarning`. Both thresholds are configurable, so a non-Gmail channel can raise them deliberately
   rather than by commenting out the check.
 - **Validation at construction, not at render.** Models and components raise `ValidationError`
   from `__init__`; by the time you call `.render()`, the data shape is already known good. The
@@ -894,6 +894,12 @@ code wrong about its environment, so they stay literals.
 Nothing reads the environment on import; `from_env()` is explicit. Consumers call
 `get_config()` at use time, so an override installed after import is still seen. An explicit
 argument always beats the config.
+
+**A soft limit is a warning, never a line on stdout.** The library prints nothing. Crossing a
+size threshold raises a `SizeWarning`, and an image short of its print resolution a
+`PrintQualityWarning`; both are `UserWarning`s pointing at your own call, so
+`warnings.filterwarnings("error", category=SizeWarning)` makes one fatal and
+`logging.captureWarnings(True)` sends them to your logger. The hard limits still raise.
 
 ## Development
 

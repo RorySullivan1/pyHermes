@@ -25,6 +25,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 from typing import Protocol, cast
 
+from svc.builder.exceptions import SizeWarning, warn_caller
 from svc.builder.images import ImageAsset
 from svc.config import get_config
 
@@ -465,9 +466,10 @@ def _check_attachment_budget(message: EmailMessage, attachments: Sequence[Attach
             f"enforce: {files}."
         )
     if size_kb > config.attachment_warn_kb:
-        print(
-            f"WARNING: Message size {size_kb:,.1f} KB with attachments "
-            f"(target < {config.attachment_warn_kb:,} KB)"
+        warn_caller(
+            f"Message size {size_kb:,.1f} KB with attachments "
+            f"(target < {config.attachment_warn_kb:,} KB)",
+            SizeWarning,
         )
 
 

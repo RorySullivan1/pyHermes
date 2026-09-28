@@ -39,7 +39,7 @@ class Config:
         size_limit_kb: Hard ceiling on rendered HTML. **102 KB is Gmail's
             actual clipping limit**, not a preference — raise it only for a
             channel you have confirmed is not Gmail.
-        size_warn_kb: Soft threshold that prints a warning. A judgment call:
+        size_warn_kb: Soft threshold that raises a ``SizeWarning``. A judgment call:
             far enough below the hard limit to leave room to react.
         inline_image_limit_kb: Cap on a single ``DATA_URI`` image's base64,
             so one image cannot eat the whole HTML budget. A judgment call —
@@ -87,7 +87,7 @@ class Config:
     #: encoded wire bytes. Microsoft 365's default, the lower of the two big
     #: providers' (Gmail refuses above 25 MB); `config.md` has why.
     attachment_limit_kb: int = 20480
-    #: Where a message with an attachment starts printing a warning.
+    #: Where a message with an attachment starts raising a ``SizeWarning``.
     attachment_warn_kb: int = 15360
 
     #: Let an email take a density no client has rendered: a custom

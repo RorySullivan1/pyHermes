@@ -123,7 +123,7 @@ Recorded so they are not re-litigated as oversights:
 
 **`print_dpi` (#188) is the resolution a brochure's images must reach, 300 by default.** The
 offset norm, and a judgement call rather than a fact: a proof printer is content with less, a
-fine-art press wants more. Below it, a brochure prints a warning at construction; below half
+fine-art press wants more. Below it, a brochure warns (`PrintQualityWarning`) at construction; below half
 of it, construction raises. `PYHERMES_PRINT_DPI` sets it, like every other field.
 
 **`allow_custom_email_density` (#212) is a switch, off by default, and the first `bool` field.**
@@ -150,3 +150,19 @@ message, not over the file: base64 makes a 16 MB PDF a 22 MB message.
   file with its size, and each file's `size_hint`. `pdf_attachment` fills that hint when the
   PDF was rendered at full resolution, naming the `SCREEN` profile. The message never
   downsamples a file on its own.
+
+## A soft limit is a warning a host can route (#246)
+
+The package printed from four places: the email size check (a warning and an "OK" line on
+every render), the attachment budget and the brochure's print dpi. The other two warnings used
+`warnings.warn`, so a host's `-W error` or `logging.captureWarnings` caught half of them, and a
+CLI writing HTML to stdout got a status line in its output.
+
+- **Two categories, both `UserWarning`s, in `svc.builder.exceptions`**: `SizeWarning` for the
+  email and message thresholds, `PrintQualityWarning` for the dpi one. A host filters by kind.
+- **The success line is gone.** `qa.preview` already printed each file's size itself.
+- **`warn_caller` finds the caller by walking out of `svc`**, because one check is reached from
+  `render()`, `Email.render()`, a builder shortcut or a brochure's constructor, and no fixed
+  `stacklevel` names all of them. A test asserts the warning's filename is the test's own.
+- **No `print` in `svc/`**, held by an AST test in `tests/test_warnings.py`. Logging is not
+  the package's business: a host maps warnings to its logger itself.
