@@ -259,7 +259,10 @@ Consequences worth knowing:
   document carries its own images, which is why the paged fixtures attach their cover art.
 - **The exporter presents its own exception tree.** `fail_on_errors=True` makes WeasyPrint wrap
   the cause in a `FatalURLFetchingError`, so a caller catching `PdfError` — the documented
-  contract — would have missed it. It unwraps and re-raises, cause chained.
+  contract — would have missed it. It unwraps and re-raises, cause chained. Anything else
+  WeasyPrint raises is re-raised as `BackendError`, and a wheel whose Pango, Cairo or HarfBuzz
+  will not load fails at import with `OSError`, not `ImportError`, so `available()` catches both
+  and `BackendMissingError` names the system packages (#241).
 - **The pin is `weasyprint~=70.0`, not a range.** Version 70 replaced the `url_fetcher` contract,
   and it is the fetcher that carries the policy, so a range spanning that change would land the
   failure on the part that matters most.

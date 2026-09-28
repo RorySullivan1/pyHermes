@@ -12,11 +12,18 @@ lazily, so the core install stays Jinja2-only and an AST test holds it there.
 """
 
 from .attachment import PDF_MIME_TYPE, pdf_attachment
-from .exceptions import BackendMissingError, PdfError, ProfileError, UnreachableResourceError
+from .exceptions import (
+    BackendError,
+    BackendMissingError,
+    PdfError,
+    ProfileError,
+    UnreachableResourceError,
+)
 from .exporter import available, layout, page_count, render_pdf, save_pdf
 from .profile import PDF_VARIANTS, PRINT, SCREEN, TAGGED, PdfProfile
 
 __all__ = [
+    "BackendError",
     "BackendMissingError",
     "available",
     "layout",
