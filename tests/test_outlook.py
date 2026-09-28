@@ -17,6 +17,7 @@ import requests
 
 from svc.builder import EmailBuilder, FullWidth, ImageBlock
 from svc.builder.images import EmailImage
+from svc.config import config_override
 from svc.delivery import build_message, save_eml
 from svc.delivery.exceptions import DeliveryError, TransportError
 from svc.outlook import (
@@ -386,6 +387,38 @@ class TestTimeout:
         session = _RecordingSession()
         GraphApiTransport(session, timeout=None).send_mime("Zm9v")
         assert session.timeouts[0] is None
+
+
+class TestTheAttemptCountComesFromConfig:
+    """
+    The one rung of the ladder that never reached the config (#240).
+
+    Every delay took its value from ``Config``; the attempt count was a
+    literal ``3`` in the adapter's signature, so a deployment retuning
+    ``retry_max_attempts`` saw every part of the ladder change except its
+    length.
+    """
+
+    def test_the_default_is_the_configured_count(self, message):
+        transport = _FailingTransport(GraphApiError(503, "unavailable"))
+        with config_override(retry_max_attempts=1):
+            with pytest.raises(TransportError):
+                send_message(message, transport=transport, sleep=lambda _: None)
+        assert transport.calls == 1
+
+    def test_a_larger_configured_count_is_honoured(self, message):
+        transport = _FailingTransport(GraphApiError(503, "unavailable"))
+        with config_override(retry_max_attempts=4):
+            with pytest.raises(TransportError):
+                send_message(message, transport=transport, sleep=lambda _: None)
+        assert transport.calls == 4
+
+    def test_an_explicit_argument_still_wins(self, message):
+        transport = _FailingTransport(GraphApiError(503, "unavailable"))
+        with config_override(retry_max_attempts=4):
+            with pytest.raises(TransportError):
+                send_message(message, transport=transport, max_attempts=2, sleep=lambda _: None)
+        assert transport.calls == 2
 
 
 class TestMaxAttemptsIsAProgrammingError:
