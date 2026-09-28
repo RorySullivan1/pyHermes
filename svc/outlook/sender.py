@@ -102,8 +102,10 @@ class GraphApiTransport:
         base_url: Graph service root; override for a sovereign cloud.
         timeout:  Seconds passed through to ``session.post`` as ``timeout=``.
             See :data:`DEFAULT_TIMEOUT_SECONDS` for why a default exists at
-            all. Override for a slower network or a deliberately-unbounded
-            call (pass ``None`` if the session supports it).
+            all. Left unset, the active ``Config`` is read at each send, so
+            an override in force then is honoured. Override for a slower
+            network or a deliberately-unbounded call (pass ``None`` if the
+            session supports it).
     """
 
     def __init__(
@@ -115,9 +117,17 @@ class GraphApiTransport:
     ) -> None:
         self._session = session
         self._base_url = base_url.rstrip("/")
-        self._timeout: float | None = (
-            get_config().request_timeout_seconds if isinstance(timeout, _UseConfigured) else timeout
-        )
+        # The sentinel is kept, not resolved: get_config() is read at use
+        # time by contract, and a transport built at start-up must see an
+        # override installed later, as the retry ladder around it does.
+        self._timeout: float | None | _UseConfigured = timeout
+
+    @property
+    def timeout(self) -> float | None:
+        """The seconds the next send will pass to ``session.post``."""
+        if isinstance(self._timeout, _UseConfigured):
+            return get_config().request_timeout_seconds
+        return self._timeout
 
     def _endpoint(self, user_id: str) -> str:
         # "me" is our own sentinel, never caller data, so it needs no
@@ -140,7 +150,7 @@ class GraphApiTransport:
             # text/plain is what selects MIME mode; application/json would
             # make Graph expect its own message schema instead.
             headers={"Content-Type": "text/plain"},
-            timeout=self._timeout,
+            timeout=self.timeout,
         )
         status = int(getattr(response, "status_code", 0))
         if status != ACCEPTED:
