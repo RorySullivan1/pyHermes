@@ -24,7 +24,7 @@ from svc.config import Config, config_override, get_config
 from .apparatus import check_unique, note_anchor, note_ref_anchor, references
 from .components import Component, Contents, Endnotes, Exhibit
 from .containers import Container, FullWidth
-from .engine import Renderer, TemplateEngine
+from .engine import Renderer, TemplateEngine, TemplateOverlay, overlay_dirs
 from .enums import EmbedStrategy, SizeTheme
 from .exceptions import ValidationError
 from .images import EmailImage, ImageAsset, dedupe_assets
@@ -80,6 +80,9 @@ class Document:
         medium:       Where this is going to be read.
         config:       Limits and policy for this document alone, in force while
                       it validates and renders; ``None`` reads the ambient one.
+        template_overlay: Your own template directories, searched before the
+                      medium's and the packaged ones: a forked template, or
+                      the template of a component you defined.
 
     Raises:
         ValidationError: If a required fact is missing or empty.
@@ -95,6 +98,7 @@ class Document:
         medium: Medium | None = None,
         *,
         config: Config | None = None,
+        template_overlay: TemplateOverlay = None,
     ):
         if config is not None and not isinstance(config, Config):
             raise TypeError(f"config must be a Config, got {type(config).__name__}")
@@ -102,7 +106,11 @@ class Document:
         # The medium is settled first: it names the templates this engine
         # searches before the shared tree.
         self._medium: Medium = medium if medium is not None else DEFAULT_MEDIUM
-        self._engine = TemplateEngine(template_dir, search_path=self._medium.template_search_path)
+        self._engine = TemplateEngine(
+            template_dir,
+            search_path=self._medium.template_search_path,
+            overlays=overlay_dirs(template_overlay),
+        )
 
         if isinstance(metadata, dict):
             self._metadata: DocumentMetadata = self.METADATA(**metadata)

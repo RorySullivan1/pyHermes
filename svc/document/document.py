@@ -16,7 +16,7 @@ from typing import Any, ClassVar, Self
 from svc.builder.components import contents_entries
 from svc.builder.containers import Container
 from svc.builder.document import Document, RegionFacts
-from svc.builder.engine import Renderer
+from svc.builder.engine import Renderer, TemplateOverlay
 from svc.builder.enums import TextAlign
 from svc.builder.medium import Medium
 from svc.builder.models import DocumentMetadata
@@ -62,7 +62,7 @@ class PagedDocument(Document):
         contents:       The sheet listing the sections, after the cover.
                         Opt-in, unlike the rest: a two-sheet factsheet is
                         not improved by a third that indexes it.
-        config:         This document's own limits, as ``Document`` takes them.
+        config, template_overlay: As ``Document`` takes them.
     """
 
     METADATA: ClassVar[type[DocumentMetadata]] = DocumentMetadata
@@ -79,12 +79,14 @@ class PagedDocument(Document):
         contents: ContentsPage | None = None,
         *,
         config: Config | None = None,
+        template_overlay: TemplateOverlay = None,
     ):
         super().__init__(
             metadata,
             template_dir,
             medium if medium is not None else PAGED_MEDIUM,
             config=config,
+            template_overlay=template_overlay,
         )
         self._cover = cover if cover is not None else Cover()
         self._running_header = running_header if running_header is not None else RunningHeader()

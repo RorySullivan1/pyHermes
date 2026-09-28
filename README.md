@@ -901,6 +901,11 @@ Nothing reads the environment on import; `from_env()` is explicit. Consumers cal
 `get_config()` at use time, so an override installed after import is still seen. An explicit
 argument always beats the config.
 
+**A house template overlays the packaged ones.** Pass `template_overlay=` a directory (or
+several) to `Email`, `EmailBuilder`, `PagedDocument` or `Brochure`, and a file there at a
+packaged path, such as `regions/footer.html`, replaces that one template while every other still
+comes from the package. A `Component` of your own sets `template_path` to a file in it.
+
 **A soft limit is a warning, never a line on stdout.** The library prints nothing. Crossing a
 size threshold raises a `SizeWarning`, and an image short of its print resolution a
 `PrintQualityWarning`; both are `UserWarning`s pointing at your own call, so

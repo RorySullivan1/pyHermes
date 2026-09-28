@@ -5,7 +5,7 @@ Manages the Jinja2 environment, template loading, caching, and custom
 filter registration. All template rendering flows through this class.
 """
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from importlib import resources
 from pathlib import Path
@@ -84,11 +84,8 @@ class TemplateEngine:
     this on: a medium with no forks has no directory at all, and every
     lookup falls through to the shared tree.
 
-    To fork one, copy it to the same relative path under the medium's
-    directory, change it, regenerate that medium's goldens, and say in the
-    PR **why the shared template was wrong here** — a fork is a claim that
-    two media genuinely need different markup, and it doubles the sites a
-    later change has to reach.
+    How to fork one, and a caller's overlay searched ahead of it, are in
+    `.claude/rules/media.md`.
 
     Args:
         template_dir: Root directory containing all templates.
@@ -98,9 +95,18 @@ class TemplateEngine:
                       it in order. A name with no directory behind it is
                       not an error; it is what a medium that has forked
                       nothing looks like.
+        overlays:     The caller's own directories, searched ahead of both.
+                      Each must exist: unlike a medium's, a missing one is a
+                      mistake.
     """
 
-    def __init__(self, template_dir: Path | None = None, *, search_path: tuple[str, ...] = ()):
+    def __init__(
+        self,
+        template_dir: Path | None = None,
+        *,
+        search_path: tuple[str, ...] = (),
+        overlays: Sequence[Path | str] = (),
+    ):
         if template_dir is None:
             template_dir = _packaged_template_dir()
         self._template_dir = Path(template_dir).resolve()
@@ -108,13 +114,19 @@ class TemplateEngine:
         if not self._template_dir.is_dir():
             raise TemplateError(f"Template directory not found: {self._template_dir}")
 
+        self._overlays = tuple(Path(overlay).resolve() for overlay in overlays)
+        for overlay in self._overlays:
+            if not overlay.is_dir():
+                raise TemplateError(f"Template overlay not found: {overlay}")
+
         self._search_path = tuple(search_path)
-        # Overlays first, the shared tree last. A FileSystemLoader over a
-        # directory that does not exist finds nothing and raises nothing,
-        # which is exactly the fall-through an unforked medium needs.
-        loaders = [
+        # The caller's overlays, then the medium's forks, then the shared tree.
+        # A FileSystemLoader over a medium directory that does not exist finds
+        # nothing and raises nothing, the fall-through an unforked medium needs.
+        loaders = [jinja2.FileSystemLoader(str(overlay)) for overlay in self._overlays]
+        loaders.extend(
             jinja2.FileSystemLoader(str(self._template_dir / sub)) for sub in self._search_path
-        ]
+        )
         loaders.append(jinja2.FileSystemLoader(str(self._template_dir)))
 
         self._env = jinja2.Environment(
@@ -147,6 +159,11 @@ class TemplateEngine:
     def search_path(self) -> tuple[str, ...]:
         """The directories searched ahead of the root, in order."""
         return self._search_path
+
+    @property
+    def overlays(self) -> tuple[Path, ...]:
+        """The caller's directories, searched ahead of everything, resolved."""
+        return self._overlays
 
     @property
     def medium(self) -> Medium:
@@ -349,3 +366,16 @@ def respaced(engine: Renderer, spacing: Spacing | None, owner: str) -> Renderer:
         return engine
     spacing.check_medium(engine.medium.paged, engine.medium.name, owner)
     return rebind(engine, size=spacing.applied_to(scheme_of(engine)))
+
+
+#: What ``template_overlay=`` takes: one directory, or several in search order.
+TemplateOverlay = Path | str | Sequence[Path | str] | None
+
+
+def overlay_dirs(overlay: TemplateOverlay) -> tuple[Path | str, ...]:
+    """``template_overlay`` as the sequence :class:`TemplateEngine` takes."""
+    if overlay is None:
+        return ()
+    if isinstance(overlay, (str, Path)):
+        return (overlay,)
+    return tuple(overlay)

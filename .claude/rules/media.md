@@ -127,6 +127,27 @@ output. It is an ordinary HTML comment to every parser but Word's, so it is wast
 breakage, and bytes do not count against anything outside Gmail. Recorded with a count instead,
 so the day it becomes a fork the diff has a number to beat.
 
+## A caller's overlay is not a medium's fork (#247)
+
+`Document`, `Email`, `EmailBuilder`, `PagedDocument` and `Brochure` take `template_overlay=`, one
+directory or several, and `TemplateEngine` searches them **first**: overlay, then the medium's
+fork path, then the packaged root. Before it a caller who wanted one house footer, or a
+template for a `Component` of their own, vendored all 33 templates and re-vendored on every
+upgrade; an absolute `template_search_path` happened to work only because `Path / absolute`
+drops the left side.
+
+- **The fork rule above is about the package's own media**, and `test_nothing_is_forked_yet`
+  is untouched. An overlay is the caller's, carries no obligation to the package, and can
+  shadow a medium fork, which is the caller's intent when they do it.
+- **A missing overlay raises `TemplateError` naming the path, at construction.** A medium's
+  missing directory is the normal unforked case; a caller's is a typo.
+- **No discovery.** An overlay is passed, never read from the environment or an entry point,
+  and a component needs no registration: its `template_path` resolves through the overlay.
+- `tests/test_template_overlay.py` holds it: the forked footer renders and, with its marker
+  removed, `kitchen_sink` is byte-identical to the packaged render; a test component renders
+  from an overlay in both projections; the precedence is asserted with one relative path in
+  all three places.
+
 ## The regions each medium has
 
 Same base class, same `SLOTS` / `TEMPLATE_PATHS` / facts-over-presentation rules, an `Empty`
