@@ -216,7 +216,10 @@ these rather than improvising:
   **#169** (pagination hardening), **#170** (the data layer, #177–#180), **#171** (document
   apparatus, #181–#185), **#172** (the brochure medium, #186–#189), **#193** (the digital PDF, #195–#200),
   **#209** (spacing at two levels, #211–#216), **#217** (table semantics for quantitative
-  material, #223–#228) and **#221** (equations from LaTeX, #229–#233).
+  material, #223–#228), **#221** (equations from LaTeX, #229–#233) and **#238** (seams for a
+  host application, #246, #247, #249). **#237** (the package as a consumer sees it: `py.typed`,
+  metadata, a library-only sdist, the 3.11–3.14 matrix, the `pyhermes` import root) is
+  implemented, with the `svc` shim to delete in the next release.
   **#201** (an image's width in a paged layout) is fixed: the CSS repeats it as a cap. **#150** (the banner's VML
   fill) is closed: gating `src` while keeping `type="frame"` left the Word engine painting a
   broken-image placeholder over the masthead, so the two are now gated together. **#202** is
