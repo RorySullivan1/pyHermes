@@ -16,8 +16,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Floor from requires-python, plus the current release.
-        python-version: ["3.11", "3.13"]
+        # Every Python the metadata admits: the requires-python floor, each
+        # release between, and the current release (3.14 since October 2025).
+        # A red one is a finding to fix or file with requires-python capped,
+        # never a reason to narrow this list (#245).
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
 
     steps:
       - uses: actions/checkout@v4
@@ -186,13 +189,21 @@ jobs:
     # place a DataFrame is actually adapted. The purity half
     # (tests/test_data_layer.py) runs in `check` above, with neither installed,
     # which is the environment that claim is about.
+    #
+    # The one extras job on two Pythons (#245): the pinned pandas, matplotlib
+    # and its numpy had only ever been resolved on 3.13, never on the 3.11
+    # floor requires-python admits. The cheapest extras job carries that proof.
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.13"]
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
+          python-version: ${{ matrix.python-version }}
           cache: pip
           cache-dependency-path: pyproject.toml
 

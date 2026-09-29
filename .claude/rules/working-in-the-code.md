@@ -317,3 +317,9 @@ earlier check passed on a tree that would have shipped wrong.
   `License-Expression` where 26.2 does, so CI upgrades pip before `pip show --verbose`.
 - **Both artefacts render the same email**, each installed into its own venv with no source
   tree, from one smoke script run in a loop.
+- **CI runs every Python the metadata admits (#245):** `check` on 3.11, 3.12, 3.13 and 3.14,
+  and `data` (the cheapest extras job) on 3.11 as well as 3.13, so the pandas, matplotlib and
+  numpy pins are proven on the floor. Before this the comment said "the current release" of a
+  matrix that stopped at 3.13. Run here before the change: all four pass `check` (3.14 as
+  3.14.0rc2), and `[data,charts,math]` installs and passes on 3.11. A red Python is a finding
+  to fix, or to file with `requires-python` capped, never a reason to narrow the list.
