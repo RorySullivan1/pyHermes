@@ -1,10 +1,32 @@
 [project]
 name = "pyhermes"
 version = "0.1.0"
-description = "Academic financial newsletter HTML email builder."
+description = "Build a research document once, then send it as an email or print it as a PDF or brochure."
+readme = "README.md"
+# An SPDX expression (PEP 639) rather than a licence classifier, which the
+# expression supersedes; the text ships as LICENSE in both artefacts.
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.11"
 authors = [
     { name = "Rory Sullivan", email = "accounts@roryjsullivan.com" },
+]
+keywords = ["email", "html email", "newsletter", "pdf", "research", "jinja2", "outlook", "gmail"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Financial and Insurance Industry",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Communications :: Email",
+    "Topic :: Printing",
+    "Topic :: Text Processing :: Markup :: HTML",
+    "Typing :: Typed",
 ]
 dependencies = [
     "jinja2>=3.1,<4",
@@ -86,8 +108,20 @@ math = [
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[project.urls]
+Homepage = "https://github.com/RorySullivan1/pyHermes"
+Repository = "https://github.com/RorySullivan1/pyHermes"
+Issues = "https://github.com/RorySullivan1/pyHermes/issues"
+
 [tool.hatch.build.targets.wheel]
 packages = ["svc"]
+
+# The sdist is the library and nothing else. Hatchling's default takes every
+# file git does not ignore, which would ship .claude/, tests/ and its goldens,
+# qa/, examples/, drafts/ and docs/. qa/distribution.py fails CI on any path
+# outside this list.
+[tool.hatch.build.targets.sdist]
+only-include = ["svc", "pyproject.toml", "README.md", "LICENSE"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

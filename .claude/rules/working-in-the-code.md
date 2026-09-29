@@ -293,3 +293,27 @@ to describe a public constant. Making the code fit that measurement would have d
 correct API documentation; the fix was a new scope in the measurer (#138). When a check
 fires on code that looks right, check the check.
 
+## The package a consumer installs (#237)
+
+Nine epics of rendering work had never shaped the package for the person who runs
+`pip install`. The checks read the **built artefacts**, never the tree, because every
+earlier check passed on a tree that would have shipped wrong.
+
+- **`py.typed` ships in the wheel (#243).** Without it a consumer's mypy reported "missing
+  library stubs or py.typed marker" and typed every symbol as `Any`, so no construction-time
+  contract was visible at a call site. CI type-checks a two-line consumer with `--strict`
+  against the installed wheel; deleting the marker from that install turns it into the
+  missing-stubs error and a revealed `Any`, measured.
+- **The sdist is the library alone (#244).** Hatchling's default sdist takes every file git
+  does not ignore, which here is 2.2 MB of `.claude/`, 4.8 MB of `tests/` and its goldens, and
+  `qa/`, `examples/`, `drafts/`, `docs/`. `only-include` names four roots, and
+  `qa/distribution.py` fails CI on any other. Two entries it allows are hatchling's own:
+  `PKG-INFO`, and a `.gitignore` it adds whatever `exclude` says (tried). Widening
+  `only-include` to `qa` and `tests` was checked to fail it.
+- **The metadata is honest (#244).** The licence is MIT, chosen by the owner, as an SPDX
+  `license` expression (PEP 639) with `license-files`, and **no licence classifier**, which
+  the expression supersedes. `twine check --strict` runs on both artefacts. A `Homepage` URL
+  label is what `pip show` prints as the home page; pip 24.0 printed no
+  `License-Expression` where 26.2 does, so CI upgrades pip before `pip show --verbose`.
+- **Both artefacts render the same email**, each installed into its own venv with no source
+  tree, from one smoke script run in a loop.

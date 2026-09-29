@@ -224,6 +224,11 @@ rather than claiming it: their tests *skip* when the extra is absent, so `pip in
 `pytest` run anywhere. `[pdf]` needs Pango and Cairo from the system, which is exactly why
 it is not in the floor.
 
+`python -m build` makes a wheel and an sdist, and both carry the library alone: the sdist
+holds `svc/`, `pyproject.toml`, this README and the [MIT licence](LICENSE), and nothing from
+the tests, the QA harness or the tooling. The wheel ships a `py.typed` marker, so your type
+checker reads pyHermes's annotations. CI builds, checks and installs both on every change.
+
 The `dev` extra also pulls `requests` and `httplib2`. Those are the HTTP transports the send
 adapters *document*, not ones they use: the adapters import neither, and an AST-parsing test
 in each keeps it that way. They exist so retry classification can be tested against the real

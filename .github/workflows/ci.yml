@@ -216,7 +216,7 @@ jobs:
     # Guards #10: templates/ must ship inside the wheel, so the package can
     # render an email with no source tree present. A parent-directory lookup
     # or a missing package-data rule passes every check above and fails only
-    # here.
+    # here. Since #244 it builds the sdist too, and renders from each.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -225,21 +225,30 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Build the wheel
+      - name: Build the wheel and the sdist
         run: |
-          pip install build
-          python -m build --wheel
+          pip install build twine
+          python -m build
+
+      - name: Check the metadata
+        run: twine check --strict dist/*
 
       - name: Check the built artefacts
         # #243: the wheel must carry py.typed, or a consumer's type checker
-        # reads every pyHermes symbol as Any. qa/distribution.py names what
-        # is missing; tests/test_distribution.py proves each check can fail.
+        # reads every pyHermes symbol as Any. #244: the sdist is the library
+        # alone, so .claude/, tests/, qa/, examples/, drafts/ or docs/ in it
+        # fails here. qa/distribution.py lists each artefact and names what
+        # is wrong; tests/test_distribution.py proves each check can fail.
         run: python -m qa.distribution dist
 
-      - name: Install it into a clean venv, outside the source tree
+      - name: Install each artefact into its own clean venv, outside the source tree
         run: |
           python -m venv /tmp/wheelenv
           /tmp/wheelenv/bin/pip install dist/*.whl
+          python -m venv /tmp/sdistenv
+          /tmp/sdistenv/bin/pip install dist/*.tar.gz
+          /tmp/wheelenv/bin/pip install --upgrade pip
+          /tmp/wheelenv/bin/pip show --verbose pyhermes
 
       - name: Type-check a consumer against the installed wheel
         # Without the marker this reports missing library stubs and reveals Any.
@@ -249,10 +258,12 @@ jobs:
           printf 'from svc.builder import Email\n\nreveal_type(Email)\n' > consumer.py
           /tmp/wheelenv/bin/mypy --strict consumer.py
 
-      - name: Render an email with no source tree in sight
+      - name: Render an email with no source tree in sight, from each
         run: |
-          mkdir -p /tmp/wheelcheck && cd /tmp/wheelcheck
-          /tmp/wheelenv/bin/python - <<'PY'
+          for env in wheelenv sdistenv; do
+          echo "== $env"
+          mkdir -p /tmp/$env-check && cd /tmp/$env-check
+          /tmp/$env/bin/python - <<'PY'
           from pathlib import Path
 
           from svc.builder import (
@@ -324,3 +335,4 @@ jobs:
           assert "font-size:13px" in compact, "the compact type scale did not reach the email"
           print("OK: columns.html renders, and its geometry follows the size theme")
           PY
+          done
