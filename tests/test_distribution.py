@@ -12,7 +12,7 @@ import tarfile
 import zipfile
 from pathlib import Path
 
-from qa.distribution import PACKAGE, SHIM, main, sdist_problems, wheel_problems
+from qa.distribution import PACKAGE, main, sdist_problems, wheel_problems
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -38,9 +38,8 @@ LIBRARY = [
     "LICENSE",
     "PKG-INFO",
     f"{PACKAGE}/__init__.py",
-    f"{SHIM}/__init__.py",
 ]
-WHEEL = [f"{PACKAGE}/__init__.py", f"{PACKAGE}/py.typed", f"{SHIM}/__init__.py"]
+WHEEL = [f"{PACKAGE}/__init__.py", f"{PACKAGE}/py.typed", "pyhermes-0.1.0.dist-info/METADATA"]
 
 
 class TestTheWheel:
@@ -55,9 +54,10 @@ class TestTheWheel:
         wheel = _wheel(tmp_path / "p.whl", [name for name in WHEEL if "py.typed" not in name])
         assert wheel_problems(wheel) == [f"p.whl is missing {PACKAGE}/py.typed"]
 
-    def test_a_wheel_without_the_old_name_is_named(self, tmp_path):
-        wheel = _wheel(tmp_path / "p.whl", [name for name in WHEEL if name.startswith(PACKAGE)])
-        assert wheel_problems(wheel) == [f"p.whl is missing {SHIM}/__init__.py"]
+    def test_a_second_import_root_is_named(self, tmp_path):
+        # The retired svc shim is the case this exists for (#255).
+        wheel = _wheel(tmp_path / "p.whl", [*WHEEL, "svc/__init__.py"])
+        assert wheel_problems(wheel) == [f"p.whl installs svc, beside {PACKAGE}"]
 
     def test_the_command_fails_on_it(self, tmp_path, capsys):
         _wheel(tmp_path / "p.whl", [f"{PACKAGE}/__init__.py"])
@@ -73,19 +73,19 @@ class TestTheSdist:
         assert sdist_problems(_sdist(tmp_path / "p.tar.gz", [*LIBRARY, ".gitignore"])) == []
 
     def test_every_stray_root_is_named(self, tmp_path):
-        extra = [".claude/memory/INDEX.md", "tests/test_x.py", "qa/lint.py", "examples/a.py"]
+        extra = [".claude/memory/INDEX.md", "tests/test_x.py", "qa/lint.py", "svc/__init__.py"]
         problems = sdist_problems(_sdist(tmp_path / "p.tar.gz", [*LIBRARY, *extra]))
         assert [p.split(" carries ")[1].split(",")[0] for p in problems] == [
             ".claude",
-            "examples",
             "qa",
+            "svc",
             "tests",
         ]
 
     def test_a_missing_licence_or_readme_is_named(self, tmp_path):
         sdist = _sdist(
             tmp_path / "p.tar.gz",
-            ["pyproject.toml", f"{PACKAGE}/__init__.py", f"{SHIM}/__init__.py"],
+            ["pyproject.toml", f"{PACKAGE}/__init__.py"],
         )
         assert sdist_problems(sdist) == [
             "p.tar.gz is missing README.md",
@@ -97,6 +97,20 @@ class TestTheSdist:
 
         config = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
         included = set(config["tool"]["hatch"]["build"]["targets"]["sdist"]["only-include"])
-        assert included <= {PACKAGE, SHIM, "pyproject.toml", "README.md", "LICENSE"}
+        assert included <= {PACKAGE, "pyproject.toml", "README.md", "LICENSE"}
         assert config["project"]["license-files"] == ["LICENSE"]
         assert (ROOT / "LICENSE").read_text(encoding="utf-8").startswith("MIT License")
+
+
+def test_nothing_in_the_repository_imports_the_retired_name():
+    """``svc`` was the import root until #248 and its shim was removed in #255."""
+    offenders = [
+        str(path.relative_to(ROOT))
+        for top in (PACKAGE, "qa", "tests", "examples", "drafts")
+        for path in (ROOT / top).rglob("*.py")
+        if any(
+            line.lstrip().startswith(("import svc", "from svc"))
+            for line in path.read_text(encoding="utf-8").splitlines()
+        )
+    ]
+    assert offenders == []

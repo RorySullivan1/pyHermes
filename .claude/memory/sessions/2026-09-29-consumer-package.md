@@ -25,3 +25,5 @@
 
 ## State at end
 - Four commits pushed, one per sub-issue; goldens byte-identical. No PR opened (not asked).
+- 2026-09-29 later: #255 removed the `svc` shim before any release shipped it; the wheel check now refuses
+  any top-level package beside `pyhermes`, and CI asserts `import svc` fails from each artefact.

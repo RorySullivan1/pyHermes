@@ -329,12 +329,14 @@ earlier check passed on a tree that would have shipped wrong.
   had to learn the import from the README. The cost was one PR of mechanical rewrite, 1,349
   references in 187 files, with the wheel and sdist checks above proving it shipped whole.
   Kept on the other side: the session logs, which record what was true when written.
-- **`svc` is a one-release shim, not a second copy.** `svc/__init__.py` warns once with a
-  `DeprecationWarning` and puts a meta-path finder in front that resolves `svc.X` to the
-  module `pyhermes.X` already is, so a class imported under either name is one class. The
-  trap it had to handle: the import system overwrites an aliased module's `__spec__` with the
-  alias's, which is no package, and `importlib.resources` then refused the templates; the
-  loader puts the real spec back. The shim ships in both artefacts, which keeps the
-  collision risk for that one release, and `test_svc_shim.py` fails if anything in the repo
-  imports it. **Delete `svc/` in the next release**, with its `packages`, `only-include`,
-  mypy and prose-budget entries and `SHIM` in `qa/distribution.py`.
+- **`svc` was a shim, and #255 removed it before any release shipped it.** #248 kept
+  `svc/__init__.py` for one release: it warned once with a `DeprecationWarning` and put a
+  meta-path finder in front that resolved `svc.X` to the module `pyhermes.X` already is.
+  Its one trap is worth keeping for the next alias: the import system overwrites an aliased
+  module's `__spec__` with the alias's, which is no package, and `importlib.resources` then
+  refused the templates, so the loader put the real spec back. The package was never
+  published, so no installer saw the warning, and the owner removed the shim at once (#255)
+  rather than carry the collision risk a release it protected no one in. Now
+  `qa/distribution.py` fails CI on any top-level package in the wheel beside `pyhermes`, the
+  wheel job asserts `import svc` fails from each artefact, and a test in
+  `test_distribution.py` fails if anything in the repo imports `svc`.
