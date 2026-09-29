@@ -10,11 +10,13 @@ from __future__ import annotations
 
 import base64
 import re
+import warnings
 from email import message_from_bytes
 
 import pytest
 
 from svc.builder import EmailBuilder, FullWidth, ImageBlock
+from svc.builder.exceptions import SizeWarning
 from svc.builder.images import EmailImage
 from svc.config import config_override
 from svc.delivery import Attachment, MessageError, build_message, save_eml
@@ -227,24 +229,25 @@ class TestTheSizeBudget:
             with pytest.raises(MessageError, match=r"\(rendered under PRINT; try SCREEN\)"):
                 build_message(cid_email, **ENVELOPE, attachments=[hinted])
 
-    def test_between_the_thresholds_it_warns_with_the_total_and_threshold(self, cid_email, capsys):
-        with config_override(**SMALL_BUDGET):
+    def test_between_the_thresholds_it_warns_with_the_total_and_threshold(self, cid_email):
+        with config_override(**SMALL_BUDGET), pytest.warns(SizeWarning) as caught:
             build_message(cid_email, **ENVELOPE, attachments=[_file(40)])
-        printed = capsys.readouterr().out
-        assert re.search(r"WARNING: Message size [\d,.]+ KB with attachments", printed)
-        assert "(target < 48 KB)" in printed
+        (warning,) = [w for w in caught if w.category is SizeWarning]
+        assert re.search(r"Message size [\d,.]+ KB with attachments", str(warning.message))
+        assert "(target < 48 KB)" in str(warning.message)
 
-    def test_under_the_warning_it_prints_nothing(self, cid_email, capsys):
-        with config_override(**SMALL_BUDGET):
+    def test_under_the_warning_it_warns_nothing(self, cid_email):
+        with config_override(**SMALL_BUDGET), warnings.catch_warnings():
+            warnings.simplefilter("error", SizeWarning)
             build_message(cid_email, **ENVELOPE, attachments=[_file(1)])
-        assert "Message size" not in capsys.readouterr().out
 
-    def test_with_no_attachment_no_check_runs_at_all(self, cid_email, capsys):
+    def test_with_no_attachment_no_check_runs_at_all(self, cid_email):
         # A cover email alone is over this budget, and is still not measured:
         # the budget is about files, and the 102 KB check owns the HTML.
         with config_override(attachment_limit_kb=1, attachment_warn_kb=1):
-            build_message(cid_email, **ENVELOPE)
-        assert "Message size" not in capsys.readouterr().out
+            with warnings.catch_warnings():
+                warnings.simplefilter("error", SizeWarning)
+                build_message(cid_email, **ENVELOPE)
 
 
 class TestAPdfAttachment:

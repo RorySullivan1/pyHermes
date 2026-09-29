@@ -25,8 +25,9 @@ from html.parser import HTMLParser
 from pathlib import Path
 from typing import Protocol, cast
 
+from svc.builder.exceptions import SizeWarning, warn_caller
 from svc.builder.images import ImageAsset
-from svc.config import get_config
+from svc.config import Config, config_override, get_config
 
 from .exceptions import MessageError
 
@@ -295,6 +296,7 @@ def build_message(
     cc: str | Sequence[str] | None = None,
     reply_to: str | None = None,
     attachments: Sequence[Attachment] = (),
+    config: Config | None = None,
 ) -> EmailMessage:
     """
     Assemble a built email into a sendable MIME message.
@@ -308,6 +310,8 @@ def build_message(
         cc:       Optional carbon-copy recipients.
         reply_to: Optional ``Reply-To`` header.
         attachments: Files carried after the email, each an :class:`Attachment`.
+        config:   Limits for this message alone, in force while it renders the
+            email and checks the budget; ``None`` reads the ambient one.
 
     Returns:
         A ``multipart/alternative``, its HTML ``multipart/related`` with CID
@@ -321,6 +325,17 @@ def build_message(
 
     ``Bcc`` is deliberately not accepted; see the module docstring.
     """
+    if config is not None:
+        with config_override(config):
+            return build_message(
+                email,
+                subject=subject,
+                sender=sender,
+                to=to,
+                cc=cc,
+                reply_to=reply_to,
+                attachments=attachments,
+            )
     recipients = _as_list(to)
     cc_recipients = _as_list(cc)
     # An explicit subject always wins; only its absence consults the email.
@@ -465,9 +480,10 @@ def _check_attachment_budget(message: EmailMessage, attachments: Sequence[Attach
             f"enforce: {files}."
         )
     if size_kb > config.attachment_warn_kb:
-        print(
-            f"WARNING: Message size {size_kb:,.1f} KB with attachments "
-            f"(target < {config.attachment_warn_kb:,} KB)"
+        warn_caller(
+            f"Message size {size_kb:,.1f} KB with attachments "
+            f"(target < {config.attachment_warn_kb:,} KB)",
+            SizeWarning,
         )
 
 

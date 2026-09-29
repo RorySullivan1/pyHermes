@@ -7,6 +7,8 @@ answer, where each panel lands on the sheet, is in ``test_brochure_pdf.py``.
 
 from __future__ import annotations
 
+import warnings
+
 import pytest
 
 from qa.fixtures import all_brochure_fixtures, tri_fold_letter
@@ -30,7 +32,7 @@ from svc.brochure import (
 )
 from svc.brochure.fold import A4_SHEET, LETTER_SHEET
 from svc.builder import EmailBuilder, FullWidth, TextBlock, TwoColumn
-from svc.builder.exceptions import ValidationError
+from svc.builder.exceptions import PrintQualityWarning, ValidationError
 from svc.builder.sizing import A4_PORTRAIT, PageFormat
 from svc.document import Page, PagedDocument
 
@@ -479,15 +481,16 @@ class TestImageResolution:
         panels[2] = Panel([FullWidth(ImageBlock(image))])
         return Brochure(_facts(), panels)
 
-    def test_enough_pixels_is_silent(self, capsys):
-        self._with_image(938, 300)
-        assert "WARNING" not in capsys.readouterr().out
+    def test_enough_pixels_is_silent(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", PrintQualityWarning)
+            self._with_image(938, 300)
 
-    def test_below_the_target_warns_naming_the_width_it_needs(self, capsys):
-        self._with_image(600, 300)
-        assert (
-            "'Chart' is 600px wide and needs 938px to print at 300 dpi" in capsys.readouterr().out
-        )
+    def test_below_the_target_warns_naming_the_width_it_needs(self):
+        with pytest.warns(
+            PrintQualityWarning, match="'Chart' is 600px wide and needs 938px to print at 300 dpi"
+        ):
+            self._with_image(600, 300)
 
     def test_below_half_the_target_raises_naming_the_width_it_needs(self):
         with pytest.raises(ValidationError, match=r"'Chart' is 400px wide.*needs 938px"):

@@ -12,7 +12,7 @@ from __future__ import annotations
 import math
 from collections.abc import Sequence
 
-from svc.builder.exceptions import ValidationError
+from svc.builder.exceptions import PrintQualityWarning, ValidationError, warn_caller
 from svc.builder.images import EmailImage, pixel_size
 from svc.config import get_config
 
@@ -55,8 +55,8 @@ def validate_image_resolution(
 
     An entry is an image, displayed at its own ``width`` (or its pixel width
     when it has none), or an ``(image, display width)`` pair for one that
-    fills a box instead, such as a panel's ground. Below the target prints a
-    warning, as the email's 90 KB threshold does; below half of it raises. A
+    fills a box instead, such as a panel's ground. Below the target warns with
+    a ``PrintQualityWarning``, as the email's 90 KB threshold does; below half of it raises. A
     hosted image has no bytes to measure, and the PDF exporter refuses it.
 
     Raises:
@@ -78,7 +78,8 @@ def validate_image_resolution(
                 f"It needs {needed}px to print at {dpi} dpi."
             )
         if pixels < needed:
-            print(
-                f"WARNING: the image {image.alt or image.filename!r} is {pixels}px wide and "
-                f"needs {needed}px to print at {dpi} dpi."
+            warn_caller(
+                f"the image {image.alt or image.filename!r} is {pixels}px wide and "
+                f"needs {needed}px to print at {dpi} dpi.",
+                PrintQualityWarning,
             )

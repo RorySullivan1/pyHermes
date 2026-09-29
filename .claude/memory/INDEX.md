@@ -6,8 +6,8 @@
   one contract — `svc/delivery`+`gmail`+`outlook`, and `svc/pdf`. Rationale: CLAUDE.md and
   `.claude/rules/media.md`; do not restate it here.
 - **Shipped**: #157, #153, #169, #170, #171, #172, #193 (PRs #167–#203); #201, #150, #202 (PRs #204–#206);
-  #209 (PR #222); #217 (PR #234); #221 (PR #235). Stubs #218–#220 are still undefined; each was
-  filed against `main` @ `0ac949a` and is defined in place with the `epic` skill, as #217 and #221 were.
+  #209 (PR #222); #217 (PR #234); #221 (PR #235). **#238 implemented on the branch** (#246, #249, #247).
+  Stubs #218–#220 are still undefined; each is defined in place with the `epic` skill, as #217 was.
 - The prose budget is live; the baseline is 45 and may only shrink.
 
 ## Decisions        (append-only; supersede, never delete)
@@ -40,6 +40,9 @@
 - [2026-09-24] **An equation's component takes bytes and the [math] extra renders them**, because the
   builder never imports a backend; **the picture is painted for the theme the caller passes** — `math.md`
 
+- [2026-09-28] **A config travels with the work: explicit, then context, then default.** A `ContextVar`
+  over `set_config`; a new thread starts from the default. Soft limits are warnings — `config.md`
+
 ## Threads          (open items; remove when closed)
 - **In this container, PDF byte-determinism tests flake** (no HarfBuzz-Subset), and screenshot
   tests skip unless `PYHERMES_CHROMIUM=/opt/pw-browsers/chromium-1194/chrome-linux/chrome`.
@@ -61,10 +64,6 @@
 
 ## Log              (append-only pointers)
 - Older entries, and epic #157's, are in sessions/ARCHIVE-2026.md.
-- [2026-09-23] digital-pdf — **#193 shipped, PR #203** (6/6 closed). PDF determinism needs
-  HarfBuzz-Subset; findings #201, #202 filed — sessions/2026-09-23-digital-pdf.md
-- [2026-09-23] image-width — **#201 fixed**: `width:100%; max-width:Npx` beside the attribute. Hints and a fixed
-  px width each put a4_portrait on six sheets; email screenshots pixel-identical — `media.md`
 - [2026-09-24] spacing-two-levels — **#209 implemented** (#211–#216): `dense`, `SizeScheme` as `size_theme`,
   `Spacing` + `SPACING_TOKENS`, the factsheet at 90% of two sheets — sessions/2026-09-24-spacing-two-levels.md
 - [2026-09-24] define-epic-217 — **#217 defined, #223–#228 filed** via the github-issues pipeline. `fill-self`
@@ -75,3 +74,5 @@
   decimal alignment and units, `HeatScale` and bars; `letter_quant_table` — sessions/2026-09-24-table-semantics.md
 - [2026-09-24] equations — **#221 implemented** (#229–#233): `MathBlock`, `svc/math` + `[math]`, `math_block`,
   lines shim, `a4_equations`, the factsheet's Sharpe ratio — sessions/2026-09-24-equations.md
+- [2026-09-28] host-seams — **#238 implemented** (#246, #249, #247): warnings not prints, a context-local
+  `Config` with `config=`, `template_overlay=` — sessions/2026-09-28-host-seams.md

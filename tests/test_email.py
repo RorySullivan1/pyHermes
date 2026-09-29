@@ -6,12 +6,18 @@ the single runtime check that matters most, and calling it with crafted
 strings pins the exact boundary without having to build a ~102 KB email.
 """
 
+import warnings
 from pathlib import Path
 
 import pytest
 
 from svc.builder import Email, EmailBuilder, FullWidth
-from svc.builder.exceptions import EmailBuilderError, SizeError, ValidationError
+from svc.builder.exceptions import (
+    EmailBuilderError,
+    SizeError,
+    SizeWarning,
+    ValidationError,
+)
 from svc.builder.models import EmailMetadata
 from svc.email.medium import _SIZE_LIMIT_KB, _SIZE_WARN_KB, validate_gmail_size
 
@@ -61,13 +67,15 @@ class TestSizeLimit:
         with pytest.raises(EmailBuilderError):
             validate_gmail_size(html_of_kb(_SIZE_LIMIT_KB + 1))
 
-    def test_above_the_warn_threshold_warns_but_passes(self, capsys):
-        validate_gmail_size(html_of_kb(_SIZE_WARN_KB + 1))
-        assert "WARNING" in capsys.readouterr().out
+    def test_above_the_warn_threshold_warns_but_passes(self):
+        with pytest.warns(SizeWarning, match=rf"target < {_SIZE_WARN_KB} KB"):
+            validate_gmail_size(html_of_kb(_SIZE_WARN_KB + 1))
 
-    def test_below_the_warn_threshold_reports_ok(self, capsys):
-        validate_gmail_size(html_of_kb(10))
-        assert "OK" in capsys.readouterr().out
+    def test_below_the_warn_threshold_is_silent(self, capsys):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            validate_gmail_size(html_of_kb(10))
+        assert capsys.readouterr().out == ""
 
     def test_size_is_measured_in_utf8_bytes(self):
         # A multi-byte body under the limit by character count but over it

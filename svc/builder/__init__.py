@@ -63,7 +63,9 @@ from .enums import (
 # Exceptions
 from .exceptions import (
     EmailBuilderError,
+    PrintQualityWarning,
     SizeError,
+    SizeWarning,
     TemplateError,
     ValidationError,
 )
@@ -247,4 +249,6 @@ __all__ = [
     "TemplateError",
     "ValidationError",
     "SizeError",
+    "SizeWarning",
+    "PrintQualityWarning",
 ]

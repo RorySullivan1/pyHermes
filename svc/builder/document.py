@@ -13,15 +13,18 @@ example. `.claude/rules/builder-architecture.md` carries the layer model.
 
 from __future__ import annotations
 
+import functools
+from collections.abc import Callable
+from contextlib import AbstractContextManager, nullcontext
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, ClassVar, Self
+from typing import TYPE_CHECKING, Any, ClassVar, Concatenate, ParamSpec, Self, TypeVar
 
-from svc.config import get_config
+from svc.config import Config, config_override, get_config
 
 from .apparatus import check_unique, note_anchor, note_ref_anchor, references
 from .components import Component, Contents, Endnotes, Exhibit
 from .containers import Container, FullWidth
-from .engine import Renderer, TemplateEngine
+from .engine import Renderer, TemplateEngine, TemplateOverlay, overlay_dirs
 from .enums import EmbedStrategy, SizeTheme
 from .exceptions import ValidationError
 from .images import EmailImage, ImageAsset, dedupe_assets
@@ -38,6 +41,23 @@ if TYPE_CHECKING:  # pragma: no cover - regions imports models, which imports th
 #: One region and the facts handed down to it. Ordered pairs rather than a
 #: mapping, because the skeleton's order is part of the contract.
 RegionFacts = tuple["Region", dict[str, Any]]
+
+_P = ParamSpec("_P")
+_R = TypeVar("_R")
+_D = TypeVar("_D", bound="Document")
+
+
+def _under_own_config(
+    method: Callable[Concatenate[_D, _P], _R],
+) -> Callable[Concatenate[_D, _P], _R]:
+    """Run ``method`` with the document's own config in force, when it has one."""
+
+    @functools.wraps(method)
+    def wrapper(self: _D, /, *args: _P.args, **kwargs: _P.kwargs) -> _R:
+        with self.configured():
+            return method(self, *args, **kwargs)
+
+    return wrapper
 
 
 class Document:
@@ -58,6 +78,11 @@ class Document:
         metadata:     Mapping of facts, or a metadata instance.
         template_dir: Root of the templates. Defaults to the packaged copy.
         medium:       Where this is going to be read.
+        config:       Limits and policy for this document alone, in force while
+                      it validates and renders; ``None`` reads the ambient one.
+        template_overlay: Your own template directories, searched before the
+                      medium's and the packaged ones: a forked template, or
+                      the template of a component you defined.
 
     Raises:
         ValidationError: If a required fact is missing or empty.
@@ -71,11 +96,21 @@ class Document:
         metadata: dict[str, Any] | DocumentMetadata,
         template_dir: Path | None = None,
         medium: Medium | None = None,
+        *,
+        config: Config | None = None,
+        template_overlay: TemplateOverlay = None,
     ):
+        if config is not None and not isinstance(config, Config):
+            raise TypeError(f"config must be a Config, got {type(config).__name__}")
+        self._config = config
         # The medium is settled first: it names the templates this engine
         # searches before the shared tree.
         self._medium: Medium = medium if medium is not None else DEFAULT_MEDIUM
-        self._engine = TemplateEngine(template_dir, search_path=self._medium.template_search_path)
+        self._engine = TemplateEngine(
+            template_dir,
+            search_path=self._medium.template_search_path,
+            overlays=overlay_dirs(template_overlay),
+        )
 
         if isinstance(metadata, dict):
             self._metadata: DocumentMetadata = self.METADATA(**metadata)
@@ -85,8 +120,9 @@ class Document:
         # Validation happens at construction time, not render time, so a
         # missing required field names itself instead of surfacing later as a
         # confusing render-time symptom.
-        self._metadata.validate()
-        check_density(self._metadata.size_theme, self._medium)
+        with self.configured():
+            self._metadata.validate()
+            check_density(self._metadata.size_theme, self._medium)
         self._sections: list[Container] = []
 
     # ------------------------------------------------------------------
@@ -104,6 +140,15 @@ class Document:
         one it closes.
         """
         return self._metadata
+
+    @property
+    def config(self) -> Config | None:
+        """The config this document pins, or ``None`` when it reads the ambient one."""
+        return self._config
+
+    def configured(self) -> AbstractContextManager[object]:
+        """A context with this document's config in force; a no-op when it pins none."""
+        return config_override(self._config) if self._config is not None else nullcontext()
 
     @property
     def medium(self) -> Medium:
@@ -153,6 +198,7 @@ class Document:
         """
         return [inner for section in self._sections for inner in _flatten(section)]
 
+    @_under_own_config
     def validate(self) -> None:
         """
         Check what only the finished tree can answer, before any template loads.
@@ -195,6 +241,7 @@ class Document:
         images.extend(image for region, _ in self.trailing_regions() for image in region.images())
         return images
 
+    @_under_own_config
     def assets(self) -> list[ImageAsset]:
         """
         The attachment manifest: what a delivery layer must carry.
@@ -209,6 +256,7 @@ class Document:
         assets.extend(asset for region, _ in self.trailing_regions() for asset in region.assets())
         return dedupe_assets(assets)
 
+    @_under_own_config
     def render(self) -> str:
         """
         Render the complete document.
@@ -244,6 +292,7 @@ class Document:
         self._medium.validate(html, self._inline_image_hint())
         return html
 
+    @_under_own_config
     def text(self) -> str:
         """
         The plain-text projection: a second projection of the same tree.

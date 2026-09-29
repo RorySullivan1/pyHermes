@@ -18,10 +18,12 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, ClassVar
 
+from svc.config import Config
 from svc.email import EMAIL_MEDIUM
 
 from .containers import Container
 from .document import Document, RegionFacts
+from .engine import TemplateOverlay
 from .images import ImageAsset
 from .medium import Medium
 from .models import EmailMetadata
@@ -49,6 +51,7 @@ class Email(Document):
         medium:       Where this is read. An ``Email`` pins the email medium;
                       the argument exists so a test can drive a different
                       constraint set.
+        config, template_overlay: As ``Document`` takes them.
 
     Raises:
         ValidationError: If required metadata (``email_subject``, ``firm_name``,
@@ -71,8 +74,17 @@ class Email(Document):
         banner: Banner | None = None,
         footer: Footer | None = None,
         medium: Medium | None = None,
+        *,
+        config: Config | None = None,
+        template_overlay: TemplateOverlay = None,
     ):
-        super().__init__(metadata, template_dir, medium if medium is not None else EMAIL_MEDIUM)
+        super().__init__(
+            metadata,
+            template_dir,
+            medium if medium is not None else EMAIL_MEDIUM,
+            config=config,
+            template_overlay=template_overlay,
+        )
         self._header: Header = header if header is not None else self._metadata.header
         self._banner: Banner = banner if banner is not None else self._metadata.banner
         self._footer: Footer = footer if footer is not None else self._metadata.footer
@@ -170,13 +182,26 @@ class EmailBuilder:
         email.save(Path("output.html"))
     """
 
-    def __init__(self, template_dir: Path | None = None):
+    def __init__(
+        self,
+        template_dir: Path | None = None,
+        *,
+        config: Config | None = None,
+        template_overlay: TemplateOverlay = None,
+    ):
         self._template_dir = template_dir
+        self._config = config
+        self._template_overlay = template_overlay
         self._email: Email | None = None
 
     def metadata(self, data: dict[str, Any] | EmailMetadata) -> EmailBuilder:
         """Set email metadata and initialise the Email instance."""
-        self._email = Email(metadata=data, template_dir=self._template_dir)
+        self._email = Email(
+            metadata=data,
+            template_dir=self._template_dir,
+            config=self._config,
+            template_overlay=self._template_overlay,
+        )
         return self
 
     def header(self, header: Header) -> EmailBuilder:

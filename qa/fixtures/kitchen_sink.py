@@ -46,6 +46,7 @@ from svc.builder import (
     ThreeColumn,
     TwoColumn,
 )
+from svc.builder.engine import TemplateOverlay
 from svc.builder.enums import CardOrientation, ImageAlign, ThreeColumnRatio, Tone, TwoColumnRatio
 from svc.builder.formats import bps, delta, number, pct
 from svc.builder.images import EmailImage
@@ -134,7 +135,11 @@ def _metadata() -> dict[str, Any]:
     }
 
 
-def build(template_dir: Path | None = None, **metadata_overrides: Any) -> Email:
+def build(
+    template_dir: Path | None = None,
+    template_overlay: TemplateOverlay = None,
+    **metadata_overrides: Any,
+) -> Email:
     """
     Build the kitchen-sink email. Deterministic: same bytes every call.
 
@@ -147,7 +152,7 @@ def build(template_dir: Path | None = None, **metadata_overrides: Any) -> Email:
     ``FixtureBuilder`` contract — callable with no arguments — still holds.
     """
     return (
-        EmailBuilder(template_dir=template_dir)
+        EmailBuilder(template_dir=template_dir, template_overlay=template_overlay)
         .metadata(_metadata() | metadata_overrides)
         .header(
             Header(

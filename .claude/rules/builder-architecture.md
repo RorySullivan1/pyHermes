@@ -309,6 +309,11 @@ Email(metadata, header=EmptyHeader(), banner=MinimalBanner(logo_url=logo))   # n
 EmailBuilder().metadata({...}).header(Header(align="left")).banner(MinimalBanner()).section(...)
 ```
 
+**Two keyword-only seams for a host application (#238)**, on `Document` and every subclass,
+and on `EmailBuilder`: `config=` pins a `Config` for that object's checks and projections
+(`config.md`), and `template_overlay=` puts the caller's template directories ahead of the
+medium's and the packaged ones (`media.md`). `build_message` takes `config=` too.
+
 `EmailBuilder.header()` / `.banner()` / `.footer()` follow the same sequencing rule as
 `section()`: calling one before `metadata()` raises `RuntimeError` — a programming error in the
 call sequence, not rejected data. Omit them and the regions come from the metadata, which the
@@ -493,6 +498,10 @@ inside a template render: the `validate_hex_color` / `default_color` filters rai
 `ValidationError`, not a bare `ValueError` (#18). A filter's `ValidationError` propagates
 out of the render as-is rather than being re-wrapped as `TemplateError`: it is a data
 failure, not a template one.
+
+A soft limit is a **warning, not an exception** (#246): `SizeWarning` above the email's 90 KB
+threshold and the message's attachment one, `PrintQualityWarning` below a brochure's print
+dpi. Both are `UserWarning`s exported from `svc.builder`, and the package prints nothing.
 
 The one deliberate exception is `EmailBuilder`'s `RuntimeError` for calling `section()` or
 `build()` before `metadata()` — a programming error in the call sequence, not rejected

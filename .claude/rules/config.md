@@ -19,10 +19,10 @@ Every judgment-call number in the package is a field on one frozen
 from svc.config import Config, get_config, set_config, config_override
 
 get_config().inline_image_limit_kb              # what is actually in force
-set_config(Config(inline_image_limit_kb=64))    # install process-wide
-set_config(Config.from_env())                   # or read PYHERMES_*
-with config_override(retry_max_attempts=1):     # scoped, restores on exit (tests)
+set_config(Config.from_env())                   # the process-wide default
+with config_override(retry_max_attempts=1):     # this context only, restored on exit
     ...
+Document(facts, config=Config(size_limit_kb=500))   # this document only
 ```
 
 **The line the module draws — and the reason it exists — is between a judgment call and a
@@ -123,7 +123,7 @@ Recorded so they are not re-litigated as oversights:
 
 **`print_dpi` (#188) is the resolution a brochure's images must reach, 300 by default.** The
 offset norm, and a judgement call rather than a fact: a proof printer is content with less, a
-fine-art press wants more. Below it, a brochure prints a warning at construction; below half
+fine-art press wants more. Below it, a brochure warns (`PrintQualityWarning`) at construction; below half
 of it, construction raises. `PYHERMES_PRINT_DPI` sets it, like every other field.
 
 **`allow_custom_email_density` (#212) is a switch, off by default, and the first `bool` field.**
@@ -150,3 +150,47 @@ message, not over the file: base64 makes a 16 MB PDF a 22 MB message.
   file with its size, and each file's `size_hint`. `pdf_attachment` fills that hint when the
   PDF was rendered at full resolution, naming the `SCREEN` profile. The message never
   downsamples a file on its own.
+
+## A soft limit is a warning a host can route (#246)
+
+The package printed from four places: the email size check (a warning and an "OK" line on
+every render), the attachment budget and the brochure's print dpi. The other two warnings used
+`warnings.warn`, so a host's `-W error` or `logging.captureWarnings` caught half of them, and a
+CLI writing HTML to stdout got a status line in its output.
+
+- **Two categories, both `UserWarning`s, in `svc.builder.exceptions`**: `SizeWarning` for the
+  email and message thresholds, `PrintQualityWarning` for the dpi one. A host filters by kind.
+- **The success line is gone.** `qa.preview` already printed each file's size itself.
+- **`warn_caller` finds the caller by walking out of `svc`**, because one check is reached from
+  `render()`, `Email.render()`, a builder shortcut or a brochure's constructor, and no fixed
+  `stacklevel` names all of them. A test asserts the warning's filename is the test's own.
+- **No `print` in `svc/`**, held by an AST test in `tests/test_warnings.py`. Logging is not
+  the package's business: a host maps warnings to its logger itself.
+
+## Three levels, and the config travels with the work (#249)
+
+The active config was one module global, so two renders in one process raced: a thread's
+override of the clipping limit was read by another thread's size check, and its exit restored
+the other's state mid-render. The global was right for one caller and wrong for a service.
+
+| Level | Set by | Seen by |
+|---|---|---|
+| Default | `set_config`, at startup | every thread and task with no override |
+| Context | `config_override(...)` | the thread or asyncio task that entered it |
+| Explicit | `Document(config=)`, `build_message(config=)` | that object's validation and projections |
+
+**The innermost wins**: explicit, then context, then default. `set_config` inside an override
+changes the default, which the override hides until it exits.
+
+- **The readers did not change.** Each calls `get_config()` at use time, which is what let a
+  `ContextVar` layered over the global work without touching them.
+- **An explicit config is entered, not threaded.** `Document` applies its own around
+  construction's checks, `validate`, `render`, `text` and `assets`, through `configured()`; a
+  brochure's print-dpi check runs under it too. There is no second parameter path.
+- **A new thread starts from the default.** `threading.Thread` runs in a fresh context, so a
+  worker does not inherit its parent's override. That is the isolation, and it is why a
+  document that must carry a policy into a pool carries it as `config=`.
+- **The no-locale decision still holds**: within one context there is one config, so one
+  document's two projections never disagree about a separator.
+- `tests/test_config_scope.py` renders in two threads at once under different limits, and
+  fails when the context variable is replaced by a shared one.

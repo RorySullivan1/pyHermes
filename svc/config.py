@@ -8,16 +8,17 @@ stay literals where they are used, because changing one does not tune
 behaviour, it makes the code wrong.
 
     get_config().inline_image_limit_kb     # what is in force
-    set_config(Config.from_env())          # or read PYHERMES_*
-    with config_override(retry_max_attempts=1): ...
+    set_config(Config.from_env())          # the process-wide default
+    with config_override(retry_max_attempts=1): ...   # this context only
+    Document(facts, config=Config(size_limit_kb=500))  # this document only
 
-Nothing reads the environment on import, and consumers call ``get_config()``
-at use time so a later override is seen. `.claude/rules/config.md` has the rest.
+Consumers call ``get_config()`` at use time; `.claude/rules/config.md` has the rest.
 """
 
 from __future__ import annotations
 
 import os
+from contextvars import ContextVar, Token
 from dataclasses import dataclass, fields, replace
 
 __all__ = ["Config", "get_config", "set_config", "config_override"]
@@ -39,7 +40,7 @@ class Config:
         size_limit_kb: Hard ceiling on rendered HTML. **102 KB is Gmail's
             actual clipping limit**, not a preference — raise it only for a
             channel you have confirmed is not Gmail.
-        size_warn_kb: Soft threshold that prints a warning. A judgment call:
+        size_warn_kb: Soft threshold that raises a ``SizeWarning``. A judgment call:
             far enough below the hard limit to leave room to react.
         inline_image_limit_kb: Cap on a single ``DATA_URI`` image's base64,
             so one image cannot eat the whole HTML budget. A judgment call —
@@ -87,7 +88,7 @@ class Config:
     #: encoded wire bytes. Microsoft 365's default, the lower of the two big
     #: providers' (Gmail refuses above 25 MB); `config.md` has why.
     attachment_limit_kb: int = 20480
-    #: Where a message with an attachment starts printing a warning.
+    #: Where a message with an attachment starts raising a ``SizeWarning``.
     attachment_warn_kb: int = 15360
 
     #: Let an email take a density no client has rendered: a custom
@@ -224,48 +225,59 @@ def _parse_bool(text: str, variable: str) -> bool:
     )
 
 
-#: The process-wide active configuration. Read through :func:`get_config`
-#: rather than imported directly, so a later :func:`set_config` is seen by
-#: code that already imported this module.
-_active: Config = Config()
+#: The process-wide default. Read through :func:`get_config` rather than
+#: imported directly, so a later :func:`set_config` is seen by code that
+#: already imported this module.
+_default: Config = Config()
+
+#: This context's override, if any: a thread or an asyncio task sees its own,
+#: so two renders in one process cannot read each other's limits.
+_context: ContextVar[Config | None] = ContextVar("pyhermes_config", default=None)
 
 
 def get_config() -> Config:
-    """The active configuration.
+    """The configuration in force here: this context's override, else the default.
 
     Consumers call this at use time, not import time, so an override
     installed after import still takes effect.
     """
-    return _active
+    override = _context.get()
+    return override if override is not None else _default
 
 
 def set_config(config: Config) -> None:
-    """Install ``config`` process-wide."""
-    global _active
+    """Install ``config`` as the process-wide default, under any context's override."""
+    global _default
     if not isinstance(config, Config):
         raise TypeError(f"expected a Config, got {type(config).__name__}")
-    _active = config
+    _default = config
 
 
 class config_override:
     """
-    Temporarily apply overrides, restoring the previous config afterwards.
+    Apply a config to this context only, restoring the previous one afterwards.
 
-    Chiefly for tests, which must not leak a limit into whatever runs next::
+    Pass a whole :class:`Config`, keyword overrides of the one in force, or
+    both. Another thread never sees it, and a new thread starts from the
+    process-wide default rather than inheriting it::
 
         with config_override(inline_image_limit_kb=1):
             ...
     """
 
-    def __init__(self, **overrides: object) -> None:
+    def __init__(self, base: Config | None = None, /, **overrides: object) -> None:
+        if base is not None and not isinstance(base, Config):
+            raise TypeError(f"expected a Config, got {type(base).__name__}")
+        self._base = base
         self._overrides = overrides
-        self._previous: Config | None = None
+        self._token: Token[Config | None] | None = None
 
     def __enter__(self) -> Config:
-        self._previous = get_config()
-        set_config(replace(self._previous, **self._overrides))  # type: ignore[arg-type]
+        base = self._base if self._base is not None else get_config()
+        self._token = _context.set(replace(base, **self._overrides))  # type: ignore[arg-type]
         return get_config()
 
     def __exit__(self, *exc_info: object) -> None:
-        assert self._previous is not None
-        set_config(self._previous)
+        assert self._token is not None
+        _context.reset(self._token)
+        self._token = None

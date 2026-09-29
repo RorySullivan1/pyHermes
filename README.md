@@ -51,7 +51,7 @@ email = (
     .build()
 )
 
-email.save("output/weekly-wrap.html")   # prints the rendered size, or raises above 102 KB
+email.save("output/weekly-wrap.html")   # warns above 90 KB, raises above 102 KB
 ```
 
 ## The same content, printed
@@ -147,7 +147,7 @@ an attachment. The cover email's own `cid:` images still render in place.
 - **A message with an attachment has a size budget.** Above 20 MB on the wire,
   `build_message` raises and names each file with its size. That is Microsoft 365's default
   limit, below Gmail's 25 MB, and base64 makes a 16 MB PDF a 22 MB message. A PDF rendered
-  under `PRINT` is named with the fix. Above 15 MB it prints a warning. Both numbers are in
+  under `PRINT` is named with the fix. Above 15 MB it warns. Both numbers are in
   `Config`.
 - **The PDF's Author, Subject and Keywords come from the document's facts**: the firm, then
   the campaign with the department and dates, then the department and issue. It carries no
@@ -197,8 +197,8 @@ that overflows it is clipped, never carried onto another panel, and
 **The PDF is print-ready but RGB.** Each side carries 1/8in of bleed, with each panel's colour
 or picture running into it, and crop and registration marks outside that. A panel whose copy
 sits nearer the trim than the fold's safe distance raises. So does an image with fewer than
-half the pixels it needs to print at 300 dpi, and one short of the full count prints a
-warning. Converting colour for a press is the print house's step, and the lint pass says so
+half the pixels it needs to print at 300 dpi, and one short of the full count warns
+with a `PrintQualityWarning`. Converting colour for a press is the print house's step, and the lint pass says so
 once per brochure.
 
 The editorial pieces are shared, so a report can use them too: `PullQuote`,
@@ -815,7 +815,7 @@ These are the failures that are invisible until a reader reports them, so they a
 rather than documented:
 
 - **The 102 KB Gmail clipping limit.** `render()` raises `SizeError` above it and warns above
-  90 KB. Both thresholds are configurable, so a non-Gmail channel can raise them deliberately
+  90 KB with a `SizeWarning`. Both thresholds are configurable, so a non-Gmail channel can raise them deliberately
   rather than by commenting out the check.
 - **Validation at construction, not at render.** Models and components raise `ValidationError`
   from `__init__`; by the time you call `.render()`, the data shape is already known good. The
@@ -878,11 +878,17 @@ Every judgment-call number is a field on one frozen `Config`:
 from svc.config import Config, get_config, set_config, config_override
 
 get_config().inline_image_limit_kb               # what is actually in force
-set_config(Config(inline_image_limit_kb=64))     # install process-wide
-set_config(Config.from_env())                    # or read PYHERMES_*
-with config_override(retry_max_attempts=1):      # scoped, restores on exit
+set_config(Config.from_env())                    # the process-wide default, at startup
+with config_override(retry_max_attempts=1):      # this thread or task only
     ...
+Email(facts, config=Config(size_limit_kb=500))   # this document only
+build_message(email, sender=..., to=..., config=Config(attachment_limit_kb=10240))
 ```
+
+Three levels, and the innermost wins: a document's or a message's own `config`, then the
+context's `config_override`, then the default `set_config` installed. An override belongs to
+the thread or asyncio task that entered it, so two renders in one service cannot read each
+other's limits; a thread you start begins from the default, so hand it a `Config` explicitly.
 
 The line it draws is between **a judgment call and a fact about the world**. The inline-image
 cap, the retry ladder and the request timeout were picked by someone, and a picked number you
@@ -894,6 +900,17 @@ code wrong about its environment, so they stay literals.
 Nothing reads the environment on import; `from_env()` is explicit. Consumers call
 `get_config()` at use time, so an override installed after import is still seen. An explicit
 argument always beats the config.
+
+**A house template overlays the packaged ones.** Pass `template_overlay=` a directory (or
+several) to `Email`, `EmailBuilder`, `PagedDocument` or `Brochure`, and a file there at a
+packaged path, such as `regions/footer.html`, replaces that one template while every other still
+comes from the package. A `Component` of your own sets `template_path` to a file in it.
+
+**A soft limit is a warning, never a line on stdout.** The library prints nothing. Crossing a
+size threshold raises a `SizeWarning`, and an image short of its print resolution a
+`PrintQualityWarning`; both are `UserWarning`s pointing at your own call, so
+`warnings.filterwarnings("error", category=SizeWarning)` makes one fatal and
+`logging.captureWarnings(True)` sends them to your logger. The hard limits still raise.
 
 ## Development
 
