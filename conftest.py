@@ -15,6 +15,9 @@ mode, so this file existing at the root is the whole mechanism.
 
 import pytest
 
+#: Fails a skip that names an installed extra, under PYHERMES_REQUIRE_EXTRAS (#239).
+pytest_plugins = ["qa.require_extras"]
+
 
 def pytest_addoption(parser: pytest.Parser) -> None:
     """

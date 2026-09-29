@@ -189,8 +189,8 @@ class TestTheDefaultsAreDecisions:
 
 
 def test_print_keeps_the_pixels_and_screen_caps_them():
-    pytest.importorskip("weasyprint")
-    pypdfium2 = pytest.importorskip("pypdfium2")
+    pytest.importorskip("weasyprint", reason='laying out the PDF is the "[pdf]" extra')
+    pypdfium2 = pytest.importorskip("pypdfium2", reason='reading it back is the "[qa]" extra')
     import pypdfium2.raw as pdfium_raw
 
     from pyhermes.builder import FullWidth

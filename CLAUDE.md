@@ -44,9 +44,10 @@ python -m qa.preview a4_portrait --lint --screenshot --open    # a paged documen
 python -m qa.preview tri_fold_letter --lint --screenshot       # a brochure, one image a side
 ```
 
-CI runs the first four on every PR, plus `screenshots`, `pdf`, `data` and `wheel` jobs. `[dev]`
-alone must stay free of every extra: each extra's tests skip rather than fail, and that is what
-proves each is optional.
+CI runs the first four on every PR, plus `screenshots`, `pdf`, `data`, `all-extras` and `wheel`
+jobs. `[dev]` alone must stay free of every extra: each extra's tests skip rather than fail, and
+that is what proves each is optional. `all-extras` installs them all and fails on any skip that
+names one, so no extra-gated test can run nowhere (#239, `qa-harness.md`).
 
 **To eyeball a change, run `preview`.** A screenshot is the only thing that catches a
 layout regression; see standing rule 3.
