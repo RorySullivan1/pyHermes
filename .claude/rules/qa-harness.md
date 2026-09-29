@@ -1081,3 +1081,38 @@ heads and units. It uses every table word the epic added. `tests/test_quant_fixt
 photographs each sheet too, and CI's `pdf` job runs it. `a4_long_table.build_grouped()` is the
 other half: the same engineered boundaries, re-measured under the tiered head, with its own
 `GROUPED_PARAGRAPHS`.
+
+## Every extra-gated test runs somewhere (#239)
+
+Each extras job installed a different subset and ran a hand-kept module list, and `check`
+installs none. So a test needing two extras no one job paired, or a module left off a list,
+skipped everywhere and green: three had never run in CI (the factsheet's two-sheet layout
+needs `[pdf]` and `[charts]` together; `test_chromium_puts_the_points_in_one_column` and
+`test_it_captures_through_the_same_runner` were on no browser job's list). `addopts = "-q"`
+hid the skip reasons, so nothing in a log showed it.
+
+- **`all-extras` installs every extra and every system library** (Pango, Cairo,
+  HarfBuzz-Subset, fonts, Chromium) and runs the whole suite with `-rs`, which prints every
+  skip that remains and its reason.
+- **`PYHERMES_REQUIRE_EXTRAS=1` turns a skip naming an extra into a failure.** The plugin is
+  `qa/require_extras.py`, registered in the root conftest; its test is the reason string, so
+  every skip names its extra in the house form (`the "[pdf]" extra`, `pyhermes[data]`).
+  `tests/test_require_extras.py` runs a throwaway suite with and without the variable, and
+  checks the pattern covers every extra `pyproject.toml` declares.
+- **It catches a skip at every stage.** A `skipif` mark skips at setup and `pytest.skip` in
+  the body; both come through `pytest_runtest_makereport`. A module-level `importorskip`
+  (`test_frames.py` without pandas) skips the whole module at *collection*, which that hook
+  never sees; the first draft missed it, found by a `[dev]`-only scratch run, and
+  `pytest_make_collect_report` now covers it. A collection failure stops pytest before any
+  test runs, so the job passes `--continue-on-collection-errors`: every test still reports
+  and the run still fails. A setup or collection failure shows as an error, not a failure.
+- **A new extra-gated test needs no list edit.** The `pdf`, `data` and `screenshots` jobs
+  keep their lists to prove each extra works with only its neighbours; a module missing
+  from one is still run by `all-extras`.
+- **Measured here**: with every extra installed, the three orphans pass, and the only skips
+  left are six `test_sizing.py` tokens "resolved in Python, never emitted", which name no
+  extra and stay skips. In a `[dev]`-only venv the variable fails `test_frames.py` and both
+  Chromium decimal tests by name; without it the whole suite is green.
+- **Two reasons were untagged and now name their extra**: `test_math.py`'s bare
+  `importorskip("weasyprint")` and `importorskip("pypdfium2")`, whose default reason names a
+  module, not an install.

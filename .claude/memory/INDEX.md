@@ -56,8 +56,8 @@
   #167 named only the epic and left all nine children open; #168, #191 and #192 named every
   issue and closed every one. One `Closes #N` per sub-issue, and check that summary after
   any epic merge.
-- **Four optional extras:** `[pdf]`, `[qa]`, `[data]`, `[charts]`. `[dev]` alone stays free of all
-  four; their tests skip, and CI's `pdf` job must name every PDF-reading test module.
+- **Five optional extras:** `[pdf]`, `[qa]`, `[data]`, `[charts]`, `[math]`. `[dev]` alone stays free of
+  them; CI's `all-extras` fails on any skip naming one (#239), so a skip reason must name its extra.
 - **CLAUDE.md is a router**; the detail is in path-scoped `.claude/rules/*.md`, which load
   only when a matching file is read. Add reasoning there, not back into the router.
 - **Factory hand-off for #140 is in `.claude/README.md`** — what claudeBrain should take,
