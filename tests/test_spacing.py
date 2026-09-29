@@ -15,10 +15,8 @@ from typing import Any
 
 import pytest
 
-from qa.fixtures import all_brochure_fixtures, all_fixtures, all_paged_fixtures, letter_dense
-from qa.fixtures._png import solid_png
-from svc.brochure import Brochure, Panel
-from svc.builder import (
+from pyhermes.brochure import Brochure, Panel
+from pyhermes.builder import (
     COMPACT_SIZES,
     DENSE_SIZES,
     STANDARD_SIZES,
@@ -41,16 +39,16 @@ from svc.builder import (
     ThreeColumn,
     TwoColumn,
 )
-from svc.builder import engine as engine_module
-from svc.builder.components import Component
-from svc.builder.containers import Container, section_spacing_tokens
-from svc.builder.document import Document
-from svc.builder.engine import Renderer, TemplateEngine
-from svc.builder.enums import CardOrientation, SizeTheme
-from svc.builder.exceptions import ValidationError
-from svc.builder.images import EmailImage
-from svc.builder.models import Card, KpiItem, NumberedItem, TableRow
-from svc.builder.sizing import (
+from pyhermes.builder import engine as engine_module
+from pyhermes.builder.components import Component
+from pyhermes.builder.containers import Container, section_spacing_tokens
+from pyhermes.builder.document import Document
+from pyhermes.builder.engine import Renderer, TemplateEngine
+from pyhermes.builder.enums import CardOrientation, SizeTheme
+from pyhermes.builder.exceptions import ValidationError
+from pyhermes.builder.images import EmailImage
+from pyhermes.builder.models import Card, KpiItem, NumberedItem, TableRow
+from pyhermes.builder.sizing import (
     LETTER_LANDSCAPE,
     LETTER_PORTRAIT,
     TOKEN_LAYERS,
@@ -58,9 +56,11 @@ from svc.builder.sizing import (
     WIDTH_TOKENS,
     SizeScheme,
 )
-from svc.config import Config, config_override
-from svc.document import Page, PagedDocument, paged_medium
-from svc.pdf import available
+from pyhermes.config import Config, config_override
+from pyhermes.document import Page, PagedDocument, paged_medium
+from pyhermes.pdf import available
+from qa.fixtures import all_brochure_fixtures, all_fixtures, all_paged_fixtures, letter_dense
+from qa.fixtures._png import solid_png
 
 requires_pdf = pytest.mark.skipif(
     not available() or importlib.util.find_spec("pypdfium2") is None,
@@ -76,7 +76,7 @@ HOUSE = COMPACT_SIZES.derive(space={"content_top": 8}, component={"table_cell_pa
 SENTINEL = 7.25
 MARK = f"{SENTINEL}px"
 
-TEMPLATES = Path(__file__).resolve().parent.parent / "svc" / "builder" / "templates"
+TEMPLATES = Path(__file__).resolve().parent.parent / "pyhermes" / "builder" / "templates"
 
 
 def _panels(count: int = 6) -> list[Panel]:
@@ -94,7 +94,7 @@ def _panels(count: int = 6) -> list[Panel]:
 class TestDenseIsAPrintDensity:
     def test_it_is_a_shipped_density(self) -> None:
         assert SizeTheme.DENSE == "dense"
-        from svc.builder.sizing import SIZE_SCHEMES
+        from pyhermes.builder.sizing import SIZE_SCHEMES
 
         assert SIZE_SCHEMES[SizeTheme.DENSE] is DENSE_SIZES
 
@@ -117,7 +117,7 @@ class TestDenseIsAPrintDensity:
 
     def test_plain_html_takes_it(self) -> None:
         # The gate is the email medium's: plain HTML is never read in Outlook.
-        from svc.builder.models import EmailMetadata
+        from pyhermes.builder.models import EmailMetadata
 
         Document(EmailMetadata(**EMAIL_FACTS, size_theme="dense"))
 
@@ -134,7 +134,7 @@ class TestTheDenseFixture:
 
     @requires_pdf
     def test_it_lays_out_to_its_sheets(self) -> None:
-        from svc.pdf import page_count
+        from pyhermes.pdf import page_count
 
         assert page_count(letter_dense.build()) == letter_dense.SHEETS == 2
 
@@ -191,7 +191,7 @@ class TestACustomScheme:
             COMPACT_SIZES.derive(space={"content_top": 0})
 
     def test_it_is_still_not_in_the_skeleton_context(self) -> None:
-        from svc.builder.models import EmailMetadata
+        from pyhermes.builder.models import EmailMetadata
 
         assert "size_theme" not in EmailMetadata(size_theme=HOUSE).to_dict()
 
@@ -241,7 +241,7 @@ class TestSpacingNamesTokens:
         assert all(len(layers) == 1 for layers in TOKEN_LAYERS.values())
 
     def test_an_ambiguous_name_is_refused(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        from svc.builder import sizing
+        from pyhermes.builder import sizing
 
         monkeypatch.setitem(sizing.TOKEN_LAYERS, "gutter", ("space", "frame"))
         with pytest.raises(ValidationError, match="ambiguous"):
@@ -541,7 +541,7 @@ def _render(cls: type, spacing: Any, scheme: SizeScheme = STANDARD_SIZES) -> str
 
 
 def test_every_public_component_and_container_is_covered() -> None:
-    import svc.builder as api
+    import pyhermes.builder as api
 
     public = {
         obj
@@ -603,7 +603,7 @@ def test_every_class_takes_spacing_as_a_keyword(cls: type) -> None:
 def test_a_tightened_table_repeats_its_header_on_every_sheet() -> None:
     import pypdfium2
 
-    from svc.pdf import render_pdf
+    from pyhermes.pdf import render_pdf
 
     headers = ["Issue", "Sector", "Weight"]
     rows = [TableRow([f"Bond {n:03d}", "Rates", f"{n / 10:.1f}"]) for n in range(1, 121)]

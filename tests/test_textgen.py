@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import pytest
 
-from svc.builder.textgen import format_link, html_to_text
+from pyhermes.builder.textgen import format_link, html_to_text
 
 
 class TestTheBlessedSet:
@@ -217,7 +217,7 @@ class TestTheDocstringCarriesTheDecision:
         closed" has to live where the next contributor reads it — not only in
         an issue they will never open.
         """
-        from svc.builder import textgen
+        from pyhermes.builder import textgen
 
         assert textgen.__doc__ is not None
         assert "refuses to grow" in textgen.__doc__
@@ -233,7 +233,7 @@ class TestItChangesNothingElse:
         import ast
         import pathlib
 
-        from svc.builder import textgen
+        from pyhermes.builder import textgen
 
         source = pathlib.Path(textgen.__file__).read_text()
         imported = {
@@ -241,4 +241,4 @@ class TestItChangesNothingElse:
             for node in ast.walk(ast.parse(source))
             if isinstance(node, ast.ImportFrom) and node.module
         }
-        assert not any(name.startswith("svc") for name in imported), imported
+        assert not any(name.startswith("pyhermes") for name in imported), imported

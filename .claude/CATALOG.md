@@ -48,7 +48,7 @@
 - outlook-html-designer — HTML email designer-builder specialized for Microsoft Outlook — produces complete, Outlook-safe … -> agents/outlook-html-designer.md
 - presentation-architect — Objective presentation-flow brain — designs how a communication artifact is structured to land its … -> agents/presentation-architect.md
 - prose-auditor — Comment-and-docstring auditor — reviews code prose against the agreed scope discipline … -> agents/prose-auditor.md
-- python-developer — Senior Python engineer for this repo's `pyhermes` package (the `svc/` HTML-email builder). Use … -> agents/python-developer.md
+- python-developer — Senior Python engineer for this repo's `pyhermes` package (the HTML-email builder). Use … -> agents/python-developer.md
 - software-architect — Objective software-architecture brain — designs how a project is structured to serve its objective, … -> agents/software-architect.md
 - token-manager — Delegate verbose or high-volume operations here so the bulk stays out of the main conversation and … -> agents/token-manager.md
 

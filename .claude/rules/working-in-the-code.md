@@ -1,6 +1,6 @@
 ---
 paths:
-  - "svc/**/*"
+  - "pyhermes/**/*"
   - "qa/**/*"
   - "tests/**/*"
 ---
@@ -10,7 +10,10 @@ paths:
 ## Directory map
 
 ```
-svc/
+pyhermes/
+├── py.typed            ← PEP 561 marker, empty: without it a consumer's mypy types every
+│                         symbol as Any. Deleting it, or a packaging change that drops it,
+│                         fails `python -m qa.distribution` in CI's `wheel` job (#243)
 ├── config.py           ← the tunable numbers, in one frozen dataclass
 ├── builder/            ← the shared kit: everything every medium has
 │   ├── __init__.py     — public API surface (re-exports everything below)
@@ -110,6 +113,8 @@ qa/                     ← QA harness (epic #54); NOT shipped in the wheel
 │                        lint_email(), size_report(), SOURCES, DEFERRED_RULES
 ├── preview.py         — the CLI that composes the rest: `python -m qa.preview <target>`
 │                        [--lint] [--screenshot] [--open] [--list]
+├── distribution.py    — checks the built wheel (and sdist) a consumer installs, not the
+│                        tree: `python -m qa.distribution dist/` (#237)
 └── fixtures/          — the gallery: minimal, kitchen_sink, image_matrix, minimal_banner,
                         minimal_footer, slate_theme, compact_size, spacious_size,
                         + all_fixtures()
@@ -126,7 +131,7 @@ tests/                  — pytest unit suite (validation, error paths, size lim
 These are not conventions to remember — each has teeth, and the teeth are named:
 
 1. **A new component joins `kitchen_sink()`.** Not by good intentions: a completeness test
-   introspects every public `Component` subclass exported from `svc.builder` and fails when
+   introspects every public `Component` subclass exported from `pyhermes.builder` and fails when
    one never appears in the fixture. The same holds for a new `EmailMetadata` field, which is
    additionally checked to differ from its own default — a field left at its default is one
    the golden cannot pin. Exemptions are named in `DEPRECATED_COMPONENTS`, with a reason.
@@ -216,13 +221,13 @@ These are not conventions to remember — each has teeth, and the teeth are name
 
 ## The service layer's two seams, stated in full
 
-Moved out of `svc/__init__.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
+Moved out of `pyhermes/__init__.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
 
 ```
 pyHermes Service Layer
 ======================
 
-svc/
+pyhermes/
 ├── builder/     — OO email assembly (Jinja2): HTML + an asset manifest.
 ├── delivery/    — transport-neutral MIME assembly: HTML + manifest → message.
 ├── gmail/       — Gmail send adapter: message → the wire.
@@ -239,10 +244,10 @@ dependency on any provider SDK.
 
 Usage::
 
-    from svc.builder import CardGroup, EmailBuilder, FullWidth
-    from svc.builder.models import Card, KpiItem
-    from svc.delivery import build_message, save_eml
-    from svc.gmail import GoogleApiTransport, send_message
+    from pyhermes.builder import CardGroup, EmailBuilder, FullWidth
+    from pyhermes.builder.models import Card, KpiItem
+    from pyhermes.delivery import build_message, save_eml
+    from pyhermes.gmail import GoogleApiTransport, send_message
 ```
 
 11. **Prose is bounded, and the bound is checked.** A file states its purpose; a class may
@@ -288,3 +293,48 @@ to describe a public constant. Making the code fit that measurement would have d
 correct API documentation; the fix was a new scope in the measurer (#138). When a check
 fires on code that looks right, check the check.
 
+## The package a consumer installs (#237)
+
+Nine epics of rendering work had never shaped the package for the person who runs
+`pip install`. The checks read the **built artefacts**, never the tree, because every
+earlier check passed on a tree that would have shipped wrong.
+
+- **`py.typed` ships in the wheel (#243).** Without it a consumer's mypy reported "missing
+  library stubs or py.typed marker" and typed every symbol as `Any`, so no construction-time
+  contract was visible at a call site. CI type-checks a two-line consumer with `--strict`
+  against the installed wheel; deleting the marker from that install turns it into the
+  missing-stubs error and a revealed `Any`, measured.
+- **The sdist is the library alone (#244).** Hatchling's default sdist takes every file git
+  does not ignore, which here is 2.2 MB of `.claude/`, 4.8 MB of `tests/` and its goldens, and
+  `qa/`, `examples/`, `drafts/`, `docs/`. `only-include` names four roots, and
+  `qa/distribution.py` fails CI on any other. Two entries it allows are hatchling's own:
+  `PKG-INFO`, and a `.gitignore` it adds whatever `exclude` says (tried). Widening
+  `only-include` to `qa` and `tests` was checked to fail it.
+- **The metadata is honest (#244).** The licence is MIT, chosen by the owner, as an SPDX
+  `license` expression (PEP 639) with `license-files`, and **no licence classifier**, which
+  the expression supersedes. `twine check --strict` runs on both artefacts. A `Homepage` URL
+  label is what `pip show` prints as the home page; pip 24.0 printed no
+  `License-Expression` where 26.2 does, so CI upgrades pip before `pip show --verbose`.
+- **Both artefacts render the same email**, each installed into its own venv with no source
+  tree, from one smoke script run in a loop.
+- **CI runs every Python the metadata admits (#245):** `check` on 3.11, 3.12, 3.13 and 3.14,
+  and `data` (the cheapest extras job) on 3.11 as well as 3.13, so the pandas, matplotlib and
+  numpy pins are proven on the floor. Before this the comment said "the current release" of a
+  matrix that stopped at 3.13. Run here before the change: all four pass `check` (3.14 as
+  3.14.0rc2), and `[data,charts,math]` installs and passes on 3.11. A red Python is a finding
+  to fix, or to file with `requires-python` capped, never a reason to narrow the list.
+- **The import root is `pyhermes`, decided in #248.** The distribution was `pyhermes` and
+  the import was `svc`, a generic top-level name: two wheels that ship a top-level `svc/`
+  overwrite each other's files in site-packages, `pip check` sees nothing, and a reader
+  had to learn the import from the README. The cost was one PR of mechanical rewrite, 1,349
+  references in 187 files, with the wheel and sdist checks above proving it shipped whole.
+  Kept on the other side: the session logs, which record what was true when written.
+- **`svc` is a one-release shim, not a second copy.** `svc/__init__.py` warns once with a
+  `DeprecationWarning` and puts a meta-path finder in front that resolves `svc.X` to the
+  module `pyhermes.X` already is, so a class imported under either name is one class. The
+  trap it had to handle: the import system overwrites an aliased module's `__spec__` with the
+  alias's, which is no package, and `importlib.resources` then refused the templates; the
+  loader puts the real spec back. The shim ships in both artefacts, which keeps the
+  collision risk for that one release, and `test_svc_shim.py` fails if anything in the repo
+  imports it. **Delete `svc/` in the next release**, with its `packages`, `only-include`,
+  mypy and prose-budget entries and `SHIM` in `qa/distribution.py`.

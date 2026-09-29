@@ -12,8 +12,8 @@ from decimal import Decimal
 
 import pytest
 
-from svc.builder import formats
-from svc.builder.formats import bps, compact, delta, displays_zero, money, number, pct
+from pyhermes.builder import formats
+from pyhermes.builder.formats import bps, compact, delta, displays_zero, money, number, pct
 
 
 @pytest.mark.parametrize(
@@ -193,11 +193,11 @@ def test_it_is_a_pure_module_with_no_builder_imports():
     }
     relative = [n for n in ast.walk(tree) if isinstance(n, ast.ImportFrom) and n.level]
     assert not relative, "formats imports from its own package"
-    assert not any(name.startswith("svc") for name in imported), imported
+    assert not any(name.startswith("pyhermes") for name in imported), imported
     assert imported <= {"__future__", "numbers", "decimal", "typing"}, imported
 
 
 def test_it_is_exported_from_the_package():
-    import svc.builder
+    import pyhermes.builder
 
-    assert svc.builder.formats is formats
+    assert pyhermes.builder.formats is formats

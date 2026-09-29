@@ -19,8 +19,8 @@ constructing one — the components, the colours, the density and the typefaces 
 either way.
 
 ```python
-from svc.builder import Banner, EmailBuilder, FullWidth, CardGroup, TextBlock
-from svc.builder.models import KpiItem
+from pyhermes.builder import Banner, EmailBuilder, FullWidth, CardGroup, TextBlock
+from pyhermes.builder.models import KpiItem
 
 email = (
     EmailBuilder()
@@ -61,9 +61,9 @@ margin of every page, a real break before the appendix, and a closing disclosure
 contents sheet, footnotes and cross-references are [below](#numbers-notes-contents-and-references)):
 
 ```python
-from svc.builder import FullWidth, TextBlock
-from svc.document import BackMatter, Cover, Page, PagedDocument, RunningFooter
-from svc.pdf import save_pdf
+from pyhermes.builder import FullWidth, TextBlock
+from pyhermes.document import BackMatter, Cover, Page, PagedDocument, RunningFooter
+from pyhermes.pdf import save_pdf
 
 document = PagedDocument(
     {
@@ -84,7 +84,7 @@ save_pdf(document, "review.pdf")   # ...and so is the PDF  (needs the [pdf] extr
 ```
 
 `A4_PORTRAIT` is the default; `paged_medium(SLIDE_16_9)` and the Letter presets are in
-`svc.builder.sizing`. Each preset carries a print margin: 20mm on A4, 0.75in on Letter. The
+`pyhermes.builder.sizing`. Each preset carries a print margin: 20mm on A4, 0.75in on Letter. The
 running header and footer print inside that margin. For a margin of your own, pass
 `PageFormat(width, height, margin=PageMargin(...))` to `paged_medium`. A `Page` **flattens**
 in the email medium — one tree, two outputs — so the same sections can go to both.
@@ -105,11 +105,11 @@ A cover email and the report behind it go out as one message. `pdf_attachment` r
 report for a screen and hands it to `build_message` as a file:
 
 ```python
-from svc.builder import EmailBuilder, FullWidth, TextBlock
-from svc.builder.sizing import LETTER_LANDSCAPE
-from svc.delivery import build_message, save_eml
-from svc.document import ContentsPage, Cover, PagedDocument, paged_medium
-from svc.pdf import pdf_attachment
+from pyhermes.builder import EmailBuilder, FullWidth, TextBlock
+from pyhermes.builder.sizing import LETTER_LANDSCAPE
+from pyhermes.delivery import build_message, save_eml
+from pyhermes.document import ContentsPage, Cover, PagedDocument, paged_medium
+from pyhermes.pdf import pdf_attachment
 
 facts = {"firm_name": "Hermes Research", "campaign_name": "Global Rates Review"}
 
@@ -135,7 +135,7 @@ message = build_message(
     to="clients@example.com",
     attachments=[pdf_attachment(report, "global-rates-review.pdf")],  # needs the [pdf] extra
 )
-save_eml(message, "review.eml")   # a dry run; send it through svc.gmail or svc.outlook as before
+save_eml(message, "review.eml")   # a dry run; send it through pyhermes.gmail or pyhermes.outlook as before
 ```
 
 The message becomes a `multipart/mixed`: the email first, unchanged, and the PDF after it as
@@ -163,9 +163,9 @@ meets them, front cover first; the fold decides which side of the sheet each one
 and where:
 
 ```python
-from svc.brochure import TRI_FOLD_LETTER, Brochure, Panel
-from svc.builder import FullWidth, PullQuote, TextBlock
-from svc.pdf import save_pdf
+from pyhermes.brochure import TRI_FOLD_LETTER, Brochure, Panel
+from pyhermes.builder import FullWidth, PullQuote, TextBlock
+from pyhermes.pdf import save_pdf
 
 
 def face(title, copy):
@@ -192,7 +192,7 @@ Four folds ship: `BI_FOLD_LETTER`, `TRI_FOLD_LETTER` (a letter fold, whose insid
 1/8in narrower so it closes flat), `Z_FOLD_LETTER` and `GATE_FOLD_A4`. A wrong panel count
 raises at construction and lists every face in reader order. Each panel is a fixed box: copy
 that overflows it is clipped, never carried onto another panel, and
-`svc.brochure.overflowing_panels(brochure)` names any that did.
+`pyhermes.brochure.overflowing_panels(brochure)` names any that did.
 
 **The PDF is print-ready but RGB.** Each side carries 1/8in of bleed, with each panel's colour
 or picture running into it, and crop and registration marks outside that. A panel whose copy
@@ -208,7 +208,9 @@ degrades in an email: the drop cap and the float disappear, and the columns beco
 
 ## Install
 
-Requires Python 3.11+. Not published to PyPI — install from a clone:
+Requires Python 3.11+. Not published to PyPI — install from a clone. The distribution and the
+import are both `pyhermes` (`from pyhermes.builder import EmailBuilder`); the old `svc` import
+still works for one release and warns:
 
 ```bash
 pip install -e ".[dev]"     # editable, plus pytest / ruff / mypy
@@ -224,6 +226,11 @@ rather than claiming it: their tests *skip* when the extra is absent, so `pip in
 `pytest` run anywhere. `[pdf]` needs Pango and Cairo from the system, which is exactly why
 it is not in the floor.
 
+`python -m build` makes a wheel and an sdist, and both carry the library alone: the sdist
+holds `pyhermes/`, `pyproject.toml`, this README and the [MIT licence](LICENSE), and nothing from
+the tests, the QA harness or the tooling. The wheel ships a `py.typed` marker, so your type
+checker reads pyHermes's annotations. CI builds, checks and installs both on every change.
+
 The `dev` extra also pulls `requests` and `httplib2`. Those are the HTTP transports the send
 adapters *document*, not ones they use: the adapters import neither, and an AST-parsing test
 in each keeps it that way. They exist so retry classification can be tested against the real
@@ -236,7 +243,7 @@ Building is the bulk of the product, but the chain is complete. Assembly is tran
 and pure; the adapters transmit.
 
 ```python
-from svc.delivery import build_message, save_eml
+from pyhermes.delivery import build_message, save_eml
 
 message = build_message(
     email,
@@ -280,7 +287,7 @@ To actually send, bring an authorized transport:
 
 ```python
 from googleapiclient.discovery import build       # your dependency, not pyHermes'
-from svc.gmail import GoogleApiTransport, send_message
+from pyhermes.gmail import GoogleApiTransport, send_message
 
 service = build("gmail", "v1", credentials=creds)  # you authenticate
 message_id = send_message(message, transport=GoogleApiTransport(service))
@@ -288,7 +295,7 @@ message_id = send_message(message, transport=GoogleApiTransport(service))
 
 ```python
 import requests                                    # your dependency, not pyHermes'
-from svc.outlook import GraphApiTransport, send_message
+from pyhermes.outlook import GraphApiTransport, send_message
 
 session = requests.Session()
 session.headers["Authorization"] = f"Bearer {token}"
@@ -309,10 +316,10 @@ Every email is **skeleton ← regions ← containers ← components**, and the r
 
 | Layer | What it owns | Where |
 |---|---|---|
-| **Skeleton** | the whole page — head, preheader, wrapper — with four holes: `{{ header_bar_html }}`, `{{ banner_html }}`, `{{ sections_html }}`, `{{ footer_html }}` | `svc/builder/templates/base.html` |
-| **Regions** | the strip (`Header`, `EmptyHeader`), the masthead (`Banner`, `MinimalBanner`) and the close (`Footer`). (The *body* region is the ordered section list — not a class) | `svc/builder/regions.py` |
-| **Containers** | layout geometry only: `FullWidth`, `TwoColumn`, `ThreeColumn` | `svc/builder/containers.py` |
-| **Components** | content: `CardGroup`, `DataTable`, `ChartBlock`, `ImageBlock`, `TextBlock`, `NumberedList`, `AuthorBlock`, `ContactBlock` | `svc/builder/components.py` |
+| **Skeleton** | the whole page — head, preheader, wrapper — with four holes: `{{ header_bar_html }}`, `{{ banner_html }}`, `{{ sections_html }}`, `{{ footer_html }}` | `pyhermes/builder/templates/base.html` |
+| **Regions** | the strip (`Header`, `EmptyHeader`), the masthead (`Banner`, `MinimalBanner`) and the close (`Footer`). (The *body* region is the ordered section list — not a class) | `pyhermes/builder/regions.py` |
+| **Containers** | layout geometry only: `FullWidth`, `TwoColumn`, `ThreeColumn` | `pyhermes/builder/containers.py` |
+| **Components** | content: `CardGroup`, `DataTable`, `ChartBlock`, `ImageBlock`, `TextBlock`, `NumberedList`, `AuthorBlock`, `ContactBlock` | `pyhermes/builder/components.py` |
 
 A container holds components, renders each, and embeds the fragments into its own `<tr>`
 block sized to the 680px outer table. Each region renders into exactly one slot, and `Email`
@@ -325,7 +332,7 @@ time — a region presents them, it cannot contradict them. Swapping the header 
 argument, not a template fork:
 
 ```python
-from svc.builder import EmailBuilder, MinimalBanner
+from pyhermes.builder import EmailBuilder, MinimalBanner
 
 (EmailBuilder()
     .metadata({...})
@@ -337,7 +344,7 @@ The footer always renders its closing block — see **Footer** below for what go
 contact call-to-action, add a `ContactBlock` body section instead of putting it in the footer:
 
 ```python
-from svc.builder import EmailBuilder, FullWidth, ContactBlock
+from pyhermes.builder import EmailBuilder, FullWidth, ContactBlock
 
 (EmailBuilder()
     .metadata({...})
@@ -406,7 +413,7 @@ The strip at the very top of the email: one band of free-form copy, above the ma
 text is an email-level fact; the region owns how the box presents it.
 
 ```python
-from svc.builder import EmptyHeader, Header
+from pyhermes.builder import EmptyHeader, Header
 
 EmailBuilder().metadata({..., "header_disclaimer": "For illustrative purposes."})
     .header(Header(align="left", background_color="#EEF2F5", text_color="#1B1B1B"))
@@ -432,8 +439,8 @@ The masthead is a region you pass, not a template you fork. Omit it and one is b
 metadata; pass a `Banner` and it renders instead:
 
 ```python
-from svc.builder import Banner, BannerPalette, MinimalBanner, Rgba
-from svc.builder.images import EmailImage
+from pyhermes.builder import Banner, BannerPalette, MinimalBanner, Rgba
+from pyhermes.builder.images import EmailImage
 
 Banner(
     title="Q3 Outlook",                      # unset → firm_name
@@ -479,8 +486,8 @@ The closing block, and the header's counterpart: it takes the **same three box f
 the email's two outer boxes cost one API to learn.
 
 ```python
-from svc.builder import Footer
-from svc.builder.models import FooterLink, LinkRow
+from pyhermes.builder import Footer
+from pyhermes.builder.models import FooterLink, LinkRow
 
 Footer(
     align="left",                      # the shared surface, as on Header
@@ -548,8 +555,8 @@ A research document is navigated by its apparatus, and pyHermes numbers all of i
 once — so the email, the PDF and the plain-text part agree:
 
 ```python
-from svc.builder import Contents, DataTable, FullWidth, TextBlock
-from svc.document import ContentsPage, PagedDocument, RunningHeader
+from pyhermes.builder import Contents, DataTable, FullWidth, TextBlock
+from pyhermes.document import ContentsPage, PagedDocument, RunningHeader
 
 document = PagedDocument(
     facts,
@@ -593,7 +600,7 @@ Python's, which is why the text part can carry it.
 Every colour and shadow comes from one validated `Theme`, chosen with one metadata field:
 
 ```python
-from svc.builder import DEFAULT_THEME, EmailBuilder
+from pyhermes.builder import DEFAULT_THEME, EmailBuilder
 
 EmailBuilder().metadata({..., "theme": "slate"})                 # a curated preset
 EmailBuilder().metadata({..., "theme": DEFAULT_THEME.derive(     # or your own
@@ -653,7 +660,7 @@ which would render one way wide and another collapsed.
 The third axis, and the same shape as the other two:
 
 ```python
-from svc.builder import DEFAULT_FONTS, EmailBuilder, FontStack
+from pyhermes.builder import DEFAULT_FONTS, EmailBuilder, FontStack
 
 EmailBuilder().metadata({..., "font_theme": "modern"})              # or "classic"
 EmailBuilder().metadata({..., "font_theme": DEFAULT_FONTS.derive(   # or your own
@@ -712,8 +719,8 @@ unit once, a column formats and tones the raw figures it is given, and the figur
 the point:
 
 ```python
-from svc.builder import ColumnGroup, HeatScale
-from svc.builder.formats import pct
+from pyhermes.builder import ColumnGroup, HeatScale
+from pyhermes.builder.formats import pct
 
 ret = lambda v: pct(v, 1, sign=True)
 DataTable(
@@ -741,11 +748,11 @@ DataTable(
 
 ## Figures as numbers
 
-Pass numbers, not strings. `svc.builder.formats` formats a figure once, and both the HTML and
+Pass numbers, not strings. `pyhermes.builder.formats` formats a figure once, and both the HTML and
 the plain-text part read the same string:
 
 ```python
-from svc.builder.formats import bps, compact, money, pct
+from pyhermes.builder.formats import bps, compact, money, pct
 
 pct(0.0142, sign=True)   # '+1.42%'
 bps(0.0006)              # '+6 bps'
@@ -763,8 +770,8 @@ otherwise, and a figure shown as zero is never coloured:
 
 ```python
 from functools import partial
-from svc.builder import Tone
-from svc.builder.models import Cell, KpiItem, TableRow
+from pyhermes.builder import Tone
+from pyhermes.builder.models import Cell, KpiItem, TableRow
 
 ret = partial(pct, dp=1, sign=True)
 TableRow(["Momentum", Cell.from_number(-0.004, ret)])        # '-0.4%', negative
@@ -773,11 +780,11 @@ KpiItem("VIX", "14.32", sublabel="-2.18 pts", tone=Tone.POSITIVE)  # down is goo
 
 An explicit `color=` still wins over a tone.
 
-**A DataFrame or a matplotlib Figure can be passed directly**, through `svc.data`
+**A DataFrame or a matplotlib Figure can be passed directly**, through `pyhermes.data`
 (`[data]` and `[charts]` above):
 
 ```python
-from svc.data import chart_from_figure, table_from_frame
+from pyhermes.data import chart_from_figure, table_from_frame
 
 table = table_from_frame(df, formats={"1M": ret}, tones={"1M": "auto"},
                          total_row=True, source="Hermes Research")
@@ -789,12 +796,12 @@ The frame's dtypes decide each column's kind, and a named index becomes the row-
 column. The chart is rendered at twice its display width and attached by `cid:`. pyHermes
 never styles the plot; it takes the Figure you drew.
 
-**An equation is written in LaTeX**, through `svc.math` (`[math]` above). It renders to an
+**An equation is written in LaTeX**, through `pyhermes.math` (`[math]` above). It renders to an
 image in every medium, because no mail client shows MathML, and the source stays with it as
 the alt text and the plain-text projection:
 
 ```python
-from svc.math import math_block
+from pyhermes.math import math_block
 
 variance = math_block(r"\sigma_p^2 = w^\top \Sigma w", label="Equation",
                       caption="Portfolio variance", theme="classic", size_theme="standard")
@@ -838,14 +845,14 @@ it is explicit: plain-text fields (titles, KPI labels, table cells, author names
 by the builder — pass them as raw text, since pre-escaping now double-escapes. HTML fields
 (`TextBlock.content`, `NumberedItem.body`, the metadata disclaimers) are emitted raw, so
 escaping untrusted text in those is the caller's job — use
-`from svc.builder.filters import escape_html`. Attributes are always escaped.
+`from pyhermes.builder.filters import escape_html`. Attributes are always escaped.
 
 ## Images
 
 An image carries two independent facts: where the bytes live, and how they reach the reader.
 
 ```python
-from svc.builder.images import EmailImage
+from pyhermes.builder.images import EmailImage
 
 EmailImage.hosted("https://cdn.example.com/chart.png", alt="Factor returns")   # REMOTE
 EmailImage.attached("charts/factor.png", alt="Factor returns", width=616)      # CID
@@ -875,7 +882,7 @@ because Word ignores `max-width`.
 Every judgment-call number is a field on one frozen `Config`:
 
 ```python
-from svc.config import Config, get_config, set_config, config_override
+from pyhermes.config import Config, get_config, set_config, config_override
 
 get_config().inline_image_limit_kb               # what is actually in force
 set_config(Config.from_env())                    # the process-wide default, at startup
@@ -917,7 +924,7 @@ size threshold raises a `SizeWarning`, and an image short of its print resolutio
 ```bash
 pytest                                    # 714 tests: validation, error paths, size limits
 ruff check . && ruff format --check .
-python -m mypy                            # config in pyproject: files = ["svc", "qa"]
+python -m mypy                            # config in pyproject: files = ["pyhermes", "qa"]
 ```
 
 CI runs all four on every pull request (and on pushes to `main`), across Python 3.11 and
@@ -1036,7 +1043,7 @@ dielines or die-cut, foil or stock metadata.
 ## Layout
 
 ```
-svc/
+pyhermes/
 ├── config.py     the tunable numbers, in one frozen dataclass
 ├── builder/      the shared kit: Document, Medium, templates, components, the three axes
 ├── email/        the email medium: the four slots and the Gmail size check

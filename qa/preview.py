@@ -21,10 +21,10 @@ import webbrowser
 from collections.abc import Callable
 from pathlib import Path
 
-from svc.builder import EmailBuilder
-from svc.builder.document import Document
-from svc.builder.exceptions import EmailBuilderError
-from svc.pdf import PdfError
+from pyhermes.builder import EmailBuilder
+from pyhermes.builder.document import Document
+from pyhermes.builder.exceptions import EmailBuilderError
+from pyhermes.pdf import PdfError
 
 from .fixtures import all_brochure_fixtures, all_fixtures, all_paged_fixtures
 from .lint import Severity, format_findings, lint_document
@@ -234,7 +234,7 @@ def main(argv: list[str] | None = None) -> int:
         # where it writes the HTML -- and says why it could not, rather than
         # failing, because the backend is an optional extra like the browser.
         try:
-            from svc.pdf import page_count, save_pdf
+            from pyhermes.pdf import page_count, save_pdf
 
             pdf_destination = save_pdf(email, args.out / f"{name}.pdf")
             size_kb = pdf_destination.stat().st_size / 1024

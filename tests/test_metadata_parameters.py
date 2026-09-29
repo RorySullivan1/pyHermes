@@ -11,9 +11,9 @@ they are the design system, not content.
 
 import pytest
 
-from svc.builder import Banner, EmailBuilder, FullWidth
-from svc.builder.images import EmailImage
-from svc.builder.models import EmailMetadata
+from pyhermes.builder import Banner, EmailBuilder, FullWidth
+from pyhermes.builder.images import EmailImage
+from pyhermes.builder.models import EmailMetadata
 
 LABEL_DEFAULTS = {
     "unsubscribe_label": "Unsubscribe",

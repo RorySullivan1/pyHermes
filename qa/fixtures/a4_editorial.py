@@ -11,9 +11,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from svc.builder import FlowedColumns, FullWidth, ImageBlock, PullQuote, TextBlock
-from svc.builder.images import EmailImage
-from svc.document import PagedDocument
+from pyhermes.builder import FlowedColumns, FullWidth, ImageBlock, PullQuote, TextBlock
+from pyhermes.builder.images import EmailImage
+from pyhermes.document import PagedDocument
 
 from . import _paged
 from ._png import solid_png

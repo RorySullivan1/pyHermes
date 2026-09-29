@@ -19,6 +19,8 @@ import json
 
 import pytest
 
+from pyhermes.builder.sizing import resolve_size_scheme
+from pyhermes.delivery import collect_cid_references
 from qa.fixtures import all_fixtures
 from qa.screenshots import (
     DEVICE_SCALE_FACTOR,
@@ -32,8 +34,6 @@ from qa.screenshots import (
     inline_cid_images,
     png_size,
 )
-from svc.builder.sizing import resolve_size_scheme
-from svc.delivery import collect_cid_references
 
 FIXTURE_NAMES = sorted(all_fixtures())
 
@@ -259,7 +259,7 @@ _MASTHEAD_PROBE = """() => {
 
 def _masthead_email(variant, size_theme):
     """A one-section email whose only interesting feature is its masthead."""
-    from svc.builder import Banner, EmailBuilder, FullWidth, MinimalBanner, TextBlock
+    from pyhermes.builder import Banner, EmailBuilder, FullWidth, MinimalBanner, TextBlock
 
     region = Banner if variant == "banner" else MinimalBanner
     return (
@@ -365,7 +365,7 @@ class TestTheMastheadPairsItsLines:
         """
         if not available():
             pytest.skip('no browser; screenshots are the optional "[qa]" extra')
-        from svc.builder import Banner, EmailBuilder, FullWidth, MinimalBanner, TextBlock
+        from pyhermes.builder import Banner, EmailBuilder, FullWidth, MinimalBanner, TextBlock
 
         region = Banner if variant == "banner" else MinimalBanner
         email = (
@@ -715,8 +715,8 @@ class TestBodyCopyKeepsItsOwnStyling:
         resolving to anything but the ``body`` one means the wrapper is not
         an ancestor of the copy after all.
         """
+        from pyhermes.builder.typography import FontStack, FontTheme
         from qa.fixtures import kitchen_sink
-        from svc.builder.typography import FontStack, FontTheme
 
         sentinel = FontTheme(
             heading=FontStack("SentinelHeading", "serif"),

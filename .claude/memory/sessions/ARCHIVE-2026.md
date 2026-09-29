@@ -311,3 +311,7 @@ Decisions and Log entries folded out of `INDEX.md` on 2026-08-29 (#143), verbati
   HarfBuzz-Subset; findings #201, #202 filed — sessions/2026-09-23-digital-pdf.md
 - [2026-09-23] image-width — **#201 fixed**: `width:100%; max-width:Npx` beside the attribute. Hints and a fixed
   px width each put a4_portrait on six sheets; email screenshots pixel-identical — `media.md`
+- [2026-09-24] spacing-two-levels — **#209 implemented** (#211–#216): `dense`, `SizeScheme` as `size_theme`,
+  `Spacing` + `SPACING_TOKENS`, the factsheet at 90% of two sheets — sessions/2026-09-24-spacing-two-levels.md
+- [2026-09-24] define-epic-217 — **#217 defined, #223–#228 filed** via the github-issues pipeline. `fill-self`
+  rewrites the Done-when sentence too; print the diff — sessions/2026-09-24-1208-define-epic-217.md

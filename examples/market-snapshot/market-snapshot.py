@@ -23,7 +23,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from svc.builder import (
+from pyhermes.builder import (
     CardGroup,
     ContactBlock,
     Email,
@@ -32,8 +32,8 @@ from svc.builder import (
     FullWidth,
     TextBlock,
 )
-from svc.builder.enums import CardOrientation
-from svc.builder.models import KpiItem
+from pyhermes.builder.enums import CardOrientation
+from pyhermes.builder.models import KpiItem
 
 # Colour vocabulary is #RRGGBB everywhere — validated at construction time.
 _GAIN = "#4A7C59"

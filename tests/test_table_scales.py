@@ -11,15 +11,15 @@ import re
 
 import pytest
 
+from pyhermes.builder import DataTable, FullWidth, HeatScale
+from pyhermes.builder.email import Email
+from pyhermes.builder.engine import TemplateEngine
+from pyhermes.builder.exceptions import ValidationError
+from pyhermes.builder.filters import heat_color
+from pyhermes.builder.formats import pct
+from pyhermes.builder.models import Cell, Column, TableRow
+from pyhermes.builder.theming import DEFAULT_THEME, SLATE_THEME
 from qa.lint import lint_html
-from svc.builder import DataTable, FullWidth, HeatScale
-from svc.builder.email import Email
-from svc.builder.engine import TemplateEngine
-from svc.builder.exceptions import ValidationError
-from svc.builder.filters import heat_color
-from svc.builder.formats import pct
-from svc.builder.models import Cell, Column, TableRow
-from svc.builder.theming import DEFAULT_THEME, SLATE_THEME
 
 
 def one_place(value: float) -> str:
@@ -173,7 +173,7 @@ class TestTextOnATintStaysLegible:
     """Found in the first raster (#228): a toned figure on its own tint vanished."""
 
     def test_the_filter_picks_the_higher_contrast(self):
-        from svc.builder.filters import readable_on
+        from pyhermes.builder.filters import readable_on
 
         assert readable_on("#B85450", "#3B3B3B", "#FFFFFF") == "#FFFFFF"
         assert readable_on("#F4F6F8", "#3B3B3B", "#FFFFFF") == "#3B3B3B"

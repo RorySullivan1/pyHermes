@@ -58,7 +58,7 @@ Curated for pyHermes (a Python + Jinja2 HTML-email builder for financial newslet
   `claim-grounding`); and a **financial / content-design** set (`quantitative-finance`,
   `financial-timeseries-analysis`, `quant-code-review`, `backtesting-validation`,
   `branding`, `presentation-design`, `report-builder`).
-- **agents/** — `python-developer` (adapted to `svc/`), `software-architect`,
+- **agents/** — `python-developer` (adapted to `pyhermes/`), `software-architect`,
   `goal-auditor`, `github-operator`, the context-economy `token-manager`, and the
   (speculative, for a future analytics layer) `finance-quantitative-developer`.
 - **commands/** — `/version-set`, `/version-ship`, `/reindex`.

@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from svc.builder import (
+from pyhermes.builder import (
     CardGroup,
     Email,
     EmailBuilder,
@@ -19,8 +19,8 @@ from svc.builder import (
     FullWidth,
     TextBlock,
 )
-from svc.builder.images import EmailImage
-from svc.builder.models import Card, FooterLink, LinkRow
+from pyhermes.builder.images import EmailImage
+from pyhermes.builder.models import Card, FooterLink, LinkRow
 
 from ._png import solid_png
 

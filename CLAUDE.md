@@ -10,18 +10,18 @@ renders each onto the medium it will be read on. Python composes Jinja2 template
 single inline-CSS document; the hard parts are per-medium — surviving Gmail's clipping limit
 and Outlook's Word engine for an email, laying out sheets and margin boxes for a page.
 
-**Scope = build, then send *or* print.** `svc/builder/` is the shared kit — the section tree,
-the three design axes, the two projections. A **medium** decides the rest: `svc/email/` the
-four-slot skeleton and the 102 KB check, `svc/document/` the paged one with its cover,
-contents sheet, running boxes and page breaks, `svc/brochure/` a sheet folded into panels,
+**Scope = build, then send *or* print.** `pyhermes/builder/` is the shared kit — the section tree,
+the three design axes, the two projections. A **medium** decides the rest: `pyhermes/email/` the
+four-slot skeleton and the 102 KB check, `pyhermes/document/` the paged one with its cover,
+contents sheet, running boxes and page breaks, `pyhermes/brochure/` a sheet folded into panels,
 imposed for the press with bleed and crop marks. The apparatus a reader navigates by —
 exhibit numbers, footnotes, contents, cross-references — is numbered in Python, once, so
 every projection agrees; only the page number is the print engine's. Three exporters sit
-on one contract — `svc/delivery/` + `svc/gmail/` + `svc/outlook/` for MIME, `svc/pdf/` for
+on one contract — `pyhermes/delivery/` + `pyhermes/gmail/` + `pyhermes/outlook/` for MIME, `pyhermes/pdf/` for
 PDF — and a PDF can ride a message as an attachment, rendered under a screen profile. Each owns its wire format and **never** authentication, so the core still depends on
 Jinja2 alone. Figures arrive as numbers:
-`svc/builder/formats.py` formats them and `svc/data/` adapts a DataFrame or a Figure, each
-adapter behind an optional extra. Equations arrive as LaTeX: `svc/math/` renders them to the
+`pyhermes/builder/formats.py` formats them and `pyhermes/data/` adapts a DataFrame or a Figure, each
+adapter behind an optional extra. Equations arrive as LaTeX: `pyhermes/math/` renders them to the
 image a `MathBlock` takes, behind the `[math]` extra.
 
 ## Commands
@@ -30,7 +30,7 @@ image a `MathBlock` takes, behind the `[math]` extra.
 pip install -e ".[dev]"       # editable install + pytest/ruff/mypy (see Gotchas)
 pytest                        # unit suite — validation, error paths, size limits
 ruff check . && ruff format --check .
-mypy                          # config in pyproject: files = ["svc", "qa"]
+mypy                          # config in pyproject: files = ["pyhermes", "svc", "qa"]
 
 pip install -e ".[qa]"        # optional: Playwright + pypdfium2 for screenshots
 pip install -e ".[pdf]"       # optional: WeasyPrint, for PDF (needs Pango/Cairo)
@@ -59,21 +59,21 @@ applies to and loads **only when a matching file is read** — so a session that
 
 | File | Loads when you touch | Holds |
 |---|---|---|
-| `working-in-the-code.md` | any of `svc/`, `qa/`, `tests/` | The annotated repo map, and the ten standing rules in full |
-| `builder-architecture.md` | `svc/builder/**` | The four-layer model, the facts-flow-down ownership rule, the public API, images and the asset manifest, parameters, validation, exceptions, the hard constraints in full |
+| `working-in-the-code.md` | any of `pyhermes/`, `qa/`, `tests/` | The annotated repo map, and the ten standing rules in full |
+| `builder-architecture.md` | `pyhermes/builder/**` | The four-layer model, the facts-flow-down ownership rule, the public API, images and the asset manifest, parameters, validation, exceptions, the hard constraints in full |
 | `design-axes.md` | theming / sizing / typography / enums / containers / `templates/**` | Colour, density, typeface and alignment — the three themes plus the axis that deliberately is not one — and spacing per object |
 | `data-table.md` | `models.py`, `components.py`, `templates/analysis/**` | Columns, cells, row kinds, caption and row headers; groups, units, markers, formats, decimal alignment, scales and bars (#217) |
 | `disclosure.md` | `components.py`, `templates/analysis/**` + `media/**`, the shared partial | An exhibit's two kinds of fine print: attribution, and the compliance copy beneath it |
-| `data-layer.md` | `formats.py`, `svc/data/**` | Figures as numbers: the formatters, the two adapters, why the dependency runs one way |
-| `math.md` | `svc/math/**`, the math tests, `templates/media/math-block.html` | Equations: the component takes bytes and the extra renders them, the fontset and scale, the mathtext subset, the multi-line shim, the theme limitation, the Outlook gap |
+| `data-layer.md` | `formats.py`, `pyhermes/data/**` | Figures as numbers: the formatters, the two adapters, why the dependency runs one way |
+| `math.md` | `pyhermes/math/**`, the math tests, `templates/media/math-block.html` | Equations: the component takes bytes and the extra renders them, the fontset and scale, the mathtext subset, the multi-line shim, the theme limitation, the Outlook gap |
 | `plain-text.md` | `textgen.py`, `email.py` | The second projection of the section tree |
 | `apparatus.md` | `apparatus.py`, `document.py`, the notes / contents / running-box templates | Exhibit numbers, footnotes, contents, cross-references, the running section — Python numbers all but the page |
-| `media.md` | `svc/email/`, `svc/document/`, `svc/pdf/`, `medium.py`, `document.py`, `templates/document/**` | The medium model, the page, the template fork rule, each medium's regions, the exporter's resource policy |
-| `digital-pdf.md` | `svc/pdf/**`, `svc/delivery/message.py`, the digital-PDF tests | The `PdfProfile` and its two presets, attachments and the message's size budget, metadata and determinism, the PDF/UA decision with its numbers, and why a screen PDF is not a medium |
-| `brochure.md` | `svc/brochure/**`, `templates/brochure/**`, the editorial partial | Folds, the panel, imposition, bleed and marks, the editorial primitives and each one's email degradation |
-| `delivery.md` | `svc/delivery/`, `svc/gmail/`, `svc/outlook/` | MIME assembly, the adapter contract, the deliberate non-features |
+| `media.md` | `pyhermes/email/`, `pyhermes/document/`, `pyhermes/pdf/`, `medium.py`, `document.py`, `templates/document/**` | The medium model, the page, the template fork rule, each medium's regions, the exporter's resource policy |
+| `digital-pdf.md` | `pyhermes/pdf/**`, `pyhermes/delivery/message.py`, the digital-PDF tests | The `PdfProfile` and its two presets, attachments and the message's size budget, metadata and determinism, the PDF/UA decision with its numbers, and why a screen PDF is not a medium |
+| `brochure.md` | `pyhermes/brochure/**`, `templates/brochure/**`, the editorial partial | Folds, the panel, imposition, bleed and marks, the editorial primitives and each one's email degradation |
+| `delivery.md` | `pyhermes/delivery/`, `pyhermes/gmail/`, `pyhermes/outlook/` | MIME assembly, the adapter contract, the deliberate non-features |
 | `qa-harness.md` | `qa/**`, `tests/**` | Gallery, goldens, screenshots, lint, the preview CLI |
-| `config.md` | `svc/config.py` | The one frozen dataclass of tunable numbers |
+| `config.md` | `pyhermes/config.py` | The one frozen dataclass of tunable numbers |
 
 Each also carries the post-mortem of the epic that built its area — the reasoning is what
 stops a settled question being reopened, and it belongs beside the code it settled.
@@ -83,7 +83,7 @@ stops a settled question being reopened, and it belongs beside the code it settl
 The rules themselves. `builder-architecture.md` carries why each exists.
 
 - **102 KB Gmail clipping limit — the *email medium's* constraint.**
-  `svc.email.validate_gmail_size` raises `SizeError` above it and warns above 90 KB, and the
+  `pyhermes.email.validate_gmail_size` raises `SizeError` above it and warns above 90 KB, and the
   email medium lists it in `constraints`. The most important runtime check there is; never
   disable it without confirming a non-Gmail channel. Both thresholds come from `Config` at
   check time. A paged document runs no size constraint, because nothing clips a PDF.
@@ -114,7 +114,7 @@ The rules themselves. `builder-architecture.md` carries why each exists.
   email's `@media` block reads (`pad_x`, `card_pad_*`, `mobile_*`) is refused off paper
   (`design-axes.md`).
 - **The package never prints.** A soft limit is a `SizeWarning` or `PrintQualityWarning` a host
-  can filter or promote; an AST test holds `svc/` free of `print` (`config.md`).
+  can filter or promote; an AST test holds `pyhermes/` free of `print` (`config.md`).
 - **Colours are `#RRGGBB`**, validated at construction and again in the templates.
 - **Validation runs at construction time, never at render time.** By the time `.render()`
   is called the data shape is already known good. Preserve this when adding a component.
@@ -169,11 +169,13 @@ itself — file purpose, verbose class, limited function, inline-for-traps — i
 ## Gotchas
 
 - **Wheel installs work** (since #10). `templates/` lives inside the package at
-  `svc/builder/templates/` and ships with the wheel; the engine resolves it via
+  `pyhermes/builder/templates/` and ships with the wheel; the engine resolves it via
   `importlib.resources`, so an editable install and a site-packages install agree. A CI job
   builds the wheel and renders an email from a clean venv to keep it that way.
-- **Import path.** `from svc.builder import …` / `from svc.builder.models import …`.
-  `svc/__init__.py` re-exports nothing, and there is no `svc.models`.
+- **Import path.** `from pyhermes.builder import …` / `from pyhermes.builder.models import …`.
+  `pyhermes/__init__.py` re-exports nothing, and there is no `pyhermes.models`. The import
+  root was `svc` until #248; `svc/` is now a one-release shim that warns and aliases every
+  submodule to its `pyhermes` twin. Nothing in the repo may import it (`test_svc_shim.py`).
 - **Config has three levels, innermost wins**: a document's or message's `config=`, then a
   context's `config_override`, then `set_config`'s default. An override is per thread or task.
 - **The skeleton is the medium's, and the email one is `templates/base.html`.** The engine
@@ -190,7 +192,7 @@ these rather than improvising:
 
 - **Python work** → `python-development` / `-review` / `-maintenance` / `-deployment` plus
   `coding-standards`. For isolated, summary-returning implementation, the `python-developer`
-  agent is already scoped to `svc/` and this repo's `pytest`.
+  agent is already scoped to `pyhermes/` and this repo's `pytest`.
 - **GitHub** → the `github-*` skills, or the `github-operator` agent; `/epic` and `/issue` file
   templated issues (the templates in `.github/` are byte-copies the `asset_integrity` hook checks).
 - **Media craft** → `outlook-html-specifications` (and the `outlook-html-designer` agent) for the
@@ -214,7 +216,10 @@ these rather than improvising:
   **#169** (pagination hardening), **#170** (the data layer, #177–#180), **#171** (document
   apparatus, #181–#185), **#172** (the brochure medium, #186–#189), **#193** (the digital PDF, #195–#200),
   **#209** (spacing at two levels, #211–#216), **#217** (table semantics for quantitative
-  material, #223–#228) and **#221** (equations from LaTeX, #229–#233).
+  material, #223–#228), **#221** (equations from LaTeX, #229–#233) and **#238** (seams for a
+  host application, #246, #247, #249). **#237** (the package as a consumer sees it: `py.typed`,
+  metadata, a library-only sdist, the 3.11–3.14 matrix, the `pyhermes` import root) is
+  implemented, with the `svc` shim to delete in the next release.
   **#201** (an image's width in a paged layout) is fixed: the CSS repeats it as a cap. **#150** (the banner's VML
   fill) is closed: gating `src` while keeping `type="frame"` left the Word engine painting a
   broken-image placeholder over the masthead, so the two are now gated together. **#202** is

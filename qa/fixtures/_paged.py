@@ -13,12 +13,12 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from svc.builder import CardGroup, ChartBlock, DataTable, FullWidth, TextBlock, TwoColumn
-from svc.builder.enums import CardOrientation, TwoColumnRatio
-from svc.builder.images import EmailImage
-from svc.builder.medium import Medium
-from svc.builder.models import KpiItem, TableRow
-from svc.document import (
+from pyhermes.builder import CardGroup, ChartBlock, DataTable, FullWidth, TextBlock, TwoColumn
+from pyhermes.builder.enums import CardOrientation, TwoColumnRatio
+from pyhermes.builder.images import EmailImage
+from pyhermes.builder.medium import Medium
+from pyhermes.builder.models import KpiItem, TableRow
+from pyhermes.document import (
     BackMatter,
     ContentsPage,
     Cover,

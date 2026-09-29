@@ -12,14 +12,14 @@ from dataclasses import replace
 
 import pytest
 
-from svc.builder import Email, FullWidth, TextBlock
-from svc.builder.engine import TemplateEngine
-from svc.builder.exceptions import SizeError
-from svc.builder.images import EmailImage
-from svc.builder.medium import DEFAULT_MEDIUM, Medium
-from svc.builder.regions import Banner, Footer, Header
-from svc.builder.sizing import DEFAULT_PAGE, SPACIOUS_SIZES, STANDARD_SIZES, PageFormat
-from svc.email.medium import _SIZE_LIMIT_KB, EMAIL_MEDIUM, validate_gmail_size
+from pyhermes.builder import Email, FullWidth, TextBlock
+from pyhermes.builder.engine import TemplateEngine
+from pyhermes.builder.exceptions import SizeError
+from pyhermes.builder.images import EmailImage
+from pyhermes.builder.medium import DEFAULT_MEDIUM, Medium
+from pyhermes.builder.regions import Banner, Footer, Header
+from pyhermes.builder.sizing import DEFAULT_PAGE, SPACIOUS_SIZES, STANDARD_SIZES, PageFormat
+from pyhermes.email.medium import _SIZE_LIMIT_KB, EMAIL_MEDIUM, validate_gmail_size
 
 #: A medium identical to the shipped one but for its (absent) constraints.
 UNCHECKED = Medium(
@@ -155,7 +155,7 @@ class TestTheFrameBelongsToTheMedium:
     def test_no_shipped_density_declares_a_page_dimension(self):
         # The structural form of "density is not width". Before #159 a preset
         # could have set a width and nothing would have stopped it.
-        from svc.builder.sizing import SIZE_SCHEMES
+        from pyhermes.builder.sizing import SIZE_SCHEMES
 
         for theme, scheme in SIZE_SCHEMES.items():
             assert scheme.frame.width == DEFAULT_PAGE.width, theme

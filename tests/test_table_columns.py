@@ -4,7 +4,7 @@ Per-column alignment and kind (#117), the first step of the DataTable epic #116.
 The claim this file exists to hold: **alignment resolves once, and both
 projections read that one resolution.** Before #117 the rule lived as
 ``loop.first`` in the template and was *re-derived* in
-``svc/builder/textgen.py`` so the two would agree — correct, and impossible
+``pyhermes/builder/textgen.py`` so the two would agree — correct, and impossible
 to extend. A test that only checked the HTML would let them drift apart.
 """
 
@@ -14,12 +14,12 @@ import re
 
 import pytest
 
-from svc.builder import DataTable
-from svc.builder.engine import TemplateEngine
-from svc.builder.enums import ColumnAlign, ColumnKind, RowKind
-from svc.builder.exceptions import ValidationError
-from svc.builder.models import Cell, Column, TableRow, coerce_cell, coerce_column
-from svc.builder.textgen import table as text_table
+from pyhermes.builder import DataTable
+from pyhermes.builder.engine import TemplateEngine
+from pyhermes.builder.enums import ColumnAlign, ColumnKind, RowKind
+from pyhermes.builder.exceptions import ValidationError
+from pyhermes.builder.models import Cell, Column, TableRow, coerce_cell, coerce_column
+from pyhermes.builder.textgen import table as text_table
 
 TEMPLATE = TemplateEngine().template_dir / "analysis" / "data-table.html"
 

@@ -15,8 +15,8 @@ from pathlib import Path
 
 import pytest
 
+from pyhermes.pdf import available
 from qa.fixtures import a4_equations as equations
-from svc.pdf import available
 
 pytestmark = pytest.mark.skipif(
     not available() or importlib.util.find_spec("pypdfium2") is None,
@@ -29,7 +29,7 @@ def _sheets(strip_figure_rule: bool = False) -> list[tuple[str, list[tuple[int, 
     import pypdfium2.raw as pdfium_raw
     import weasyprint
 
-    from svc.pdf.fetcher import build_fetcher
+    from pyhermes.pdf.fetcher import build_fetcher
 
     document = equations.build()
     html = document.render()
@@ -77,8 +77,8 @@ def test_the_engineered_equation_splits_without_the_rule():
 
 
 def test_it_is_photographed_one_image_per_sheet(tmp_path: Path):
+    from pyhermes.document import PAGED_MEDIUM
     from qa.screenshots import capture_pages
-    from svc.document import PAGED_MEDIUM
 
     shots, _ = capture_pages({"a4_equations": equations.build()}, tmp_path)
     assert len(shots) == equations.SHEETS
@@ -92,7 +92,7 @@ def test_a_centred_equation_is_centred_on_paper():
     import pypdfium2
     import pypdfium2.raw as pdfium_raw
 
-    from svc.pdf import render_pdf
+    from pyhermes.pdf import render_pdf
 
     pdf = pypdfium2.PdfDocument(render_pdf(equations.build()))
     for sheet in pdf:

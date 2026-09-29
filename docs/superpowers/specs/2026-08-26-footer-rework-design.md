@@ -60,7 +60,7 @@ below the body, which is what makes a full box drawable.
 
 ## 5. `ContactBlock` — new body component
 
-- **Location:** `svc/builder/components.py` + template `text/contact-block.html`.
+- **Location:** `pyhermes/builder/components.py` + template `text/contact-block.html`.
 - **Fields (validated in `__init__`, escaped by the template):**
   - `heading: str` (required)
   - `description: str = ""`
@@ -71,7 +71,7 @@ below the body, which is what makes a full box drawable.
   `footer-contact.html`.
 - **Usage:** `.section(FullWidth(content=ContactBlock(...)))` — placed by the
   caller, typically last, but not forced there.
-- **Exports:** added to `svc.builder.__init__` `__all__`.
+- **Exports:** added to `pyhermes.builder.__init__` `__all__`.
 
 ## 6. `Footer` — reworked region
 

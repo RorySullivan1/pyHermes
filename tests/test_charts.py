@@ -13,15 +13,15 @@ pytest.importorskip("matplotlib", reason='the Figure adapter needs "pyhermes[cha
 
 from matplotlib.figure import Figure  # noqa: E402
 
-from svc.builder import (  # noqa: E402
+from pyhermes.builder import (  # noqa: E402
     ChartBlock,
     EmailBuilder,
     FullWidth,
     SizeError,
     ValidationError,
 )
-from svc.builder.enums import EmbedStrategy  # noqa: E402
-from svc.data import chart_from_figure, image_from_figure  # noqa: E402
+from pyhermes.builder.enums import EmbedStrategy  # noqa: E402
+from pyhermes.data import chart_from_figure, image_from_figure  # noqa: E402
 
 
 def _figure(width_inches: float = 6.4, points: int = 3) -> Figure:

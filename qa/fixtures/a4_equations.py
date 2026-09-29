@@ -11,8 +11,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from svc.builder import FullWidth, MathBlock, TextBlock
-from svc.document import (
+from pyhermes.builder import FullWidth, MathBlock, TextBlock
+from pyhermes.document import (
     PAGED_MEDIUM,
     EmptyBackMatter,
     EmptyContentsPage,

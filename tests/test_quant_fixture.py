@@ -13,11 +13,11 @@ from pathlib import Path
 
 import pytest
 
+from pyhermes.builder.components import DataTable
+from pyhermes.builder.sizing import LETTER_PORTRAIT
+from pyhermes.pdf import available
 from qa.fixtures import all_paged_fixtures
 from qa.fixtures import letter_quant_table as quant
-from svc.builder.components import DataTable
-from svc.builder.sizing import LETTER_PORTRAIT
-from svc.pdf import available
 
 requires_pdf = pytest.mark.skipif(
     not available() or importlib.util.find_spec("pypdfium2") is None,
@@ -59,7 +59,7 @@ class TestOnPaper:
         import pypdfium2
         import weasyprint
 
-        from svc.pdf.fetcher import build_fetcher
+        from pyhermes.pdf.fetcher import build_fetcher
 
         document = quant.build()
         pdf = pypdfium2.PdfDocument(

@@ -30,7 +30,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
-from svc.builder.document import Document
+from pyhermes.builder.document import Document
 
 from .fixtures import all_fixtures
 
@@ -328,7 +328,7 @@ def _launch(playwright: Any) -> Any:
 
 
 #: Points to px at 96 dpi. A PDF is 72 dpi by definition and a
-#: :class:`~svc.builder.sizing.PageFormat` is px at 96, so this is the factor
+#: :class:`~pyhermes.builder.sizing.PageFormat` is px at 96, so this is the factor
 #: that makes a raster come back at the width the document was designed at.
 PDF_PX_SCALE = 96 / 72
 
@@ -338,7 +338,7 @@ def pages_available() -> bool:
     try:
         import pypdfium2  # noqa: F401
 
-        from svc.pdf import available as backend_available
+        from pyhermes.pdf import available as backend_available
     except ImportError:
         return False
     return bool(backend_available())
@@ -365,7 +365,7 @@ def capture_pages(
     """
     import pypdfium2
 
-    from svc.pdf import render_pdf
+    from pyhermes.pdf import render_pdf
 
     out_dir = out_dir or DEFAULT_OUT_DIR
     out_dir.mkdir(parents=True, exist_ok=True)

@@ -5,6 +5,7 @@
   "attribute": 24,
   "comment_run": 4,
   "include": [
+    "pyhermes",
     "svc",
     "qa"
   ],

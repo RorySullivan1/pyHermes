@@ -10,8 +10,8 @@ import dataclasses
 
 import pytest
 
-from svc.builder.exceptions import EmailBuilderError, ValidationError
-from svc.builder.models import (
+from pyhermes.builder.exceptions import EmailBuilderError, ValidationError
+from pyhermes.builder.models import (
     DocumentMetadata,
     EmailMetadata,
     KpiItem,
@@ -182,7 +182,7 @@ class TestTheDocumentFactsSplitFromTheEmailOnes:
     def test_a_flat_keyword_conflict_is_reported_before_a_bad_language(self, png_bytes):
         # Error precedence is behaviour too: hydration runs before the base's
         # checks, and it did before the split.
-        from svc.builder.regions import Banner
+        from pyhermes.builder.regions import Banner
 
         with pytest.raises(ValidationError, match="flat banner field"):
             EmailMetadata(

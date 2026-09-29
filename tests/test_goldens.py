@@ -23,6 +23,8 @@ from pathlib import Path
 
 import pytest
 
+from pyhermes.builder import AuthorBlock, Email, FullWidth, TextBlock
+from pyhermes.builder.engine import TemplateEngine
 from qa.fixtures import all_fixtures
 from qa.goldens import (
     GOLDEN_DIR,
@@ -34,8 +36,6 @@ from qa.goldens import (
     text_path,
     write_fixture,
 )
-from svc.builder import AuthorBlock, Email, FullWidth, TextBlock
-from svc.builder.engine import TemplateEngine
 
 FIXTURE_NAMES = sorted(all_fixtures())
 

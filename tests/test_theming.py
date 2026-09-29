@@ -13,10 +13,10 @@ from dataclasses import fields
 
 import pytest
 
-from svc.builder.engine import BoundEngine, Renderer, TemplateEngine
-from svc.builder.exceptions import ValidationError
-from svc.builder.models import EmailMetadata
-from svc.builder.theming import (
+from pyhermes.builder.engine import BoundEngine, Renderer, TemplateEngine
+from pyhermes.builder.exceptions import ValidationError
+from pyhermes.builder.models import EmailMetadata
+from pyhermes.builder.theming import (
     DEFAULT_THEME,
     SLATE_THEME,
     THEMES,
@@ -290,9 +290,9 @@ class TestThePresetRegistry:
         ``Card.color`` is unset by default and resolved in the template.
         Byte identity is the proof the substitution is exact.
         """
-        from svc.builder import CardGroup, Email, FullWidth
-        from svc.builder.filters import default_color
-        from svc.builder.models import Card
+        from pyhermes.builder import CardGroup, Email, FullWidth
+        from pyhermes.builder.filters import default_color
+        from pyhermes.builder.models import Card
 
         assert Card("L", "V").color == ""
         assert default_color("", DEFAULT_THEME.semantic.neutral) == "#5A5A5A"
@@ -309,8 +309,8 @@ class TestThePresetRegistry:
         Unset skips the check; explicit does not. The component is where a
         card is validated, and that did not move.
         """
-        from svc.builder import CardGroup
-        from svc.builder.models import Card
+        from pyhermes.builder import CardGroup
+        from pyhermes.builder.models import Card
 
         CardGroup([Card("L", "V"), Card("M", "W")], "horizontal")  # unset: fine
         with pytest.raises(ValidationError, match=r"card\.color"):
@@ -359,8 +359,8 @@ def _theme_resolving_regions() -> list[type]:
     added later is picked up by adding its module here, which is one line
     and visible, rather than by widening an assertion.
     """
-    from svc.builder import regions as region_api
-    from svc.document import regions as document_regions
+    from pyhermes.builder import regions as region_api
+    from pyhermes.document import regions as document_regions
 
     return [
         obj
@@ -533,8 +533,8 @@ class TestTheThemeReachesEveryTemplate:
         return binder, seen, real
 
     def test_every_rendered_template_gets_the_theme(self):
-        from svc.builder import CardGroup, DataTable, Email, FullWidth, TextBlock, TwoColumn
-        from svc.builder.models import Card, TableRow
+        from pyhermes.builder import CardGroup, DataTable, Email, FullWidth, TextBlock, TwoColumn
+        from pyhermes.builder.models import Card, TableRow
 
         seen: dict[str, dict] = {}
         real = TemplateEngine()
@@ -600,9 +600,9 @@ class TestTheThemeReachesEveryTemplate:
         """
         import inspect
 
-        from svc.builder import FullWidth, TextBlock
-        from svc.builder.containers import Container
-        from svc.builder.regions import Region
+        from pyhermes.builder import FullWidth, TextBlock
+        from pyhermes.builder.containers import Container
+        from pyhermes.builder.regions import Region
 
         for func in (Container.render, FullWidth.render, TextBlock.render):
             assert list(inspect.signature(func).parameters) == ["self", "engine"]
@@ -651,7 +651,7 @@ class TestTheDefaultThemeChangesNothing:
         the same thing at the level of one email, so a failure here points
         straight at the plumbing rather than at a template.
         """
-        from svc.builder import Email
+        from pyhermes.builder import Email
 
         facts = {"email_subject": "S", "firm_name": "F", "campaign_name": "c"}
         assert Email(facts).render() == Email({**facts, "theme": "classic"}).render()
@@ -680,8 +680,8 @@ class TestThePerturbedTheme:
     }
 
     def _themed_html(self) -> str:
-        from svc.builder import CardGroup, DataTable, Email, FullWidth, TextBlock, TwoColumn
-        from svc.builder.models import Card, TableRow
+        from pyhermes.builder import CardGroup, DataTable, Email, FullWidth, TextBlock, TwoColumn
+        from pyhermes.builder.models import Card, TableRow
 
         theme = Theme(
             palette=Palette(**self.SENTINELS),
@@ -689,7 +689,7 @@ class TestThePerturbedTheme:
             semantic=SemanticColors(neutral="#BCDEF0"),
             shadow=ShadowStyle(scrim=Rgba("#CDEF01", 0.25)),
         )
-        from svc.builder import Footer
+        from pyhermes.builder import Footer
 
         email = Email(
             {
@@ -749,8 +749,8 @@ class TestThePerturbedTheme:
         ``KpiItem.color`` and ``TableRow.colors`` are statements about the
         numbers, not about the design. The theme supplies the fallback only.
         """
-        from svc.builder import CardGroup, Email, FullWidth
-        from svc.builder.models import Card
+        from pyhermes.builder import CardGroup, Email, FullWidth
+        from pyhermes.builder.models import Card
 
         email = Email(
             {
@@ -774,7 +774,7 @@ class TestTheCustomThemeApi:
     """#50: the epic's reason to exist — a caller re-skins from one field."""
 
     def test_the_layers_are_public(self):
-        import svc.builder as api
+        import pyhermes.builder as api
 
         for name in (
             "Theme",
@@ -871,7 +871,7 @@ class TestTheSlatePreset:
         return all_fixtures()["slate_theme"]().render()
 
     def test_it_is_in_the_registry_and_selectable_by_name(self):
-        from svc.builder import Email
+        from pyhermes.builder import Email
 
         assert THEMES["slate"] is SLATE_THEME
         facts = {"email_subject": "S", "firm_name": "F", "campaign_name": "c"}
@@ -932,7 +932,7 @@ def _heat_colours(candidates: set[str]) -> set[str]:
     it is theme-derived without being a token; one the filter cannot produce
     from some theme's pair is still a colour that bypassed the theme.
     """
-    from svc.builder.filters import heat_color
+    from pyhermes.builder.filters import heat_color
 
     derived = {
         heat_color(step / 1000, theme.palette.surface, getattr(theme.semantic, toward))

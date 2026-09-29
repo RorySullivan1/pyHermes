@@ -10,7 +10,7 @@ rules reject.
 from __future__ import annotations
 
 from drafts._chart import bar_chart
-from svc.builder import (
+from pyhermes.builder import (
     AuthorBlock,
     Card,
     CardGroup,
@@ -28,7 +28,7 @@ from svc.builder import (
     TextBlock,
     TwoColumn,
 )
-from svc.builder.models import Cell, NumberedItem
+from pyhermes.builder.models import Cell, NumberedItem
 
 #: Monthly long-short factor spread, in percent, most recent last. Drawn as the
 #: chart image and quoted in the copy, so the two cannot disagree.

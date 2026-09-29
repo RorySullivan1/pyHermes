@@ -11,8 +11,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from svc.brochure import TRI_FOLD_LETTER, Brochure, Panel
-from svc.builder import (
+from pyhermes.brochure import TRI_FOLD_LETTER, Brochure, Panel
+from pyhermes.builder import (
     AuthorBlock,
     CardGroup,
     ChartBlock,
@@ -24,9 +24,9 @@ from svc.builder import (
     PullQuote,
     TextBlock,
 )
-from svc.builder.enums import CardOrientation
-from svc.builder.images import EmailImage
-from svc.builder.models import Card, NumberedItem
+from pyhermes.builder.enums import CardOrientation
+from pyhermes.builder.images import EmailImage
+from pyhermes.builder.models import Card, NumberedItem
 
 from . import _paged
 from ._png import solid_png

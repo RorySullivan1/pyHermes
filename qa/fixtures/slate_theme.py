@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from svc.builder import (
+from pyhermes.builder import (
     AuthorBlock,
     CardGroup,
     DataTable,
@@ -23,7 +23,7 @@ from svc.builder import (
     ThreeColumn,
     TwoColumn,
 )
-from svc.builder.models import Card, Cell, Column, HeatScale, NumberedItem, TableRow
+from pyhermes.builder.models import Card, Cell, Column, HeatScale, NumberedItem, TableRow
 
 
 def build(template_dir: Path | None = None) -> Email:

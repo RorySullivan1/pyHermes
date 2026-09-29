@@ -38,7 +38,7 @@ import zlib
 from collections.abc import Callable
 from pathlib import Path
 
-from svc.builder import (
+from pyhermes.builder import (
     CardGroup,
     ChartBlock,
     ContactBlock,
@@ -50,9 +50,9 @@ from svc.builder import (
     TextBlock,
     TwoColumn,
 )
-from svc.builder.enums import CardOrientation, TwoColumnRatio
-from svc.builder.images import EmailImage
-from svc.builder.models import KpiItem, TableRow
+from pyhermes.builder.enums import CardOrientation, TwoColumnRatio
+from pyhermes.builder.images import EmailImage
+from pyhermes.builder.models import KpiItem, TableRow
 
 # Colour vocabulary is #RRGGBB everywhere — validated at construction time.
 _GAIN = "#4A7C59"

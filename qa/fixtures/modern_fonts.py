@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from svc.builder import Email
+from pyhermes.builder import Email
 
 from . import kitchen_sink
 

@@ -13,12 +13,12 @@ from dataclasses import replace
 
 import pytest
 
-from svc.builder.exceptions import SizeError
-from svc.builder.images import EmailImage
-from svc.config import Config, config_override, get_config, set_config
-from svc.delivery.retry import retry_with_backoff
-from svc.email.medium import validate_gmail_size
-from svc.outlook import GraphApiTransport
+from pyhermes.builder.exceptions import SizeError
+from pyhermes.builder.images import EmailImage
+from pyhermes.config import Config, config_override, get_config, set_config
+from pyhermes.delivery.retry import retry_with_backoff
+from pyhermes.email.medium import validate_gmail_size
+from pyhermes.outlook import GraphApiTransport
 
 
 class TestValidation:
@@ -192,8 +192,8 @@ class TestTheWiringIsLive:
                 validate_gmail_size(html)
 
     def test_attachment_limit_is_read_from_config(self, valid_metadata, text_block):
-        from svc.builder import EmailBuilder, FullWidth
-        from svc.delivery import Attachment, MessageError, build_message
+        from pyhermes.builder import EmailBuilder, FullWidth
+        from pyhermes.delivery import Attachment, MessageError, build_message
 
         email = EmailBuilder().metadata(valid_metadata).section(FullWidth(content=text_block))
         envelope = {"sender": "a@example.com", "to": "b@example.com"}
@@ -204,8 +204,8 @@ class TestTheWiringIsLive:
                 build_message(email.build(), **envelope, attachments=[big])
 
     def test_the_email_density_switch_is_read_from_config(self, valid_metadata):
-        from svc.builder import Email
-        from svc.builder.exceptions import ValidationError
+        from pyhermes.builder import Email
+        from pyhermes.builder.exceptions import ValidationError
 
         with pytest.raises(ValidationError, match="allow_custom_email_density"):
             Email({**valid_metadata, "size_theme": "dense"})
@@ -280,7 +280,7 @@ class TestTheWiringIsLive:
         assert session.timeouts == [None]
 
     def test_error_body_excerpt_length_is_read_from_config(self):
-        from svc.outlook.sender import GraphApiError
+        from pyhermes.outlook.sender import GraphApiError
 
         class _Session:
             def post(self, url, *, data, headers, timeout):
@@ -294,9 +294,9 @@ class TestTheWiringIsLive:
 
     def test_defaults_reproduce_the_previous_constants(self):
         # The whole change must be behaviour-preserving out of the box.
-        from svc.builder.images import INLINE_LIMIT_KB
-        from svc.email.medium import _SIZE_LIMIT_KB, _SIZE_WARN_KB
-        from svc.outlook.sender import DEFAULT_TIMEOUT_SECONDS
+        from pyhermes.builder.images import INLINE_LIMIT_KB
+        from pyhermes.email.medium import _SIZE_LIMIT_KB, _SIZE_WARN_KB
+        from pyhermes.outlook.sender import DEFAULT_TIMEOUT_SECONDS
 
         config = Config()
         assert (_SIZE_LIMIT_KB, _SIZE_WARN_KB, INLINE_LIMIT_KB) == (102, 90, 48)

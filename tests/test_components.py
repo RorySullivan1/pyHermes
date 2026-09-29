@@ -8,7 +8,7 @@ context()) fails here rather than only in the full-email integration run.
 
 import pytest
 
-from svc.builder import (
+from pyhermes.builder import (
     AuthorBlock,
     CardGroup,
     ChartBlock,
@@ -17,9 +17,9 @@ from svc.builder import (
     NumberedList,
     TextBlock,
 )
-from svc.builder.components import Component
-from svc.builder.exceptions import ValidationError
-from svc.builder.models import KpiItem, TableRow
+from pyhermes.builder.components import Component
+from pyhermes.builder.exceptions import ValidationError
+from pyhermes.builder.models import KpiItem, TableRow
 
 
 class TestCardGroup:
@@ -131,7 +131,7 @@ class TestNumberedList:
             NumberedList(items=[])
 
     def test_propagates_item_validation(self):
-        from svc.builder.models import NumberedItem
+        from pyhermes.builder.models import NumberedItem
 
         with pytest.raises(ValidationError, match="numbered_item.body"):
             NumberedList(items=[NumberedItem(number="01", title="T", body="")])

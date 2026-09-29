@@ -1,12 +1,12 @@
 # MEMORY INDEX  ·  keep ≤ ~80 lines, ≤ ~200 chars per line
 
 ## State            (rewrite in place — current truth only, ≤ ~10 lines)
-- pyHermes builds **documents** and renders each onto a **medium**: `svc/builder` is the
-  shared kit, `svc/email`, `svc/document` and `svc/brochure` are the media, and exporters sit on
-  one contract — `svc/delivery`+`gmail`+`outlook`, and `svc/pdf`. Rationale: CLAUDE.md and
+- pyHermes builds **documents** and renders each onto a **medium**: `pyhermes/builder` is the
+  shared kit, `pyhermes/email`, `pyhermes/document` and `pyhermes/brochure` are the media, and exporters sit on
+  one contract — `pyhermes/delivery`+`gmail`+`outlook`, and `pyhermes/pdf`. Rationale: CLAUDE.md and
   `.claude/rules/media.md`; do not restate it here.
 - **Shipped**: #157, #153, #169, #170, #171, #172, #193 (PRs #167–#203); #201, #150, #202 (PRs #204–#206);
-  #209 (PR #222); #217 (PR #234); #221 (PR #235). **#238 implemented on the branch** (#246, #249, #247).
+  #209 (PR #222); #217 (PR #234); #221 (PR #235); #238 (PR #253). **#237 implemented on the branch.**
   Stubs #218–#220 are still undefined; each is defined in place with the `epic` skill, as #217 was.
 - The prose budget is live; the baseline is 45 and may only shrink.
 
@@ -43,7 +43,11 @@
 - [2026-09-28] **A config travels with the work: explicit, then context, then default.** A `ContextVar`
   over `set_config`; a new thread starts from the default. Soft limits are warnings — `config.md`
 
+- [2026-09-29] **The import root is `pyhermes`; `svc` is a one-release shim to delete next release.**
+  Checks read the built wheel and sdist, never the tree — `working-in-the-code.md` (#237)
+
 ## Threads          (open items; remove when closed)
+- **`epic-autoclose` has failed every run since 2026-09-28** (logs 404 here); close an epic by hand.
 - **In this container, PDF byte-determinism tests flake** (no HarfBuzz-Subset), and screenshot
   tests skip unless `PYHERMES_CHROMIUM=/opt/pw-browsers/chromium-1194/chrome-linux/chrome`.
 - **Every issue or PR body is written without angle brackets** — GitHub's sanitizer has
@@ -64,15 +68,13 @@
 
 ## Log              (append-only pointers)
 - Older entries, and epic #157's, are in sessions/ARCHIVE-2026.md.
-- [2026-09-24] spacing-two-levels — **#209 implemented** (#211–#216): `dense`, `SizeScheme` as `size_theme`,
-  `Spacing` + `SPACING_TOKENS`, the factsheet at 90% of two sheets — sessions/2026-09-24-spacing-two-levels.md
-- [2026-09-24] define-epic-217 — **#217 defined, #223–#228 filed** via the github-issues pipeline. `fill-self`
-  rewrites the Done-when sentence too; print the diff — sessions/2026-09-24-1208-define-epic-217.md
 - [2026-09-24] define-epic-221 — **#221 defined, #229–#233 filed**. mathtext measured: deterministic, no `aligned`,
   `\le` unknown; two stub claims corrected (purity, theme recolour) — sessions/2026-09-24-1312-define-epic-221.md
 - [2026-09-24] table-semantics — **#217 implemented** (#223–#228): groups, cell markers, `Column.format`,
   decimal alignment and units, `HeatScale` and bars; `letter_quant_table` — sessions/2026-09-24-table-semantics.md
-- [2026-09-24] equations — **#221 implemented** (#229–#233): `MathBlock`, `svc/math` + `[math]`, `math_block`,
+- [2026-09-24] equations — **#221 implemented** (#229–#233): `MathBlock`, `pyhermes/math` + `[math]`, `math_block`,
   lines shim, `a4_equations`, the factsheet's Sharpe ratio — sessions/2026-09-24-equations.md
 - [2026-09-28] host-seams — **#238 implemented** (#246, #249, #247): warnings not prints, a context-local
   `Config` with `config=`, `template_overlay=` — sessions/2026-09-28-host-seams.md
+- [2026-09-29] consumer-package — **#237 implemented** (#243-#245, #248): `py.typed`, MIT metadata and a
+  library-only sdist, 3.11-3.14 in CI, `svc` renamed `pyhermes` — sessions/2026-09-29-consumer-package.md

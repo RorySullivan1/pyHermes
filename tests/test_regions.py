@@ -11,8 +11,8 @@ import re
 
 import pytest
 
-import svc.builder as builder_api
-from svc.builder import (
+import pyhermes.builder as builder_api
+from pyhermes.builder import (
     Banner,
     BannerPalette,
     BoxSurface,
@@ -24,11 +24,11 @@ from svc.builder import (
     MinimalBanner,
     Rgba,
 )
-from svc.builder.engine import TemplateEngine
-from svc.builder.exceptions import ValidationError
-from svc.builder.images import EmailImage
-from svc.builder.models import EmailMetadata
-from svc.builder.theming import DEFAULT_THEME
+from pyhermes.builder.engine import TemplateEngine
+from pyhermes.builder.exceptions import ValidationError
+from pyhermes.builder.images import EmailImage
+from pyhermes.builder.models import EmailMetadata
+from pyhermes.builder.theming import DEFAULT_THEME
 
 TEMPLATE_DIR = TemplateEngine().template_dir
 
@@ -127,7 +127,7 @@ class TestTheBannerModel:
     """#34: the masthead's presentation is a model of its own, validated early."""
 
     def test_it_is_exported_from_the_package(self):
-        from svc.builder import Banner as Exported
+        from pyhermes.builder import Banner as Exported
 
         assert Exported is Banner
 
@@ -465,7 +465,7 @@ class TestTheTwoTreacherousBlocksLeaveTheBannerAlone:
 
     @staticmethod
     def _skeleton() -> str:
-        from svc.builder import Email
+        from pyhermes.builder import Email
 
         return Email({"email_subject": "s", "firm_name": "f", "campaign_name": "c"}).render()
 
@@ -673,7 +673,7 @@ class TestEveryRegionVariantHoldsTheContract:
     """
     The shared contract, checked by introspection rather than by a list.
 
-    Every region and variant exported from ``svc.builder`` goes through this,
+    Every region and variant exported from ``pyhermes.builder`` goes through this,
     so a variant added later is covered without anyone remembering to name
     it here — which is what #96 asked for and what a hand-written
     parametrize list cannot promise.
@@ -681,7 +681,7 @@ class TestEveryRegionVariantHoldsTheContract:
 
     @staticmethod
     def _variants() -> list[type]:
-        from svc.builder import regions as region_api
+        from pyhermes.builder import regions as region_api
 
         return [
             obj
@@ -1056,7 +1056,7 @@ class TestTheMinimalBannerVariant:
     """#36: a region abstraction with one implementation is a refactor in a hat."""
 
     def test_it_is_exported_from_the_package(self):
-        from svc.builder import MinimalBanner as Exported
+        from pyhermes.builder import MinimalBanner as Exported
 
         assert Exported is MinimalBanner
 

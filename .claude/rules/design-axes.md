@@ -1,11 +1,11 @@
 ---
 paths:
-  - "svc/builder/theming.py"
-  - "svc/builder/sizing.py"
-  - "svc/builder/typography.py"
-  - "svc/builder/enums.py"
-  - "svc/builder/containers.py"
-  - "svc/builder/templates/**/*"
+  - "pyhermes/builder/theming.py"
+  - "pyhermes/builder/sizing.py"
+  - "pyhermes/builder/typography.py"
+  - "pyhermes/builder/enums.py"
+  - "pyhermes/builder/containers.py"
+  - "pyhermes/builder/templates/**/*"
 ---
 
 # The four design axes — colour, size, typeface, alignment
@@ -20,10 +20,10 @@ bound only at render. A document under another theme needs its equations rendere
 Colour was 18 hex values in 245 occurrences across all 20 template files, three `rgba()`
 literals and three Python fallbacks, described by a palette *comment* in `base.html` that
 nothing could read — and that had already drifted, naming a row-alt colour the data table
-never used. Epic #46 replaced it with [svc/builder/theming.py](../../svc/builder/theming.py).
+never used. Epic #46 replaced it with [pyhermes/builder/theming.py](../../pyhermes/builder/theming.py).
 
 ```python
-from svc.builder import DEFAULT_THEME, Palette, Theme
+from pyhermes.builder import DEFAULT_THEME, Palette, Theme
 
 EmailBuilder().metadata({..., "theme": "slate"})              # a curated preset
 EmailBuilder().metadata({..., "theme": DEFAULT_THEME.derive(  # or your own
@@ -185,7 +185,7 @@ Sizes were 57 `font-size` declarations, ~50 line-heights and ~90 padding literal
 templates, plus the 680px frame arithmetic written out **twice per column in eight container
 files**. An implied scale existed (28 / 22 / 21 / 17 / 14 / 13 / 11 / 10 / 9.5 px); nothing
 named it, owned it, or could vary it. Epic #45 replaced it with
-[svc/builder/sizing.py](../../svc/builder/sizing.py).
+[pyhermes/builder/sizing.py](../../pyhermes/builder/sizing.py).
 
 ```python
 EmailBuilder().metadata({..., "size_theme": "compact"})     # or "standard" / "spacious"
@@ -449,10 +449,10 @@ Faces were the last hardcoded axis. Colour became a resolved `Theme` in #46 and 
 resolved `SizeScheme` in #45, but `font-family` stacks stayed baked into the templates: 49
 declarations of three stacks across 15 files, unnamed and unvariable, so a newsletter wanting
 its own house face forked templates. Epic #56 replaced them with
-[svc/builder/typography.py](../../svc/builder/typography.py).
+[pyhermes/builder/typography.py](../../pyhermes/builder/typography.py).
 
 ```python
-from svc.builder import DEFAULT_FONTS, FontStack
+from pyhermes.builder import DEFAULT_FONTS, FontStack
 
 EmailBuilder().metadata({..., "font_theme": "modern"})           # a curated preset
 EmailBuilder().metadata({..., "font_theme": DEFAULT_FONTS.derive(  # or your own
@@ -607,7 +607,7 @@ exactly as a palette and a density are.
 
 ## The sizing audit — how the token values were established
 
-Moved out of `svc/builder/sizing.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
+Moved out of `pyhermes/builder/sizing.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
 
 ```
 The email's size vocabulary — one validated object per density.
@@ -634,9 +634,9 @@ it, and nothing could vary it. This module is that owner.
     templates read {{ size.type.body }}, {{ size.space.gutter }}, ...
 
 **Callers pick a theme, never a px.** ``size_theme`` accepts a
-:class:`~svc.builder.enums.SizeTheme` member or its bare string and nothing
+:class:`~pyhermes.builder.enums.SizeTheme` member or its bare string and nothing
 else — deliberately narrower than ``theme``, which also accepts a custom
-:class:`~svc.builder.theming.Theme`. The asymmetry is the point: a palette is
+:class:`~pyhermes.builder.theming.Theme`. The asymmetry is the point: a palette is
 an email's voice and a house style may legitimately need its own, whereas
 density interacts with the 102 KB clipping limit, Outlook's Word engine and
 the mobile collapse all at once. A scheme nobody has rendered in a real
@@ -787,7 +787,7 @@ rule cannot simply be "ints only". Line-heights obey the same rule, so
 
 ## The colour audit — how the palette's roles and values were established
 
-Moved out of `svc/builder/theming.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
+Moved out of `pyhermes/builder/theming.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
 
 ```
 Theming — every colour and shadow in the email, as one validated object.
@@ -824,7 +824,7 @@ The audit
 ---------
 
 Every default below is exactly what the templates hardcode today. Occurrence
-counts are over ``svc/builder/templates/``; the palette comment's own 13
+counts are over ``pyhermes/builder/templates/``; the palette comment's own 13
 lines are excluded from "renders in".
 
 Palette
@@ -895,14 +895,14 @@ Four things the audit found, recorded rather than quietly fixed
 
 ## The typeface axis — how the font roles and stacks were chosen
 
-Moved out of `svc/builder/typography.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
+Moved out of `pyhermes/builder/typography.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
 
 ```
 The email's typeface vocabulary — one validated object per house voice.
 
 Faces were the last hardcoded axis of the design system. Colour became a
-resolved :class:`~svc.builder.theming.Theme` in #46 and density a resolved
-:class:`~svc.builder.sizing.SizeScheme` in #45, but ``font-family`` stacks
+resolved :class:`~pyhermes.builder.theming.Theme` in #46 and density a resolved
+:class:`~pyhermes.builder.sizing.SizeScheme` in #45, but ``font-family`` stacks
 stayed baked into the templates: repeated per declaration, unnamed,
 unvariable. A newsletter wanting a different house face forked templates.
 This module is that owner.
@@ -919,7 +919,7 @@ This module is that owner.
     +-- numeric    FontStack        the data table's figure columns
 
 **The audit this module is pinned to** — every ``font-family`` declaration in
-``svc/builder/templates/``, 2026-08-28. Three stacks, 49 declarations:
+``pyhermes/builder/templates/``, 2026-08-28. Three stacks, 49 declarations:
 
 ===========================================  =====  ==============================
 stack                                        count  drawn at

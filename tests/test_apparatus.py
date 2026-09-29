@@ -11,8 +11,7 @@ import re
 
 import pytest
 
-from qa.fixtures import all_paged_fixtures
-from svc.builder import (
+from pyhermes.builder import (
     CardGroup,
     ChartBlock,
     Contents,
@@ -26,11 +25,11 @@ from svc.builder import (
     TwoColumn,
     ValidationError,
 )
-from svc.builder.apparatus import slugify
-from svc.builder.email import Email
-from svc.builder.models import Card, Footnote, NumberedItem, TableRow
-from svc.config import config_override
-from svc.document import (
+from pyhermes.builder.apparatus import slugify
+from pyhermes.builder.email import Email
+from pyhermes.builder.models import Card, Footnote, NumberedItem, TableRow
+from pyhermes.config import config_override
+from pyhermes.document import (
     ContentsPage,
     EmptyBackMatter,
     EmptyContentsPage,
@@ -40,7 +39,8 @@ from svc.document import (
     PagedDocument,
     RunningHeader,
 )
-from svc.pdf import available, render_pdf
+from pyhermes.pdf import available, render_pdf
+from qa.fixtures import all_paged_fixtures
 
 requires_pdf = pytest.mark.skipif(
     not available() or importlib.util.find_spec("pypdfium2") is None,
@@ -521,7 +521,7 @@ class TestCrossReferences:
             email(section()).render()
 
     def test_the_document_facts_and_the_footer_are_checked_too(self):
-        from svc.builder import Footer
+        from pyhermes.builder import Footer
 
         with pytest.raises(ValidationError, match="header_disclaimer links to #nowhere"):
             Email({**FACTS, "header_disclaimer": '<a href="#nowhere">x</a>'}).render()

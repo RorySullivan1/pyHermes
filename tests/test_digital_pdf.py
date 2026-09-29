@@ -15,15 +15,11 @@ import zlib
 
 import pytest
 
-from qa.fixtures import _paged as paged
-from qa.fixtures import all_brochure_fixtures, all_paged_fixtures
-from qa.fixtures import tri_fold_letter as brochure
-from qa.fixtures._png import solid_png
-from svc.builder import ChartBlock, Email, FullWidth, ImageBlock, TextBlock, TwoColumn
-from svc.builder.enums import TwoColumnRatio
-from svc.builder.images import EmailImage
-from svc.document import PagedDocument
-from svc.pdf import (
+from pyhermes.builder import ChartBlock, Email, FullWidth, ImageBlock, TextBlock, TwoColumn
+from pyhermes.builder.enums import TwoColumnRatio
+from pyhermes.builder.images import EmailImage
+from pyhermes.document import PagedDocument
+from pyhermes.pdf import (
     PRINT,
     SCREEN,
     TAGGED,
@@ -33,6 +29,10 @@ from svc.pdf import (
     render_pdf,
     save_pdf,
 )
+from qa.fixtures import _paged as paged
+from qa.fixtures import all_brochure_fixtures, all_paged_fixtures
+from qa.fixtures import tri_fold_letter as brochure
+from qa.fixtures._png import solid_png
 
 pytestmark = pytest.mark.skipif(
     not available() or importlib.util.find_spec("pypdfium2") is None,
@@ -484,10 +484,10 @@ class TestTheLandscapeReport:
     def test_it_goes_out_as_one_message(self, report, pdf):
         from email import message_from_bytes
 
-        from svc.builder import EmailBuilder
-        from svc.delivery import build_message
-        from svc.delivery.message import to_wire_bytes
-        from svc.pdf import pdf_attachment
+        from pyhermes.builder import EmailBuilder
+        from pyhermes.delivery import build_message
+        from pyhermes.delivery.message import to_wire_bytes
+        from pyhermes.pdf import pdf_attachment
 
         cover = (
             EmailBuilder()

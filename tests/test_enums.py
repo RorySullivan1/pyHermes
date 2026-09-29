@@ -8,7 +8,7 @@ and that string-equivalence, because the whole backward-compatibility story
 rests on it.
 """
 
-from svc.builder.enums import CardOrientation, ThreeColumnRatio, TwoColumnRatio
+from pyhermes.builder.enums import CardOrientation, ThreeColumnRatio, TwoColumnRatio
 
 
 class TestTwoColumnRatio:

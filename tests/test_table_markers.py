@@ -12,12 +12,12 @@ import re
 
 import pytest
 
-from svc.builder import DataTable, FullWidth, TextBlock
-from svc.builder.email import Email
-from svc.builder.engine import TemplateEngine
-from svc.builder.exceptions import ValidationError
-from svc.builder.models import TableRow
-from svc.document import PagedDocument
+from pyhermes.builder import DataTable, FullWidth, TextBlock
+from pyhermes.builder.email import Email
+from pyhermes.builder.engine import TemplateEngine
+from pyhermes.builder.exceptions import ValidationError
+from pyhermes.builder.models import TableRow
+from pyhermes.document import PagedDocument
 
 PAPER_FACTS = {"firm_name": "Hermes", "campaign_name": "Review"}
 FACTS = {"email_subject": "Subject", **PAPER_FACTS}

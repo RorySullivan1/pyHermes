@@ -12,11 +12,11 @@ import re
 
 import pytest
 
+from pyhermes.builder import ColumnGroup, DataTable
+from pyhermes.builder.engine import TemplateEngine
+from pyhermes.builder.exceptions import ValidationError
+from pyhermes.builder.models import TableRow
 from qa.lint import lint_html
-from svc.builder import ColumnGroup, DataTable
-from svc.builder.engine import TemplateEngine
-from svc.builder.exceptions import ValidationError
-from svc.builder.models import TableRow
 
 GROUPS = [ColumnGroup("Share class"), ColumnGroup("Annualised", 3)]
 

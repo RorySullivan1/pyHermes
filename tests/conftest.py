@@ -10,14 +10,14 @@ from pathlib import Path
 
 import pytest
 
-from svc.builder import TextBlock
-from svc.builder.engine import TemplateEngine
-from svc.builder.models import KpiItem, NumberedItem, TableRow
+from pyhermes.builder import TextBlock
+from pyhermes.builder.engine import TemplateEngine
+from pyhermes.builder.models import KpiItem, NumberedItem, TableRow
 
 
 @pytest.fixture(scope="session")
 def engine() -> TemplateEngine:
-    """A TemplateEngine pointed at the templates/ packaged in svc.builder.
+    """A TemplateEngine pointed at the templates/ packaged in pyhermes.builder.
 
     Session-scoped: the engine is stateless for our purposes and Jinja2
     caches compiled templates, so sharing it keeps the suite fast.

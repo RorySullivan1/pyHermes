@@ -12,11 +12,11 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from svc.builder import ColumnGroup, DataTable, FullWidth, HeatScale, TextBlock
-from svc.builder.formats import pct
-from svc.builder.models import Cell, Column, TableRow
-from svc.builder.sizing import LETTER_PORTRAIT
-from svc.document import (
+from pyhermes.builder import ColumnGroup, DataTable, FullWidth, HeatScale, TextBlock
+from pyhermes.builder.formats import pct
+from pyhermes.builder.models import Cell, Column, TableRow
+from pyhermes.builder.sizing import LETTER_PORTRAIT
+from pyhermes.document import (
     EmptyBackMatter,
     EmptyContentsPage,
     EmptyCover,

@@ -20,7 +20,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from svc.builder import (
+from pyhermes.builder import (
     CardGroup,
     DataTable,
     Email,
@@ -30,7 +30,7 @@ from svc.builder import (
     ThreeColumn,
     TwoColumn,
 )
-from svc.builder.models import Card, Column, TableRow
+from pyhermes.builder.models import Card, Column, TableRow
 
 #: Fixed, like every string in the gallery: a golden cannot pin a value that
 #: moves. See the module docstring in :mod:`qa.fixtures`.

@@ -17,6 +17,8 @@ import re
 
 import pytest
 
+from pyhermes.builder import Email, FullWidth, TextBlock
+from pyhermes.config import config_override
 from qa.fixtures import all_fixtures
 from qa.lint import (
     DEFERRED_RULES,
@@ -29,8 +31,6 @@ from qa.lint import (
     lint_html,
     size_report,
 )
-from svc.builder import Email, FullWidth, TextBlock
-from svc.config import config_override
 
 FIXTURE_NAMES = sorted(all_fixtures())
 

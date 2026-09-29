@@ -13,11 +13,11 @@ import importlib.util
 
 import pytest
 
+from pyhermes.builder import ChartBlock, FullWidth, ImageBlock
+from pyhermes.builder.images import EmailImage
+from pyhermes.pdf import available as pdf_available
 from qa.fixtures._png import solid_png
 from qa.screenshots import available as browser_available
-from svc.builder import ChartBlock, FullWidth, ImageBlock
-from svc.builder.images import EmailImage
-from svc.pdf import available as pdf_available
 
 requires_pdf = pytest.mark.skipif(
     not pdf_available() or importlib.util.find_spec("pypdfium2") is None,
@@ -45,8 +45,8 @@ def _image(width: int, height: int, alt: str) -> EmailImage:
 
 def _content_box() -> tuple[float, float]:
     """A full-width section's content column on paper: the sheet less margin and padding."""
-    from svc.builder.sizing import STANDARD_SIZES
-    from svc.document import PAGED_MEDIUM
+    from pyhermes.builder.sizing import STANDARD_SIZES
+    from pyhermes.document import PAGED_MEDIUM
 
     page, pad = PAGED_MEDIUM.page_format, STANDARD_SIZES.frame.pad_x
     return page.margin.left + pad, page.width - page.margin.right - pad
@@ -65,8 +65,8 @@ def test_on_paper_each_image_sits_where_its_alignment_says(name):
     import pypdfium2
     import pypdfium2.raw as pdfium_raw
 
-    from svc.document import PagedDocument
-    from svc.pdf import render_pdf
+    from pyhermes.document import PagedDocument
+    from pyhermes.pdf import render_pdf
 
     build, side = CASES[name]
     document = PagedDocument({"firm_name": "F", "campaign_name": "C"})
@@ -90,14 +90,14 @@ def test_on_paper_a_decorative_image_follows_its_alignment(align):
     import numpy as np
     import pypdfium2
 
-    from svc.document import (
+    from pyhermes.document import (
         EmptyBackMatter,
         EmptyCover,
         EmptyRunningFooter,
         EmptyRunningHeader,
         PagedDocument,
     )
-    from svc.pdf import render_pdf
+    from pyhermes.pdf import render_pdf
 
     image = EmailImage.attached(solid_png(160, 40, (10, 10, 10)), decorative=True, width=80)
     document = PagedDocument(
@@ -117,8 +117,8 @@ def test_on_paper_a_decorative_image_follows_its_alignment(align):
 
 @pytest.mark.skipif(not browser_available(), reason='no browser; the "[qa]" extra')
 def test_in_a_browser_each_image_sits_where_its_alignment_says():
+    from pyhermes.builder.email import Email
     from qa.screenshots import _launch, _load_playwright, inline_cid_images
-    from svc.builder.email import Email
 
     email = Email({"email_subject": "S", "firm_name": "F", "campaign_name": "C"})
     for build, _ in CASES.values():

@@ -1,11 +1,11 @@
 ---
 paths:
-  - "svc/email/**/*"
-  - "svc/document/**/*"
-  - "svc/pdf/**/*"
-  - "svc/builder/medium.py"
-  - "svc/builder/document.py"
-  - "svc/builder/templates/document/**/*"
+  - "pyhermes/email/**/*"
+  - "pyhermes/document/**/*"
+  - "pyhermes/pdf/**/*"
+  - "pyhermes/builder/medium.py"
+  - "pyhermes/builder/document.py"
+  - "pyhermes/builder/templates/document/**/*"
 ---
 
 # Media — one section tree, several destinations
@@ -21,9 +21,9 @@ same skeleton, same slots, same constraints. A medium changes all of those, so i
 **which class you construct**, never by a field you flip:
 
 ```python
-Email(metadata)          # svc/builder/email.py   — EMAIL_MEDIUM
-PagedDocument(metadata)  # svc/document/          — PAGED_MEDIUM, A4 by default
-Document(metadata)       # svc/builder/document.py — DEFAULT_MEDIUM, plain HTML
+Email(metadata)          # pyhermes/builder/email.py   — EMAIL_MEDIUM
+PagedDocument(metadata)  # pyhermes/document/          — PAGED_MEDIUM, A4 by default
+Document(metadata)       # pyhermes/builder/document.py — DEFAULT_MEDIUM, plain HTML
 ```
 
 Once chosen it **rides the binder as the fourth keyword**, so a shared template can ask
@@ -262,10 +262,10 @@ subject and the URL schemes.
 
 ## The exporter contract, extended
 
-`svc/pdf/` is an exporter on `svc/gmail` and `svc/outlook`'s terms exactly: it takes what the
+`pyhermes/pdf/` is an exporter on `pyhermes/gmail` and `pyhermes/outlook`'s terms exactly: it takes what the
 builder produces, owns its wire format, and owns nothing else. WeasyPrint is the optional
-`[pdf]` extra, imported lazily, and an AST test holds that nothing under `svc/builder`,
-`svc/document` or `svc/email` imports it.
+`[pdf]` extra, imported lazily, and an AST test holds that nothing under `pyhermes/builder`,
+`pyhermes/document` or `pyhermes/email` imports it.
 
 What it **adds** to that contract is a resource policy, and it is the security-relevant part:
 **no network requests**. `cid:` is served from the document's own manifest, `data:` resolves
@@ -317,7 +317,7 @@ made them reviewable as changes of *owner* rather than of markup, the proof #95 
 
 ## The third medium: a folded sheet (#172)
 
-`svc/brochure/` is the first medium with **no regions**. A brochure's cover is its first panel,
+`pyhermes/brochure/` is the first medium with **no regions**. A brochure's cover is its first panel,
 and a `Cover` region would be a second way to fill it. Its overlay searches `brochure/`, then
 `document/`, then the shared tree, so it forks only its skeleton, the side and the panel, and
 shares the paged medium's editorial partial. `Document.render` gained one hook for it,
@@ -373,5 +373,5 @@ cover is paged-only and sits on a full sheet, so it takes a plain `width: Npx`.
 the fixed-width version in a half column.
 
 **The digital PDF (#193) is not a medium.** It is a `PdfProfile` on this exporter plus an
-attachment path in `svc/delivery`, and `digital-pdf.md` has the decision, the profiles, the size
+attachment path in `pyhermes/delivery`, and `digital-pdf.md` has the decision, the profiles, the size
 budget and the PDF/UA measurement.

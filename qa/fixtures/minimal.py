@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from svc.builder import Email, EmailBuilder, FullWidth, TextBlock
+from pyhermes.builder import Email, EmailBuilder, FullWidth, TextBlock
 
 
 def build(template_dir: Path | None = None) -> Email:

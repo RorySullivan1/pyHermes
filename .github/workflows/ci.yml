@@ -16,8 +16,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Floor from requires-python, plus the current release.
-        python-version: ["3.11", "3.13"]
+        # Every Python the metadata admits: the requires-python floor, each
+        # release between, and the current release (3.14 since October 2025).
+        # A red one is a finding to fix or file with requires-python capped,
+        # never a reason to narrow this list (#245).
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
 
     steps:
       - uses: actions/checkout@v4
@@ -160,7 +163,7 @@ jobs:
 
           from qa.fixtures import all_brochure_fixtures, all_paged_fixtures
           from qa.screenshots import capture_pages
-          from svc.pdf import page_count, save_pdf
+          from pyhermes.pdf import page_count, save_pdf
 
           builders = {**all_paged_fixtures(), **all_brochure_fixtures()}
           gallery = {name: build() for name, build in sorted(builders.items())}
@@ -186,13 +189,21 @@ jobs:
     # place a DataFrame is actually adapted. The purity half
     # (tests/test_data_layer.py) runs in `check` above, with neither installed,
     # which is the environment that claim is about.
+    #
+    # The one extras job on two Pythons (#245): the pinned pandas, matplotlib
+    # and its numpy had only ever been resolved on 3.13, never on the 3.11
+    # floor requires-python admits. The cheapest extras job carries that proof.
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.13"]
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
+          python-version: ${{ matrix.python-version }}
           cache: pip
           cache-dependency-path: pyproject.toml
 
@@ -216,7 +227,7 @@ jobs:
     # Guards #10: templates/ must ship inside the wheel, so the package can
     # render an email with no source tree present. A parent-directory lookup
     # or a missing package-data rule passes every check above and fails only
-    # here.
+    # here. Since #244 it builds the sdist too, and renders from each.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -225,23 +236,48 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Build the wheel
+      - name: Build the wheel and the sdist
         run: |
-          pip install build
-          python -m build --wheel
+          pip install build twine
+          python -m build
 
-      - name: Install it into a clean venv, outside the source tree
+      - name: Check the metadata
+        run: twine check --strict dist/*
+
+      - name: Check the built artefacts
+        # #243: the wheel must carry py.typed, or a consumer's type checker
+        # reads every pyHermes symbol as Any. #244: the sdist is the library
+        # alone, so .claude/, tests/, qa/, examples/, drafts/ or docs/ in it
+        # fails here. qa/distribution.py lists each artefact and names what
+        # is wrong; tests/test_distribution.py proves each check can fail.
+        run: python -m qa.distribution dist
+
+      - name: Install each artefact into its own clean venv, outside the source tree
         run: |
           python -m venv /tmp/wheelenv
           /tmp/wheelenv/bin/pip install dist/*.whl
+          python -m venv /tmp/sdistenv
+          /tmp/sdistenv/bin/pip install dist/*.tar.gz
+          /tmp/wheelenv/bin/pip install --upgrade pip
+          /tmp/wheelenv/bin/pip show --verbose pyhermes
 
-      - name: Render an email with no source tree in sight
+      - name: Type-check a consumer against the installed wheel
+        # Without the marker this reports missing library stubs and reveals Any.
         run: |
-          mkdir -p /tmp/wheelcheck && cd /tmp/wheelcheck
-          /tmp/wheelenv/bin/python - <<'PY'
+          /tmp/wheelenv/bin/pip install mypy
+          mkdir -p /tmp/typecheck && cd /tmp/typecheck
+          printf 'from pyhermes.builder import Email\n\nreveal_type(Email)\n' > consumer.py
+          /tmp/wheelenv/bin/mypy --strict consumer.py
+
+      - name: Render an email with no source tree in sight, from each
+        run: |
+          for env in wheelenv sdistenv; do
+          echo "== $env"
+          mkdir -p /tmp/$env-check && cd /tmp/$env-check
+          /tmp/$env/bin/python - <<'PY'
           from pathlib import Path
 
-          from svc.builder import (
+          from pyhermes.builder import (
               ContactBlock,
               EmailBuilder,
               Footer,
@@ -310,3 +346,4 @@ jobs:
           assert "font-size:13px" in compact, "the compact type scale did not reach the email"
           print("OK: columns.html renders, and its geometry follows the size theme")
           PY
+          done

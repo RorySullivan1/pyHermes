@@ -9,12 +9,12 @@ from typing import Any
 
 import pytest
 
+from pyhermes.builder import Component, Email, EmailBuilder, FullWidth, TemplateEngine
+from pyhermes.builder.engine import _packaged_template_dir
+from pyhermes.builder.exceptions import TemplateError
+from pyhermes.builder.medium import Medium
+from pyhermes.document import PagedDocument
 from qa.fixtures import kitchen_sink
-from svc.builder import Component, Email, EmailBuilder, FullWidth, TemplateEngine
-from svc.builder.engine import _packaged_template_dir
-from svc.builder.exceptions import TemplateError
-from svc.builder.medium import Medium
-from svc.document import PagedDocument
 
 MARKER = "<!-- house footer -->\n"
 

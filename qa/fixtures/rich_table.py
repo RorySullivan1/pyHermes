@@ -14,9 +14,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from svc.builder import DataTable, Email, EmailBuilder, FullWidth, HeatScale, TextBlock
-from svc.builder.formats import pct
-from svc.builder.models import Cell, Column, ColumnGroup, TableRow
+from pyhermes.builder import DataTable, Email, EmailBuilder, FullWidth, HeatScale, TextBlock
+from pyhermes.builder.formats import pct
+from pyhermes.builder.models import Cell, Column, ColumnGroup, TableRow
 
 #: Gains and losses, as the caller's claim about a figure rather than a
 #: styling choice — the justification that admits #118's colours at all.

@@ -22,8 +22,7 @@ from typing import NamedTuple
 
 import pytest
 
-from qa.fixtures import all_fixtures
-from svc.builder import (
+from pyhermes.builder import (
     AuthorBlock,
     CardGroup,
     ChartBlock,
@@ -39,10 +38,11 @@ from svc.builder import (
     TwoColumn,
     ValidationError,
 )
-from svc.builder.components import CopyAlignment
-from svc.builder.models import Card, NumberedItem, TableRow
+from pyhermes.builder.components import CopyAlignment
+from pyhermes.builder.models import Card, NumberedItem, TableRow
+from qa.fixtures import all_fixtures
 
-TEMPLATE_DIR = Path("svc/builder/templates")
+TEMPLATE_DIR = Path("pyhermes/builder/templates")
 
 #: The two elements where the spellings are **not** equivalent, so the
 #: pairing deliberately does not apply. Each carries the style alone.
@@ -263,7 +263,7 @@ class TestTheTwoSpellingsTravelTogether:
         Without this, admitting ``justify`` to the audit would quietly become
         permission to add it to the enum.
         """
-        from svc.builder.enums import TextAlign
+        from pyhermes.builder.enums import TextAlign
 
         assert "justify" not in {member.value for member in TextAlign}
         assert "justify" not in _ALIGNMENTS
@@ -529,7 +529,7 @@ class TestOnlyProseComponentsTakeAnAlignment:
             )
 
     def test_the_structural_components_deliberately_do_not(self):
-        import svc.builder as api
+        import pyhermes.builder as api
 
         for name, reason in STRUCTURALLY_ALIGNED.items():
             component = getattr(api, name)
@@ -545,7 +545,7 @@ class TestOnlyProseComponentsTakeAnAlignment:
         neither prose nor named as structural is one nobody has decided
         about, which is how a field silently goes missing.
         """
-        import svc.builder as api
+        import pyhermes.builder as api
 
         public = {
             name
@@ -687,7 +687,7 @@ class TestAlignmentIsGeometryNotADesignAxis:
             "FullWidth": "align",
             "TextBlock": "align",
         }
-        import svc.builder as api
+        import pyhermes.builder as api
 
         for name, parameter in geometry.items():
             parameters = inspect.signature(getattr(api, name)).parameters
@@ -700,7 +700,7 @@ class TestAlignmentIsGeometryNotADesignAxis:
         email-level voice. A section's alignment varies *per section* —
         that is the whole point — so it can never be one.
         """
-        from svc.builder.models import EmailMetadata
+        from pyhermes.builder.models import EmailMetadata
 
         fields = {f.name for f in dataclasses.fields(EmailMetadata)}
         assert not {name for name in fields if "align" in name}, (

@@ -13,13 +13,12 @@ import dataclasses
 
 import pytest
 
-from qa.fixtures import _paged, all_paged_fixtures
-from svc.builder import Email, FullWidth, TextBlock
-from svc.builder.engine import TemplateEngine
-from svc.builder.exceptions import ValidationError
-from svc.builder.images import EmailImage
-from svc.builder.medium import DEFAULT_MEDIUM
-from svc.document import (
+from pyhermes.builder import Email, FullWidth, TextBlock
+from pyhermes.builder.engine import TemplateEngine
+from pyhermes.builder.exceptions import ValidationError
+from pyhermes.builder.images import EmailImage
+from pyhermes.builder.medium import DEFAULT_MEDIUM
+from pyhermes.document import (
     BackMatter,
     ContentsPage,
     Cover,
@@ -32,9 +31,10 @@ from svc.document import (
     RunningFooter,
     RunningHeader,
 )
-from svc.document.document import BACK_MATTER_FACTS, COVER_FACTS, RUNNING_FACTS
-from svc.document.medium import PAGED_MEDIUM
-from svc.document.regions import MARGIN_BOXES
+from pyhermes.document.document import BACK_MATTER_FACTS, COVER_FACTS, RUNNING_FACTS
+from pyhermes.document.medium import PAGED_MEDIUM
+from pyhermes.document.regions import MARGIN_BOXES
+from qa.fixtures import _paged, all_paged_fixtures
 
 TEMPLATE_DIR = TemplateEngine().template_dir
 DOCUMENT_REGIONS = (Cover, ContentsPage, RunningHeader, RunningFooter, BackMatter)
@@ -162,7 +162,7 @@ class TestAPageProjectsAndWalksItsSections:
         assert with_break == without
 
     def test_it_walks_its_sections_for_components_images_and_assets(self, png_bytes):
-        from svc.builder import ChartBlock
+        from pyhermes.builder import ChartBlock
 
         chart = ChartBlock(EmailImage.attached(png_bytes, alt="Chart", width=100))
         page = Page([FullWidth(content=chart)])
@@ -171,7 +171,7 @@ class TestAPageProjectsAndWalksItsSections:
         assert len(page.assets()) == 1
 
     def test_a_documents_manifest_reaches_through_a_page(self, png_bytes):
-        from svc.builder import ChartBlock
+        from pyhermes.builder import ChartBlock
 
         document = PagedDocument(_paged.facts(), cover=EmptyCover())
         document.add_section(

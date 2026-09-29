@@ -21,7 +21,7 @@ from functools import partial
 from pathlib import Path
 from typing import Any
 
-from svc.builder import (
+from pyhermes.builder import (
     AuthorBlock,
     Banner,
     BannerPalette,
@@ -46,11 +46,17 @@ from svc.builder import (
     ThreeColumn,
     TwoColumn,
 )
-from svc.builder.engine import TemplateOverlay
-from svc.builder.enums import CardOrientation, ImageAlign, ThreeColumnRatio, Tone, TwoColumnRatio
-from svc.builder.formats import bps, delta, number, pct
-from svc.builder.images import EmailImage
-from svc.builder.models import (
+from pyhermes.builder.engine import TemplateOverlay
+from pyhermes.builder.enums import (
+    CardOrientation,
+    ImageAlign,
+    ThreeColumnRatio,
+    Tone,
+    TwoColumnRatio,
+)
+from pyhermes.builder.formats import bps, delta, number, pct
+from pyhermes.builder.images import EmailImage
+from pyhermes.builder.models import (
     Card,
     Cell,
     Column,
@@ -251,7 +257,7 @@ def build(
                 highlight=True,
                 content=CardGroup(
                     [
-                        # Figures go through svc.builder.formats (#177), and each
+                        # Figures go through pyhermes.builder.formats (#177), and each
                         # value is coloured by a tone the theme resolves (#178):
                         # the sign where the sign is the claim, stated where not.
                         KpiItem(

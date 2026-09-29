@@ -13,9 +13,8 @@ import inspect
 
 import pytest
 
-import svc.builder as builder
-from qa.fixtures import DEPRECATED_COMPONENTS, all_fixtures, kitchen_sink
-from svc.builder import (
+import pyhermes.builder as builder
+from pyhermes.builder import (
     AuthorBlock,
     Banner,
     CardGroup,
@@ -32,9 +31,10 @@ from svc.builder import (
     ThreeColumn,
     TwoColumn,
 )
-from svc.builder.components import Component
-from svc.builder.engine import TemplateEngine
-from svc.builder.models import Card, LinkRow, NumberedItem, TableRow
+from pyhermes.builder.components import Component
+from pyhermes.builder.engine import TemplateEngine
+from pyhermes.builder.models import Card, LinkRow, NumberedItem, TableRow
+from qa.fixtures import DEPRECATED_COMPONENTS, all_fixtures, kitchen_sink
 
 
 def _public_components() -> list[type[Component]]:

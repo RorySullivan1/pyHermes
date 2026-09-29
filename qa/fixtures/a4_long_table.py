@@ -13,11 +13,11 @@ from __future__ import annotations
 import dataclasses
 from pathlib import Path
 
-from svc.builder import ChartBlock, DataTable, FullWidth, TextBlock
-from svc.builder.document import Document
-from svc.builder.images import EmailImage
-from svc.builder.models import Column, ColumnGroup, TableRow
-from svc.document import PAGED_MEDIUM, PagedDocument
+from pyhermes.builder import ChartBlock, DataTable, FullWidth, TextBlock
+from pyhermes.builder.document import Document
+from pyhermes.builder.images import EmailImage
+from pyhermes.builder.models import Column, ColumnGroup, TableRow
+from pyhermes.document import PAGED_MEDIUM, PagedDocument
 
 from . import _paged
 from ._png import solid_png

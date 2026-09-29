@@ -10,10 +10,10 @@ import warnings
 
 import pytest
 
-from svc.builder import CardGroup, FullWidth, KpiStrip
-from svc.builder.enums import CardOrientation
-from svc.builder.exceptions import EmailBuilderError, ValidationError
-from svc.builder.models import Card, KpiItem
+from pyhermes.builder import CardGroup, FullWidth, KpiStrip
+from pyhermes.builder.enums import CardOrientation
+from pyhermes.builder.exceptions import EmailBuilderError, ValidationError
+from pyhermes.builder.models import Card, KpiItem
 
 
 def cards(n: int) -> list[Card]:

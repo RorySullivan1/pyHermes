@@ -17,6 +17,8 @@ from pathlib import Path
 
 import pytest
 
+from pyhermes.builder import Email
+from pyhermes.builder.exceptions import ValidationError
 from qa.fixtures import all_brochure_fixtures, all_fixtures, all_paged_fixtures
 from qa.preview import (
     EXIT_BUILD_FAILED,
@@ -27,8 +29,6 @@ from qa.preview import (
     resolve,
 )
 from qa.screenshots import available
-from svc.builder import Email
-from svc.builder.exceptions import ValidationError
 
 requires_browser = pytest.mark.skipif(
     not available(),
@@ -45,7 +45,7 @@ def write_module(directory: Path, name: str, body: str) -> Path:
 VALID_METADATA = '{"email_subject": "S", "firm_name": "F", "campaign_name": "c"}'
 
 RETURNS_EMAIL = f"""
-    from svc.builder import Email, FullWidth, TextBlock
+    from pyhermes.builder import Email, FullWidth, TextBlock
 
     def build():
         email = Email(metadata={VALID_METADATA})
@@ -53,7 +53,7 @@ RETURNS_EMAIL = f"""
 """
 
 RETURNS_BUILDER = f"""
-    from svc.builder import EmailBuilder, FullWidth, TextBlock
+    from pyhermes.builder import EmailBuilder, FullWidth, TextBlock
 
     def build():
         return (
@@ -149,7 +149,7 @@ class TestResolvingAModuleSpec:
             tmp_path,
             "draft",
             """
-            from svc.builder import Email
+            from pyhermes.builder import Email
 
             Email(metadata={"email_subject": "", "firm_name": "F", "campaign_name": "c"})
             """,
@@ -239,7 +239,7 @@ class TestTheCommand:
             tmp_path,
             "draft",
             """
-            from svc.builder import Email
+            from pyhermes.builder import Email
 
             def build():
                 return Email(
@@ -273,7 +273,7 @@ class TestLinting:
             tmp_path,
             "draft",
             f"""
-            from svc.builder import Email, FullWidth, TextBlock
+            from pyhermes.builder import Email, FullWidth, TextBlock
 
             def build():
                 email = Email(metadata={VALID_METADATA})
@@ -294,7 +294,7 @@ class TestLinting:
             tmp_path,
             "draft",
             f"""
-            from svc.builder import Email, FullWidth, TextBlock
+            from pyhermes.builder import Email, FullWidth, TextBlock
 
             def build():
                 email = Email(metadata={VALID_METADATA})
@@ -349,7 +349,7 @@ class TestScreenshots:
             tmp_path,
             "draft",
             f"""
-            from svc.builder import Email, FullWidth, TextBlock
+            from pyhermes.builder import Email, FullWidth, TextBlock
 
             def build():
                 email = Email(metadata={VALID_METADATA})

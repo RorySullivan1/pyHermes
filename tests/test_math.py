@@ -13,11 +13,11 @@ import zlib
 
 import pytest
 
-from svc.builder.exceptions import ValidationError
+from pyhermes.builder.exceptions import ValidationError
 
 pytest.importorskip("matplotlib", reason='rendering an equation is the "[math]" extra')
 
-from svc.math import FONTSETS, MathError, MathSyntaxError, render_math  # noqa: E402
+from pyhermes.math import FONTSETS, MathError, MathSyntaxError, render_math  # noqa: E402
 
 SOURCE = r"\sigma_p^2 = w^\top \Sigma w"
 ARGS = {"font_px": 14, "color": "#3B3B3B", "scale": 3, "fontset": "dejavusans"}
@@ -109,7 +109,7 @@ class TestTheArgumentsAreValidated:
 # #231 — math_block, painted for the caller's theme and density
 # ----------------------------------------------------------------------
 
-from svc.math import (  # noqa: E402
+from pyhermes.math import (  # noqa: E402
     DEFAULT_MATH_FONTSET,
     DEFAULT_MATH_SCALE,
     image_from_math,
@@ -135,7 +135,7 @@ def _near(rgb: tuple[int, int, int], hexa: str, tolerance: int = 8) -> bool:
 
 class TestTheBlockIsPaintedForItsTheme:
     def test_the_default_is_classic_body_text(self):
-        from svc.builder.theming import DEFAULT_THEME
+        from pyhermes.builder.theming import DEFAULT_THEME
 
         block = math_block(SOURCE, label="Equation")
         assert block.image.src.startswith("cid:") and block.image.alt == SOURCE
@@ -149,7 +149,7 @@ class TestTheBlockIsPaintedForItsTheme:
         assert image.width == round(rendered.width_px / DEFAULT_MATH_SCALE)
 
     def test_slate_paints_another_picture(self):
-        from svc.builder.theming import SLATE_THEME
+        from pyhermes.builder.theming import SLATE_THEME
 
         classic, slate = image_from_math(SOURCE), image_from_math(SOURCE, theme="slate")
         assert classic.content_id != slate.content_id
@@ -161,8 +161,8 @@ class TestTheBlockIsPaintedForItsTheme:
         assert spacious.width > compact.width
 
     def test_one_source_twice_is_attached_once(self):
-        from svc.builder import FullWidth
-        from svc.builder.email import Email
+        from pyhermes.builder import FullWidth
+        from pyhermes.builder.email import Email
 
         email = Email({"email_subject": "S", "firm_name": "F", "campaign_name": "C"})
         email.add_section(FullWidth(content=math_block(SOURCE, label="Equation")))
@@ -175,7 +175,7 @@ class TestTheDefaultsAreDecisions:
         assert DEFAULT_MATH_FONTSET == "cm"
 
     def test_the_scale_covers_print(self):
-        from svc.config import get_config
+        from pyhermes.config import get_config
 
         assert DEFAULT_MATH_SCALE == 4
         assert DEFAULT_MATH_SCALE * 96 >= get_config().print_dpi
@@ -193,9 +193,9 @@ def test_print_keeps_the_pixels_and_screen_caps_them():
     pypdfium2 = pytest.importorskip("pypdfium2")
     import pypdfium2.raw as pdfium_raw
 
-    from svc.builder import FullWidth
-    from svc.document import PagedDocument
-    from svc.pdf import PRINT, SCREEN, render_pdf
+    from pyhermes.builder import FullWidth
+    from pyhermes.document import PagedDocument
+    from pyhermes.pdf import PRINT, SCREEN, render_pdf
 
     document = PagedDocument({"firm_name": "F", "campaign_name": "C"})
     block = math_block(r"\hat{\beta} = (X^\top X)^{-1} X^\top y", label="Equation")
@@ -281,11 +281,11 @@ class TestTheMultiLineShim:
 
 def test_twenty_equations_ride_the_manifest_not_the_html():
     """Measured for #232: 280 KB on the wire against a 15 MB warning; math.md records it."""
-    from svc.builder import FullWidth
-    from svc.builder.email import Email
-    from svc.config import get_config
-    from svc.delivery import build_message
-    from svc.delivery.message import to_wire_bytes
+    from pyhermes.builder import FullWidth
+    from pyhermes.builder.email import Email
+    from pyhermes.config import get_config
+    from pyhermes.delivery import build_message
+    from pyhermes.delivery.message import to_wire_bytes
 
     email = Email({"email_subject": "S", "firm_name": "F", "campaign_name": "C"})
     for i in range(20):

@@ -12,7 +12,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from svc.builder import (
+from pyhermes.builder import (
     CardGroup,
     DataTable,
     FullWidth,
@@ -21,10 +21,10 @@ from svc.builder import (
     TextBlock,
     TwoColumn,
 )
-from svc.builder.enums import CardOrientation, TwoColumnRatio
-from svc.builder.models import Column, KpiItem, NumberedItem, TableRow
-from svc.builder.sizing import LETTER_PORTRAIT
-from svc.document import (
+from pyhermes.builder.enums import CardOrientation, TwoColumnRatio
+from pyhermes.builder.models import Column, KpiItem, NumberedItem, TableRow
+from pyhermes.builder.sizing import LETTER_PORTRAIT
+from pyhermes.document import (
     EmptyBackMatter,
     EmptyContentsPage,
     EmptyCover,
