@@ -11,6 +11,9 @@ paths:
 
 ```
 svc/
+├── py.typed            ← PEP 561 marker, empty: without it a consumer's mypy types every
+│                         symbol as Any. Deleting it, or a packaging change that drops it,
+│                         fails `python -m qa.distribution` in CI's `wheel` job (#243)
 ├── config.py           ← the tunable numbers, in one frozen dataclass
 ├── builder/            ← the shared kit: everything every medium has
 │   ├── __init__.py     — public API surface (re-exports everything below)
@@ -110,6 +113,8 @@ qa/                     ← QA harness (epic #54); NOT shipped in the wheel
 │                        lint_email(), size_report(), SOURCES, DEFERRED_RULES
 ├── preview.py         — the CLI that composes the rest: `python -m qa.preview <target>`
 │                        [--lint] [--screenshot] [--open] [--list]
+├── distribution.py    — checks the built wheel (and sdist) a consumer installs, not the
+│                        tree: `python -m qa.distribution dist/` (#237)
 └── fixtures/          — the gallery: minimal, kitchen_sink, image_matrix, minimal_banner,
                         minimal_footer, slate_theme, compact_size, spacious_size,
                         + all_fixtures()

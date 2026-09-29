@@ -230,10 +230,24 @@ jobs:
           pip install build
           python -m build --wheel
 
+      - name: Check the built artefacts
+        # #243: the wheel must carry py.typed, or a consumer's type checker
+        # reads every pyHermes symbol as Any. qa/distribution.py names what
+        # is missing; tests/test_distribution.py proves each check can fail.
+        run: python -m qa.distribution dist
+
       - name: Install it into a clean venv, outside the source tree
         run: |
           python -m venv /tmp/wheelenv
           /tmp/wheelenv/bin/pip install dist/*.whl
+
+      - name: Type-check a consumer against the installed wheel
+        # Without the marker this reports missing library stubs and reveals Any.
+        run: |
+          /tmp/wheelenv/bin/pip install mypy
+          mkdir -p /tmp/typecheck && cd /tmp/typecheck
+          printf 'from svc.builder import Email\n\nreveal_type(Email)\n' > consumer.py
+          /tmp/wheelenv/bin/mypy --strict consumer.py
 
       - name: Render an email with no source tree in sight
         run: |
