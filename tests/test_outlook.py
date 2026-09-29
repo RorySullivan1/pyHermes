@@ -15,12 +15,12 @@ import base64
 import pytest
 import requests
 
-from svc.builder import EmailBuilder, FullWidth, ImageBlock
-from svc.builder.images import EmailImage
-from svc.config import config_override
-from svc.delivery import build_message, save_eml
-from svc.delivery.exceptions import DeliveryError, TransportError
-from svc.outlook import (
+from pyhermes.builder import EmailBuilder, FullWidth, ImageBlock
+from pyhermes.builder.images import EmailImage
+from pyhermes.config import config_override
+from pyhermes.delivery import build_message, save_eml
+from pyhermes.delivery.exceptions import DeliveryError, TransportError
+from pyhermes.outlook import (
     ACCEPTED,
     GraphApiError,
     GraphApiTransport,
@@ -28,7 +28,7 @@ from svc.outlook import (
     retry_after_seconds,
     send_message,
 )
-from svc.outlook.sender import DEFAULT_TIMEOUT_SECONDS
+from pyhermes.outlook.sender import DEFAULT_TIMEOUT_SECONDS
 
 ENVELOPE = {
     "subject": "Weekly Market Wrap",
@@ -177,7 +177,7 @@ class TestGraphApiTransport:
         import ast
         import pathlib
 
-        import svc.outlook.sender as sender
+        import pyhermes.outlook.sender as sender
 
         tree = ast.parse(pathlib.Path(sender.__file__).read_text())
         imported: list[str] = []

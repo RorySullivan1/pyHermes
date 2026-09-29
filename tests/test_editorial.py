@@ -9,13 +9,20 @@ from __future__ import annotations
 
 import pytest
 
+from pyhermes.builder import (
+    EmailBuilder,
+    FlowedColumns,
+    FullWidth,
+    ImageBlock,
+    PullQuote,
+    TextBlock,
+)
+from pyhermes.builder.components import _with_drop_cap
+from pyhermes.builder.exceptions import ValidationError
+from pyhermes.builder.images import EmailImage
+from pyhermes.document import PagedDocument
 from qa.fixtures import all_brochure_fixtures, all_fixtures, all_paged_fixtures
 from qa.fixtures._png import solid_png
-from svc.builder import EmailBuilder, FlowedColumns, FullWidth, ImageBlock, PullQuote, TextBlock
-from svc.builder.components import _with_drop_cap
-from svc.builder.exceptions import ValidationError
-from svc.builder.images import EmailImage
-from svc.document import PagedDocument
 
 FACTS = {"firm_name": "Hermes", "campaign_name": "Editorial", "email_subject": "S"}
 

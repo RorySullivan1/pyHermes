@@ -13,10 +13,10 @@ from email.message import EmailMessage
 
 import pytest
 
-from svc.builder import Email, EmailBuilder, FullWidth, ImageBlock
-from svc.builder.exceptions import EmailBuilderError
-from svc.builder.images import EmailImage, ImageAsset
-from svc.delivery import (
+from pyhermes.builder import Email, EmailBuilder, FullWidth, ImageBlock
+from pyhermes.builder.exceptions import EmailBuilderError
+from pyhermes.builder.images import EmailImage, ImageAsset
+from pyhermes.delivery import (
     DeliveryError,
     MessageError,
     build_message,
@@ -40,7 +40,7 @@ def _normalize_boundaries(raw: bytes) -> bytes:
     from ``random.randrange()`` — one draw per multipart per
     ``build_message()`` call, since each call builds a fresh
     ``EmailMessage``. See the module docstring on
-    ``svc/delivery/message.py``.
+    ``pyhermes/delivery/message.py``.
 
     **Every**, not the first: since #111 a message is always a
     ``multipart/alternative``, and one with CID images carries a second

@@ -12,7 +12,7 @@ import dataclasses
 
 import pytest
 
-from svc.builder import (
+from pyhermes.builder import (
     ChartBlock,
     EmailBuilder,
     EmailImage,
@@ -21,10 +21,10 @@ from svc.builder import (
     TextBlock,
     TwoColumn,
 )
-from svc.builder.enums import EmbedStrategy
-from svc.builder.exceptions import SizeError, ValidationError
-from svc.builder.images import INLINE_LIMIT_KB, dedupe_assets, sniff_image_type
-from svc.builder.models import EmailMetadata
+from pyhermes.builder.enums import EmbedStrategy
+from pyhermes.builder.exceptions import SizeError, ValidationError
+from pyhermes.builder.images import INLINE_LIMIT_KB, dedupe_assets, sniff_image_type
+from pyhermes.builder.models import EmailMetadata
 
 
 class TestSniffing:
@@ -474,7 +474,7 @@ class TestContentIdErrorMessage:
     """The rejection must describe what really happens to a Content-ID (#73)."""
 
     def test_does_not_promise_that_delivery_adds_an_at_sign(self, png_bytes):
-        # svc/delivery emits `Content-ID: <bare-id>` and cannot qualify it:
+        # pyhermes/delivery emits `Content-ID: <bare-id>` and cannot qualify it:
         # RFC 2392 makes a cid: URL the id minus its brackets, so an "@"
         # would stop matching the src="cid:..." the builder already wrote --
         # and _CONTENT_ID_RE forbids "@" anyway.

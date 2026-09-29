@@ -10,10 +10,10 @@ import pytest
 
 pd = pytest.importorskip("pandas", reason='the DataFrame adapter needs "pyhermes[data]"')
 
-from svc.builder import TemplateEngine, Tone, ValidationError  # noqa: E402
-from svc.builder.enums import ColumnKind, RowKind  # noqa: E402
-from svc.builder.formats import money, pct  # noqa: E402
-from svc.data import table_from_frame  # noqa: E402
+from pyhermes.builder import TemplateEngine, Tone, ValidationError  # noqa: E402
+from pyhermes.builder.enums import ColumnKind, RowKind  # noqa: E402
+from pyhermes.builder.formats import money, pct  # noqa: E402
+from pyhermes.data import table_from_frame  # noqa: E402
 
 _RET = {"1M": lambda v: pct(v, 1, sign=True)}
 

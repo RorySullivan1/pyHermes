@@ -1,0 +1,113 @@
+{#
+  MULTI-COLUMN CONTAINER
+
+  One template for every split, two columns or three. The eight per-ratio
+  files this replaced were byte-identical apart from a Jinja comment and
+  the numbers — which is what made the frame an assumption spread across
+  eight files rather than a value the builder owns.
+
+  Widths arrive computed: pyhermes.builder.sizing.column_layout() splits the
+  frame's content width by the ratio's own weights, floors each column and
+  distributes the remainder outside-in, then gives each column the padding
+  its width earns. The MSO ghost table and the inline-block table read the
+  *same* number, because there is now only one number to read.
+
+  The band is wrapped in a cell that insets it by frame.pad_x, so its text
+  starts where a full-width section's text starts and where this section's
+  own heading starts. That cell also zeroes font-size and line-height: the
+  columns are inline-blocks, so the newline between two of them would
+  otherwise render as a space, and 616px of columns plus that space no
+  longer fits in 616px of content width. The column cells set both
+  properties themselves, so nothing inherits the zero.
+
+  Context variables:
+    columns          — One dict per column: width, pad_left, pad_right, content
+    section_align    — Optional alignment for this section's copy; empty means
+                       the template's own behaviour, which is what keeps an
+                       email that states none byte-identical (#126)
+    section_title    — Optional heading spanning every column
+    section_anchor   — The heading's `id`, empty when untitled (#183)
+    background_color — Optional hex override; defaults to the theme's surface,
+                       or its highlight tint when highlighted
+    highlight        — When true, tints the band and adds hairline rules top and bottom
+#}
+{# `inline-table`, NOT `inline-block`, and the difference is #129. With
+   `inline-block` the element stops being a table box: the tr and td get an
+   anonymous table around them which shrink-wraps to its content, so the
+   width specified here applied to the outer box and the cell inside stayed
+   as narrow as its copy — 76 of the gallery's 88 column cells did. Anything
+   that then depended on the cell's width had no room to show: #126's
+   alignment reached every cell correctly and was invisible.
+
+   Measured, not reasoned about, in #76's tradition — the obvious fix does
+   NOT work. `width="100%"` on the cell (attribute, style, or both) changes
+   nothing at all, because it resolves against an anonymous table that is
+   itself shrink-wrapping; a fixed px width does fill on desktop but then
+   constrains the copy at the mobile breakpoint, where `.stack-column`
+   overrides the table's width and the cell's px value goes stale.
+
+   Outlook never sees this: its Word engine ignores both display values and
+   lays the columns out from the MSO ghost table above. The residual risk is
+   a client that implements `inline-block` but not `inline-table`, which
+   would stack the columns — the same graceful degradation a client
+   supporting neither already gets. #}
+{# A highlighted band spends 1px a side on its hairline frame, so every
+   horizontal inset inside it gives that pixel back. Content then starts at
+   frame.pad_x from the frame edge whether the band is highlighted or not —
+   which is the whole of #85: a heading and the text under it must not
+   disagree about where the left margin is. #}
+{# `section_align` lands on TWO cells, and that is not redundancy: the
+   title and the content are sibling tables, not parent and child, so a
+   declaration on the content cell alone leaves the heading where it was.
+   Both spellings travel together per #125 — the attribute for Outlook's
+   Word engine, the style because an attribute is not inherited by the
+   prose inside the cell and inheritance is #126's whole mechanism. #}
+{% set edge_pad = size.frame.pad_x - 1 if highlight else size.frame.pad_x %}
+{# The band also has to *fit*: 2x pad_x plus the computed content width is
+   the whole frame, so without the pixel back the last column wraps. #}
+<tr>
+  <td style="{% if highlight %}padding:1px 1px 1px 1px; background-color:{{ theme.palette.surface }}; border-top:1px solid {{ theme.palette.rule }}; border-bottom:1px solid {{ theme.palette.rule }};{% else %}padding:0; background-color:{{ background_color | default(theme.palette.surface) }};{% endif %}">
+{% if section_title %}
+    <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:{{ background_color | default(theme.palette.highlight_tint if highlight else theme.palette.surface) }};">
+      <tr>
+        <td{% if section_align %} align="{{ section_align | escape_html }}"{% endif %} style="padding:{{ size.space.section_title_top }}px {{ edge_pad }}px {{ size.space.section_title_bottom }}px {{ edge_pad }}px;{% if section_align %} text-align:{{ section_align }};{% endif %}">
+          <h2{% if section_anchor %} id="{{ section_anchor | escape_html }}"{% endif %} style="margin:0; font-family: {{ font.heading }}; font-size:{{ size.type.section }}px; font-weight:bold; color:{{ theme.text.heading }}; line-height:{{ size.type.title_line | percent }};">
+            {{ section_title | escape_html }}
+          </h2>
+        </td>
+      </tr>
+    </table>
+{% endif %}
+    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:{{ background_color | default(theme.palette.highlight_tint if highlight else theme.palette.surface) }};">
+      <tr>
+        <td style="padding:0 {{ edge_pad }}px; font-size:0; line-height:0;">
+    <!--[if mso]>
+    <table role="presentation" width="{{ size.frame.inner }}" border="0" cellpadding="0" cellspacing="0" style="width:{{ size.frame.inner }}px;">
+      <tr>
+        <td width="{{ columns[0].width }}" valign="top" style="width:{{ columns[0].width }}px; padding:0;">
+    <![endif]-->
+{% for col in columns %}
+    <table role="presentation" width="{{ col.width }}" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:{{ col.width }}px;{% if not loop.last %} margin-right:{{ size.space.gutter }}px;{% endif %} background-color:{{ background_color | default(theme.palette.highlight_tint if highlight else theme.palette.surface) }};">
+      <tr>
+        <td class="mobile-pad"{% if section_align %} align="{{ section_align | escape_html }}"{% endif %} style="padding:{{ size.space.column_top }}px {{ col.pad_right }}px {{ size.space.column_bottom }}px {{ col.pad_left }}px; font-family: {{ font.label }}; font-size:{{ size.type.body }}px; color:{{ theme.text.primary }}; line-height:{{ size.type.body_line | percent }};{% if section_align %} text-align:{{ section_align }};{% endif %}">
+          {{ col.content }}
+        </td>
+      </tr>
+    </table>
+{% if not loop.last %}
+    <!--[if mso]>
+        </td>
+        <td width="{{ columns[loop.index].width }}" valign="top" style="width:{{ columns[loop.index].width }}px; padding:0;">
+    <![endif]-->
+{% endif %}
+{% endfor %}
+    <!--[if mso]>
+        </td>
+      </tr>
+    </table>
+    <![endif]-->
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>

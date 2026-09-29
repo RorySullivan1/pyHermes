@@ -20,9 +20,9 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 from html.parser import HTMLParser
 
-from svc.builder import Email
-from svc.builder.document import Document
-from svc.config import get_config
+from pyhermes.builder import Email
+from pyhermes.builder.document import Document
+from pyhermes.config import get_config
 
 #: Where each rule's claim about a mail client comes from. Prose that cannot be
 #: traced is a preference wearing a rule's clothes.
@@ -30,12 +30,12 @@ SOURCES: dict[str, str] = {
     "img-width-attr": (
         "Outlook's Word rendering engine ignores CSS max-width, so a display "
         "width must travel as the HTML attribute. This repo already builds on "
-        "that (svc/builder/images.py's `width`, and CLAUDE.md's images "
+        "that (pyhermes/builder/images.py's `width`, and CLAUDE.md's images "
         "section); the rule checks it survives into the markup."
     ),
     "img-alt": (
         "Alt text is what the reader sees whenever images are blocked, which "
-        "for Outlook desktop is the default state (svc/builder/images.py). "
+        "for Outlook desktop is the default state (pyhermes/builder/images.py). "
         "EmailImage requires it at construction; this checks the render. The "
         'exception is a decorative image, which takes alt="" so a screen '
         "reader skips it — indistinguishable in the render from a forgotten "
@@ -163,7 +163,7 @@ SOURCES: dict[str, str] = {
     ),
     "size-budget": (
         "Gmail clips a message above ~102 KB behind a 'View entire message' "
-        "link. svc/config.Config.size_limit_kb; Email._validate_size enforces "
+        "link. pyhermes/config.Config.size_limit_kb; Email._validate_size enforces "
         "the total, this attributes it."
     ),
 }
@@ -886,7 +886,7 @@ def lint_html(html: str, medium: str = "email") -> list[Finding]:
     Takes a string rather than a document so it works on markup from anywhere
     — a saved file, a paste, another builder — and a medium *name* rather than
     a ``Medium`` for the same reason: this module imports nothing from
-    ``svc`` beyond what it already needs, and a name is what the rule table
+    ``pyhermes`` beyond what it already needs, and a name is what the rule table
     is keyed by.
 
     Defaults to ``"email"`` so every pre-#165 caller keeps its exact

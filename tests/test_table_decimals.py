@@ -11,13 +11,13 @@ import re
 
 import pytest
 
+from pyhermes.builder import ColumnGroup, DataTable, FullWidth
+from pyhermes.builder.email import Email
+from pyhermes.builder.engine import TemplateEngine
+from pyhermes.builder.exceptions import ValidationError
+from pyhermes.builder.models import Column, TableRow
+from pyhermes.builder.typography import FontStack, FontTheme
 from qa.screenshots import VIEWPORTS, _launch, _load_playwright, available
-from svc.builder import ColumnGroup, DataTable, FullWidth
-from svc.builder.email import Email
-from svc.builder.engine import TemplateEngine
-from svc.builder.exceptions import ValidationError
-from svc.builder.models import Column, TableRow
-from svc.builder.typography import FontStack, FontTheme
 
 FIGURES = ["4.5%", "12.25%", "7%"]
 

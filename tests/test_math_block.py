@@ -12,14 +12,14 @@ import re
 
 import pytest
 
+from pyhermes.builder import ChartBlock, DataTable, FullWidth, MathBlock, TextBlock
+from pyhermes.builder.email import Email
+from pyhermes.builder.engine import TemplateEngine
+from pyhermes.builder.exceptions import ValidationError
+from pyhermes.builder.images import EmailImage
+from pyhermes.builder.models import TableRow
 from qa.fixtures import kitchen_sink
 from qa.fixtures._png import solid_png
-from svc.builder import ChartBlock, DataTable, FullWidth, MathBlock, TextBlock
-from svc.builder.email import Email
-from svc.builder.engine import TemplateEngine
-from svc.builder.exceptions import ValidationError
-from svc.builder.images import EmailImage
-from svc.builder.models import TableRow
 
 PNG = solid_png(120, 30, (59, 59, 59))
 SOURCE = r"\sigma^2"
@@ -147,7 +147,7 @@ def test_the_builder_imports_no_optional_backend():
     import ast
     import pathlib
 
-    tree = ast.parse(pathlib.Path("svc/builder/components.py").read_text(encoding="utf-8"))
+    tree = ast.parse(pathlib.Path("pyhermes/builder/components.py").read_text(encoding="utf-8"))
     modules = [
         getattr(node, "module", None) or alias.name
         for node in ast.walk(tree)
@@ -155,7 +155,7 @@ def test_the_builder_imports_no_optional_backend():
         for alias in node.names
     ]
     assert not [
-        m for m in modules if m and (m.startswith("matplotlib") or m.startswith("svc.math"))
+        m for m in modules if m and (m.startswith("matplotlib") or m.startswith("pyhermes.math"))
     ]
 
 

@@ -15,23 +15,32 @@ import zipfile
 from pathlib import Path
 
 #: The import root the wheel ships.
-PACKAGE = "svc"
+PACKAGE = "pyhermes"
+
+#: The old import name, a warning shim that re-exports ``PACKAGE`` for one release.
+SHIM = "svc"
 
 #: Files a wheel must carry beyond the code. ``py.typed`` is what tells a
 #: consumer's type checker to read the annotations instead of typing everything
 #: as ``Any`` (PEP 561).
-WHEEL_REQUIRED = (f"{PACKAGE}/py.typed",)
+WHEEL_REQUIRED = (f"{PACKAGE}/py.typed", f"{SHIM}/__init__.py")
 
 #: The top-level entries an sdist may hold: the library, what builds it, what
 #: describes it, and the two files hatchling always writes (``PKG-INFO``, and a
 #: ``.gitignore`` it adds whatever the config says).
 SDIST_ALLOWED = frozenset(
-    {PACKAGE, "pyproject.toml", "README.md", "LICENSE", "PKG-INFO", ".gitignore"}
+    {PACKAGE, SHIM, "pyproject.toml", "README.md", "LICENSE", "PKG-INFO", ".gitignore"}
 )
 
 #: What an sdist must hold for its metadata to build: ``readme`` and
 #: ``license-files`` name the last two, so dropping either breaks the install.
-SDIST_REQUIRED = ("pyproject.toml", "README.md", "LICENSE", f"{PACKAGE}/__init__.py")
+SDIST_REQUIRED = (
+    "pyproject.toml",
+    "README.md",
+    "LICENSE",
+    f"{PACKAGE}/__init__.py",
+    f"{SHIM}/__init__.py",
+)
 
 
 def wheel_problems(path: Path) -> list[str]:

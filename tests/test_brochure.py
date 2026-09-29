@@ -11,10 +11,7 @@ import warnings
 
 import pytest
 
-from qa.fixtures import all_brochure_fixtures, tri_fold_letter
-from qa.goldens import artifacts, check_fixture
-from qa.lint import errors, lint_document
-from svc.brochure import (
+from pyhermes.brochure import (
     BI_FOLD_LETTER,
     BROCHURE_MEDIUM,
     FACE_NAMES,
@@ -30,11 +27,14 @@ from svc.brochure import (
     brochure_medium,
     impose,
 )
-from svc.brochure.fold import A4_SHEET, LETTER_SHEET
-from svc.builder import EmailBuilder, FullWidth, TextBlock, TwoColumn
-from svc.builder.exceptions import PrintQualityWarning, ValidationError
-from svc.builder.sizing import A4_PORTRAIT, PageFormat
-from svc.document import Page, PagedDocument
+from pyhermes.brochure.fold import A4_SHEET, LETTER_SHEET
+from pyhermes.builder import EmailBuilder, FullWidth, TextBlock, TwoColumn
+from pyhermes.builder.exceptions import PrintQualityWarning, ValidationError
+from pyhermes.builder.sizing import A4_PORTRAIT, PageFormat
+from pyhermes.document import Page, PagedDocument
+from qa.fixtures import all_brochure_fixtures, tri_fold_letter
+from qa.goldens import artifacts, check_fixture
+from qa.lint import errors, lint_document
 
 BROCHURE_NAMES = sorted(all_brochure_fixtures())
 
@@ -430,15 +430,15 @@ class TestAProofIsACopy:
 
 
 def test_the_brochure_imports_the_exporter_only_to_check_a_fit():
-    """``svc.brochure`` renders on ``[dev]`` alone; only the overflow check needs ``[pdf]``."""
+    """``pyhermes.brochure`` renders on ``[dev]`` alone; only the overflow check needs ``[pdf]``."""
     import ast
     import pathlib
 
-    for path in sorted(pathlib.Path("svc/brochure").glob("*.py")):
+    for path in sorted(pathlib.Path("pyhermes/brochure").glob("*.py")):
         tree = ast.parse(path.read_text(encoding="utf-8"))
         top = [n for n in tree.body if isinstance(n, (ast.Import, ast.ImportFrom))]
         modules = {getattr(n, "module", None) or n.names[0].name for n in top}
-        assert not any(m and m.startswith("svc.pdf") for m in modules), path
+        assert not any(m and m.startswith("pyhermes.pdf") for m in modules), path
 
 
 # ----------------------------------------------------------------------
@@ -472,9 +472,9 @@ class TestImageResolution:
     """300 dpi on paper: a 300px display width needs 938 source pixels."""
 
     def _with_image(self, pixels: int, display: int) -> Brochure:
+        from pyhermes.builder import ImageBlock
+        from pyhermes.builder.images import EmailImage
         from qa.fixtures._png import solid_png
-        from svc.builder import ImageBlock
-        from svc.builder.images import EmailImage
 
         image = EmailImage.attached(solid_png(pixels, 10, (1, 2, 3)), alt="Chart", width=display)
         panels = _panels(6)
@@ -497,7 +497,7 @@ class TestImageResolution:
             self._with_image(400, 300)
 
     def test_the_target_is_the_configs(self):
-        from svc.config import config_override
+        from pyhermes.config import config_override
 
         with config_override(print_dpi=150):
             self._with_image(469, 300)
@@ -542,8 +542,8 @@ class TestThePrintMarkup:
 class TestTheFullBleedPanel:
     @staticmethod
     def _image(pixels: int = 1150):
+        from pyhermes.builder.images import EmailImage
         from qa.fixtures._png import solid_png
-        from svc.builder.images import EmailImage
 
         return EmailImage.attached(solid_png(pixels, 20, (9, 9, 9)), alt="Ground")
 
@@ -577,7 +577,7 @@ class TestTheFullBleedPanel:
             self._brochure(self._image(500))
 
     def test_a_hosted_image_is_refused(self):
-        from svc.builder.images import EmailImage
+        from pyhermes.builder.images import EmailImage
 
         with pytest.raises(ValidationError, match="attach it"):
             Panel(

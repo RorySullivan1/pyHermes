@@ -15,10 +15,10 @@ from pathlib import Path
 
 import pytest
 
-from svc.builder import DEFAULT_FONTS, FONT_THEMES, MODERN_FONTS, FontStack, FontTheme
-from svc.builder.engine import TemplateEngine
-from svc.builder.exceptions import ValidationError
-from svc.builder.typography import GENERIC_FAMILIES, resolve_font_theme
+from pyhermes.builder import DEFAULT_FONTS, FONT_THEMES, MODERN_FONTS, FontStack, FontTheme
+from pyhermes.builder.engine import TemplateEngine
+from pyhermes.builder.exceptions import ValidationError
+from pyhermes.builder.typography import GENERIC_FAMILIES, resolve_font_theme
 
 TEMPLATE_DIR = TemplateEngine().template_dir
 
@@ -368,7 +368,7 @@ class TestNoLiteralSurvives:
         The other half of rules 4/5: a literal hiding in a Python default is
         just as unthemeable as one in markup.
         """
-        for path in sorted(Path("svc").rglob("*.py")):
+        for path in sorted(Path("pyhermes").rglob("*.py")):
             if path.name == "typography.py":  # the vocabulary is where they live
                 continue
             source = path.read_text()
@@ -450,7 +450,7 @@ class TestNoLiteralSurvives:
         on it, and no signature in the section tree changed to carry them.
         The binder moved to ``Document`` in #162 — the claim did not.
         """
-        source = (Path("svc/builder") / "document.py").read_text()
+        source = (Path("pyhermes/builder") / "document.py").read_text()
         bind = source[source.index("self._engine.bound(") : source.index("ctx = self._metadata")]
         assert bind.count("bound(") == 1
         for value in ("theme=", "size=", "font=", "medium="):

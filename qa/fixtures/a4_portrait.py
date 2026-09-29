@@ -11,8 +11,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from svc.builder.document import Document
-from svc.document import PAGED_MEDIUM
+from pyhermes.builder.document import Document
+from pyhermes.document import PAGED_MEDIUM
 
 from . import _paged
 

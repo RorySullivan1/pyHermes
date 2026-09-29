@@ -11,14 +11,12 @@ from __future__ import annotations
 
 import pytest
 
-from qa.fixtures import _paged, all_paged_fixtures
-from qa.goldens import artifacts, check_fixture
-from svc.builder.document import Document
-from svc.builder.engine import TemplateEngine
-from svc.builder.medium import DEFAULT_MEDIUM
-from svc.builder.models import EmailMetadata
-from svc.builder.sizing import A4_PORTRAIT, PAGE_FORMATS, SLIDE_16_9, PageFormat, PageMargin
-from svc.document import (
+from pyhermes.builder.document import Document
+from pyhermes.builder.engine import TemplateEngine
+from pyhermes.builder.medium import DEFAULT_MEDIUM
+from pyhermes.builder.models import EmailMetadata
+from pyhermes.builder.sizing import A4_PORTRAIT, PAGE_FORMATS, SLIDE_16_9, PageFormat, PageMargin
+from pyhermes.document import (
     PAGED_MEDIUM,
     EmptyBackMatter,
     EmptyCover,
@@ -27,7 +25,9 @@ from svc.document import (
     PagedDocument,
     paged_medium,
 )
-from svc.email import EMAIL_MEDIUM
+from pyhermes.email import EMAIL_MEDIUM
+from qa.fixtures import _paged, all_paged_fixtures
+from qa.goldens import artifacts, check_fixture
 
 PAGED_NAMES = sorted(all_paged_fixtures())
 
@@ -258,8 +258,8 @@ class TestWhatTheEmailLintMakesOfAPagedDocument:
         assert lint_document(all_paged_fixtures()["a4_portrait"]()) == []
 
     def test_the_gmail_size_rule_no_longer_reaches_a_paged_document(self):
+        from pyhermes.builder import FullWidth, TextBlock
         from qa.lint import lint_document, lint_html
-        from svc.builder import FullWidth, TextBlock
 
         oversized = PagedDocument(_paged.facts())
         oversized.add_section(FullWidth(content=TextBlock("<p>" + "x" * 110 * 1024 + "</p>")))
@@ -302,7 +302,7 @@ class TestThePageMarginIsTheMediums:
         assert 'width="9001"' in cover
 
     def test_the_density_no_longer_decides_the_print_margin(self, html):
-        from svc.builder.sizing import STANDARD_SIZES
+        from pyhermes.builder.sizing import STANDARD_SIZES
 
         pad = STANDARD_SIZES.frame.outer_pad_y
         assert f"margin: {pad}px" not in html, "@page still reads outer_pad_y"

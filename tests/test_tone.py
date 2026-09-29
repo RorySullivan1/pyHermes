@@ -13,7 +13,7 @@ import math
 
 import pytest
 
-from svc.builder import (
+from pyhermes.builder import (
     DEFAULT_THEME,
     SLATE_THEME,
     CardGroup,
@@ -23,9 +23,9 @@ from svc.builder import (
     ValidationError,
     tone_of,
 )
-from svc.builder.formats import pct
-from svc.builder.models import Card, Cell, KpiItem, TableRow
-from svc.builder.theming import SemanticColors
+from pyhermes.builder.formats import pct
+from pyhermes.builder.models import Card, Cell, KpiItem, TableRow
+from pyhermes.builder.theming import SemanticColors
 
 
 def _table(*cells: Cell) -> DataTable:
@@ -182,6 +182,6 @@ def test_the_semantic_tokens_now_have_a_render_site():
     """
     from pathlib import Path
 
-    templates = Path("svc/builder/templates/analysis")
+    templates = Path("pyhermes/builder/templates/analysis")
     assert "theme.semantic[cell.tone]" in (templates / "data-table.html").read_text()
     assert "theme.semantic[card.tone" in (templates / "card-group.html").read_text()

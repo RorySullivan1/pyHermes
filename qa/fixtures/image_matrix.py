@@ -15,10 +15,18 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from svc.builder import Email, EmailBuilder, Footer, FullWidth, ImageBlock, TextBlock, TwoColumn
-from svc.builder.enums import ImageAlign, TwoColumnRatio
-from svc.builder.images import EmailImage
-from svc.builder.models import EmailMetadata
+from pyhermes.builder import (
+    Email,
+    EmailBuilder,
+    Footer,
+    FullWidth,
+    ImageBlock,
+    TextBlock,
+    TwoColumn,
+)
+from pyhermes.builder.enums import ImageAlign, TwoColumnRatio
+from pyhermes.builder.images import EmailImage
+from pyhermes.builder.models import EmailMetadata
 
 from ._png import solid_png
 

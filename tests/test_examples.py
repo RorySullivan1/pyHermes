@@ -18,8 +18,8 @@ from pathlib import Path
 
 import pytest
 
-from svc.data.exceptions import BackendMissingError as _DataMissing
-from svc.math.exceptions import BackendMissingError as _MathMissing
+from pyhermes.data.exceptions import BackendMissingError as _DataMissing
+from pyhermes.math.exceptions import BackendMissingError as _MathMissing
 
 #: An example that needs an extra skips without it: [charts] or [math] (#233).
 DataBackendMissing = (_DataMissing, _MathMissing)
@@ -31,7 +31,7 @@ README = REPO_ROOT / "README.md"
 
 def _pdf_available() -> bool:
     """Whether this environment can print. Used to skip, never to fail."""
-    from svc.pdf import available
+    from pyhermes.pdf import available
 
     return available()
 
@@ -188,11 +188,11 @@ class TestTheFactsheetIsTwoSheets:
         assert self.FACTSHEET in EXAMPLES, "the factsheet example has moved or been renamed"
 
     def test_it_lays_out_to_exactly_two_sheets(self):
-        from svc.pdf import available as pdf_available
+        from pyhermes.pdf import available as pdf_available
 
         if not pdf_available():
             pytest.skip('laying a document onto sheets needs the "[pdf]" extra')
-        from svc.pdf import page_count
+        from pyhermes.pdf import page_count
 
         module = _load(self.FACTSHEET)
         try:

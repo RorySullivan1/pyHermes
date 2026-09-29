@@ -12,8 +12,7 @@ import importlib.util
 
 import pytest
 
-from qa.fixtures import tri_fold_letter
-from svc.brochure import (
+from pyhermes.brochure import (
     BI_FOLD_LETTER,
     TRI_FOLD_LETTER,
     Brochure,
@@ -21,8 +20,9 @@ from svc.brochure import (
     impose,
     overflowing_panels,
 )
-from svc.builder import FullWidth, TextBlock
-from svc.pdf import available, render_pdf
+from pyhermes.builder import FullWidth, TextBlock
+from pyhermes.pdf import available, render_pdf
+from qa.fixtures import tri_fold_letter
 
 pytestmark = pytest.mark.skipif(
     not available() or importlib.util.find_spec("pypdfium2") is None,

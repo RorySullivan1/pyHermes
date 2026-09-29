@@ -14,7 +14,7 @@ a logo through it rather than around it.
 from __future__ import annotations
 
 from drafts._chart import bar_chart, sparkline_strip
-from svc.builder import (
+from pyhermes.builder import (
     Banner,
     BannerPalette,
     Card,
@@ -33,7 +33,7 @@ from svc.builder import (
     TextBlock,
     ThreeColumn,
 )
-from svc.builder.models import Cell, FooterLink, LinkRow
+from pyhermes.builder.models import Cell, FooterLink, LinkRow
 
 #: Weekly OAS change in basis points by rating bucket, oldest first. The three
 #: series are plotted as small multiples and quoted in the copy.

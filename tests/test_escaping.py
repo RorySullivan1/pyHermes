@@ -15,7 +15,7 @@ fields are *not* (escaping those would break every caller passing markup).
 
 import pytest
 
-from svc.builder import (
+from pyhermes.builder import (
     AuthorBlock,
     CardGroup,
     ChartBlock,
@@ -26,8 +26,8 @@ from svc.builder import (
     TextBlock,
     TwoColumn,
 )
-from svc.builder.filters import escape_html
-from svc.builder.models import KpiItem, NumberedItem, TableRow
+from pyhermes.builder.filters import escape_html
+from pyhermes.builder.models import KpiItem, NumberedItem, TableRow
 
 NASTY = 'S&P "500" <script>alert(1)</script>'
 
@@ -203,7 +203,7 @@ class TestHtmlFieldsStayRaw:
         assert "<em>emphasis</em>" in html
 
     def test_metadata_disclaimers_are_not_escaped(self, valid_metadata, text_block):
-        from svc.builder import Footer
+        from pyhermes.builder import Footer
 
         email = Email(
             metadata=valid_metadata,

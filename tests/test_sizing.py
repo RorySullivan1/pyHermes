@@ -16,10 +16,10 @@ from typing import Any
 
 import pytest
 
-from svc.builder.enums import SizeTheme
-from svc.builder.exceptions import ValidationError
-from svc.builder.filters import percent
-from svc.builder.sizing import (
+from pyhermes.builder.enums import SizeTheme
+from pyhermes.builder.exceptions import ValidationError
+from pyhermes.builder.filters import percent
+from pyhermes.builder.sizing import (
     PRINT_DENSITIES,
     SIZE_SCHEMES,
     STANDARD_SIZES,
@@ -35,7 +35,7 @@ from svc.builder.sizing import (
     resolve_size_scheme,
 )
 
-TEMPLATE_DIR = Path(__file__).resolve().parent.parent / "svc" / "builder" / "templates"
+TEMPLATE_DIR = Path(__file__).resolve().parent.parent / "pyhermes" / "builder" / "templates"
 
 
 def _templates() -> list[Path]:
@@ -388,13 +388,13 @@ class TestResolve:
 
 class TestTheSizeThemeIsSelectable:
     def test_the_default_is_standard(self) -> None:
-        from svc.builder.models import EmailMetadata
+        from pyhermes.builder.models import EmailMetadata
 
         assert EmailMetadata().size_theme == SizeTheme.STANDARD
 
     @pytest.mark.parametrize("value", [SizeTheme.STANDARD, "standard"])
     def test_member_or_bare_string(self, value: SizeTheme | str) -> None:
-        from svc.builder.models import EmailMetadata
+        from pyhermes.builder.models import EmailMetadata
 
         assert resolve_size_scheme(EmailMetadata(size_theme=value).size_theme) is (STANDARD_SIZES)
 
@@ -404,19 +404,19 @@ class TestTheSizeThemeIsSelectable:
         *checks* — so a typo fails there, and the field stays the caller's
         own value rather than a silently normalised one.
         """
-        from svc.builder.models import EmailMetadata
+        from pyhermes.builder.models import EmailMetadata
 
         assert EmailMetadata(size_theme="standard").size_theme == "standard"
 
     def test_an_unknown_name_raises_at_construction(self) -> None:
-        from svc.builder.models import EmailMetadata
+        from pyhermes.builder.models import EmailMetadata
 
         with pytest.raises(ValidationError, match="unknown size theme 'huge'"):
             EmailMetadata(size_theme="huge")
 
     def test_it_is_not_in_the_skeleton_context(self) -> None:
         """One value, one source: the resolved scheme rides the binder."""
-        from svc.builder.models import EmailMetadata
+        from pyhermes.builder.models import EmailMetadata
 
         assert "size_theme" not in EmailMetadata().to_dict()
 
@@ -439,7 +439,7 @@ class TestTheSchemeReachesEveryTemplate:
     }
 
     def _rendered_contexts(self, **metadata: object) -> dict[str, dict]:
-        from svc.builder import (
+        from pyhermes.builder import (
             CardGroup,
             DataTable,
             Email,
@@ -449,7 +449,7 @@ class TestTheSchemeReachesEveryTemplate:
             ThreeColumn,
             TwoColumn,
         )
-        from svc.builder.models import Card, TableRow
+        from pyhermes.builder.models import Card, TableRow
 
         seen: dict[str, dict] = {}
         real = TemplateEngine()
@@ -492,7 +492,7 @@ class TestTheSchemeReachesEveryTemplate:
             assert "size" in context
 
     def test_a_component_cannot_shadow_the_emails_scheme(self) -> None:
-        from svc.builder import TemplateEngine
+        from pyhermes.builder import TemplateEngine
 
         binder = TemplateEngine().bound(size=STANDARD_SIZES)
         merged = {**{"size": "impostor"}, **binder.shared}
@@ -503,7 +503,7 @@ class TestTheSchemeReachesEveryTemplate:
         The constraint the epic set for whichever mechanism was chosen. A
         binder is per-render, so a second one cannot disturb the first.
         """
-        from svc.builder import TemplateEngine
+        from pyhermes.builder import TemplateEngine
 
         engine = TemplateEngine()
         dense = STANDARD_SIZES.derive(type={"body": 13})
@@ -518,7 +518,7 @@ class TestTheSchemeReachesEveryTemplate:
         layers ``STANDARD_SIZES`` *under* the caller's context, so a bound
         scheme still wins over this floor.
         """
-        from svc.builder import TemplateEngine
+        from pyhermes.builder import TemplateEngine
 
         engine = TemplateEngine()
         assert engine.render_string("{{ size.type.body }}", {}) == "14"
@@ -618,8 +618,8 @@ class TestTheTokensAreLive:
 
     @pytest.fixture()
     def perturbed_html(self, monkeypatch: pytest.MonkeyPatch) -> str:
+        from pyhermes.builder import sizing
         from qa.fixtures import kitchen_sink
-        from svc.builder import sizing
 
         scheme = _sentinel_scheme()
         monkeypatch.setitem(sizing.SIZE_SCHEMES, SizeTheme.SPACIOUS, scheme)
@@ -699,7 +699,7 @@ class TestNoScaleLiteralSurvives:
     """
 
     #: Every literal a template may still carry, and why. See
-    #: :mod:`svc.builder.sizing` for the full reasoning.
+    #: :mod:`pyhermes.builder.sizing` for the full reasoning.
     DELIBERATE = {
         "padding:1px 1px 1px 1px": "the hairline frame of a highlighted band",
         "font-size:1px": "the preheader hider — not type",
@@ -876,7 +876,7 @@ class TestTheGeometryReachesTheTemplateOnce:
     """
 
     def _render(self, ratio: str, scheme: SizeScheme | None = None) -> str:
-        from svc.builder import TemplateEngine, TextBlock, ThreeColumn, TwoColumn
+        from pyhermes.builder import TemplateEngine, TextBlock, ThreeColumn, TwoColumn
 
         engine = TemplateEngine().bound(size=scheme or STANDARD_SIZES)
         slots = [TextBlock(f"<p>{n}</p>") for n in ("a", "b", "c")]
@@ -923,7 +923,7 @@ class TestTheGeometryReachesTheTemplateOnce:
         assert not offenders, f"hardcoded widths in columns.html: {offenders}"
 
     def test_one_template_serves_every_split(self) -> None:
-        from svc.builder import ThreeColumn, TwoColumn
+        from pyhermes.builder import ThreeColumn, TwoColumn
 
         assert TwoColumn.template_path == ThreeColumn.template_path
         assert not list((TEMPLATE_DIR / "common" / "containers").glob("col-*.html")), (
@@ -976,7 +976,7 @@ class TestTheShippedSchemes:
 
     @pytest.mark.parametrize("theme", ALL_THEMES)
     def test_selectable_by_bare_string(self, theme: SizeTheme) -> None:
-        from svc.builder.models import EmailMetadata
+        from pyhermes.builder.models import EmailMetadata
 
         assert (
             resolve_size_scheme(EmailMetadata(size_theme=theme.value).size_theme)
@@ -991,7 +991,7 @@ class TestTheShippedSchemes:
         matters again the moment a fourth member is added ahead of its
         values.
         """
-        from svc.builder import sizing
+        from pyhermes.builder import sizing
 
         monkeypatch.delitem(sizing.SIZE_SCHEMES, SizeTheme.SPACIOUS)
         with pytest.raises(ValidationError, match="has no scheme yet"):
@@ -1015,7 +1015,7 @@ class TestTheSchemesAreCuratedNotScaled:
     """
 
     def test_no_single_multiplier_explains_a_theme(self) -> None:
-        from svc.builder.sizing import COMPACT_SIZES
+        from pyhermes.builder.sizing import COMPACT_SIZES
 
         ratios = {
             round(
@@ -1027,20 +1027,20 @@ class TestTheSchemesAreCuratedNotScaled:
         assert len(ratios) > 1, "the type scale is a single multiplier, not a curation"
 
     def test_fine_print_holds_at_the_readability_floor_in_compact(self) -> None:
-        from svc.builder.sizing import COMPACT_SIZES
+        from pyhermes.builder.sizing import COMPACT_SIZES
 
         assert COMPACT_SIZES.type.micro == STANDARD_SIZES.type.micro == 9.5
         assert COMPACT_SIZES.type.label == STANDARD_SIZES.type.label == 10
 
     def test_leading_does_not_track_type_linearly(self) -> None:
-        from svc.builder.sizing import COMPACT_SIZES
+        from pyhermes.builder.sizing import COMPACT_SIZES
 
         type_drop = COMPACT_SIZES.type.body / STANDARD_SIZES.type.body
         leading_drop = COMPACT_SIZES.type.body_line / STANDARD_SIZES.type.body_line
         assert leading_drop > type_drop, "smaller type needs proportionally more leading, not less"
 
     def test_the_kpi_value_gives_up_the_least(self) -> None:
-        from svc.builder.sizing import COMPACT_SIZES
+        from pyhermes.builder.sizing import COMPACT_SIZES
 
         kpi = COMPACT_SIZES.component.kpi_value / STANDARD_SIZES.component.kpi_value
         title = COMPACT_SIZES.type.title / STANDARD_SIZES.type.title
@@ -1057,20 +1057,20 @@ class TestTheSchemesAreCuratedNotScaled:
 
     def test_dense_holds_fine_print_at_the_print_floor(self) -> None:
         """#211: label and micro may move in print, and never below 8px (6pt)."""
-        from svc.builder.sizing import DENSE_SIZES
+        from pyhermes.builder.sizing import DENSE_SIZES
 
         assert min(DENSE_SIZES.type.label, DENSE_SIZES.type.micro) >= 8
         assert DENSE_SIZES.type.micro < STANDARD_SIZES.type.micro
 
     def test_dense_tightens_leading_less_than_type(self) -> None:
-        from svc.builder.sizing import COMPACT_SIZES, DENSE_SIZES
+        from pyhermes.builder.sizing import COMPACT_SIZES, DENSE_SIZES
 
         type_drop = DENSE_SIZES.type.body / COMPACT_SIZES.type.body
         leading_drop = DENSE_SIZES.type.body_line / COMPACT_SIZES.type.body_line
         assert leading_drop > type_drop
 
     def test_dense_gives_up_the_kpi_value_least(self) -> None:
-        from svc.builder.sizing import COMPACT_SIZES, DENSE_SIZES
+        from pyhermes.builder.sizing import COMPACT_SIZES, DENSE_SIZES
 
         kpi = DENSE_SIZES.component.kpi_value / COMPACT_SIZES.component.kpi_value
         body = DENSE_SIZES.type.body / COMPACT_SIZES.type.body
@@ -1078,7 +1078,7 @@ class TestTheSchemesAreCuratedNotScaled:
 
     def test_dense_is_denser_than_compact_everywhere_it_decides(self) -> None:
         """Written as a derive of compact, so no token it sets may be roomier."""
-        from svc.builder.sizing import COMPACT_SIZES, DENSE_SIZES
+        from pyhermes.builder.sizing import COMPACT_SIZES, DENSE_SIZES
 
         for layer in ("type", "space", "component"):
             for spec in fields(SizeScheme.LAYERS[layer]):
@@ -1093,7 +1093,7 @@ class TestTheSchemesAreCuratedNotScaled:
         gutter puts a two-up split at 288px; holding the threshold at 300
         would have given the airiest theme the tightest column padding.
         """
-        from svc.builder.sizing import SPACIOUS_SIZES
+        from pyhermes.builder.sizing import SPACIOUS_SIZES
 
         two_up = column_layout([50, 50], SPACIOUS_SIZES)
         assert two_up[0].width < STANDARD_SIZES.frame.narrow_column
@@ -1157,7 +1157,7 @@ class TestTheCallerFacingSurfaceStaysClosed:
         """
         import inspect
 
-        import svc.builder as builder
+        import pyhermes.builder as builder
 
         banned = ("font_size", "line_height", "padding", "size_px", "width_px")
         offenders: list[str] = []
@@ -1178,7 +1178,7 @@ class TestTheCallerFacingSurfaceStaysClosed:
         additive, and this is that widening. The reason it existed survives
         as a gate on the email medium, pinned in ``test_spacing.py``.
         """
-        from svc.builder.models import EmailMetadata
+        from pyhermes.builder.models import EmailMetadata
 
         house = STANDARD_SIZES.derive(space={"content_top": 8})
         assert EmailMetadata(size_theme=house).size_theme is house

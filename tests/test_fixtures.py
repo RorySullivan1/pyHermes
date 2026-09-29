@@ -19,13 +19,13 @@ import inspect
 
 import pytest
 
-import svc.builder as builder_api
+import pyhermes.builder as builder_api
+from pyhermes.builder.components import Component, DataTable
+from pyhermes.builder.models import Cell, Column, EmailMetadata, TableRow
+from pyhermes.delivery import collect_cid_references
 from qa.fixtures import DEPRECATED_COMPONENTS, all_fixtures
 from qa.fixtures import kitchen_sink as kitchen_sink_module
 from qa.fixtures._png import solid_png
-from svc.builder.components import Component, DataTable
-from svc.builder.models import Cell, Column, EmailMetadata, TableRow
-from svc.delivery import collect_cid_references
 
 FIXTURE_NAMES = sorted(all_fixtures())
 
@@ -120,7 +120,7 @@ def _gallery_sections():
 
 def _tables_in_gallery():
     """Every DataTable the gallery builds, with its rows, columns and cells."""
-    from svc.builder.components import DataTable
+    from pyhermes.builder.components import DataTable
 
     for build in all_fixtures().values():
         email = build()
@@ -205,7 +205,7 @@ class TestComponentFieldsAreExercised:
 
     def test_every_math_block_argument_is_exercised(self):
         """#229's fields, read off ``__init__`` as DataTable's are."""
-        from svc.builder import MathBlock
+        from pyhermes.builder import MathBlock
 
         blocks = [
             component
@@ -235,7 +235,7 @@ class TestComponentFieldsAreExercised:
         field is one the golden cannot pin — the render would not move if
         the default changed underneath it.
         """
-        from svc.builder.components import CopyAlignment
+        from pyhermes.builder.components import CopyAlignment
 
         aligned = [
             component
@@ -319,7 +319,7 @@ class TestComponentFieldsAreExercised:
 class TestKitchenSinkCompleteness:
     @staticmethod
     def _public_components() -> set[str]:
-        """Every public Component subclass exported from svc.builder."""
+        """Every public Component subclass exported from pyhermes.builder."""
         return {
             name
             for name, obj in vars(builder_api).items()
@@ -331,7 +331,7 @@ class TestKitchenSinkCompleteness:
 
     def test_every_public_component_appears(self):
         """
-        Introspected, not hand-listed: a component added to svc.builder and
+        Introspected, not hand-listed: a component added to pyhermes.builder and
         forgotten here fails the suite instead of going unrendered forever.
         """
         source = inspect.getsource(kitchen_sink_module)
@@ -466,8 +466,8 @@ class TestCustomBannerCarriesEveryAxis:
         attached one reaches the manifest and puts a ``cid:`` in both the CSS
         and the VML.
         """
-        from svc.builder.enums import EmbedStrategy
-        from svc.builder.images import EmailImage
+        from pyhermes.builder.enums import EmbedStrategy
+        from pyhermes.builder.images import EmailImage
 
         backdrop = email.banner.background_image_url
         assert isinstance(backdrop, EmailImage)

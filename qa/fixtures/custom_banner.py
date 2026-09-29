@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from svc.builder import (
+from pyhermes.builder import (
     Banner,
     BannerPalette,
     CardGroup,
@@ -27,9 +27,9 @@ from svc.builder import (
     TextBlock,
     TwoColumn,
 )
-from svc.builder.enums import TwoColumnRatio
-from svc.builder.images import EmailImage
-from svc.builder.models import Card, TableRow
+from pyhermes.builder.enums import TwoColumnRatio
+from pyhermes.builder.images import EmailImage
+from pyhermes.builder.models import Card, TableRow
 
 from ._png import solid_png
 

@@ -163,7 +163,7 @@ jobs:
 
           from qa.fixtures import all_brochure_fixtures, all_paged_fixtures
           from qa.screenshots import capture_pages
-          from svc.pdf import page_count, save_pdf
+          from pyhermes.pdf import page_count, save_pdf
 
           builders = {**all_paged_fixtures(), **all_brochure_fixtures()}
           gallery = {name: build() for name, build in sorted(builders.items())}
@@ -266,7 +266,7 @@ jobs:
         run: |
           /tmp/wheelenv/bin/pip install mypy
           mkdir -p /tmp/typecheck && cd /tmp/typecheck
-          printf 'from svc.builder import Email\n\nreveal_type(Email)\n' > consumer.py
+          printf 'from pyhermes.builder import Email\n\nreveal_type(Email)\n' > consumer.py
           /tmp/wheelenv/bin/mypy --strict consumer.py
 
       - name: Render an email with no source tree in sight, from each
@@ -277,7 +277,7 @@ jobs:
           /tmp/$env/bin/python - <<'PY'
           from pathlib import Path
 
-          from svc.builder import (
+          from pyhermes.builder import (
               ContactBlock,
               EmailBuilder,
               Footer,

@@ -13,11 +13,11 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from svc.builder import DataTable, FullWidth, ImageBlock, PullQuote, TextBlock
-from svc.builder.images import EmailImage
-from svc.builder.models import TableRow
-from svc.builder.sizing import LETTER_LANDSCAPE
-from svc.document import (
+from pyhermes.builder import DataTable, FullWidth, ImageBlock, PullQuote, TextBlock
+from pyhermes.builder.images import EmailImage
+from pyhermes.builder.models import TableRow
+from pyhermes.builder.sizing import LETTER_LANDSCAPE
+from pyhermes.document import (
     BackMatter,
     ContentsPage,
     Cover,

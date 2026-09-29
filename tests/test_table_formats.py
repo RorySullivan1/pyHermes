@@ -12,12 +12,12 @@ from decimal import Decimal
 
 import pytest
 
-from svc.builder import DataTable
-from svc.builder.engine import TemplateEngine
-from svc.builder.enums import ColumnKind, Tone
-from svc.builder.exceptions import ValidationError
-from svc.builder.formats import pct
-from svc.builder.models import Cell, Column, TableRow
+from pyhermes.builder import DataTable
+from pyhermes.builder.engine import TemplateEngine
+from pyhermes.builder.enums import ColumnKind, Tone
+from pyhermes.builder.exceptions import ValidationError
+from pyhermes.builder.formats import pct
+from pyhermes.builder.models import Cell, Column, TableRow
 
 
 def one_year(value: float) -> str:
@@ -118,4 +118,4 @@ def test_the_frame_adapter_formats_nothing_itself():
     # The logic moved onto the column; one path means the two cannot differ.
     import pathlib
 
-    assert "from_number" not in pathlib.Path("svc/data/frames.py").read_text(encoding="utf-8")
+    assert "from_number" not in pathlib.Path("pyhermes/data/frames.py").read_text(encoding="utf-8")

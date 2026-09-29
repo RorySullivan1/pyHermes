@@ -1,7 +1,7 @@
 ---
 paths:
-  - "svc/builder/formats.py"
-  - "svc/data/**/*"
+  - "pyhermes/builder/formats.py"
+  - "pyhermes/data/**/*"
   - "tests/test_formats.py"
   - "tests/test_frames.py"
   - "tests/test_charts.py"
@@ -23,10 +23,10 @@ number  →  format (Python, once)  →  string      →  both projections read 
 
 | Piece | Where | Needs |
 |---|---|---|
-| Formatters (#177) | `svc/builder/formats.py` | stdlib only |
+| Formatters (#177) | `pyhermes/builder/formats.py` | stdlib only |
 | Semantic tone (#178) | `Cell.tone`, `Card.tone`, `tone_of`, `Cell.from_number` | nothing |
-| DataFrame adapter (#179) | `svc.data.table_from_frame` | `[data]` — pandas |
-| Figure adapter (#180) | `svc.data.image_from_figure`, `chart_from_figure` | `[charts]` — matplotlib |
+| DataFrame adapter (#179) | `pyhermes.data.table_from_frame` | `[data]` — pandas |
+| Figure adapter (#180) | `pyhermes.data.image_from_figure`, `chart_from_figure` | `[charts]` — matplotlib |
 
 The tone's own argument lives in `data-table.md`, beside the colour exception it extends.
 
@@ -49,31 +49,31 @@ The tone's own argument lives in `data-table.md`, beside the colour exception it
 - **`compact()` moves up a unit when rounding reaches 1,000.** `999_950` is `1m`, not
   `1,000k`. It drops trailing zeros (`340m`, not `340.0m`), which is the convention for
   magnitudes and not for returns, so `pct` keeps its zeros.
-- **The module imports nothing from `svc`**, and an AST test holds it to `numbers`, `decimal`
+- **The module imports nothing from `pyhermes`**, and an AST test holds it to `numbers`, `decimal`
   and `typing`. It is the floor of the layer, usable without the render path, and it has no
   reason to move a golden.
 
 ### The adapters — a sibling package, and a dependency that runs one way
 
-`svc/data/` is a sibling of `svc/pdf/` on the same terms: it imports the builder, the builder
-never imports it, and each backend is imported inside a function, so `import svc.data` works
-with neither extra installed. **`svc/math/` (#221) is the third sibling on exactly these
+`pyhermes/data/` is a sibling of `pyhermes/pdf/` on the same terms: it imports the builder, the builder
+never imports it, and each backend is imported inside a function, so `import pyhermes.data` works
+with neither extra installed. **`pyhermes/math/` (#221) is the third sibling on exactly these
 terms**: `MathBlock` takes bytes and the `[math]` extra renders them, so the purity tests cover
 it both ways. `math.md` carries its decisions.
 
 - **There is no `DataTable.from_frame` or `ChartBlock.from_figure`.** #179 and #180 asked for
-  both classmethods *and* for a purity test that `svc/builder` never imports `svc.data`. The
+  both classmethods *and* for a purity test that `pyhermes/builder` never imports `pyhermes.data`. The
   two cannot both hold, because a lazy import inside a builder method is still the builder
   importing the adapters. The purity test is what proves the extras optional, so it stayed.
-  The entry points are functions in `svc.data`, the shape `svc.pdf.render_pdf(document)`
+  The entry points are functions in `pyhermes.data`, the shape `pyhermes.pdf.render_pdf(document)`
   already has. Appending the classmethod to `components.py` fails
-  `test_no_core_module_imports_an_optional_backend_or_the_adapters[svc/builder]` by name.
+  `test_no_core_module_imports_an_optional_backend_or_the_adapters[pyhermes/builder]` by name.
 - **Two extras, not one.** `[data]` is pandas and `[charts]` is matplotlib. A table author
   should not install a plotting library, and a test asserts neither extra carries the
   other's backend.
 - **A missing backend is a `DataError`; a frame of the wrong shape is a `ValidationError`.**
-  `svc.data.BackendMissingError` names the install (`pip install "pyhermes[data]"`), as
-  `svc.pdf`'s does. A mapping that names a column the frame lacks, `"auto"` on a text column,
+  `pyhermes.data.BackendMissingError` names the install (`pip install "pyhermes[data]"`), as
+  `pyhermes.pdf`'s does. A mapping that names a column the frame lacks, `"auto"` on a text column,
   a MultiIndex or an empty frame are data problems, so they raise the builder's own error,
   naming the offending key.
 - **mypy lists both spellings of each backend** (`pandas` and `pandas.*`). This is the #157
@@ -86,7 +86,7 @@ it both ways. `math.md` carries its decisions.
   2.5 needs Python 3.12+ and this machine's default is 3.11. A 3.13 venv reproduced it
   exactly. The fix took two keys, not one: `follow_imports = "skip"` **is ignored for `.pyi`
   stubs** unless `follow_imports_for_stubs = true` is also set. numpy is listed because it
-  comes in transitively. `svc/data` types every backend as `Any`, so nothing is lost by
+  comes in transitively. `pyhermes/data` types every backend as `Any`, so nothing is lost by
   skipping it.
 
 ### The frame adapter's inferences

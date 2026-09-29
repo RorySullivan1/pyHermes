@@ -1,9 +1,9 @@
 ---
 paths:
-  - "svc/builder/components.py"
-  - "svc/builder/templates/analysis/**/*"
-  - "svc/builder/templates/media/**/*"
-  - "svc/builder/templates/common/disclosure.html"
+  - "pyhermes/builder/components.py"
+  - "pyhermes/builder/templates/analysis/**/*"
+  - "pyhermes/builder/templates/media/**/*"
+  - "pyhermes/builder/templates/common/disclosure.html"
 ---
 
 # An exhibit's fine print — attribution, and the disclosure beneath it

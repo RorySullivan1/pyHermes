@@ -1,10 +1,10 @@
 ---
 paths:
-  - "svc/math/**"
+  - "pyhermes/math/**"
   - "tests/test_math.py"
   - "tests/test_math_block.py"
   - "tests/test_math_paged.py"
-  - "svc/builder/templates/media/math-block.html"
+  - "pyhermes/builder/templates/media/math-block.html"
 ---
 
 # Equations — a MathBlock that survives every medium (#221)
@@ -18,16 +18,16 @@ that picture honest: its source kept, its number computed once, its projection r
 
 | Piece | Where | What it knows |
 |---|---|---|
-| `MathBlock(image, latex=… \| lines=…)` | `svc/builder/components.py` | An `Exhibit`: the image, the source, caption, label, notes. **Never matplotlib.** |
-| `render_math(latex, font_px, color, scale, fontset, lines, align_lines)` | `svc/math/render.py` | mathtext, behind `_backend()`. Returns `RenderedMath(png, width_px, height_px)` |
-| `math_block(latex, theme, size_theme, …)` / `image_from_math` | `svc/math/adapter.py` | Joins them: the colour and size from the caller's theme and density |
+| `MathBlock(image, latex=… \| lines=…)` | `pyhermes/builder/components.py` | An `Exhibit`: the image, the source, caption, label, notes. **Never matplotlib.** |
+| `render_math(latex, font_px, color, scale, fontset, lines, align_lines)` | `pyhermes/math/render.py` | mathtext, behind `_backend()`. Returns `RenderedMath(png, width_px, height_px)` |
+| `math_block(latex, theme, size_theme, …)` / `image_from_math` | `pyhermes/math/adapter.py` | Joins them: the colour and size from the caller's theme and density |
 
 - **The stub put rendering in the component, and that was corrected.** `MathBlock(latex)`
   rendering at construction would make the builder import a backend.
   `test_no_core_module_imports_an_optional_backend_or_the_adapters` forbids that, lazily or not,
   for the reason `data-layer.md` gives for refusing `DataTable.from_frame`. So the component
-  is `ChartBlock`'s half of the `chart_from_figure` pair, and `svc/math` is a third sibling of
-  `svc/data` and `svc/pdf` on the same terms. The purity tests cover it both ways.
+  is `ChartBlock`'s half of the `chart_from_figure` pair, and `pyhermes/math` is a third sibling of
+  `pyhermes/data` and `pyhermes/pdf` on the same terms. The purity tests cover it both ways.
 - **The source is the alt text and the text projection.** The `img` alt is the LaTeX, escaped
   as an attribute, and `text()` prints `$source$` on its own line beneath the numbered caption,
   one line per line of a multi-line display. The raw-HTML set stays closed at five. A screen

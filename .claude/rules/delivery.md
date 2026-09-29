@@ -1,20 +1,20 @@
 ---
 paths:
-  - "svc/delivery/**/*"
-  - "svc/gmail/**/*"
-  - "svc/outlook/**/*"
+  - "pyhermes/delivery/**/*"
+  - "pyhermes/gmail/**/*"
+  - "pyhermes/outlook/**/*"
 ---
 
 # Delivery and the send adapters
 
-## Architecture — `svc/delivery`
+## Architecture — `pyhermes/delivery`
 
 The builder **declares** a CID embed; delivery **performs** it. `Email.render()` gives the
 HTML, `Email.text()` the plain-text projection and `Email.assets()` the manifest;
-[build_message()](../../svc/delivery/message.py) turns those three into a sendable `EmailMessage`.
+[build_message()](../../pyhermes/delivery/message.py) turns those three into a sendable `EmailMessage`.
 
 ```python
-from svc.delivery import build_message, save_eml
+from pyhermes.delivery import build_message, save_eml
 
 message = build_message(email, sender="research@example.com",
                         to=["reader@example.com"])   # subject defaults from the email
@@ -73,10 +73,10 @@ save_eml(message, "output/preview.eml")     # dry run — no transport, no crede
   and leaks the blind-copy list) — both are transport concerns for the adapters. Output is
   byte-identical for a given input **except** the MIME boundary on a `multipart/related`
   result: the stdlib draws a fresh random one per call, so a snapshot test (#58) must
-  normalize it. `svc/delivery/message.py`'s docstring says exactly what to normalize.
+  normalize it. `pyhermes/delivery/message.py`'s docstring says exactly what to normalize.
 - **Errors are a separate hierarchy.** `DeliveryError` is a **sibling** of `EmailBuilderError`,
   not a child: a send failure is not a build failure. `MessageError` covers assembly.
-- **`subject` is optional and falls back to [Email.metadata](../../svc/builder/email.py)'s
+- **`subject` is optional and falls back to [Email.metadata](../../pyhermes/builder/email.py)'s
   `email_subject`**, which `validate()` already requires. An explicit `subject=` always wins,
   and an explicitly blank one is still an error rather than a silent fallback — a caller who
   passed something meant it. `Email.metadata` is read-only and deliberately not a copy: the
@@ -91,19 +91,19 @@ it never rebuilds.** Concretely:
 
 1. **Take an authorized transport, not credentials.** Define a one-method `Protocol` and let
    the caller satisfy it. This is why pyHermes has no provider SDK in its dependency tree —
-   `svc/gmail` and `svc/outlook` import nothing from Google or Microsoft, and a test in each
+   `pyhermes/gmail` and `pyhermes/outlook` import nothing from Google or Microsoft, and a test in each
    parses the module's **AST** to keep it that way. Token acquisition, refresh and revocation
    stay with the caller, where an application's secret handling already lives.
-2. **Serialise with [to_wire_bytes()](../../svc/delivery/message.py)**, never `message.as_bytes()`
+2. **Serialise with [to_wire_bytes()](../../pyhermes/delivery/message.py)**, never `message.as_bytes()`
    directly. One path means the bytes you transmit equal the bytes `save_eml()` writes, which
    is the only reason the dry run is a preview rather than an approximation. Each adapter
    asserts that equality in its own suite.
-3. **Reuse [retry_with_backoff()](../../svc/delivery/retry.py); supply your own `is_transient`.**
+3. **Reuse [retry_with_backoff()](../../pyhermes/delivery/retry.py); supply your own `is_transient`.**
    The policy is shared because it is transport-neutral; the classification is not, because
    only you know what your provider's rate-limit error looks like. If your provider sends a
    `Retry-After`, pass a `delay_hint` too. Leave the numeric arguments alone unless your
    provider genuinely needs a different ladder — omitted, they come from
-   [Config](../../svc/config.py), so a deployment can retune every adapter at once.
+   [Config](../../pyhermes/config.py), so a deployment can retune every adapter at once.
 4. **Never retry an unrecognised failure.** On a send path an unknown error may already have
    delivered, and a blind retry risks a duplicate. Retry only what you positively identify.
 5. **Map every failure to `TransportError`, chaining the provider's exception** with
@@ -137,16 +137,16 @@ Recorded as decisions, so they are not re-litigated as oversights:
 | **Any compliance policy** | pyHermes does not decide what an email must *say*. Disclaimer language, unsubscribe links and every other compliance question are the caller's judgement: the library cannot know whether an email is a commercial newsletter, an internal note or a receipt, and each answers differently — a library that guessed would be wrong for two of the three. What it guarantees instead is narrower and checkable: a region *variant* will not silently drop content the caller supplied (`REQUIRED_SLOTS`), and what renders is shape- and safety-valid (hex colours, URL schemes). `LinkRow(links=[])` and an empty `disclaimer` are both valid |
 | `Retry-After` as an HTTP-date | Legal but rare; degrades to the computed backoff instead of crashing |
 
-## Architecture — `svc/gmail`
+## Architecture — `pyhermes/gmail`
 
-Delivery assembles bytes; an adapter transmits them. `svc/gmail` owns Gmail's **wire
+Delivery assembles bytes; an adapter transmits them. `pyhermes/gmail` owns Gmail's **wire
 contract** — the base64url `raw` encoding, the `users.messages.send` shape, which failures
 are worth retrying — and deliberately does **not** own authentication.
 
 ```python
 from googleapiclient.discovery import build      # the caller's dependency, not ours
-from svc.delivery import build_message
-from svc.gmail import GoogleApiTransport, send_message
+from pyhermes.delivery import build_message
+from pyhermes.gmail import GoogleApiTransport, send_message
 
 service = build("gmail", "v1", credentials=creds)          # caller authenticates
 message = build_message(email, subject=..., sender=..., to=[...])
@@ -161,31 +161,31 @@ message_id = send_message(message, transport=GoogleApiTransport(service))
   mailbox, no network, and no recorded fixtures to drift**. Token acquisition, refresh and
   revocation stay with the caller, where an application's secret handling already lives.
   `GoogleApiTransport` is a duck-typed three-line shim so callers needn't rewrite it.
-- **Retry policy is shared, classification is not.** [retry_with_backoff()](../../svc/delivery/retry.py)
-  is transport-neutral and lives in `svc/delivery`, so the Outlook adapter (#70) reuses it
+- **Retry policy is shared, classification is not.** [retry_with_backoff()](../../pyhermes/delivery/retry.py)
+  is transport-neutral and lives in `pyhermes/delivery`, so the Outlook adapter (#70) reuses it
   rather than growing a second copy. Each adapter supplies its own `is_transient`, because
   only it knows what its provider's rate-limit error looks like. Gmail retries 429 and the
   5xx family plus network interruptions; **an unrecognised failure is not retried**, because
   on a send path it may already have delivered and a blind retry risks a duplicate.
 - **`sleep` is injected**, so tests exercise the real backoff ladder without spending it.
 - **The bytes sent are the bytes `save_eml()` writes** — both go through
-  [to_wire_bytes()](../../svc/delivery/message.py), and a test asserts the equality. That is what
+  [to_wire_bytes()](../../pyhermes/delivery/message.py), and a test asserts the equality. That is what
   makes the dry run a faithful preview rather than an approximation.
 - **`TransportError`** (a `DeliveryError`) covers every send failure, always chaining the
   provider's own exception. It is distinct from `MessageError` on purpose: an unbuildable
   message is the caller's data problem, while an unsendable one may be worth retrying later
   with the exact same bytes.
 
-## Architecture — `svc/outlook`
+## Architecture — `pyhermes/outlook`
 
 The second adapter, and the proof the seam generalises: it transplants
-[svc/gmail](../../svc/gmail/sender.py)'s shape — injected transport, `TransportError` mapping,
+[pyhermes/gmail](../../pyhermes/gmail/sender.py)'s shape — injected transport, `TransportError` mapping,
 shared retry — and differs only where Microsoft Graph genuinely differs from Gmail.
 
 ```python
 import requests                                # the caller's dependency, not ours
-from svc.delivery import build_message
-from svc.outlook import GraphApiTransport, send_message
+from pyhermes.delivery import build_message
+from pyhermes.outlook import GraphApiTransport, send_message
 
 session = requests.Session()                   # caller authenticates
 session.headers["Authorization"] = f"Bearer {token}"
@@ -219,7 +219,7 @@ An `HTTP-date` form of the header degrades to the ladder rather than crashing.
 
 ## Outlook: why Graph, and how it differs from Gmail
 
-Moved out of `svc/outlook/sender.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
+Moved out of `pyhermes/outlook/sender.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
 
 ```
 Outlook send adapter, over Microsoft Graph.
@@ -233,14 +233,14 @@ delivery layer rots. This adapter uses **Microsoft Graph**:
   needs nothing installed locally — and, decisively, ``sendMail`` accepts a
   whole RFC 822 message as base64 rather than making the caller decompose it
   into Graph's JSON ``message`` schema. That keeps the bytes we send
-  identical to the bytes :func:`svc.delivery.save_eml` writes, so inline CID
+  identical to the bytes :func:`pyhermes.delivery.save_eml` writes, so inline CID
   images and every header survive exactly as assembled. Re-encoding through
   a JSON schema would put that equality — and the dry run's usefulness —
   at risk.
 - **SMTP.** Needs no SDK, but it is not *Outlook*: it is a generic protocol
   that happens to reach Microsoft 365, and Microsoft has been retiring basic
   auth for it. A generic SMTP adapter is a reasonable thing to want, and it
-  could reuse :func:`~svc.delivery.retry.retry_with_backoff` unchanged — it
+  could reuse :func:`~pyhermes.delivery.retry.retry_with_backoff` unchanged — it
   is simply not this module.
 - **``win32com`` / local Outlook automation.** Windows-only and requires a
   running Outlook install. Wrong for a library, ruled out.
@@ -271,14 +271,14 @@ alike and the differences bite:
    and guessing a backoff actively *prolongs* the throttling. This adapter
    reads the header and lets it override the computed ladder.
 
-Authentication is not this module's job — see :mod:`svc.gmail.sender` for the
+Authentication is not this module's job — see :mod:`pyhermes.gmail.sender` for the
 same boundary and the reasoning behind it. Bring an authorized session.
 
 Usage::
 
     import requests                             # the caller's dependency
-    from svc.delivery import build_message
-    from svc.outlook import GraphApiTransport, send_message
+    from pyhermes.delivery import build_message
+    from pyhermes.outlook import GraphApiTransport, send_message
 
     session = requests.Session()                # caller authenticates
     session.headers["Authorization"] = f"Bearer {token}"
@@ -289,14 +289,14 @@ Usage::
 
 ## MIME assembly — the ordering rules and the boundary-randomness caveat
 
-Moved out of `svc/delivery/message.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
+Moved out of `pyhermes/delivery/message.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
 
 ```
 Transport-neutral MIME assembly for a built email.
 
 The builder composes and *declares*; this module assembles.
-:meth:`~svc.builder.email.Email.render` gives the HTML and
-:meth:`~svc.builder.email.Email.assets` gives the manifest of images that
+:meth:`~pyhermes.builder.email.Email.render` gives the HTML and
+:meth:`~pyhermes.builder.email.Email.assets` gives the manifest of images that
 HTML references as ``cid:`` — this turns that pair into an
 :class:`~email.message.EmailMessage` an adapter can hand to a transport.
 
@@ -355,7 +355,7 @@ it was, one level deeper.
 
 ## Gmail: what the adapter owns, and the three things the credential boundary buys
 
-Moved out of `svc/gmail/sender.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
+Moved out of `pyhermes/gmail/sender.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
 
 ```
 Gmail send adapter: puts an assembled message on the wire.
@@ -382,8 +382,8 @@ authorized transport and calls it. That boundary buys three things:
 Usage::
 
     from googleapiclient.discovery import build      # caller's dependency
-    from svc.delivery import build_message
-    from svc.gmail import GoogleApiTransport, send_message
+    from pyhermes.delivery import build_message
+    from pyhermes.gmail import GoogleApiTransport, send_message
 
     service = build("gmail", "v1", credentials=creds)   # caller authenticates
     message = build_message(email, subject=..., sender=..., to=[...])
@@ -392,7 +392,7 @@ Usage::
 
 ## The retry split — why policy is shared and classification is not
 
-Moved out of `svc/delivery/retry.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
+Moved out of `pyhermes/delivery/retry.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
 
 ```
 Bounded retry with exponential backoff, shared by every send adapter.
@@ -415,16 +415,16 @@ is retried.
 
 ## The delivery package front door, in full
 
-Moved out of `svc/delivery/__init__.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
+Moved out of `pyhermes/delivery/__init__.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
 
 ```
 pyHermes delivery layer — transport-neutral MIME assembly.
 
 The builder declares a CID embed; it never performs one. Attaching a MIME
-part is a transport act, so ``svc.builder`` emits two things and this package
+part is a transport act, so ``pyhermes.builder`` emits two things and this package
 consumes both::
 
-    from svc.delivery import build_message, save_eml
+    from pyhermes.delivery import build_message, save_eml
 
     message = build_message(
         email,
@@ -434,15 +434,15 @@ consumes both::
     )
     save_eml(message, "output/weekly-wrap.eml")   # dry run, no transport
 
-:func:`~svc.delivery.message.build_message` is pure — no credentials, no
+:func:`~pyhermes.delivery.message.build_message` is pure — no credentials, no
 network, no clock — so it is fully testable on its own. Sending is the job of
-the per-service adapters (``svc.gmail``, ``svc.outlook``), which consume the
+the per-service adapters (``pyhermes.gmail``, ``pyhermes.outlook``), which consume the
 message this package builds.
 ```
 
 ## build_message — the Bcc decision and the determinism caveat
 
-Moved out of `svc/delivery/message.py`'s `build_message` docstring by #138: the function keeps its contract, the reasoning lives here.
+Moved out of `pyhermes/delivery/message.py`'s `build_message` docstring by #138: the function keeps its contract, the reasoning lives here.
 
 ```
 Assemble a built email into a sendable MIME message.
@@ -497,7 +497,7 @@ Assemble a built email into a sendable MIME message.
 
 ## retry_with_backoff — why a hint outranks the computed backoff, and why it has its own ceiling
 
-Moved out of `svc/delivery/retry.py`'s `retry_with_backoff` docstring by #138: the function keeps its contract, the reasoning lives here.
+Moved out of `pyhermes/delivery/retry.py`'s `retry_with_backoff` docstring by #138: the function keeps its contract, the reasoning lives here.
 
 ```
 Call ``operation``, retrying only failures ``is_transient`` accepts.
@@ -509,7 +509,7 @@ Call ``operation``, retrying only failures ``is_transient`` accepts.
         max_attempts:   Total attempts including the first. ``1`` disables
             retrying without needing a separate code path. ``None`` --
             like every numeric argument here -- takes the value from
-            :func:`svc.config.get_config`, so the ladder is tunable
+            :func:`pyhermes.config.get_config`, so the ladder is tunable
             without editing this module.
         initial_delay:  Seconds to wait after the first failure.
         backoff_factor: Multiplier applied to the delay after each failure.
@@ -555,10 +555,10 @@ Call ``operation``, retrying only failures ``is_transient`` accepts.
 There are three exporters on one contract now, and `.claude/rules/media.md` carries the medium
 model they hang off. What follows stays true of all of them.
 
-`svc/pdf/` is an exporter on exactly the terms `svc/gmail` and `svc/outlook` hold: it takes
+`pyhermes/pdf/` is an exporter on exactly the terms `pyhermes/gmail` and `pyhermes/outlook` hold: it takes
 what the builder produces, owns its own wire format, and owns nothing else. WeasyPrint is the
-optional `[pdf]` extra, imported lazily, and an AST test holds that nothing under `svc/builder`,
-`svc/document` or `svc/email` imports it.
+optional `[pdf]` extra, imported lazily, and an AST test holds that nothing under `pyhermes/builder`,
+`pyhermes/document` or `pyhermes/email` imports it.
 
 What it *adds* to the adapter contract is a **resource policy**, and it is the security-relevant
 part: the exporter makes **no network requests**. `cid:` references are served from the

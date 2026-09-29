@@ -9,8 +9,8 @@ from pathlib import Path
 
 import pytest
 
-from svc.builder.engine import TemplateEngine
-from svc.builder.exceptions import EmailBuilderError, TemplateError, ValidationError
+from pyhermes.builder.engine import TemplateEngine
+from pyhermes.builder.exceptions import EmailBuilderError, TemplateError, ValidationError
 
 
 class TestConstruction:
@@ -21,11 +21,11 @@ class TestConstruction:
     def test_templates_live_inside_the_package(self, engine):
         # Regression: #10 — templates used to sit at the repo root and were
         # resolved by walking up three parents, so they were absent from a
-        # wheel install. They must resolve *inside* svc/builder for the
+        # wheel install. They must resolve *inside* pyhermes/builder for the
         # package to be installable without a source tree.
-        import svc.builder
+        import pyhermes.builder
 
-        package_dir = Path(svc.builder.__file__).resolve().parent
+        package_dir = Path(pyhermes.builder.__file__).resolve().parent
         assert engine.template_dir.is_relative_to(package_dir)
 
     def test_all_templates_are_packaged(self, engine):

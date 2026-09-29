@@ -1,9 +1,9 @@
 # MEMORY INDEX  ·  keep ≤ ~80 lines, ≤ ~200 chars per line
 
 ## State            (rewrite in place — current truth only, ≤ ~10 lines)
-- pyHermes builds **documents** and renders each onto a **medium**: `svc/builder` is the
-  shared kit, `svc/email`, `svc/document` and `svc/brochure` are the media, and exporters sit on
-  one contract — `svc/delivery`+`gmail`+`outlook`, and `svc/pdf`. Rationale: CLAUDE.md and
+- pyHermes builds **documents** and renders each onto a **medium**: `pyhermes/builder` is the
+  shared kit, `pyhermes/email`, `pyhermes/document` and `pyhermes/brochure` are the media, and exporters sit on
+  one contract — `pyhermes/delivery`+`gmail`+`outlook`, and `pyhermes/pdf`. Rationale: CLAUDE.md and
   `.claude/rules/media.md`; do not restate it here.
 - **Shipped**: #157, #153, #169, #170, #171, #172, #193 (PRs #167–#203); #201, #150, #202 (PRs #204–#206);
   #209 (PR #222); #217 (PR #234); #221 (PR #235). **#238 implemented on the branch** (#246, #249, #247).
@@ -72,7 +72,7 @@
   `\le` unknown; two stub claims corrected (purity, theme recolour) — sessions/2026-09-24-1312-define-epic-221.md
 - [2026-09-24] table-semantics — **#217 implemented** (#223–#228): groups, cell markers, `Column.format`,
   decimal alignment and units, `HeatScale` and bars; `letter_quant_table` — sessions/2026-09-24-table-semantics.md
-- [2026-09-24] equations — **#221 implemented** (#229–#233): `MathBlock`, `svc/math` + `[math]`, `math_block`,
+- [2026-09-24] equations — **#221 implemented** (#229–#233): `MathBlock`, `pyhermes/math` + `[math]`, `math_block`,
   lines shim, `a4_equations`, the factsheet's Sharpe ratio — sessions/2026-09-24-equations.md
 - [2026-09-28] host-seams — **#238 implemented** (#246, #249, #247): warnings not prints, a context-local
   `Config` with `config=`, `template_overlay=` — sessions/2026-09-28-host-seams.md

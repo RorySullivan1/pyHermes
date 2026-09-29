@@ -14,12 +14,12 @@ import httplib2
 import pytest
 import requests
 
-from svc.builder import EmailBuilder, FullWidth, ImageBlock
-from svc.builder.images import EmailImage
-from svc.config import config_override
-from svc.delivery import build_message, save_eml
-from svc.delivery.exceptions import DeliveryError, TransportError
-from svc.gmail import GoogleApiTransport, is_transient, send_message
+from pyhermes.builder import EmailBuilder, FullWidth, ImageBlock
+from pyhermes.builder.images import EmailImage
+from pyhermes.config import config_override
+from pyhermes.delivery import build_message, save_eml
+from pyhermes.delivery.exceptions import DeliveryError, TransportError
+from pyhermes.gmail import GoogleApiTransport, is_transient, send_message
 
 ENVELOPE = {
     "subject": "Weekly Market Wrap",
@@ -414,7 +414,7 @@ class TestGoogleApiTransport:
         import ast
         import pathlib
 
-        import svc.gmail.sender as sender
+        import pyhermes.gmail.sender as sender
 
         tree = ast.parse(pathlib.Path(sender.__file__).read_text())
         imported: list[str] = []

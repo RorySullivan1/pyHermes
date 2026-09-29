@@ -12,7 +12,7 @@ import pathlib
 
 import pytest
 
-#: What only ``svc.data`` may import, and only inside a function.
+#: What only ``pyhermes.data`` may import, and only inside a function.
 _OPTIONAL = {"pandas", "matplotlib", "numpy"}
 
 
@@ -30,26 +30,33 @@ def _imports(path: pathlib.Path, *, module_level_only: bool = False) -> set[str]
 
 class TestTheCoreNeverImportsTheAdapters:
     """
-    The one-way dependency: ``svc.data`` imports the builder, never the reverse.
+    The one-way dependency: ``pyhermes.data`` imports the builder, never the reverse.
 
     This is why there is no ``DataTable.from_frame``. A lazy import inside a
-    builder method would still be the builder importing ``svc.data``, and the
+    builder method would still be the builder importing ``pyhermes.data``, and the
     rule would then be enforced nowhere.
     """
 
     @pytest.mark.parametrize(
         "package",
-        ["svc/builder", "svc/document", "svc/email", "svc/brochure", "svc/delivery", "svc/pdf"],
+        [
+            "pyhermes/builder",
+            "pyhermes/document",
+            "pyhermes/email",
+            "pyhermes/brochure",
+            "pyhermes/delivery",
+            "pyhermes/pdf",
+        ],
     )
     def test_no_core_module_imports_an_optional_backend_or_the_adapters(self, package):
         for path in sorted(pathlib.Path(package).rglob("*.py")):
             roots = {name.split(".")[0] for name in _imports(path)}
             assert not roots & _OPTIONAL, f"{path} imports {roots & _OPTIONAL}"
-            assert not any(name.startswith(("svc.data", "svc.math")) for name in _imports(path)), (
-                path
-            )
+            assert not any(
+                name.startswith(("pyhermes.data", "pyhermes.math")) for name in _imports(path)
+            ), path
 
-    @pytest.mark.parametrize("package", ["svc/data", "svc/math"])
+    @pytest.mark.parametrize("package", ["pyhermes/data", "pyhermes/math"])
     def test_the_adapters_import_their_backends_lazily(self, package):
         for path in sorted(pathlib.Path(package).glob("*.py")):
             roots = {name.split(".")[0] for name in _imports(path, module_level_only=True)}
@@ -71,18 +78,18 @@ class TestAMissingBackendNamesTheInstall:
     def test_the_package_imports_without_any_extra(self, refuse):
         import importlib
 
-        import svc.data
+        import pyhermes.data
 
-        importlib.reload(svc.data)
+        importlib.reload(pyhermes.data)
 
     def test_a_frame_without_pandas_says_install_data(self, refuse):
-        from svc.data import BackendMissingError, table_from_frame
+        from pyhermes.data import BackendMissingError, table_from_frame
 
         with pytest.raises(BackendMissingError, match=r"pyhermes\[data\]"):
             table_from_frame(object())
 
     def test_a_figure_without_matplotlib_says_install_charts(self, refuse):
-        from svc.data import BackendMissingError, image_from_figure
+        from pyhermes.data import BackendMissingError, image_from_figure
 
         with pytest.raises(BackendMissingError, match=r"pyhermes\[charts\]"):
             image_from_figure(object(), alt="Chart", width=320)
@@ -90,17 +97,17 @@ class TestAMissingBackendNamesTheInstall:
     def test_an_equation_without_matplotlib_says_install_math(self, refuse):
         import importlib
 
-        import svc.math
+        import pyhermes.math
 
-        importlib.reload(svc.math)
-        from svc.math import BackendMissingError, render_math
+        importlib.reload(pyhermes.math)
+        from pyhermes.math import BackendMissingError, render_math
 
         with pytest.raises(BackendMissingError, match=r"pyhermes\[math\]"):
             render_math("x", font_px=14, color="#3B3B3B", scale=2, fontset="cm")
-        assert svc.math.available() is False
+        assert pyhermes.math.available() is False
 
     def test_availability_reports_each_backend(self, refuse):
-        from svc.data import charts_available, frames_available
+        from pyhermes.data import charts_available, frames_available
 
         assert frames_available() is False
         assert charts_available() is False

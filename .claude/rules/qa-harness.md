@@ -75,18 +75,18 @@ HTML and fails every downstream golden for a reason unrelated to the change unde
 Hence fixed strings, no clock, no `random`, and PNG bytes generated from constants by
 [qa/fixtures/_png.py](../../qa/fixtures/_png.py) rather than checked in as binaries.
 
-**`qa/` is a top-level package, not `svc/qa` and not `tests/fixtures`** — the decision #57 left
-to its PR. It is out of `svc/` because the wheel ships `packages = ["svc"]` and the gallery is
+**`qa/` is a top-level package, not `pyhermes/qa` and not `tests/fixtures`** — the decision #57 left
+to its PR. It is out of `pyhermes/` because the wheel ships `packages = ["pyhermes"]` and the gallery is
 test data that would be dead weight for every installing user; it is out of `tests/` because
 `tests/` is not importable from an installed position and the epic's later tools (#59
 screenshots, #60 lint, #61 the `preview` CLI) are not tests. A root
 [conftest.py](../../conftest.py) puts the repo root on `sys.path` so `import qa` does not depend on
 hatchling's editable-install strategy happening to expose it. `qa/` **is** type-checked —
-`mypy` runs over `["svc", "qa"]`.
+`mypy` runs over `["pyhermes", "qa"]`.
 
 **Adding a component means adding it to `kitchen_sink()`; so does adding an `EmailMetadata`,
 `Banner` or `Footer` field.** Four completeness tests introspect rather than hand-list: one
-over every public `Component` subclass exported from `svc.builder`, one over
+over every public `Component` subclass exported from `pyhermes.builder`, one over
 `dataclasses.fields(EmailMetadata)`, a third asserting each metadata value *differs from its
 own default*, and a fourth doing both at once over each **region** — parametrized across
 header and footer, and read off the *built* region, so it holds however the fixture chooses
@@ -505,7 +505,7 @@ Email-client lint pass (#60): portability checks over rendered HTML.
 
 The constraints that actually break emails are documented prose, not checks.
 Outlook's Word engine ignores ``max-width``, so every ``<img>`` needs a
-``width=`` attribute — a rule :mod:`svc.builder.images` follows and nothing
+``width=`` attribute — a rule :mod:`pyhermes.builder.images` follows and nothing
 verified end to end. ``alt`` is required at construction, but nothing asserted
 it survived into the markup. This module turns those into findings.
 

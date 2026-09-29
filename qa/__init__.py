@@ -1,8 +1,8 @@
 """
 QA harness — the fixture gallery and the tools that consume it (epic #54).
 
-Deliberately a top-level package rather than a subpackage of ``svc``: the
-wheel ships ``packages = ["svc"]``, so nothing here reaches an installing
+Deliberately a top-level package rather than a subpackage of ``pyhermes``: the
+wheel ships ``packages = ["pyhermes"]``, so nothing here reaches an installing
 user. The gallery is test data — several PNG-bearing emails — and shipping it
 to every consumer would be dead weight in a library whose whole discipline is
 staying under a size budget.

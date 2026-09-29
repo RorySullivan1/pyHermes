@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from svc.builder import (
+from pyhermes.builder import (
     DataTable,
     Email,
     EmailBuilder,
@@ -27,8 +27,8 @@ from svc.builder import (
     TextBlock,
     TwoColumn,
 )
-from svc.builder.images import EmailImage
-from svc.builder.models import TableRow
+from pyhermes.builder.images import EmailImage
+from pyhermes.builder.models import TableRow
 
 from ._png import solid_png
 

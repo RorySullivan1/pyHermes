@@ -11,14 +11,14 @@ from __future__ import annotations
 
 import pytest
 
+from pyhermes.brochure import BROCHURE_MEDIUM
+from pyhermes.builder.medium import DEFAULT_MEDIUM
+from pyhermes.document import PAGED_MEDIUM, PagedDocument
+from pyhermes.email import EMAIL_MEDIUM
 from qa.fixtures import all_fixtures, all_paged_fixtures
 from qa.goldens import GOLDEN_DIR, artifacts, html_path, medium_dir
 from qa.lint import RULE_MEDIA, SOURCES, Severity, lint_document, lint_email, lint_html, rules_for
 from qa.screenshots import PDF_PX_SCALE, capture_pages, pages_available
-from svc.brochure import BROCHURE_MEDIUM
-from svc.builder.medium import DEFAULT_MEDIUM
-from svc.document import PAGED_MEDIUM, PagedDocument
-from svc.email import EMAIL_MEDIUM
 
 SHIPPED_MEDIA = {EMAIL_MEDIUM.name, PAGED_MEDIUM.name, BROCHURE_MEDIUM.name, DEFAULT_MEDIUM.name}
 
@@ -203,7 +203,7 @@ class TestAPagedDocumentIsPhotographedFromItsPdf:
     def test_one_image_per_sheet(self, tmp_path):
         document = all_paged_fixtures()["a4_portrait"]()
         shots, _ = capture_pages({"a4_portrait": document}, tmp_path)
-        from svc.pdf import page_count
+        from pyhermes.pdf import page_count
 
         assert len(shots) == page_count(document)
 

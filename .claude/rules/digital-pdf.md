@@ -1,7 +1,7 @@
 ---
 paths:
-  - "svc/pdf/**/*"
-  - "svc/delivery/message.py"
+  - "pyhermes/pdf/**/*"
+  - "pyhermes/delivery/message.py"
   - "tests/test_digital_pdf.py"
   - "tests/test_pdf_profile.py"
   - "tests/test_attachments.py"
@@ -18,14 +18,14 @@ in `build_message`, and a size budget on the message. Tagged PDF was measured an
 A screen PDF changes no skeleton, no slot set and no constraint. The paged medium already
 carries the cover, contents, running boxes, back matter, apparatus and both orientations. So
 this is **a rendering profile on the existing exporter plus a delivery path**, not
-`svc/screen/`. #172's test for a medium applies in reverse: a brochure needed fold geometry,
+`pyhermes/screen/`. #172's test for a medium applies in reverse: a brochure needed fold geometry,
 imposition and print prep, and a screen PDF needs none of them.
 
 **The test that would reopen it:** a change the screen needs in the skeleton, the slots or the
 constraints. A different margin is not one, since `PageFormat` already takes any margin. A
 hyperlinked contents sheet is not one, since the contents entries are live links already.
 
-## The profile — `svc/pdf/profile.py`
+## The profile — `pyhermes/pdf/profile.py`
 
 `PdfProfile(name, dpi, jpeg_quality, optimize_images, variant, identifier)` is frozen and
 validated at construction. A bad field raises `ProfileError`, which is a `PdfError` for the
@@ -104,7 +104,7 @@ the whole email gallery.
 
 - **The adapters changed by zero lines.** They serialise through `to_wire_bytes()` and never
   look inside. A test sends through each adapter's `send_message` and finds the file intact.
-- **`svc.delivery` never learns what a PDF is.** `svc.pdf.pdf_attachment` builds the
+- **`pyhermes.delivery` never learns what a PDF is.** `pyhermes.pdf.pdf_attachment` builds the
   `Attachment`, and the dependency runs that one way. `size_hint` is how the exporter tells the
   delivery layer what would shrink a file without the delivery layer knowing profiles exist.
 - **The budget is on the message, not the PDF**, because servers count encoded wire bytes.
@@ -137,7 +137,7 @@ defect was ever in the markup:
 - **WeasyPrint 70 tags by element name and never reads `role`**, so every layout table became
   a `/Table` with rows and cells. The table layout is not negotiable — Outlook's Word engine
   reads nothing else — so there is no markup that would have fixed it, and the correction
-  happens where the tag is chosen: [svc/pdf/tagging.py](../../svc/pdf/tagging.py), a
+  happens where the tag is chosen: [pyhermes/pdf/tagging.py](../../pyhermes/pdf/tagging.py), a
   WeasyPrint `finisher` that retags a table with no `th` as a `/Div`. `th` is the
   discriminator `qa/lint.py`'s `table-role` rule already uses, so the linter and the tagger
   cannot disagree about which table is which.
@@ -157,7 +157,7 @@ the one case that has no alternative.
 blocked; now it is priced. Tagging costs 11.4% to 32.2% more bytes (`a4_editorial` 11.4%,
 `a4_portrait` 18.7%, `letter_landscape_report` 19.9%, `slide_16_9` 25.4%, `a4_long_table`
 32.2%), and a reader who never needs the tags should not pay for them. So tagging is a
-**preset a caller chooses**: `TAGGED` is `SCREEN` plus `pdf/ua-1`, exported from `svc.pdf`.
+**preset a caller chooses**: `TAGGED` is `SCREEN` plus `pdf/ua-1`, exported from `pyhermes.pdf`.
 `PRINT` stays `None` regardless: a press file's conformance concern is PDF/X, a non-goal here.
 
 `TestLayoutAndDecorationAreTaggedHonestly` pins both halves, including the mirrors that make

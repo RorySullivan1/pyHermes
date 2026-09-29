@@ -11,9 +11,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from svc.builder.document import Document
-from svc.builder.sizing import SLIDE_16_9
-from svc.document import paged_medium
+from pyhermes.builder.document import Document
+from pyhermes.builder.sizing import SLIDE_16_9
+from pyhermes.document import paged_medium
 
 from . import _paged
 

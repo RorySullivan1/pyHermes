@@ -9,10 +9,10 @@ an undefined name raises even when it is only tested for truthiness.
 
 import pytest
 
-from svc.builder import FullWidth, ThreeColumn, TwoColumn
-from svc.builder.containers import Container
-from svc.builder.enums import ThreeColumnRatio, TwoColumnRatio
-from svc.builder.exceptions import EmailBuilderError, ValidationError
+from pyhermes.builder import FullWidth, ThreeColumn, TwoColumn
+from pyhermes.builder.containers import Container
+from pyhermes.builder.enums import ThreeColumnRatio, TwoColumnRatio
+from pyhermes.builder.exceptions import EmailBuilderError, ValidationError
 
 RATIOS = ["50-50", "30-70", "70-30"]
 THREE_RATIOS = ["33-33-33", "50-25-25", "25-50-25", "25-25-50"]
@@ -148,7 +148,7 @@ class TestThreeColumn:
         assert html.count("Narrative prose.") == 2
 
     def test_columns_render_left_to_right_in_order(self, engine):
-        from svc.builder import TextBlock
+        from pyhermes.builder import TextBlock
 
         html = ThreeColumn(
             left=TextBlock("<p>AAA</p>"),

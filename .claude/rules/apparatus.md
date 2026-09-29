@@ -1,13 +1,13 @@
 ---
 paths:
-  - "svc/builder/apparatus.py"
-  - "svc/builder/document.py"
-  - "svc/builder/templates/common/notes.html"
-  - "svc/builder/templates/common/endnotes.html"
-  - "svc/builder/templates/common/contents-list.html"
-  - "svc/builder/templates/text/contents.html"
-  - "svc/builder/templates/document/regions/contents.html"
-  - "svc/builder/templates/document/regions/running-box.html"
+  - "pyhermes/builder/apparatus.py"
+  - "pyhermes/builder/document.py"
+  - "pyhermes/builder/templates/common/notes.html"
+  - "pyhermes/builder/templates/common/endnotes.html"
+  - "pyhermes/builder/templates/common/contents-list.html"
+  - "pyhermes/builder/templates/text/contents.html"
+  - "pyhermes/builder/templates/document/regions/contents.html"
+  - "pyhermes/builder/templates/document/regions/running-box.html"
 ---
 
 # The document apparatus — numbers, notes, contents, references

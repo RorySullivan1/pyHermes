@@ -2,11 +2,11 @@
 
 import pytest
 
-from svc.builder import EmailBuilder, Footer, FullWidth, TextBlock
-from svc.builder.engine import TemplateEngine
-from svc.builder.exceptions import ValidationError
-from svc.builder.images import EmailImage
-from svc.builder.models import FooterLink, LinkRow
+from pyhermes.builder import EmailBuilder, Footer, FullWidth, TextBlock
+from pyhermes.builder.engine import TemplateEngine
+from pyhermes.builder.exceptions import ValidationError
+from pyhermes.builder.images import EmailImage
+from pyhermes.builder.models import FooterLink, LinkRow
 
 TEMPLATE_DIR = TemplateEngine().template_dir
 
@@ -104,7 +104,7 @@ class TestPresentation:
 class TestMinimalFooterIsGone:
     def test_it_is_no_longer_importable(self):
         with pytest.raises(ImportError):
-            from svc.builder import MinimalFooter  # noqa: F401
+            from pyhermes.builder import MinimalFooter  # noqa: F401
 
 
 class TestTheLinkRow:

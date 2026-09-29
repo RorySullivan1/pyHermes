@@ -6,13 +6,13 @@
 
 **Architecture:** "Contact Us" becomes a `Component` placed in the body like any other. The footer becomes a single-slot region rendered in its own table below the body, so a border box is drawable. The disclaimer text moves onto the `Footer` object and is emitted unwrapped; the three legal facts stay on `EmailMetadata`. `MinimalFooter` and the two old footer templates are deleted (clean break).
 
-**Tech Stack:** Python 3.13, Jinja2 (`StrictUndefined`, autoescape off), pytest, ruff, mypy. Templates ship inside the `svc.builder` package.
+**Tech Stack:** Python 3.13, Jinja2 (`StrictUndefined`, autoescape off), pytest, ruff, mypy. Templates ship inside the `pyhermes.builder` package.
 
 **Spec:** `docs/superpowers/specs/2026-08-26-footer-rework-design.md`
 
 ## Global Constraints
 
-- **Import surface:** everything public imports from `svc.builder` / `svc.builder.models`. Add new public names to `svc/builder/__init__.py` `__all__`.
+- **Import surface:** everything public imports from `pyhermes.builder` / `pyhermes.builder.models`. Add new public names to `pyhermes/builder/__init__.py` `__all__`.
 - **Validation at construction time** — models/components raise `ValidationError` from `__init__`, never from `context()`/render.
 - **`StrictUndefined`** — every template variable must have a key in the component's/region's context dict, or the render raises. Inject falsey defaults; never `{% if x %}` on a name that may be undefined.
 - **Autoescape is OFF.** Plain-text fields are escaped in templates via `| escape_html`. HTML fields (`disclaimer`, `TextBlock.content`) are emitted raw — caller's job to escape. Attributes (`src`, `href`, `alt`) are always `| escape_html`.
@@ -27,9 +27,9 @@
 ### Task 1: `ContactBlock` body component
 
 **Files:**
-- Create: `svc/builder/templates/text/contact-block.html`
-- Modify: `svc/builder/components.py` (add `ContactBlock` after `TextBlock`)
-- Modify: `svc/builder/__init__.py` (import + `__all__`)
+- Create: `pyhermes/builder/templates/text/contact-block.html`
+- Modify: `pyhermes/builder/components.py` (add `ContactBlock` after `TextBlock`)
+- Modify: `pyhermes/builder/__init__.py` (import + `__all__`)
 - Test: `tests/test_components.py`
 
 **Interfaces:**
@@ -41,8 +41,8 @@
 In `tests/test_components.py`, add:
 
 ```python
-from svc.builder import ContactBlock, FullWidth  # add to existing imports
-from svc.builder.exceptions import ValidationError
+from pyhermes.builder import ContactBlock, FullWidth  # add to existing imports
+from pyhermes.builder.exceptions import ValidationError
 
 
 class TestContactBlock:
@@ -75,7 +75,7 @@ Expected: FAIL — `ImportError: cannot import name 'ContactBlock'`.
 
 - [ ] **Step 3: Create the template**
 
-Create `svc/builder/templates/text/contact-block.html` — the inner card lifted from `regions/footer-contact.html`, minus its outer `<tr><td>` (the container supplies that):
+Create `pyhermes/builder/templates/text/contact-block.html` — the inner card lifted from `regions/footer-contact.html`, minus its outer `<tr><td>` (the container supplies that):
 
 ```html
 {# CONTACT CALL-TO-ACTION — a body component (was the footer's contact card). #}
@@ -119,7 +119,7 @@ Create `svc/builder/templates/text/contact-block.html` — the inner card lifted
 
 - [ ] **Step 4: Add the component**
 
-In `svc/builder/components.py`, after the `TextBlock` class, add:
+In `pyhermes/builder/components.py`, after the `TextBlock` class, add:
 
 ```python
 class ContactBlock(Component):
@@ -164,7 +164,7 @@ class ContactBlock(Component):
 
 - [ ] **Step 5: Export it**
 
-In `svc/builder/__init__.py`, add `ContactBlock` to the `from .components import (...)` block and to `__all__` (alphabetical-ish, next to the other components).
+In `pyhermes/builder/__init__.py`, add `ContactBlock` to the `from .components import (...)` block and to `__all__` (alphabetical-ish, next to the other components).
 
 - [ ] **Step 6: Run tests to verify they pass**
 
@@ -174,7 +174,7 @@ Expected: PASS (4 tests).
 - [ ] **Step 7: Commit**
 
 ```bash
-git add svc/builder/templates/text/contact-block.html svc/builder/components.py svc/builder/__init__.py tests/test_components.py
+git add pyhermes/builder/templates/text/contact-block.html pyhermes/builder/components.py pyhermes/builder/__init__.py tests/test_components.py
 git commit -m "Add ContactBlock body component"
 ```
 
@@ -185,12 +185,12 @@ git commit -m "Add ContactBlock body component"
 Atomic: the suite is red between the first and last step of this task because `EmailMetadata._hydrate` and `Footer`'s fields must change together.
 
 **Files:**
-- Modify: `svc/builder/regions.py` (rework `Footer`, delete `MinimalFooter`)
-- Create: `svc/builder/templates/regions/footer.html`
-- Delete: `svc/builder/templates/regions/footer-contact.html`, `svc/builder/templates/regions/footer-legal.html`
-- Modify: `svc/builder/templates/base.html` (two slots → one)
-- Modify: `svc/builder/models.py` (`EmailMetadata`: remove fields/InitVars, update `FOOTER_FACTS`, `_hydrate`, docstring)
-- Modify: `svc/builder/__init__.py` (drop `MinimalFooter`)
+- Modify: `pyhermes/builder/regions.py` (rework `Footer`, delete `MinimalFooter`)
+- Create: `pyhermes/builder/templates/regions/footer.html`
+- Delete: `pyhermes/builder/templates/regions/footer-contact.html`, `pyhermes/builder/templates/regions/footer-legal.html`
+- Modify: `pyhermes/builder/templates/base.html` (two slots → one)
+- Modify: `pyhermes/builder/models.py` (`EmailMetadata`: remove fields/InitVars, update `FOOTER_FACTS`, `_hydrate`, docstring)
+- Modify: `pyhermes/builder/__init__.py` (drop `MinimalFooter`)
 - Test: `tests/test_footer.py` (rewrite), `tests/test_models.py`, `tests/test_metadata_parameters.py`, `tests/test_regions.py`
 
 **Interfaces:**
@@ -206,11 +206,11 @@ Replace the body of `tests/test_footer.py` with tests for the new shape:
 
 import pytest
 
-from svc.builder import Email, EmailBuilder, Footer, FullWidth, TextBlock
-from svc.builder.engine import TemplateEngine
-from svc.builder.exceptions import ValidationError
-from svc.builder.images import EmailImage
-from svc.builder.models import EmailMetadata
+from pyhermes.builder import Email, EmailBuilder, Footer, FullWidth, TextBlock
+from pyhermes.builder.engine import TemplateEngine
+from pyhermes.builder.exceptions import ValidationError
+from pyhermes.builder.images import EmailImage
+from pyhermes.builder.models import EmailMetadata
 
 TEMPLATE_DIR = TemplateEngine().template_dir
 
@@ -277,7 +277,7 @@ class TestPresentation:
 class TestMinimalFooterIsGone:
     def test_it_is_no_longer_importable(self):
         with pytest.raises(ImportError):
-            from svc.builder import MinimalFooter  # noqa: F401
+            from pyhermes.builder import MinimalFooter  # noqa: F401
 ```
 
 - [ ] **Step 2: Run to verify failure**
@@ -287,7 +287,7 @@ Expected: FAIL (import/attribute errors — `Footer` still has old fields, `Mini
 
 - [ ] **Step 3: Rework the `Footer` class**
 
-In `svc/builder/regions.py`: add `_validate_color` to the models import (`from .models import _validate_color, _validate_url`). Replace the `Footer` class body and **delete `MinimalFooter` entirely** with:
+In `pyhermes/builder/regions.py`: add `_validate_color` to the models import (`from .models import _validate_color, _validate_url`). Replace the `Footer` class body and **delete `MinimalFooter` entirely** with:
 
 ```python
 @dataclass
@@ -369,7 +369,7 @@ class Footer(Region):
 
 - [ ] **Step 4: Create `regions/footer.html`**
 
-Create `svc/builder/templates/regions/footer.html`. The disclaimer sits in a `<div>` (not a `<p>`) so block content can't break its wrapper — the fix for problem #3:
+Create `pyhermes/builder/templates/regions/footer.html`. The disclaimer sits in a `<div>` (not a `<p>`) so block content can't break its wrapper — the fix for problem #3:
 
 ```html
 {#
@@ -414,7 +414,7 @@ Create `svc/builder/templates/regions/footer.html`. The disclaimer sits in a `<d
 
 - [ ] **Step 5: Collapse the base.html slots**
 
-In `svc/builder/templates/base.html`, replace the footer comment block and the two slot lines (the `{{ footer_contact_html }}` … `{{ footer_legal_html }}` region, currently lines ~93–106) with:
+In `pyhermes/builder/templates/base.html`, replace the footer comment block and the two slot lines (the `{{ footer_contact_html }}` … `{{ footer_legal_html }}` region, currently lines ~93–106) with:
 
 ```html
         </table>
@@ -429,12 +429,12 @@ In `svc/builder/templates/base.html`, replace the footer comment block and the t
 Delete the old two-slot comment. Delete the old files:
 
 ```bash
-git rm svc/builder/templates/regions/footer-contact.html svc/builder/templates/regions/footer-legal.html
+git rm pyhermes/builder/templates/regions/footer-contact.html pyhermes/builder/templates/regions/footer-legal.html
 ```
 
 - [ ] **Step 6: Migrate `EmailMetadata`**
 
-In `svc/builder/models.py`:
+In `pyhermes/builder/models.py`:
 - Delete the fields `contact_url` and `footer_disclaimer`.
 - Delete the InitVars `contact_heading`, `contact_description`, `contact_cta_label` (keep `unsubscribe_label`, `view_in_browser_label`).
 - Update `__post_init__`'s signature to drop the three `contact_*` parameters, and update the footer `_hydrate` legacy dict to:
@@ -465,7 +465,7 @@ In `svc/builder/models.py`:
 
 - [ ] **Step 7: Drop `MinimalFooter` from the public API**
 
-In `svc/builder/__init__.py`, remove `MinimalFooter` from the `from .regions import (...)` block and from `__all__`.
+In `pyhermes/builder/__init__.py`, remove `MinimalFooter` from the `from .regions import (...)` block and from `__all__`.
 
 - [ ] **Step 8: Update the sibling tests**
 
@@ -486,7 +486,7 @@ Expected: failures ONLY in `tests/test_goldens.py` / `tests/test_fixtures.py` (r
 - [ ] **Step 11: Commit**
 
 ```bash
-git add svc/builder tests/test_footer.py tests/test_models.py tests/test_metadata_parameters.py tests/test_regions.py
+git add pyhermes/builder tests/test_footer.py tests/test_models.py tests/test_metadata_parameters.py tests/test_regions.py
 git commit -m "Rework footer into a single structured region; drop MinimalFooter"
 ```
 
@@ -505,7 +505,7 @@ git commit -m "Rework footer into a single structured region; drop MinimalFooter
 
 - [ ] **Step 1: Add `ContactBlock` to the kitchen sink**
 
-In `qa/fixtures/kitchen_sink.py`, add `ContactBlock` to the `svc.builder` import, and add a final section before `.build()`:
+In `qa/fixtures/kitchen_sink.py`, add `ContactBlock` to the `pyhermes.builder` import, and add a final section before `.build()`:
 
 ```python
         .section(
@@ -572,7 +572,7 @@ git commit -m "Update fixtures and goldens for the reworked footer and ContactBl
 The `footer_disclaimer` metadata key no longer exists — passing it now raises. Remove it from the `metadata({...})` dict and set the disclaimer on the footer instead, as **inline text** (not a `<p>`, which was the original bug):
 
 ```python
-from svc.builder import Footer  # add to imports
+from pyhermes.builder import Footer  # add to imports
 # ...in build(), after .metadata(...):
         .footer(Footer(disclaimer="For illustrative purposes only. Not investment advice."))
 ```
@@ -582,7 +582,7 @@ from svc.builder import Footer  # add to imports
 Same disclaimer migration, plus demonstrate the new component — add a final section:
 
 ```python
-from svc.builder import ContactBlock  # add to imports
+from pyhermes.builder import ContactBlock  # add to imports
 # ...last section before .build():
         .section(
             FullWidth(
@@ -635,7 +635,7 @@ Update the composition section that describes the footer region (two slots → o
 
 - [ ] **Step 3: Verify no stale references remain**
 
-Run: `grep -rn "MinimalFooter\|footer_contact_html\|footer_legal_html\|footer_disclaimer" CLAUDE.md README.md svc/ examples/`
+Run: `grep -rn "MinimalFooter\|footer_contact_html\|footer_legal_html\|footer_disclaimer" CLAUDE.md README.md pyhermes/ examples/`
 Expected: no matches (all migrated).
 
 - [ ] **Step 4: Commit**

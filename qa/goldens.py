@@ -20,7 +20,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from svc.builder.document import Document as Email
+from pyhermes.builder.document import Document as Email
 
 #: Where the checked-in goldens live — inside the fixture package, next to the
 #: code that generates them.

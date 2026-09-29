@@ -11,9 +11,9 @@ are, is explicitly out of scope.
 
 import pytest
 
-from svc.builder import ChartBlock, EmailBuilder, FullWidth
-from svc.builder.exceptions import EmailBuilderError, ValidationError
-from svc.builder.models import EmailMetadata, _validate_url
+from pyhermes.builder import ChartBlock, EmailBuilder, FullWidth
+from pyhermes.builder.exceptions import EmailBuilderError, ValidationError
+from pyhermes.builder.models import EmailMetadata, _validate_url
 
 METADATA_URL_FIELDS = [
     "unsubscribe_url",

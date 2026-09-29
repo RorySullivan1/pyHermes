@@ -42,7 +42,7 @@ dev = [
     "ruff~=0.16.3",
     "mypy~=1.19.1",
     # The HTTP transports the send adapters *document* -- not ones they use.
-    # svc/gmail and svc/outlook import neither (an AST test in each enforces
+    # pyhermes/gmail and pyhermes/outlook import neither (an AST test in each enforces
     # that), so these stay out of `dependencies` and pyHermes still installs
     # with Jinja2 alone. They are here because the adapters' retry
     # classification turns on real exception hierarchies -- requests'
@@ -80,7 +80,7 @@ qa = [
 # Pinned to 70.x deliberately rather than loosely. WeasyPrint 70 replaced the
 # url_fetcher contract: a fetcher is now a `URLFetcher` subclass returning a
 # `URLFetcherResponse`, where every earlier version took a plain callable
-# returning a dict. svc/pdf/fetcher.py is written against the new one, so a
+# returning a dict. pyhermes/pdf/fetcher.py is written against the new one, so a
 # `>=` range spanning the change would resolve to a version this code cannot
 # drive -- and it is the fetcher that carries the no-network policy, so the
 # failure would land on the security-relevant part.
@@ -88,7 +88,7 @@ pdf = [
     "weasyprint~=70.0",
 ]
 
-# The data adapters (svc/data, #179 and #180). Two extras rather than one: a
+# The data adapters (pyhermes/data, #179 and #180). Two extras rather than one: a
 # table author should not have to install a plotting library to adapt a frame.
 data = [
     "pandas~=3.0",
@@ -98,7 +98,7 @@ charts = [
     "matplotlib~=3.11",
 ]
 
-# The equation renderer (svc/math, #230). Its own extra for the [data]/[charts]
+# The equation renderer (pyhermes/math, #230). Its own extra for the [data]/[charts]
 # reason: an equation author is not a chart author. Same pin as [charts].
 math = [
     "matplotlib~=3.11",
@@ -114,14 +114,15 @@ Repository = "https://github.com/RorySullivan1/pyHermes"
 Issues = "https://github.com/RorySullivan1/pyHermes/issues"
 
 [tool.hatch.build.targets.wheel]
-packages = ["svc"]
+# svc is the old import name, a warning shim kept for one release (#248).
+packages = ["pyhermes", "svc"]
 
 # The sdist is the library and nothing else. Hatchling's default takes every
 # file git does not ignore, which would ship .claude/, tests/ and its goldens,
 # qa/, examples/, drafts/ and docs/. qa/distribution.py fails CI on any path
 # outside this list.
 [tool.hatch.build.targets.sdist]
-only-include = ["svc", "pyproject.toml", "README.md", "LICENSE"]
+only-include = ["pyhermes", "svc", "pyproject.toml", "README.md", "LICENSE"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -147,9 +148,9 @@ select = ["E4", "E7", "E9", "E501", "F", "I", "B", "UP"]
 [tool.mypy]
 python_version = "3.11"
 # qa/ is first-party importable code (the #54 fixture gallery and the tools
-# that consume it), so it is type-checked like svc/. It is excluded from the
+# that consume it), so it is type-checked like pyhermes/. It is excluded from the
 # wheel by the packages setting above, not by being untyped.
-files = ["svc", "qa"]
+files = ["pyhermes", "svc", "qa"]
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
 no_implicit_optional = true
@@ -183,7 +184,7 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 # The data adapters' backends are skipped, not merely allowed to be missing.
-# svc/data types every backend as Any, so nothing is lost by not reading them,
+# pyhermes/data types every backend as Any, so nothing is lost by not reading them,
 # and reading them is what breaks: matplotlib ships its own annotations, mypy
 # follows them into numpy, and numpy 2.5's stubs use the 3.12 `type` statement
 # this project cannot parse at python_version 3.11. That failed only where
