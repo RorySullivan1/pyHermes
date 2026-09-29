@@ -6,7 +6,6 @@
   "comment_run": 4,
   "include": [
     "pyhermes",
-    "svc",
     "qa"
   ],
   "baseline": "qa/prose_baseline.json"

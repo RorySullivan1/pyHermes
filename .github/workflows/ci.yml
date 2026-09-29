@@ -346,4 +346,9 @@ jobs:
           assert "font-size:13px" in compact, "the compact type scale did not reach the email"
           print("OK: columns.html renders, and its geometry follows the size theme")
           PY
+          # svc was the import root until #248, and its shim is gone since #255.
+          if /tmp/$env/bin/python -c "import svc" 2>/dev/null; then
+            echo "error: import svc still works from $env"; exit 1
+          fi
+          echo "OK: import svc fails from $env"
           done

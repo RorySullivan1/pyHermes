@@ -114,15 +114,14 @@ Repository = "https://github.com/RorySullivan1/pyHermes"
 Issues = "https://github.com/RorySullivan1/pyHermes/issues"
 
 [tool.hatch.build.targets.wheel]
-# svc is the old import name, a warning shim kept for one release (#248).
-packages = ["pyhermes", "svc"]
+packages = ["pyhermes"]
 
 # The sdist is the library and nothing else. Hatchling's default takes every
 # file git does not ignore, which would ship .claude/, tests/ and its goldens,
 # qa/, examples/, drafts/ and docs/. qa/distribution.py fails CI on any path
 # outside this list.
 [tool.hatch.build.targets.sdist]
-only-include = ["pyhermes", "svc", "pyproject.toml", "README.md", "LICENSE"]
+only-include = ["pyhermes", "pyproject.toml", "README.md", "LICENSE"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -150,7 +149,7 @@ python_version = "3.11"
 # qa/ is first-party importable code (the #54 fixture gallery and the tools
 # that consume it), so it is type-checked like pyhermes/. It is excluded from the
 # wheel by the packages setting above, not by being untyped.
-files = ["pyhermes", "svc", "qa"]
+files = ["pyhermes", "qa"]
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
 no_implicit_optional = true

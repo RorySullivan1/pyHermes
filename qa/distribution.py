@@ -17,38 +17,35 @@ from pathlib import Path
 #: The import root the wheel ships.
 PACKAGE = "pyhermes"
 
-#: The old import name, a warning shim that re-exports ``PACKAGE`` for one release.
-SHIM = "svc"
-
 #: Files a wheel must carry beyond the code. ``py.typed`` is what tells a
 #: consumer's type checker to read the annotations instead of typing everything
 #: as ``Any`` (PEP 561).
-WHEEL_REQUIRED = (f"{PACKAGE}/py.typed", f"{SHIM}/__init__.py")
+WHEEL_REQUIRED = (f"{PACKAGE}/py.typed",)
 
 #: The top-level entries an sdist may hold: the library, what builds it, what
 #: describes it, and the two files hatchling always writes (``PKG-INFO``, and a
 #: ``.gitignore`` it adds whatever the config says).
 SDIST_ALLOWED = frozenset(
-    {PACKAGE, SHIM, "pyproject.toml", "README.md", "LICENSE", "PKG-INFO", ".gitignore"}
+    {PACKAGE, "pyproject.toml", "README.md", "LICENSE", "PKG-INFO", ".gitignore"}
 )
 
 #: What an sdist must hold for its metadata to build: ``readme`` and
 #: ``license-files`` name the last two, so dropping either breaks the install.
-SDIST_REQUIRED = (
-    "pyproject.toml",
-    "README.md",
-    "LICENSE",
-    f"{PACKAGE}/__init__.py",
-    f"{SHIM}/__init__.py",
-)
+SDIST_REQUIRED = ("pyproject.toml", "README.md", "LICENSE", f"{PACKAGE}/__init__.py")
 
 
 def wheel_problems(path: Path) -> list[str]:
-    """Each way the wheel at ``path`` falls short, or an empty list."""
+    """Each top-level package the wheel should not install, and each file it lacks."""
     with zipfile.ZipFile(path) as wheel:
         names = set(wheel.namelist())
+    # One import root: anything else at the top would share site-packages with
+    # whatever other wheel ships that name, which is what #248 renamed svc to end.
+    roots = {name.split("/")[0] for name in names}
+    stray = sorted(root for root in roots - {PACKAGE} if not root.endswith(".dist-info"))
     missing = [required for required in WHEEL_REQUIRED if required not in names]
-    return [f"{path.name} is missing {required}" for required in missing]
+    return [f"{path.name} installs {root}, beside {PACKAGE}" for root in stray] + [
+        f"{path.name} is missing {required}" for required in missing
+    ]
 
 
 def sdist_problems(path: Path) -> list[str]:

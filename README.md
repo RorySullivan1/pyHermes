@@ -209,8 +209,8 @@ degrades in an email: the drop cap and the float disappear, and the columns beco
 ## Install
 
 Requires Python 3.11+. Not published to PyPI — install from a clone. The distribution and the
-import are both `pyhermes` (`from pyhermes.builder import EmailBuilder`); the old `svc` import
-still works for one release and warns:
+import are both `pyhermes` (`from pyhermes.builder import EmailBuilder`). Code written against
+the old `svc` import needs its imports changed; nothing else moved:
 
 ```bash
 pip install -e ".[dev]"     # editable, plus pytest / ruff / mypy

@@ -30,7 +30,7 @@ image a `MathBlock` takes, behind the `[math]` extra.
 pip install -e ".[dev]"       # editable install + pytest/ruff/mypy (see Gotchas)
 pytest                        # unit suite — validation, error paths, size limits
 ruff check . && ruff format --check .
-mypy                          # config in pyproject: files = ["pyhermes", "svc", "qa"]
+mypy                          # config in pyproject: files = ["pyhermes", "qa"]
 
 pip install -e ".[qa]"        # optional: Playwright + pypdfium2 for screenshots
 pip install -e ".[pdf]"       # optional: WeasyPrint, for PDF (needs Pango/Cairo)
@@ -174,8 +174,8 @@ itself — file purpose, verbose class, limited function, inline-for-traps — i
   builds the wheel and renders an email from a clean venv to keep it that way.
 - **Import path.** `from pyhermes.builder import …` / `from pyhermes.builder.models import …`.
   `pyhermes/__init__.py` re-exports nothing, and there is no `pyhermes.models`. The import
-  root was `svc` until #248; `svc/` is now a one-release shim that warns and aliases every
-  submodule to its `pyhermes` twin. Nothing in the repo may import it (`test_svc_shim.py`).
+  root was `svc` until #248, and its shim is gone since #255: `import svc` fails, and a test in
+  `test_distribution.py` fails if anything in the repo imports it.
 - **Config has three levels, innermost wins**: a document's or message's `config=`, then a
   context's `config_override`, then `set_config`'s default. An override is per thread or task.
 - **The skeleton is the medium's, and the email one is `templates/base.html`.** The engine
@@ -218,8 +218,8 @@ these rather than improvising:
   **#209** (spacing at two levels, #211–#216), **#217** (table semantics for quantitative
   material, #223–#228), **#221** (equations from LaTeX, #229–#233) and **#238** (seams for a
   host application, #246, #247, #249). **#237** (the package as a consumer sees it: `py.typed`,
-  metadata, a library-only sdist, the 3.11–3.14 matrix, the `pyhermes` import root) is
-  implemented, with the `svc` shim to delete in the next release.
+  metadata, a library-only sdist, the 3.11–3.14 matrix, the `pyhermes` import root) is complete,
+  and **#255** removed the `svc` shim it left.
   **#201** (an image's width in a paged layout) is fixed: the CSS repeats it as a cap. **#150** (the banner's VML
   fill) is closed: gating `src` while keeping `type="frame"` left the Word engine painting a
   broken-image placeholder over the masthead, so the two are now gated together. **#202** is

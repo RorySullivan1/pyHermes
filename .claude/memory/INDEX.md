@@ -43,8 +43,8 @@
 - [2026-09-28] **A config travels with the work: explicit, then context, then default.** A `ContextVar`
   over `set_config`; a new thread starts from the default. Soft limits are warnings — `config.md`
 
-- [2026-09-29] **The import root is `pyhermes`; `svc` is a one-release shim to delete next release.**
-  Checks read the built wheel and sdist, never the tree — `working-in-the-code.md` (#237)
+- [2026-09-29] **The import root is `pyhermes` alone**; the `svc` shim was removed (#255) before any
+  release shipped it. Checks read the built wheel and sdist, never the tree — `working-in-the-code.md`
 
 ## Threads          (open items; remove when closed)
 - **`epic-autoclose` has failed every run since 2026-09-28** (logs 404 here); close an epic by hand.
