@@ -232,3 +232,5 @@ these rather than improvising:
 - [README.md](README.md) is the human-facing entry point (what it is, install, build, send or
   print, the constraints it enforces). The router and its rules files stay the *rationale*:
   the README says what the library does, these say why each constraint exists. Keep the split.
+  [docs/manual/](docs/manual/README.md) is the task-first user manual. `tests/test_manual.py` runs
+  every `python` block in it and checks its links, so an API change that breaks a page fails CI.
