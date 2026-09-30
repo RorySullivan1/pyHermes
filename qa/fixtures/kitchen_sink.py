@@ -27,6 +27,7 @@ from pyhermes.builder import (
     BannerPalette,
     CardGroup,
     ChartBlock,
+    Columns,
     ContactBlock,
     Contents,
     DataTable,
@@ -42,6 +43,7 @@ from pyhermes.builder import (
     PullQuote,
     Rgba,
     Spacing,
+    Stack,
     TextBlock,
     ThreeColumn,
     TwoColumn,
@@ -491,7 +493,19 @@ def build(
             TwoColumn(
                 ratio=TwoColumnRatio.WIDE_NARROW,
                 title="Wide then Narrow",
-                left=TextBlock("<p>Commentary occupying the wider 70% column.</p>"),
+                # Two blocks in one column (#262), at a gap of its own.
+                left=Stack(
+                    [
+                        TextBlock("<p>Commentary occupying the wider 70% column.</p>"),
+                        TextBlock("<p>A second block in the same column.</p>"),
+                        # And a split inside the column (#263).
+                        Columns(
+                            [TextBlock("<p>Nested left.</p>"), TextBlock("<p>Nested right.</p>")],
+                            ratio=(1, 2),
+                        ),
+                    ],
+                    spacing={"block_gap": 8},
+                ),
                 right=AuthorBlock(
                     "A. Analyst",
                     job_title="Head of Research",

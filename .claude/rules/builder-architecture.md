@@ -833,3 +833,72 @@ Provides two usage patterns:
         .section(FullWidth(content=TextBlock("Hello"), title="Intro"))
         .render())
 ```
+
+## Blocks that hold blocks (#261)
+
+**A cell still holds one component; that component may hold several.** `Stack` (#262) is a
+`Component` whose job is to hold others, top to bottom, so it goes wherever one block goes and
+no container signature widened. The alternative, `content=` taking a list, would have widened
+every container and every template for the same result.
+
+**The walk contract, and why it is split.**
+
+- `Component.children()` is empty for a leaf and lists the held blocks for a composite.
+  `descendants()` and `leaves()` in `components.py` walk it depth first, in reading order.
+- **The document reads leaves.** `Document._components()` returns `leaves(...)`, so exhibit
+  numbers, footnotes, raw-HTML link checks and a nested `Contents` all reach blocks inside a
+  `Stack`. A composite therefore reports **no** notes or raw HTML of its own; if it did, the
+  document would count them twice.
+- **Containers read the top level.** `Container.images()`, `Page` and `Panel` walk
+  `section.components()` without descending, so a composite **delegates** `images()` (and so
+  `assets()`) to its children. Standing rule 7 applies to it like any other block.
+- **The medium check reads every node.** `_spacings()` uses `descendants()`, so a `spacing=` on
+  a block inside a `Stack` is refused on an email when it moves an `@media` token, exactly as
+  it would be one level up.
+
+Four tests in `tests/test_composition.py` fail with the document still reading the top level
+and pass with it reading leaves, which is how the walk was checked rather than assumed.
+
+**The gap is `block_gap`, deliberately not a new token.** It is padding on every row but the
+last, because the Word engine drops margins on a cell. A `TextBlock` already ends with a
+`block_gap` margin, so the space after a paragraph is the sum of the two, which reads as a
+paragraph break and was judged against a screenshot rather than a number. Moving `block_gap`
+on a `Stack` also moves the paragraph gaps inside its text blocks. That coupling is the cost
+of not minting a token for one component.
+
+**A ratio is weights (#264).** `TwoColumn` and `ThreeColumn` take a preset's name or one
+positive weight per column, and `FourColumn` takes four blocks in a list with `None` for an
+empty slot. The presets were always weights under a name (`_weights("30-70")` is `[30, 70]`),
+so a test holds that each preset renders byte-for-byte as its own weights, and no golden moved.
+Two decisions:
+
+- **A string is still a preset, never parsed as weights.** `"60-40"` raises and names the tuple
+  form. A string that parses would make a typo in a preset a silent new layout.
+- **The floor is `Config.min_column_px` (90), checked at construction against the standard
+  680px frame.** The frame a document renders at is not known until render, and the standard
+  email frame is the narrowest one shipped, so a split that passes there passes everywhere.
+  `FourColumn` declares no `column_pad_x`, because a column wide enough to take it leaves the
+  other three under the floor, and the spacing sentinel test holds every declared token read.
+
+**A split inside a cell is `Columns`, a component (#263).** The containers own a band, a title
+and an anchor, and two of those nested have no reading, so the nested split is a block with
+none of them. It is sized from the cell it sits in:
+
+- **A container binds the cell's content width onto the engine** as `cell_width`, through the
+  same `rebind` the density uses. `FullWidth` binds `frame.inner`. A split binds each column's
+  width less its padding. `cell_width_of(engine)` reads it and falls back to `frame.inner`, so a
+  `Columns` rendered with no container splits the frame. No template reads the value, and every
+  golden stayed byte-identical when the binding went in.
+- **Its columns carry no padding**: a `gutter` margin separates them, as in `columns.html`. The
+  stacking reuses `.stack-column`, so the `@media` block did not change. Every column but the
+  last pads its foot by `block_gap`, so stacked columns do not touch on a phone. On a desktop
+  that space falls below the row, where nothing shows it.
+- **One level, refused at construction**, through a `Stack` as well. There is no minimum width
+  check, because the cell's width is known only at render.
+- **`test_spacing.FALLBACK_READS`** records that a lone `Columns` reads `pad_x` through the
+  frame fallback. Declaring `pad_x` would mislead, since in a cell the token has no effect.
+
+**A pre-existing limit, measured here and filed separately:** at the phone breakpoint a split's
+column becomes a block, and its cell then shrinks to its content. So a table in a stacked column
+is only as wide as its figures. It is older than this epic, and the fix changes the `@media` block
+every email carries (#282).

@@ -97,6 +97,10 @@ class Config:
     #: set it once you have rendered yours in the clients you send to (#212).
     allow_custom_email_density: bool = False
 
+    #: The narrowest column a split may compute at the 680px email frame. Custom
+    #: weights narrower than this raise at construction, naming the width (#264).
+    min_column_px: int = 90
+
     def __post_init__(self) -> None:
         # Validation at construction, as everywhere else in this codebase --
         # a bad limit should name itself here, not surface later as a
@@ -108,6 +112,7 @@ class Config:
             "size_warn_kb",
             "inline_image_limit_kb",
             "print_dpi",
+            "min_column_px",
             "attachment_limit_kb",
             "attachment_warn_kb",
             "retry_initial_delay",

@@ -203,13 +203,12 @@ you: a title, a label, a table cell or a caption.
 **Fix:** pass plain text to those fields, with `&` and `<` written as they are. Only
 `TextBlock`, a numbered item's body, and the header and footer disclaimers take HTML.
 
-### The footer's Unsubscribe link goes nowhere
+### The footer has no Unsubscribe or View in browser link
 
-**Likely cause:** the default footer shows **Unsubscribe** and **View in browser** links,
-and `unsubscribe_url` / `view_in_browser_url` are not set.
+**Likely cause:** each default link only appears once its address is set.
 
-**Fix:** set the two addresses in the metadata, or replace the links
-([Build an email](02-build-an-email.md#how-to-set-the-footer)).
+**Fix:** set `unsubscribe_url` and `view_in_browser_url` in the metadata, or pass your own
+links ([Build an email](02-build-an-email.md#how-to-set-the-footer)).
 
 ### A table runs off the side of the screen on a phone
 

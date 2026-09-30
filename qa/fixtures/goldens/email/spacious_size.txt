@@ -156,6 +156,12 @@ Wide then Narrow
 
 Commentary occupying the wider 70% column.
 
+A second block in the same column.
+
+Nested left.
+
+Nested right.
+
 A. Analyst
 Head of Research · research@example.com
 

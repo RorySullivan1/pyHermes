@@ -154,6 +154,108 @@ email = EmailBuilder().metadata(facts).section(side_by_side).section(three).buil
 
 **Result:** on a desktop the columns sit side by side. On a phone they stack, left first.
 
+**Proportions of your own, and four columns.** A ratio can also be a tuple of weights, one
+per column, such as `ratio=(60, 40)` or `ratio=(2, 1, 1)`. `FourColumn` takes a list of four
+blocks, with `None` for an empty column:
+
+```python
+from pyhermes.builder import FourColumn
+
+email = (
+    EmailBuilder()
+    .metadata(facts)
+    .section(TwoColumn(ratio=(60, 40), left=TextBlock("<p>The argument.</p>"),
+                       right=TextBlock("<p>The evidence.</p>"), title="Sixty-forty"))
+    .section(FourColumn([TextBlock("<p><b>Rates</b><br>Long.</p>"),
+                         TextBlock("<p><b>Credit</b><br>Neutral.</p>"),
+                         TextBlock("<p><b>Equities</b><br>Overweight.</p>"),
+                         TextBlock("<p><b>FX</b><br>Short USD.</p>")], title="Views"))
+    .build()
+)
+```
+
+A column narrower than 90 pixels is refused, with a message giving the width your weights
+produce.
+
+## How to put several blocks in one section
+
+**When to use this:** a paragraph, then the table it introduces, then a note, all under one
+section title. Or a column of figures with a comment beneath them.
+
+```python
+from pyhermes.builder import DataTable, Stack
+from pyhermes.builder.models import TableRow
+
+returns = DataTable(["Factor", "1M"], [TableRow(["Value", "+1.8%"]), TableRow(["Momentum", "-0.4%"])])
+email = (
+    EmailBuilder()
+    .metadata(facts)
+    .section(FullWidth(
+        Stack([
+            TextBlock("<p>Value led again this month.</p>"),
+            returns,
+            TextBlock("<p>Returns are gross of fees.</p>"),
+        ]),
+        title="Factor returns",
+    ))
+    .section(TwoColumn(
+        ratio="30-70",
+        left=Stack([
+            CardGroup([KpiItem("Duration", "6.2y"), KpiItem("Yield", "4.1%")],
+                      orientation="vertical"),
+            TextBlock("<p>As of Friday's close.</p>"),
+        ]),
+        right=TextBlock("<p>We stay long duration.</p>"),
+        title="Positioning",
+    ))
+    .build()
+)
+```
+
+**Result:** each section has one title, with its blocks one above the other. On a phone they
+stay in the same order.
+
+**Notes:**
+- A `Stack` goes anywhere a single block goes: a full-width section or any column.
+- Tables, charts and notes inside a `Stack` are numbered in reading order with the rest of
+  the email.
+- To tighten or loosen the gap, pass `spacing={"block_gap": 8}`. The same setting also
+  spaces the paragraphs inside the stack's text blocks.
+
+## How to put two things side by side inside a column
+
+**When to use this:** a comparison that belongs inside one column of a split, or under the
+paragraph that introduces it in a `Stack`.
+
+```python
+from pyhermes.builder import Columns
+
+email = (
+    EmailBuilder()
+    .metadata(facts)
+    .section(TwoColumn(
+        ratio="30-70",
+        left=TextBlock("<p>Our view in one line.</p>"),
+        right=Stack([
+            TextBlock("<p>Two curves compared.</p>"),
+            Columns([
+                CardGroup([KpiItem("UST 2Y", "3.91%"), KpiItem("UST 10Y", "4.28%")],
+                          orientation="vertical"),
+                TextBlock("<p>The front end fell while the long end held.</p>"),
+            ], ratio=(1, 2)),
+        ]),
+        title="Curves",
+    ))
+    .build()
+)
+```
+
+**Result:** the wide column holds a paragraph, then a small split sized to fit that column.
+On a phone every column stacks, in order.
+
+**Notes:** `Columns` takes two to four blocks (`None` leaves one empty) and optional weights.
+It nests one level only: a `Columns` inside another `Columns` is refused.
+
 ## How to add a numbered list of ideas
 
 ```python
@@ -301,11 +403,19 @@ footer = Footer(
 email = EmailBuilder().metadata(facts).footer(footer).section(FullWidth(TextBlock("<p>…</p>"))).build()
 ```
 
-> **Warning:** by default the footer shows **Unsubscribe** and **View in browser** links.
-> If you have not set `unsubscribe_url` and `view_in_browser_url` in the metadata, those
-> links go nowhere. For an internal email, pass a `LinkRow` with the links you want, or
-> `links=[]` for none. ([#258](https://github.com/RorySullivan1/pyHermes/issues/258) tracks
-> leaving an unset link out automatically.)
+**The two default links.** Without a `link_row`, the footer adds an **Unsubscribe** link
+when you set `unsubscribe_url` in the metadata, and a **View in browser** link when you set
+`view_in_browser_url`. Leave both unset, as an internal email usually would, and the footer
+shows the copyright line alone. A `LinkRow` you pass is used exactly as you wrote it.
+
+```python
+email = (
+    EmailBuilder()
+    .metadata({**facts, "unsubscribe_url": "https://example.com/unsubscribe"})
+    .section(FullWidth(TextBlock("<p>…</p>")))
+    .build()
+)
+```
 
 **Notes:** `disclaimer` is HTML, like a `TextBlock`. `Footer` also takes `align`,
 `background_color` and `text_color`, the same as `Header`.

@@ -1,0 +1,19 @@
+{#
+  STACK — several blocks in one cell, top to bottom (#262).
+
+  One layout row per block, so each keeps the full width of the cell it
+  sits in, in every client. The gap is padding on the row above rather than
+  a margin, because the Word engine drops margins on a cell. The last row
+  takes none, so the cell's own padding is all that follows the stack.
+
+  Context: blocks — the rendered blocks, in order.
+#}
+<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
+{% for block in blocks %}
+  <tr>
+    <td style="padding:{% if loop.last %}0{% else %}0 0 {{ size.space.block_gap }}px 0{% endif %};">
+{{ block }}
+    </td>
+  </tr>
+{% endfor %}
+</table>

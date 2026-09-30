@@ -31,9 +31,9 @@ from pyhermes.builder import (
     ThreeColumn,
     TwoColumn,
 )
-from pyhermes.builder.components import Component
+from pyhermes.builder.components import Component, descendants
 from pyhermes.builder.engine import TemplateEngine
-from pyhermes.builder.models import Card, LinkRow, NumberedItem, TableRow
+from pyhermes.builder.models import Card, FooterLink, LinkRow, NumberedItem, TableRow
 from qa.fixtures import DEPRECATED_COMPONENTS, all_fixtures, kitchen_sink
 
 
@@ -49,7 +49,8 @@ def _public_components() -> list[type[Component]]:
 
 
 def _components_in(email) -> list[Component]:
-    return [c for section in email._sections for c in section.components()]
+    """Every component, nested ones included (#261)."""
+    return descendants([c for section in email._sections for c in section.components()])
 
 
 class TestEveryComponentHasAProjection:
@@ -370,12 +371,18 @@ class TestRegionsProjectResolvedState:
         assert "Unsubscribe: https://example.com/u" in projected
         assert "View in browser: https://example.com/v" in projected
 
-    def test_a_link_with_no_url_emits_its_label_alone(self):
-        """
-        pyHermes does not require an unsubscribe destination (#100), so an
-        email that supplies none must not project a dangling colon.
-        """
+    def test_a_default_link_with_no_url_is_left_out(self):
+        """#258: an unset URL fact drops its default link from both parts."""
         projected = Footer().text({"firm_name": "F", "current_year": "2026"})
+        assert "Unsubscribe" not in projected and "View in browser" not in projected
+
+    def test_an_explicit_link_with_no_url_emits_its_label_alone(self):
+        """
+        pyHermes does not require an unsubscribe destination (#100), so a
+        caller's link with none must not project a dangling colon.
+        """
+        footer = Footer(link_row=LinkRow(links=[FooterLink("Unsubscribe", "")]))
+        projected = footer.text({"firm_name": "F", "current_year": "2026"})
         assert "Unsubscribe" in projected
         assert "Unsubscribe:" not in projected
 

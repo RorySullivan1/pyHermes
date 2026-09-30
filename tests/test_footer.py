@@ -11,13 +11,21 @@ from pyhermes.builder.models import FooterLink, LinkRow
 TEMPLATE_DIR = TemplateEngine().template_dir
 
 
-def _render(footer: Footer | None = None) -> str:
+URLS = {"unsubscribe_url": "https://acme.test/u", "view_in_browser_url": "https://acme.test/v"}
+
+
+def _builder(footer: Footer | None = None, **facts: str) -> EmailBuilder:
     builder = EmailBuilder().metadata(
         {"email_subject": "S", "firm_name": "F", "campaign_name": "c", "current_year": "2026"}
+        | facts
     )
     if footer is not None:
         builder.footer(footer)
-    return builder.section(FullWidth(content=TextBlock("<p>Body.</p>"))).render()
+    return builder.section(FullWidth(content=TextBlock("<p>Body.</p>")))
+
+
+def _render(footer: Footer | None = None, **facts: str) -> str:
+    return _builder(footer, **(URLS | facts)).render()
 
 
 class TestFooterStructure:
@@ -47,6 +55,38 @@ class TestFooterStructure:
         html = _render()
         assert "&copy;" in html and "2026" in html
         assert "Unsubscribe" in html and "View in browser" in html
+
+
+class TestAnUnsetDefaultLinkIsLeftOut:
+    """#258: a default link whose URL fact is unset rendered as ``href=""``."""
+
+    def test_with_neither_url_the_row_is_the_copyright_alone(self):
+        builder = _builder()
+        html, text = builder.render(), builder.text()
+        assert 'href=""' not in html
+        assert "Unsubscribe" not in html and "View in browser" not in html
+        assert "&copy; 2026 F" in html and "&nbsp;&middot;&nbsp;" not in html
+        assert "Unsubscribe" not in text and "View in browser" not in text
+
+    @pytest.mark.parametrize(
+        ("fact", "kept", "dropped"),
+        [
+            ("unsubscribe_url", "Unsubscribe", "View in browser"),
+            ("view_in_browser_url", "View in browser", "Unsubscribe"),
+        ],
+    )
+    def test_with_one_url_only_that_link_renders(self, fact, kept, dropped):
+        html = _builder(**{fact: "https://acme.test/x"}).render()
+        assert (
+            f'href="https://acme.test/x" style="color:#5B8A9A; text-decoration:underline;">{kept}'
+            in html
+        )
+        assert dropped not in html
+        assert 'href=""' not in html
+
+    def test_an_explicit_row_is_still_taken_exactly_as_given(self):
+        footer = Footer(link_row=LinkRow(links=[FooterLink("Portal", "")]))
+        assert 'href=""' in _builder(footer).render()
 
 
 class TestDisclaimer:

@@ -209,6 +209,10 @@ class Component:
         """
         return []
 
+    def children(self) -> list[Component]:
+        """The blocks this one holds, in reading order: none for a leaf (#261)."""
+        return []
+
     def raw_html(self) -> list[str]:
         """
         The caller markup this component emits raw, for the document's link check.
@@ -287,6 +291,20 @@ class Component:
             raise ValidationError(f"{self.__class__.__name__} has no template_path set.")
         engine = respaced(engine, self.spacing, type(self).__name__)
         return engine.render(self.template_path, self.context())
+
+
+def descendants(components: Sequence[Component]) -> list[Component]:
+    """Every component, each followed by those it holds, depth first in reading order."""
+    found: list[Component] = []
+    for component in components:
+        found.append(component)
+        found.extend(descendants(component.children()))
+    return found
+
+
+def leaves(components: Sequence[Component]) -> list[Component]:
+    """The components that hold none, in reading order: what the document numbers and walks."""
+    return [component for component in descendants(components) if not component.children()]
 
 
 # ──────────────────────────────────────────────────────────────────────

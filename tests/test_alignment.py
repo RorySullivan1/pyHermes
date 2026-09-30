@@ -509,6 +509,8 @@ STRUCTURALLY_ALIGNED = {
     "ImageBlock": "already has an align, and that one places a block (ImageAlign)",
     "MathBlock": "an equation is an image, placed as a block like ImageBlock (#229)",
     "Contents": "an entry is a title, a leader and a page number, left to right (#183)",
+    "Stack": "it holds blocks; each keeps its own align and inherits the section's (#262)",
+    "Columns": "a split: each block keeps its own align and inherits the section's (#263)",
 }
 
 

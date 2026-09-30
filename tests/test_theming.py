@@ -49,6 +49,13 @@ def _gallery_html() -> str:
     return "\n".join(build().render() for build in all_fixtures().values())
 
 
+#: Layout-only templates, each with the reason it draws no colour. Painting a
+#: surface here would hide the band's own colour or highlight tint underneath.
+COLOURLESS = {
+    "stack.html": "rows of blocks in a cell whose band the container already paints (#262)",
+}
+
+
 class TestTheLayersAreATightVocabulary:
     @pytest.mark.parametrize("layer", [*LAYERS, ShadowStyle, Theme, Rgba])
     def test_every_layer_is_frozen(self, layer):
@@ -639,6 +646,8 @@ class TestTheDefaultThemeChangesNothing:
         }
         assert resolved, "no region resolves anything against the theme"
         for path in sorted(TEMPLATE_DIR.rglob("*.html")):
+            if path.name in COLOURLESS:
+                continue
             source = path.read_text(encoding="utf-8")
             takes_colour = "theme." in source or any(
                 f"{{{{ {key}" in source or f"{{{{ {key}." in source for key in resolved

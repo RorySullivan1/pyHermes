@@ -96,7 +96,15 @@ class TestLogoWidth:
         assert header.resolved_logo_width() == 200
 
 
+#: A default footer link renders only once its URL is set (#258).
+URLS = {"unsubscribe_url": "https://example.com/u", "view_in_browser_url": "https://example.com/v"}
+
+
 class TestSkeletonCopy:
+    @pytest.fixture
+    def valid_metadata(self, valid_metadata):
+        return {**valid_metadata, **URLS}
+
     @pytest.mark.parametrize(("field", "default"), sorted(LABEL_DEFAULTS.items()))
     def test_defaults_match_what_was_hardcoded(self, valid_metadata, text_block, field, default):
         # The labels are the footer region's copy; the flat keyword

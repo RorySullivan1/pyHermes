@@ -315,3 +315,7 @@ Decisions and Log entries folded out of `INDEX.md` on 2026-08-29 (#143), verbati
   `Spacing` + `SPACING_TOKENS`, the factsheet at 90% of two sheets — sessions/2026-09-24-spacing-two-levels.md
 - [2026-09-24] define-epic-217 — **#217 defined, #223–#228 filed** via the github-issues pipeline. `fill-self`
   rewrites the Done-when sentence too; print the diff — sessions/2026-09-24-1208-define-epic-217.md
+- [2026-09-24] define-epic-221 — **#221 defined, #229–#233 filed**. mathtext measured: deterministic, no `aligned`,
+  `\le` unknown; two stub claims corrected (purity, theme recolour) — sessions/2026-09-24-1312-define-epic-221.md
+- [2026-09-24] table-semantics — **#217 implemented** (#223–#228): groups, cell markers, `Column.format`,
+  decimal alignment and units, `HeatScale` and bars; `letter_quant_table` — sessions/2026-09-24-table-semantics.md

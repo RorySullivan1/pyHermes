@@ -23,18 +23,21 @@ from pyhermes.builder import (
     AuthorBlock,
     CardGroup,
     ChartBlock,
+    Columns,
     ContactBlock,
     Contents,
     DataTable,
     Email,
     EmailBuilder,
     FlowedColumns,
+    FourColumn,
     FullWidth,
     ImageBlock,
     MathBlock,
     NumberedList,
     PullQuote,
     Spacing,
+    Stack,
     TextBlock,
     ThreeColumn,
     TwoColumn,
@@ -509,6 +512,9 @@ INSTANCES: dict[type, list[Any]] = {
         )
     ],
     Contents: [lambda s: _with_entries(Contents(subtitle="S", spacing=s))],
+    Stack: [lambda s: Stack([_Stub(), _Stub()], spacing=s)],
+    Columns: [lambda s: Columns([_Stub(), _Stub()], spacing=s)],
+    FourColumn: [lambda s: FourColumn([_Stub(), _Stub(), None, _Stub()], title="T", spacing=s)],
 }
 
 
@@ -566,12 +572,20 @@ def test_every_declared_token_reaches_the_markup(cls: type, token: str) -> None:
     )
 
 
+#: Tokens a class reads only when rendered outside any cell, each with why it does.
+FALLBACK_READS: dict[type, dict[str, str]] = {
+    Columns: {
+        "pad_x": "alone it splits the frame's content width; in a cell it splits the cell's (#263)"
+    },
+}
+
+
 @pytest.mark.parametrize("cls", list(INSTANCES), ids=lambda cls: cls.__name__)
 def test_every_token_the_markup_reads_is_declared(cls: type) -> None:
     baseline = _render(cls, None)
     undeclared = []
     for token in _eligible():
-        if token in cls.SPACING_TOKENS:
+        if token in cls.SPACING_TOKENS or token in FALLBACK_READS.get(cls, {}):
             continue
         layer = TOKEN_LAYERS[token][0]
         perturbed = STANDARD_SIZES.derive(**{layer: {token: SENTINEL}})
