@@ -1025,7 +1025,9 @@ def _remainder_order(count: int) -> list[int]:
     return order
 
 
-def column_layout(weights: Sequence[int | float], scheme: SizeScheme) -> list[ColumnGeometry]:
+def column_layout(
+    weights: Sequence[int | float], scheme: SizeScheme, within: int | None = None
+) -> list[ColumnGeometry]:
     """
     Split the frame's content width into columns, per the ratio's weights.
 
@@ -1058,12 +1060,14 @@ def column_layout(weights: Sequence[int | float], scheme: SizeScheme) -> list[Co
     if total <= 0:
         raise ValidationError(f"column weights must be positive, got: {list(weights)}")
 
-    available = scheme.frame.inner - scheme.space.gutter * (count - 1)
+    # ``within`` is a cell's own width when the split sits inside one (#263).
+    content_width = scheme.frame.inner if within is None else within
+    available = content_width - scheme.space.gutter * (count - 1)
     if available < count:
         raise ValidationError(
             f"{count} columns and {count - 1} gutter(s) of "
             f"{scheme.space.gutter}px leave {available}px inside a "
-            f"{scheme.frame.inner}px content width — not enough for one pixel each."
+            f"{content_width}px content width — not enough for one pixel each."
         )
 
     exact = [available * weight / total for weight in weights]

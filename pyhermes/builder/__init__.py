@@ -39,6 +39,7 @@ from .composition import Stack
 from .containers import (
     Container,
     FlowedColumns,
+    FourColumn,
     FullWidth,
     ThreeColumn,
     TwoColumn,
@@ -226,6 +227,7 @@ __all__ = [
     # Containers
     "Container",
     "FlowedColumns",
+    "FourColumn",
     "FullWidth",
     "TwoColumn",
     "ThreeColumn",

@@ -16,8 +16,10 @@ split::
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from typing import ClassVar
+
+from pyhermes.config import get_config
 
 from .apparatus import slugify, validate_anchor
 from .components import Component
@@ -26,7 +28,7 @@ from .enums import TextAlign, ThreeColumnRatio, TwoColumnRatio
 from .exceptions import ValidationError
 from .images import EmailImage, ImageAsset
 from .models import _validate_align, _validate_color
-from .sizing import SizeScheme, Spacing, coerce_spacing, column_layout
+from .sizing import STANDARD_SIZES, SizeScheme, Spacing, coerce_spacing, column_layout
 from .textgen import join_blocks, underline
 
 
@@ -187,6 +189,11 @@ class Container:
         raise NotImplementedError
 
 
+def _is_weight(value: object) -> bool:
+    """A positive int or float, and not a bool, which is an int to Python."""
+    return isinstance(value, (int, float)) and not isinstance(value, bool) and value > 0
+
+
 class _SplitContainer(Container):
     """
     Shared machinery for every multi-column container.
@@ -212,35 +219,59 @@ class _SplitContainer(Container):
         "pad_x",
     )
 
-    #: The split this container was built with, as its bare string or the
-    #: matching enum member. Set by each subclass's ``__init__``.
-    ratio: str
+    #: The split this container was built with: a preset's name (or its enum
+    #: member), or a tuple of weights (#264). Set by each subclass's ``__init__``.
+    ratio: str | tuple[int | float, ...]
 
-    #: The closed set of splits this container accepts.
-    _ratio_enum: type[TwoColumnRatio] | type[ThreeColumnRatio]
+    #: The named splits this container accepts as a string.
+    _presets: ClassVar[tuple[str, ...]]
+
+    #: How many columns this split has, which is how many weights it takes.
+    COUNT: ClassVar[int]
 
     @classmethod
-    def _check_ratio(cls, ratio: str) -> None:
+    def _check_ratio(cls, ratio: object) -> str | tuple[int | float, ...]:
         """
-        A StrEnum member equals and hashes as its string value, so this
-        membership test accepts both the enum and the bare ratio string.
+        ``ratio`` as stored: a preset string as given, or weights as a tuple.
+
+        A StrEnum member equals and hashes as its string value, so the preset
+        test accepts both. Weights must be one positive number per column, and
+        none may compute narrower than ``Config.min_column_px`` at the email frame.
         """
-        if ratio not in set(cls._ratio_enum):
+        if isinstance(ratio, str):
+            if ratio not in cls._presets:
+                raise ValidationError(
+                    f"Unsupported ratio '{ratio}'. Use one of {[str(p) for p in cls._presets]}, "
+                    f"or {cls.COUNT} weights such as {(3,) * (cls.COUNT - 1) + (2,)}."
+                )
+            return ratio
+        weights = tuple(ratio) if isinstance(ratio, Sequence) else ()
+        if len(weights) != cls.COUNT or not all(_is_weight(weight) for weight in weights):
             raise ValidationError(
-                f"Unsupported ratio '{ratio}'. Use: {[r.value for r in cls._ratio_enum]}"
+                f"{cls.__name__} takes {cls.COUNT} positive weights, got: {ratio!r}"
             )
+        floor = get_config().min_column_px
+        for index, column in enumerate(column_layout(weights, STANDARD_SIZES)):
+            if column.width < floor:
+                raise ValidationError(
+                    f"weights {weights} make column {index + 1} {column.width}px wide at the "
+                    f"680px email frame, below Config.min_column_px ({floor})."
+                )
+        return weights
 
     @staticmethod
-    def _weights(ratio: str) -> list[int]:
+    def _weights(ratio: str | tuple[int | float, ...]) -> list[int | float]:
         """
-        A ratio's own name is its weights: ``"25-25-50"`` -> ``[25, 25, 50]``.
+        A preset's own name is its weights: ``"25-25-50"`` -> ``[25, 25, 50]``.
 
         No lookup table, because a table would be a second place for the
         split to be written down and therefore a second place to be wrong.
         :func:`~pyhermes.builder.sizing.column_layout` normalises by the sum, so
         ``"33-33-33"`` is exact thirds rather than 99% of the frame.
         """
-        return [int(part) for part in str(ratio).split("-")]
+        if isinstance(ratio, str):
+            return [int(part) for part in ratio.split("-")]
+        return list(ratio)
 
     def _column_context(self, engine: Renderer, contents: list[str], scheme: SizeScheme) -> dict:
         geometry = column_layout(self._weights(self.ratio), scheme)
@@ -388,11 +419,12 @@ class TwoColumn(_SplitContainer):
             or when both columns are omitted.
     """
 
-    _ratio_enum = TwoColumnRatio
+    _presets = tuple(TwoColumnRatio)
+    COUNT = 2
 
     def __init__(
         self,
-        ratio: str | TwoColumnRatio = TwoColumnRatio.EQUAL,
+        ratio: str | TwoColumnRatio | Sequence[int | float] = TwoColumnRatio.EQUAL,
         left: Component | None = None,
         right: Component | None = None,
         title: str | None = None,
@@ -403,10 +435,9 @@ class TwoColumn(_SplitContainer):
         spacing: Spacing | Mapping[str, int | float] | None = None,
     ):
         super().__init__(title, background_color, highlight, align, anchor, spacing)
-        self._check_ratio(ratio)
+        self.ratio = self._check_ratio(ratio)
         if left is None and right is None:
             raise ValidationError("TwoColumn requires at least one of 'left' or 'right'.")
-        self.ratio = ratio
         self.left = left
         self.right = right
 
@@ -458,11 +489,12 @@ class ThreeColumn(_SplitContainer):
             or when all three columns are omitted.
     """
 
-    _ratio_enum = ThreeColumnRatio
+    _presets = tuple(ThreeColumnRatio)
+    COUNT = 3
 
     def __init__(
         self,
-        ratio: str | ThreeColumnRatio = ThreeColumnRatio.EQUAL,
+        ratio: str | ThreeColumnRatio | Sequence[int | float] = ThreeColumnRatio.EQUAL,
         left: Component | None = None,
         center: Component | None = None,
         right: Component | None = None,
@@ -474,12 +506,11 @@ class ThreeColumn(_SplitContainer):
         spacing: Spacing | Mapping[str, int | float] | None = None,
     ):
         super().__init__(title, background_color, highlight, align, anchor, spacing)
-        self._check_ratio(ratio)
+        self.ratio = self._check_ratio(ratio)
         if left is None and center is None and right is None:
             raise ValidationError(
                 "ThreeColumn requires at least one of 'left', 'center', or 'right'."
             )
-        self.ratio = ratio
         self.left = left
         self.center = center
         self.right = right
@@ -495,6 +526,67 @@ class ThreeColumn(_SplitContainer):
             component.render(engine) if component else ""
             for component in (self.left, self.center, self.right)
         ]
+        ctx = self._column_context(engine, contents, scheme_of(engine))
+        return engine.render(self.template_path, ctx)
+
+
+class FourColumn(_SplitContainer):
+    """
+    Four columns side by side: a row of small charts, logos or figures (#264).
+
+    Slots are a list, left to right, because four named slots read worse than
+    a position. ``None`` leaves a column empty, and at least one must be
+    filled. Equal quarters by default (142px each at the 680px frame); pass
+    four weights for anything else. On a phone the columns stack, left first.
+
+    Args:
+        columns:          Four components, or ``None`` for an empty column.
+        ratio:            ``"25-25-25-25"``, or four positive weights.
+        title, background_color, highlight, align, anchor, spacing: As on
+                          ``TwoColumn``.
+    """
+
+    _presets = ("25-25-25-25",)
+    COUNT = 4
+
+    #: A split's tokens less ``column_pad_x``: a column wide enough to take it
+    #: (``frame.narrow_column``) leaves three others under ``Config.min_column_px``.
+    SPACING_TOKENS = tuple(
+        token for token in _SplitContainer.SPACING_TOKENS if token != "column_pad_x"
+    )
+
+    def __init__(
+        self,
+        columns: Sequence[Component | None],
+        ratio: str | Sequence[int | float] = "25-25-25-25",
+        title: str | None = None,
+        background_color: str | None = None,
+        highlight: bool = False,
+        align: str | TextAlign | None = None,
+        anchor: str | None = None,
+        spacing: Spacing | Mapping[str, int | float] | None = None,
+    ):
+        super().__init__(title, background_color, highlight, align, anchor, spacing)
+        self.ratio = self._check_ratio(ratio)
+        slots = list(columns)
+        if len(slots) != self.COUNT:
+            raise ValidationError(f"FourColumn takes four columns, got {len(slots)}.")
+        if all(slot is None for slot in slots):
+            raise ValidationError("FourColumn requires at least one filled column.")
+        for index, slot in enumerate(slots):
+            if slot is not None and not isinstance(slot, Component):
+                raise ValidationError(
+                    f"FourColumn column {index + 1} must be a Component or None, "
+                    f"got {type(slot).__name__}."
+                )
+        self.columns = slots
+
+    def components(self) -> list[Component]:
+        return [c for c in self.columns if c is not None]
+
+    def render(self, engine: Renderer) -> str:
+        engine = self._spaced(engine)
+        contents = [c.render(engine) if c else "" for c in self.columns]
         ctx = self._column_context(engine, contents, scheme_of(engine))
         return engine.render(self.template_path, ctx)
 

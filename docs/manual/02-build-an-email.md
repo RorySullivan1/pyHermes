@@ -154,6 +154,29 @@ email = EmailBuilder().metadata(facts).section(side_by_side).section(three).buil
 
 **Result:** on a desktop the columns sit side by side. On a phone they stack, left first.
 
+**Proportions of your own, and four columns.** A ratio can also be a tuple of weights, one
+per column, such as `ratio=(60, 40)` or `ratio=(2, 1, 1)`. `FourColumn` takes a list of four
+blocks, with `None` for an empty column:
+
+```python
+from pyhermes.builder import FourColumn
+
+email = (
+    EmailBuilder()
+    .metadata(facts)
+    .section(TwoColumn(ratio=(60, 40), left=TextBlock("<p>The argument.</p>"),
+                       right=TextBlock("<p>The evidence.</p>"), title="Sixty-forty"))
+    .section(FourColumn([TextBlock("<p><b>Rates</b><br>Long.</p>"),
+                         TextBlock("<p><b>Credit</b><br>Neutral.</p>"),
+                         TextBlock("<p><b>Equities</b><br>Overweight.</p>"),
+                         TextBlock("<p><b>FX</b><br>Short USD.</p>")], title="Views"))
+    .build()
+)
+```
+
+A column narrower than 90 pixels is refused, with a message giving the width your weights
+produce.
+
 ## How to put several blocks in one section
 
 **When to use this:** a paragraph, then the table it introduces, then a note, all under one

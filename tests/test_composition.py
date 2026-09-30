@@ -11,10 +11,12 @@ from pyhermes.builder import (
     Contents,
     DataTable,
     Email,
+    FourColumn,
     FullWidth,
     ImageBlock,
     Stack,
     TextBlock,
+    ThreeColumn,
     TwoColumn,
 )
 from pyhermes.builder.exceptions import ValidationError
@@ -112,3 +114,92 @@ def test_a_mobile_token_inside_a_stack_is_refused_on_an_email():
     cards = CardGroup([KpiItem("a", "1"), KpiItem("b", "2")], spacing={"card_pad_x": 4})
     with pytest.raises(ValidationError, match="card_pad_x"):
         _email(FullWidth(Stack([cards])))
+
+
+class TestWeights:
+    """#264: a split takes any weights, and the named presets are weights too."""
+
+    @pytest.mark.parametrize("size_theme", ["standard", "compact", "spacious"])
+    def test_sixty_forty_fills_the_content_width_at_every_density(self, size_theme):
+        from pyhermes.builder import SIZE_SCHEMES
+        from pyhermes.builder.sizing import column_layout
+
+        scheme = SIZE_SCHEMES[size_theme]
+        widths = [column.width for column in column_layout((60, 40), scheme)]
+        assert sum(widths) + scheme.space.gutter == scheme.frame.inner
+        email = Email({**FACTS, "size_theme": size_theme})
+        email.add_section(TwoColumn((60, 40), TextBlock("<p>L</p>"), TextBlock("<p>R</p>")))
+        rendered = email.render()
+        for width in widths:
+            assert f'width="{width}"' in rendered
+
+    @pytest.mark.parametrize(
+        ("preset", "weights"), [("30-70", (30, 70)), ("50-50", (1, 1)), ("70-30", (7, 3))]
+    )
+    def test_a_preset_renders_as_its_own_weights(self, preset, weights):
+        def render(ratio):
+            return _email(TwoColumn(ratio, TextBlock("<p>L</p>"), TextBlock("<p>R</p>"))).render()
+
+        assert render(preset) == render(weights)
+
+    def test_three_columns_take_weights_too(self):
+        section = ThreeColumn((2, 1, 1), TextBlock("<p>a</p>"), TextBlock("<p>b</p>"))
+        assert section.ratio == (2, 1, 1)
+        assert 'width="292"' in _email(section).render()
+
+    @pytest.mark.parametrize(
+        ("ratio", "message"),
+        [
+            ((95, 5), "column 2 30px wide"),
+            ((1,), "takes 2 positive weights"),
+            ((1, 0), "takes 2 positive weights"),
+            ((1, True), "takes 2 positive weights"),
+            ("60-40", "or 2 weights such as"),
+        ],
+    )
+    def test_a_bad_ratio_is_refused_at_construction(self, ratio, message):
+        with pytest.raises(ValidationError, match=message):
+            TwoColumn(ratio, TextBlock("<p>L</p>"), TextBlock("<p>R</p>"))
+
+    def test_the_floor_is_a_config_value(self):
+        from pyhermes.config import config_override
+
+        with config_override(min_column_px=20):
+            TwoColumn((95, 5), TextBlock("<p>L</p>"), TextBlock("<p>R</p>"))
+
+
+class TestFourColumn:
+    def _columns(self):
+        return [TextBlock(f"<p>c{n}</p>") for n in range(4)]
+
+    def test_four_equal_quarters_fill_the_frame(self):
+        html = _email(FourColumn(self._columns(), title="Four")).render()
+        assert html.count('width="142"') >= 4
+        assert html.index("c0") < html.index("c1") < html.index("c2") < html.index("c3")
+
+    def test_it_takes_weights(self):
+        from pyhermes.builder import STANDARD_SIZES
+        from pyhermes.builder.sizing import column_layout
+
+        section = FourColumn(self._columns(), ratio=(2, 1, 1, 1))
+        wide = column_layout((2, 1, 1, 1), STANDARD_SIZES)[0].width
+        assert wide > 142 and f'width="{wide}"' in _email(section).render()
+
+    def test_an_empty_column_keeps_its_place(self):
+        columns = self._columns()
+        columns[2] = None
+        section = FourColumn(columns)
+        assert [c.content for c in section.components()] == ["<p>c0</p>", "<p>c1</p>", "<p>c3</p>"]
+        assert _email(section).text().count("c") >= 3
+
+    @pytest.mark.parametrize(
+        ("columns", "message"),
+        [
+            ([TextBlock("<p>a</p>")] * 3, "four columns, got 3"),
+            ([None] * 4, "at least one filled"),
+            ([TextBlock("<p>a</p>"), "b", None, None], "column 2 must be a Component"),
+        ],
+    )
+    def test_a_bad_row_is_refused(self, columns, message):
+        with pytest.raises(ValidationError, match=message):
+            FourColumn(columns)

@@ -27,6 +27,7 @@ from . import (
     a4_portrait,
     aligned_layout,
     compact_size,
+    composed_layout,
     custom_banner,
     custom_footer,
     image_matrix,
@@ -94,6 +95,7 @@ def all_fixtures() -> dict[str, FixtureBuilder]:
         "modern_fonts": modern_fonts.build,
         "rich_table": rich_table.build,
         "aligned_layout": aligned_layout.build,
+        "composed_layout": composed_layout.build,
     }
 
 

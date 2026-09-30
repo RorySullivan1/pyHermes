@@ -29,6 +29,7 @@ from pyhermes.builder import (
     Email,
     EmailBuilder,
     FlowedColumns,
+    FourColumn,
     FullWidth,
     ImageBlock,
     MathBlock,
@@ -511,6 +512,7 @@ INSTANCES: dict[type, list[Any]] = {
     ],
     Contents: [lambda s: _with_entries(Contents(subtitle="S", spacing=s))],
     Stack: [lambda s: Stack([_Stub(), _Stub()], spacing=s)],
+    FourColumn: [lambda s: FourColumn([_Stub(), _Stub(), None, _Stub()], title="T", spacing=s)],
 }
 
 

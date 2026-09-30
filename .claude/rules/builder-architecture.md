@@ -865,3 +865,17 @@ last, because the Word engine drops margins on a cell. A `TextBlock` already end
 paragraph break and was judged against a screenshot rather than a number. Moving `block_gap`
 on a `Stack` also moves the paragraph gaps inside its text blocks. That coupling is the cost
 of not minting a token for one component.
+
+**A ratio is weights (#264).** `TwoColumn` and `ThreeColumn` take a preset's name or one
+positive weight per column, and `FourColumn` takes four blocks in a list with `None` for an
+empty slot. The presets were always weights under a name (`_weights("30-70")` is `[30, 70]`),
+so a test holds that each preset renders byte-for-byte as its own weights, and no golden moved.
+Two decisions:
+
+- **A string is still a preset, never parsed as weights.** `"60-40"` raises and names the tuple
+  form. A string that parses would make a typo in a preset a silent new layout.
+- **The floor is `Config.min_column_px` (90), checked at construction against the standard
+  680px frame.** The frame a document renders at is not known until render, and the standard
+  email frame is the narrowest one shipped, so a split that passes there passes everywhere.
+  `FourColumn` declares no `column_pad_x`, because a column wide enough to take it leaves the
+  other three under the floor, and the spacing sentinel test holds every declared token read.
