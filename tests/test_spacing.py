@@ -35,6 +35,7 @@ from pyhermes.builder import (
     NumberedList,
     PullQuote,
     Spacing,
+    Stack,
     TextBlock,
     ThreeColumn,
     TwoColumn,
@@ -509,6 +510,7 @@ INSTANCES: dict[type, list[Any]] = {
         )
     ],
     Contents: [lambda s: _with_entries(Contents(subtitle="S", spacing=s))],
+    Stack: [lambda s: Stack([_Stub(), _Stub()], spacing=s)],
 }
 
 

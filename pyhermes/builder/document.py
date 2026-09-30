@@ -22,7 +22,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Concatenate, ParamSpec, Self, T
 from pyhermes.config import Config, config_override, get_config
 
 from .apparatus import check_unique, note_anchor, note_ref_anchor, references
-from .components import Component, Contents, Endnotes, Exhibit
+from .components import Component, Contents, Endnotes, Exhibit, descendants, leaves
 from .containers import Container, FullWidth
 from .engine import Renderer, TemplateEngine, TemplateOverlay, overlay_dirs
 from .enums import EmbedStrategy, SizeTheme
@@ -330,8 +330,10 @@ class Document:
         return {"sections_html": "\n".join(section.render(engine) for section in sections)}
 
     def _components(self) -> list[Component]:
-        """Every component, in reading order: sections in turn, a split left to right."""
-        return [component for section in self._sections for component in section.components()]
+        """Every leaf component, in reading order: sections in turn, a split left to right."""
+        return leaves(
+            [component for section in self._sections for component in section.components()]
+        )
 
     def _walk(self) -> None:
         """
@@ -345,7 +347,7 @@ class Document:
         for number, note in enumerate(self._footnotes(), start=1):
             note.number = number
         for section in self._flat_sections():
-            for component in section.components():
+            for component in leaves(section.components()):
                 if isinstance(component, Contents):
                     component.entries = self._contents_entries(skip=section)
 
@@ -474,7 +476,7 @@ def _spacings(container: Container) -> list[tuple[str, Spacing]]:
     if not hasattr(container, "sections"):
         found.extend(
             (type(component).__name__, component.spacing)
-            for component in container.components()
+            for component in descendants(container.components())
             if component.spacing is not None
         )
     return found

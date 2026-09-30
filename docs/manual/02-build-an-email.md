@@ -154,6 +154,51 @@ email = EmailBuilder().metadata(facts).section(side_by_side).section(three).buil
 
 **Result:** on a desktop the columns sit side by side. On a phone they stack, left first.
 
+## How to put several blocks in one section
+
+**When to use this:** a paragraph, then the table it introduces, then a note, all under one
+section title. Or a column of figures with a comment beneath them.
+
+```python
+from pyhermes.builder import DataTable, Stack
+from pyhermes.builder.models import TableRow
+
+returns = DataTable(["Factor", "1M"], [TableRow(["Value", "+1.8%"]), TableRow(["Momentum", "-0.4%"])])
+email = (
+    EmailBuilder()
+    .metadata(facts)
+    .section(FullWidth(
+        Stack([
+            TextBlock("<p>Value led again this month.</p>"),
+            returns,
+            TextBlock("<p>Returns are gross of fees.</p>"),
+        ]),
+        title="Factor returns",
+    ))
+    .section(TwoColumn(
+        ratio="30-70",
+        left=Stack([
+            CardGroup([KpiItem("Duration", "6.2y"), KpiItem("Yield", "4.1%")],
+                      orientation="vertical"),
+            TextBlock("<p>As of Friday's close.</p>"),
+        ]),
+        right=TextBlock("<p>We stay long duration.</p>"),
+        title="Positioning",
+    ))
+    .build()
+)
+```
+
+**Result:** each section has one title, with its blocks one above the other. On a phone they
+stay in the same order.
+
+**Notes:**
+- A `Stack` goes anywhere a single block goes: a full-width section or any column.
+- Tables, charts and notes inside a `Stack` are numbered in reading order with the rest of
+  the email.
+- To tighten or loosen the gap, pass `spacing={"block_gap": 8}`. The same setting also
+  spaces the paragraphs inside the stack's text blocks.
+
 ## How to add a numbered list of ideas
 
 ```python

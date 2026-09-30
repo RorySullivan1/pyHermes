@@ -833,3 +833,35 @@ Provides two usage patterns:
         .section(FullWidth(content=TextBlock("Hello"), title="Intro"))
         .render())
 ```
+
+## Blocks that hold blocks (#261)
+
+**A cell still holds one component; that component may hold several.** `Stack` (#262) is a
+`Component` whose job is to hold others, top to bottom, so it goes wherever one block goes and
+no container signature widened. The alternative, `content=` taking a list, would have widened
+every container and every template for the same result.
+
+**The walk contract, and why it is split.**
+
+- `Component.children()` is empty for a leaf and lists the held blocks for a composite.
+  `descendants()` and `leaves()` in `components.py` walk it depth first, in reading order.
+- **The document reads leaves.** `Document._components()` returns `leaves(...)`, so exhibit
+  numbers, footnotes, raw-HTML link checks and a nested `Contents` all reach blocks inside a
+  `Stack`. A composite therefore reports **no** notes or raw HTML of its own; if it did, the
+  document would count them twice.
+- **Containers read the top level.** `Container.images()`, `Page` and `Panel` walk
+  `section.components()` without descending, so a composite **delegates** `images()` (and so
+  `assets()`) to its children. Standing rule 7 applies to it like any other block.
+- **The medium check reads every node.** `_spacings()` uses `descendants()`, so a `spacing=` on
+  a block inside a `Stack` is refused on an email when it moves an `@media` token, exactly as
+  it would be one level up.
+
+Four tests in `tests/test_composition.py` fail with the document still reading the top level
+and pass with it reading leaves, which is how the walk was checked rather than assumed.
+
+**The gap is `block_gap`, deliberately not a new token.** It is padding on every row but the
+last, because the Word engine drops margins on a cell. A `TextBlock` already ends with a
+`block_gap` margin, so the space after a paragraph is the sum of the two, which reads as a
+paragraph break and was judged against a screenshot rather than a number. Moving `block_gap`
+on a `Stack` also moves the paragraph gaps inside its text blocks. That coupling is the cost
+of not minting a token for one component.
