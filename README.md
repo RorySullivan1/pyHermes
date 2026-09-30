@@ -8,6 +8,9 @@ engine, which ignores `max-width`, drops most modern CSS, and will not display a
 URI at all. The usual answers — a CSS framework, a `<div>` grid, an external stylesheet —
 all fail there.
 
+**New here?** The [user manual](docs/manual/README.md) walks through building, checking and
+sending an email, task by task, with a troubleshooting page for every error message.
+
 pyHermes composes Jinja2 templates into a single inline-CSS, table-based document
 engineered for those constraints, and enforces the ones that break silently. It depends on
 **Jinja2 and nothing else**.
