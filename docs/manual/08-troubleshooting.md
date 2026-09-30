@@ -146,6 +146,9 @@ pictures, very long text, or many large tables.
 
 4. `"size_theme": "compact"` does **not** help much here. It saves height, not bytes.
 
+> **Note:** a size report that names the heaviest section for you is tracked in
+> [#259](https://github.com/RorySullivan1/pyHermes/issues/259).
+
 **If you only send through Outlook:** the limit is Gmail's. You can raise it with
 `Email(facts, config=Config(size_limit_kb=200, size_warn_kb=180))`. Do this only if you
 are sure no reader uses Gmail.

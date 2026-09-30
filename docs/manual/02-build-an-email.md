@@ -304,7 +304,8 @@ email = EmailBuilder().metadata(facts).footer(footer).section(FullWidth(TextBloc
 > **Warning:** by default the footer shows **Unsubscribe** and **View in browser** links.
 > If you have not set `unsubscribe_url` and `view_in_browser_url` in the metadata, those
 > links go nowhere. For an internal email, pass a `LinkRow` with the links you want, or
-> `links=[]` for none.
+> `links=[]` for none. ([#258](https://github.com/RorySullivan1/pyHermes/issues/258) tracks
+> leaving an unset link out automatically.)
 
 **Notes:** `disclaimer` is HTML, like a `TextBlock`. `Footer` also takes `align`,
 `background_color` and `text_color`, the same as `Header`.
