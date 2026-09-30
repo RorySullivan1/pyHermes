@@ -773,8 +773,9 @@ class Footer(BoxSurface, Region):
 
         ``link_row=None`` and ``LinkRow(links=None)`` both mean *the default
         pair*, built from the email's two URL facts and this footer's own
-        labels — which is what keeps #64's label parameters working and an
-        unset row byte-identical. An explicit list is taken exactly as given,
+        labels — which is what keeps #64's label parameters working. A default
+        link whose fact is unset is left out rather than rendered as
+        ``href=""`` (#258). An explicit list is taken exactly as given,
         **including an empty one**: which links an email carries is the
         caller's judgement, not this library's.
         """
@@ -785,7 +786,7 @@ class Footer(BoxSurface, Region):
             (self.unsubscribe_label, facts.get("unsubscribe_url", "")),
             (self.view_in_browser_label, facts.get("view_in_browser_url", "")),
         )
-        return [FooterLink(label, str(url)) for label, url in pairs]
+        return [FooterLink(label, str(url)) for label, url in pairs if url]
 
     def theme_context(self, theme: Theme) -> dict[str, Any]:
         """

@@ -301,11 +301,19 @@ footer = Footer(
 email = EmailBuilder().metadata(facts).footer(footer).section(FullWidth(TextBlock("<p>…</p>"))).build()
 ```
 
-> **Warning:** by default the footer shows **Unsubscribe** and **View in browser** links.
-> If you have not set `unsubscribe_url` and `view_in_browser_url` in the metadata, those
-> links go nowhere. For an internal email, pass a `LinkRow` with the links you want, or
-> `links=[]` for none. ([#258](https://github.com/RorySullivan1/pyHermes/issues/258) tracks
-> leaving an unset link out automatically.)
+**The two default links.** Without a `link_row`, the footer adds an **Unsubscribe** link
+when you set `unsubscribe_url` in the metadata, and a **View in browser** link when you set
+`view_in_browser_url`. Leave both unset, as an internal email usually would, and the footer
+shows the copyright line alone. A `LinkRow` you pass is used exactly as you wrote it.
+
+```python
+email = (
+    EmailBuilder()
+    .metadata({**facts, "unsubscribe_url": "https://example.com/unsubscribe"})
+    .section(FullWidth(TextBlock("<p>…</p>")))
+    .build()
+)
+```
 
 **Notes:** `disclaimer` is HTML, like a `TextBlock`. `Footer` also takes `align`,
 `background_color` and `text_color`, the same as `Header`.

@@ -74,8 +74,8 @@ you install the same way:
 
 **Result:** you see a dark slate masthead reading *Acme Research* and *Weekly Market Note*, a row
 of three figures (green for good news, red for bad), a paragraph, and a footer with a
-copyright line and **Unsubscribe** and **View in browser** links. Those two links go nowhere
-until you give them addresses (see [Set the footer](02-build-an-email.md#how-to-set-the-footer)).
+copyright line. To add **Unsubscribe** and **View in browser** links, give their addresses
+(see [Set the footer](02-build-an-email.md#how-to-set-the-footer)).
 
 <!-- TODO: screenshot of weekly.html -->
 

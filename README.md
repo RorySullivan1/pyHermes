@@ -510,8 +510,9 @@ Footer(
 
 The copyright row is a `LinkRow`, not a template: pass one to add a link, drop one, or reword
 the copyright. Leave `link_row` unset and it is built from the email's own facts —
-`© {current_year} {firm_name}` plus your two URLs, worded by `unsubscribe_label` and
-`view_in_browser_label`.
+`© {current_year} {firm_name}` plus a link for each of your two URLs that is set, worded by
+`unsubscribe_label` and `view_in_browser_label`. An unset URL leaves its link out rather than
+rendering an empty `href`.
 
 **pyHermes does not decide what your email must say.** Disclaimer language, unsubscribe links
 and every other compliance question are your judgement — the library cannot know whether this
