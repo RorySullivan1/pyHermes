@@ -19,5 +19,5 @@
 - `FourColumn` cannot read `column_pad_x`: a column that wide leaves the others under the floor.
 - The spacing reverse-sentinel caught `Columns` reading `pad_x` alone (the frame fallback);
   recorded in `test_spacing.FALLBACK_READS` rather than declared.
-- Pre-existing, filed separately: at the phone breakpoint a split's column cell shrinks to its
+- Pre-existing, filed as #282: at the phone breakpoint a split's column cell shrinks to its
   content, so a table in a stacked column is only as wide as its figures.

@@ -901,4 +901,4 @@ none of them. It is sized from the cell it sits in:
 **A pre-existing limit, measured here and filed separately:** at the phone breakpoint a split's
 column becomes a block, and its cell then shrinks to its content. So a table in a stacked column
 is only as wide as its figures. It is older than this epic, and the fix changes the `@media` block
-every email carries.
+every email carries (#282).
