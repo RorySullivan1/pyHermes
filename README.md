@@ -321,8 +321,8 @@ Every email is **skeleton ← regions ← containers ← components**, and the r
 |---|---|---|
 | **Skeleton** | the whole page — head, preheader, wrapper — with four holes: `{{ header_bar_html }}`, `{{ banner_html }}`, `{{ sections_html }}`, `{{ footer_html }}` | `pyhermes/builder/templates/base.html` |
 | **Regions** | the strip (`Header`, `EmptyHeader`), the masthead (`Banner`, `MinimalBanner`) and the close (`Footer`). (The *body* region is the ordered section list — not a class) | `pyhermes/builder/regions.py` |
-| **Containers** | layout geometry only: `FullWidth`, `TwoColumn`, `ThreeColumn` | `pyhermes/builder/containers.py` |
-| **Components** | content: `CardGroup`, `DataTable`, `ChartBlock`, `ImageBlock`, `TextBlock`, `NumberedList`, `AuthorBlock`, `ContactBlock` | `pyhermes/builder/components.py` |
+| **Containers** | layout geometry only: `FullWidth`, `TwoColumn`, `ThreeColumn`, `FourColumn`, at a named ratio or any weights such as `ratio=(60, 40)` | `pyhermes/builder/containers.py` |
+| **Components** | content: `CardGroup`, `DataTable`, `ChartBlock`, `ImageBlock`, `TextBlock`, `NumberedList`, `AuthorBlock`, `ContactBlock`; and two that hold others, `Stack` (several blocks in one cell) and `Columns` (a split inside a cell) | `pyhermes/builder/components.py`, `composition.py` |
 
 A container holds components, renders each, and embeds the fragments into its own `<tr>`
 block sized to the 680px outer table. Each region renders into exactly one slot, and `Email`

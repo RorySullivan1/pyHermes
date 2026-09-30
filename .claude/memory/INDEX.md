@@ -6,7 +6,8 @@
   one contract — `pyhermes/delivery`+`gmail`+`outlook`, and `pyhermes/pdf`. Rationale: CLAUDE.md and
   `.claude/rules/media.md`; do not restate it here.
 - **Shipped**: #157, #153, #169, #170, #171, #172, #193 (PRs #167–#203); #201, #150, #202 (PRs #204–#206);
-  #209 (PR #222); #217 (PR #234); #221 (PR #235); #238 (PR #253). **#237 implemented on the branch.**
+  #209 (PR #222); #217 (PR #234); #221 (PR #235); #238 (PR #253); #237, #255, #239 (PRs #254–#257); manual
+  + #258 (PR #260, #258's commit landed after the merge and rides the #261 PR). **#261 implemented on the branch.**
   Stubs #218–#220 are still undefined; each is defined in place with the `epic` skill, as #217 was.
 - The prose budget is live; the baseline is 45 and may only shrink.
 
@@ -66,15 +67,16 @@
 - **Everything in `.claude/` is a factory asset** except `agents/python-developer.md` and
   `agents/finance-quantitative-developer.md`. No project name may enter the others.
 
+- [2026-09-30] **A composite is a component; the document walks leaves, containers the top level.** So a
+  composite delegates images and reports no notes of its own — `builder-architecture.md` (#261)
+
 ## Log              (append-only pointers)
 - Older entries, and epic #157's, are in sessions/ARCHIVE-2026.md.
-- [2026-09-24] define-epic-221 — **#221 defined, #229–#233 filed**. mathtext measured: deterministic, no `aligned`,
-  `\le` unknown; two stub claims corrected (purity, theme recolour) — sessions/2026-09-24-1312-define-epic-221.md
-- [2026-09-24] table-semantics — **#217 implemented** (#223–#228): groups, cell markers, `Column.format`,
-  decimal alignment and units, `HeatScale` and bars; `letter_quant_table` — sessions/2026-09-24-table-semantics.md
 - [2026-09-24] equations — **#221 implemented** (#229–#233): `MathBlock`, `pyhermes/math` + `[math]`, `math_block`,
   lines shim, `a4_equations`, the factsheet's Sharpe ratio — sessions/2026-09-24-equations.md
 - [2026-09-28] host-seams — **#238 implemented** (#246, #249, #247): warnings not prints, a context-local
   `Config` with `config=`, `template_overlay=` — sessions/2026-09-28-host-seams.md
 - [2026-09-29] consumer-package — **#237 implemented** (#243-#245, #248): `py.typed`, MIT metadata and a
   library-only sdist, 3.11-3.14 in CI, `svc` renamed `pyhermes` — sessions/2026-09-29-consumer-package.md
+- [2026-09-30] composition — **#261 implemented** (#262–#264): `Stack`, nested `Columns` sized by a bound
+  `cell_width`, ratios as weights, `FourColumn`; `composed_layout` — sessions/2026-09-30-composition.md

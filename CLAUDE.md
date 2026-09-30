@@ -220,7 +220,8 @@ these rather than improvising:
   material, #223–#228), **#221** (equations from LaTeX, #229–#233) and **#238** (seams for a
   host application, #246, #247, #249). **#237** (the package as a consumer sees it: `py.typed`,
   metadata, a library-only sdist, the 3.11–3.14 matrix, the `pyhermes` import root) is complete,
-  and **#255** removed the `svc` shim it left.
+  and **#255** removed the `svc` shim it left. **#261** (composition: `Stack`, nested `Columns`,
+  ratios as weights and `FourColumn`, #262–#264) is complete.
   **#201** (an image's width in a paged layout) is fixed: the CSS repeats it as a cap. **#150** (the banner's VML
   fill) is closed: gating `src` while keeping `type="frame"` left the Word engine painting a
   broken-image placeholder over the masthead, so the two are now gated together. **#202** is
