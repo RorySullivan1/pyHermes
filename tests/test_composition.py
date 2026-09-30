@@ -8,6 +8,7 @@ import pytest
 
 from pyhermes.builder import (
     CardGroup,
+    Columns,
     Contents,
     DataTable,
     Email,
@@ -203,3 +204,72 @@ class TestFourColumn:
     def test_a_bad_row_is_refused(self, columns, message):
         with pytest.raises(ValidationError, match=message):
             FourColumn(columns)
+
+
+class TestNestedColumns:
+    """#263: a split inside a cell, sized to that cell."""
+
+    def _pair(self, ratio=None):
+        return Columns([TextBlock("<p>L</p>"), TextBlock("<p>R</p>")], ratio=ratio)
+
+    @pytest.mark.parametrize(
+        ("section", "cell"),
+        [
+            (lambda inner: FullWidth(inner), 616),
+            (lambda inner: TwoColumn("30-70", TextBlock("<p>x</p>"), inner), 400),
+            (lambda inner: TwoColumn("50-50", Stack([TextBlock("<p>x</p>"), inner]), None), 280),
+        ],
+    )
+    def test_its_columns_fill_the_cell_they_sit_in(self, section, cell):
+        from pyhermes.builder import STANDARD_SIZES
+        from pyhermes.builder.sizing import column_layout
+
+        expected = [c.width for c in column_layout((1, 2), STANDARD_SIZES, within=cell)]
+        assert sum(expected) + STANDARD_SIZES.space.gutter == cell
+        html = _email(section(self._pair((1, 2)))).render()
+        assert (
+            f'width="{cell}" border="0" cellpadding="0" cellspacing="0" style="width:{cell}px;"'
+            in html
+        )
+        for width in expected:
+            assert f'<table role="presentation" width="{width}" border="0"' in html
+
+    def test_it_reads_in_order_in_both_parts(self):
+        email = _email(TwoColumn("30-70", TextBlock("<p>A</p>"), self._pair()))
+        html, text = email.render(), email.text()
+        assert html.index(">A<") < html.index(">L<") < html.index(">R<")
+        assert text.index("A") < text.index("L") < text.index("R")
+
+    def test_the_document_numbers_what_it_holds(self):
+        email = _email(
+            FullWidth(_table("First")),
+            FullWidth(Columns([_table("Left"), TextBlock("<p>x</p>")])),
+        )
+        assert "Exhibit 2 · Left" in email.render()
+
+    def test_an_image_inside_reaches_the_manifest(self):
+        image = EmailImage.attached(solid_png(20, 10, (4, 5, 6)), alt="Mark", width=20)
+        email = _email(FullWidth(Columns([ImageBlock(image), None])))
+        assert [a.content_id for a in email.assets()] == [image.content_id]
+
+    @pytest.mark.parametrize(
+        ("build", "message"),
+        [
+            (lambda: Columns([TextBlock("<p>a</p>")]), "2 to 4 components, got 1"),
+            (lambda: Columns([TextBlock("<p>a</p>")] * 5), "2 to 4 components, got 5"),
+            (lambda: Columns([None, None]), "at least one"),
+            (lambda: Columns([TextBlock("<p>a</p>"), "b"]), "must be a Component"),
+            (lambda: Columns([TextBlock("<p>a</p>")] * 2, ratio=(1,)), "2 positive weights"),
+            (lambda: Columns([TextBlock("<p>a</p>")] * 2, ratio=(1, 0)), "2 positive weights"),
+        ],
+    )
+    def test_a_bad_split_is_refused(self, build, message):
+        with pytest.raises(ValidationError, match=message):
+            build()
+
+    def test_one_level_only_even_through_a_stack(self):
+        inner = Columns([TextBlock("<p>a</p>"), TextBlock("<p>b</p>")])
+        with pytest.raises(ValidationError, match="one level"):
+            Columns([inner, TextBlock("<p>c</p>")])
+        with pytest.raises(ValidationError, match="one level"):
+            Columns([Stack([inner]), TextBlock("<p>c</p>")])

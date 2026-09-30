@@ -222,6 +222,40 @@ stay in the same order.
 - To tighten or loosen the gap, pass `spacing={"block_gap": 8}`. The same setting also
   spaces the paragraphs inside the stack's text blocks.
 
+## How to put two things side by side inside a column
+
+**When to use this:** a comparison that belongs inside one column of a split, or under the
+paragraph that introduces it in a `Stack`.
+
+```python
+from pyhermes.builder import Columns
+
+email = (
+    EmailBuilder()
+    .metadata(facts)
+    .section(TwoColumn(
+        ratio="30-70",
+        left=TextBlock("<p>Our view in one line.</p>"),
+        right=Stack([
+            TextBlock("<p>Two curves compared.</p>"),
+            Columns([
+                CardGroup([KpiItem("UST 2Y", "3.91%"), KpiItem("UST 10Y", "4.28%")],
+                          orientation="vertical"),
+                TextBlock("<p>The front end fell while the long end held.</p>"),
+            ], ratio=(1, 2)),
+        ]),
+        title="Curves",
+    ))
+    .build()
+)
+```
+
+**Result:** the wide column holds a paragraph, then a small split sized to fit that column.
+On a phone every column stacks, in order.
+
+**Notes:** `Columns` takes two to four blocks (`None` leaves one empty) and optional weights.
+It nests one level only: a `Columns` inside another `Columns` is refused.
+
 ## How to add a numbered list of ideas
 
 ```python

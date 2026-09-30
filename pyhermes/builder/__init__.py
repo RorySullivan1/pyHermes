@@ -33,7 +33,7 @@ from .components import (
     PullQuote,
     TextBlock,
 )
-from .composition import Stack
+from .composition import Columns, Stack
 
 # Containers
 from .containers import (
@@ -224,6 +224,7 @@ __all__ = [
     "ContactBlock",
     "Contents",
     "Stack",
+    "Columns",
     # Containers
     "Container",
     "FlowedColumns",

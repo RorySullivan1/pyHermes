@@ -34,6 +34,28 @@ Yield: 4.1%
 As of Friday's close.
 
 
+Nested
+------
+
+The narrow column: a view in one line.
+
+The wide column holds a stack.
+
+Exhibit 2 · Style factor returns
+
+Factor       1M    YTD
+--------  -----  -----
+Value     +1.8%  +7.4%
+Momentum  -0.4%  +3.1%
+
+Hermes Research
+
+UST 2Y: 3.91%
+UST 10Y: 4.28%
+
+Two columns inside a column.
+
+
 Four Across
 -----------
 

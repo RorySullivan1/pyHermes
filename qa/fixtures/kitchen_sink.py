@@ -27,6 +27,7 @@ from pyhermes.builder import (
     BannerPalette,
     CardGroup,
     ChartBlock,
+    Columns,
     ContactBlock,
     Contents,
     DataTable,
@@ -497,6 +498,11 @@ def build(
                     [
                         TextBlock("<p>Commentary occupying the wider 70% column.</p>"),
                         TextBlock("<p>A second block in the same column.</p>"),
+                        # And a split inside the column (#263).
+                        Columns(
+                            [TextBlock("<p>Nested left.</p>"), TextBlock("<p>Nested right.</p>")],
+                            ratio=(1, 2),
+                        ),
                     ],
                     spacing={"block_gap": 8},
                 ),

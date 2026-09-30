@@ -343,6 +343,13 @@ def scheme_of(engine: Renderer) -> SizeScheme:
     return scheme if isinstance(scheme, SizeScheme) else STANDARD_SIZES
 
 
+def cell_width_of(engine: Renderer) -> int:
+    """The width of the cell ``engine`` is rendering into, or the frame's content width (#263)."""
+    shared = getattr(engine, "shared", {})
+    width = shared.get("cell_width") if isinstance(shared, Mapping) else None
+    return width if isinstance(width, int) else int(scheme_of(engine).frame.inner)
+
+
 def rebind(engine: Renderer, **shared: Any) -> Renderer:
     """``engine`` with ``shared`` bound over whatever it already had."""
     if isinstance(engine, BoundEngine):

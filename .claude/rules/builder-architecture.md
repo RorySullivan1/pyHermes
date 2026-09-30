@@ -879,3 +879,26 @@ Two decisions:
   email frame is the narrowest one shipped, so a split that passes there passes everywhere.
   `FourColumn` declares no `column_pad_x`, because a column wide enough to take it leaves the
   other three under the floor, and the spacing sentinel test holds every declared token read.
+
+**A split inside a cell is `Columns`, a component (#263).** The containers own a band, a title
+and an anchor, and two of those nested have no reading, so the nested split is a block with
+none of them. It is sized from the cell it sits in:
+
+- **A container binds the cell's content width onto the engine** as `cell_width`, through the
+  same `rebind` the density uses. `FullWidth` binds `frame.inner`. A split binds each column's
+  width less its padding. `cell_width_of(engine)` reads it and falls back to `frame.inner`, so a
+  `Columns` rendered with no container splits the frame. No template reads the value, and every
+  golden stayed byte-identical when the binding went in.
+- **Its columns carry no padding**: a `gutter` margin separates them, as in `columns.html`. The
+  stacking reuses `.stack-column`, so the `@media` block did not change. Every column but the
+  last pads its foot by `block_gap`, so stacked columns do not touch on a phone. On a desktop
+  that space falls below the row, where nothing shows it.
+- **One level, refused at construction**, through a `Stack` as well. There is no minimum width
+  check, because the cell's width is known only at render.
+- **`test_spacing.FALLBACK_READS`** records that a lone `Columns` reads `pad_x` through the
+  frame fallback. Declaring `pad_x` would mislead, since in a cell the token has no effect.
+
+**A pre-existing limit, measured here and filed separately:** at the phone breakpoint a split's
+column becomes a block, and its cell then shrinks to its content. So a table in a stacked column
+is only as wide as its figures. It is older than this epic, and the fix changes the `@media` block
+every email carries.

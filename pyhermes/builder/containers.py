@@ -23,7 +23,7 @@ from pyhermes.config import get_config
 
 from .apparatus import slugify, validate_anchor
 from .components import Component
-from .engine import Renderer, respaced, scheme_of
+from .engine import Renderer, rebind, respaced, scheme_of
 from .enums import TextAlign, ThreeColumnRatio, TwoColumnRatio
 from .exceptions import ValidationError
 from .images import EmailImage, ImageAsset
@@ -189,6 +189,11 @@ class Container:
         raise NotImplementedError
 
 
+def _in_cell(engine: Renderer, width: int) -> Renderer:
+    """``engine`` bound to the content width of the cell it renders into, for a nested split."""
+    return rebind(engine, cell_width=width)
+
+
 def _is_weight(value: object) -> bool:
     """A positive int or float, and not a bool, which is an int to Python."""
     return isinstance(value, (int, float)) and not isinstance(value, bool) and value > 0
@@ -208,7 +213,7 @@ class _SplitContainer(Container):
     #: it selects *numbers*, which is the whole point of #42.
     template_path = "common/containers/columns.html"
 
-    SPACING_TOKENS = (
+    SPACING_TOKENS: ClassVar[tuple[str, ...]] = (
         "section_title_top",
         "section_title_bottom",
         "column_top",
@@ -273,6 +278,20 @@ class _SplitContainer(Container):
             return [int(part) for part in ratio.split("-")]
         return list(ratio)
 
+    def _render_split(self, engine: Renderer, slots: Sequence[Component | None]) -> str:
+        """Each slot rendered into its column's content width, then the split around them."""
+        engine = self._spaced(engine)
+        scheme = scheme_of(engine)
+        geometry = column_layout(self._weights(self.ratio), scheme)
+        # An omitted column is an empty cell, not a missing one: the geometry holds either way.
+        contents = [
+            slot.render(_in_cell(engine, int(col.width - col.pad_left - col.pad_right)))
+            if slot
+            else ""
+            for slot, col in zip(slots, geometry, strict=True)
+        ]
+        return engine.render(self.template_path, self._column_context(engine, contents, scheme))
+
     def _column_context(self, engine: Renderer, contents: list[str], scheme: SizeScheme) -> dict:
         geometry = column_layout(self._weights(self.ratio), scheme)
         ctx = self._base_context(engine)
@@ -330,7 +349,7 @@ class FullWidth(Container):
     def render(self, engine: Renderer) -> str:
         engine = self._spaced(engine)
         ctx = self._base_context(engine)
-        ctx["content"] = self.content.render(engine)
+        ctx["content"] = self.content.render(_in_cell(engine, int(scheme_of(engine).frame.inner)))
         ctx["flow_columns"] = 0
         return engine.render(self.template_path, ctx)
 
@@ -384,7 +403,7 @@ class FlowedColumns(FullWidth):
     def render(self, engine: Renderer) -> str:
         engine = self._spaced(engine)
         ctx = self._base_context(engine)
-        ctx["content"] = self.content.render(engine)
+        ctx["content"] = self.content.render(_in_cell(engine, int(scheme_of(engine).frame.inner)))
         ctx["flow_columns"] = self.count if engine.medium.paged else 0
         return engine.render(self.template_path, ctx)
 
@@ -445,15 +464,7 @@ class TwoColumn(_SplitContainer):
         return [c for c in (self.left, self.right) if c is not None]
 
     def render(self, engine: Renderer) -> str:
-        engine = self._spaced(engine)
-        # Every column is always present in the list: the template walks it
-        # unconditionally, and an omitted column renders as an empty cell
-        # rather than a missing one — the geometry has to hold either way.
-        contents = [
-            component.render(engine) if component else "" for component in (self.left, self.right)
-        ]
-        ctx = self._column_context(engine, contents, scheme_of(engine))
-        return engine.render(self.template_path, ctx)
+        return self._render_split(engine, (self.left, self.right))
 
 
 class ThreeColumn(_SplitContainer):
@@ -519,15 +530,7 @@ class ThreeColumn(_SplitContainer):
         return [c for c in (self.left, self.center, self.right) if c is not None]
 
     def render(self, engine: Renderer) -> str:
-        engine = self._spaced(engine)
-        # See TwoColumn.render() — an omitted column is an empty cell, not a
-        # missing one, because the geometry has to hold either way.
-        contents = [
-            component.render(engine) if component else ""
-            for component in (self.left, self.center, self.right)
-        ]
-        ctx = self._column_context(engine, contents, scheme_of(engine))
-        return engine.render(self.template_path, ctx)
+        return self._render_split(engine, (self.left, self.center, self.right))
 
 
 class FourColumn(_SplitContainer):
@@ -585,10 +588,7 @@ class FourColumn(_SplitContainer):
         return [c for c in self.columns if c is not None]
 
     def render(self, engine: Renderer) -> str:
-        engine = self._spaced(engine)
-        contents = [c.render(engine) if c else "" for c in self.columns]
-        ctx = self._column_context(engine, contents, scheme_of(engine))
-        return engine.render(self.template_path, ctx)
+        return self._render_split(engine, self.columns)
 
 
 def section_spacing_tokens() -> tuple[str, ...]:

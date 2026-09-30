@@ -1,9 +1,9 @@
 """
 Every composition axis at once (#261), so a cross-axis regression is visible.
 
-Several blocks in one cell (a ``Stack``), a split at weights no preset names, and a
-four-column row. The body is otherwise plain, and theme, size and font stay default, so
-every line of its golden is about composition.
+Several blocks in one cell (a ``Stack``), a split nested inside a cell (``Columns``), a
+split at weights no preset names, and a four-column row. The body is otherwise plain,
+and theme, size and font stay default, so every line of its golden is about composition.
 """
 
 from __future__ import annotations
@@ -13,6 +13,7 @@ from typing import Any
 
 from pyhermes.builder import (
     CardGroup,
+    Columns,
     DataTable,
     Email,
     EmailBuilder,
@@ -85,6 +86,31 @@ def build(template_dir: Path | None = None) -> Email:
                             orientation="vertical",
                         ),
                         TextBlock("<p>As of Friday's close.</p>"),
+                    ]
+                ),
+            )
+        )
+        # The epic's acceptance case: in one column of a split, a stack of text, a
+        # table and figures, with a two-up split nested inside it (#263).
+        .section(
+            TwoColumn(
+                ratio="30-70",
+                title="Nested",
+                left=TextBlock("<p>The narrow column: a view in one line.</p>"),
+                right=Stack(
+                    [
+                        TextBlock("<p>The wide column holds a stack.</p>"),
+                        _returns(),
+                        Columns(
+                            [
+                                CardGroup(
+                                    [KpiItem("UST 2Y", "3.91%"), KpiItem("UST 10Y", "4.28%")],
+                                    orientation="vertical",
+                                ),
+                                TextBlock("<p>Two columns inside a column.</p>"),
+                            ],
+                            ratio=(1, 2),
+                        ),
                     ]
                 ),
             )

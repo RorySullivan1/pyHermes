@@ -1,0 +1,45 @@
+{#
+  NESTED COLUMNS — a split inside a cell (#263).
+
+  columns.html's mechanism at the cell's width rather than the frame's: an MSO
+  ghost table for the Word engine, and inline tables everyone else lays out side
+  by side and the @media block stacks, by the same .stack-column class. No title,
+  band or padding of its own; those are the section's. The wrapping cell zeroes
+  font-size and line-height for columns.html's reason: the newline between two
+  inline tables renders as a space, and the widths already sum to the cell.
+  Every column but the last pads its foot by block_gap, so the stacked columns do
+  not touch on a phone; on a desktop that space falls under the row, unseen.
+
+  Context: columns — each a width and rendered content; within — the cell's width.
+#}
+<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
+  <tr>
+    <td style="padding:0; font-size:0; line-height:0;">
+    <!--[if mso]>
+    <table role="presentation" width="{{ within }}" border="0" cellpadding="0" cellspacing="0" style="width:{{ within }}px;">
+      <tr>
+        <td width="{{ columns[0].width }}" valign="top" style="width:{{ columns[0].width }}px; padding:0;">
+    <![endif]-->
+{% for col in columns %}
+    <table role="presentation" width="{{ col.width }}" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:{{ col.width }}px;{% if not loop.last %} margin-right:{{ size.space.gutter }}px;{% endif %}">
+      <tr>
+        <td style="padding:{% if loop.last %}0{% else %}0 0 {{ size.space.block_gap }}px 0{% endif %}; font-family: {{ font.label }}; font-size:{{ size.type.body }}px; color:{{ theme.text.primary }}; line-height:{{ size.type.body_line | percent }};">
+          {{ col.content }}
+        </td>
+      </tr>
+    </table>
+{% if not loop.last %}
+    <!--[if mso]>
+        </td>
+        <td width="{{ columns[loop.index].width }}" valign="top" style="width:{{ columns[loop.index].width }}px; padding:0;">
+    <![endif]-->
+{% endif %}
+{% endfor %}
+    <!--[if mso]>
+        </td>
+      </tr>
+    </table>
+    <![endif]-->
+    </td>
+  </tr>
+</table>

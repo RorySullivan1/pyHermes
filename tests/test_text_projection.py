@@ -31,7 +31,7 @@ from pyhermes.builder import (
     ThreeColumn,
     TwoColumn,
 )
-from pyhermes.builder.components import Component
+from pyhermes.builder.components import Component, descendants
 from pyhermes.builder.engine import TemplateEngine
 from pyhermes.builder.models import Card, FooterLink, LinkRow, NumberedItem, TableRow
 from qa.fixtures import DEPRECATED_COMPONENTS, all_fixtures, kitchen_sink
@@ -49,7 +49,8 @@ def _public_components() -> list[type[Component]]:
 
 
 def _components_in(email) -> list[Component]:
-    return [c for section in email._sections for c in section.components()]
+    """Every component, nested ones included (#261)."""
+    return descendants([c for section in email._sections for c in section.components()])
 
 
 class TestEveryComponentHasAProjection:
