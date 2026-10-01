@@ -46,3 +46,9 @@ python examples/<example-name>/<example-name>.py
 
 The script rebuilds its `.html` output in place. Re-run it after changing the
 script (or the builder) and diff the HTML to see what moved.
+
+`tests/test_examples.py` renders every example and compares it to the committed
+`.html`, so a change to the builder that moves an example fails the suite until
+the example is regenerated. The failure names the line that moved and the
+command to run. The PDFs are not compared, because their bytes depend on the
+fonts of the machine that printed them; regenerate one when its HTML changes.

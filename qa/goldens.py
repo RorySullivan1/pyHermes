@@ -186,12 +186,23 @@ def _compare(name: str, artifact: str, path: Path, actual: str) -> GoldenMismatc
 
 
 def _report(name: str, artifact: str, path: Path, expected: str, actual: str) -> str:
+    """A golden's mismatch report, ending with how to regenerate a golden."""
+    remedy = (
+        f"If this change is intended, regenerate with `pytest {UPDATE_FLAG}` and "
+        "commit the diff — that diff is the claim that it was intended."
+    )
+    return difference_report(name, artifact, path, expected, actual, remedy)
+
+
+def difference_report(
+    name: str, artifact: str, path: Path, expected: str, actual: str, remedy: str
+) -> str:
     """
-    Locate the first divergence and describe it.
+    Locate the first divergence between a committed file and a fresh render, and describe it.
 
     "Bytes differ" on a 90 KB document costs the next reader an hour, so the
-    report names the fixture, the line, the byte offset, and shows the two
-    versions of the line that moved.
+    report names the file, the line, the byte offset, shows the two versions
+    of the line that moved, and ends with ``remedy``.
     """
     line_no, offset = _first_difference(expected, actual)
     expected_lines = expected.splitlines()
@@ -199,8 +210,8 @@ def _report(name: str, artifact: str, path: Path, expected: str, actual: str) ->
 
     context = expected_lines[max(0, line_no - 1 - _CONTEXT_LINES) : line_no - 1]
     body = [
-        f"{name}: {artifact} differs from its golden.",
-        f"  golden: {_display(path)}",
+        f"{name}: {artifact} differs from its committed copy.",
+        f"  committed: {_display(path)}",
         f"  first divergence at line {line_no}, byte offset {offset}",
         f"  ({len(expected.encode('utf-8'))} bytes expected, {len(actual.encode('utf-8'))} actual)",
     ]
@@ -210,8 +221,7 @@ def _report(name: str, artifact: str, path: Path, expected: str, actual: str) ->
     body += [
         f"  - expected {line_no:>6} | {_elide(_line_at(expected_lines, line_no))}",
         f"  + actual   {line_no:>6} | {_elide(_line_at(actual_lines, line_no))}",
-        f"  If this change is intended, regenerate with `pytest {UPDATE_FLAG}` and "
-        "commit the diff — that diff is the claim that it was intended.",
+        f"  {remedy}",
     ]
     return "\n".join(body)
 
@@ -258,6 +268,7 @@ def _display(path: Path) -> str:
 
 __all__ = [
     "GOLDEN_DIR",
+    "difference_report",
     "UPDATE_FLAG",
     "GoldenMismatch",
     "artifacts",

@@ -937,22 +937,38 @@ size threshold raises a `SizeWarning`, and an image short of its print resolutio
 ## Development
 
 ```bash
-pytest                                    # 714 tests: validation, error paths, size limits
+pytest                                    # the unit suite: validation, error paths, size limits
 ruff check . && ruff format --check .
 python -m mypy                            # config in pyproject: files = ["pyhermes", "qa"]
 ```
 
-CI runs all four on every pull request (and on pushes to `main`), across Python 3.11 and
-3.13, plus two more jobs: one builds the wheel and renders an email from a clean venv
-outside the source tree — templates ship inside the package, and that job is what keeps
-non-editable installs working — and one renders the fixture gallery through headless
-Chromium and uploads the PNGs, so a visual change is reviewable from the pull request.
+CI runs these on every pull request and on pushes to `main`, in six jobs:
 
-`qa/fixtures/` is the gallery — `minimal`, `kitchen_sink` and `image_matrix`, each a
-deterministic email built in code. The suite renders all three, checks that every `cid:`
-reference has a manifest entry, that a second build is byte-identical, and that each still
-matches its golden. To look at one, use the `preview` command below rather than a scratch
-script.
+- `check` runs the suite, ruff and mypy on Python 3.11, 3.12, 3.13 and 3.14, with no extras
+  installed, so each extra's tests skip there.
+- `screenshots` renders the email gallery through headless Chromium and uploads the PNGs, so
+  a visual change is reviewable from the pull request.
+- `pdf` prints the paged and folded galleries through WeasyPrint and photographs each sheet.
+- `data` runs the DataFrame, chart and equation adapters, on Python 3.11 and 3.13.
+- `all-extras` installs every extra and fails on any test that skips for want of one.
+- `wheel` builds the wheel and the sdist and renders an email from each in a clean venv
+  outside the source tree. Templates ship inside the package, and this job is what keeps
+  non-editable installs working.
+
+`qa/fixtures/` holds three galleries, each built in code and deterministic:
+
+- `all_fixtures()`, the email gallery. `minimal` and `kitchen_sink` are its ends, and each
+  other fixture pins one choice (a theme, a density, a region variant) or one family of
+  properties (tables, alignment, composition, surfaces).
+- `all_paged_fixtures()`, documents on sheets: A4, US Letter and 16:9 layouts, long tables
+  that cross sheets, equations and a dense two-sheet monitor.
+- `all_brochure_fixtures()`, a folded tri-fold.
+
+The suite renders every fixture, checks that every `cid:` reference has a manifest entry,
+that a second build is byte-identical, and that each still matches its golden. The examples
+under `examples/` are held to the same bar: a test renders each one and fails, naming the
+command that regenerates it, when its committed `.html` has drifted. To look at a fixture,
+use the `preview` command below rather than a scratch script.
 
 ### Golden snapshots
 
@@ -1076,7 +1092,8 @@ pyhermes/
 ├── outlook/      Outlook send adapter over Microsoft Graph, and drafts in classic Outlook
 ├── check/        the portability check and `python -m pyhermes.check`
 ├── pdf/          the PDF exporter, on the adapters' contract — no network; profiles, attachments
-└── data/         DataFrame -> table and Figure -> chart, each an optional extra
+├── data/         DataFrame -> table and Figure -> chart, each an optional extra
+└── math/         LaTeX -> equation image, the optional [math] extra
 qa/               the fixture galleries, goldens, screenshots, preview CLI
 tests/            pytest suite
 ```
