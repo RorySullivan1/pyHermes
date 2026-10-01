@@ -186,7 +186,8 @@ than left to CSS because `break-before` is inert in a mail client and so would *
 harmless — while the wrapper element around it is not. The break lands on a table `tr`:
 containers emit `tr` blocks, and CSS break properties do not apply to a `td`.
 
-**A page that opens the body drops its leading break**, in `PagedDocument._body_context`. The
+**A page that opens the body drops its leading break**, in `PagedDocument._body_sections`
+(moved from `_body_context` by #259, so the size report's per-section render matches). The
 body always starts a sheet, whether the first or the one after a cover or contents sheet. But
 the running boxes' two seed leaves sit ahead of the body table, so a forced break there opened
 a blank sheet whenever no contents sheet came first. The factsheet found it: its first sheet

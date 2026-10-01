@@ -25,9 +25,17 @@ class ValidationError(EmailBuilderError):
 
 
 class SizeError(EmailBuilderError):
-    """Raised when the rendered email exceeds the size limit."""
+    """
+    Raised when the rendered email exceeds the size limit.
 
-    pass
+    ``html`` is the document that was refused, when one was composed, so a
+    checker can say where the bytes went rather than only that there are
+    too many (#259).
+    """
+
+    def __init__(self, message: str, html: str | None = None) -> None:
+        super().__init__(message)
+        self.html = html
 
 
 class SizeWarning(UserWarning):

@@ -21,8 +21,8 @@ from collections.abc import Callable
 from pathlib import Path
 
 from pyhermes.builder.document import Document
-from pyhermes.builder.exceptions import EmailBuilderError
-from pyhermes.check import Severity, format_findings, lint_document
+from pyhermes.builder.exceptions import EmailBuilderError, SizeError
+from pyhermes.check import Severity, format_findings, lint_html, render_for_check
 from pyhermes.check.target import TargetError, as_document, load_target
 from pyhermes.pdf import PdfError
 
@@ -143,8 +143,10 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         name, email = resolve(args.target)
-        html = email.render()
         text = email.text()
+        # With --lint an email over its limit is still measured, so the size
+        # breakdown says what to cut (#259); the lint error sets the exit code.
+        html = render_for_check(email) if args.lint else email.render()
     except PreviewError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return EXIT_BUILD_FAILED
@@ -152,6 +154,8 @@ def main(argv: list[str] | None = None) -> int:
         # The builder's own message names the field or the limit. Printing it
         # bare beats a traceback wall for what is nearly always a data mistake.
         print(f"{type(exc).__name__}: {exc}", file=sys.stderr)
+        if isinstance(exc, SizeError):
+            print("Run with --lint to see which sections are heaviest.", file=sys.stderr)
         return EXIT_BUILD_FAILED
 
     args.out.mkdir(parents=True, exist_ok=True)
@@ -171,7 +175,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.lint:
         # Judged by its own medium's rules since #165: an email answers to
         # the ten about mail clients, a paged document to the six about a page.
-        findings = lint_document(email)
+        findings = lint_html(html, email.medium.name, email.rendered_sections())
         print(format_findings(findings))
         if any(finding.severity is Severity.ERROR for finding in findings):
             exit_code = EXIT_LINT_ERRORS

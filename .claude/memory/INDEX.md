@@ -7,22 +7,14 @@
   `.claude/rules/media.md`; do not restate it here.
 - **Shipped**: #157, #153, #169, #170, #171, #172, #193 (PRs #167–#203); #201, #150, #202 (PRs #204–#206);
   #209 (PR #222); #217 (PR #234); #221 (PR #235); #238 (PR #253); #237, #255, #239 (PRs #254–#257); manual
-  + #258 (PR #260); #261 + #258's fix (PR #283); #265 (PR #284); #277 (PR #285); #282 (PR #286). **#273 implemented on the branch.**
+  + #258 (PR #260); #261 + #258's fix (PR #283); #265 (PR #284); #277 (PR #285); #282 (PR #286); #273 (PR #287); #270
+  (PR #289). **#259 implemented on the branch.** #288 is the human Outlook-desktop check.
   Stubs #218–#220 are still undefined; each is defined in place with the `epic` skill, as #217 was.
 - The prose budget is live; the baseline is 44 and may only shrink.
 
 ## Decisions        (append-only; supersede, never delete)
 - Older entries, and epic #157's, are in sessions/ARCHIVE-2026.md.
 
-- [2026-09-23] **A panel is a fixed box that clips, and the clip is made loud by the print
-  engine.** Table cells ran a side onto five sheets; a sentinel read off `page.anchors` names an
-  overflowing face — sessions/2026-09-23-brochure-medium.md
-
-- [2026-09-23] **A screen PDF is a profile, not a medium; `SCREEN` stays untagged.** WeasyPrint 70
-  tags layout tables as `/Table` and ignores `role` (#202) — sessions/2026-09-23-digital-pdf.md
-
-- [2026-09-23] **An image's CSS width is a cap on 100%, never a fixed px.** A px width is WeasyPrint's
-  min-content, so a 600px chart in a half column widened the frame and added a sheet — `media.md` (#201)
 - [2026-09-24] **A page opening the body drops its leading break.** The seed leaves ahead of the body
   table made it open a blank sheet. `add_page` is paged-only shorthand; the `Page` node stays — `media.md`
 
@@ -48,7 +40,7 @@
   release shipped it. Checks read the built wheel and sdist, never the tree — `working-in-the-code.md`
 
 ## Threads          (open items; remove when closed)
-- **`epic-autoclose` has failed every run since 2026-09-28** (logs 404 here); close an epic by hand.
+- **`epic-autoclose` works again**: it closed #273 on 2026-10-01. Still confirm each epic closed.
 - **In this container, PDF byte-determinism tests flake** (no HarfBuzz-Subset), and screenshot
   tests skip unless `PYHERMES_CHROMIUM=/opt/pw-browsers/chromium-1194/chrome-linux/chrome`.
 - **Every issue or PR body is written without angle brackets** — GitHub's sanitizer has
@@ -75,8 +67,12 @@
   data. Desktop Outlook is drafts only, never send** — `qa-harness.md`, `delivery.md` (#277)
 - [2026-10-01] **An oversize-picture threshold must clear the package's own deliberate density: equations at
   4x, print at 3.125x. So 4.5, not 3** — `data-layer.md`, `config.md` (#276)
+- [2026-10-01] **The size report attributes bytes from the section tree, never new comments; `SizeError`
+  carries the refused HTML so the check measures over the limit** — `qa-harness.md` (#259)
 
 ## Log              (append-only pointers)
 - Older entries, and epic #157's, are in sessions/ARCHIVE-2026.md.
 - [2026-10-01] data-to-email — **#273 implemented** (#274–#276): `Card.from_number`, `chart_style`, the
   oversize-picture `SizeWarning` — sessions/2026-10-01-data-to-email.md
+- [2026-10-01] size-by-section — **#259 implemented**: per-section size report, check and preview report
+  over 102 KB — sessions/2026-10-01-size-by-section.md

@@ -1020,8 +1020,10 @@ print(format_findings(check(email)))
 images are its default state), `no-external-css`, `outlook-unsupported-css`,
 `outlook-line-height` (Outlook Classic ignores a unitless `line-height`),
 `outlook-transparent-background`, `empty-url`, and `size-budget` — which reports the 90/102
-KB thresholds **and attributes the bytes to sections**, so a too-large email says what to cut
-rather than only how much.
+KB thresholds **and attributes the bytes to each body section**, by title and position,
+heaviest first, so a too-large email says what to cut rather than only how much. It reports
+on an email over 102 KB too: `python -m pyhermes.check` and `qa.preview --lint` measure the
+markup the size check refused, print the breakdown and exit 1.
 
 The suite lints every gallery fixture. Each rule carries a citation, and the linter parses
 the HTML rather than grepping it — including the conditional comments, so an Outlook-specific

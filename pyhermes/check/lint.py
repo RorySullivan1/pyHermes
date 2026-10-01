@@ -23,6 +23,7 @@ from html.parser import HTMLParser
 
 from pyhermes.builder import Email
 from pyhermes.builder.document import Document
+from pyhermes.builder.exceptions import SizeError
 from pyhermes.config import get_config
 
 __all__ = [
@@ -39,6 +40,7 @@ __all__ = [
     "lint_document",
     "lint_email",
     "lint_html",
+    "render_for_check",
     "rules_for",
     "size_report",
 ]
@@ -757,7 +759,7 @@ class SizeReport:
         return "\n".join(lines)
 
 
-def size_report(html: str) -> SizeReport:
+def size_report(html: str, sections: list[tuple[str, str]] | None = None) -> SizeReport:
     """
     Attribute the rendered bytes to the section markers that delimit them.
 
@@ -769,27 +771,53 @@ def size_report(html: str) -> SizeReport:
     Regions run from one ``<!-- marker -->`` to the next; bytes before the
     first marker are attributed to ``"(document head)"``. ``<!--[if ...]>``
     conditional comments are not markers.
+
+    ``sections`` is ``(label, markup)`` per body section, as
+    :meth:`Document.rendered_sections` gives it. Each one found in ``html``
+    becomes its own region, and its bytes leave the marker region around it,
+    so the regions still sum to the total. One not found is left where it was.
     """
-    markers = list(_MARKER.finditer(html))
-    encoded_length = len(html.encode("utf-8"))
-    if not markers:
-        return SizeReport(total_bytes=encoded_length, regions=[])
+    spans = _section_spans(html, sections or [])
+    markers = [m for m in _MARKER.finditer(html) if not _inside(m.start(), spans)]
+    bounds = [(m.start(), m[1]) for m in markers]
+    if markers and markers[0].start():
+        bounds.insert(0, (0, "(document head)"))
+    elif spans and not markers:
+        # A paged document carries no markers; what its sections leave is one region.
+        bounds = [(0, "(rest of document)")]
+    regions: list[RegionSize] = []
+    if bounds:
+        for index, (start, name) in enumerate(bounds):
+            end = bounds[index + 1][0] if index + 1 < len(bounds) else len(html)
+            inner = sum(_size(html[a:b]) for a, b, _ in spans if start <= a and b <= end)
+            regions.append(RegionSize(name, _size(html[start:end]) - inner))
+    regions += [RegionSize(label, _size(html[a:b])) for a, b, label in spans]
+    return SizeReport(total_bytes=_size(html), regions=regions)
 
-    regions = []
-    if markers[0].start():
-        regions.append(
-            RegionSize("(document head)", len(html[: markers[0].start()].encode("utf-8")))
-        )
-    for index, marker in enumerate(markers):
-        end = markers[index + 1].start() if index + 1 < len(markers) else len(html)
-        regions.append(RegionSize(marker[1], len(html[marker.start() : end].encode("utf-8"))))
-    return SizeReport(total_bytes=encoded_length, regions=regions)
+
+def _size(text: str) -> int:
+    return len(text.encode("utf-8"))
 
 
-def _budget_findings(html: str) -> list[Finding]:
+def _section_spans(html: str, sections: list[tuple[str, str]]) -> list[tuple[int, int, str]]:
+    """Where each section's markup sits in ``html``, searched in order."""
+    spans, cursor = [], 0
+    for label, markup in sections:
+        start = html.find(markup, cursor) if markup else -1
+        if start >= 0:
+            cursor = start + len(markup)
+            spans.append((start, cursor, label))
+    return spans
+
+
+def _inside(offset: int, spans: list[tuple[int, int, str]]) -> bool:
+    return any(start <= offset < end for start, end, _ in spans)
+
+
+def _budget_findings(html: str, sections: list[tuple[str, str]] | None = None) -> list[Finding]:
     """Warn or fail on the size budget, naming where the bytes went."""
     config = get_config()
-    report = size_report(html)
+    report = size_report(html, sections)
     if report.total_kb > config.size_limit_kb:
         severity, threshold = Severity.ERROR, config.size_limit_kb
     elif report.total_kb > config.size_warn_kb:
@@ -893,7 +921,9 @@ def _print_findings(html: str) -> list[Finding]:
 # ──────────────────────────────────────────────────────────────────────
 
 
-def lint_html(html: str, medium: str = "email") -> list[Finding]:
+def lint_html(
+    html: str, medium: str = "email", sections: list[tuple[str, str]] | None = None
+) -> list[Finding]:
     """
     Lint rendered HTML for the medium named ``medium``.
 
@@ -905,12 +935,19 @@ def lint_html(html: str, medium: str = "email") -> list[Finding]:
 
     Defaults to ``"email"`` so every pre-#165 caller keeps its exact
     behaviour; :func:`lint_document` is what reads the medium off a document.
+    ``sections`` names the body sections in the size breakdown; see
+    :func:`size_report`.
     """
     linter = _Linter()
     linter.feed(html)
     linter.close()
     applicable = rules_for(medium)
-    found = linter.findings + _budget_findings(html) + _paged_findings(html) + _print_findings(html)
+    found = (
+        linter.findings
+        + _budget_findings(html, sections)
+        + _paged_findings(html)
+        + _print_findings(html)
+    )
     return [finding for finding in found if finding.rule_id in applicable]
 
 
@@ -920,9 +957,20 @@ def lint_document(document: Document) -> list[Finding]:
 
     This is the entry point that makes the rule table mean anything: an
     email is judged by the ten rules about mail clients, and a paged document
-    by the six that are true of a page.
+    by the six that are true of a page. A document over its size limit is
+    still linted: the refused markup is what the breakdown is for.
     """
-    return lint_html(document.render(), document.medium.name)
+    return lint_html(render_for_check(document), document.medium.name, document.rendered_sections())
+
+
+def render_for_check(document: Document) -> str:
+    """``document.render()``, or the markup a size constraint refused, so it can be measured."""
+    try:
+        return document.render()
+    except SizeError as exc:
+        if exc.html is None:
+            raise
+        return exc.html
 
 
 def lint_email(email: Email) -> list[Finding]:
@@ -961,6 +1009,7 @@ __all__ = [
     "lint_document",
     "lint_email",
     "lint_html",
+    "render_for_check",
     "rules_for",
     "size_report",
 ]

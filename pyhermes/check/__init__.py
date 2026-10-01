@@ -25,6 +25,7 @@ from .lint import (
     format_findings,
     lint_document,
     lint_html,
+    render_for_check,
     rules_for,
     size_report,
 )
@@ -45,6 +46,7 @@ __all__ = [
     "lint_document",
     "lint_html",
     "load_target",
+    "render_for_check",
     "rules_for",
     "size_report",
 ]
