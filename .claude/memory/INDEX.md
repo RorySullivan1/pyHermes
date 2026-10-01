@@ -9,8 +9,8 @@
   #209 (PR #222); #217 (PR #234); #221 (PR #235); #238 (PR #253); #237, #255, #239 (PRs #254–#257); manual
   + #258 (PR #260); #261 + #258's fix (PR #283); #265 (PR #284); #277 (PR #285); #282 (PR #286); #273 (PR #287); #270
   (PR #289); #259 (PR #292); #281 (PR #293). **#272 implemented on the branch.** #288 is the human Outlook-desktop check.
-  Stubs #218–#220 were built out on 2026-10-01 (#296–#312). **The exporter review recommends scrapping
-  #219 and #300 and keeping #218 as the deck medium**; the owner has not yet decided.
+  Stubs #218–#220 were built out on 2026-10-01 (#296–#312); the same day **#219 (DOCX) and #300 (PPTX)
+  were closed as not planned** and #218 became the deck medium alone (#296–#299, #301). #220 is unchanged.
 - The prose budget is live; the baseline is 44 and may only shrink.
 
 ## Decisions        (append-only; supersede, never delete)
@@ -39,9 +39,10 @@
 - [2026-09-29] **The import root is `pyhermes` alone**; the `svc` shim was removed (#255) before any
   release shipped it. Checks read the built wheel and sdist, never the tree — `working-in-the-code.md`
 
+- [2026-10-01] **pyHermes grows by media, not by portability.** A DOCX/PPTX walk is a second render path
+  over 46 classes, and a chart is PNG bytes by the time it is in the tree; #219 and #300 closed — `media.md`
+
 ## Threads          (open items; remove when closed)
-- **Epics #218/#219 await a build-or-scrap call.** A DOCX/PPTX walk is a second render path over 46
-  classes, and a chart is PNG bytes by the time it is in the tree — sessions/2026-10-01-1707-exporter-epics-review.md
 - **`epic-autoclose` works again**: it closed #273 on 2026-10-01. Still confirm each epic closed.
 - **In this container, PDF byte-determinism tests flake** (no HarfBuzz-Subset), and screenshot
   tests skip unless `PYHERMES_CHROMIUM=/opt/pw-browsers/chromium-1194/chrome-linux/chrome`.
@@ -86,5 +87,5 @@
   sessions/2026-10-01-customise-the-layout.md
 - [2026-10-01] prose-styles — **#280 implemented**: the `prose` filter, three tokens, the h1/h2
   refusal, manual page 9's tag table — sessions/2026-10-01-prose-styles.md
-- [2026-10-01] exporter-epics-review — **#218/#219 reviewed, scrap recommended** for the DOCX and PPTX walks;
-  keep the deck medium. Measured: 46 classes, 1,130 lines for the text projection alone — sessions/2026-10-01-1707-exporter-epics-review.md
+- [2026-10-01] exporter-epics-review — **#219 and #300 closed as not planned, #218 rescoped to the deck medium**;
+  decision in `media.md`, README line reworded — sessions/2026-10-01-1707-exporter-epics-review.md

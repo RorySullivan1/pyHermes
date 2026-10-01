@@ -46,13 +46,24 @@ there. Both epics were built out earlier today against `main` @ `cf2cd5b` (#296�
 - `issue_read get_sub_issues` on a six-child epic exceeds the tool's output cap; read the saved JSON
   with python instead.
 
+## The owner's call, same session: scrap, and refocus the epics on media
+- **#219 closed as not planned** with one reasoning comment carrying the table above; #302–#307
+  closed as not planned (no comment each; the epic's comment is the record).
+- **#300 closed as not planned, with a one-line comment, and removed from #218's sub-issues** so
+  `epic-autoclose` will not read it as a completed child. #218 retitled "a slide deck medium, one
+  slide to a sheet, with dividers and speaker notes"; body rewritten without the PPTX outcome,
+  acceptance, risk and non-goal, and with a "Rescoped on 2026-10-01" paragraph. #296, #299 and
+  #301 lost their PPTX lines. Bodies were re-sent without any angle bracket: the `sub` footer became
+  plain text and `deck/NAME.notes.txt` replaced the bracketed placeholder.
+- **The decision lives in `media.md`** ("There is no DOCX or PPTX exporter, by decision"), after the
+  digital-PDF paragraph; the README's scope line links #219 instead of promising "a new epic on the
+  same contract". #220 was untouched: it is apparatus, already medium-shaped.
+
 ## State at end
-- Proposal on the table, awaiting the owner: close #219 and #302–#307 as not planned with one
-  reasoning comment on the epic; rescope #218 to the deck medium (drop #300, strip the PPTX line
-  from #299, retitle); record the decision in `media.md` beside the exporter contract and reword
-  README's "each is a new epic on the same contract"; keep one bounded door, a `[docx]` adapter from
-  one `DataTable` to one Word table, as a task filed only when someone asks.
+- Open epics: #218 (deck medium, #296–#299, #301) and #220 (long-form apparatus, #308–#312). The
+  rule they follow: pyHermes grows by media, not by portability.
 
 ## Open threads
-- If the owner says build anyway: #300 and #302 each name "whichever lands first sets the projection
-  contract", so the first PR must define the per-class registry both exporters share.
+- The one door: a `[docx]` adapter from one `DataTable` to one Word table, filed as a task only when
+  someone asks. A chart *model* in the tree is what would reopen the exporter question, and it is a
+  second product.

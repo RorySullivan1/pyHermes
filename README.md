@@ -1074,8 +1074,9 @@ to PDF, and attaching that PDF to an email.
 **Out, deliberately:** OAuth flows (the caller's, by design); campaign management — no
 scheduling, recipient lists, batching or send-time analytics; open tracking and link
 rewriting. On the paged side: no index, bibliography or list of figures, no multi-level
-numbering, and no DOCX or PPTX exporter — each is a new epic on the same contract rather
-than a gap. On the folded side: no CMYK, ICC profile or PDF/X, no booklet imposition, and no
+numbering, and no DOCX or PPTX exporter — the library grows by media, not by portability,
+and an exporter that walks the tree is a second render path (the decision is on
+[#219](https://github.com/RorySullivan1/pyHermes/issues/219)). On the folded side: no CMYK, ICC profile or PDF/X, no booklet imposition, and no
 dielines or die-cut, foil or stock metadata.
 
 ## Layout

@@ -376,3 +376,31 @@ the fixed-width version in a half column.
 **The digital PDF (#193) is not a medium.** It is a `PdfProfile` on this exporter plus an
 attachment path in `pyhermes/delivery`, and `digital-pdf.md` has the decision, the profiles, the size
 budget and the PDF/UA measurement.
+
+## There is no DOCX or PPTX exporter, by decision (2026-10-01)
+
+Epics #218 and #219 proposed a Word and a PowerPoint export, each walking the section tree with
+a projection per component. Both exports were closed as not planned, and the rule they settled
+is **pyHermes grows by media, not by portability**: a new destination is a medium on the one HTML
+render path, as the paged document and the brochure are. An exporter joins the contract above
+only if it rides that path, as the PDF does.
+
+Why the walk was refused, measured on `main` at `cf2cd5b`:
+
+- **It is a second render path, not an exporter.** The PDF exporter is 652 lines with no
+  per-component code because WeasyPrint consumes the HTML. Word and PowerPoint cannot start from
+  it, so each walk needed a projection for 46 public classes, the three axes re-bound as styles
+  or a master, the apparatus re-implemented (python-docx has no footnote API), and a fourth golden
+  artefact with its own read-back harness. The plain-text projection, the one non-HTML path, cost
+  1,130 lines against the simplest possible target. A completeness test would have made that a
+  permanent tax: three projections per future component instead of one.
+- **The fidelity ceiling is low, and the chart is the general case.** A chart enters the tree as
+  PNG bytes from a drawn Figure (`chart_from_figure`), so the data is gone before any exporter
+  sees it; a native chart needs a chart model the data layer deliberately lacks. Equations stay
+  pictures, a `FontStack` collapses to one face, heat and bars become shading. What stays editable
+  is titles, prose and tables, and a pitchbook is mostly charts.
+
+**The one door left open:** if someone must edit one table in Word, the shape is an adapter at
+the edge, `table_from_frame` in reverse, one function from a `DataTable` to a Word table behind a
+`[docx]` extra, with no walk, no styles and no apparatus. A task, filed when asked for. What
+would reopen the decision itself is a chart *model* in the tree, which is a second product.
