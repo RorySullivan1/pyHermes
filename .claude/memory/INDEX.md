@@ -9,7 +9,8 @@
   #209 (PR #222); #217 (PR #234); #221 (PR #235); #238 (PR #253); #237, #255, #239 (PRs #254–#257); manual
   + #258 (PR #260); #261 + #258's fix (PR #283); #265 (PR #284); #277 (PR #285); #282 (PR #286); #273 (PR #287); #270
   (PR #289); #259 (PR #292); #281 (PR #293). **#272 implemented on the branch.** #288 is the human Outlook-desktop check.
-  Stubs #218–#220 are still undefined; each is defined in place with the `epic` skill, as #217 was.
+  Stubs #218–#220 were built out on 2026-10-01 (#296–#312). **The exporter review recommends scrapping
+  #219 and #300 and keeping #218 as the deck medium**; the owner has not yet decided.
 - The prose budget is live; the baseline is 44 and may only shrink.
 
 ## Decisions        (append-only; supersede, never delete)
@@ -33,10 +34,14 @@
 - [2026-09-28] **A config travels with the work: explicit, then context, then default.** A `ContextVar`
   over `set_config`; a new thread starts from the default. Soft limits are warnings — `config.md`
 
+- [2026-09-28] **A test gated on an extra must run in some CI job, and a job list by hand is how three
+  never did.** One all-extras job that fails on a skip its extra should lift — #239, sessions/2026-09-28-2015-package-review-issues.md
 - [2026-09-29] **The import root is `pyhermes` alone**; the `svc` shim was removed (#255) before any
   release shipped it. Checks read the built wheel and sdist, never the tree — `working-in-the-code.md`
 
 ## Threads          (open items; remove when closed)
+- **Epics #218/#219 await a build-or-scrap call.** A DOCX/PPTX walk is a second render path over 46
+  classes, and a chart is PNG bytes by the time it is in the tree — sessions/2026-10-01-1707-exporter-epics-review.md
 - **`epic-autoclose` works again**: it closed #273 on 2026-10-01. Still confirm each epic closed.
 - **In this container, PDF byte-determinism tests flake** (no HarfBuzz-Subset), and screenshot
   tests skip unless `PYHERMES_CHROMIUM=/opt/pw-browsers/chromium-1194/chrome-linux/chrome`.
@@ -73,9 +78,13 @@
 
 ## Log              (append-only pointers)
 - Older entries, and epic #157's, are in sessions/ARCHIVE-2026.md.
+- [2026-09-28] package-review-issues — **the package review filed**: epics #237, #238, task #239, bugs #240–#242.
+  Three tests never ran in CI — sessions/2026-09-28-2015-package-review-issues.md
 - [2026-10-01] examples-drift — **#281 implemented**: README facts, three examples regenerated, the
   committed-output test — sessions/2026-10-01-examples-drift.md
 - [2026-10-01] customise-the-layout — **#272 implemented**: manual page 9, every example run —
   sessions/2026-10-01-customise-the-layout.md
 - [2026-10-01] prose-styles — **#280 implemented**: the `prose` filter, three tokens, the h1/h2
   refusal, manual page 9's tag table — sessions/2026-10-01-prose-styles.md
+- [2026-10-01] exporter-epics-review — **#218/#219 reviewed, scrap recommended** for the DOCX and PPTX walks;
+  keep the deck medium. Measured: 46 classes, 1,130 lines for the text projection alone — sessions/2026-10-01-1707-exporter-epics-review.md
