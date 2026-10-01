@@ -1009,4 +1009,4 @@ indentation lives in the partial, not on the include line. `Divider` is the acce
 shape: a bordered cell with zero type, one pixel tall, rather than an `hr`.
 
 `surfaced_layout` is the gallery fixture for all of it, and `tests/test_surfaces.py` holds the
-claims. In stacked columns on a phone, a callout shrinks to its content: that is #282.
+claims. In stacked columns on a phone a callout fills its column, since #282.

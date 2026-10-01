@@ -27,7 +27,10 @@
     img { -ms-interpolation-mode:bicubic; border:0; outline:none; text-decoration:none; }
     @media only screen and (max-width:{{ size.frame.mobile_breakpoint }}px) {
       .email-container { width:100% !important; }
-      .stack-column { display:block !important; width:100% !important; }
+      {# `table`, not `block` (#282): as a block, the column's cells sit in an anonymous table that
+         shrink-wraps, #129's failure at the breakpoint. Measured at 375px: 98 of the gallery's
+         111 column cells were narrower than their column with `block`, none with `table`. #}
+      .stack-column { display:table !important; width:100% !important; }
       .mobile-pad { padding:{{ size.space.mobile_pad_y }}px {{ size.space.mobile_pad_x }}px !important; }
       .mobile-title { font-size:{{ size.type.title_mobile }}px !important; }
       /* box-sizing is what keeps the padding *inside* the 100% width. Without it

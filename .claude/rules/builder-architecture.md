@@ -898,7 +898,11 @@ none of them. It is sized from the cell it sits in:
 - **`test_spacing.FALLBACK_READS`** records that a lone `Columns` reads `pad_x` through the
   frame fallback. Declaring `pad_x` would mislead, since in a cell the token has no effect.
 
-**A pre-existing limit, measured here and filed separately:** at the phone breakpoint a split's
-column becomes a block, and its cell then shrinks to its content. So a table in a stacked column
-is only as wide as its figures. It is older than this epic, and the fix changes the `@media` block
-every email carries (#282).
+**A pre-existing limit, measured here and fixed by #282:** at the phone breakpoint a split's
+column became a block, and its cell then shrank to its content, so a table in a stacked column
+was only as wide as its figures. The `@media` rule now says `display:table`, the breakpoint's
+`inline-table`. Measured at 375px: 98 of the gallery's 111 column cells were narrower than their
+column, and none are. Every email golden moved by that one line, and
+`TestAStackedColumnFillsItsWidth` in `test_screenshots.py` fails against the old rule. On a
+phone a split's column still keeps the section's inset inside its own mobile padding; that
+indent is older and separate.
