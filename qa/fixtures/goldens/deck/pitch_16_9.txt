@@ -1,0 +1,75 @@
+Rates, Projected
+================
+
+A quarterly view of the gilt curve
+Rates Strategy · Quarter ending 30 September
+
+
+Agenda
+------
+
+Two parts, five slides
+
+Where rates stand
+The quarter in four numbers
+Curve by tenor
+The term premium
+What we would do
+Two positions
+
+
+Where rates stand
+-----------------
+
+Levels, curve and premium
+
+
+The quarter in four numbers
+---------------------------
+
+10Y gilt: 4.21% (+18 bps)
+2s10s: 38 bps (+9 bps)
+Breakeven: 3.42% (-4 bps)
+Term premium: 61 bps (+12 bps)
+
+
+Curve by tenor
+--------------
+
+Tenor  Yield  Change (bps)  Weight
+-----  -----  ------------  ------
+2Y     3.83%            +9     18%
+5Y     3.97%           +12     27%
+10Y    4.21%           +18     35%
+30Y    4.78%           +21     20%
+
+Hermes Research, as at quarter end
+
+
+The term premium
+----------------
+
+[Term premium, ten years]
+
+Hermes Research
+
+The premium rose for a third quarter, and now explains most of the move at the
+long end.
+
+
+What we would do
+----------------
+
+
+Two positions
+-------------
+
+Steepener. Own 30Y against 5Y, sized to the premium's last move.
+
+Linker hedge. Hold breakevens through the next two prints.
+
+
+Important information
+---------------------
+
+For illustrative purposes. Not investment advice.

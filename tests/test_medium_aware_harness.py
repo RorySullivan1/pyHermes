@@ -13,6 +13,7 @@ import pytest
 
 from pyhermes.brochure import BROCHURE_MEDIUM
 from pyhermes.builder.medium import DEFAULT_MEDIUM
+from pyhermes.deck import DECK_MEDIUM
 from pyhermes.document import PAGED_MEDIUM, PagedDocument
 from pyhermes.email import EMAIL_MEDIUM
 from qa.fixtures import all_fixtures, all_paged_fixtures
@@ -20,7 +21,13 @@ from qa.goldens import GOLDEN_DIR, artifacts, html_path, medium_dir
 from qa.lint import RULE_MEDIA, SOURCES, Severity, lint_document, lint_email, lint_html, rules_for
 from qa.screenshots import PDF_PX_SCALE, capture_pages, pages_available
 
-SHIPPED_MEDIA = {EMAIL_MEDIUM.name, PAGED_MEDIUM.name, BROCHURE_MEDIUM.name, DEFAULT_MEDIUM.name}
+SHIPPED_MEDIA = {
+    EMAIL_MEDIUM.name,
+    PAGED_MEDIUM.name,
+    BROCHURE_MEDIUM.name,
+    DECK_MEDIUM.name,
+    DEFAULT_MEDIUM.name,
+}
 
 requires_pdf = pytest.mark.skipif(
     not pages_available(),
@@ -50,7 +57,8 @@ class TestEveryRuleSaysWhereItApplies:
         # table-header-tier. Narrowing the set is what this guards.
         paged_only = {"page-size-declared", "paged-table-width", "table-structure"}
         print_only = {"print-marks", "rgb-only"}
-        assert rules_for("email") == set(SOURCES) - paged_only - print_only
+        deck_only = {"slide-overflow"}
+        assert rules_for("email") == set(SOURCES) - paged_only - print_only - deck_only
         assert len(rules_for("email")) == 12
 
     def test_the_brochure_is_judged_as_print(self):

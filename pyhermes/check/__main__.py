@@ -14,7 +14,7 @@ from pathlib import Path
 
 from pyhermes.builder.exceptions import EmailBuilderError
 
-from .lint import Severity, format_findings, lint_html, render_for_check
+from .lint import Severity, format_findings, layout_findings, lint_html, render_for_check
 from .target import TargetError, load_target
 
 EXIT_OK = 0
@@ -60,6 +60,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"{destination}  ({len(part.encode('utf-8')) / 1024:.1f} KB)")
 
     findings = lint_html(html, document.medium.name, document.rendered_sections())
+    findings += layout_findings(document)
     print(format_findings(findings))
     failed = any(finding.severity is Severity.ERROR for finding in findings)
     return EXIT_LINT_ERRORS if failed else EXIT_OK

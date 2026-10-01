@@ -242,6 +242,7 @@ test (#60). `lint_html(html)` returns `Finding(rule_id, severity, location, mess
 | `vml-fill-empty-src` | error | A `v:fill` with `src=""` inside `[if mso]` (#150) — `empty-url`'s case, in the one place that rule cannot reach |
 | `vml-fill-frame-without-src` | error | A `v:fill` claiming `type="frame"` with no `src` (#150). Outlook paints a broken-image placeholder over the shape rather than falling back to `color`/`opacity` |
 | `size-budget` | warn/error | The 90/102 KB thresholds, **attributing the bytes to each body section and to the section-marker regions** (#259) |
+| `slide-overflow` | error, or warn | A slide whose copy runs past its body, **decks only** (#297). It needs a layout, so `layout_findings(document)` runs it, from `lint_document`, the check and `preview --lint`; without `[pdf]` it is one warning saying the deck was not measured |
 
 Seven decisions worth not re-litigating:
 
@@ -1052,6 +1053,12 @@ A4 to six sheets.
 `test_medium_aware_harness`, `test_apparatus`, `test_brochure_pdf` and `test_examples`. Each
 skips without the extras, so the check job passes them by, and a module missing from that
 line is never run anywhere. `test_apparatus` had been missing since #171.
+
+**A fourth registry**, `all_deck_fixtures()` (#296), holds `pitch_16_9`, for the brochure's
+reason: the paged tests read a cover and running boxes off every fixture. A deck's goldens
+gain a fourth artifact, `goldens/deck/NAME.notes.txt`, the speaker notes, through the same
+`artifacts()` list. `test_deck_pdf` joins the `pdf` job's line, and the job photographs the
+deck one image a sheet. `deck.md` has the medium.
 
 **Two print rules and a severity.** `print-marks` (error) fires when a brochure's `@page`
 lacks `bleed` or `marks`. `rgb-only` is the first `INFO` finding: a fact no edit can change,

@@ -1,0 +1,23 @@
+Slide 2: Agenda
+---------------
+
+Thirty seconds: say what each part answers.
+
+
+Slide 3: Where rates stand
+--------------------------
+
+Pause here.
+
+
+Slide 5: Curve by tenor
+-----------------------
+
+The long end did the work; the front end barely moved.
+
+
+Slide 6: The term premium
+-------------------------
+
+Walk through the term premium first, then the hedge. The sentinel ZEBRANOTES7
+marks what only the presenter reads.

@@ -24,12 +24,9 @@ def overflowing_panels(brochure: Brochure) -> list[str]:
     Raises:
         pyhermes.pdf.BackendMissingError: If WeasyPrint is not installed.
     """
-    from pyhermes.pdf import layout
+    from pyhermes.pdf import anchor_tops
 
-    landed: dict[str, float] = {}
-    for page in layout(brochure).pages:
-        for anchor, position in page.anchors.items():
-            landed.setdefault(anchor, position[1])
+    landed = anchor_tops(brochure)
     overflowing = []
     for box, panel in zip(impose(brochure.fold), brochure.panels, strict=True):
         y = landed.get(f"panel-{box.reader}-end")

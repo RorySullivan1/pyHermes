@@ -58,6 +58,11 @@ def manifest_path(name: str, medium: str = "email") -> Path:
     return medium_dir(medium) / f"{name}.assets.txt"
 
 
+def notes_path(name: str, medium: str = "deck") -> Path:
+    """Where a deck fixture's speaker-notes golden lives (#299)."""
+    return medium_dir(medium) / f"{name}.notes.txt"
+
+
 def text_path(name: str, medium: str = "email") -> Path:
     """Path to a fixture's plain-text golden."""
     return medium_dir(medium) / f"{name}.txt"
@@ -110,14 +115,20 @@ def artifacts(name: str, email: Email) -> list[tuple[str, Path, str]]:
     The single list :func:`check_fixture` and :func:`write_fixture` both walk,
     so checking and regenerating cannot come to disagree about what is pinned
     — which is how a fourth artifact would otherwise be checked but never
-    written, or written but never checked.
+    written, or written but never checked. A deck has one: its speaker
+    notes, a third projection the other two cannot see (#299).
     """
+    from pyhermes.deck import Deck
+
     medium = email.medium.name
-    return [
+    pinned = [
         ("rendered HTML", html_path(name, medium), email.render()),
         ("asset manifest", manifest_path(name, medium), render_manifest(email)),
         ("plain text", text_path(name, medium), email.text()),
     ]
+    if isinstance(email, Deck):
+        pinned.append(("speaker notes", notes_path(name, medium), email.notes()))
+    return pinned
 
 
 def check_fixture(name: str, email: Email) -> list[GoldenMismatch]:
@@ -275,6 +286,7 @@ __all__ = [
     "check_fixture",
     "html_path",
     "medium_dir",
+    "notes_path",
     "manifest_path",
     "render_manifest",
     "text_path",

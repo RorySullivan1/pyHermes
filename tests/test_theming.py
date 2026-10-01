@@ -368,11 +368,12 @@ def _theme_resolving_regions() -> list[type]:
     and visible, rather than by widening an assertion.
     """
     from pyhermes.builder import regions as region_api
+    from pyhermes.deck import regions as deck_regions
     from pyhermes.document import regions as document_regions
 
     return [
         obj
-        for module in (region_api, document_regions)
+        for module in (region_api, document_regions, deck_regions)
         for obj in vars(module).values()
         if isinstance(obj, type)
         and issubclass(obj, region_api.Region)

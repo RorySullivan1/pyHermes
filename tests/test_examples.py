@@ -172,6 +172,17 @@ class TestTheReadmesHeadlinePrograms:
 
     @pytest.mark.skipif(
         not _pdf_available(),
+        reason='the README\'s deck block prints and measures; that is the "[pdf]" extra',
+    )
+    def test_the_deck_example_runs(self):
+        _run(_block_after("## The same content, as slides"), "README: deck")
+
+    def test_the_deck_example_builds_without_the_extra(self):
+        source = _block_after("## The same content, as slides")
+        _run(source.split("save_pdf(deck")[0], "README: deck (no extra)")
+
+    @pytest.mark.skipif(
+        not _pdf_available(),
         reason='the README\'s attachment renders a PDF; that is the "[pdf]" extra',
     )
     def test_the_sent_as_a_pdf_example_runs(self):

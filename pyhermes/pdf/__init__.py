@@ -19,12 +19,13 @@ from .exceptions import (
     ProfileError,
     UnreachableResourceError,
 )
-from .exporter import available, layout, page_count, render_pdf, save_pdf
+from .exporter import anchor_tops, available, layout, page_count, render_pdf, save_pdf
 from .profile import PDF_VARIANTS, PRINT, SCREEN, TAGGED, PdfProfile
 
 __all__ = [
     "BackendError",
     "BackendMissingError",
+    "anchor_tops",
     "available",
     "layout",
     "PdfError",

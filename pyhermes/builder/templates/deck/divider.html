@@ -1,0 +1,16 @@
+{# A divider: the part's title set large on the theme's dark ground, low on the
+   sheet where a slide's body ends, and the footer band, light, so the sheet
+   still says where it sits in the deck. The title is the KPI value's size,
+   the one token sized to be read across a room. Positioned rather than a
+   valign'd cell: WeasyPrint left the cell's copy at the top. #}
+{% from "deck/bands.html" import footer_band with context %}
+<div class="sheet slide divider" data-slide="{{ number }}" style="background-color:{{ theme.palette.header_bg }};">
+  <div class="slide-band" style="bottom:{{ box.footer_height + box.title_height }}px; width:{{ box.width }}px; padding:0 {{ box.inset }}px;">
+    <div style="width:{{ box.inset * 2 }}px; border-top:4px solid {{ theme.palette.accent }}; margin-bottom:{{ size.space.block_gap }}px;"></div>
+    <h2 class="slide-title"{% if section_anchor %} id="{{ section_anchor | escape_html }}"{% endif %} style="margin:0; font-family:{{ font.heading }}; font-size:{{ size.component.kpi_value }}px; line-height:{{ size.type.title_line | percent }}; font-weight:normal; color:{{ theme.text.on_dark }};">{{ section_title | escape_html }}</h2>
+    {% if subtitle %}
+    <p style="margin:{{ size.space.subtitle_gap }}px 0 0; font-family:{{ font.body }}; font-size:{{ size.type.section }}px; line-height:{{ size.type.heading_line | percent }}; color:{{ theme.text.on_dark_secondary }};">{{ subtitle | escape_html }}</p>
+    {% endif %}
+  </div>
+{{ footer_band(box, number, footer_label, dark=true) }}
+</div>

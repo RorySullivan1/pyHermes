@@ -87,7 +87,14 @@ class TestTheCoreNeverImportsTheBackend:
     """
 
     @pytest.mark.parametrize(
-        "package", ["pyhermes/builder", "pyhermes/document", "pyhermes/email", "pyhermes/brochure"]
+        "package",
+        [
+            "pyhermes/builder",
+            "pyhermes/document",
+            "pyhermes/email",
+            "pyhermes/brochure",
+            "pyhermes/deck",
+        ],
     )
     def test_no_module_imports_weasyprint(self, package):
         for path in sorted(pathlib.Path(package).rglob("*.py")):

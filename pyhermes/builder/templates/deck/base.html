@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="{{ language | escape_html }}">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ campaign_name | escape_html }}</title>
+  {# The paged skeleton's document information, line for line (#195). #}
+{% if firm_name %}
+  <meta name="author" content="{{ firm_name | escape_html }}">
+{% endif %}
+{% if campaign_name or department or date_range %}
+  <meta name="description" content="{{ [campaign_name, department, date_range] | select | join(' · ') | escape_html }}">
+{% endif %}
+{% if department or issue_label %}
+  <meta name="keywords" content="{{ [department, issue_label] | select | join(', ') | escape_html }}">
+{% endif %}
+  <style type="text/css">
+    {# One CSS page per sheet, at the slide's size with no margin: every sheet
+       insets its own bands and copy by the page margin, so a page margin would
+       inset them twice, and the title band's ground could not reach the edge. #}
+    @page {
+      size: {{ size.frame.sheet_width }}px {{ size.frame.sheet_height }}px;
+      margin: 0;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: {{ theme.palette.surface }};
+      font-family: {{ font.body }};
+      color: {{ theme.text.primary }};
+      orphans: 2;
+      widows: 2;
+    }
+    table { border-collapse: collapse; }
+    {# The paged skeleton's reason: a print engine does not map a table's
+       width attribute. #}
+    table[width="100%"] { width: 100%; }
+    img { border: 0; }
+
+{% include "document/editorial.html" %}
+
+    {# A sheet is one slide, a fixed box that never carries over (#296). The
+       break goes before every sheet but the first, so no trailing break can
+       open a blank one whichever regions are empty. #}
+    .sheet {
+      position: relative;
+      width: {{ size.frame.sheet_width }}px;
+      height: {{ size.frame.sheet_height }}px;
+      overflow: hidden;
+      box-sizing: border-box;
+    }
+    .sheet + .sheet { break-before: page; page-break-before: always; }
+    .slide-band, .slide-body { position: absolute; left: 0; box-sizing: border-box; }
+    {# Copy past the body's foot is clipped rather than painted over the footer
+       band. The clip is silent in the PDF; pyhermes.deck.overflowing_slides()
+       is what makes it loud. #}
+    .slide-body { overflow: hidden; }
+
+    {# A contents list on a slide prints each entry's sheet, as on paper. The
+       number is the print engine's, and it agrees with the footer band's,
+       which Python counts, because every slide is exactly one sheet. #}
+    .contents-entry a::after {
+      content: leader(".") " " target-counter(attr(href), page);
+      color: {{ theme.text.light }};
+    }
+  </style>
+</head>
+<body>
+{{ title_slide_html }}
+{{ sections_html }}
+{{ closing_slide_html }}
+</body>
+</html>

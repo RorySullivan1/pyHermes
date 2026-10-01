@@ -13,8 +13,8 @@ It is for anyone who sends a regular note to readers, such as a weekly market wr
 research brief or a client update, and wants to write it in code instead of rebuilding it
 by hand every time. You describe *what* the email says. pyHermes decides how it is laid out.
 
-The same content can also be printed as a PDF report. See
-[Reports and PDFs](07-reports-and-pdfs.md).
+The same content can also be printed as a PDF report, or laid out as a slide deck. See
+[Reports and PDFs](07-reports-and-pdfs.md) and [Make a slide deck](11-make-a-slide-deck.md).
 
 ## Where to start
 
@@ -33,6 +33,7 @@ and ends with an email open in your browser.
 | [8. Troubleshooting](08-troubleshooting.md) | Fix an error message or an email that looks wrong |
 | [9. Customise the layout](09-customise-the-layout.md) | Move one section's spacing, add a block of your own, or see what is fixed and why |
 | [10. Write a research note](10-write-a-research-note.md) | Cite sources, define terms, letter appendices and list your tables and figures |
+| [11. Make a slide deck](11-make-a-slide-deck.md) | Build slides with a title slide, dividers, speaker notes and disclosures, and send them as a PDF |
 
 ## Three words used throughout
 

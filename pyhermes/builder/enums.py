@@ -60,6 +60,8 @@ class SizeTheme(StrEnum):
     #: Tuned for print, and refused on the email medium until a client has
     #: rendered it (#211).
     DENSE = "dense"
+    #: Tuned for a projected slide, and taken by the deck medium alone (#301).
+    PRESENTATION = "presentation"
 
 
 class EmbedStrategy(StrEnum):

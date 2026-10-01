@@ -158,6 +158,7 @@ variant each.
 | `email` | `Header`, `Banner`, `Footer` | `templates/base.html` |
 | `document` | `Cover`, `ContentsPage`, `ExhibitsPage`, `RunningHeader`, `RunningFooter`, `BackMatter` | `templates/document/base.html` |
 | `brochure` | none: every face is a `Panel` the caller composes | `templates/brochure/base.html` |
+| `deck` | `TitleSlide`, `ClosingSlide`: every sheet between them is a `Slide` | `templates/deck/base.html` |
 
 Three things the second set taught:
 
@@ -374,6 +375,15 @@ already use for it. No template was forked, and the email goldens moved by bytes
 cover is paged-only and sits on a full sheet, so it takes a plain `width: Npx`.
 `TestAnImagePrintsAtItsDeclaredWidth` reads every case back from the PDF. It also catches
 the fixed-width version in a half column.
+
+## The fourth medium: a deck (#218)
+
+`pyhermes/deck/` lays one `Slide` to a sheet, between a title slide and the disclosures.
+**It supersedes a decision this file recorded: that a slide and a sheet of A4 are one
+medium at two pages.** That was true of a slide-shaped *sheet*, which `slide_16_9` still
+is. A deck needs its own skeleton, slots and constraint (overflow is a finding, not a second
+sheet), which is #172's test for a medium. `deck.md` has the rest, including the first
+density one medium alone may take.
 
 **The digital PDF (#193) is not a medium.** It is a `PdfProfile` on this exporter plus an
 attachment path in `pyhermes/delivery`, and `digital-pdf.md` has the decision, the profiles, the size

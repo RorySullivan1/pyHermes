@@ -1,10 +1,11 @@
 """
-The same paged content on a 16:9 slide — landscape, and still one medium.
+The same paged content on a 16:9 sheet: the paged medium, landscape.
 
 Its value is the diff against ``a4_portrait``: identical copy, one
-``PageFormat`` apart. A slide is a *page*, not a medium of its own, and two
-goldens that differ only in their dimensions are what makes that claim
-checkable rather than asserted.
+``PageFormat`` apart, flowing from sheet to sheet like a report. A real deck,
+one slide to a sheet with a title band and a numbered footer, is the deck
+medium since #218 (``pitch_16_9``); `.claude/rules/deck.md` records why the
+"a slide is a page" decision this fixture once carried was superseded.
 """
 
 from __future__ import annotations

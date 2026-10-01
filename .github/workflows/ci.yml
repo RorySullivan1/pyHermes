@@ -156,17 +156,18 @@ jobs:
           tests/test_spacing.py tests/test_quant_fixture.py tests/test_math.py
           tests/test_math_paged.py tests/test_image_centring.py
           tests/test_exhibit_list.py tests/test_appendices.py tests/test_research_note.py
+          tests/test_deck_pdf.py tests/test_deck.py
 
-      - name: Render the paged and brochure galleries to PDF, and photograph every sheet
+      - name: Render the paged, brochure and deck galleries to PDF, and photograph every sheet
         run: |
           python - <<'PY'
           from pathlib import Path
 
-          from qa.fixtures import all_brochure_fixtures, all_paged_fixtures
+          from qa.fixtures import all_brochure_fixtures, all_deck_fixtures, all_paged_fixtures
           from qa.screenshots import capture_pages
           from pyhermes.pdf import page_count, save_pdf
 
-          builders = {**all_paged_fixtures(), **all_brochure_fixtures()}
+          builders = {**all_paged_fixtures(), **all_brochure_fixtures(), **all_deck_fixtures()}
           gallery = {name: build() for name, build in sorted(builders.items())}
           for name, document in gallery.items():
               path = save_pdf(document, Path("output/pdf") / f"{name}.pdf")

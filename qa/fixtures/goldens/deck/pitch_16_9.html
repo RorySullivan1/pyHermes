@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <title>Quarterly Review</title>
+  <meta name="author" content="Hermes Research">
+  <meta name="description" content="Quarterly Review · Rates Strategy · Quarter ending 30 September">
+  <meta name="keywords" content="Rates Strategy, Issue 001">
+  <style type="text/css">
+    @page {
+      size: 1280px 720px;
+      margin: 0;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #FFFFFF;
+      font-family: Georgia, 'Times New Roman', serif;
+      color: #3B3B3B;
+      orphans: 2;
+      widows: 2;
+    }
+    table { border-collapse: collapse; }
+    table[width="100%"] { width: 100%; }
+    img { border: 0; }
+
+    .drop-cap {
+      float: left;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 80px;
+      line-height: 58px;
+      margin: 8px 10px 0 0;
+      color: #5B8A9A;
+    }
+    .flowed-columns p:first-child { margin-top: 0; }
+    .wrap-left { float: left; margin: 0 32px 10px 0; }
+    .wrap-right { float: right; margin: 0 0 10px 32px; }
+
+    .sheet {
+      position: relative;
+      width: 1280px;
+      height: 720px;
+      overflow: hidden;
+      box-sizing: border-box;
+    }
+    .sheet + .sheet { break-before: page; page-break-before: always; }
+    .slide-band, .slide-body { position: absolute; left: 0; box-sizing: border-box; }
+    .slide-body { overflow: hidden; }
+
+    .contents-entry a::after {
+      content: leader(".") " " target-counter(attr(href), page);
+      color: #A09E97;
+    }
+  </style>
+</head>
+<body>
+<div class="sheet title-slide" style="background-color:#EEF2F5; background-image:url('cid:986af80812f2233b'); background-size:cover; background-position:center;">
+  <div class="slide-band" align="right" style="bottom:98px; width:1280px; padding:0 38px; text-align:right;">
+    <img src="cid:39cac08fae7a4317" alt="Hermes Research" width="140"
+         style="display:block; width:140px; border:0; margin-bottom:18px; margin-left:auto;">
+    <div style="width:76px; border-top:4px solid #5B8A9A; margin-bottom:18px; margin-left:auto;"></div>
+    <h1 style="margin:0 0 12px; font-family:Georgia, 'Times New Roman', serif; font-size:44px; line-height:115%; font-weight:normal; color:#22313F;">Rates, Projected</h1>
+    <p style="margin:0; font-family:Georgia, 'Times New Roman', serif; font-size:28px; line-height:125%; color:#22313F;">A quarterly view of the gilt curve</p>
+    <p style="margin:18px 0 0; font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:135%; color:#22313F;">Rates Strategy · Quarter ending 30 September</p>
+  </div>
+</div>
+
+<div class="sheet slide" data-slide="2"     style="background-color:#FFFFFF;">
+<div class="slide-band slide-title-band" style="top:0; width:1280px; height:98px; padding:38px 38px 0;">
+  <h2 class="slide-title" id="agenda" style="margin:0; font-family:Georgia, 'Times New Roman', serif; font-size:40px; line-height:115%; font-weight:normal; color:#2C3E50;">Agenda</h2>
+</div>
+
+  <div class="slide-body" style="top:98px; width:1280px; height:584px;">
+    <table role="presentation" width="1280" cellpadding="0" cellspacing="0" border="0"
+           style="width:1280px;">
+<tr>
+  <td style="padding:0; background-color:#FFFFFF;">
+    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:12px 38px 12px 38px; font-family: Arial, Helvetica, sans-serif; font-size:20px; color:#3B3B3B; line-height:145%;">
+          <p class="subtitle" style="font-family: Georgia, 'Times New Roman', serif; font-size: 18px; font-style: italic; color: #7A7A72; margin: 0 0 12px 0; line-height: 135%;">Two parts, five slides</p>
+<div class="contents" align="left" style="text-align: left;">
+<ol style="margin: 0; padding: 0; list-style-type: none;">
+  <li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 20px; line-height: 145%; margin: 0 0 10px 0;"><a href="#where-rates-stand" style="color: #5B8A9A; text-decoration: none;">Where rates stand</a></li>
+  <li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 20px; line-height: 145%; margin: 0 0 10px 0;"><a href="#the-quarter-in-four-numbers" style="color: #5B8A9A; text-decoration: none;">The quarter in four numbers</a></li>
+  <li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 20px; line-height: 145%; margin: 0 0 10px 0;"><a href="#curve-by-tenor" style="color: #5B8A9A; text-decoration: none;">Curve by tenor</a></li>
+  <li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 20px; line-height: 145%; margin: 0 0 10px 0;"><a href="#premium" style="color: #5B8A9A; text-decoration: none;">The term premium</a></li>
+  <li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 20px; line-height: 145%; margin: 0 0 10px 0;"><a href="#what-we-would-do" style="color: #5B8A9A; text-decoration: none;">What we would do</a></li>
+  <li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 20px; line-height: 145%; margin: 0 0 10px 0;"><a href="#two-positions" style="color: #5B8A9A; text-decoration: none;">Two positions</a></li>
+</ol>
+</div>
+
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+
+    </table>
+    <span class="slide-end" id="slide-2-end"></span>
+  </div>
+<div class="slide-band slide-footer-band" align="left" style="text-align:left; top:682px; width:1280px; height:38px; padding:0 38px; font-family:Arial, Helvetica, sans-serif; font-size:13px; line-height:38px; color:#A09E97;">
+  <span class="slide-footer-label">Hermes Research</span>
+  <span class="slide-number" style="float:right;">2</span>
+</div>
+
+</div>
+
+<div class="sheet slide divider" data-slide="3" style="background-color:#2C3E50;">
+  <div class="slide-band" style="bottom:136px; width:1280px; padding:0 38px;">
+    <div style="width:76px; border-top:4px solid #5B8A9A; margin-bottom:18px;"></div>
+    <h2 class="slide-title" id="where-rates-stand" style="margin:0; font-family:Georgia, 'Times New Roman', serif; font-size:44px; line-height:115%; font-weight:normal; color:#FFFFFF;">Where rates stand</h2>
+    <p style="margin:12px 0 0; font-family:Georgia, 'Times New Roman', serif; font-size:28px; line-height:125%; color:#CFD8DC;">Levels, curve and premium</p>
+  </div>
+<div class="slide-band slide-footer-band" align="left" style="text-align:left; top:682px; width:1280px; height:38px; padding:0 38px; font-family:Arial, Helvetica, sans-serif; font-size:13px; line-height:38px; color:#90A4AE;">
+  <span class="slide-footer-label">Hermes Research · Where rates stand</span>
+  <span class="slide-number" style="float:right;">3</span>
+</div>
+
+</div>
+
+<div class="sheet slide" data-slide="4"     style="background-color:#FFFFFF;">
+<div class="slide-band slide-title-band" style="top:0; width:1280px; height:98px; padding:38px 38px 0;">
+  <h2 class="slide-title" id="the-quarter-in-four-numbers" style="margin:0; font-family:Georgia, 'Times New Roman', serif; font-size:40px; line-height:115%; font-weight:normal; color:#2C3E50;">The quarter in four numbers</h2>
+</div>
+
+  <div class="slide-body" style="top:98px; width:1280px; height:584px;">
+    <table role="presentation" width="1280" cellpadding="0" cellspacing="0" border="0"
+           style="width:1280px;">
+<tr>
+  <td style="padding:0; background-color:#FFFFFF;">
+    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:12px 38px 12px 38px; font-family: Arial, Helvetica, sans-serif; font-size:20px; color:#3B3B3B; line-height:145%;">
+          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border: 1px solid #D6D2CB;">
+  <tr>
+    <td class="kpi-cell" align="center" style="width: 25.0%; border-right: 1px solid #D6D2CB; padding: 20px 18px; text-align: center; background-color: #FFFFFF;">
+      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; color: #7A7A72; text-transform: uppercase; margin: 0 0 8px 0; line-height: 145%; letter-spacing: 0.5px; font-weight: bold;">10Y gilt</p>
+      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 44px; font-weight: bold; color: #5A5A5A; margin: 0 0 6px 0; line-height: 115%;">4.21%</p>
+      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; color: #A09E97; margin: 0; line-height: 135%;">+18 bps</p>
+    </td>
+    <td class="kpi-cell" align="center" style="width: 25.0%; border-right: 1px solid #D6D2CB; padding: 20px 18px; text-align: center; background-color: #FFFFFF;">
+      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; color: #7A7A72; text-transform: uppercase; margin: 0 0 8px 0; line-height: 145%; letter-spacing: 0.5px; font-weight: bold;">2s10s</p>
+      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 44px; font-weight: bold; color: #5A5A5A; margin: 0 0 6px 0; line-height: 115%;">38 bps</p>
+      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; color: #A09E97; margin: 0; line-height: 135%;">+9 bps</p>
+    </td>
+    <td class="kpi-cell" align="center" style="width: 25.0%; border-right: 1px solid #D6D2CB; padding: 20px 18px; text-align: center; background-color: #FFFFFF;">
+      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; color: #7A7A72; text-transform: uppercase; margin: 0 0 8px 0; line-height: 145%; letter-spacing: 0.5px; font-weight: bold;">Breakeven</p>
+      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 44px; font-weight: bold; color: #5A5A5A; margin: 0 0 6px 0; line-height: 115%;">3.42%</p>
+      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; color: #A09E97; margin: 0; line-height: 135%;">-4 bps</p>
+    </td>
+    <td class="kpi-cell kpi-cell-last" align="center" style="width: 25.0%; padding: 20px 18px; text-align: center; background-color: #FFFFFF;">
+      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; color: #7A7A72; text-transform: uppercase; margin: 0 0 8px 0; line-height: 145%; letter-spacing: 0.5px; font-weight: bold;">Term premium</p>
+      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 44px; font-weight: bold; color: #5A5A5A; margin: 0 0 6px 0; line-height: 115%;">61 bps</p>
+      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; color: #A09E97; margin: 0; line-height: 135%;">+12 bps</p>
+    </td>
+  </tr>
+</table>
+
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+
+    </table>
+    <span class="slide-end" id="slide-4-end"></span>
+  </div>
+<div class="slide-band slide-footer-band" align="left" style="text-align:left; top:682px; width:1280px; height:38px; padding:0 38px; font-family:Arial, Helvetica, sans-serif; font-size:13px; line-height:38px; color:#A09E97;">
+  <span class="slide-footer-label">Hermes Research · Where rates stand</span>
+  <span class="slide-number" style="float:right;">4</span>
+</div>
+
+</div>
+
+<div class="sheet slide" data-slide="5"     style="background-color:#FFFFFF;">
+<div class="slide-band slide-title-band" style="top:0; width:1280px; height:98px; padding:38px 38px 0;">
+  <h2 class="slide-title" id="curve-by-tenor" style="margin:0; font-family:Georgia, 'Times New Roman', serif; font-size:40px; line-height:115%; font-weight:normal; color:#2C3E50;">Curve by tenor</h2>
+</div>
+
+  <div class="slide-body" style="top:98px; width:1280px; height:584px;">
+    <table role="presentation" width="1280" cellpadding="0" cellspacing="0" border="0"
+           style="width:1280px;">
+<tr>
+  <td style="padding:0; background-color:#FFFFFF;">
+    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:12px 38px 12px 38px; font-family: Arial, Helvetica, sans-serif; font-size:20px; color:#3B3B3B; line-height:145%;">
+          <table class="data-table" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
+  <thead>
+  <tr style="border-top: 1px solid #D6D2CB; border-bottom: 2px solid #2C3E50;">
+    <th scope="col" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 145%; text-align: left; padding: 10px; letter-spacing: 0.5px;">Tenor</th>
+    <th scope="col" align="right" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 145%; text-align: right; padding: 10px; letter-spacing: 0.5px;">Yield</th>
+    <th scope="col" align="right" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 145%; text-align: right; padding: 10px; letter-spacing: 0.5px;">Change (bps)</th>
+    <th scope="col" align="right" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 145%; text-align: right; padding: 10px; letter-spacing: 0.5px;">Weight</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr style="border-bottom: 1px solid #EAE8E4;">
+    <th scope="row" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 18px; font-weight: normal; line-height: 145%; color: #3B3B3B; text-align: left; padding: 10px; background-color: #FFFFFF;">2Y</th>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 18px; font-weight: bold; line-height: 145%; color: #5A5A5A; text-align: right; padding: 10px; background-color: #FFFFFF;">3.83%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 18px; font-weight: bold; line-height: 145%; color: #5A5A5A; text-align: right; padding: 10px; background-color: #FFFFFF;">+9</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 18px; font-weight: bold; line-height: 145%; color: #5A5A5A; text-align: right; padding: 10px; background-color: #FFFFFF;">18%</td>
+  </tr>
+  <tr style="border-bottom: 1px solid #EAE8E4;">
+    <th scope="row" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 18px; font-weight: normal; line-height: 145%; color: #3B3B3B; text-align: left; padding: 10px; background-color: #F8F7F5;">5Y</th>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 18px; font-weight: bold; line-height: 145%; color: #5A5A5A; text-align: right; padding: 10px; background-color: #F8F7F5;">3.97%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 18px; font-weight: bold; line-height: 145%; color: #5A5A5A; text-align: right; padding: 10px; background-color: #F8F7F5;">+12</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 18px; font-weight: bold; line-height: 145%; color: #5A5A5A; text-align: right; padding: 10px; background-color: #F8F7F5;">27%</td>
+  </tr>
+  <tr style="border-bottom: 1px solid #EAE8E4;">
+    <th scope="row" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 18px; font-weight: normal; line-height: 145%; color: #3B3B3B; text-align: left; padding: 10px; background-color: #FFFFFF;">10Y</th>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 18px; font-weight: bold; line-height: 145%; color: #5A5A5A; text-align: right; padding: 10px; background-color: #FFFFFF;">4.21%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 18px; font-weight: bold; line-height: 145%; color: #5A5A5A; text-align: right; padding: 10px; background-color: #FFFFFF;">+18</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 18px; font-weight: bold; line-height: 145%; color: #5A5A5A; text-align: right; padding: 10px; background-color: #FFFFFF;">35%</td>
+  </tr>
+  <tr style="border-bottom: 1px solid #D6D2CB;">
+    <th scope="row" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 18px; font-weight: normal; line-height: 145%; color: #3B3B3B; text-align: left; padding: 10px; background-color: #F8F7F5;">30Y</th>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 18px; font-weight: bold; line-height: 145%; color: #5A5A5A; text-align: right; padding: 10px; background-color: #F8F7F5;">4.78%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 18px; font-weight: bold; line-height: 145%; color: #5A5A5A; text-align: right; padding: 10px; background-color: #F8F7F5;">+21</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 18px; font-weight: bold; line-height: 145%; color: #5A5A5A; text-align: right; padding: 10px; background-color: #F8F7F5;">20%</td>
+  </tr>
+  </tbody>
+</table>
+<p class="fine-print" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; color: #A09E97; font-style: italic; margin: 10px 0 0 0; line-height: 145%;">Hermes Research, as at quarter end</p>
+
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+
+    </table>
+    <span class="slide-end" id="slide-5-end"></span>
+  </div>
+<div class="slide-band slide-footer-band" align="left" style="text-align:left; top:682px; width:1280px; height:38px; padding:0 38px; font-family:Arial, Helvetica, sans-serif; font-size:13px; line-height:38px; color:#A09E97;">
+  <span class="slide-footer-label">Hermes Research · Where rates stand</span>
+  <span class="slide-number" style="float:right;">5</span>
+</div>
+
+</div>
+
+<div class="sheet slide" data-slide="6"     style="background-color:#FFFFFF;">
+<div class="slide-band slide-title-band" style="top:0; width:1280px; height:98px; padding:38px 38px 0;">
+  <h2 class="slide-title" id="premium" style="margin:0; font-family:Georgia, 'Times New Roman', serif; font-size:40px; line-height:115%; font-weight:normal; color:#2C3E50;">The term premium</h2>
+</div>
+
+  <div class="slide-body" style="top:98px; width:1280px; height:584px;">
+    <table role="presentation" width="1280" cellpadding="0" cellspacing="0" border="0"
+           style="width:1280px;">
+<tr>
+  <td style="padding:0; background-color:#FFFFFF;">
+    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td style="padding:0 38px; font-size:0; line-height:0;">
+    <!--[if mso]>
+    <table role="presentation" width="1204" border="0" cellpadding="0" cellspacing="0" style="width:1204px;">
+      <tr>
+        <td width="820" valign="top" style="width:820px; padding:0;">
+    <![endif]-->
+    <table role="presentation" width="820" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:820px; margin-right:32px; background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:4px 28px 16px 0px; font-family: Arial, Helvetica, sans-serif; font-size:20px; color:#3B3B3B; line-height:145%;">
+          <table class="figure" role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
+  <tr>
+    <td style="padding: 0;">
+      <img src="cid:e10e16795826bb19" alt="Term premium, ten years"
+width="560"           style="display: block; width: 100%; max-width: 560px; height: auto; border: 1px solid #D6D2CB; margin: 0;">
+    </td>
+  </tr>
+</table>
+<p class="fine-print" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; color: #A09E97; font-style: italic; margin: 10px 0 0 0; line-height: 145%;">Hermes Research</p>
+
+        </td>
+      </tr>
+    </table>
+    <!--[if mso]>
+        </td>
+        <td width="352" valign="top" style="width:352px; padding:0;">
+    <![endif]-->
+    <table role="presentation" width="352" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:352px; background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:4px 0px 16px 28px; font-family: Arial, Helvetica, sans-serif; font-size:20px; color:#3B3B3B; line-height:145%;">
+          <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 20px; color: #3B3B3B; line-height: 145%; margin: 0 0 18px 0;"><p>The premium rose for a third quarter, and now explains most of the move at the long end.</p></div>
+
+        </td>
+      </tr>
+    </table>
+    <!--[if mso]>
+        </td>
+      </tr>
+    </table>
+    <![endif]-->
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+
+    </table>
+    <span class="slide-end" id="slide-6-end"></span>
+  </div>
+<div class="slide-band slide-footer-band" align="left" style="text-align:left; top:682px; width:1280px; height:38px; padding:0 38px; font-family:Arial, Helvetica, sans-serif; font-size:13px; line-height:38px; color:#A09E97;">
+  <span class="slide-footer-label">Hermes Research · Where rates stand</span>
+  <span class="slide-number" style="float:right;">6</span>
+</div>
+
+</div>
+
+<div class="sheet slide divider" data-slide="7" style="background-color:#2C3E50;">
+  <div class="slide-band" style="bottom:136px; width:1280px; padding:0 38px;">
+    <div style="width:76px; border-top:4px solid #5B8A9A; margin-bottom:18px;"></div>
+    <h2 class="slide-title" id="what-we-would-do" style="margin:0; font-family:Georgia, 'Times New Roman', serif; font-size:44px; line-height:115%; font-weight:normal; color:#FFFFFF;">What we would do</h2>
+  </div>
+<div class="slide-band slide-footer-band" align="left" style="text-align:left; top:682px; width:1280px; height:38px; padding:0 38px; font-family:Arial, Helvetica, sans-serif; font-size:13px; line-height:38px; color:#90A4AE;">
+  <span class="slide-footer-label">Hermes Research · What we would do</span>
+  <span class="slide-number" style="float:right;">7</span>
+</div>
+
+</div>
+
+<div class="sheet slide" data-slide="8" align="center"     style="background-color:#F4F1EA; text-align:center;">
+<div class="slide-band slide-title-band" style="top:0; width:1280px; height:98px; padding:38px 38px 0;">
+  <h2 class="slide-title" id="two-positions" style="margin:0; font-family:Georgia, 'Times New Roman', serif; font-size:40px; line-height:115%; font-weight:normal; color:#2C3E50;">Two positions</h2>
+</div>
+
+  <div class="slide-body" style="top:98px; width:1280px; height:584px;">
+    <table role="presentation" width="1280" cellpadding="0" cellspacing="0" border="0"
+           style="width:1280px;">
+<tr>
+  <td style="padding:0; background-color:#F4F1EA;">
+    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#F4F1EA;">
+      <tr>
+        <td style="padding:0 38px; font-size:0; line-height:0;">
+    <!--[if mso]>
+    <table role="presentation" width="1204" border="0" cellpadding="0" cellspacing="0" style="width:1204px;">
+      <tr>
+        <td width="586" valign="top" style="width:586px; padding:0;">
+    <![endif]-->
+    <table role="presentation" width="586" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:586px; margin-right:32px; background-color:#F4F1EA;">
+      <tr>
+        <td class="mobile-pad" style="padding:4px 28px 16px 0px; font-family: Arial, Helvetica, sans-serif; font-size:20px; color:#3B3B3B; line-height:145%;">
+          <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 20px; color: #3B3B3B; line-height: 145%; margin: 0 0 18px 0;"><p><strong>Steepener.</strong> Own 30Y against 5Y, sized to the premium's last move.</p></div>
+
+        </td>
+      </tr>
+    </table>
+    <!--[if mso]>
+        </td>
+        <td width="586" valign="top" style="width:586px; padding:0;">
+    <![endif]-->
+    <table role="presentation" width="586" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:586px; background-color:#F4F1EA;">
+      <tr>
+        <td class="mobile-pad" style="padding:4px 0px 16px 28px; font-family: Arial, Helvetica, sans-serif; font-size:20px; color:#3B3B3B; line-height:145%;">
+          <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 20px; color: #3B3B3B; line-height: 145%; margin: 0 0 18px 0;"><p><strong>Linker hedge.</strong> Hold breakevens through the next two prints.</p></div>
+
+        </td>
+      </tr>
+    </table>
+    <!--[if mso]>
+        </td>
+      </tr>
+    </table>
+    <![endif]-->
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+
+    </table>
+    <span class="slide-end" id="slide-8-end"></span>
+  </div>
+<div class="slide-band slide-footer-band" align="left" style="text-align:left; top:682px; width:1280px; height:38px; padding:0 38px; font-family:Arial, Helvetica, sans-serif; font-size:13px; line-height:38px; color:#A09E97;">
+  <span class="slide-footer-label">Hermes Research · What we would do</span>
+  <span class="slide-number" style="float:right;">8</span>
+</div>
+
+</div>
+
+<div class="sheet slide closing-slide" data-slide="9" align="left"     style="background-color:#FFFFFF; text-align:left;">
+<div class="slide-band slide-title-band" style="top:0; width:1280px; height:98px; padding:38px 38px 0;">
+  <h2 class="slide-title" style="margin:0; font-family:Georgia, 'Times New Roman', serif; font-size:40px; line-height:115%; font-weight:normal; color:#2C3E50;">Important information</h2>
+</div>
+
+  <div class="slide-body" style="top:98px; width:1280px; height:584px; padding:0 38px;">
+    <div style="font-family:Georgia, 'Times New Roman', serif; font-size:16px; line-height:145%; color:#8A8880;">For illustrative purposes. Not investment advice.</div>
+    <span class="slide-end" id="slide-9-end"></span>
+  </div>
+<div class="slide-band slide-footer-band" align="left" style="text-align:left; top:682px; width:1280px; height:38px; padding:0 38px; font-family:Arial, Helvetica, sans-serif; font-size:13px; line-height:38px; color:#A09E97;">
+  <span class="slide-footer-label">Hermes Research</span>
+  <span class="slide-number" style="float:right;">9</span>
+</div>
+
+</div>
+
+</body>
+</html>
