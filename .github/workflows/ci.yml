@@ -249,7 +249,7 @@ jobs:
             fonts-liberation
 
       - name: Install (every extra)
-        run: pip install -e ".[dev,qa,pdf,data,charts,math]"
+        run: pip install -e ".[dev,qa,pdf,data,charts,math,outlook-desktop]"
 
       - name: Install Chromium
         run: playwright install --with-deps chromium
