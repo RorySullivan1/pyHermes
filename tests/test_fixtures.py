@@ -249,7 +249,18 @@ class TestComponentFieldsAreExercised:
         )
 
     @pytest.mark.parametrize(
-        "field_name", ["title", "background_color", "highlight", "align", "anchor", "spacing"]
+        "field_name",
+        [
+            "title",
+            "background_color",
+            "highlight",
+            "align",
+            "anchor",
+            "spacing",
+            "text_color",
+            "border",
+            "border_color",
+        ],
     )
     def test_every_container_field_is_exercised(self, field_name):
         """
@@ -266,6 +277,9 @@ class TestComponentFieldsAreExercised:
             "align": None,
             "anchor": None,
             "spacing": None,
+            "text_color": None,
+            "border": False,
+            "border_color": None,
         }
         assert any(
             getattr(section, field_name, defaults[field_name]) != defaults[field_name]

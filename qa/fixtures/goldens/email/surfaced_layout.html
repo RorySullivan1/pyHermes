@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:v="urn:schemas-microsoft-com:vml"
+      xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="x-apple-disable-message-reformatting">
+  <meta name="color-scheme" content="light only">
+  <meta name="supported-color-schemes" content="light only">
+  <title>Surfaced Layout — grounds, frames and boxes</title>
+  <!--[if mso]>
+  <noscript>
+    <xml><o:OfficeDocumentSettings>
+      <o:PixelsPerInch>96</o:PixelsPerInch>
+    </o:OfficeDocumentSettings></xml>
+  </noscript>
+  <style type="text/css">
+    body, td, th { font-family: Georgia, 'Times New Roman', serif; }
+    body { background-color: #F2F1EE !important; }
+  </style>
+  <![endif]-->
+  <style type="text/css">
+    body, table, td, a { -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%; }
+    table, td { mso-table-lspace:0pt; mso-table-rspace:0pt; }
+    img { -ms-interpolation-mode:bicubic; border:0; outline:none; text-decoration:none; }
+    @media only screen and (max-width:700px) {
+      .email-container { width:100% !important; }
+      .stack-column { display:block !important; width:100% !important; }
+      .mobile-pad { padding:20px 18px !important; }
+      .mobile-title { font-size:22px !important; }
+      /* box-sizing is what keeps the padding *inside* the 100% width. Without it
+         the content-box default adds it on top and the cell overflows the
+         viewport by its own padding (#76). Word ignores this whole @media
+         block, so the property it lacks costs Outlook nothing. */
+      .kpi-cell { display:block !important; width:100% !important; box-sizing:border-box !important; border-right:none !important; border-bottom:1px solid #D6D2CB !important; padding:14px 16px !important; }
+      .kpi-cell-last { border-bottom:none !important; }
+      /* A data table cannot collapse — stacking its columns would destroy the
+         alignment that is the only reason to render one — so padding is what
+         gives a narrow viewport its room back. See #132. */
+      .data-table th, .data-table td { padding:6px !important; }
+    }
+    /* Force light rendering in all dark mode contexts */
+    :root { color-scheme: light only; }
+    [data-ogsc] .email-container,
+    [data-ogsb] .email-container { background-color:#FFFFFF !important; }
+    [data-ogsc] .surface,
+    [data-ogsb] .surface { background-color:#FFFFFF !important; }
+    [data-ogsc] .body-text,
+    [data-ogsb] .body-text { color:#3B3B3B !important; }
+    @media (prefers-color-scheme:dark) {
+      .email-container { background-color:#FFFFFF !important; }
+      .body-text { color:#3B3B3B !important; }
+      .surface { background-color:#FFFFFF !important; }
+    }
+  </style>
+</head>
+<body style="margin:0; padding:0; background-color:#F2F1EE; font-family: Georgia, 'Times New Roman', serif;" bgcolor="#F2F1EE">
+
+  <!-- Preheader -->
+  <div style="display:none;max-height:0;overflow:hidden;font-size:1px;color:#F2F1EE;">
+    One email exercising every surface axis at once.&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;
+  </div>
+
+  <!-- Outer wrapper -->
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+         style="background-color:#F2F1EE;" bgcolor="#F2F1EE">
+    <tr>
+      <td align="center" style="padding:28px 0;">
+
+        <!-- MAIN CONTAINER — 680px                       -->
+        <table class="email-container" role="presentation" width="680" cellpadding="0" cellspacing="0"
+               border="0" style="background-color:#FFFFFF; max-width:680px;" bgcolor="#FFFFFF">
+
+          <!-- HEADER: Disclaimer bar                    -->
+          <tr>
+            <td align="center" style="background-color:#2C3E50; padding:7px 32px; text-align:center;" bgcolor="#2C3E50">
+              <div style="margin:0; font-family: Arial, Helvetica, sans-serif; font-size:9.5px;
+                        font-weight:300; color:#90A4AE; letter-spacing:0.3px; line-height:140%;">
+                
+              </div>
+            </td>
+          </tr>
+
+          <!-- HEADER: Background image + text overlay   -->
+          <tr>
+            <td style="background-color:#2C3E50;" bgcolor="#2C3E50">
+              <!--[if mso]>
+              <v:rect xmlns:v="urn:schemas-microsoft-com:vml" fill="true" stroke="false"
+                      style="width:680px;height:180px;">
+                <v:fill color="#141E2C" opacity="65%"/>
+                <v:textbox inset="32px,0,32px,0" style="mso-fit-shape-to-text:false;">
+              <![endif]-->
+              <div style="background-color:#2C3E50; background-size:cover;
+                          background-position:center center; background-repeat:no-repeat;">
+                <!--[if !mso]><!--><div style="background-color:rgba(20,30,44,0.65);"><!--<![endif]-->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <td width="100%" valign="bottom" style="padding:18px 0 6px 32px;">
+                      <p style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:28px;
+                                font-weight:bold; color:#FFFFFF; line-height:120%; letter-spacing:0.3px;
+                                text-shadow:0 1px 3px rgba(0,0,0,0.4);"
+                         class="mobile-title">
+                        Hermes Research
+                      </p>
+                    </td>
+                    <td valign="bottom" align="right" style="text-align:right; padding:18px 32px 6px 16px;">
+                    </td>
+                  </tr>
+                  <tr>
+                    <td valign="middle" style="padding:0 0 8px 32px;">
+                      <p style="margin:0; font-family: Arial, Helvetica, sans-serif; font-size:13px;
+                                font-weight:400; color:#CFD8DC; line-height:130%;
+                                text-shadow:0 1px 2px rgba(0,0,0,0.3);">
+                        surfaced-layout
+                      </p>
+                    </td>
+                    <td valign="middle" align="right" style="text-align:right; padding:0 32px 8px 16px;">
+                    </td>
+                  </tr>
+                </table>
+                <!-- Accent rule -->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <td style="padding:0 32px;">
+                      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                        <tr>
+                          <td style="border-top:2px solid #5B8A9A; font-size:0; line-height:0;" height="1">&nbsp;</td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+                <!-- Date / Issue bar -->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <td style="padding:10px 32px 18px;">
+                      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                        <tr>
+                          <td style="font-family: Arial, Helvetica, sans-serif; font-size:11px;
+                                     color:#90A4AE; letter-spacing:0.6px; text-transform:uppercase;">
+                            Week ending 9 October
+                          </td>
+                          <td align="right" style="text-align:right; font-family: Arial, Helvetica, sans-serif; font-size:11px;
+                                                    color:#90A4AE; letter-spacing:0.6px; text-transform:uppercase;">
+                            Issue 011
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+                <!--[if !mso]><!--></div><!--<![endif]--><!-- /dark overlay -->
+              </div>
+              <!--[if mso]>
+                </v:textbox>
+              </v:rect>
+              <![endif]-->
+            </td>
+          </tr>
+
+          <!-- SECTIONS: Insert containers here          -->
+          <tr>
+  <td style="padding:0; background-color:#1B2A38;">
+    <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#1B2A38;">
+      <tr>
+        <td style="padding:22px 32px 12px 32px;">
+          <h2 id="on-a-dark-ground" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:17px; font-weight:bold; color:#FFFFFF; line-height:120%;">
+            On a Dark Ground
+          </h2>
+        </td>
+      </tr>
+    </table>
+    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#1B2A38;">
+      <tr>
+        <td class="mobile-pad" style="padding:16px 32px 14px 32px; font-family: Arial, Helvetica, sans-serif; font-size:14px; color:#FFFFFF; line-height:172%;">
+          <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
+  <tr>
+    <td style="padding:0 0 16px 0;">
+<div class="" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: #FFFFFF; line-height: 172%; margin: 0 0 16px 0;"><p>The title and this paragraph read light on navy.</p></div>
+
+    </td>
+  </tr>
+  <tr>
+    <td style="padding:0 0 16px 0;">
+<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
+  <tr>
+    <td bgcolor="#FFFFFF" style="padding:8px; background-color:#FFFFFF;">
+<table class="data-table" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
+  <caption style="caption-side: top; text-align: left; font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #2C3E50; letter-spacing: 0.5px; padding: 0 0 8px 0;">Treasury yields</caption>
+  <thead>
+  <tr style="border-top: 1px solid #D6D2CB; border-bottom: 2px solid #2C3E50;">
+    <th scope="col" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 172%; text-align: left; padding: 12px; letter-spacing: 0.5px;">Tenor</th>
+    <th scope="col" align="right" style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 172%; text-align: right; padding: 12px; letter-spacing: 0.5px;">Yield</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr style="border-bottom: 1px solid #EAE8E4;">
+    <th scope="row" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: normal; line-height: 172%; color: #3B3B3B; text-align: left; padding: 12px; background-color: #FFFFFF;">2Y</th>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #FFFFFF;">3.91%</td>
+  </tr>
+  <tr style="border-bottom: 1px solid #D6D2CB;">
+    <th scope="row" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: normal; line-height: 172%; color: #3B3B3B; text-align: left; padding: 12px; background-color: #F8F7F5;">10Y</th>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #F8F7F5;">4.28%</td>
+  </tr>
+  </tbody>
+</table>
+
+    </td>
+  </tr>
+</table>
+
+    </td>
+  </tr>
+  <tr>
+    <td style="padding:0;">
+<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
+  <tr>
+    <td style="padding:0;">
+      <!--[if mso]>
+      <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="https://example.com/curve"
+        style="height:38px;v-text-anchor:middle;width:150px;" arcsize="8%"
+        strokecolor="#5B8A9A" fillcolor="#5B8A9A">
+        <w:anchorlock/>
+        <center style="color:#FFFFFF;font-family: Arial, Helvetica, sans-serif;
+                       font-size:13px;font-weight:bold;">
+          See the curve
+        </center>
+      </v:roundrect>
+      <![endif]-->
+      <!--[if !mso]><!-->
+      <a href="https://example.com/curve"
+         style="background-color:#5B8A9A; border-radius:3px; color:#FFFFFF;
+                display:inline-block; font-family: Arial, Helvetica, sans-serif;
+                font-size:13px; font-weight:bold; line-height:38px;
+                text-align:center; text-decoration:none; width:150px;
+                -webkit-text-size-adjust:none;">
+        See the curve
+      </a>
+      <!--<![endif]-->
+    </td>
+  </tr>
+</table>
+
+    </td>
+  </tr>
+</table>
+
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+
+<tr>
+  <td style="padding:0; background-color:#22313F; border:1px solid #5B8A9A;">
+    <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#22313F;">
+      <tr>
+        <td style="padding:22px 31px 12px 31px;">
+          <h2 id="framed-in-the-accent" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:17px; font-weight:bold; color:#F2E6C9; line-height:120%;">
+            Framed in the Accent
+          </h2>
+        </td>
+      </tr>
+    </table>
+    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#22313F;">
+      <tr>
+        <td style="padding:0 31px; font-size:0; line-height:0;">
+    <!--[if mso]>
+    <table role="presentation" width="616" border="0" cellpadding="0" cellspacing="0" style="width:616px;">
+      <tr>
+        <td width="300" valign="top" style="width:300px; padding:0;">
+    <![endif]-->
+    <table role="presentation" width="300" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:300px; margin-right:16px; background-color:#22313F;">
+      <tr>
+        <td class="mobile-pad" style="padding:2px 20px 26px 0px; font-family: Arial, Helvetica, sans-serif; font-size:14px; color:#F2E6C9; line-height:172%;">
+          <div class="" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: #F2E6C9; line-height: 172%; margin: 0 0 16px 0;"><p>Type in the caller's own cream.</p></div>
+
+        </td>
+      </tr>
+    </table>
+    <!--[if mso]>
+        </td>
+        <td width="300" valign="top" style="width:300px; padding:0;">
+    <![endif]-->
+    <table role="presentation" width="300" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:300px; background-color:#22313F;">
+      <tr>
+        <td class="mobile-pad" style="padding:2px 0px 26px 20px; font-family: Arial, Helvetica, sans-serif; font-size:14px; color:#F2E6C9; line-height:172%;">
+          <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
+  <tr>
+    <td bgcolor="#FFFFFF" style="padding:8px; background-color:#FFFFFF;">
+<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border: 1px solid #D6D2CB;">
+  <tr>
+    <td align="left" style="padding: 14px 16px; text-align: left; background-color: #FFFFFF; border-bottom: 1px solid #D6D2CB;">
+      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #7A7A72; text-transform: uppercase; margin: 0 0 6px 0; line-height: 172%; letter-spacing: 0.5px; font-weight: bold;">Duration</p>
+      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 21px; font-weight: bold; color: #5A5A5A; margin: 0 0 4px 0; line-height: 120%;">6.2y</p>
+    </td>
+  </tr>
+  <tr>
+    <td align="left" style="padding: 14px 16px; text-align: left; background-color: #FFFFFF;">
+      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #7A7A72; text-transform: uppercase; margin: 0 0 6px 0; line-height: 172%; letter-spacing: 0.5px; font-weight: bold;">Yield</p>
+      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 21px; font-weight: bold; color: #5A5A5A; margin: 0 0 4px 0; line-height: 120%;">4.1%</p>
+    </td>
+  </tr>
+</table>
+
+    </td>
+  </tr>
+</table>
+
+        </td>
+      </tr>
+    </table>
+    <!--[if mso]>
+        </td>
+      </tr>
+    </table>
+    <![endif]-->
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+
+<tr>
+  <td style="padding:1px 1px 1px 1px; background-color:#FFFFFF; border-top:1px solid #D6D2CB; border-bottom:1px solid #D6D2CB; border-left:1px solid #D6D2CB; border-right:1px solid #D6D2CB;">
+    <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#F8F7F5;">
+      <tr>
+        <td style="padding:22px 30px 12px 30px;">
+          <h2 id="highlighted-and-framed" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:17px; font-weight:bold; color:#2C3E50; line-height:120%;">
+            Highlighted and Framed
+          </h2>
+        </td>
+      </tr>
+    </table>
+    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#F8F7F5;">
+      <tr>
+        <td class="mobile-pad" style="padding:16px 30px 14px 30px; font-family: Arial, Helvetica, sans-serif; font-size:14px; color:#3B3B3B; line-height:172%;">
+          <table class="callout" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+  <tr>
+    <td bgcolor="#F2F2F2" style="padding:16px 20px; background-color:#F2F2F2;">
+      <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: #3B3B3B; line-height: 172%; margin: 0 0 16px 0;"><p>An unframed neutral box on the highlight band.</p></div>
+
+    </td>
+  </tr>
+</table>
+
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+
+<tr>
+  <td style="padding:0; background-color:#FFFFFF;">
+    <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td style="padding:22px 32px 12px 32px;">
+          <h2 id="three-tones" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:17px; font-weight:bold; color:#2C3E50; line-height:120%;">
+            Three Tones
+          </h2>
+        </td>
+      </tr>
+    </table>
+    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td style="padding:0 32px; font-size:0; line-height:0;">
+    <!--[if mso]>
+    <table role="presentation" width="616" border="0" cellpadding="0" cellspacing="0" style="width:616px;">
+      <tr>
+        <td width="195" valign="top" style="width:195px; padding:0;">
+    <![endif]-->
+    <table role="presentation" width="195" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:195px; margin-right:16px; background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:2px 16px 26px 0px; font-family: Arial, Helvetica, sans-serif; font-size:14px; color:#3B3B3B; line-height:172%;">
+          <table class="callout" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+  <tr>
+    <td bgcolor="#F1F5F2" style="padding:16px 20px; background-color:#F1F5F2; border:1px solid #4A7C59;">
+      <div style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; letter-spacing: 0.5px; text-transform: uppercase; color: #4A7C59; margin: 0 0 8px 0; line-height: 140%;">Up</div>
+      <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: #3B3B3B; line-height: 172%; margin: 0 0 16px 0;"><p>Breadth improved.</p></div>
+
+    </td>
+  </tr>
+</table>
+
+        </td>
+      </tr>
+    </table>
+    <!--[if mso]>
+        </td>
+        <td width="194" valign="top" style="width:194px; padding:0;">
+    <![endif]-->
+    <table role="presentation" width="194" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:194px; margin-right:16px; background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:2px 16px 26px 16px; font-family: Arial, Helvetica, sans-serif; font-size:14px; color:#3B3B3B; line-height:172%;">
+          <table class="callout" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+  <tr>
+    <td bgcolor="#F9F1F1" style="padding:16px 20px; background-color:#F9F1F1; border:1px solid #B85450;">
+      <div style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; letter-spacing: 0.5px; text-transform: uppercase; color: #B85450; margin: 0 0 8px 0; line-height: 140%;">Down</div>
+      <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: #3B3B3B; line-height: 172%; margin: 0 0 16px 0;"><p>Spreads widened.</p></div>
+
+    </td>
+  </tr>
+</table>
+
+        </td>
+      </tr>
+    </table>
+    <!--[if mso]>
+        </td>
+        <td width="195" valign="top" style="width:195px; padding:0;">
+    <![endif]-->
+    <table role="presentation" width="195" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:195px; background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:2px 0px 26px 16px; font-family: Arial, Helvetica, sans-serif; font-size:14px; color:#3B3B3B; line-height:172%;">
+          <table class="callout" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+  <tr>
+    <td bgcolor="#F2F2F2" style="padding:16px 20px; background-color:#F2F2F2; border:1px solid #5A5A5A;">
+      <div style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; letter-spacing: 0.5px; text-transform: uppercase; color: #5A5A5A; margin: 0 0 8px 0; line-height: 140%;">Flat</div>
+      <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: #3B3B3B; line-height: 172%; margin: 0 0 16px 0;"><p>Volumes flat.</p></div>
+
+    </td>
+  </tr>
+</table>
+
+        </td>
+      </tr>
+    </table>
+    <!--[if mso]>
+        </td>
+      </tr>
+    </table>
+    <![endif]-->
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+
+<tr>
+  <td style="padding:0; background-color:#FFFFFF;">
+    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:16px 32px 14px 32px; font-family: Arial, Helvetica, sans-serif; font-size:14px; color:#3B3B3B; line-height:172%;">
+          <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
+  <tr>
+    <td style="padding:0 0 16px 0;">
+<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
+  <tr>
+    <td style="padding:16px 0 16px 0;">
+      <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="border-top:1px solid #D6D2CB; font-size:0; line-height:0;" height="1">&nbsp;</td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+    </td>
+  </tr>
+  <tr>
+    <td style="padding:0;">
+<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
+  <tr>
+    <td align="right" style="padding:0; text-align:right;">
+      <!--[if mso]>
+      <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="mailto:desk@example.com"
+        style="height:38px;v-text-anchor:middle;width:150px;" arcsize="8%"
+        strokecolor="#5B8A9A" fillcolor="#5B8A9A">
+        <w:anchorlock/>
+        <center style="color:#FFFFFF;font-family: Arial, Helvetica, sans-serif;
+                       font-size:13px;font-weight:bold;">
+          Email the desk
+        </center>
+      </v:roundrect>
+      <![endif]-->
+      <!--[if !mso]><!-->
+      <a href="mailto:desk@example.com"
+         style="background-color:#5B8A9A; border-radius:3px; color:#FFFFFF;
+                display:inline-block; font-family: Arial, Helvetica, sans-serif;
+                font-size:13px; font-weight:bold; line-height:38px;
+                text-align:center; text-decoration:none; width:150px;
+                -webkit-text-size-adjust:none;">
+        Email the desk
+      </a>
+      <!--<![endif]-->
+    </td>
+  </tr>
+</table>
+
+    </td>
+  </tr>
+</table>
+
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+
+
+        </table>
+        <!-- /Main container -->
+
+        <!-- FOOTER: copyright, links and optional disclaimer -->
+        <table role="presentation" width="680" cellpadding="0" cellspacing="0" border="0"
+               style="max-width:680px; background-color:#F2F1EE;" bgcolor="#F2F1EE" class="email-container">
+          <tr>
+            <td style="padding:20px 32px 24px; background-color:#F2F1EE;" bgcolor="#F2F1EE">
+              <p align="center" style="margin:6px 0 0; font-family: Arial, Helvetica, sans-serif; font-size:9.5px;
+                        color:#A09E97; text-align:center;">
+                &copy; 2026 Hermes Research &nbsp;&middot;&nbsp;
+                <a href="https://example.com/unsubscribe" style="color:#5B8A9A; text-decoration:underline;">Unsubscribe</a>
+                &nbsp;&middot;&nbsp;
+                <a href="https://example.com/archive/011" style="color:#5B8A9A; text-decoration:underline;">View in browser</a>
+              </p>
+            </td>
+          </tr>
+        </table>
+
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>

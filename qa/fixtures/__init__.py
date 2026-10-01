@@ -44,6 +44,7 @@ from . import (
     slate_theme,
     slide_16_9,
     spacious_size,
+    surfaced_layout,
     tri_fold_letter,
 )
 
@@ -96,6 +97,7 @@ def all_fixtures() -> dict[str, FixtureBuilder]:
         "rich_table": rich_table.build,
         "aligned_layout": aligned_layout.build,
         "composed_layout": composed_layout.build,
+        "surfaced_layout": surfaced_layout.build,
     }
 
 
