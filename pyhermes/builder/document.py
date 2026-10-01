@@ -174,9 +174,18 @@ class Document:
         Append a section. Returns ``self`` for optional chaining.
 
         Raises:
-            ValidationError: If the section claims an anchor the document already
-                has; the document is left as it was.
+            ValidationError: If ``container`` is not a section, or if it claims an
+                anchor the document already has; the document is left as it was.
         """
+        if not isinstance(container, Container):
+            hint = (
+                "Wrap a block in a section, e.g. FullWidth(...)."
+                if isinstance(container, Component)
+                else "Pass a section such as FullWidth(...)."
+            )
+            raise ValidationError(
+                f"add_section takes a section, got {type(container).__name__}. {hint}"
+            )
         for owner, spacing in _spacings(container):
             spacing.check_medium(self._medium.paged, self._medium.name, owner)
         self._sections.append(container)

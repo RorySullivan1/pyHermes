@@ -132,6 +132,20 @@ class Container:
         title = getattr(self, "title", None)
         return f"{type(self).__name__} {title!r}" if title else type(self).__name__
 
+    def _slot(self, name: str, value: object) -> Component:
+        """``value`` if it is a component, else a ``ValidationError`` naming what to use instead."""
+        if isinstance(value, Component):
+            return value
+        got = type(value).__name__
+        if isinstance(value, Container):
+            hint = "A section cannot sit inside a section; to split a cell, use Columns([...])."
+        elif isinstance(value, (list, tuple)):
+            hint = "To put several blocks in one cell, use Stack([...])."
+        else:
+            hint = "Wrap text in a TextBlock."
+        owner = type(self).__name__
+        raise ValidationError(f"{owner}.{name} must be a Component, got {got}. {hint}")
+
     def _spaced(self, engine: Renderer) -> Renderer:
         """``engine`` as this section and everything inside it render against."""
         engine = respaced(engine, self.spacing, self._owner())
@@ -373,7 +387,7 @@ class FullWidth(Container):
             border=border,
             border_color=border_color,
         )
-        self.content = content
+        self.content = self._slot("content", content)
 
     def components(self) -> list[Component]:
         return [self.content]
@@ -518,8 +532,8 @@ class TwoColumn(_SplitContainer):
         self.ratio = self._check_ratio(ratio)
         if left is None and right is None:
             raise ValidationError("TwoColumn requires at least one of 'left' or 'right'.")
-        self.left = left
-        self.right = right
+        self.left = None if left is None else self._slot("left", left)
+        self.right = None if right is None else self._slot("right", right)
 
     def components(self) -> list[Component]:
         return [c for c in (self.left, self.right) if c is not None]
@@ -597,9 +611,9 @@ class ThreeColumn(_SplitContainer):
             raise ValidationError(
                 "ThreeColumn requires at least one of 'left', 'center', or 'right'."
             )
-        self.left = left
-        self.center = center
-        self.right = right
+        self.left = None if left is None else self._slot("left", left)
+        self.center = None if center is None else self._slot("center", center)
+        self.right = None if right is None else self._slot("right", right)
 
     def components(self) -> list[Component]:
         return [c for c in (self.left, self.center, self.right) if c is not None]
