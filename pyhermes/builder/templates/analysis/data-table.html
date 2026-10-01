@@ -9,10 +9,11 @@
                merely sits above.
     groups   — List of dicts with keys: label, span. Empty for no header tier.
     units    — One unit per column, or empty for no units row.
-    columns  — List of dicts with keys: header, parts, align, kind — already
+    columns  — List of dicts with keys: header, parts, align, kind, width — already
                resolved (#117), so this template decides neither. A column's
                position means nothing here; its `kind` carries the face and
-               its `align` the alignment.
+               its `align` the alignment. `width` is a percentage, or empty
+               when the table sets no weights (#271).
     rows     — List of dicts with keys: kind, cells (list), alt (bool). A
                `total` is ruled off above and bold across; a `subhead` is a
                tinted label band. Both draw from theme tokens only — a row's
@@ -60,7 +61,7 @@
 {% endif %}
   <tr style="border-top: 1px solid {{ theme.palette.rule }}; border-bottom: {% if units %}1px solid {{ theme.palette.rule_subtle }}{% else %}2px solid {{ theme.palette.rule_dark }}{% endif %};">
 {% for column in columns %}
-    <th scope="col" align="{{ column.align | escape_html }}" style="font-family: {{ font.label }}; font-size: {{ size.type.label }}px; font-weight: bold; color: {{ theme.semantic.neutral }}; text-transform: uppercase; line-height: {{ size.type.body_line | percent }}; text-align: {{ column.align }}; padding: {{ size.component.table_cell_pad }}px; letter-spacing: 0.5px;">{{ marked(column.parts) }}</th>
+    <th scope="col" align="{{ column.align | escape_html }}"{% if column.width %} width="{{ column.width }}"{% endif %} style="{% if column.width %}width: {{ column.width }}; {% endif %}font-family: {{ font.label }}; font-size: {{ size.type.label }}px; font-weight: bold; color: {{ theme.semantic.neutral }}; text-transform: uppercase; line-height: {{ size.type.body_line | percent }}; text-align: {{ column.align }}; padding: {{ size.component.table_cell_pad }}px; letter-spacing: 0.5px;">{{ marked(column.parts) }}</th>
 {% endfor %}
   </tr>
 {% if units %}

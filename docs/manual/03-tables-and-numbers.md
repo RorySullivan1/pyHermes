@@ -126,6 +126,26 @@ table = DataTable(
 negative ones in red. `tone="auto"` colours by sign, and a figure shown as zero is left
 uncoloured.
 
+## How to set how wide each column is
+
+**When to use this:** a long label column squeezes the figures beside it, or a short one
+leaves them spread out.
+
+```python
+table = DataTable(
+    headers=[Column("Issue", width=3), "Weight", "Yield"],
+    rows=[
+        TableRow(["UKT 0.875% 2033", "4.2%", "4.1%"]),
+        TableRow(["National Grid 2041", "1.8%", "5.3%"]),
+    ],
+)
+```
+
+**Result:** the first column takes 60% of the table and the other two 20% each. `width`
+is a weight, not pixels: a column you leave unset weighs 1, so `3` means three times as
+wide as one of those. The shares are the same in Outlook, in a browser and on paper. Leave
+every `width` unset and each email client decides the widths from the content, as before.
+
 ## How to colour one cell
 
 ```python

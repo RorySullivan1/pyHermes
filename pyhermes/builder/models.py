@@ -647,6 +647,8 @@ class Column:
         unit:   Printed once, in a units row beneath the heads. Plain text.
         scale:  A :class:`HeatScale` tinting each cell by its raw figure (#227).
         bar:    Draw each raw figure as a bar in its cell (#227).
+        width:  A relative weight for this column's share of the width (#271).
+                Unset weighs 1; with no weight set, the client decides.
     """
 
     header: str
@@ -658,9 +660,16 @@ class Column:
     unit: str = ""
     scale: "HeatScale | None" = None
     bar: bool = False
+    width: int | float | None = None
 
     def validate(self) -> None:
         _require(self.header, "column.header")
+        if self.width is not None and not (
+            isinstance(self.width, (int, float))
+            and not isinstance(self.width, bool)
+            and self.width > 0
+        ):
+            raise ValidationError(f"'column.width' must be a positive weight, got: {self.width!r}")
         if self.format is not None and not callable(self.format):
             raise ValidationError(f"'column.format' must be callable, got: {self.format!r}")
         if self.tone != "auto":
