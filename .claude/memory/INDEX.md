@@ -2,16 +2,17 @@
 
 ## State            (rewrite in place — current truth only, ≤ ~10 lines)
 - pyHermes builds **documents** and renders each onto a **medium**: `pyhermes/builder` is the
-  shared kit, `pyhermes/email`, `pyhermes/document` and `pyhermes/brochure` are the media, and exporters sit on
+  shared kit, `pyhermes/email`, `pyhermes/document`, `pyhermes/brochure` and `pyhermes/deck` are the media, and exporters sit on
   one contract — `pyhermes/delivery`+`gmail`+`outlook`, and `pyhermes/pdf`. Rationale: CLAUDE.md and
   `.claude/rules/media.md`; do not restate it here.
 - **Shipped**: #157, #153, #169, #170, #171, #172, #193 (PRs #167–#203); #201, #150, #202 (PRs #204–#206);
   #209 (PR #222); #217 (PR #234); #221 (PR #235); #238 (PR #253); #237, #255, #239 (PRs #254–#257); manual
   + #258 (PR #260); #261 + #258's fix (PR #283); #265 (PR #284); #277 (PR #285); #282 (PR #286); #273 (PR #287); #270
-  (PR #289); #259 (PR #292); #281 (PR #293); #272 (PR #294); #280 (PR #295); #220 (PR #313). #288 is the human Outlook-desktop check.
+  (PR #289); #259 (PR #292); #281 (PR #293); #272 (PR #294); #280 (PR #295); #220 (PR #313); #218 (PR #314). #288 is the human Outlook-desktop check.
   #220 research apparatus (#308–#312) shipped in PR #313; epic-autoclose closed it.
-  #218 deck medium (#296–#299, #301; #300 PPTX closed with #219) is implemented, its PR open.
-  Epics defined, not started: #219 DOCX (#302–#307).
+  #218 deck medium shipped in PR #314; epic-autoclose closed it. #300 PPTX was closed with #219.
+  Epics defined, not started: #219 DOCX (#302–#307); content #318 #324 #329 #335 #340 #346;
+  position #354 #361. Subs #319–#367. Deck bugs #315–#317 come before #346.
 - The prose budget is live; the baseline is 44 and may only shrink.
 
 ## Decisions        (append-only; supersede, never delete)
@@ -39,6 +40,7 @@
   release shipped it. Checks read the built wheel and sdist, never the tree — `working-in-the-code.md`
 
 ## Threads          (open items; remove when closed)
+- **Open deck bugs #315–#317** (overflow check crash, wrapped title, Slide in Panel); #347 waits on #316.
 - **`epic-autoclose` works again**: it closed #273 on 2026-10-01. Still confirm each epic closed.
 - **In this container, PDF byte-determinism tests flake** (no HarfBuzz-Subset), and screenshot
   tests skip unless `PYHERMES_CHROMIUM=/opt/pw-browsers/chromium-1194/chrome-linux/chrome`.
@@ -74,6 +76,10 @@
   Content-IDs, whose chart bytes are the machine's** — `qa-harness.md` (#281)
 - [2026-10-01] **A deck is a medium, superseding "a slide is a page"; one slide is one sheet, overflow a
   finding; `presentation` is the first density one medium alone may take** — `deck.md` (#218)
+- [2026-10-01] **Owner's calls for the filed epics**: trend arrows are drawn shapes, never glyphs; the notes
+  handout fits #299; `[qr]` is the sixth extra; kicker and badge both sit on `Container` — #318–#346
+- [2026-10-01] **Position routes**: split `valign` is paper-only and an email refuses it (C); the prose
+  measure is a medium default written only where it bites (D); visibility is `Only`/`OnlySections` (B) — #354, #361
 - [2026-10-01] **Appendices reopen numbering by one letter level only; a citation is `[@key]` in the
   `[^n]` fields, resolved by the walk; a term link is a plain `#term-` anchor** — `apparatus.md` (#220)
 
