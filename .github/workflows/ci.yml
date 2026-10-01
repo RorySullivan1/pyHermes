@@ -215,7 +215,7 @@ jobs:
         # fund-factsheet example plots through [charts], so this is the
         # only job where it actually builds rather than skipping.
         run: |
-          pytest tests/test_frames.py tests/test_charts.py tests/test_data_layer.py \
+          pytest tests/test_frames.py tests/test_charts.py tests/test_chart_style.py tests/test_data_layer.py \
                  tests/test_examples.py tests/test_math.py
 
       - name: Type-check with the backends present
