@@ -73,7 +73,7 @@ class Page(Container):
         if not sections:
             raise ValidationError("a page needs at least one section")
         for section in sections:
-            if isinstance(section, Page):
+            if isinstance(section, Page) or hasattr(section, "sections"):
                 raise ValidationError(
                     "a page may not contain a page: an inner break would either "
                     "duplicate the outer one or contradict it. Put the sections "

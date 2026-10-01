@@ -32,6 +32,7 @@ and ends with an email open in your browser.
 | [7. Reports and PDFs](07-reports-and-pdfs.md) | Print the same content as a PDF, or attach one |
 | [8. Troubleshooting](08-troubleshooting.md) | Fix an error message or an email that looks wrong |
 | [9. Customise the layout](09-customise-the-layout.md) | Move one section's spacing, add a block of your own, or see what is fixed and why |
+| [10. Write a research note](10-write-a-research-note.md) | Cite sources, define terms, letter appendices and list your tables and figures |
 
 ## Three words used throughout
 

@@ -1,0 +1,23 @@
+{#
+  BIBLIOGRAPHY — the sources a document cites, in its style (#310).
+
+  Each entry is a paragraph carrying the `id` its citations link to, hung by
+  a negative indent so a reader finds the next author at the margin. A `p`,
+  not an `li`: Outlook's Word engine indents a list item by its own rules and
+  the hang would be lost. It declares its own alignment, as the contents
+  list does, since a centred section would centre an entry away from its
+  hang. Every part is plain text from a Reference, so every part is escaped.
+
+  Context:
+    bibliography_title — the optional heading, empty when unset
+    entries — list of dicts with keys: anchor, label, and the punctuated
+              authors, year, title, venue and link
+#}
+{% if bibliography_title %}
+<p class="bibliography-heading" style="font-family: {{ font.label }}; font-size: {{ size.type.label }}px; font-weight: bold; color: {{ theme.text.heading }}; letter-spacing: 0.5px; margin: 0 0 {{ size.space.caption_gap }}px 0; line-height: {{ size.type.body_line | percent }};">{{ bibliography_title | escape_html }}</p>
+{% endif %}
+<div class="bibliography" align="left" style="text-align: left;">
+{% for entry in entries %}
+  <p id="{{ entry.anchor | escape_html }}" style="font-family: {{ font.body }}; font-size: {{ size.type.secondary }}px; color: {{ theme.text.primary }}; line-height: {{ size.type.secondary_line | percent }}; margin: 0 0 {{ size.space.caption_gap }}px {{ size.space.gutter }}px; text-indent: -{{ size.space.gutter }}px;">{% if entry.label %}<span style="font-family: {{ font.label }}; color: {{ theme.text.secondary }};">{{ entry.label | escape_html }}</span> {% endif %}{{ entry.authors | escape_html }} {{ entry.year | escape_html }} {{ entry.title | escape_html }}{% if entry.venue %} <em>{{ entry.venue | escape_html }}</em>{% endif %}{% if entry.link %} <a href="{{ entry.link | escape_html }}" style="color: {{ theme.palette.accent }}; text-decoration: none; word-break: break-all;">{{ entry.link | escape_html }}</a>{% endif %}</p>
+{% endfor %}
+</div>

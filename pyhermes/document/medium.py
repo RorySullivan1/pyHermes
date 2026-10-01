@@ -14,7 +14,7 @@ from dataclasses import replace
 from pyhermes.builder.medium import Medium
 from pyhermes.builder.sizing import A4_PORTRAIT, PageFormat
 
-from .regions import BackMatter, ContentsPage, Cover, RunningFooter, RunningHeader
+from .regions import BackMatter, ContentsPage, Cover, ExhibitsPage, RunningFooter, RunningHeader
 
 __all__ = ["PAGED_MEDIUM", "paged_medium"]
 
@@ -29,7 +29,7 @@ PAGED_MEDIUM = Medium(
     name="document",
     skeleton="base.html",
     page_format=A4_PORTRAIT,
-    region_types=(Cover, ContentsPage, RunningHeader, RunningFooter, BackMatter),
+    region_types=(Cover, ContentsPage, ExhibitsPage, RunningHeader, RunningFooter, BackMatter),
     template_search_path=("document",),
     paged=True,
 )

@@ -32,6 +32,7 @@ Wide Centre
 Wide Right
 What We Are Watching
 Bottom Line
+Sources and Terms
 
 
 Market Snapshot
@@ -262,6 +263,27 @@ Stay long the belly; fade the long end.
 ------------------------------------------------------------------------------
 
 Read the full note: https://example.com/note
+
+
+Sources and Terms
+-----------------
+
+Momentum persists [1, 2], though its crash risk is well documented [1].
+
+References
+----------
+
+[1] Jegadeesh, Narasimhan, and Sheridan Titman. 1993. Returns to buying
+    winners and selling losers. https://example.com/jt1993
+[2] Carhart, Mark M. 1997. On persistence in mutual fund performance. The
+    Journal of Finance. https://doi.org/10.1111/j.1540-6261.1997.tb03808.x
+
+Terms
+-----
+
+Momentum: Past winners continuing to outperform.
+
+Crash risk: A sudden, deep reversal of a trend.
 
 
 Questions about this note?

@@ -2,6 +2,9 @@
 paths:
   - "pyhermes/builder/apparatus.py"
   - "pyhermes/builder/document.py"
+  - "pyhermes/builder/research.py"
+  - "pyhermes/builder/templates/text/bibliography.html"
+  - "pyhermes/builder/templates/text/glossary.html"
   - "pyhermes/builder/templates/common/notes.html"
   - "pyhermes/builder/templates/common/endnotes.html"
   - "pyhermes/builder/templates/common/contents-list.html"
@@ -10,11 +13,13 @@ paths:
   - "pyhermes/builder/templates/document/regions/running-box.html"
 ---
 
-# The document apparatus — numbers, notes, contents, references
+# The document apparatus — numbers, notes, contents, references, sources
 
 Epic #171 gave a document the apparatus a reader navigates by. #157 and #153 each deferred it by
 name. Five sub-issues: exhibit numbering (#181), footnotes (#182), a contents list (#183),
-cross-references (#184) and a running header that follows the section (#185).
+cross-references (#184) and a running header that follows the section (#185). Epic #220 added
+the long-form half on the same walk: a list of exhibits (#308), lettered appendices (#309),
+citations and a bibliography (#310), a glossary (#311), and a research-note fixture (#312).
 
 | Apparatus | Paged | Email | Plain text |
 |---|---|---|---|
@@ -23,6 +28,11 @@ cross-references (#184) and a running header that follows the section (#185).
 | Contents | `ContentsPage`, after the cover, with page numbers | the `Contents` component, a linked list | the titles, one per line |
 | Cross-reference | "Exhibit 3 (p. 4)" | "Exhibit 3", linked | "Exhibit 3" |
 | Running section | `string-set` from the current section title | none (no sheets) | none, by decision |
+| List of exhibits | `ExhibitsPage`, or `ContentsPage(of="exhibits")`, with page numbers | `Contents(of="exhibits")` | the headings, one per line |
+| Appendix | "Appendix A: Data sources", exhibits "A.1", `id="exhibit-a-1"` | the same | the same |
+| Citation | "(Fama and French 1993)" or "[3]", linked to `ref-<key>` | the same | the same, unlinked |
+| Bibliography | entries hung under their first line | the same | hung by four spaces, or under the label |
+| Glossary term | `term-<slug>`, a two-column table | the same, stacked on a phone | "Term: definition" |
 
 ## The one rule: Python numbers everything but the page
 
@@ -34,7 +44,10 @@ they are handed:
 
 - each labelled exhibit's `number`, counted per label in reading order;
 - each `Footnote.number`, across the whole tree in reading order;
-- each `Contents` component's entries, every titled section but its own.
+- each `Contents` component's entries, every titled section but its own, or every numbered
+  exhibit;
+- each appendix section's letter, and each exhibit's appendix (#309);
+- the bibliography's citation order, and every component's `citing` (#310).
 
 **The walk runs on every `add_section` and again before each projection.** Running it at
 render is what lets a component shared between two documents carry each document's number
@@ -184,9 +197,13 @@ components and regions declare through `raw_html()`, the `images()` shape, plus
 
 ## Non-goals, as decisions
 
-- **No index, bibliography or list of figures.** Each is a smaller later addition on this
-  numbering, and a factsheet needs none of them.
-- **No multi-level numbering** (`3.2.1`). Sections are flat, and the contents list is one level.
+- **Superseded (#220): "No index, bibliography or list of figures."** It said each was a
+  smaller later addition on this numbering. The list of exhibits and the bibliography are now
+  that addition; **no index** still stands, for the reason it was given: a factsheet needs
+  none, and an index is a page-number product only the print engine could finish.
+- **Superseded (#309), by one bounded step: "No multi-level numbering (`3.2.1`)."** Body
+  sections are still flat and unnumbered, and the contents list is still one level. What was
+  reopened is a single letter level, for appendices only, below.
 - **No footnote in an email as a footnote.** Endnotes are the honest degradation. A caller who
   wants per-exhibit qualification already has `disclosure`.
 - **No link inside a note or a disclosure**, the same follow-up for both.
@@ -207,3 +224,89 @@ components and regions declare through `raw_html()`, the `images()` shape, plus
 - **Probe the print engine before designing on it.** Every mechanism here was tried in a
   scratch document under WeasyPrint 70 before any code was written. `string-set` failed two
   intuitive designs that the specification would have endorsed.
+
+## The list of exhibits (#308)
+
+- **The same walk read another way.** `Contents(of="exhibits", label=None)` lists every
+  numbered exhibit in reading order, under the heading it prints (`Exhibit.listed()`: the
+  numbered caption, markers removed). `label` narrows it to one sequence. `of="sections"` is
+  the default and is byte-identical.
+- **On paper it is a region in a slot of its own.** A research note wants both lists, and a
+  region owns exactly one slot, so `ExhibitsPage` is a `ContentsPage` with
+  `SLOTS = ("exhibits",)`, refusing `of="sections"`. The skeleton prints
+  `{{ contents_html }}{{ exhibits_html }}` on one line, so an empty slot adds no byte and no
+  golden moved. `ContentsPage(of="exhibits")` also works, for a document with one list.
+- **The page numbers are the contents CSS, unchanged**: both share `common/contents-list.html`.
+
+## Appendices, lettered (#309) — the reopened decision
+
+**The reason to reopen:** a methodology paper's appendices are lettered, and their exhibits
+are numbered within them. Typing "Appendix A" into a title gave the heading and left every
+exhibit inside counting on from the body, "Exhibit 7" where a reader expects "A.1".
+
+- **`Appendices(sections)` is a section list, as `Page` is.** It flattens in rendering, opens
+  a fresh sheet on paper unless `break_before=False`, and emits no wrapper in an email. Each
+  titled section opens the next appendix; an untitled one continues it, so the first must be
+  titled. One per document, at most 26, and it cannot nest with a `Page` either way round.
+- **The walk letters, the container prints.** `Container.letter` is set by the walk and
+  `Container.heading()` formats it through `Config.appendix_heading`
+  (`"Appendix {letter}: {title}"`). Every consumer reads `heading()`: the `h2`, the text
+  part, both contents lists, and so the running header, which follows the `h2`. The section's
+  anchor stays the slug of the caller's title, so a link to it survives a reordering.
+- **An exhibit counts per label and appendix.** `Exhibit.appendix` is set by the walk;
+  `numbered()` prints "A.1" and `resolved_anchor()` gives `exhibit-a-1`, which no body
+  anchor can collide with.
+- **#171's probes, re-run under WeasyPrint 70 with lettered anchors** (`test_appendices.py`,
+  `TestOnPaper`): the running header on an appendix sheet reads "Appendix A: Data sources",
+  `target-counter(attr(href), page)` resolves `#exhibit-a-1` to its sheet in a cross-reference
+  and in the list of exhibits. No CSS changed; the fallback string still shows on the
+  contents sheets.
+
+## Citations and the bibliography (#310)
+
+- **A citation is a record cited by key, unlike a note.** `Reference(key, authors, year,
+  title, venue, url, doi)` is a frozen dataclass validated at construction. Authors are
+  written "Surname, Given"; a citation prints the part before the comma. No BibTeX or CSL
+  parser, by decision: a `[bibtex]` adapter can follow as `[data]` did.
+- **`[@key]` follows the footnote marker's rules**: plain text in exactly the fields a `[^n]`
+  works in, so the raw-HTML set stays at five. `[@a; @b]` cites several. A component lists
+  those fields in `marked_copy()`, which is what the walk reads.
+- **The walk resolves it.** It reads every key in reading order, hands the order to the one
+  `Bibliography`, and hands every leaf the `Citing` it returns: each key's label and the
+  style's punctuation. `split_markers` and `text_markers` take it, so the markup and the text
+  part spell a citation the same way. A component rendered alone holds `UNRESOLVED`, which
+  prints the key.
+- **Two styles, each a curated house form.** Author-year cites "(Fama and French 1993)",
+  shortening past `Config.citation_authors` (2) to "et al.", sorts by first author then year,
+  and letters a collision "1993a". Numeric cites "[3]", numbering by first citation, reusing a
+  number on re-citation, and listing the uncited after. An entry reads
+  "Authors. Year. Title. *Venue.* link", the first author inverted and the rest in reading
+  order, a DOI linked through doi.org ahead of a URL.
+- **The entry is a hung `p`, not an `li`**: Outlook indents a list item by its own rules. The
+  text part hangs a continuation by four spaces, or under the widest numeric label. Long links
+  are never broken in the text part.
+- **Refusals**: an unknown key is named by `validate()`, before any template loads; a second
+  `Bibliography` is refused in `add_section`; a key listed twice, at construction.
+- **A known limit, kept**: in the text part a numeric citation "[1]" and a footnote marker
+  "[1]" look alike, the two lists headed "References" and "Notes". Respelling the marker would
+  move every golden carrying a note; a document with notes reads better in author-year.
+
+## The glossary (#311)
+
+- **A term link is an ordinary link.** `Term(term, definition)` is anchored `term-<slug>`; a
+  `Glossary`'s anchors join the document's through `Component.anchors()`, so
+  `a href="#term-duration"` validates and a dangling one is named, by the existing check.
+  No marker, and no automatic linking: the author links what they mean.
+- **A layout table, not a data table**: a paged data table needs a `thead` a glossary has no
+  use for. Both cells take the skeleton's `stack-column` class, so it stacks on a phone with
+  no change to the `@media` block. Two terms with one anchor are refused at construction.
+
+## The research note (#312)
+
+`a4_research_note` and `research_note` build the same sections (`qa/fixtures/_research.py`):
+citations, glossary links, a key-takeaways `Callout`, two body exhibits, a bibliography, a
+glossary and two appendices. `test_research_note.py` reads each medium's exhibits, appendix
+headings and citations against the other's, and reads both lists' page numbers back from the
+PDF. Every other golden was byte-identical except the kitchen-sink family, which gained the
+section rule 1 required.
+

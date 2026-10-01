@@ -26,10 +26,13 @@ pyhermes/
 │   ├── email.py        — Email(Document) + EmailBuilder (fluent): the four-slot region set
 │   ├── regions.py      — Region base + Banner/MinimalBanner, Footer
 │                         (body = the section list, deliberately not a class)
-│   ├── containers.py   — Container, FullWidth, TwoColumn, ThreeColumn (+ `highlight=` property)
+│   ├── containers.py   — Container, FullWidth, TwoColumn, ThreeColumn (+ `highlight=` property),
+│                         and Appendices, which letters its sections (#309)
 │   ├── components.py   — Component, CardGroup, DataTable, ChartBlock, ImageBlock, TextBlock, NumberedList, AuthorBlock, ContactBlock, Contents
 │                         (+ the Exhibit mixin, and the private Endnotes the document appends)
 │   ├── surfaces.py     — Callout, Button, Divider: blocks that set content apart (#265)
+│   ├── research.py     — Reference + Bibliography, Term + Glossary: a note's sources and
+│                         terms, resolved by the document's walk (#220). `apparatus.md`
 │   ├── models.py       — EmailMetadata (the email's facts), Card, KpiItem, TableRow, NumberedItem, Footnote, SectionConfig
 │   ├── images.py       — EmailImage (hosted/attached/inline), ImageAsset manifest, format sniffing
 │   ├── enums.py        — StrEnum vocab: TwoColumnRatio, ThreeColumnRatio, CardOrientation, EmbedStrategy, ImageAlign, SizeTheme
@@ -80,8 +83,8 @@ pyhermes/
 │   ├── medium.py       — PAGED_MEDIUM, paged_medium(page)
 │   ├── document.py     — PagedDocument: cover | running boxes | body | back matter
 │   ├── page.py         — Page: a sheet boundary that FLATTENS in a non-paged medium
-│   └── regions.py      — Cover, ContentsPage, RunningHeader/Footer (@page margin boxes),
-│                         BackMatter, plus an Empty variant of each
+│   └── regions.py      — Cover, ContentsPage, ExhibitsPage, RunningHeader/Footer (@page
+│                         margin boxes), BackMatter, plus an Empty variant of each
 ├── brochure/           ← the folded medium (#172): one sheet, panels, both sides
 │   ├── fold.py         — FoldFormat, FoldKind, four presets; the tuck is a distance
 │   ├── panel.py        — Panel (flattens elsewhere) and PanelBox, where one sits

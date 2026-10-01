@@ -9,7 +9,8 @@
   #209 (PR #222); #217 (PR #234); #221 (PR #235); #238 (PR #253); #237, #255, #239 (PRs #254–#257); manual
   + #258 (PR #260); #261 + #258's fix (PR #283); #265 (PR #284); #277 (PR #285); #282 (PR #286); #273 (PR #287); #270
   (PR #289); #259 (PR #292); #281 (PR #293); #272 (PR #294); #280 (PR #295). #288 is the human Outlook-desktop check.
-  Epics defined, not started: #218 deck + PPTX (#296–#301), #219 DOCX (#302–#307), #220 research apparatus (#308–#312).
+  #220 research apparatus (#308–#312) implemented on the branch, PR not yet opened.
+  Epics defined, not started: #218 deck + PPTX (#296–#301), #219 DOCX (#302–#307).
 - The prose budget is live; the baseline is 44 and may only shrink.
 
 ## Decisions        (append-only; supersede, never delete)
@@ -70,6 +71,8 @@
   `h1`/`h2` are refused rather than demoted** — `design-axes.md` (#280)
 - [2026-10-01] **A committed example is a golden: a test compares it to a fresh render, masking only
   Content-IDs, whose chart bytes are the machine's** — `qa-harness.md` (#281)
+- [2026-10-01] **Appendices reopen numbering by one letter level only; a citation is `[@key]` in the
+  `[^n]` fields, resolved by the walk; a term link is a plain `#term-` anchor** — `apparatus.md` (#220)
 
 ## Log              (append-only pointers)
 - Older entries, and epic #157's, are in sessions/ARCHIVE-2026.md.
@@ -79,3 +82,5 @@
   sessions/2026-10-01-customise-the-layout.md
 - [2026-10-01] prose-styles — **#280 implemented**: the `prose` filter, three tokens, the h1/h2
   refusal, manual page 9's tag table — sessions/2026-10-01-prose-styles.md
+- [2026-10-01] research-apparatus — **#220 implemented** (#308–#312): exhibits list, appendices,
+  citations, glossary, the research-note fixtures — sessions/2026-10-01-research-apparatus.md

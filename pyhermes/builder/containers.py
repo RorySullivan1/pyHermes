@@ -29,7 +29,7 @@ from .exceptions import ValidationError
 from .images import EmailImage, ImageAsset
 from .models import _validate_align, _validate_color
 from .sizing import STANDARD_SIZES, SizeScheme, Spacing, coerce_spacing, column_layout
-from .textgen import join_blocks, underline
+from .textgen import join_blocks, join_sections, underline
 
 
 class Container:
@@ -87,6 +87,9 @@ class Container:
 
     #: This section's spacing override, or ``None`` for the document's.
     spacing: Spacing | None = None
+
+    #: The appendix letter this section opens, set by the document's walk (#309).
+    letter: str = ""
 
     def __init__(
         self,
@@ -151,6 +154,12 @@ class Container:
         engine = respaced(engine, self.spacing, self._owner())
         return grounded(engine, engine.theme.on_ground(self.background_color, self.text_color))
 
+    def heading(self) -> str:
+        """The title as printed: behind its appendix letter when the walk gave it one."""
+        if self.letter and self.title:
+            return get_config().appendix_heading.format(letter=self.letter, title=self.title)
+        return self.title or ""
+
     def resolved_anchor(self) -> str:
         """The ``id`` this section's title carries: the caller's, or a slug of the title."""
         if not self.title:
@@ -170,7 +179,7 @@ class Container:
         undefined value, not an empty one — and that default now depends on
         ``highlight``, so the flag is always injected too.
         """
-        ctx: dict = {"section_title": self.title or "", "highlight": self.highlight}
+        ctx: dict = {"section_title": self.heading(), "highlight": self.highlight}
         if self.background_color:
             ctx["background_color"] = self.background_color
         # Always injected, empty when unset: the templates gate on it with
@@ -215,7 +224,7 @@ class Container:
         nothing. They are presentation, and a plain-text part has no surface
         for them to sit on.
         """
-        return join_blocks(underline(self.title or ""), *(c.text() for c in self.components()))
+        return join_blocks(underline(self.heading()), *(c.text() for c in self.components()))
 
     def render(self, engine: Renderer) -> str:
         raise NotImplementedError
@@ -692,6 +701,109 @@ class FourColumn(_SplitContainer):
 
     def render(self, engine: Renderer) -> str:
         return self._render_split(engine, self.columns)
+
+
+class Appendices(Container):
+    """
+    The back of a document, lettered: each titled section is an appendix (#309).
+
+    A section list that flattens to its sections, as a ``Page`` does, and
+    marks them for the walk. Each titled section opens the next appendix, so
+    its heading reads "Appendix A: Data sources", and an exhibit inside is
+    numbered within it, "Exhibit A.1"; an untitled section continues the
+    appendix before it. The letters are the document's, computed once, so the
+    contents, the running header and the text part print the same heading.
+
+    On paper the appendices open a fresh sheet unless ``break_before`` is
+    off; in an email the wrapper is not emitted, as with a ``Page``.
+
+    Args:
+        sections:     The appendices' sections, in reading order. The first
+                      must be titled, since it opens Appendix A.
+        break_before: On paper, start the appendices on a fresh sheet.
+        spacing:      Spacing for every section here: any token one reads.
+    """
+
+    template_path = "document/page.html"
+
+    def __init__(
+        self,
+        sections: Sequence[Container],
+        break_before: bool = True,
+        spacing: Spacing | Mapping[str, int | float] | None = None,
+    ):
+        super().__init__(spacing=spacing)
+        sections = list(sections)
+        if not sections:
+            raise ValidationError("Appendices needs at least one section.")
+        for section in sections:
+            if not isinstance(section, Container) or hasattr(section, "sections"):
+                raise ValidationError(
+                    "Appendices holds sections such as FullWidth, got "
+                    f"{type(section).__name__}; a page or a second Appendices cannot nest."
+                )
+        if not sections[0].title:
+            raise ValidationError(
+                "the first section in Appendices must be titled: it opens Appendix A."
+            )
+        if sum(1 for section in sections if section.title) > len(LETTERS):
+            raise ValidationError(f"Appendices letters at most {len(LETTERS)} appendices, A to Z.")
+        self.sections = sections
+        self.break_before = break_before
+
+    @classmethod
+    def spacing_tokens(cls) -> tuple[str, ...]:
+        """Every token a section or component reads: the appendices reach all of them."""
+        return section_spacing_tokens()
+
+    def lettered(self) -> list[tuple[str, Container]]:
+        """Each section with the letter of the appendix it falls in."""
+        letters: list[tuple[str, Container]] = []
+        count = 0
+        for section in self.sections:
+            count += bool(section.title)
+            letters.append((LETTERS[count - 1], section))
+        return letters
+
+    def resolved_anchor(self) -> str:
+        """None: the appendices have no heading of their own; their sections do."""
+        return ""
+
+    def components(self) -> list[Component]:
+        """Every component in the appendices, in reading order."""
+        return [component for section in self.sections for component in section.components()]
+
+    def assets(self) -> list[ImageAsset]:
+        """The manifest entries from every section here, in reading order."""
+        return [asset for section in self.sections for asset in section.assets()]
+
+    def images(self) -> list[EmailImage]:
+        """Every image in the appendices, section by section."""
+        return [image for section in self.sections for image in section.images()]
+
+    def text(self) -> str:
+        """Each section's projection in turn; the break is nothing in plain text."""
+        return join_sections(*(section.text() for section in self.sections))
+
+    def render(self, engine: Renderer) -> str:
+        """The sections, wrapped in their break on paper and bare everywhere else."""
+        spaced = self._spaced(engine)
+        inner = "\n".join(section.render(spaced) for section in self.sections)
+        if not engine.medium.paged or not self.break_before:
+            return inner
+        return engine.render(
+            self.template_path,
+            {
+                **self._base_context(engine),
+                "sections_html": inner,
+                "break_before": True,
+                "break_after": False,
+            },
+        )
+
+
+#: The letters an appendix takes, in order.
+LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 
 def section_spacing_tokens() -> tuple[str, ...]:

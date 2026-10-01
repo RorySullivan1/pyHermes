@@ -156,7 +156,7 @@ variant each.
 | Medium | Regions | Skeleton |
 |---|---|---|
 | `email` | `Header`, `Banner`, `Footer` | `templates/base.html` |
-| `document` | `Cover`, `ContentsPage`, `RunningHeader`, `RunningFooter`, `BackMatter` | `templates/document/base.html` |
+| `document` | `Cover`, `ContentsPage`, `ExhibitsPage`, `RunningHeader`, `RunningFooter`, `BackMatter` | `templates/document/base.html` |
 | `brochure` | none: every face is a `Panel` the caller composes | `templates/brochure/base.html` |
 
 Three things the second set taught:
@@ -176,9 +176,11 @@ Three things the second set taught:
   engine's named strings (`string-set` on each section title, `string()` in the box) and never
   through the facts layer. `RUNNING_FACTS` are unchanged; `label` is the fallback before the
   first section. `apparatus.md` has the four probes the fallback took.
-- **The contents sheet (#183) is the one opt-in region.** `ContentsPage` is handed the sections'
+- **The contents sheet (#183) is opt-in.** `ContentsPage` is handed the sections'
   titles as a derived fact, `contents_entries`, and its page numbers are the print engine's.
   It defaults to `EmptyContentsPage`, because a two-sheet factsheet is not improved by a third.
+  **`ExhibitsPage` (#308)** is the same sheet in a slot of its own, listing the exhibits, and
+  opt-in for the same reason; the skeleton prints the two slots back to back on one line.
 
 `Page` is the other managed element: a container of containers that **flattens where pages do
 not exist**, byte for byte as though it were not there. The decision is made in Python rather

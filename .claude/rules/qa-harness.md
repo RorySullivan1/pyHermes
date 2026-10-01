@@ -1085,6 +1085,17 @@ real render's pixel size, so no golden depends on matplotlib. `LEAD_IN_PARAGRAPH
 second at a sheet's foot. `tests/test_math_paged.py` holds image and caption on one sheet,
 splits them with `.figure` stripped, and checks each equation is centred. `math.md` has the rest.
 
+## The research note (#312)
+
+`a4_research_note` is the ninth paged fixture and `research_note` the email gallery's
+seventeenth: one set of sections (`qa/fixtures/_research.py`) in both media, so their goldens
+pin that every exhibit number, appendix letter and citation agrees across them. It carries a
+cover, a contents sheet and an `ExhibitsPage`, three body sections with author-year
+citations, glossary links and a key-takeaways `Callout`, then a `Bibliography`, a `Glossary`
+and `Appendices` holding A.1 and B.1. `tests/test_research_note.py` compares the two text
+parts' apparatus and reads both lists' page numbers back from the PDF. Its first raster showed
+the running header reading "Appendix A: Data sources" on the appendix sheet.
+
 ## The factor book (#228)
 
 `letter_quant_table` is the seventh paged fixture and epic #217's proof. It is a Letter portrait

@@ -25,6 +25,7 @@ from pyhermes.builder import (
     AuthorBlock,
     Banner,
     BannerPalette,
+    Bibliography,
     Button,
     Callout,
     CardGroup,
@@ -39,14 +40,17 @@ from pyhermes.builder import (
     FlowedColumns,
     Footer,
     FullWidth,
+    Glossary,
     Header,
     ImageBlock,
     MathBlock,
     NumberedList,
     PullQuote,
+    Reference,
     Rgba,
     Spacing,
     Stack,
+    Term,
     TextBlock,
     ThreeColumn,
     TwoColumn,
@@ -607,6 +611,50 @@ def build(
                         ),
                         Divider(),
                         Button("Read the full note", "https://example.com/note", align="center"),
+                    ]
+                ),
+            )
+        )
+        # Citations, a numeric Bibliography and a Glossary (#310, #311).
+        .section(
+            FullWidth(
+                title="Sources and Terms",
+                content=Stack(
+                    [
+                        TextBlock(
+                            "<p>Momentum persists [@jt1993; @carhart1997], though its "
+                            '<a href="#term-crash-risk">crash risk</a> is well '
+                            "documented [@jt1993].</p>"
+                        ),
+                        Bibliography(
+                            [
+                                Reference(
+                                    "carhart1997",
+                                    ["Carhart, Mark M."],
+                                    1997,
+                                    "On persistence in mutual fund performance",
+                                    "The Journal of Finance",
+                                    doi="10.1111/j.1540-6261.1997.tb03808.x",
+                                ),
+                                Reference(
+                                    "jt1993",
+                                    ["Jegadeesh, Narasimhan", "Titman, Sheridan"],
+                                    1993,
+                                    "Returns to buying winners and selling losers",
+                                    url="https://example.com/jt1993",
+                                ),
+                            ],
+                            style="numeric",
+                            title="References",
+                        ),
+                        Glossary(
+                            [
+                                Term("Momentum", "Past winners continuing to outperform."),
+                                Term("Crash risk", "A sudden, deep reversal of a trend."),
+                            ],
+                            title="Terms",
+                            sort=False,
+                        ),
                     ]
                 ),
             )

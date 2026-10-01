@@ -522,6 +522,8 @@ STRUCTURALLY_ALIGNED = {
     "Columns": "a split: each block keeps its own align and inherits the section's (#263)",
     "Callout": "it boxes one block, which keeps its own align and inherits the section's (#268)",
     "Divider": "a rule has no copy to align (#269)",
+    "Bibliography": "an entry's hanging indent is its shape, so it fixes its own left (#310)",
+    "Glossary": "a term sits beside its definition, so the list fixes its own left (#311)",
 }
 
 

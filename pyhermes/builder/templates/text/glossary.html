@@ -1,0 +1,25 @@
+{#
+  GLOSSARY — a document's terms, each beside its definition (#311).
+
+  A layout table: the term in the label face, the definition in the body.
+  On a phone both cells stack through the skeleton's `stack-column` rule, so
+  the `@media` block is unchanged. The term carries the `id` a body link
+  lands on. Both are plain text, escaped. The alignment is the list's own,
+  for the contents list's reason: a centred section must not pull a term
+  away from its definition.
+
+  Context:
+    glossary_title — the optional heading, empty when unset
+    terms          — list of dicts with keys: term, definition, anchor
+#}
+{% if glossary_title %}
+<p class="glossary-heading" style="font-family: {{ font.label }}; font-size: {{ size.type.label }}px; font-weight: bold; color: {{ theme.text.heading }}; letter-spacing: 0.5px; margin: 0 0 {{ size.space.caption_gap }}px 0; line-height: {{ size.type.body_line | percent }};">{{ glossary_title | escape_html }}</p>
+{% endif %}
+<table class="glossary" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
+{% for term in terms %}
+  <tr>
+    <td class="stack-column" width="30%" align="left" valign="top" style="width: 30%; text-align: left; vertical-align: top; padding: 0 {{ size.space.gutter }}px {{ size.space.caption_gap }}px 0;"><p id="{{ term.anchor | escape_html }}" style="font-family: {{ font.label }}; font-size: {{ size.type.body }}px; font-weight: bold; color: {{ theme.text.heading }}; margin: 0; line-height: {{ size.type.body_line | percent }};">{{ term.term | escape_html }}</p></td>
+    <td class="stack-column" align="left" valign="top" style="text-align: left; vertical-align: top; padding: 0 0 {{ size.space.caption_gap }}px 0;"><p style="font-family: {{ font.body }}; font-size: {{ size.type.body }}px; color: {{ theme.text.primary }}; margin: 0; line-height: {{ size.type.body_line | percent }};">{{ term.definition | escape_html }}</p></td>
+  </tr>
+{% endfor %}
+</table>

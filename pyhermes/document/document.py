@@ -30,6 +30,8 @@ from .regions import (
     ContentsPage,
     Cover,
     EmptyContentsPage,
+    EmptyExhibitsPage,
+    ExhibitsPage,
     RunningFooter,
     RunningHeader,
 )
@@ -45,11 +47,10 @@ class PagedDocument(Document):
     region's, and this class only says which regions there are and what each
     is handed.
 
-    **The skeleton names four slots, so four regions are always supplied.**
-    Under ``StrictUndefined`` an unfilled *name* is a render failure rather
-    than an empty block, which is what makes omitting a region a deliberate
-    act: pass ``EmptyCover()``, ``EmptyRunningFooter()`` and so on, the way
-    an email passes ``EmptyHeader()``.
+    **Every slot the skeleton names is filled, so every region is supplied.**
+    Under ``StrictUndefined`` an unfilled *name* is a render failure, so
+    omitting a region is a deliberate act: pass ``EmptyCover()``,
+    ``EmptyRunningFooter()`` and so on, as an email passes ``EmptyHeader()``.
 
     Args:
         metadata:       Mapping of facts, or a ``DocumentMetadata``.
@@ -62,6 +63,7 @@ class PagedDocument(Document):
         contents:       The sheet listing the sections, after the cover.
                         Opt-in, unlike the rest: a two-sheet factsheet is
                         not improved by a third that indexes it.
+        exhibits:       The list of exhibits after it (#308), opt-in too.
         config, template_overlay: As ``Document`` takes them.
     """
 
@@ -77,6 +79,7 @@ class PagedDocument(Document):
         back_matter: BackMatter | None = None,
         medium: Medium | None = None,
         contents: ContentsPage | None = None,
+        exhibits: ExhibitsPage | None = None,
         *,
         config: Config | None = None,
         template_overlay: TemplateOverlay = None,
@@ -93,6 +96,7 @@ class PagedDocument(Document):
         self._running_footer = running_footer if running_footer is not None else RunningFooter()
         self._back_matter = back_matter if back_matter is not None else BackMatter()
         self._contents = contents if contents is not None else EmptyContentsPage()
+        self._exhibits = exhibits if exhibits is not None else EmptyExhibitsPage()
 
     @property
     def cover(self) -> Cover:
@@ -103,6 +107,11 @@ class PagedDocument(Document):
     def contents(self) -> ContentsPage:
         """The sheet listing the sections."""
         return self._contents
+
+    @property
+    def exhibits(self) -> ExhibitsPage:
+        """The sheet listing the numbered exhibits."""
+        return self._exhibits
 
     @property
     def running_header(self) -> RunningHeader:
@@ -140,11 +149,11 @@ class PagedDocument(Document):
         return self.add_section(page)
 
     def leading_regions(self) -> tuple[RegionFacts, ...]:
-        """The cover, the contents and the two margin boxes, each with what it renders."""
-        entries = contents_entries(self._contents_entries())
+        """The cover, the two lists and the two margin boxes, each with what it renders."""
         return (
             (self._cover, self._facts(COVER_FACTS)),
-            (self._contents, {"contents_entries": entries}),
+            (self._contents, self._listed(self._contents)),
+            (self._exhibits, self._listed(self._exhibits)),
             (self._running_header, self._facts(RUNNING_FACTS)),
             (self._running_footer, self._facts(RUNNING_FACTS)),
         )
@@ -166,6 +175,10 @@ class PagedDocument(Document):
         if sections and isinstance(sections[0], Page):
             sections = [sections[0].opening(), *sections[1:]]
         return sections
+
+    def _listed(self, sheet: ContentsPage) -> dict[str, Any]:
+        """What a contents sheet lists, as the fact it is handed."""
+        return {"contents_entries": contents_entries(self._listing(sheet.of, sheet.label))}
 
     def _facts(self, names: tuple[str, ...]) -> dict[str, Any]:
         """The named facts, read off the metadata this document was built from."""

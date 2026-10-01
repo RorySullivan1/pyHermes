@@ -20,7 +20,9 @@ from pyhermes.builder import (
     COMPACT_SIZES,
     DENSE_SIZES,
     STANDARD_SIZES,
+    Appendices,
     AuthorBlock,
+    Bibliography,
     Button,
     Callout,
     CardGroup,
@@ -35,12 +37,15 @@ from pyhermes.builder import (
     FlowedColumns,
     FourColumn,
     FullWidth,
+    Glossary,
     ImageBlock,
     MathBlock,
     NumberedList,
     PullQuote,
+    Reference,
     Spacing,
     Stack,
+    Term,
     TextBlock,
     ThreeColumn,
     TwoColumn,
@@ -529,6 +534,16 @@ INSTANCES: dict[type, list[Any]] = {
     Callout: [lambda s: Callout(_Stub(), tone="positive", label="L", spacing=s)],
     Button: [lambda s: Button("Go", "https://example.com", spacing=s)],
     Divider: [lambda s: Divider(spacing=s)],
+    Bibliography: [
+        lambda s: Bibliography(
+            [Reference("k", ["A, B."], 2020, "T", "V", url="https://example.com")],
+            style="numeric",
+            title="R",
+            spacing=s,
+        )
+    ],
+    Glossary: [lambda s: Glossary([Term("T", "D")], title="G", spacing=s)],
+    Appendices: [lambda s: Appendices([FullWidth(title="T", content=_Stub())], spacing=s)],
 }
 
 
@@ -594,12 +609,17 @@ FALLBACK_READS: dict[type, dict[str, str]] = {
 }
 
 
+def _declared(cls: type) -> tuple[str, ...]:
+    """What a spacing on ``cls`` may move: a holder of sections reaches every one's (#213)."""
+    return cls.spacing_tokens() if issubclass(cls, Container) else cls.SPACING_TOKENS
+
+
 @pytest.mark.parametrize("cls", list(INSTANCES), ids=lambda cls: cls.__name__)
 def test_every_token_the_markup_reads_is_declared(cls: type) -> None:
     baseline = _render(cls, None)
     undeclared = []
     for token in _eligible():
-        if token in cls.SPACING_TOKENS or token in FALLBACK_READS.get(cls, {}):
+        if token in _declared(cls) or token in FALLBACK_READS.get(cls, {}):
             continue
         layer = TOKEN_LAYERS[token][0]
         perturbed = STANDARD_SIZES.derive(**{layer: {token: SENTINEL}})
@@ -610,7 +630,7 @@ def test_every_token_the_markup_reads_is_declared(cls: type) -> None:
 
 @pytest.mark.parametrize("cls", list(INSTANCES), ids=lambda cls: cls.__name__)
 def test_a_token_outside_the_tuple_is_refused(cls: type) -> None:
-    outside = next(token for token in _eligible() if token not in cls.SPACING_TOKENS)
+    outside = next(token for token in _eligible() if token not in _declared(cls))
     with pytest.raises(ValidationError, match="reads no"):
         INSTANCES[cls][0]({outside: 4})
 

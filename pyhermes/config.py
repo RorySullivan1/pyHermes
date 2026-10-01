@@ -60,6 +60,10 @@ class Config:
             quote back in an exception message.
         exhibit_separator: Between a numbered exhibit's number and its
             caption — ``"Exhibit 3 · Factor returns"``. House style (#181).
+        appendix_heading: How an appendix's section title reads, from its
+            ``{letter}`` and ``{title}``: ``"Appendix A: Data sources"`` (#309).
+        citation_authors: The most authors an author-year citation names before
+            it shortens to the first and "et al." (#310).
         print_dpi: The resolution a brochure's images must reach (#188). Below
             it warns and below half of it raises; 300 is the offset norm.
     """
@@ -81,6 +85,8 @@ class Config:
     error_body_excerpt_chars: int = 500
 
     exhibit_separator: str = " · "
+    appendix_heading: str = "Appendix {letter}: {title}"
+    citation_authors: int = 2
 
     print_dpi: int = 300
 
@@ -118,6 +124,7 @@ class Config:
             "inline_image_limit_kb",
             "print_dpi",
             "min_column_px",
+            "citation_authors",
             "oversize_image_ratio",
             "attachment_limit_kb",
             "attachment_warn_kb",
@@ -164,6 +171,17 @@ class Config:
             raise ValueError(
                 f"exhibit_separator must show something between the number and the "
                 f"caption, got {self.exhibit_separator!r}"
+            )
+        try:
+            heading = self.appendix_heading.format(letter="\0", title="")
+        except (KeyError, IndexError, ValueError) as error:
+            raise ValueError(
+                "appendix_heading takes {letter} and {title} and nothing else, "
+                f"got {self.appendix_heading!r}"
+            ) from error
+        if "\0" not in heading:
+            raise ValueError(
+                f"appendix_heading must show the {{letter}}, got {self.appendix_heading!r}"
             )
         if not isinstance(self.allow_custom_email_density, bool):
             raise ValueError(

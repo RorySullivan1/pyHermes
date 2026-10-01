@@ -593,6 +593,10 @@ document.add_section(FullWidth(title="Method", content=TextBlock(
 | Contents | `ContentsPage`, with page numbers | the `Contents` component, linked | the titles |
 | `class="xref"` | Exhibit 1 (p. 3) | Exhibit 1, linked | Exhibit 1 |
 | `follow="section"` | the running header tracks the section | — | — |
+| `Contents(of="exhibits")` | `ExhibitsPage`, with page numbers | a linked list of exhibits | the headings |
+| `Appendices([...])` | Appendix A: …, Exhibit A.1, a new sheet | the same, no sheet | the same |
+| `[@key]` + `Bibliography` | (Fama and French 1993) or [3], linked | the same | the same, unlinked |
+| `Glossary` + `href="#term-…"` | a term beside its definition | the same, stacked on a phone | Term: definition |
 
 - **Exhibits number per label** — `Table 2` and `Figure 1` coexist — in reading order, across
   splits and pages. The separator is `Config.exhibit_separator`.
@@ -607,6 +611,29 @@ document.add_section(FullWidth(title="Method", content=TextBlock(
 
 The page numbers are the print engine's (WeasyPrint's `target-counter`); everything else is
 Python's, which is why the text part can carry it.
+
+A long-form note adds its sources, its terms and its appendices on the same walk:
+
+```python
+from pyhermes.builder import Appendices, Bibliography, Glossary, Reference, Term
+
+refs = [Reference("fama1993", ["Fama, Eugene F.", "French, Kenneth R."], 1993,
+                  "Common risk factors in the returns on stocks and bonds")]
+document.add_section(FullWidth(title="Summary", content=TextBlock(
+    '<p>Value pays [@fama1993]; see <a href="#term-value">value</a>.</p>')))
+document.add_section(FullWidth(title="References", content=Bibliography(refs)))
+document.add_section(FullWidth(title="Glossary", content=Glossary(
+    [Term("Value", "Cheap stocks, on book to market.")])))
+document.add_section(Appendices([FullWidth(title="Data sources", content=coverage)]))
+```
+
+- **A citation is `[@key]`, in the same fields as `[^n]`**, resolved against the one
+  `Bibliography`: "(Fama and French 1993)" in `style="author-year"`, "[1]" in
+  `style="numeric"`. A key it does not list is named by `validate()`.
+- **A glossary term is an ordinary link** to `#term-<slug>`, checked like any reference.
+- **Each titled section in `Appendices` is lettered**, its exhibits numbered A.1, A.2, and
+  the heading format is `Config.appendix_heading`. The manual's
+  [Write a research note](docs/manual/10-write-a-research-note.md) walks through all four.
 
 ## Colour
 

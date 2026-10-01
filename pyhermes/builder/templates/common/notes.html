@@ -1,5 +1,5 @@
 {#
-  NOTES — a field's copy with its footnote markers rendered (#182).
+  NOTES — a field's copy with its footnote and citation markers rendered (#182, #310).
 
   `marked(parts, raw)` walks what `apparatus.split_markers` cut: a run of copy
   prints as it always did, escaped unless the field is one of the blessed
@@ -8,6 +8,8 @@
   sheet foot (`float: footnote`, a WeasyPrint feature); an email collects its
   notes as endnotes instead, so the span is not emitted there. The number is
   the document's, never a CSS counter, so the text part prints the same one.
+  A citation prints in the bibliography's style, each key linked to its entry;
+  its label comes from a Reference, so it is escaped in every field.
 
   Every tag below sits on one logical line with whitespace control, because
   a field with no marker must render byte-identically to before.
@@ -19,6 +21,8 @@
 {%- if medium.paged -%}
 <span class="footnote" id="note-{{ part.note }}" data-note="{{ part.note }}">{{ part.note_text | escape_html }}</span>
 {%- endif -%}
+{%- elif part.cites -%}
+{{ part.citing.open }}{% for cite in part.cites %}{% if not loop.first %}{{ part.citing.separator }}{% endif %}<a href="#{{ cite.anchor }}" class="citation" style="color: {{ theme.palette.accent }}; text-decoration: none;">{{ cite.label | escape_html }}</a>{% endfor %}{{ part.citing.close }}
 {%- elif raw -%}
 {{ part.text }}
 {%- else -%}

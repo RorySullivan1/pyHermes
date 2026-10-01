@@ -21,15 +21,23 @@ from typing import TYPE_CHECKING, Any, ClassVar, Concatenate, ParamSpec, Self, T
 
 from pyhermes.config import Config, config_override, get_config
 
-from .apparatus import check_unique, note_anchor, note_ref_anchor, references
+from .apparatus import (
+    UNRESOLVED,
+    check_unique,
+    cited_keys,
+    note_anchor,
+    note_ref_anchor,
+    references,
+)
 from .components import Component, Contents, Endnotes, Exhibit, descendants, leaves
-from .containers import Container, FullWidth
+from .containers import Appendices, Container, FullWidth
 from .engine import Renderer, TemplateEngine, TemplateOverlay, overlay_dirs
 from .enums import EmbedStrategy, SizeTheme
 from .exceptions import ValidationError
 from .images import EmailImage, ImageAsset, dedupe_assets
 from .medium import DEFAULT_MEDIUM, Medium
 from .models import DocumentMetadata, Footnote
+from .research import Bibliography
 from .sizing import PRINT_DENSITIES, SizeScheme, Spacing, resolve_size_scheme
 from .textgen import join_sections
 from .theming import resolve_theme
@@ -188,9 +196,16 @@ class Document:
             )
         for owner, spacing in _spacings(container):
             spacing.check_medium(self._medium.paged, self._medium.name, owner)
+        if isinstance(container, Appendices) and any(
+            isinstance(section, Appendices) for section in self._sections
+        ):
+            raise ValidationError(
+                "a document has one Appendices; a second would letter its own from A again."
+            )
         self._sections.append(container)
         try:
             self._walk()
+            self._check_one_bibliography()
             check_unique(self._anchors())
         except ValidationError:
             self._sections.pop()
@@ -213,14 +228,23 @@ class Document:
         Check what only the finished tree can answer, before any template loads.
 
         Every ``#fragment`` in caller markup must land on an anchor this
-        document defines. It runs at the start of each projection rather than
-        in :meth:`add_section`, because a reference may name a section not yet
+        document defines, and every ``[@key]`` on a reference its bibliography
+        lists. It runs at the start of each projection rather than in
+        :meth:`add_section`, because a reference may name a section not yet
         added; call it directly to check sooner.
 
         Raises:
-            ValidationError: Naming the first dangling reference and who made it.
+            ValidationError: Naming the first dangling reference or citation and who made it.
         """
         self._walk()
+        listed = bibliography.keys if (bibliography := self._bibliography()) else set()
+        for component in self._components():
+            for key in (k for copy in component.marked_copy() for k in cited_keys(copy)):
+                if key not in listed:
+                    raise ValidationError(
+                        f"{type(component).__name__} cites [@{key}], which no Bibliography "
+                        "in this document lists. Check the key, or add the Reference."
+                    )
         defined = {anchor for anchor, _ in self._anchors()}
         for owner, html in self._raw_html():
             for target in references(html):
@@ -320,7 +344,7 @@ class Document:
         self.validate()
         engine = self._bound_engine()
         return [
-            (f"section {n}: {section.title or type(section).__name__}", section.render(engine))
+            (f"section {n}: {section.heading() or type(section).__name__}", section.render(engine))
             for n, section in enumerate(self._body_sections(), start=1)
         ]
 
@@ -376,13 +400,21 @@ class Document:
         component shared with another document carries this one's numbers
         while this one renders.
         """
+        for letter, section in self._lettered():
+            section.letter = letter if section.title else ""
         self._number_exhibits()
         for number, note in enumerate(self._footnotes(), start=1):
             note.number = number
+        components = self._components()
+        bibliography = self._bibliography()
+        cited = [key for c in components for copy in c.marked_copy() for key in cited_keys(copy)]
+        citing = bibliography.resolve(cited) if bibliography else UNRESOLVED
+        for component in components:
+            component.citing = citing
         for section in self._flat_sections():
             for component in leaves(section.components()):
                 if isinstance(component, Contents):
-                    component.entries = self._contents_entries(skip=section)
+                    component.entries = self._listing(component.of, component.label, section)
 
     def _raw_html(self) -> list[tuple[str, str]]:
         """Every raw-HTML field in the document, each with who carries it."""
@@ -397,6 +429,18 @@ class Document:
             ),
         ]
 
+    def _bibliography(self) -> Bibliography | None:
+        """The document's bibliography, or ``None`` when it cites nothing."""
+        return next((c for c in self._components() if isinstance(c, Bibliography)), None)
+
+    def _check_one_bibliography(self) -> None:
+        """Raise on a second bibliography: two would number one citation two ways."""
+        if sum(isinstance(c, Bibliography) for c in self._components()) > 1:
+            raise ValidationError(
+                "a document carries one Bibliography; a second would resolve one citation "
+                "two ways. List every Reference in the first."
+            )
+
     def _footnotes(self) -> list[Footnote]:
         """Every note the tree calls, in reading order."""
         return [note for component in self._components() for note in component.footnotes()]
@@ -406,22 +450,54 @@ class Document:
         notes = self._footnotes()
         return Endnotes(notes) if notes else None
 
+    def _listing(
+        self, of: str, label: str | None = None, skip: Container | None = None
+    ) -> list[tuple[str, str]]:
+        """The entries a contents list of ``of`` holds: sections less ``skip``, or exhibits."""
+        if of == "exhibits":
+            return self._exhibit_entries(label)
+        return self._contents_entries(skip)
+
+    def _exhibit_entries(self, label: str | None = None) -> list[tuple[str, str]]:
+        """``(heading, anchor)`` for every numbered exhibit in reading order, or one label's."""
+        return [
+            (component.listed(), component.resolved_anchor())
+            for component in self._components()
+            if isinstance(component, Exhibit)
+            and component.number
+            and label in (None, component.label)
+        ]
+
     def _contents_entries(self, skip: Container | None = None) -> list[tuple[str, str]]:
         """``(title, anchor)`` for every titled section in reading order, less ``skip``."""
         return [
-            (section.title, section.resolved_anchor())
+            (section.heading(), section.resolved_anchor())
             for section in self._flat_sections()
             if section.title and section is not skip
         ]
 
+    def _lettered(self) -> list[tuple[str, Container]]:
+        """Every section in reading order, with its appendix letter, or ``""`` in the body."""
+        lettered: list[tuple[str, Container]] = []
+        for section in self._sections:
+            if isinstance(section, Appendices):
+                lettered.extend(section.lettered())
+            else:
+                lettered.extend(("", inner) for inner in _flatten(section))
+        return lettered
+
     def _number_exhibits(self) -> None:
-        """Number every labelled exhibit in reading order, one count per label."""
-        counts: dict[str, int] = {}
-        for component in self._components():
-            if isinstance(component, Exhibit):
+        """Number every labelled exhibit in reading order, one count per label and appendix."""
+        counts: dict[tuple[str, str], int] = {}
+        for letter, section in self._lettered():
+            for component in leaves(section.components()):
+                if not isinstance(component, Exhibit):
+                    continue
+                component.appendix = letter
                 if component.label:
-                    counts[component.label] = counts.get(component.label, 0) + 1
-                    component.number = counts[component.label]
+                    key = (letter, component.label)
+                    counts[key] = counts.get(key, 0) + 1
+                    component.number = counts[key]
                 else:
                     component.number = None
 
@@ -442,7 +518,8 @@ class Document:
             for note in self._footnotes()
             for anchor in (note_anchor, note_ref_anchor)
         ]
-        return sections + exhibits + notes
+        others = [pair for component in self._components() for pair in component.anchors()]
+        return sections + exhibits + notes + others
 
     def _inline_image_hint(self) -> str:
         """
