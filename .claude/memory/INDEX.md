@@ -7,7 +7,7 @@
   `.claude/rules/media.md`; do not restate it here.
 - **Shipped**: #157, #153, #169, #170, #171, #172, #193 (PRs #167–#203); #201, #150, #202 (PRs #204–#206);
   #209 (PR #222); #217 (PR #234); #221 (PR #235); #238 (PR #253); #237, #255, #239 (PRs #254–#257); manual
-  + #258 (PR #260); #261 + #258's fix (PR #283); #265 (PR #284); #277 (PR #285). **#282 fixed on the branch.**
+  + #258 (PR #260); #261 + #258's fix (PR #283); #265 (PR #284); #277 (PR #285); #282 (PR #286). **#273 implemented on the branch.**
   Stubs #218–#220 are still undefined; each is defined in place with the `epic` skill, as #217 was.
 - The prose budget is live; the baseline is 44 and may only shrink.
 
@@ -73,10 +73,10 @@
   resets it and, on a ground, sits on the theme's surface** — `design-axes.md` (#265)
 - [2026-10-01] **The lint rules are product behaviour and ship as `pyhermes.check`; the gallery stays test
   data. Desktop Outlook is drafts only, never send** — `qa-harness.md`, `delivery.md` (#277)
+- [2026-10-01] **An oversize-picture threshold must clear the package's own deliberate density: equations at
+  4x, print at 3.125x. So 4.5, not 3** — `data-layer.md`, `config.md` (#276)
 
 ## Log              (append-only pointers)
 - Older entries, and epic #157's, are in sessions/ARCHIVE-2026.md.
-- [2026-10-01] toolchain — **#277 implemented** (#278–#279): `python -m pyhermes.check`, `qa.lint` a
-  re-export; `create_draft` into classic Outlook — sessions/2026-10-01-toolchain.md
-- [2026-10-01] phone-columns — **#282 fixed**: `.stack-column` is `display:table` at the breakpoint;
-  98 of 111 gallery cells had shrink-wrapped. Measured, not reasoned (#76, #129)
+- [2026-10-01] data-to-email — **#273 implemented** (#274–#276): `Card.from_number`, `chart_style`, the
+  oversize-picture `SizeWarning` — sessions/2026-10-01-data-to-email.md

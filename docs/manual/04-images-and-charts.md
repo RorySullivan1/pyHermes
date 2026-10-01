@@ -56,6 +56,10 @@ email = (
 - A full-width section is **616 pixels** wide inside its margins. Each half of a 50-50
   split is about 280. Save the picture at twice that width so it looks sharp on a
   high-resolution screen, and give the display width in `width=`.
+- A picture more than four and a half times wider than its `width=`, such as a phone photo
+  shown as a thumbnail, raises a `SizeWarning` that says what width to export it at. It
+  still builds, but it adds weight to every message. `Config.oversize_image_ratio` changes
+  the limit.
 - A picture you pass as `bytes` works the same way as a file path:
   `EmailImage.attached(png_bytes, alt=..., width=...)`.
 - For a purely decorative picture, write `decorative=True` instead of an `alt`.
@@ -105,6 +109,42 @@ plt.close(fig)
 
 **Result:** the figure as you drew it, saved at twice its display width and attached to the
 email. pyHermes does not restyle your plot.
+
+## How to draw a chart in the email's colours and type
+
+**When to use this:** you want your matplotlib charts to match the email, and to follow it
+when the theme changes. Needs the `[charts]` extra.
+
+<!-- manual: needs charts -->
+```python
+import matplotlib
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+
+from pyhermes.data import chart_from_figure, chart_style
+
+style = chart_style("classic")             # or chart_style(email.metadata.theme)
+with plt.rc_context(style):
+    fig, ax = plt.subplots(figsize=(6, 3))
+    ax.plot([1, 2, 3, 4], [110, 118, 115, 122])
+    changes = [0.4, -0.2, 0.3]
+    ax.bar([5, 6, 7], changes, color=[style.positive if c > 0 else style.negative for c in changes])
+
+chart = chart_from_figure(fig, alt="IG spreads rose to 122 bps", width=616)
+plt.close(fig)
+```
+
+**Result:** lines and bars in the theme's colours, the first series in its accent, axes and
+gridlines in its rule colours, and labels in its small-print typeface where your computer
+has it.
+
+**Notes:**
+- Nothing changes outside the `with` block, and a colour you set yourself is kept.
+- `style.positive` and `style.negative` colour bars by sign. `style.series` lists the series
+  colours in order.
+- `chart_style("slate", "modern")` takes a font theme too, and `role="body"` uses the body
+  typeface instead of the small-print one.
 
 ## How to add a logo to the masthead
 

@@ -127,6 +127,9 @@ email = (
 - For a list of more than four, stack them: `CardGroup([...], orientation="vertical")`.
 - For a card with a sentence instead of a figure, use `Card("Label", body="<p>…</p>")`
   from `pyhermes.builder.models`.
+- When the figures come from data, build each with `KpiItem.from_number(...)`, which writes
+  the figure and its change and picks the colour for you. See
+  [Tables and numbers](03-tables-and-numbers.md#how-to-build-headline-figures-from-numbers).
 
 ## How to put two or three things side by side
 

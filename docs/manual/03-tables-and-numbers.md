@@ -63,6 +63,39 @@ pct(None)                 # '--', for a missing figure
 **Notes:** the second argument is the number of decimal places. Rounding is half up, so
 `0.125` becomes `0.13`. For European formatting pass `thousands="."` and `decimal=","`.
 
+## How to build headline figures from numbers
+
+**When to use this:** your figures row comes from data, such as a level and its change.
+
+```python
+from functools import partial
+
+from pyhermes.builder import CardGroup
+from pyhermes.builder.formats import bps, pct
+from pyhermes.builder.models import KpiItem
+
+signed_pct = partial(pct, sign=True)
+
+figures = CardGroup([
+    KpiItem.from_number("UST 10Y", 0.0428, pct, change=0.0006, change_fmt=bps, good="down"),
+    KpiItem.from_number("S&P 500", 5234.1, change=0.0142, change_fmt=signed_pct),
+    KpiItem.from_number("VIX", 14.32, number, change=-2.18, good="down"),
+])
+email = EmailBuilder().metadata(facts).section(FullWidth(figures, title="Snapshot")).build()
+```
+
+**Result:** *4.28%* over *+6 bps* in red, *5,234* over *+1.42%* in green, and *14* over
+*-2* in green.
+
+**Notes:**
+- The figure is written with the third argument, and the change with `change_fmt`. When you
+  give no `change_fmt`, the change uses the figure's format.
+- The colour follows the change: up is green and down is red. `good="down"` swaps them, for
+  a yield, a spread or the VIX, where a rise is bad news.
+- A change that shows as zero, such as `+0.00%`, is not coloured. With no `change`, the
+  figure's own sign sets the colour. Pass `tone="neutral"` to choose it yourself.
+- `Card.from_number(...)` does the same for a card, and also takes `body=`.
+
 ## How to let each column format its own figures
 
 **When to use this:** a table of raw numbers, where every figure in a column is written the

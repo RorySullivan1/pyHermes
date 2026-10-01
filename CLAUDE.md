@@ -225,7 +225,9 @@ these rather than improvising:
   ratios as weights and `FourColumn`, #262–#264) is complete. **#265** (section surfaces: a dark
   band whose type stays readable, a section border, `Callout`, `Button` and `Divider`, #266–#269)
   is complete. **#277** (the author's toolchain: the check ships as `pyhermes.check`, and
-  `pyhermes.outlook.desktop` puts a draft into classic Outlook, #278–#279) is complete.
+  `pyhermes.outlook.desktop` puts a draft into classic Outlook, #278–#279) is complete. **#273**
+  (figures, charts and pictures from data: `from_number`, `chart_style`, the oversize-picture
+  warning, #274–#276) is complete. **#282** (a stacked column fills its width on a phone) is fixed.
   **#201** (an image's width in a paged layout) is fixed: the CSS repeats it as a cap. **#150** (the banner's VML
   fill) is closed: gating `src` while keeping `type="frame"` left the Word engine painting a
   broken-image placeholder over the masthead, so the two are now gated together. **#202** is

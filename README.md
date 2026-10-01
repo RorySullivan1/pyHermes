@@ -789,6 +789,7 @@ from pyhermes.builder.models import Cell, KpiItem, TableRow
 ret = partial(pct, dp=1, sign=True)
 TableRow(["Momentum", Cell.from_number(-0.004, ret)])        # '-0.4%', negative
 KpiItem("VIX", "14.32", sublabel="-2.18 pts", tone=Tone.POSITIVE)  # down is good news
+KpiItem.from_number("VIX", 14.32, partial(number, dp=2), change=-2.18, good="down")  # from numbers
 ```
 
 An explicit `color=` still wins over a tone.
@@ -807,7 +808,8 @@ chart = chart_from_figure(fig, alt="Cumulative returns", width=320,
 
 The frame's dtypes decide each column's kind, and a named index becomes the row-header
 column. The chart is rendered at twice its display width and attached by `cid:`. pyHermes
-never styles the plot; it takes the Figure you drew.
+never styles the plot; it takes the Figure you drew. To draw it in the email's colours and
+type, draw inside `plt.rc_context(chart_style(email.metadata.theme))`.
 
 **An equation is written in LaTeX**, through `pyhermes.math` (`[math]` above). It renders to an
 image in every medium, because no mail client shows MathML, and the source stays with it as
