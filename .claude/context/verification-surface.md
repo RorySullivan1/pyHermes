@@ -60,13 +60,14 @@ Outlook, PDF rasterisation owns pagination, and a byte-verified diff is not a ve
 | Style and types | `ruff check . && ruff format --check .` and `mypy` | `agent-runnable` | Pure source analysis | — |
 | Prose budget | `pytest tests/test_prose_budget.py` | `agent-runnable` | Baseline may only shrink; gated in the suite | — |
 | Rendered HTML bytes | goldens in `pytest` (`--update-goldens` only to accept an intended change) | `agent-runnable` | Byte comparison — proves *sameness*, never *correctness* of a render | — |
-| Outlook compatibility — static | `python -m qa.preview <fixture> --lint` | `agent-runnable` | Lint rules encode the Word-engine contract (`outlook-html-specifications`) | — |
+| Outlook compatibility — static | `python -m pyhermes.check <file>.py:<callable>`, or `python -m qa.preview <fixture> --lint` | `agent-runnable` | Lint rules encode the Word-engine contract (`outlook-html-specifications`) | — |
 | Outlook compatibility — rendering | open the message in classic Outlook and look | `human-gated` | No Word-engine renderer is reachable from a session; human reports what broke | — |
 | Gmail-like layout | `python -m qa.preview <fixture> --screenshot` (needs `.[qa]`) | `agent-runnable` | Chromium approximates Gmail-in-a-browser; a real Gmail client is `human-gated` | — |
 | Paged document / brochure pagination | `python -m qa.preview a4_portrait --screenshot` (needs `.[pdf]` + `.[qa]`) — look at each sheet image | `agent-runnable` | PDF rasterised one image per sheet; needs Pango/Cairo | — |
 | Print HTML — static rules | `.claude/skills/weasyprint-print-html/scripts/lint_print_html.py` | `agent-runnable` | Pure source analysis; the skill's `probes/flawed.html` is the negative control | — |
 | Brochure on press (colour, folding, trim) | print and fold a proof | `human-gated` | Physical output; the PDF is RGB by decision (`brochure.md`) | — |
 | Delivery (Gmail / Outlook send) | adapter unit tests in `pytest`; a real send | tests `agent-runnable`, send `human-gated` | Adapters never own authentication — a live send needs the user's credentials | — |
+| Outlook desktop draft (#279) | fake-COM tests in `pytest`; `python -m qa.outlook_desktop_check you@example.com` on Windows with classic Outlook | tests `agent-runnable`, draft `human-gated` | No Windows or Outlook reaches a session or CI. The human answers the script's five questions: opened unsent, light type on navy, inline image, empty attachment well, callouts and buttons | not yet run |
 | Wheel install | the CI `wheel` job | `agent-runnable` (CI) | Builds and renders from a clean venv | — |
 | Asset shape (`.claude/`) | `asset_integrity.py` fed a git-commit hook payload — **advisory: reports, never vetoes** | `agent-runnable` | Pure file-shape analysis | — |
 

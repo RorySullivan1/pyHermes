@@ -42,6 +42,7 @@ pytest --update-goldens       # the ONLY way to regenerate a golden (#58)
 python -m qa.preview kitchen_sink --lint --screenshot --open   # an email
 python -m qa.preview a4_portrait --lint --screenshot --open    # a paged document + its PDF
 python -m qa.preview tri_fold_letter --lint --screenshot       # a brochure, one image a side
+python -m pyhermes.check drafts/weekly.py:build               # the shipped check, from any install
 ```
 
 CI runs the first four on every PR, plus `screenshots`, `pdf`, `data`, `all-extras` and `wheel`
@@ -72,8 +73,8 @@ applies to and loads **only when a matching file is read** — so a session that
 | `media.md` | `pyhermes/email/`, `pyhermes/document/`, `pyhermes/pdf/`, `medium.py`, `document.py`, `templates/document/**` | The medium model, the page, the template fork rule, each medium's regions, the exporter's resource policy |
 | `digital-pdf.md` | `pyhermes/pdf/**`, `pyhermes/delivery/message.py`, the digital-PDF tests | The `PdfProfile` and its two presets, attachments and the message's size budget, metadata and determinism, the PDF/UA decision with its numbers, and why a screen PDF is not a medium |
 | `brochure.md` | `pyhermes/brochure/**`, `templates/brochure/**`, the editorial partial | Folds, the panel, imposition, bleed and marks, the editorial primitives and each one's email degradation |
-| `delivery.md` | `pyhermes/delivery/`, `pyhermes/gmail/`, `pyhermes/outlook/` | MIME assembly, the adapter contract, the deliberate non-features |
-| `qa-harness.md` | `qa/**`, `tests/**` | Gallery, goldens, screenshots, lint, the preview CLI |
+| `delivery.md` | `pyhermes/delivery/`, `pyhermes/gmail/`, `pyhermes/outlook/` | MIME assembly, the adapter contract, the deliberate non-features, drafts in classic Outlook |
+| `qa-harness.md` | `qa/**`, `tests/**`, `pyhermes/check/**` | Gallery, goldens, screenshots, lint and the shipped check, the preview CLI |
 | `config.md` | `pyhermes/config.py` | The one frozen dataclass of tunable numbers |
 
 Each also carries the post-mortem of the epic that built its area — the reasoning is what
@@ -223,7 +224,8 @@ these rather than improvising:
   and **#255** removed the `svc` shim it left. **#261** (composition: `Stack`, nested `Columns`,
   ratios as weights and `FourColumn`, #262–#264) is complete. **#265** (section surfaces: a dark
   band whose type stays readable, a section border, `Callout`, `Button` and `Divider`, #266–#269)
-  is complete.
+  is complete. **#277** (the author's toolchain: the check ships as `pyhermes.check`, and
+  `pyhermes.outlook.desktop` puts a draft into classic Outlook, #278–#279) is complete.
   **#201** (an image's width in a paged layout) is fixed: the CSS repeats it as a cap. **#150** (the banner's VML
   fill) is closed: gating `src` while keeping `type="frame"` left the Word engine painting a
   broken-image placeholder over the masthead, so the two are now gated together. **#202** is

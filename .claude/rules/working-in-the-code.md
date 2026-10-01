@@ -90,7 +90,10 @@ pyhermes/
 ├── gmail/              ← Gmail send adapter (consumes delivery; owns no credentials)
 │   └── sender.py       — GmailTransport protocol, GoogleApiTransport shim, send_message()
 ├── outlook/            ← Outlook send adapter over Microsoft Graph (same shape as gmail)
-│   └── sender.py       — OutlookTransport protocol, GraphApiTransport shim, send_message()
+│   ├── sender.py       — OutlookTransport protocol, GraphApiTransport shim, send_message()
+│   └── desktop.py      — create_draft(): classic Outlook's drafts through COM (#279)
+├── check/              ← the portability check, shipped (#278): lint.py, target.py, and
+│                         `python -m pyhermes.check path.py:callable`
 ├── data/               ← the data adapters (#179, #180); "[data]" and "[charts]" extras
 │   ├── frames.py       — table_from_frame: a DataFrame as a DataTable
 │   ├── charts.py       — image_from_figure / chart_from_figure: a Figure as an image
@@ -110,8 +113,8 @@ qa/                     ← QA harness (epic #54); NOT shipped in the wheel
 │                        render_manifest(), and the diagnosable mismatch report
 ├── screenshots.py     — headless-Chromium runner: `python -m qa.screenshots`, cid→data URI
 │                        substitution, run.json recording the browser build
-├── lint.py            — email-client portability rules over rendered HTML: lint_html(),
-│                        lint_email(), size_report(), SOURCES, DEFERRED_RULES
+├── lint.py            — re-exports pyhermes.check.lint, where the rules ship since #278
+├── outlook_desktop_check.py — the human check for #279, run on Windows
 ├── preview.py         — the CLI that composes the rest: `python -m qa.preview <target>`
 │                        [--lint] [--screenshot] [--open] [--list]
 ├── distribution.py    — checks the built wheel (and sdist) a consumer installs, not the

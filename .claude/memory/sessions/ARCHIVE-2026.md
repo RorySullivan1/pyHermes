@@ -323,3 +323,7 @@ Decisions and Log entries folded out of `INDEX.md` on 2026-08-29 (#143), verbati
   lines shim, `a4_equations`, the factsheet's Sharpe ratio — sessions/2026-09-24-equations.md
 - [2026-09-28] host-seams — **#238 implemented** (#246, #249, #247): warnings not prints, a context-local
   `Config` with `config=`, `template_overlay=` — sessions/2026-09-28-host-seams.md
+- [2026-09-29] consumer-package — **#237 implemented** (#243-#245, #248): `py.typed`, MIT metadata and a
+  library-only sdist, 3.11-3.14 in CI, `svc` renamed `pyhermes` — sessions/2026-09-29-consumer-package.md
+- [2026-09-30] composition — **#261 implemented** (#262–#264): `Stack`, nested `Columns` sized by a bound
+  `cell_width`, ratios as weights, `FourColumn`; `composed_layout` — sessions/2026-09-30-composition.md

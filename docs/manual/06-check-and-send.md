@@ -5,7 +5,8 @@ ways to send it, from simplest to most automated:
 
 | Way | You need | Best for |
 |---|---|---|
-| [Open it as an Outlook draft](#how-to-open-your-email-as-an-outlook-draft) | Outlook on Windows | Sending by hand from your own mailbox |
+| [Put it straight into your Outlook drafts](#how-to-put-the-email-straight-into-your-outlook-drafts) | Classic Outlook on Windows | Sending by hand from your own mailbox |
+| [Open it as an Outlook draft](#how-to-open-your-email-as-an-outlook-draft) | A mail program that opens `.eml` files | The same, from a saved file |
 | [Send through Microsoft 365](#how-to-send-through-microsoft-365-outlook) | An access token from your IT team | Scheduled or automated sends |
 | [Send through Gmail](#how-to-send-through-gmail) | Google API credentials | Google Workspace firms |
 
@@ -33,15 +34,19 @@ email = (
    browser. Attached images show as broken here. That is expected, see below.
 2. **As plain text.** `print(email.text())` shows the text-only version pyHermes writes
    for you. Read it once: it is what a reader sees on a text-only device.
-3. **With the checker.** From the `pyHermes` folder:
+3. **With the checker.** From any folder:
 
    ```bash
-   python -m qa.preview path/to/rates.py:build --lint --screenshot --open
+   python -m pyhermes.check path/to/rates.py:build
    ```
 
-   `--lint` checks the email against the rules Outlook and Gmail enforce. `--screenshot`
-   saves desktop and phone pictures of it, with attached images in place, into
-   `output/screenshots/`. It needs the `[qa]` extra.
+   It saves the HTML and plain-text versions into `output/` and checks the email against
+   the rules Outlook and Gmail enforce. It exits with 0 when there is nothing to fix, 1 when
+   there is, and 2 when the email does not build, so a script can stop on a problem. In
+   Python, `from pyhermes.check import check` and `check(email)` returns the same findings.
+4. **As pictures.** From the `pyHermes` folder, with the `[qa]` extra,
+   `python -m qa.preview path/to/rates.py:build --screenshot` saves desktop and phone
+   pictures of it, with attached images in place, into `output/screenshots/`.
 
 ```python
 email.save("rates.html")
@@ -52,6 +57,35 @@ plain = email.text()
 > Windows shows, because Outlook lays out email with Microsoft Word. The `--lint` check is
 > what covers Outlook. For an important send, also send yourself a test and open it in
 > Outlook.
+
+## How to put the email straight into your Outlook drafts
+
+**When to use this:** you use classic Outlook on Windows and want the email waiting in your
+drafts, with its pictures, without saving a file or asking IT for anything.
+
+**Steps:**
+1. Install the extra once, from the `pyHermes` folder: `pip install -e ".[outlook-desktop]"`.
+2. With Outlook open, create the draft:
+
+<!-- manual: skip -->
+```python
+from pyhermes.outlook.desktop import create_draft
+
+message = build_message(email, sender="you@example.com", to=["reader@example.com"])
+create_draft(message)
+```
+
+3. The draft opens. Check it, then click **Send**.
+
+**Result:** the draft is saved in your Drafts folder, with the pictures in place and the
+attachments listed. pyHermes never sends it: you do.
+
+**Notes:**
+- `create_draft(message, display=False)` saves it without opening it.
+- It sends from your Outlook account, whatever `sender` says.
+- It needs classic Outlook. The new Outlook for Windows has no way for a program to reach
+  it, so use the `.eml` route below or [Microsoft 365](#how-to-send-through-microsoft-365-outlook).
+- On a Mac or Linux it raises an error that names the alternatives.
 
 ## How to open your email as an Outlook draft
 

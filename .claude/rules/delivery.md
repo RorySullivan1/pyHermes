@@ -217,6 +217,34 @@ stays throttled *longer*. `retry_with_backoff()` therefore takes an optional `de
 Outlook supplies one that reads the header, Gmail passes none and keeps the computed ladder.
 An `HTTP-date` form of the header degrades to the ladder rather than crashing.
 
+## Drafts in classic Outlook — `pyhermes/outlook/desktop.py` (#279)
+
+**Superseded in part: "`win32com` ... wrong for a library, ruled out."** It stays ruled out
+as a *send* transport. The Graph docstring below named the case that would reopen it, a
+caller who cannot get `Mail.Send`, and that is the work user this serves. What shipped is
+narrower than a transport: `create_draft(message, *, display=True, outlook=None)` saves a
+draft and never sends, so a person stays the sender and campaign management stays out.
+
+- **It reads the MIME message `build_message` made**, so the draft and `save_eml` carry the
+  same parts: the HTML, the To and Cc, each `cid:` image and each file attachment.
+- **An inline picture is a hidden attachment with its Content-ID.** `Attachments.Add` takes
+  a path, so the bytes go through a temporary folder Outlook copies from. Then
+  `PR_ATTACH_CONTENT_ID` (`0x3712001F`) resolves the body's `cid:` and `PR_ATTACHMENT_HIDDEN`
+  (`0x7FFE000B`) keeps it out of the attachment well.
+- **The Outlook application is injectable**, so `tests/test_outlook_desktop.py` drives a
+  recording fake of the object model, rule 7 above. An AST test holds that nothing calls
+  `Send`. Unset, `outlook_application()` dispatches the running Outlook through pywin32,
+  imported lazily, and raises `BackendMissingError` (a `TransportError`) off Windows or
+  without the extra.
+- **The module imports on every platform**; the issue proposed refusing at import. A refusal
+  at use keeps the module testable on CI's Linux and still fails with the same message.
+- **`[outlook-desktop]` is `pywin32; sys_platform == 'win32'`**, so `all-extras` installs it
+  as a no-op on Linux. No test skips naming it, because none needs it.
+- **The draft is from the profile's own account**, whatever `From` the message names.
+- **Verified against the object model's documentation and a fake, not a real Outlook.**
+  `python -m qa.outlook_desktop_check you@example.com` is the human check, with five
+  questions to answer; `.claude/context/verification-surface.md` records the result.
+
 ## Outlook: why Graph, and how it differs from Gmail
 
 Moved out of `pyhermes/outlook/sender.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
