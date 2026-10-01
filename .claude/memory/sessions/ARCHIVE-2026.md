@@ -329,3 +329,7 @@ Decisions and Log entries folded out of `INDEX.md` on 2026-08-29 (#143), verbati
   `cell_width`, ratios as weights, `FourColumn`; `composed_layout` — sessions/2026-09-30-composition.md
 - [2026-10-01] surfaces — **#265 implemented** (#266–#269): readable dark bands, section borders, `Callout`,
   `Button`, `Divider`; `surfaced_layout` — sessions/2026-10-01-surfaces.md
+- [2026-10-01] toolchain — **#277 implemented** (#278–#279): `python -m pyhermes.check`, `qa.lint` a
+  re-export; `create_draft` into classic Outlook — sessions/2026-10-01-toolchain.md
+- [2026-10-01] phone-columns — **#282 fixed**: `.stack-column` is `display:table` at the breakpoint;
+  98 of 111 gallery cells had shrink-wrapped. Measured, not reasoned (#76, #129)

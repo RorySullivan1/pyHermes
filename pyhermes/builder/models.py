@@ -10,7 +10,7 @@ import re
 from collections.abc import Callable, Sequence
 from dataclasses import InitVar, dataclass, field, fields, replace
 from decimal import Decimal
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, Self
 
 from . import formats
 from .apparatus import check_markers
@@ -565,6 +565,41 @@ class Card:
             raise ValidationError(
                 "'card' requires a 'value' or a 'body'; a label alone says nothing."
             )
+
+    @classmethod
+    def from_number(
+        cls,
+        label: str,
+        value: Any,
+        fmt: Callable[[Any], str] = formats.number,
+        *,
+        change: Any = None,
+        change_fmt: Callable[[Any], str] | None = None,
+        tone: str = "auto",
+        good: str = "up",
+        body: str = "",
+    ) -> Self:
+        """
+        A headline figure, its change beneath it, toned by what the move means (#274).
+
+        ``value`` is written with ``fmt``; ``change``, when given, with
+        ``change_fmt`` (``fmt`` if unset) into the sublabel. ``tone="auto"``
+        reads the sign of the change, or of the value when there is none, through
+        :func:`tone_of`, so a change shown as zero is never coloured.
+        ``good="down"`` flips it, for a figure whose rise is bad news: a yield,
+        the VIX. Pass a :class:`~pyhermes.builder.enums.Tone` to state it instead.
+        """
+        if good not in ("up", "down"):
+            raise ValidationError(f"good must be 'up' or 'down', got: {good!r}")
+        change_fmt = change_fmt or fmt
+        if tone == "auto":
+            moved = tone_of(change, change_fmt) if change is not None else tone_of(value, fmt)
+            flip = {Tone.POSITIVE: Tone.NEGATIVE, Tone.NEGATIVE: Tone.POSITIVE}
+            tone = flip.get(moved, moved) if good == "down" else moved
+        sublabel = change_fmt(change) if change is not None else ""
+        card = cls(label=label, value=fmt(value), sublabel=sublabel, body=body, tone=str(tone))
+        card.validate()
+        return card
 
 
 @dataclass

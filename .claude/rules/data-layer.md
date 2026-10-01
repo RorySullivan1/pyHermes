@@ -122,7 +122,8 @@ it both ways. `math.md` carries its decisions.
   cap is 48 KB, which a 2× chart routinely exceeds. The cap's `SizeError` already names
   `attached()` as the fix. A render has no host, so `remote` cannot mean anything.
 - **It never styles the plot.** A default style, a palette on the axes or a chart type is
-  where a charting library would start, and #170 recorded that as a non-goal.
+  where a charting library would start, and #170 recorded that as a non-goal. #275 keeps it:
+  see *Offered, never applied* below.
 
 ### What #170 leaves
 
@@ -138,3 +139,32 @@ it both ways. `math.md` carries its decisions.
 - **A pipe hid a red suite once.** `pytest | tail -1 && git commit` committed with a failing
   prose-budget test, because `tail` exits 0. The commit was amended before anything was
   pushed. Gate a commit on `set -o pipefail`, or on pytest's own exit code.
+
+
+## Figures, charts and pictures without hand-work (#273)
+
+**A headline figure takes a number (#274).** `Card.from_number(label, value, fmt, *, change,
+change_fmt, tone, good, body)` is `Cell.from_number` for the figures row, and `KpiItem`
+inherits it. The tone reads the sign of the *change*, or of the value when there is none,
+through `tone_of`, so a change written as zero is never coloured. `good="down"` flips it,
+which is the case the README wrote by hand for a yield or the VIX. `change_fmt` falls back to
+`fmt`. The tests cover each sign under each `good`, and that the HTML and the text part print
+the same strings.
+
+**Offered, never applied (#275).** `pyhermes.data.chart_style(theme, font_theme, *, role)`
+returns a `ChartStyle`: a `dict` of matplotlib `rc` settings for `plt.rc_context`, with
+`positive`, `negative` and `series` as attributes, because `rc_context` refuses keys it does not
+know. The colour settings are listed in `RC_TOKENS`, each with the theme token it reads, and a
+test holds that `slate` differs from `classic` exactly where those tokens do. The font list
+keeps only the families `font_manager.findfont` resolves without falling back, then the
+stack's generic family, so a missing Georgia produces no warning. `chart_from_figure` is
+untouched, and nothing changes outside the context.
+
+**A picture far wider than it is shown warns (#276).** `EmailImage.__post_init__` reads the
+pixel width with `pixel_size` and raises a `SizeWarning` through `warn_caller` when it is
+over `Config.oversize_image_ratio` times the display `width`. Hosted images and ones with no
+`width` are not checked. **The default is 4.5, not the issue's 3, and that was measured:** at 3
+the package's own output warned. An equation renders at 4x (`DEFAULT_MATH_SCALE`, so one render
+serves paper), and the paged and brochure fixtures' pictures sit at about 3.1x, the 300 dpi
+`print_dpi` asks for. The warning names both targets, 2x for a screen and 3.125x for print.
+Every gallery renders with no `SizeWarning`, asserted.

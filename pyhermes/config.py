@@ -101,6 +101,11 @@ class Config:
     #: weights narrower than this raise at construction, naming the width (#264).
     min_column_px: int = 90
 
+    #: How many times wider than its display width an attached or inline image may
+    #: be before a ``SizeWarning`` says to export it smaller (#276). Above the 4x an
+    #: equation renders at and the 3.125x print needs; `config.md` has the measurement.
+    oversize_image_ratio: float = 4.5
+
     def __post_init__(self) -> None:
         # Validation at construction, as everywhere else in this codebase --
         # a bad limit should name itself here, not surface later as a
@@ -113,6 +118,7 @@ class Config:
             "inline_image_limit_kb",
             "print_dpi",
             "min_column_px",
+            "oversize_image_ratio",
             "attachment_limit_kb",
             "attachment_warn_kb",
             "retry_initial_delay",

@@ -27,7 +27,7 @@ from pathlib import Path
 from pyhermes.config import Config, get_config
 
 from .enums import EmbedStrategy
-from .exceptions import SizeError, ValidationError
+from .exceptions import SizeError, SizeWarning, ValidationError, warn_caller
 
 # ──────────────────────────────────────────────────────────────────────
 # Format detection
@@ -412,6 +412,25 @@ class EmailImage:
 
         if self.strategy == EmbedStrategy.CID and not self.content_id:
             raise ValidationError("a CID image requires a 'content_id'.")
+        self._check_weight()
+
+    def _check_weight(self) -> None:
+        """Warn when the bytes are far wider than the image is shown (#276); hosted is unread."""
+        if not self.data or not self.width:
+            return
+        size = pixel_size(self.data)
+        ratio = get_config().oversize_image_ratio
+        if size is None or size[0] <= ratio * self.width:
+            return
+        name = self.alt or self.filename or "a decorative image"
+        warn_caller(
+            f"{name!r} is {size[0]}x{size[1]}px but shown {self.width}px wide, "
+            f"{size[0] / self.width:.1f} times its display width. Export it at "
+            f"{2 * self.width}px wide for a screen, or {round(3.125 * self.width)}px for "
+            f"print at 300 dpi, to cut its weight. Config.oversize_image_ratio ({ratio:g}) "
+            "sets this threshold.",
+            SizeWarning,
+        )
 
     # ------------------------------------------------------------------
     # Rendering / manifest

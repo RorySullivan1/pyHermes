@@ -13,11 +13,14 @@ from .charts import chart_from_figure, image_from_figure
 from .exceptions import BackendMissingError, DataError
 from .frames import available as frames_available
 from .frames import table_from_frame
+from .style import ChartStyle, chart_style
 
 __all__ = [
     "BackendMissingError",
+    "ChartStyle",
     "DataError",
     "chart_from_figure",
+    "chart_style",
     "charts_available",
     "image_from_figure",
     "frames_available",

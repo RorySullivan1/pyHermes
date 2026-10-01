@@ -126,6 +126,11 @@ offset norm, and a judgement call rather than a fact: a proof printer is content
 fine-art press wants more. Below it, a brochure warns (`PrintQualityWarning`) at construction; below half
 of it, construction raises. `PYHERMES_PRINT_DPI` sets it, like every other field.
 
+**`oversize_image_ratio` (#276) is how many times its display width a picture may be, 4.5 by
+default.** Above it, construction raises a `SizeWarning`. The issue proposed 3, and the
+package's own output answered it: equations render at 4x and print pictures at 3.125x, both
+on purpose, so 3 warned on the gallery. `data-layer.md` has the measurement.
+
 **`allow_custom_email_density` (#212) is a switch, off by default, and the first `bool` field.**
 An email refuses a custom `SizeScheme` and the print density `dense` until the caller has
 rendered theirs in the clients they send to; this is how they say so. It is a judgement call
