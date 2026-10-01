@@ -230,7 +230,8 @@ these rather than improvising:
   warning, #274–#276) is complete. **#282** (a stacked column fills its width on a phone) is fixed.
   **#259** is fixed: the size report names each body section, and `pyhermes.check` and
   `preview --lint` report on an email over 102 KB. **#281** is fixed: the README states current
-  facts, and a test holds each example's committed `.html` to a fresh render.
+  facts, and a test holds each example's committed `.html` to a fresh render. **#272** is done:
+  the manual's *Customise the layout* page covers spacing, house densities, overlays and limits.
   **#201** (an image's width in a paged layout) is fixed: the CSS repeats it as a cap. **#150** (the banner's VML
   fill) is closed: gating `src` while keeping `type="frame"` left the Word engine painting a
   broken-image placeholder over the masthead, so the two are now gated together. **#202** is

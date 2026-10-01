@@ -31,6 +31,7 @@ and ends with an email open in your browser.
 | [6. Check and send](06-check-and-send.md) | Preview it, open it as an Outlook draft, or send it |
 | [7. Reports and PDFs](07-reports-and-pdfs.md) | Print the same content as a PDF, or attach one |
 | [8. Troubleshooting](08-troubleshooting.md) | Fix an error message or an email that looks wrong |
+| [9. Customise the layout](09-customise-the-layout.md) | Move one section's spacing, add a block of your own, or see what is fixed and why |
 
 ## Three words used throughout
 
