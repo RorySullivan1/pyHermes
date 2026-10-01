@@ -209,6 +209,36 @@ The editorial pieces are shared, so a report can use them too: `PullQuote`,
 `TextBlock(figure=ImageBlock(..., wrap="left"))` for a picture the prose wraps round. Each
 degrades in an email: the drop cap and the float disappear, and the columns become one.
 
+## The same content, as slides
+
+A deck lays its content out one slide to a sheet: a title band, the slide's sections, and a
+footer band carrying the firm, the current part and the slide's number. It opens on a title
+slide and closes on the disclosures, and reaches a colleague as a PDF:
+
+```python
+from pyhermes.builder import CardGroup, FullWidth, TextBlock
+from pyhermes.builder.models import KpiItem
+from pyhermes.deck import Deck, overflowing_slides
+from pyhermes.pdf import save_pdf
+
+deck = Deck({"firm_name": "Hermes Research", "campaign_name": "Rates, Projected"})
+deck.add_divider("Where rates stand", "Levels, curve and premium")
+deck.add_slide(
+    [FullWidth(content=CardGroup([KpiItem("10Y gilt", "4.21%"), KpiItem("2s10s", "38 bps")]))],
+    "The quarter in two numbers",
+    notes="Lead with the long end.",  # never printed: deck.notes() reads them back
+)
+deck.add_slide([FullWidth(content=TextBlock("<p>Own the steepener.</p>"))], "What we would do")
+save_pdf(deck, "deck.pdf")      # one sheet a slide, plus the title and closing slides
+print(overflowing_slides(deck))  # [] -- or "slide N: Title" for a slide too full to fit
+```
+
+A slide is a fixed box: copy that does not fit is clipped, never carried onto a second sheet,
+and `python -m pyhermes.check` reports it as `slide-overflow`. A deck defaults to the
+`presentation` density, sized for a slide read across a room, which only a deck may take.
+`SLIDE_16_9` is the default sheet and `SLIDE_4_3` the other; a `Slide` placed in an email or
+a report renders as its sections alone.
+
 ## Install
 
 Requires Python 3.11+. Not published to PyPI — install from a clone. The distribution and the
@@ -982,7 +1012,7 @@ CI runs these on every pull request and on pushes to `main`, in six jobs:
   outside the source tree. Templates ship inside the package, and this job is what keeps
   non-editable installs working.
 
-`qa/fixtures/` holds three galleries, each built in code and deterministic:
+`qa/fixtures/` holds four galleries, each built in code and deterministic:
 
 - `all_fixtures()`, the email gallery. `minimal` and `kitchen_sink` are its ends, and each
   other fixture pins one choice (a theme, a density, a region variant) or one family of
@@ -990,6 +1020,7 @@ CI runs these on every pull request and on pushes to `main`, in six jobs:
 - `all_paged_fixtures()`, documents on sheets: A4, US Letter and 16:9 layouts, long tables
   that cross sheets, equations and a dense two-sheet monitor.
 - `all_brochure_fixtures()`, a folded tri-fold.
+- `all_deck_fixtures()`, a 16:9 pitch deck with dividers, notes and its disclosures.
 
 The suite renders every fixture, checks that every `cid:` reference has a manifest entry,
 that a second build is byte-identical, and that each still matches its golden. The examples
@@ -1114,6 +1145,7 @@ pyhermes/
 ├── email/        the email medium: the four slots and the Gmail size check
 ├── document/     the paged medium: PagedDocument, Page, Cover, running boxes, back matter
 ├── brochure/     the folded medium: Brochure, Panel, the folds, imposition, print checks
+├── deck/         the slide medium: Deck, Slide, dividers, title and closing slides, notes
 ├── delivery/     transport-neutral MIME assembly + shared retry policy
 ├── gmail/        Gmail send adapter
 ├── outlook/      Outlook send adapter over Microsoft Graph, and drafts in classic Outlook

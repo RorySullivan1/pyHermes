@@ -22,11 +22,22 @@ from pathlib import Path
 
 from pyhermes.builder.document import Document
 from pyhermes.builder.exceptions import EmailBuilderError, SizeError
-from pyhermes.check import Severity, format_findings, lint_html, render_for_check
+from pyhermes.check import (
+    Severity,
+    format_findings,
+    layout_findings,
+    lint_html,
+    render_for_check,
+)
 from pyhermes.check.target import TargetError, as_document, load_target
 from pyhermes.pdf import PdfError
 
-from .fixtures import all_brochure_fixtures, all_fixtures, all_paged_fixtures
+from .fixtures import (
+    all_brochure_fixtures,
+    all_deck_fixtures,
+    all_fixtures,
+    all_paged_fixtures,
+)
 from .screenshots import ScreenshotError, capture_emails, capture_pages
 
 #: Where rendered HTML lands. Gitignored, per the repo's existing convention.
@@ -77,7 +88,12 @@ def _gallery() -> dict[str, Callable[[], Document]]:
     command renders a document and shows it to you, and refusing to preview
     a paged fixture would be the tool having an opinion it has no use for.
     """
-    return {**all_fixtures(), **all_paged_fixtures(), **all_brochure_fixtures()}
+    return {
+        **all_fixtures(),
+        **all_paged_fixtures(),
+        **all_brochure_fixtures(),
+        **all_deck_fixtures(),
+    }
 
 
 def _from_fixture(name: str) -> Document:
@@ -176,6 +192,7 @@ def main(argv: list[str] | None = None) -> int:
         # Judged by its own medium's rules since #165: an email answers to
         # the ten about mail clients, a paged document to the six about a page.
         findings = lint_html(html, email.medium.name, email.rendered_sections())
+        findings += layout_findings(email)
         print(format_findings(findings))
         if any(finding.severity is Severity.ERROR for finding in findings):
             exit_code = EXIT_LINT_ERRORS

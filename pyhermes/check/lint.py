@@ -37,6 +37,7 @@ __all__ = [
     "SizeReport",
     "errors",
     "format_findings",
+    "layout_findings",
     "lint_document",
     "lint_email",
     "lint_html",
@@ -182,6 +183,14 @@ SOURCES: dict[str, str] = {
         "Outlook's handling of colspan is unverified in this repo; this rule "
         "keeps the span where a render has been reasoned about."
     ),
+    "slide-overflow": (
+        "A slide is one sheet with a fixed body (#296), so copy that does not fit "
+        "is clipped at the footer band rather than carried onto a second sheet, "
+        "and the clip is silent in the PDF. The brochure's panels clip the same "
+        "way (#186). This lays the deck out through the PDF exporter and reads "
+        "back where each slide's closing sentinel landed; without the [pdf] "
+        "extra it says it could not measure rather than passing."
+    ),
     "size-budget": (
         "Gmail clips a message above ~102 KB behind a 'View entire message' "
         "link. pyhermes/config.Config.size_limit_kb; Email._validate_size enforces "
@@ -249,14 +258,14 @@ class _OpenTable:
 RULE_MEDIA: dict[str, frozenset[str]] = {
     # Accessibility, not client compatibility: a screen reader reads a PDF
     # too, and neither rule mentions a mail client in its source.
-    "img-alt": frozenset({"email", "document", "brochure", "html"}),
-    "table-role": frozenset({"email", "document", "brochure", "html"}),
+    "img-alt": frozenset({"email", "document", "brochure", "deck", "html"}),
+    "table-role": frozenset({"email", "document", "brochure", "deck", "html"}),
     # A URL that cannot resolve is a defect in any medium, and #164 made it a
     # harder one for paged output than for email: the PDF exporter refuses
     # every URL it cannot serve from the manifest, so an empty or external
     # one stops the render rather than merely wasting a request.
-    "empty-url": frozenset({"email", "document", "brochure", "html"}),
-    "no-external-css": frozenset({"email", "document", "brochure", "html"}),
+    "empty-url": frozenset({"email", "document", "brochure", "deck", "html"}),
+    "no-external-css": frozenset({"email", "document", "brochure", "deck", "html"}),
     # Outlook's Word engine, and the markup written for it. None of this is
     # true of a print engine -- #164 measured the reverse for the width
     # attribute, which a print engine ignores where Outlook needs it.
@@ -271,15 +280,18 @@ RULE_MEDIA: dict[str, frozenset[str]] = {
     # threshold is a fact about one mail client.
     "size-budget": frozenset({"email"}),
     # Paged-only, and each comes from a defect a real PDF produced (#164, #173).
-    # A brochure is printed by the same engine, so each is as true of it.
-    "page-size-declared": frozenset({"document", "brochure"}),
-    "paged-table-width": frozenset({"document", "brochure"}),
-    "table-structure": frozenset({"document", "brochure"}),
+    # A brochure and a deck are laid out by the same engine, so each is as true of them.
+    "page-size-declared": frozenset({"document", "brochure", "deck"}),
+    "paged-table-width": frozenset({"document", "brochure", "deck"}),
+    "table-structure": frozenset({"document", "brochure", "deck"}),
     # Structure and accessibility, true of the markup in every medium (#223).
-    "table-header-tier": frozenset({"email", "document", "brochure", "html"}),
+    "table-header-tier": frozenset({"email", "document", "brochure", "deck", "html"}),
     # A folded sheet going to a press: true of nothing else this package builds.
     "print-marks": frozenset({"brochure"}),
     "rgb-only": frozenset({"brochure"}),
+    # One slide is one sheet, so overflow is clipped copy (#297). A deck is
+    # projected or sent, never pressed, so the two print rules stay off it.
+    "slide-overflow": frozenset({"deck"}),
 }
 
 
@@ -958,9 +970,51 @@ def lint_document(document: Document) -> list[Finding]:
     This is the entry point that makes the rule table mean anything: an
     email is judged by the ten rules about mail clients, and a paged document
     by the six that are true of a page. A document over its size limit is
-    still linted: the refused markup is what the breakdown is for.
+    still linted: the refused markup is what the breakdown is for. The rules
+    only a layout can answer follow, from :func:`layout_findings`.
     """
-    return lint_html(render_for_check(document), document.medium.name, document.rendered_sections())
+    html = render_for_check(document)
+    return lint_html(html, document.medium.name, document.rendered_sections()) + layout_findings(
+        document
+    )
+
+
+def layout_findings(document: Document) -> list[Finding]:
+    """
+    The findings only the print engine can answer: today, a slide whose copy overflows (#297).
+
+    Each overflowing slide is an error. Without the ``[pdf]`` extra it is one
+    warning saying the deck was not measured, so a check never passes a
+    deck it could not see. Empty for any medium the rule does not apply to.
+    """
+    from pyhermes.deck import Deck, overflowing_slides
+    from pyhermes.pdf import BackendMissingError
+
+    if "slide-overflow" not in rules_for(document.medium.name) or not isinstance(document, Deck):
+        return []
+    try:
+        overflowing = overflowing_slides(document)
+    except BackendMissingError:
+        return [
+            Finding(
+                rule_id="slide-overflow",
+                severity=Severity.WARNING,
+                location="whole deck",
+                message=(
+                    "not measured: finding a slide that overflows needs a layout, "
+                    'and the PDF backend is missing. Install "pyhermes[pdf]".'
+                ),
+            )
+        ]
+    return [
+        Finding(
+            rule_id="slide-overflow",
+            severity=Severity.ERROR,
+            location=name,
+            message="its copy runs past the footer band and is clipped; trim it or split the slide",
+        )
+        for name in overflowing
+    ]
 
 
 def render_for_check(document: Document) -> str:
@@ -1006,6 +1060,7 @@ __all__ = [
     "SizeReport",
     "errors",
     "format_findings",
+    "layout_findings",
     "lint_document",
     "lint_email",
     "lint_html",

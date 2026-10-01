@@ -22,9 +22,9 @@ __all__ = ["PAGED_MEDIUM", "paged_medium"]
 #:
 #: Its skeleton is named ``base.html`` and resolved through the overlay
 #: ``document/`` — the fork mechanism #160 shipped, doing the job it exists
-#: for. A slide and a sheet of A4 are one medium at two pages, not two
-#: media: they share a skeleton, a slot contract and a rule set, and differ
-#: only in :class:`~pyhermes.builder.sizing.PageFormat`.
+#: for. A4, Letter and a slide-shaped sheet are one medium at several pages:
+#: they share a skeleton, a slot contract and a rule set. A deck, one slide
+#: to a sheet, is its own medium since #218 (`pyhermes.deck`).
 PAGED_MEDIUM = Medium(
     name="document",
     skeleton="base.html",

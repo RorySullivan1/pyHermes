@@ -235,6 +235,13 @@ shape of compact's four:
 The probe in #209 (11px body, 3px cells) filled 60% and 63% of the factsheet's sheets. `dense`
 is tuned up from it and filled 65% and 68% before the factsheet spent the room.
 
+**`presentation` is the fifth preset, and the first one medium alone may take (#301).** A deck
+reads it by default (`DeckMetadata`); `MEDIUM_DENSITIES` maps it to `deck`, and `check_density`
+refuses it on every other medium with no config switch, because a slide's type on an A4 sheet
+or in an inbox is a mistake rather than a choice. It derives from `spacious` and was set from
+the deck fixture's PDF: 15pt body and a 30pt title on PowerPoint's 960pt-wide sheet, against
+spacious's 11.25 and 24. `deck.md` has the measurements.
+
 **Column geometry is arithmetic the builder owns.** A ratio's own *name* is its weights —
 `"25-25-50"` is `[25, 25, 50]` — and `column_layout()` splits the active scheme's content
 width by them. No lookup table: a table would be a second place for the split to be written

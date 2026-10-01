@@ -8,9 +8,10 @@
 - **Shipped**: #157, #153, #169, #170, #171, #172, #193 (PRs #167–#203); #201, #150, #202 (PRs #204–#206);
   #209 (PR #222); #217 (PR #234); #221 (PR #235); #238 (PR #253); #237, #255, #239 (PRs #254–#257); manual
   + #258 (PR #260); #261 + #258's fix (PR #283); #265 (PR #284); #277 (PR #285); #282 (PR #286); #273 (PR #287); #270
-  (PR #289); #259 (PR #292); #281 (PR #293); #272 (PR #294); #280 (PR #295). #288 is the human Outlook-desktop check.
-  #220 research apparatus (#308–#312) implemented on the branch, PR not yet opened.
-  Epics defined, not started: #218 deck + PPTX (#296–#301), #219 DOCX (#302–#307).
+  (PR #289); #259 (PR #292); #281 (PR #293); #272 (PR #294); #280 (PR #295); #220 (PR #313). #288 is the human Outlook-desktop check.
+  #220 research apparatus (#308–#312) shipped in PR #313; epic-autoclose closed it.
+  #218 deck medium (#296–#299, #301; #300 PPTX closed with #219) is implemented, its PR open.
+  Epics defined, not started: #219 DOCX (#302–#307).
 - The prose budget is live; the baseline is 44 and may only shrink.
 
 ## Decisions        (append-only; supersede, never delete)
@@ -71,11 +72,15 @@
   `h1`/`h2` are refused rather than demoted** — `design-axes.md` (#280)
 - [2026-10-01] **A committed example is a golden: a test compares it to a fresh render, masking only
   Content-IDs, whose chart bytes are the machine's** — `qa-harness.md` (#281)
+- [2026-10-01] **A deck is a medium, superseding "a slide is a page"; one slide is one sheet, overflow a
+  finding; `presentation` is the first density one medium alone may take** — `deck.md` (#218)
 - [2026-10-01] **Appendices reopen numbering by one letter level only; a citation is `[@key]` in the
   `[^n]` fields, resolved by the walk; a term link is a plain `#term-` anchor** — `apparatus.md` (#220)
 
 ## Log              (append-only pointers)
 - Older entries, and epic #157's, are in sessions/ARCHIVE-2026.md.
+- [2026-10-01] deck-medium — **#218 implemented**: Deck, Slide, overflow, notes, `presentation`,
+  `pitch_16_9` — sessions/2026-10-01-deck-medium.md
 - [2026-10-01] examples-drift — **#281 implemented**: README facts, three examples regenerated, the
   committed-output test — sessions/2026-10-01-examples-drift.md
 - [2026-10-01] customise-the-layout — **#272 implemented**: manual page 9, every example run —

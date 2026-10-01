@@ -38,7 +38,7 @@ from .images import EmailImage, ImageAsset, dedupe_assets
 from .medium import DEFAULT_MEDIUM, Medium
 from .models import DocumentMetadata, Footnote
 from .research import Bibliography
-from .sizing import PRINT_DENSITIES, SizeScheme, Spacing, resolve_size_scheme
+from .sizing import MEDIUM_DENSITIES, PRINT_DENSITIES, SizeScheme, Spacing, resolve_size_scheme
 from .textgen import join_sections
 from .theming import resolve_theme
 from .typography import resolve_font_theme
@@ -551,15 +551,25 @@ __all__ = ["Document", "RegionFacts", "Renderer"]
 
 def check_density(size_theme: SizeTheme | str | SizeScheme, medium: Medium) -> None:
     """
-    Refuse a density the email medium has not been rendered at.
+    Refuse a density the medium has not been rendered at.
 
-    The shipped email densities are the ones checked against the clients; a
-    print density or a custom scheme is not, until the caller says it has
-    been, with ``Config.allow_custom_email_density``. Other media take any.
+    A density tuned for one medium is refused by every other, with no switch
+    (``presentation`` belongs to the deck). The shipped email densities are
+    the ones checked against the clients; a print density or a custom scheme
+    is not, until the caller says it has been, with
+    ``Config.allow_custom_email_density``. Other media take the rest.
 
     Raises:
-        ValidationError: Naming the density and the switch.
+        ValidationError: Naming the density, and the switch where there is one.
     """
+    if not isinstance(size_theme, SizeScheme):
+        owner = MEDIUM_DENSITIES.get(SizeTheme(size_theme))
+        if owner is not None and owner != medium.name:
+            raise ValidationError(
+                f"the density {str(size_theme)!r} is tuned for the {owner} medium alone, "
+                f"and this document is a {medium.name}. Choose 'spacious' for room, "
+                "or build the document the density was made for."
+            )
     if not medium.email or get_config().allow_custom_email_density:
         return
     if isinstance(size_theme, SizeScheme):

@@ -1,0 +1,20 @@
+{# The slide a deck opens on. No bands: a title slide carries no number, as a
+   cover carries no folio. The copy is anchored low on the sheet, inset by the
+   page margin like every slide's, under an accent rule; positioned, as the
+   divider's is, because WeasyPrint left a valign'd cell's copy at the top. #}
+<div class="sheet title-slide" style="background-color:{{ title_slide_background }};{% if background_image_url %} background-image:url('{{ background_image_url | escape_html }}'); background-size:cover; background-position:center;{% endif %}">
+  <div class="slide-band" align="{{ align | default('left', true) }}" style="bottom:{{ deck_box.title_height }}px; width:{{ deck_box.width }}px; padding:0 {{ deck_box.inset }}px; text-align:{{ align | default('left', true) }};">
+    {% if logo_url %}
+    <img src="{{ logo_url | escape_html }}" alt="{{ resolved_logo_alt | escape_html }}" width="{{ resolved_logo_width }}"
+         style="display:block; width:{{ resolved_logo_width }}px; border:0; margin-bottom:{{ size.space.block_gap }}px;{% if align == 'center' %} margin-left:auto; margin-right:auto;{% elif align == 'right' %} margin-left:auto;{% endif %}">
+    {% endif %}
+    <div style="width:{{ deck_box.inset * 2 }}px; border-top:4px solid {{ theme.palette.accent }}; margin-bottom:{{ size.space.block_gap }}px;{% if align == 'center' %} margin-left:auto; margin-right:auto;{% elif align == 'right' %} margin-left:auto;{% endif %}"></div>
+    <h1 style="margin:0 0 {{ size.space.subtitle_gap }}px; font-family:{{ font.heading }}; font-size:{{ size.component.kpi_value }}px; line-height:{{ size.type.title_line | percent }}; font-weight:normal; color:{{ title_slide_text }};">{{ headline | escape_html }}</h1>
+    {% if standfirst %}
+    <p style="margin:0; font-family:{{ font.body }}; font-size:{{ size.type.section }}px; line-height:{{ size.type.heading_line | percent }}; color:{{ title_slide_text }};">{{ standfirst | escape_html }}</p>
+    {% endif %}
+    {% if department or date_range %}
+    <p style="margin:{{ size.space.block_gap }}px 0 0; font-family:{{ font.label }}; font-size:{{ size.type.small }}px; line-height:{{ size.type.secondary_line | percent }}; color:{{ title_slide_text }};">{{ [department, date_range] | select | join(' · ') | escape_html }}</p>
+    {% endif %}
+  </div>
+</div>

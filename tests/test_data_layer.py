@@ -44,6 +44,7 @@ class TestTheCoreNeverImportsTheAdapters:
             "pyhermes/document",
             "pyhermes/email",
             "pyhermes/brochure",
+            "pyhermes/deck",
             "pyhermes/delivery",
             "pyhermes/pdf",
         ],

@@ -346,6 +346,8 @@ A4_LANDSCAPE = PageFormat(width=1123, height=794, margin=A4_MARGIN)
 LETTER_PORTRAIT = PageFormat(width=816, height=1056, margin=LETTER_MARGIN)
 LETTER_LANDSCAPE = PageFormat(width=1056, height=816, margin=LETTER_MARGIN)
 SLIDE_16_9 = PageFormat(width=1280, height=720, margin=SLIDE_MARGIN)
+#: The older projector shape (#296), at the 16:9 slide's margin.
+SLIDE_4_3 = PageFormat(width=1024, height=768, margin=SLIDE_MARGIN)
 
 #: Every shipped page by name, the way ``SIZE_SCHEMES`` names every density.
 PAGE_FORMATS: dict[str, PageFormat] = {
@@ -355,6 +357,7 @@ PAGE_FORMATS: dict[str, PageFormat] = {
     "letter_portrait": LETTER_PORTRAIT,
     "letter_landscape": LETTER_LANDSCAPE,
     "slide_16_9": SLIDE_16_9,
+    "slide_4_3": SLIDE_4_3,
 }
 
 
@@ -801,6 +804,60 @@ DENSE_SIZES = COMPACT_SIZES.derive(
     frame={"pad_x": 12, "outer_pad_y": 10},
 )
 
+#: Read across a room, or on a screen at a glance (#301).
+#:
+#: Derived from ``SPACIOUS`` and set from the deck fixture's PDF. A 1280px
+#: slide is a 960pt sheet, PowerPoint's own 13.33in, so 1px prints as 0.75pt.
+#: ``spacious`` measured 11.25pt body and a 24pt title there, a printed
+#: report's sizes; this sets 15pt body, a 30pt title and 33pt KPI values.
+#: Leading tightens rather than loosens: a slide is read in lines, and its
+#: height is fixed. `deck.md` has the measurements and the photographs.
+PRESENTATION_SIZES = SPACIOUS_SIZES.derive(
+    type={
+        "title": 40,
+        "title_mobile": 32,
+        "section": 28,
+        "subheading": 24,
+        "item_title": 22,
+        "body": 20,
+        "secondary": 18,
+        "small": 16,
+        "label": 14,
+        "micro": 13,
+        "title_line": 1.15,
+        "heading_line": 1.25,
+        "body_line": 1.45,
+        "secondary_line": 1.35,
+    },
+    space={
+        "gutter": 32,
+        "section_title_top": 18,
+        "section_title_bottom": 14,
+        "content_top": 12,
+        "content_bottom": 12,
+        "column_bottom": 16,
+        "column_pad_x": 28,
+        "column_pad_x_narrow": 24,
+        "block_gap": 18,
+        "subtitle_gap": 12,
+        "caption_gap": 10,
+    },
+    component={
+        "kpi_value": 44,
+        "kpi_pad_y": 20,
+        "kpi_pad_x": 18,
+        "card_body_line": 1.4,
+        "table_cell_pad": 10,
+        "table_bar_height": 8,
+        "list_ordinal_width": 34,
+        "list_body_line": 1.45,
+        "cta_width": 200,
+        "cta_height": 52,
+        "contact_line": 1.45,
+        "legal_line": 1.45,
+    },
+)
+
 #: Every scheme the repo ships, by name. Repo-owned and never mutated at
 #: runtime: a house density is a ``derive`` passed as an object (#212), not
 #: a name registered here.
@@ -809,12 +866,18 @@ SIZE_SCHEMES: dict[SizeTheme, SizeScheme] = {
     SizeTheme.STANDARD: STANDARD_SIZES,
     SizeTheme.SPACIOUS: SPACIOUS_SIZES,
     SizeTheme.DENSE: DENSE_SIZES,
+    SizeTheme.PRESENTATION: PRESENTATION_SIZES,
 }
 
 #: The shipped densities no email client has rendered. The email medium
 #: refuses them, as it refuses a custom scheme, unless
 #: ``Config.allow_custom_email_density`` says the caller has.
-PRINT_DENSITIES: frozenset[SizeTheme] = frozenset({SizeTheme.DENSE})
+PRINT_DENSITIES: frozenset[SizeTheme] = frozenset({SizeTheme.DENSE, SizeTheme.PRESENTATION})
+
+#: A density one medium alone may take, by ``Medium.name`` (#301). A slide's
+#: type on an A4 sheet or in an inbox is a mistake, not a choice, and no
+#: config switch admits it, unlike a print density in an email.
+MEDIUM_DENSITIES: dict[SizeTheme, str] = {SizeTheme.PRESENTATION: "deck"}
 
 
 def resolve_size_scheme(value: SizeTheme | str | SizeScheme) -> SizeScheme:

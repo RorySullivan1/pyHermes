@@ -41,6 +41,7 @@ from . import (
     minimal_footer,
     modern_fonts,
     no_header,
+    pitch_16_9,
     research_note,
     rich_table,
     slate_theme,
@@ -142,11 +143,23 @@ def all_brochure_fixtures() -> dict[str, PagedFixtureBuilder]:
     return {"tri_fold_letter": tri_fold_letter.build}
 
 
+def all_deck_fixtures() -> dict[str, PagedFixtureBuilder]:
+    """
+    The deck gallery, name → builder (#296).
+
+    A fourth registry for :func:`all_brochure_fixtures`' reason: the paged
+    tests read a cover, running boxes and back matter off every fixture, and
+    a deck has a title slide and a closing slide instead.
+    """
+    return {"pitch_16_9": pitch_16_9.build}
+
+
 __all__ = [
     "DEPRECATED_COMPONENTS",
     "FixtureBuilder",
     "PagedFixtureBuilder",
     "all_brochure_fixtures",
+    "all_deck_fixtures",
     "all_fixtures",
     "all_paged_fixtures",
 ]

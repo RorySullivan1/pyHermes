@@ -14,7 +14,8 @@ and Outlook's Word engine for an email, laying out sheets and margin boxes for a
 the three design axes, the two projections. A **medium** decides the rest: `pyhermes/email/` the
 four-slot skeleton and the 102 KB check, `pyhermes/document/` the paged one with its cover,
 contents sheet, running boxes and page breaks, `pyhermes/brochure/` a sheet folded into panels,
-imposed for the press with bleed and crop marks. The apparatus a reader navigates by —
+imposed for the press with bleed and crop marks, `pyhermes/deck/` one slide to a sheet, between a
+title slide and the disclosures, with speaker notes as a third projection. The apparatus a reader navigates by —
 exhibit numbers, footnotes, contents, cross-references, appendix letters, citations — is
 numbered in Python, once, so every projection agrees; only the page number is the print engine's. Three exporters sit
 on one contract — `pyhermes/delivery/` + `pyhermes/gmail/` + `pyhermes/outlook/` for MIME, `pyhermes/pdf/` for
@@ -42,6 +43,7 @@ pytest --update-goldens       # the ONLY way to regenerate a golden (#58)
 python -m qa.preview kitchen_sink --lint --screenshot --open   # an email
 python -m qa.preview a4_portrait --lint --screenshot --open    # a paged document + its PDF
 python -m qa.preview tri_fold_letter --lint --screenshot       # a brochure, one image a side
+python -m qa.preview pitch_16_9 --lint --screenshot            # a deck, one image a slide
 python -m pyhermes.check drafts/weekly.py:build               # the shipped check, from any install
 ```
 
@@ -73,6 +75,7 @@ applies to and loads **only when a matching file is read** — so a session that
 | `media.md` | `pyhermes/email/`, `pyhermes/document/`, `pyhermes/pdf/`, `medium.py`, `document.py`, `templates/document/**` | The medium model, the page, the template fork rule, each medium's regions, the exporter's resource policy |
 | `digital-pdf.md` | `pyhermes/pdf/**`, `pyhermes/delivery/message.py`, the digital-PDF tests | The `PdfProfile` and its two presets, attachments and the message's size budget, metadata and determinism, the PDF/UA decision with its numbers, and why a screen PDF is not a medium |
 | `brochure.md` | `pyhermes/brochure/**`, `templates/brochure/**`, the editorial partial | Folds, the panel, imposition, bleed and marks, the editorial primitives and each one's email degradation |
+| `deck.md` | `pyhermes/deck/**`, `templates/deck/**`, the deck fixtures and tests | The slide against the panel and the page, the bands, numbering and parts, overflow, notes as a third projection, the `presentation` density and its measurements, and why there is no PowerPoint export |
 | `delivery.md` | `pyhermes/delivery/`, `pyhermes/gmail/`, `pyhermes/outlook/` | MIME assembly, the adapter contract, the deliberate non-features, drafts in classic Outlook |
 | `qa-harness.md` | `qa/**`, `tests/**`, `pyhermes/check/**` | Gallery, goldens, screenshots, lint and the shipped check, the preview CLI |
 | `config.md` | `pyhermes/config.py` | The one frozen dataclass of tunable numbers |
@@ -110,9 +113,12 @@ The rules themselves. `builder-architecture.md` carries why each exists.
 - **A brochure is checked for print at construction.** A panel inset inside the fold's safe
   distance raises; an image below half its 300 dpi pixel count raises, and below the full
   count warns. Its PDF is RGB, by decision (`brochure.md`).
+- **A slide is one sheet.** A deck's slide never carries over: overflow is clipped, and
+  `slide-overflow` names it, an error in the check (`deck.md`).
 - **An email refuses a density no client has rendered.** A custom `SizeScheme` or the print
   density `dense` raises at construction unless `Config.allow_custom_email_density` is set; a
-  paged document and a brochure take any. A per-object `spacing` that moves a token the
+  paged document and a brochure take any. `presentation` is the deck's alone, and every other
+  medium refuses it with no switch. A per-object `spacing` that moves a token the
   email's `@media` block reads (`pad_x`, `card_pad_*`, `mobile_*`) is refused off paper
   (`design-axes.md`).
 - **The package never prints.** A soft limit is a `SizeWarning` or `PrintQualityWarning` a host
@@ -230,6 +236,9 @@ these rather than improvising:
   warning, #274–#276) is complete. **#282** (a stacked column fills its width on a phone) is fixed.
   **#220** (the long-form research apparatus: a list of exhibits, lettered appendices,
   citations with a bibliography, a glossary, and a research-note fixture, #308–#312) is complete.
+  **#218** (the deck medium: `Deck`, `Slide` and dividers, the title and closing slides,
+  `slide-overflow`, speaker notes, the `presentation` density and `pitch_16_9`, #296–#301) is
+  complete; #300, the PowerPoint export, was closed with #219.
   **#259** is fixed: the size report names each body section, and `pyhermes.check` and
   `preview --lint` report on an email over 102 KB. **#281** is fixed: the README states current
   facts, and a test holds each example's committed `.html` to a fresh render. **#272** is done:

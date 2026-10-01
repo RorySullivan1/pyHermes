@@ -107,6 +107,21 @@ def layout(document: Document, profile: PdfProfile = PRINT) -> Any:
         return weasyprint.HTML(string=html, url_fetcher=fetcher).render(**profile.options())
 
 
+def anchor_tops(document: Document) -> dict[str, float]:
+    """
+    Where each ``id`` in ``document`` landed: the top of its box, in px from its sheet's top.
+
+    The first sheet an id lands on wins. An element the engine placed on no
+    sheet, such as copy that ran off one, has no entry, which is how a fit
+    check tells "past the line" from "off the sheet".
+    """
+    landed: dict[str, float] = {}
+    for page in layout(document).pages:
+        for anchor, position in page.anchors.items():
+            landed.setdefault(anchor, position[1])
+    return landed
+
+
 def save_pdf(document: Document, output_path: str | Path, profile: PdfProfile = PRINT) -> Path:
     """Render under ``profile`` and write to disk, returning the resolved path."""
     output_path = Path(output_path)
