@@ -39,7 +39,8 @@ def validate_gmail_size(html: str, hint: str = "") -> None:
     if size_kb > config.size_limit_kb:
         raise SizeError(
             f"Rendered email is {size_kb:.1f} KB, "
-            f"exceeds {config.size_limit_kb} KB Gmail clipping limit.{hint}"
+            f"exceeds {config.size_limit_kb} KB Gmail clipping limit.{hint}",
+            html=html,
         )
     if size_kb > config.size_warn_kb:
         warn_caller(f"Email size {size_kb:.1f} KB (target < {config.size_warn_kb} KB)", SizeWarning)

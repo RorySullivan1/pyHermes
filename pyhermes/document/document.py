@@ -16,7 +16,7 @@ from typing import Any, ClassVar, Self
 from pyhermes.builder.components import contents_entries
 from pyhermes.builder.containers import Container
 from pyhermes.builder.document import Document, RegionFacts
-from pyhermes.builder.engine import Renderer, TemplateOverlay
+from pyhermes.builder.engine import TemplateOverlay
 from pyhermes.builder.enums import TextAlign
 from pyhermes.builder.medium import Medium
 from pyhermes.builder.models import DocumentMetadata
@@ -153,7 +153,7 @@ class PagedDocument(Document):
         """The closing sheet, on the same terms."""
         return ((self._back_matter, self._facts(BACK_MATTER_FACTS)),)
 
-    def _body_context(self, engine: Renderer, sections: list[Container]) -> dict[str, Any]:
+    def _body_sections(self) -> list[Container]:
         """
         The body, less the leading break of a page that opens it.
 
@@ -162,9 +162,10 @@ class PagedDocument(Document):
         and the running boxes' seed leaves ahead of the body table make it
         open a blank sheet instead.
         """
+        sections = super()._body_sections()
         if sections and isinstance(sections[0], Page):
             sections = [sections[0].opening(), *sections[1:]]
-        return super()._body_context(engine, sections)
+        return sections
 
     def _facts(self, names: tuple[str, ...]) -> dict[str, Any]:
         """The named facts, read off the metadata this document was built from."""

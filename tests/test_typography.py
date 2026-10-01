@@ -451,7 +451,8 @@ class TestNoLiteralSurvives:
         The binder moved to ``Document`` in #162 — the claim did not.
         """
         source = (Path("pyhermes/builder") / "document.py").read_text()
-        bind = source[source.index("self._engine.bound(") : source.index("ctx = self._metadata")]
+        bind = source[source.index("def _bound_engine(") : source.index("def _body_sections(")]
+        assert source.count("self._engine.bound(") == 1
         assert bind.count("bound(") == 1
         for value in ("theme=", "size=", "font=", "medium="):
             assert value in bind, f"{value} is not on the shared binder"

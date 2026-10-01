@@ -14,7 +14,7 @@ from pathlib import Path
 
 from pyhermes.builder.exceptions import EmailBuilderError
 
-from .lint import Severity, format_findings, lint_document
+from .lint import Severity, format_findings, lint_html, render_for_check
 from .target import TargetError, load_target
 
 EXIT_OK = 0
@@ -44,7 +44,7 @@ def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     try:
         name, document = load_target(args.target)
-        html = document.render()
+        html = render_for_check(document)
         text = document.text()
     except TargetError as exc:
         print(f"error: {exc}", file=sys.stderr)
@@ -59,7 +59,7 @@ def main(argv: list[str] | None = None) -> int:
         destination.write_text(part, encoding="utf-8")
         print(f"{destination}  ({len(part.encode('utf-8')) / 1024:.1f} KB)")
 
-    findings = lint_document(document)
+    findings = lint_html(html, document.medium.name, document.rendered_sections())
     print(format_findings(findings))
     failed = any(finding.severity is Severity.ERROR for finding in findings)
     return EXIT_LINT_ERRORS if failed else EXIT_OK

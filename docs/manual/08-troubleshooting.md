@@ -147,23 +147,37 @@ pictures, very long text, or many large tables.
    not count towards the limit, and inline ones are the usual cause.
 2. Move long detail into an attached PDF ([Reports and PDFs](07-reports-and-pdfs.md)), or
    link to it on your website.
-3. To find which section is heaviest, measure the email with the limit lifted, then remove
-   sections one at a time and measure again:
+3. To find which section is heaviest, run the check on your draft. It still reports on an
+   email over the limit, lists the sections heaviest first, and exits with code 1:
+
+   ```bash
+   python -m pyhermes.check drafts/weekly.py:build
+   ```
+
+   ```text
+   error: size-budget at whole document — over 102 KB. 149.5 KB total; heaviest regions:
+        59.6 KB  section 3: Positioning
+        40.1 KB  section 4: Appendix
+        30.3 KB  section 2: Market wrap
+        10.8 KB  section 1: Outlook
+         2.9 KB  (document head)
+   ```
+
+   `python -m qa.preview drafts/weekly.py:build --lint` prints the same report. From Python,
+   the same report comes from the email itself:
 
    ```python
    from pyhermes.builder import Email, FullWidth, TextBlock
-   from pyhermes.config import Config
+   from pyhermes.check import render_for_check, size_report
 
    facts = {"email_subject": "Rates Weekly", "firm_name": "Acme", "campaign_name": "Rates"}
-   email = Email(facts, config=Config(size_limit_kb=10_000, size_warn_kb=10_000))
-   email.add_section(FullWidth(TextBlock("<p>" + "word " * 20_000 + "</p>"), title="Long"))
-   size_kb = len(email.render().encode()) / 1024
+   email = Email(facts)
+   email.add_section(FullWidth(TextBlock("<p>" + "word " * 30_000 + "</p>"), title="Long"))
+   report = size_report(render_for_check(email), email.rendered_sections())
+   print(report.summary())
    ```
 
 4. `"size_theme": "compact"` does **not** help much here. It saves height, not bytes.
-
-> **Note:** a size report that names the heaviest section for you is tracked in
-> [#259](https://github.com/RorySullivan1/pyHermes/issues/259).
 
 **If you only send through Outlook:** the limit is Gmail's. You can raise it with
 `Email(facts, config=Config(size_limit_kb=200, size_warn_kb=180))`. Do this only if you

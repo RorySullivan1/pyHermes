@@ -241,7 +241,7 @@ test (#60). `lint_html(html)` returns `Finding(rule_id, severity, location, mess
 | `table-header-tier` | error | A `colspan` outside a `thead`, a header tier whose spans miscount the columns, or a spanning `th` without `scope="colgroup"` — every medium (#223) |
 | `vml-fill-empty-src` | error | A `v:fill` with `src=""` inside `[if mso]` (#150) — `empty-url`'s case, in the one place that rule cannot reach |
 | `vml-fill-frame-without-src` | error | A `v:fill` claiming `type="frame"` with no `src` (#150). Outlook paints a broken-image placeholder over the shape rather than falling back to `color`/`opacity` |
-| `size-budget` | warn/error | The 90/102 KB thresholds, **attributing the bytes to section-marker regions** |
+| `size-budget` | warn/error | The 90/102 KB thresholds, **attributing the bytes to each body section and to the section-marker regions** (#259) |
 
 Seven decisions worth not re-litigating:
 
@@ -1129,3 +1129,31 @@ hid the skip reasons, so nothing in a log showed it.
 - **Two reasons were untagged and now name their extra**: `test_math.py`'s bare
   `importorskip("weasyprint")` and `importorskip("pypdfium2")`, whose default reason names a
   module, not an install.
+
+## The size report names each section (#259)
+
+The body used to be one region. Containers emit no marker since #137 cut shipped comments, so
+every section's bytes landed in `SECTIONS: Insert containers here`, and `preview --lint` never
+printed even that above 102 KB, because `render()` raised first.
+
+- **The attribution comes from the section tree, not from new comments.**
+  `Document.rendered_sections()` renders each body section through the same bound engine and
+  section list as `render()`, labelled `section N: Title` (or the class when untitled).
+  `size_report(html, sections)` finds each one in the markup in order, gives it its own
+  region and takes its bytes out of the marker region around it, so the regions still sum to
+  the total. Every golden is byte-identical, which is the proof the email is unchanged.
+- **Without `sections` the report is exactly what it was.** `TestTheSizeBudgetStillNamesItsRegions`
+  still asserts the body marker is the heaviest region of the bare report.
+- **The two have to stay one render.** `PagedDocument` drops a first page's leading break.
+  That lived in `_body_context`, so the standalone first `Page` of `letter_dense` did not
+  match and was silently left unattributed. It now lives in `_body_sections`, which both paths
+  call. `TestEverySectionIsFound` checks every email and paged fixture, and moving the rule back
+  fails it by name. A paged document has no markers, so what its sections leave is one
+  `(rest of document)` region.
+- **A brochure is not attributed.** Its panels are imposed onto two sides, so no section's
+  standalone markup appears in the page. The report falls back to the markers, and a test holds
+  that this degrades without error.
+- **`SizeError.html` carries the refused markup**, and `pyhermes.check.render_for_check()`
+  returns it instead of raising. `render()` still refuses, the check always measures, and
+  `preview` measures only with `--lint`. Without it, an over-limit draft still exits 2 and the
+  message says to run with `--lint`.

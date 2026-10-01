@@ -333,3 +333,15 @@ Decisions and Log entries folded out of `INDEX.md` on 2026-08-29 (#143), verbati
   re-export; `create_draft` into classic Outlook — sessions/2026-10-01-toolchain.md
 - [2026-10-01] phone-columns — **#282 fixed**: `.stack-column` is `display:table` at the breakpoint;
   98 of 111 gallery cells had shrink-wrapped. Measured, not reasoned (#76, #129)
+
+## Folded in from INDEX.md on 2026-10-01 (decisions of 2026-09-23)
+
+- [2026-09-23] **A panel is a fixed box that clips, and the clip is made loud by the print
+  engine.** Table cells ran a side onto five sheets; a sentinel read off `page.anchors` names an
+  overflowing face — sessions/2026-09-23-brochure-medium.md
+
+- [2026-09-23] **A screen PDF is a profile, not a medium; `SCREEN` stays untagged.** WeasyPrint 70
+  tags layout tables as `/Table` and ignores `role` (#202) — sessions/2026-09-23-digital-pdf.md
+
+- [2026-09-23] **An image's CSS width is a cap on 100%, never a fixed px.** A px width is WeasyPrint's
+  min-content, so a 600px chart in a half column widened the frame and added a sheet — `media.md` (#201)

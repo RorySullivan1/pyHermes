@@ -277,23 +277,9 @@ class Document:
         bytes are inside whatever budget it sets.
         """
         self.validate()
-        # The one resolution point. Every template below — skeleton, regions,
-        # containers, components — reads the same values, because they all
-        # render through this binder rather than looking any of them up.
-        engine = self._engine.bound(
-            theme=resolve_theme(self._metadata.theme),
-            size=resolve_size_scheme(self._metadata.size_theme).with_page(self._medium.page_format),
-            font=resolve_font_theme(self._metadata.font_theme),
-            medium=self._medium,
-        )
-
+        engine = self._bound_engine()
         ctx = self._metadata.to_dict()
-        sections = list(self._sections)
-        if (endnotes := self._endnotes()) and not self._medium.paged:
-            # A mail client has no sheet foot, so the notes a page floats
-            # there are gathered after the last section instead.
-            sections.append(FullWidth(content=endnotes))
-        ctx.update(self._body_context(engine, sections))
+        ctx.update(self._body_context(engine, self._body_sections()))
         for region, facts in self.leading_regions() + self.trailing_regions():
             ctx.update(region.render_slots(engine, facts))
 
@@ -322,6 +308,22 @@ class Document:
             *(region.text(facts) for region, facts in self.trailing_regions()),
         )
 
+    @_under_own_config
+    def rendered_sections(self) -> list[tuple[str, str]]:
+        """
+        ``(label, markup)`` for each body section, rendered as :meth:`render` renders it.
+
+        The label is the section's title, else its class, after its position.
+        No constraint runs, because no document is composed: this is what a
+        size report uses to say which section spent the bytes (#259).
+        """
+        self.validate()
+        engine = self._bound_engine()
+        return [
+            (f"section {n}: {section.title or type(section).__name__}", section.render(engine))
+            for n, section in enumerate(self._body_sections(), start=1)
+        ]
+
     def save(self, output_path: str | Path) -> Path:
         """Render and write to disk, returning the resolved path."""
         html = self.render()
@@ -333,6 +335,28 @@ class Document:
     # ------------------------------------------------------------------
     # Internals
     # ------------------------------------------------------------------
+
+    def _bound_engine(self) -> Renderer:
+        """
+        The one resolution point. Every template — skeleton, regions,
+        containers, components — reads the same values, because they all
+        render through this binder rather than looking any of them up.
+        """
+        return self._engine.bound(
+            theme=resolve_theme(self._metadata.theme),
+            size=resolve_size_scheme(self._metadata.size_theme).with_page(self._medium.page_format),
+            font=resolve_font_theme(self._metadata.font_theme),
+            medium=self._medium,
+        )
+
+    def _body_sections(self) -> list[Container]:
+        """The sections the body renders, endnotes appended where there is no sheet foot."""
+        sections = list(self._sections)
+        if (endnotes := self._endnotes()) and not self._medium.paged:
+            # A mail client has no sheet foot, so the notes a page floats
+            # there are gathered after the last section instead.
+            sections.append(FullWidth(content=endnotes))
+        return sections
 
     def _body_context(self, engine: Renderer, sections: list[Container]) -> dict[str, Any]:
         """The skeleton's body keys: every section in reading order. A brochure adds its sides."""
