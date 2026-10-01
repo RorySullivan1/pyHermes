@@ -1,0 +1,18 @@
+{#
+  DIVIDER — a rule between blocks (#269).
+
+  A bordered cell rather than an hr, which the Word engine draws at its own
+  weight and colour. The cell is the accent rule's shape: zero type, one
+  pixel tall, a space so the Word engine keeps it. block_gap above and below.
+#}
+<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
+  <tr>
+    <td style="padding:{{ size.space.block_gap }}px 0 {{ size.space.block_gap }}px 0;">
+      <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="border-top:1px solid {{ theme.palette.rule }}; font-size:0; line-height:0;" height="1">&nbsp;</td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>

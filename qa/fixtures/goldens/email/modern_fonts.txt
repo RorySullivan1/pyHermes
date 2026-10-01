@@ -30,6 +30,7 @@ Wide Left
 Wide Centre
 Wide Right
 What We Are Watching
+Bottom Line
 
 
 Market Snapshot
@@ -222,6 +223,24 @@ Breadth is narrowing.
 03. Positioning
 
 Futures length is extended.
+
+
+Bottom Line
+-----------
+
+Duration has paid for its carry this quarter.
+
+------------------------------------------------------------------------------
+
+KEY TAKEAWAY
+
+Stay long the belly; fade the long end.
+
+------------------------------------------------------------------------------
+
+------------------------------------------------------------------------------
+
+Read the full note: https://example.com/note
 
 
 Questions about this note?

@@ -35,7 +35,7 @@ Slash commands (from the `.claude/` library): `/version-set`, `/version-ship`, `
 ## The fixture gallery — `qa/fixtures`
 
 The shared set of representative emails every later QA tool consumes (#57, the first step of
-epic #54). Fifteen fixtures, each a `build()` returning a built `Email`, enumerated through
+epic #54). Sixteen fixtures, each a `build()` returning a built `Email`, enumerated through
 `all_fixtures()` so a consumer never imports them one by one:
 
 | Fixture | What it is for |
@@ -53,6 +53,7 @@ epic #54). Fifteen fixtures, each a `build()` returning a built `Email`, enumera
 | `rich_table` | Every `DataTable` axis at once (#121), closing epic #116 — a caption, a second **text** column, a **centred** column, per-cell colours *and* backgrounds, an alignment override, `subhead` groupings and a `total`. **Two tables on purpose**: the second has a **numeric first column**, which is the only way a golden can show that the row-header rule keys on the column's resolved *kind* rather than on position — with one table, "the first cell is a row header" and "a text first column is a row header" pin identically. Its body is short for `custom_banner`'s reason, and its theme, size and font stay default so no preset moves alongside a table axis |
 | `aligned_layout` | Every alignment axis at once (#128), closing epic #124 — a centred section whose **title follows**, a component **overriding** its container, a **right-aligned** band holding a `CardGroup` and a `DataTable` that do not move, and aligned two- and three-column splits. The band is right-aligned on purpose: a centred one could not tell "the KPI strip kept its own alignment" from "it inherited the section's". Body short, theme/size/font default, for `rich_table`'s reasons. It also carries the gallery's only explicit `Container.background_color` — widening the field-completeness rule to containers found that the **original** entry in the closed colour list had never been set by any fixture |
 | `composed_layout` | Every composition axis at once (#261): a `Stack` of text, a table and a note under one title; a 60-40 split at weights no preset names, with a `Stack` in its narrow column; the epic's acceptance case, a `Stack` of text, a table and figures in one column of a split with a `Columns` nested inside it; and a `FourColumn` row with one slot left empty. Theme, size and font default, so every line of its golden is composition. The screenshot tests' 375px overflow check covers it as a gallery member |
+| `surfaced_layout` | Every surface axis at once (#265): a dark band whose type turns light by itself, with a table and a button on it; a split in the caller's own `text_color`, framed in a `border_color`, with figures keeping their own surface; a highlighted band framed on four sides; and a `Callout` in each tone, then a `Divider` and a right-aligned `Button`. Theme, size and font default, so every line of its golden is a surface. Its first screenshot found the table's caption dark on navy, which no test had seen |
 | `minimal_footer` | A minimal-footer build (#66), the same argument at the other end. Paired with the **default** header on purpose: the two region choices are independent, and swapping both at once could not say which one moved a byte |
 
 **There is a second gallery since #162**, `all_paged_fixtures()` — `a4_portrait` and

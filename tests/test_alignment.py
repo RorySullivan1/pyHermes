@@ -24,6 +24,7 @@ import pytest
 
 from pyhermes.builder import (
     AuthorBlock,
+    Button,
     CardGroup,
     ChartBlock,
     Component,
@@ -278,7 +279,7 @@ class TestTheStyleOnlyElementsAreDeliberate:
 
     @pytest.mark.parametrize(
         ("template", "element"),
-        [("analysis/data-table.html", "caption"), ("text/contact-block.html", "a")],
+        [("analysis/data-table.html", "caption"), ("common/cta.html", "a")],
     )
     def test_the_template_explains_why_it_is_unpaired(self, template, element):
         source = (TEMPLATE_DIR / template).read_text(encoding="utf-8")
@@ -497,7 +498,15 @@ class TestTheBoundaryHolds:
         )
 
 
-PROSE_COMPONENTS = (TextBlock, NumberedList, AuthorBlock, ContactBlock, ChartBlock, PullQuote)
+PROSE_COMPONENTS = (
+    TextBlock,
+    NumberedList,
+    AuthorBlock,
+    ContactBlock,
+    ChartBlock,
+    PullQuote,
+    Button,
+)
 
 #: Components that deliberately do **not** take an ``align``, each with the
 #: reason, because an exclusion whose justification lives only in an issue
@@ -511,6 +520,8 @@ STRUCTURALLY_ALIGNED = {
     "Contents": "an entry is a title, a leader and a page number, left to right (#183)",
     "Stack": "it holds blocks; each keeps its own align and inherits the section's (#262)",
     "Columns": "a split: each block keeps its own align and inherits the section's (#263)",
+    "Callout": "it boxes one block, which keeps its own align and inherits the section's (#268)",
+    "Divider": "a rule has no copy to align (#269)",
 }
 
 

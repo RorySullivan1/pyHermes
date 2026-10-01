@@ -1,0 +1,78 @@
+Hermes Research
+===============
+
+surfaced-layout
+Week ending 9 October · Issue 011
+
+
+On a Dark Ground
+----------------
+
+The title and this paragraph read light on navy.
+
+Treasury yields
+
+Tenor  Yield
+-----  -----
+2Y     3.91%
+10Y    4.28%
+
+See the curve: https://example.com/curve
+
+
+Framed in the Accent
+--------------------
+
+Type in the caller's own cream.
+
+Duration: 6.2y
+Yield: 4.1%
+
+
+Highlighted and Framed
+----------------------
+
+------------------------------------------------------------------------------
+
+An unframed neutral box on the highlight band.
+
+------------------------------------------------------------------------------
+
+
+Three Tones
+-----------
+
+------------------------------------------------------------------------------
+
+UP
+
+Breadth improved.
+
+------------------------------------------------------------------------------
+
+------------------------------------------------------------------------------
+
+DOWN
+
+Spreads widened.
+
+------------------------------------------------------------------------------
+
+------------------------------------------------------------------------------
+
+FLAT
+
+Volumes flat.
+
+------------------------------------------------------------------------------
+
+
+------------------------------------------------------------------------------
+
+Email the desk: mailto:desk@example.com
+
+
+© 2026 Hermes Research
+
+Unsubscribe: https://example.com/unsubscribe
+View in browser: https://example.com/archive/011

@@ -122,6 +122,8 @@ AUDIT: dict[str, dict[str, int | float]] = {
         "contact_pad_x": 24,
         "contact_heading_gap": 6,
         "contact_cta_gap": 16,
+        "callout_pad_y": 16,
+        "callout_pad_x": 20,
         "contact_line": 1.55,
         "legal_line": 1.6,
     },

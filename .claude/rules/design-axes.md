@@ -46,7 +46,7 @@ EmailBuilder().metadata({..., "theme": DEFAULT_THEME.derive(  # or your own
 
   | Exception | Since | The ground the caller supplies |
   |---|---|---|
-  | `Container.background_color` | pre-existing | a section band — the original escape hatch, neither removed nor extended |
+  | `Container.background_color` + `text_color` + `border_color` | pre-existing; #266, #267 | a section band — the original escape hatch, completed into the atom the rest already were: the ground, the type on it, and its frame |
   | `Banner.palette` (`BannerPalette`) | #93 | a **photograph**: `background_image_url` is an image the palette has never seen, so white-on-navy tokens over a pale one are a guess |
   | `Header` / `Footer` `background_color` + `text_color` (`BoxSurface`) | #95, #99 | the two outer **boxes**, the same reason at the size those boxes need |
   | `Cell.color` + `Cell.background` | #118 | **not a ground at all — the other kind of exception.** Admitted as *semantic data*: the caller's claim about a **figure**, which is why `TableRow.colors` was never a breach either. See `data-table.md` |
@@ -968,3 +968,45 @@ Word engine, which synthesises what a face does not supply. A theme that wants
 a lighter voice picks a lighter *face*, in the stack, where the fallback chain
 can be reasoned about.
 ```
+
+
+## Section surfaces (#265)
+
+**The section band was the one exception that shipped half an atom.** A dark
+`background_color` kept the theme's dark type, so its copy read at about 1.3:1 and the lint
+pass saw nothing. #266 gave the band the `text_color` the boxes had, and a default for when
+it is unset. #267 gave it the footer's `border` and `border_color`. No entry was added to the
+list above; the existing one was completed.
+
+- **The ground rebinds the theme for the section's subtree.** `Theme.on_ground(background,
+  text_color)` returns the theme with its light-ground ladder (`primary`, `heading`,
+  `secondary`, `light`, `fine_print`) replaced, and `grounded()` binds it with the theme it
+  replaced as `surface_theme`. A `text_color` sets the whole ladder. Without one, the band
+  takes the `on_dark` ladder when `readable_on` prefers it, and otherwise nothing rebinds,
+  which is why no golden moved: the gallery's only band, `#F4F1EC`, reads dark.
+- **A block that paints its own surface keeps the theme's type**: `CardGroup`, `DataTable`,
+  `PullQuote`, `ContactBlock` and `Callout` set `OWN_SURFACE`. On a ground, all but `Callout`
+  are also set on `common/surface.html`, the theme's surface inset by `caption_gap`, because
+  a table's caption and header and a contact card's border sit on whatever is beneath them.
+  The first screenshot showed exactly that, dark on navy, with every test green.
+- **`TextBlock` drops its `body-text` class on a ground.** The dark-mode block forces that
+  class to the theme's dark type, which would undo the ground in the clients that honour it.
+- **A border spends a pixel a side, and the band gives it back**, as `highlight` does:
+  `edge_pad` loses one for each, so a bordered split still fills the frame. A highlighted
+  band with a border draws all four sides in the border colour. `border_color` without
+  `border=True` raises, since it would draw nothing.
+
+**A `Callout` names a tone, never a colour** (#268). Its fill is the highlight tint, or a
+tint of a semantic token through `heat_color` at 0.08, and its frame is the rule or that
+token, so it is not an exception. Its padding is a cell's, because the Word engine drops a
+`div`'s, and the tokens are its own (`callout_pad_y`, `callout_pad_x`). A known imbalance:
+a `TextBlock` inside ends with its `block_gap` margin, so the box's foot is deeper than its
+head. Judged against the screenshot and kept.
+
+**`Button` and `ContactBlock` share one partial, `common/cta.html`** (#269), extracted with
+every golden byte-identical. The engine strips whitespace before a block tag, so the
+indentation lives in the partial, not on the include line. `Divider` is the accent rule's
+shape: a bordered cell with zero type, one pixel tall, rather than an `hr`.
+
+`surfaced_layout` is the gallery fixture for all of it, and `tests/test_surfaces.py` holds the
+claims. In stacked columns on a phone, a callout shrinks to its content: that is #282.

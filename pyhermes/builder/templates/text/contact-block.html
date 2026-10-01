@@ -11,31 +11,7 @@
                 color:{{ theme.text.secondary }}; line-height:{{ size.component.contact_line | percent }};">
         {{ contact_description | escape_html }}
       </p>
-      <!--[if mso]>
-      <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="{{ contact_url | escape_html }}"
-        style="height:{{ size.component.cta_height }}px;v-text-anchor:middle;width:{{ size.component.cta_width }}px;" arcsize="8%"
-        strokecolor="{{ theme.palette.accent }}" fillcolor="{{ theme.palette.accent }}">
-        <w:anchorlock/>
-        <center style="color:{{ theme.text.on_dark }};font-family: {{ font.label }};
-                       font-size:{{ size.type.secondary }}px;font-weight:bold;">
-          {{ contact_cta_label | escape_html }}
-        </center>
-      </v:roundrect>
-      <![endif]-->
-      <!--[if !mso]><!-->
-      {# The style carries the alignment alone: `a` has no `align`
-         attribute in any HTML spec, so #125's attribute-plus-style pairing
-         does not apply here. See the caption in `analysis/data-table.html`
-         for the other element the pairing skips, and why. #}
-      <a href="{{ contact_url | escape_html }}"
-         style="background-color:{{ theme.palette.accent }}; border-radius:3px; color:{{ theme.text.on_dark }};
-                display:inline-block; font-family: {{ font.label }};
-                font-size:{{ size.type.secondary }}px; font-weight:bold; line-height:{{ size.component.cta_height }}px;
-                text-align:center; text-decoration:none; width:{{ size.component.cta_width }}px;
-                -webkit-text-size-adjust:none;">
-        {{ contact_cta_label | escape_html }}
-      </a>
-      <!--<![endif]-->
+      {% set button_url, button_label = contact_url, contact_cta_label %}{% include "common/cta.html" %}
     </td>
   </tr>
 </table>

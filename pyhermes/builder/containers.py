@@ -23,7 +23,7 @@ from pyhermes.config import get_config
 
 from .apparatus import slugify, validate_anchor
 from .components import Component
-from .engine import Renderer, rebind, respaced, scheme_of
+from .engine import Renderer, grounded, rebind, respaced, scheme_of
 from .enums import TextAlign, ThreeColumnRatio, TwoColumnRatio
 from .exceptions import ValidationError
 from .images import EmailImage, ImageAsset
@@ -96,13 +96,27 @@ class Container:
         align: str | TextAlign | None = None,
         anchor: str | None = None,
         spacing: Spacing | Mapping[str, int | float] | None = None,
+        *,
+        text_color: str | None = None,
+        border: bool = False,
+        border_color: str | None = None,
     ):
-        if background_color:
-            _validate_color(background_color, "container.background_color")
+        for value, name in (
+            (background_color, "background_color"),
+            (text_color, "text_color"),
+            (border_color, "border_color"),
+        ):
+            if value:
+                _validate_color(value, f"container.{name}")
+        if border_color and not border:
+            raise ValidationError("container.border_color needs border=True to draw anything.")
         _validate_align(align or "", "container.align")
         validate_anchor(anchor or "", "container.anchor")
         self.title = title
         self.background_color = background_color
+        self.text_color = text_color
+        self.border = border
+        self.border_color = border_color
         self.highlight = highlight
         self.align = align
         self.anchor = anchor
@@ -120,7 +134,8 @@ class Container:
 
     def _spaced(self, engine: Renderer) -> Renderer:
         """``engine`` as this section and everything inside it render against."""
-        return respaced(engine, self.spacing, self._owner())
+        engine = respaced(engine, self.spacing, self._owner())
+        return grounded(engine, engine.theme.on_ground(self.background_color, self.text_color))
 
     def resolved_anchor(self) -> str:
         """The ``id`` this section's title carries: the caller's, or a slug of the title."""
@@ -149,6 +164,9 @@ class Container:
         # rather than testing falsey — ``section_title``'s reasoning exactly.
         ctx["section_align"] = self.align or ""
         ctx["section_anchor"] = self.resolved_anchor()
+        ctx["section_border"] = (
+            (self.border_color or engine.theme.palette.rule) if self.border else ""
+        )
         return ctx
 
     def components(self) -> list[Component]:
@@ -339,8 +357,22 @@ class FullWidth(Container):
         align: str | TextAlign | None = None,
         anchor: str | None = None,
         spacing: Spacing | Mapping[str, int | float] | None = None,
+        *,
+        text_color: str | None = None,
+        border: bool = False,
+        border_color: str | None = None,
     ):
-        super().__init__(title, background_color, highlight, align, anchor, spacing)
+        super().__init__(
+            title,
+            background_color,
+            highlight,
+            align,
+            anchor,
+            spacing,
+            text_color=text_color,
+            border=border,
+            border_color=border_color,
+        )
         self.content = content
 
     def components(self) -> list[Component]:
@@ -391,8 +423,23 @@ class FlowedColumns(FullWidth):
         align: str | TextAlign | None = None,
         anchor: str | None = None,
         spacing: Spacing | Mapping[str, int | float] | None = None,
+        *,
+        text_color: str | None = None,
+        border: bool = False,
+        border_color: str | None = None,
     ):
-        super().__init__(content, title, background_color, highlight, align, anchor, spacing)
+        super().__init__(
+            content,
+            title,
+            background_color,
+            highlight,
+            align,
+            anchor,
+            spacing,
+            text_color=text_color,
+            border=border,
+            border_color=border_color,
+        )
         if isinstance(count, bool) or count not in self.COUNTS:
             raise ValidationError(
                 f"FlowedColumns takes {self.COUNTS.start} to {self.COUNTS.stop - 1} "
@@ -452,8 +499,22 @@ class TwoColumn(_SplitContainer):
         align: str | TextAlign | None = None,
         anchor: str | None = None,
         spacing: Spacing | Mapping[str, int | float] | None = None,
+        *,
+        text_color: str | None = None,
+        border: bool = False,
+        border_color: str | None = None,
     ):
-        super().__init__(title, background_color, highlight, align, anchor, spacing)
+        super().__init__(
+            title,
+            background_color,
+            highlight,
+            align,
+            anchor,
+            spacing,
+            text_color=text_color,
+            border=border,
+            border_color=border_color,
+        )
         self.ratio = self._check_ratio(ratio)
         if left is None and right is None:
             raise ValidationError("TwoColumn requires at least one of 'left' or 'right'.")
@@ -515,8 +576,22 @@ class ThreeColumn(_SplitContainer):
         align: str | TextAlign | None = None,
         anchor: str | None = None,
         spacing: Spacing | Mapping[str, int | float] | None = None,
+        *,
+        text_color: str | None = None,
+        border: bool = False,
+        border_color: str | None = None,
     ):
-        super().__init__(title, background_color, highlight, align, anchor, spacing)
+        super().__init__(
+            title,
+            background_color,
+            highlight,
+            align,
+            anchor,
+            spacing,
+            text_color=text_color,
+            border=border,
+            border_color=border_color,
+        )
         self.ratio = self._check_ratio(ratio)
         if left is None and center is None and right is None:
             raise ValidationError(
@@ -568,8 +643,22 @@ class FourColumn(_SplitContainer):
         align: str | TextAlign | None = None,
         anchor: str | None = None,
         spacing: Spacing | Mapping[str, int | float] | None = None,
+        *,
+        text_color: str | None = None,
+        border: bool = False,
+        border_color: str | None = None,
     ):
-        super().__init__(title, background_color, highlight, align, anchor, spacing)
+        super().__init__(
+            title,
+            background_color,
+            highlight,
+            align,
+            anchor,
+            spacing,
+            text_color=text_color,
+            border=border,
+            border_color=border_color,
+        )
         self.ratio = self._check_ratio(ratio)
         slots = list(columns)
         if len(slots) != self.COUNT:

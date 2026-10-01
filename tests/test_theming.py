@@ -53,6 +53,7 @@ def _gallery_html() -> str:
 #: surface here would hide the band's own colour or highlight tint underneath.
 COLOURLESS = {
     "stack.html": "rows of blocks in a cell whose band the container already paints (#262)",
+    "button.html": "a cell around common/cta.html, which takes the colours (#269)",
 }
 
 
@@ -403,9 +404,11 @@ def _container_colours() -> set[str]:
     found: set[str] = set()
     for build in all_fixtures().values():
         for section in build()._sections:
-            colour = getattr(section, "background_color", None)
-            if isinstance(colour, str) and _HEX.match(colour):
-                found.add(colour)
+            # Since #266 and #267 the atom is the ground with its type and its frame.
+            for field in ("background_color", "text_color", "border_color"):
+                colour = getattr(section, field, None)
+                if isinstance(colour, str) and _HEX.match(colour):
+                    found.add(colour)
     return found
 
 
@@ -935,7 +938,7 @@ class TestTheSlatePreset:
 
 def _heat_colours(candidates: set[str]) -> set[str]:
     """
-    The candidates a heat scale (#227) derives from a theme's own tokens.
+    The candidates a heat scale (#227) or a callout's tint (#268) derives from a theme's tokens.
 
     A tint is interpolated from ``palette.surface`` toward a semantic token, so
     it is theme-derived without being a token; one the filter cannot produce
@@ -946,7 +949,7 @@ def _heat_colours(candidates: set[str]) -> set[str]:
     derived = {
         heat_color(step / 1000, theme.palette.surface, getattr(theme.semantic, toward))
         for theme in (DEFAULT_THEME, SLATE_THEME)
-        for toward in ("positive", "negative")
+        for toward in ("positive", "negative", "neutral")
         for step in range(1001)
     }
     return candidates & derived

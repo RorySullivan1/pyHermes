@@ -21,12 +21,15 @@ from pyhermes.builder import (
     DENSE_SIZES,
     STANDARD_SIZES,
     AuthorBlock,
+    Button,
+    Callout,
     CardGroup,
     ChartBlock,
     Columns,
     ContactBlock,
     Contents,
     DataTable,
+    Divider,
     Email,
     EmailBuilder,
     FlowedColumns,
@@ -362,6 +365,10 @@ class TestTheRebindCostsNothingUnused:
         for section in document._sections:
             for node in [section, *getattr(section, "sections", ()), *section.components()]:
                 node.spacing = None
+                # A section's own ground rebinds the theme (#266): a colour, not a spacing cost.
+                for ground in ("background_color", "text_color"):
+                    if hasattr(node, ground):
+                        setattr(node, ground, None)
         return document
 
     @pytest.mark.parametrize(
@@ -515,6 +522,9 @@ INSTANCES: dict[type, list[Any]] = {
     Stack: [lambda s: Stack([_Stub(), _Stub()], spacing=s)],
     Columns: [lambda s: Columns([_Stub(), _Stub()], spacing=s)],
     FourColumn: [lambda s: FourColumn([_Stub(), _Stub(), None, _Stub()], title="T", spacing=s)],
+    Callout: [lambda s: Callout(_Stub(), tone="positive", label="L", spacing=s)],
+    Button: [lambda s: Button("Go", "https://example.com", spacing=s)],
+    Divider: [lambda s: Divider(spacing=s)],
 }
 
 

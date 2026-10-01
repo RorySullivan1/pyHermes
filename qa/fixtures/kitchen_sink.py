@@ -25,12 +25,15 @@ from pyhermes.builder import (
     AuthorBlock,
     Banner,
     BannerPalette,
+    Button,
+    Callout,
     CardGroup,
     ChartBlock,
     Columns,
     ContactBlock,
     Contents,
     DataTable,
+    Divider,
     Email,
     EmailBuilder,
     FlowedColumns,
@@ -567,6 +570,25 @@ def build(
                         NumberedItem("03", "Positioning", "<p>Futures length is extended.</p>"),
                     ],
                     subtitle="Three themes into next week",
+                ),
+            )
+        )
+        # Callout, Divider and Button in a bordered band (#265).
+        .section(
+            FullWidth(
+                title="Bottom Line",
+                border=True,
+                content=Stack(
+                    [
+                        TextBlock("<p>Duration has paid for its carry this quarter.</p>"),
+                        Callout(
+                            TextBlock("<p>Stay long the belly; fade the long end.</p>"),
+                            tone="positive",
+                            label="Key takeaway",
+                        ),
+                        Divider(),
+                        Button("Read the full note", "https://example.com/note", align="center"),
+                    ]
                 ),
             )
         )

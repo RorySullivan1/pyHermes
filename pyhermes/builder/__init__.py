@@ -125,6 +125,7 @@ from .sizing import (
     SpacingScale,
     TypeScale,
 )
+from .surfaces import Button, Callout, Divider
 from .theming import (
     DEFAULT_THEME,
     SLATE_THEME,
@@ -225,6 +226,9 @@ __all__ = [
     "Contents",
     "Stack",
     "Columns",
+    "Callout",
+    "Button",
+    "Divider",
     # Containers
     "Container",
     "FlowedColumns",

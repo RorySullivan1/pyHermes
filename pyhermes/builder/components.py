@@ -30,7 +30,7 @@ from .apparatus import (
     text_markers,
     validate_anchor,
 )
-from .engine import Renderer, respaced
+from .engine import Renderer, on_ground, own_surface, respaced
 from .enums import CardOrientation, ColumnKind, ImageAlign, RowKind
 from .exceptions import ValidationError
 from .images import EmailImage, ImageAsset, _displayed_height, coerce_image
@@ -189,6 +189,10 @@ class Component:
     #: This component's spacing override, or ``None`` for the bound scheme's.
     spacing: Spacing | None = None
 
+    #: Whether this block paints its own surface, and so keeps the theme's type
+    #: on a section's own ground (#266) rather than the ground's.
+    OWN_SURFACE: ClassVar[bool] = False
+
     def _coerce_spacing(
         self, spacing: Spacing | Mapping[str, int | float] | None
     ) -> Spacing | None:
@@ -289,8 +293,11 @@ class Component:
         """
         if not self.template_path:
             raise ValidationError(f"{self.__class__.__name__} has no template_path set.")
+        grounded = self.OWN_SURFACE and on_ground(engine)
+        engine = own_surface(engine) if self.OWN_SURFACE else engine
         engine = respaced(engine, self.spacing, type(self).__name__)
-        return engine.render(self.template_path, self.context())
+        html = engine.render(self.template_path, self.context())
+        return engine.render("common/surface.html", {"content": html}) if grounded else html
 
 
 def descendants(components: Sequence[Component]) -> list[Component]:
@@ -329,6 +336,8 @@ class CardGroup(Component):
         ValidationError: On an unsupported orientation, a card count outside
             the orientation's limits, or an invalid card.
     """
+
+    OWN_SURFACE = True
 
     template_path = "analysis/card-group.html"
 
@@ -478,6 +487,8 @@ class DataTable(Exhibit, Component):
     alignments rather than re-deriving them — which is what stops the HTML
     and the plain-text part disagreeing about the same table.
     """
+
+    OWN_SURFACE = True
 
     template_path = "analysis/data-table.html"
 
@@ -1173,6 +1184,8 @@ class TextBlock(CopyAlignment, Component):
         """
         engine = respaced(engine, self.spacing, type(self).__name__)
         ctx = self.context()
+        # Dark mode forces `.body-text` to the theme's dark type, lost on a section's own ground.
+        ctx["body_class"] = "" if on_ground(engine) else "body-text"
         paged = engine.medium.paged
         if self.drop_cap and paged:
             ctx["text_parts"] = split_markers(_with_drop_cap(self.content), self.notes)
@@ -1198,6 +1211,7 @@ class TextBlock(CopyAlignment, Component):
     def context(self) -> dict[str, Any]:
         return {
             "text_content": self.content,
+            "body_class": "body-text",
             "text_parts": split_markers(self.content, self.notes),
             "subtitle": self.subtitle,
             "figure_html": "",
@@ -1220,6 +1234,8 @@ class PullQuote(CopyAlignment, Component):
         attribution: Who said them, set beneath. Optional.
         align:       Alignment for the quote's copy; inherits when unset.
     """
+
+    OWN_SURFACE = True
 
     template_path = "text/pull-quote.html"
 
@@ -1282,6 +1298,8 @@ class ContactBlock(CopyAlignment, Component):
     typically as the last section. Owns the Outlook ``v:roundrect`` / anchor
     dual button. Validates at construction, like every model here.
     """
+
+    OWN_SURFACE = True
 
     template_path = "text/contact-block.html"
 
