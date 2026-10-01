@@ -12,6 +12,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, ClassVar
 
+from pyhermes.builder.components import check_listing
 from pyhermes.builder.exceptions import ValidationError
 from pyhermes.builder.models import _validate_align
 from pyhermes.builder.regions import BoxSurface, Region
@@ -152,6 +153,10 @@ class ContentsPage(Region):
     each through ``target-counter``, on the partial the email's
     :class:`~pyhermes.builder.components.Contents` component shares.
 
+    ``of="exhibits"`` lists the numbered exhibits instead, as the email's
+    component does (#308); :class:`ExhibitsPage` is the same sheet in a slot
+    of its own, for a document that wants both lists.
+
     Its heading is deliberately not a section title, so it never becomes the
     section a running header follows (#185). There is no ``align``: the list
     fixes its own, since an entry's shape — title, leader, page — is its
@@ -163,6 +168,13 @@ class ContentsPage(Region):
     TEMPLATE_PATHS: ClassVar[dict[str, str]] = {"contents": "document/regions/contents.html"}
 
     heading: str = "Contents"
+    of: str = "sections"
+    label: str | None = None
+
+    def validate(self) -> None:
+        """The base rules, then a listing :func:`check_listing` accepts."""
+        super().validate()
+        check_listing(self.of, self.label, type(self).__name__)
 
     def _text(self, facts: dict[str, Any]) -> str:
         """The heading, then the titles one per line: plain text has no page numbers."""
@@ -173,6 +185,38 @@ class ContentsPage(Region):
 @dataclass
 class EmptyContentsPage(ContentsPage):
     """No contents sheet: the body follows the cover. Fills no slot."""
+
+    TEMPLATE_PATHS: ClassVar[dict[str, str]] = {}
+
+
+@dataclass
+class ExhibitsPage(ContentsPage):
+    """
+    The list of exhibits on a sheet of its own, after the contents (#308).
+
+    A :class:`ContentsPage` in a second slot, so a research note can open on
+    both lists; the skeleton prints the two slots back to back.
+    """
+
+    CONTEXT_NAME: ClassVar[str] = "exhibits"
+    SLOTS: ClassVar[tuple[str, ...]] = ("exhibits",)
+    TEMPLATE_PATHS: ClassVar[dict[str, str]] = {"exhibits": "document/regions/contents.html"}
+
+    heading: str = "Exhibits"
+    of: str = "exhibits"
+
+    def validate(self) -> None:
+        """The contents sheet's rules, and a listing of exhibits only."""
+        super().validate()
+        if self.of != "exhibits":
+            raise ValidationError(
+                f"{type(self).__name__} lists exhibits; a list of sections is ContentsPage."
+            )
+
+
+@dataclass
+class EmptyExhibitsPage(ExhibitsPage):
+    """No list of exhibits. Fills no slot, and the default."""
 
     TEMPLATE_PATHS: ClassVar[dict[str, str]] = {}
 

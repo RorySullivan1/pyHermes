@@ -37,6 +37,7 @@ from .composition import Columns, Stack
 
 # Containers
 from .containers import (
+    Appendices,
     Container,
     FlowedColumns,
     FourColumn,
@@ -107,6 +108,7 @@ from .regions import (
     MinimalBanner,
     Region,
 )
+from .research import Bibliography, Glossary, Reference, Term
 
 # Sizing
 from .sizing import (
@@ -229,7 +231,13 @@ __all__ = [
     "Callout",
     "Button",
     "Divider",
+    # The research apparatus (#220)
+    "Bibliography",
+    "Reference",
+    "Glossary",
+    "Term",
     # Containers
+    "Appendices",
     "Container",
     "FlowedColumns",
     "FourColumn",

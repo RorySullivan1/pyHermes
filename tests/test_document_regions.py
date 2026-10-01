@@ -26,6 +26,7 @@ from pyhermes.document import (
     EmptyCover,
     EmptyRunningFooter,
     EmptyRunningHeader,
+    ExhibitsPage,
     Page,
     PagedDocument,
     RunningFooter,
@@ -37,7 +38,7 @@ from pyhermes.document.regions import MARGIN_BOXES
 from qa.fixtures import _paged, all_paged_fixtures
 
 TEMPLATE_DIR = TemplateEngine().template_dir
-DOCUMENT_REGIONS = (Cover, ContentsPage, RunningHeader, RunningFooter, BackMatter)
+DOCUMENT_REGIONS = (Cover, ContentsPage, ExhibitsPage, RunningHeader, RunningFooter, BackMatter)
 
 
 def section(body: str = "<p>Body.</p>", title: str | None = None) -> FullWidth:
@@ -308,16 +309,24 @@ class TestTheDocumentRegionsAreComplete:
         # Across the paged gallery, as standing rule 9 words it: a field on a
         # base both margin boxes share cannot be non-default on both at once
         # in one document without the two saying the same thing (#185).
-        attribute = {
-            "Cover": "cover",
-            "ContentsPage": "contents",
-            "RunningHeader": "running_header",
-            "RunningFooter": "running_footer",
-            "BackMatter": "back_matter",
+        attributes = {
+            "Cover": ("cover",),
+            # An exhibits sheet is a contents sheet in a slot of its own (#308),
+            # so it exercises the listing fields the two share.
+            "ContentsPage": ("contents", "exhibits"),
+            "ExhibitsPage": ("exhibits",),
+            "RunningHeader": ("running_header",),
+            "RunningFooter": ("running_footer",),
+            "BackMatter": ("back_matter",),
         }[region_cls.__name__]
-        built = [getattr(build(), attribute) for build in all_paged_fixtures().values()]
+        documents = [build() for build in all_paged_fixtures().values()]
+        built = [getattr(d, attribute) for d in documents for attribute in attributes]
         default = region_cls()
+        # A field with one legal value on this class has no other value to set.
+        fixed = {"ExhibitsPage": {"of"}}.get(region_cls.__name__, set())
         for field in dataclasses.fields(region_cls):
+            if field.name in fixed:
+                continue
             assert any(getattr(b, field.name) != getattr(default, field.name) for b in built), (
                 f"{region_cls.__name__}.{field.name} is never set to anything but its "
                 "default in the paged gallery, so no golden can pin it"

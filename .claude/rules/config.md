@@ -9,6 +9,9 @@ paths:
 exhibit's number and its caption is house style — a judgment call, like the rest — and it is
 read at render, so a `config_override` moves both projections at once. `from_env` takes a
 string field verbatim, surrounding spaces included, and a blank one is refused.
+**`appendix_heading` (#309) is the second**, `"Appendix {letter}: {title}"`, refused unless it
+shows the `{letter}`; **`citation_authors` (#310)**, 2, is how many authors a citation names
+before "et al.". Both are house style, read at render, so both projections move together.
 
 ## Configuration — `pyhermes/config`
 

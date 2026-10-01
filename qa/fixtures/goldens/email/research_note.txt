@@ -1,0 +1,138 @@
+For illustrative purposes. Not investment advice.
+
+
+Hermes Research
+===============
+
+Momentum After Costs
+
+
+In This Note
+------------
+
+Sections
+
+Summary
+Data and Method
+Results
+References
+Glossary
+Appendix A: Data sources
+Appendix B: Robustness
+
+Tables and figures
+
+Exhibit 1 · Momentum decile returns
+Exhibit 2 · The winner-minus-loser spread
+Exhibit A.1 · Data coverage
+Exhibit B.1 · Returns after trading costs
+
+
+Summary
+-------
+
+Momentum has earned a premium in every market studied since the first evidence
+(Jegadeesh and Titman 1993), and it survives the four-factor model (Carhart
+1997). Its cost is the momentum crash (Daniel and Moskowitz 2016).[1]
+
+------------------------------------------------------------------------------
+
+KEY TAKEAWAYS
+
+The premium survives trading costs at moderate turnover, and the crash risk is
+what a position should be sized to.
+
+------------------------------------------------------------------------------
+
+
+Data and Method
+---------------
+
+Stocks are ranked each month on their return over the prior twelve months,
+skipping the most recent (Jegadeesh and Titman 1993). The winner-minus-loser
+portfolio is set out in Exhibit 1, and the sample in Exhibit A.1.
+
+Exhibit 1 · Momentum decile returns
+
+Decile        Return  Volatility
+------------  ------  ----------
+1 (losers)     -0.4%        8.1%
+5               0.7%        4.9%
+10 (winners)    1.3%        6.2%
+
+Hermes Research (Jegadeesh and Titman 1993)
+30 September 2026
+
+
+Results
+-------
+
+Exhibit 2 · The winner-minus-loser spread
+
+[Winner-minus-loser spread by year]
+
+Hermes Research
+
+The spread is positive in most years and negative in a few deep ones (Daniel
+and Moskowitz 2016). After costs at the turnover the strategy needs, Exhibit
+B.1 keeps most of it (Frazzini et al. 2018).
+
+
+References
+----------
+
+Carhart, Mark M. 1997. On persistence in mutual fund performance. The Journal
+    of Finance. https://doi.org/10.1111/j.1540-6261.1997.tb03808.x
+Daniel, Kent, and Tobias J. Moskowitz. 2016. Momentum crashes. Journal of
+    Financial Economics. https://doi.org/10.1016/j.jfineco.2015.12.002
+Frazzini, Andrea, Ronen Israel, and Tobias J. Moskowitz. 2018. Trading costs.
+    https://example.com/trading-costs
+Jegadeesh, Narasimhan, and Sheridan Titman. 1993. Returns to buying winners
+    and selling losers: implications for stock market efficiency. The Journal
+    of Finance. https://doi.org/10.1111/j.1540-6261.1993.tb04702.x
+
+
+Glossary
+--------
+
+Momentum: The tendency of recent winners to keep outperforming recent losers.
+
+Momentum crash: A sudden reversal in which past losers sharply outperform.
+
+Turnover: The share of a portfolio traded each month to keep it on its signal.
+
+Winner-minus-loser: A portfolio long the top decile of past returns and short
+the bottom decile.
+
+
+Appendix A: Data sources
+------------------------
+
+Exhibit A.1 · Data coverage
+
+Region         Stocks  From
+-------------  ------  ----
+United States   3,412  1963
+Europe          2,180  1990
+Japan           1,604  1990
+
+Hermes Research
+
+
+Appendix B: Robustness
+----------------------
+
+Exhibit B.1 · Returns after trading costs
+
+[Returns after costs]
+
+Hermes Research (Frazzini et al. 2018)
+
+
+Notes
+-----
+
+[1] The sample ends on 30 September 2026.
+
+
+© Hermes Research

@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <title>Momentum After Costs</title>
+  <meta name="author" content="Hermes Research">
+  <meta name="description" content="Momentum After Costs · Rates Strategy · Quarter ending 30 September">
+  <meta name="keywords" content="Rates Strategy, Issue 001">
+  <style type="text/css">
+    @page {
+      size: 794px 1123px;
+      margin: 76px 76px 76px 76px;
+    }
+
+    .running-header-start { string-set: running-header-fallback "Momentum After Costs"; }
+    @page {
+      @top-left {
+        content: string(running-header-fallback, last) string(running-header, first);
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 9.5px;
+        color: #A09E97;
+      }
+    }
+    @page cover { @top-left { content: none; } }
+
+    @page {
+      @bottom-center {
+        content: "Hermes Research" " · " counter(page) " / " counter(pages);
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 9.5px;
+        color: #A09E97;
+      }
+    }
+    @page cover { @bottom-center { content: none; } }
+
+
+    @page cover { margin: 0; }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #FFFFFF;
+      font-family: Georgia, 'Times New Roman', serif;
+      color: #3B3B3B;
+      orphans: 2;
+      widows: 2;
+    }
+    table { border-collapse: collapse; }
+
+    table[width="100%"] { width: 100%; }
+    img { border: 0; }
+
+    .data-table tbody tr { break-inside: avoid; page-break-inside: avoid; }
+    .data-table tr.row-total { break-before: avoid; page-break-before: avoid; }
+    .data-table tr.row-subhead { break-after: avoid; page-break-after: avoid; }
+    .data-table > caption { break-after: avoid; page-break-after: avoid; }
+    .section-title { break-after: avoid; page-break-after: avoid; }
+    .subtitle { break-after: avoid; page-break-after: avoid; }
+    .fine-print { break-before: avoid; page-break-before: avoid; }
+    .figure { break-inside: avoid; page-break-inside: avoid; }
+
+    .contents-entry a::after {
+      content: leader(".") " " target-counter(attr(href), page);
+      color: #A09E97;
+    }
+
+    @page {
+      @footnote {
+        border-top: 1px solid #D6D2CB;
+        padding-top: 8px;
+      }
+    }
+    .footnote {
+      float: footnote;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 9.5px;
+      font-style: normal;
+      font-weight: normal;
+      letter-spacing: 0;
+      line-height: 140%;
+      color: #7A7A72;
+      text-align: left;
+    }
+    .section-title h2 {
+      string-set: running-header content(), running-footer content(),
+        running-header-fallback "", running-footer-fallback "";
+    }
+    .footnote::footnote-call { content: none; }
+    .footnote::footnote-marker { content: attr(data-note) ". "; }
+
+    .drop-cap {
+      float: left;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 56px;
+      line-height: 48px;
+      margin: 4px 8px 0 0;
+      color: #5B8A9A;
+    }
+    .flowed-columns p:first-child { margin-top: 0; }
+    .wrap-left { float: left; margin: 0 16px 8px 0; }
+    .wrap-right { float: right; margin: 0 0 8px 16px; }
+
+    a.xref::after {
+      content: " (p. " target-counter(attr(href), page) ")";
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 9.5px;
+      color: #A09E97;
+    }
+  </style>
+</head>
+<body>
+
+<table role="presentation" width="794" cellpadding="0" cellspacing="0" border="0"
+       style="width:794px; page: cover; break-after:page; page-break-after:always; background-color:#FFFFFF;"
+       bgcolor="#FFFFFF">
+  <tr>
+    <td align="center"
+        style="padding:18px 32px 18px; text-align:center;">
+      <h1 style="margin:0 0 6px; font-family:Georgia, 'Times New Roman', serif; font-size:28px; line-height:120%; color:#3B3B3B;">Momentum After Costs</h1>
+      <p style="margin:0 0 8px; font-family:Georgia, 'Times New Roman', serif; font-size:17px; line-height:130%; color:#3B3B3B;">A research note</p>
+      <p style="margin:10px 0 0; font-family:Arial, Helvetica, sans-serif; font-size:11px; line-height:140%; color:#3B3B3B;">Rates Strategy · Quarter ending 30 September · Issue 001</p>
+    </td>
+  </tr>
+</table>
+
+  <div class="running-header-start"></div><div class="running-footer-start"></div>
+<table role="presentation" width="642" cellpadding="0" cellspacing="0" border="0"
+       style="width:642px; break-after:page; page-break-after:always;">
+  <tr>
+    <td style="padding:22px 32px 14px;">
+      <h2 style="margin:0 0 12px; font-family:Georgia, 'Times New Roman', serif; font-size:17px; line-height:120%; color:#2C3E50;">Contents</h2>
+<div class="contents" align="left" style="text-align: left;">
+<ol style="margin: 0; padding: 0; list-style-type: none;">
+  <li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 172%; margin: 0 0 8px 0;"><a href="#summary" style="color: #5B8A9A; text-decoration: none;">Summary</a></li>
+  <li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 172%; margin: 0 0 8px 0;"><a href="#data-and-method" style="color: #5B8A9A; text-decoration: none;">Data and Method</a></li>
+  <li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 172%; margin: 0 0 8px 0;"><a href="#results" style="color: #5B8A9A; text-decoration: none;">Results</a></li>
+  <li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 172%; margin: 0 0 8px 0;"><a href="#references" style="color: #5B8A9A; text-decoration: none;">References</a></li>
+  <li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 172%; margin: 0 0 8px 0;"><a href="#glossary" style="color: #5B8A9A; text-decoration: none;">Glossary</a></li>
+  <li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 172%; margin: 0 0 8px 0;"><a href="#data-sources" style="color: #5B8A9A; text-decoration: none;">Appendix A: Data sources</a></li>
+  <li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 172%; margin: 0 0 8px 0;"><a href="#robustness" style="color: #5B8A9A; text-decoration: none;">Appendix B: Robustness</a></li>
+</ol>
+</div>
+    </td>
+  </tr>
+</table>
+<table role="presentation" width="642" cellpadding="0" cellspacing="0" border="0"
+       style="width:642px; break-after:page; page-break-after:always;">
+  <tr>
+    <td style="padding:22px 32px 14px;">
+      <h2 style="margin:0 0 12px; font-family:Georgia, 'Times New Roman', serif; font-size:17px; line-height:120%; color:#2C3E50;">Tables and Figures</h2>
+<div class="contents" align="left" style="text-align: left;">
+<ol style="margin: 0; padding: 0; list-style-type: none;">
+  <li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 172%; margin: 0 0 8px 0;"><a href="#exhibit-1" style="color: #5B8A9A; text-decoration: none;">Exhibit 1 · Momentum decile returns</a></li>
+  <li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 172%; margin: 0 0 8px 0;"><a href="#exhibit-2" style="color: #5B8A9A; text-decoration: none;">Exhibit 2 · The winner-minus-loser spread</a></li>
+  <li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 172%; margin: 0 0 8px 0;"><a href="#exhibit-a-1" style="color: #5B8A9A; text-decoration: none;">Exhibit A.1 · Data coverage</a></li>
+  <li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 172%; margin: 0 0 8px 0;"><a href="#exhibit-b-1" style="color: #5B8A9A; text-decoration: none;">Exhibit B.1 · Returns after trading costs</a></li>
+</ol>
+</div>
+    </td>
+  </tr>
+</table>
+
+
+  <table class="document-container" role="presentation" width="642"
+         cellpadding="0" cellspacing="0" border="0"
+         style="width:642px; background-color:#FFFFFF;">
+<tr>
+  <td style="padding:0; background-color:#FFFFFF;">
+    <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td style="padding:22px 32px 12px 32px;">
+          <h2 id="summary" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:17px; font-weight:bold; color:#2C3E50; line-height:120%;">
+            Summary
+          </h2>
+        </td>
+      </tr>
+    </table>
+    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:16px 32px 14px 32px; font-family: Arial, Helvetica, sans-serif; font-size:14px; color:#3B3B3B; line-height:172%;">
+          <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
+  <tr>
+    <td style="padding:0 0 16px 0;">
+<div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: #3B3B3B; line-height: 172%; margin: 0 0 16px 0;"><p><a href="#term-momentum" style="color: #5B8A9A; text-decoration: underline;">Momentum</a> has earned a premium in every market studied since the first evidence (<a href="#ref-jt1993" class="citation" style="color: #5B8A9A; text-decoration: none;">Jegadeesh and Titman 1993</a>), and it survives the four-factor model (<a href="#ref-carhart1997" class="citation" style="color: #5B8A9A; text-decoration: none;">Carhart 1997</a>). Its cost is the <a href="#term-momentum-crash" style="color: #5B8A9A; text-decoration: underline;">momentum crash</a> (<a href="#ref-dm2016" class="citation" style="color: #5B8A9A; text-decoration: none;">Daniel and Moskowitz 2016</a>).<sup class="note-ref" style="line-height: 0;"><a href="#note-1" id="note-ref-1" style="color: #5B8A9A; text-decoration: none;">1</a></sup><span class="footnote" id="note-1" data-note="1">The sample ends on 30 September 2026.</span></p></div>
+
+    </td>
+  </tr>
+  <tr>
+    <td style="padding:0;">
+<table class="callout" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+  <tr>
+    <td bgcolor="#F8F7F5" style="padding:16px 20px; background-color:#F8F7F5; border:1px solid #D6D2CB;">
+      <div style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; letter-spacing: 0.5px; text-transform: uppercase; color: #7A7A72; margin: 0 0 8px 0; line-height: 140%;">Key takeaways</div>
+      <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: #3B3B3B; line-height: 172%; margin: 0 0 16px 0;"><p>The premium survives trading costs at moderate turnover, and the crash risk is what a position should be sized to.</p></div>
+
+    </td>
+  </tr>
+</table>
+
+    </td>
+  </tr>
+</table>
+
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+
+<tr>
+  <td style="padding:0; background-color:#FFFFFF;">
+    <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td style="padding:22px 32px 12px 32px;">
+          <h2 id="data-and-method" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:17px; font-weight:bold; color:#2C3E50; line-height:120%;">
+            Data and Method
+          </h2>
+        </td>
+      </tr>
+    </table>
+    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:16px 32px 14px 32px; font-family: Arial, Helvetica, sans-serif; font-size:14px; color:#3B3B3B; line-height:172%;">
+          <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
+  <tr>
+    <td style="padding:0 0 16px 0;">
+<div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: #3B3B3B; line-height: 172%; margin: 0 0 16px 0;"><p>Stocks are ranked each month on their return over the prior twelve months, skipping the most recent (<a href="#ref-jt1993" class="citation" style="color: #5B8A9A; text-decoration: none;">Jegadeesh and Titman 1993</a>). The <a href="#term-winner-minus-loser" style="color: #5B8A9A; text-decoration: underline;">winner-minus-loser</a> portfolio is set out in <a class="xref" href="#exhibit-1" style="color: #5B8A9A; text-decoration: underline;">Exhibit 1</a>, and the sample in <a class="xref" href="#exhibit-a-1" style="color: #5B8A9A; text-decoration: underline;">Exhibit A.1</a>.</p></div>
+
+    </td>
+  </tr>
+  <tr>
+    <td style="padding:0;">
+<table class="data-table" id="exhibit-1" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
+  <caption style="caption-side: top; text-align: left; font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #2C3E50; letter-spacing: 0.5px; padding: 0 0 8px 0;">Exhibit 1 · Momentum decile returns</caption>
+  <thead>
+  <tr style="border-top: 1px solid #D6D2CB; border-bottom: 2px solid #2C3E50;">
+    <th scope="col" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 172%; text-align: left; padding: 12px; letter-spacing: 0.5px;">Decile</th>
+    <th scope="col" align="right" style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 172%; text-align: right; padding: 12px; letter-spacing: 0.5px;">Return</th>
+    <th scope="col" align="right" style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 172%; text-align: right; padding: 12px; letter-spacing: 0.5px;">Volatility</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr style="border-bottom: 1px solid #EAE8E4;">
+    <th scope="row" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: normal; line-height: 172%; color: #3B3B3B; text-align: left; padding: 12px; background-color: #FFFFFF;">1 (losers)</th>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #FFFFFF;">-0.4%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #FFFFFF;">8.1%</td>
+  </tr>
+  <tr style="border-bottom: 1px solid #EAE8E4;">
+    <th scope="row" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: normal; line-height: 172%; color: #3B3B3B; text-align: left; padding: 12px; background-color: #F8F7F5;">5</th>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #F8F7F5;">0.7%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #F8F7F5;">4.9%</td>
+  </tr>
+  <tr style="border-bottom: 1px solid #D6D2CB;">
+    <th scope="row" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: normal; line-height: 172%; color: #3B3B3B; text-align: left; padding: 12px; background-color: #FFFFFF;">10 (winners)</th>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #FFFFFF;">1.3%</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #FFFFFF;">6.2%</td>
+  </tr>
+  </tbody>
+</table>
+<p class="fine-print" style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #A09E97; font-style: italic; margin: 8px 0 0 0; line-height: 172%;">Hermes Research (<a href="#ref-jt1993" class="citation" style="color: #5B8A9A; text-decoration: none;">Jegadeesh and Titman 1993</a>) as of 30 September 2026</p>
+
+    </td>
+  </tr>
+</table>
+
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+
+<tr>
+  <td style="padding:0; background-color:#FFFFFF;">
+    <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td style="padding:22px 32px 12px 32px;">
+          <h2 id="results" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:17px; font-weight:bold; color:#2C3E50; line-height:120%;">
+            Results
+          </h2>
+        </td>
+      </tr>
+    </table>
+    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:16px 32px 14px 32px; font-family: Arial, Helvetica, sans-serif; font-size:14px; color:#3B3B3B; line-height:172%;">
+          <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
+  <tr>
+    <td style="padding:0 0 16px 0;">
+<table class="figure" id="exhibit-2" role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
+  <tr>
+    <td style="padding: 0 0 8px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #2C3E50; letter-spacing: 0.5px; line-height: 172%;">Exhibit 2 · The winner-minus-loser spread</td>
+  </tr>
+  <tr>
+    <td style="padding: 0;">
+      <img src="cid:3a75b53040f8fe19" alt="Winner-minus-loser spread by year"
+width="600"           style="display: block; width: 100%; max-width: 600px; height: auto; border: 1px solid #D6D2CB; margin: 0;">
+    </td>
+  </tr>
+</table>
+<p class="fine-print" style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #A09E97; font-style: italic; margin: 8px 0 0 0; line-height: 172%;">Hermes Research</p>
+
+    </td>
+  </tr>
+  <tr>
+    <td style="padding:0;">
+<div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: #3B3B3B; line-height: 172%; margin: 0 0 16px 0;"><p>The spread is positive in most years and negative in a few deep ones (<a href="#ref-dm2016" class="citation" style="color: #5B8A9A; text-decoration: none;">Daniel and Moskowitz 2016</a>). After costs at the <a href="#term-turnover" style="color: #5B8A9A; text-decoration: underline;">turnover</a> the strategy needs, <a class="xref" href="#exhibit-b-1" style="color: #5B8A9A; text-decoration: underline;">Exhibit B.1</a> keeps most of it (<a href="#ref-afmp2018" class="citation" style="color: #5B8A9A; text-decoration: none;">Frazzini et al. 2018</a>).</p></div>
+
+    </td>
+  </tr>
+</table>
+
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+
+<tr>
+  <td style="padding:0; background-color:#FFFFFF;">
+    <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td style="padding:22px 32px 12px 32px;">
+          <h2 id="references" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:17px; font-weight:bold; color:#2C3E50; line-height:120%;">
+            References
+          </h2>
+        </td>
+      </tr>
+    </table>
+    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:16px 32px 14px 32px; font-family: Arial, Helvetica, sans-serif; font-size:14px; color:#3B3B3B; line-height:172%;">
+          <div class="bibliography" align="left" style="text-align: left;">
+  <p id="ref-carhart1997" style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; color: #3B3B3B; line-height: 140%; margin: 0 0 8px 16px; text-indent: -16px;">Carhart, Mark M. 1997. On persistence in mutual fund performance. <em>The Journal of Finance.</em> <a href="https://doi.org/10.1111/j.1540-6261.1997.tb03808.x" style="color: #5B8A9A; text-decoration: none; word-break: break-all;">https://doi.org/10.1111/j.1540-6261.1997.tb03808.x</a></p>
+  <p id="ref-dm2016" style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; color: #3B3B3B; line-height: 140%; margin: 0 0 8px 16px; text-indent: -16px;">Daniel, Kent, and Tobias J. Moskowitz. 2016. Momentum crashes. <em>Journal of Financial Economics.</em> <a href="https://doi.org/10.1016/j.jfineco.2015.12.002" style="color: #5B8A9A; text-decoration: none; word-break: break-all;">https://doi.org/10.1016/j.jfineco.2015.12.002</a></p>
+  <p id="ref-afmp2018" style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; color: #3B3B3B; line-height: 140%; margin: 0 0 8px 16px; text-indent: -16px;">Frazzini, Andrea, Ronen Israel, and Tobias J. Moskowitz. 2018. Trading costs. <a href="https://example.com/trading-costs" style="color: #5B8A9A; text-decoration: none; word-break: break-all;">https://example.com/trading-costs</a></p>
+  <p id="ref-jt1993" style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; color: #3B3B3B; line-height: 140%; margin: 0 0 8px 16px; text-indent: -16px;">Jegadeesh, Narasimhan, and Sheridan Titman. 1993. Returns to buying winners and selling losers: implications for stock market efficiency. <em>The Journal of Finance.</em> <a href="https://doi.org/10.1111/j.1540-6261.1993.tb04702.x" style="color: #5B8A9A; text-decoration: none; word-break: break-all;">https://doi.org/10.1111/j.1540-6261.1993.tb04702.x</a></p>
+</div>
+
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+
+<tr>
+  <td style="padding:0; background-color:#FFFFFF;">
+    <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td style="padding:22px 32px 12px 32px;">
+          <h2 id="glossary" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:17px; font-weight:bold; color:#2C3E50; line-height:120%;">
+            Glossary
+          </h2>
+        </td>
+      </tr>
+    </table>
+    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:16px 32px 14px 32px; font-family: Arial, Helvetica, sans-serif; font-size:14px; color:#3B3B3B; line-height:172%;">
+          <table class="glossary" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
+  <tr>
+    <td class="stack-column" width="30%" align="left" valign="top" style="width: 30%; text-align: left; vertical-align: top; padding: 0 16px 8px 0;"><p id="term-momentum" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; font-weight: bold; color: #2C3E50; margin: 0; line-height: 172%;">Momentum</p></td>
+    <td class="stack-column" align="left" valign="top" style="text-align: left; vertical-align: top; padding: 0 0 8px 0;"><p style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: #3B3B3B; margin: 0; line-height: 172%;">The tendency of recent winners to keep outperforming recent losers.</p></td>
+  </tr>
+  <tr>
+    <td class="stack-column" width="30%" align="left" valign="top" style="width: 30%; text-align: left; vertical-align: top; padding: 0 16px 8px 0;"><p id="term-momentum-crash" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; font-weight: bold; color: #2C3E50; margin: 0; line-height: 172%;">Momentum crash</p></td>
+    <td class="stack-column" align="left" valign="top" style="text-align: left; vertical-align: top; padding: 0 0 8px 0;"><p style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: #3B3B3B; margin: 0; line-height: 172%;">A sudden reversal in which past losers sharply outperform.</p></td>
+  </tr>
+  <tr>
+    <td class="stack-column" width="30%" align="left" valign="top" style="width: 30%; text-align: left; vertical-align: top; padding: 0 16px 8px 0;"><p id="term-turnover" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; font-weight: bold; color: #2C3E50; margin: 0; line-height: 172%;">Turnover</p></td>
+    <td class="stack-column" align="left" valign="top" style="text-align: left; vertical-align: top; padding: 0 0 8px 0;"><p style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: #3B3B3B; margin: 0; line-height: 172%;">The share of a portfolio traded each month to keep it on its signal.</p></td>
+  </tr>
+  <tr>
+    <td class="stack-column" width="30%" align="left" valign="top" style="width: 30%; text-align: left; vertical-align: top; padding: 0 16px 8px 0;"><p id="term-winner-minus-loser" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; font-weight: bold; color: #2C3E50; margin: 0; line-height: 172%;">Winner-minus-loser</p></td>
+    <td class="stack-column" align="left" valign="top" style="text-align: left; vertical-align: top; padding: 0 0 8px 0;"><p style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: #3B3B3B; margin: 0; line-height: 172%;">A portfolio long the top decile of past returns and short the bottom decile.</p></td>
+  </tr>
+</table>
+
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+
+<tr style="break-before:page; page-break-before:always;">
+  <td style="padding:0;">
+    <table role="presentation" width="642" cellpadding="0" cellspacing="0"
+           border="0" style="width:642px; background-color:#FFFFFF;"
+           bgcolor="#FFFFFF">
+<tr>
+  <td style="padding:0; background-color:#FFFFFF;">
+    <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td style="padding:22px 32px 12px 32px;">
+          <h2 id="data-sources" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:17px; font-weight:bold; color:#2C3E50; line-height:120%;">
+            Appendix A: Data sources
+          </h2>
+        </td>
+      </tr>
+    </table>
+    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:16px 32px 14px 32px; font-family: Arial, Helvetica, sans-serif; font-size:14px; color:#3B3B3B; line-height:172%;">
+          <table class="data-table" id="exhibit-a-1" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
+  <caption style="caption-side: top; text-align: left; font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #2C3E50; letter-spacing: 0.5px; padding: 0 0 8px 0;">Exhibit A.1 · Data coverage</caption>
+  <thead>
+  <tr style="border-top: 1px solid #D6D2CB; border-bottom: 2px solid #2C3E50;">
+    <th scope="col" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 172%; text-align: left; padding: 12px; letter-spacing: 0.5px;">Region</th>
+    <th scope="col" align="right" style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 172%; text-align: right; padding: 12px; letter-spacing: 0.5px;">Stocks</th>
+    <th scope="col" align="right" style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 172%; text-align: right; padding: 12px; letter-spacing: 0.5px;">From</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr style="border-bottom: 1px solid #EAE8E4;">
+    <th scope="row" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: normal; line-height: 172%; color: #3B3B3B; text-align: left; padding: 12px; background-color: #FFFFFF;">United States</th>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #FFFFFF;">3,412</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #FFFFFF;">1963</td>
+  </tr>
+  <tr style="border-bottom: 1px solid #EAE8E4;">
+    <th scope="row" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: normal; line-height: 172%; color: #3B3B3B; text-align: left; padding: 12px; background-color: #F8F7F5;">Europe</th>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #F8F7F5;">2,180</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #F8F7F5;">1990</td>
+  </tr>
+  <tr style="border-bottom: 1px solid #D6D2CB;">
+    <th scope="row" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: normal; line-height: 172%; color: #3B3B3B; text-align: left; padding: 12px; background-color: #FFFFFF;">Japan</th>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #FFFFFF;">1,604</td>
+    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #5A5A5A; text-align: right; padding: 12px; background-color: #FFFFFF;">1990</td>
+  </tr>
+  </tbody>
+</table>
+<p class="fine-print" style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #A09E97; font-style: italic; margin: 8px 0 0 0; line-height: 172%;">Hermes Research</p>
+
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+
+<tr>
+  <td style="padding:0; background-color:#FFFFFF;">
+    <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td style="padding:22px 32px 12px 32px;">
+          <h2 id="robustness" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:17px; font-weight:bold; color:#2C3E50; line-height:120%;">
+            Appendix B: Robustness
+          </h2>
+        </td>
+      </tr>
+    </table>
+    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+      <tr>
+        <td class="mobile-pad" style="padding:16px 32px 14px 32px; font-family: Arial, Helvetica, sans-serif; font-size:14px; color:#3B3B3B; line-height:172%;">
+          <table class="figure" id="exhibit-b-1" role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
+  <tr>
+    <td style="padding: 0 0 8px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #2C3E50; letter-spacing: 0.5px; line-height: 172%;">Exhibit B.1 · Returns after trading costs</td>
+  </tr>
+  <tr>
+    <td style="padding: 0;">
+      <img src="cid:e515ea322828da2e" alt="Returns after costs"
+width="600"           style="display: block; width: 100%; max-width: 600px; height: auto; border: 1px solid #D6D2CB; margin: 0;">
+    </td>
+  </tr>
+</table>
+<p class="fine-print" style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #A09E97; font-style: italic; margin: 8px 0 0 0; line-height: 172%;">Hermes Research (<a href="#ref-afmp2018" class="citation" style="color: #5B8A9A; text-decoration: none;">Frazzini et al. 2018</a>)</p>
+
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+
+    </table>
+  </td>
+</tr>
+
+  </table>
+
+<table role="presentation" width="642" cellpadding="0" cellspacing="0" border="0"
+       style="width:642px; break-before:page; page-break-before:always;">
+  <tr>
+    <td align="left"
+        style="padding:22px 32px 24px; text-align:left;">
+      <h2 style="margin:0 0 12px; font-family:Georgia, 'Times New Roman', serif; font-size:17px; line-height:130%; color:#3B3B3B;">Important Disclosures</h2>
+      <div style="font-family:Georgia, 'Times New Roman', serif; font-size:11px; line-height:160%; color:#8A8880;">For illustrative purposes. Not investment advice.</div>
+    </td>
+  </tr>
+</table>
+
+
+</body>
+</html>

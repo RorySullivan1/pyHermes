@@ -15,8 +15,8 @@ the three design axes, the two projections. A **medium** decides the rest: `pyhe
 four-slot skeleton and the 102 KB check, `pyhermes/document/` the paged one with its cover,
 contents sheet, running boxes and page breaks, `pyhermes/brochure/` a sheet folded into panels,
 imposed for the press with bleed and crop marks. The apparatus a reader navigates by —
-exhibit numbers, footnotes, contents, cross-references — is numbered in Python, once, so
-every projection agrees; only the page number is the print engine's. Three exporters sit
+exhibit numbers, footnotes, contents, cross-references, appendix letters, citations — is
+numbered in Python, once, so every projection agrees; only the page number is the print engine's. Three exporters sit
 on one contract — `pyhermes/delivery/` + `pyhermes/gmail/` + `pyhermes/outlook/` for MIME, `pyhermes/pdf/` for
 PDF — and a PDF can ride a message as an attachment, rendered under a screen profile. Each owns its wire format and **never** authentication, so the core still depends on
 Jinja2 alone. Figures arrive as numbers:
@@ -69,7 +69,7 @@ applies to and loads **only when a matching file is read** — so a session that
 | `data-layer.md` | `formats.py`, `pyhermes/data/**` | Figures as numbers: the formatters, the two adapters, why the dependency runs one way |
 | `math.md` | `pyhermes/math/**`, the math tests, `templates/media/math-block.html` | Equations: the component takes bytes and the extra renders them, the fontset and scale, the mathtext subset, the multi-line shim, the theme limitation, the Outlook gap |
 | `plain-text.md` | `textgen.py`, `email.py` | The second projection of the section tree |
-| `apparatus.md` | `apparatus.py`, `document.py`, the notes / contents / running-box templates | Exhibit numbers, footnotes, contents, cross-references, the running section — Python numbers all but the page |
+| `apparatus.md` | `apparatus.py`, `document.py`, `research.py`, the notes / contents / running-box / bibliography / glossary templates | Exhibit numbers, footnotes, contents, cross-references, the running section, the list of exhibits, lettered appendices, citations and the glossary — Python numbers all but the page |
 | `media.md` | `pyhermes/email/`, `pyhermes/document/`, `pyhermes/pdf/`, `medium.py`, `document.py`, `templates/document/**` | The medium model, the page, the template fork rule, each medium's regions, the exporter's resource policy |
 | `digital-pdf.md` | `pyhermes/pdf/**`, `pyhermes/delivery/message.py`, the digital-PDF tests | The `PdfProfile` and its two presets, attachments and the message's size budget, metadata and determinism, the PDF/UA decision with its numbers, and why a screen PDF is not a medium |
 | `brochure.md` | `pyhermes/brochure/**`, `templates/brochure/**`, the editorial partial | Folds, the panel, imposition, bleed and marks, the editorial primitives and each one's email degradation |
@@ -228,6 +228,8 @@ these rather than improvising:
   `pyhermes.outlook.desktop` puts a draft into classic Outlook, #278–#279) is complete. **#273**
   (figures, charts and pictures from data: `from_number`, `chart_style`, the oversize-picture
   warning, #274–#276) is complete. **#282** (a stacked column fills its width on a phone) is fixed.
+  **#220** (the long-form research apparatus: a list of exhibits, lettered appendices,
+  citations with a bibliography, a glossary, and a research-note fixture, #308–#312) is complete.
   **#259** is fixed: the size report names each body section, and `pyhermes.check` and
   `preview --lint` report on an email over 102 KB. **#281** is fixed: the README states current
   facts, and a test holds each example's committed `.html` to a fresh render. **#272** is done:

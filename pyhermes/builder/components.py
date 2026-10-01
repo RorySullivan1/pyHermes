@@ -23,11 +23,14 @@ from pyhermes.config import get_config
 from . import formats
 from .apparatus import (
     MARKER,
+    UNRESOLVED,
+    Citing,
     note_anchor,
     note_ref_anchor,
     slugify,
     split_markers,
     text_markers,
+    unmarked,
     validate_anchor,
 )
 from .engine import Renderer, on_ground, own_surface, respaced
@@ -144,6 +147,9 @@ class Exhibit:
     #: Set by the document's walk; ``None`` when unlabelled or rendered alone.
     number: int | None = None
 
+    #: The letter of the appendix this exhibit sits in, set by the walk (#309).
+    appendix: str = ""
+
     def validate_exhibit(self, label: str, anchor: str) -> None:
         """Validate and store the two caller-facing fields."""
         name = type(self).__name__.lower()
@@ -153,21 +159,30 @@ class Exhibit:
         self.label = label
         self.anchor = anchor
         self.number = None
+        self.appendix = ""
 
     def resolved_anchor(self) -> str:
         """The ``id`` this exhibit carries, or ``""`` when it has none."""
         if self.anchor:
             return self.anchor
         if self.label and self.number:
-            return f"{slugify(self.label, 'exhibit')}-{self.number}"
+            return f"{slugify(self.label, 'exhibit')}-{self._ordinal().lower().replace('.', '-')}"
         return ""
+
+    def _ordinal(self) -> str:
+        """``3``, or ``A.1`` in an appendix: the number as both projections print it."""
+        return f"{self.appendix}.{self.number}" if self.appendix else str(self.number)
 
     def numbered(self, heading: str) -> str:
         """``heading`` behind this exhibit's number — the one string both projections print."""
         if not (self.label and self.number):
             return heading
-        prefix = f"{self.label} {self.number}"
+        prefix = f"{self.label} {self._ordinal()}"
         return f"{prefix}{get_config().exhibit_separator}{heading}" if heading else prefix
+
+    def listed(self) -> str:
+        """This exhibit's entry in a list of exhibits: its numbered caption, markers removed."""
+        return self.numbered(unmarked(getattr(self, "caption", "")))
 
 
 class Component:
@@ -193,6 +208,9 @@ class Component:
     #: Whether this block paints its own surface, and so keeps the theme's type
     #: on a section's own ground (#266) rather than the ground's.
     OWN_SURFACE: ClassVar[bool] = False
+
+    #: How this component's document spells a citation, handed down by the walk (#310).
+    citing: Citing = UNRESOLVED
 
     def _coerce_spacing(
         self, spacing: Spacing | Mapping[str, int | float] | None
@@ -225,6 +243,14 @@ class Component:
         Empty by default: only the blessed raw-HTML fields carry markup, and a
         component holding one returns it so a ``#fragment`` in it is checked.
         """
+        return []
+
+    def marked_copy(self) -> list[str]:
+        """Every field that may carry a marker, in reading order: where citations come from."""
+        return []
+
+    def anchors(self) -> list[tuple[str, str]]:
+        """``(anchor, owner)`` for each destination this block defines beyond an exhibit's."""
         return []
 
     def footnotes(self) -> list[Footnote]:
@@ -561,6 +587,14 @@ class DataTable(Exhibit, Component):
         self.caption = caption
         self.disclosure = disclosure
 
+    def marked_copy(self) -> list[str]:
+        return [
+            self.caption,
+            *self.headers,
+            *(cell.text for row in self.rows for cell in row.cells),
+            self.source,
+        ]
+
     @property
     def headers(self) -> list[str]:
         """The column headings, as the plain strings the caller may have passed."""
@@ -580,9 +614,9 @@ class DataTable(Exhibit, Component):
     def text(self) -> str:
         """Aligned columns, then the attribution lines."""
         return self._with_subtitle(
-            wrap(text_markers(self.numbered(self.caption), self.notes)),
+            wrap(text_markers(self.numbered(self.caption), self.notes, self.citing)),
             table(
-                [text_markers(header, self.notes) for header in self.headers],
+                [text_markers(header, self.notes, self.citing) for header in self.headers],
                 [
                     [text + " " * pad for text, pad in zip(texts, pads, strict=True)]
                     for texts, pads in zip(self._spelled(), self._pads(), strict=True)
@@ -592,13 +626,20 @@ class DataTable(Exhibit, Component):
                 groups=[(group.label, group.span) for group in self.groups],
                 units=self._units(),
             ),
-            wrap("\n".join(filter(None, (text_markers(self.source, self.notes), self.as_of)))),
+            wrap(
+                "\n".join(
+                    filter(None, (text_markers(self.source, self.notes, self.citing), self.as_of))
+                )
+            ),
             wrap(self.disclosure),
         )
 
     def _spelled(self) -> list[list[str]]:
         """Every cell's text with its markers spelled as the document's numbers."""
-        return [[text_markers(cell.text, self.notes) for cell in row.cells] for row in self.rows]
+        return [
+            [text_markers(cell.text, self.notes, self.citing) for cell in row.cells]
+            for row in self.rows
+        ]
 
     def _pads(self, hang_markers: bool = False) -> list[list[int]]:
         """
@@ -685,7 +726,7 @@ class DataTable(Exhibit, Component):
             "columns": [
                 {
                     "header": c.header,
-                    "parts": split_markers(c.header, self.notes),
+                    "parts": split_markers(c.header, self.notes, self.citing),
                     "align": c.align,
                     "kind": c.kind,
                     "width": width,
@@ -700,7 +741,7 @@ class DataTable(Exhibit, Component):
                     "cells": [
                         {
                             "text": cell.text,
-                            "parts": split_markers(cell.text, self.notes),
+                            "parts": split_markers(cell.text, self.notes, self.citing),
                             "pad": pad,
                             **self._figure(r, cell, self.columns[index], ends[index]),
                             # The chain completes here: cell → column → position.
@@ -728,11 +769,11 @@ class DataTable(Exhibit, Component):
                 for r, row_pads in zip(self.rows, pads, strict=True)
             ],
             "source": self.source,
-            "source_parts": split_markers(self.source, self.notes),
+            "source_parts": split_markers(self.source, self.notes, self.citing),
             "as_of": self.as_of,
             "subtitle": self.subtitle,
             "caption": self.numbered(self.caption),
-            "caption_parts": split_markers(self.numbered(self.caption), self.notes),
+            "caption_parts": split_markers(self.numbered(self.caption), self.notes, self.citing),
             "anchor": self.resolved_anchor(),
             "disclosure": self.disclosure,
         }
@@ -859,6 +900,9 @@ class ChartBlock(Exhibit, CopyAlignment, Component):
     def images(self) -> list[EmailImage]:
         return [self.image]
 
+    def marked_copy(self) -> list[str]:
+        return [self.caption, self.source]
+
     def text(self) -> str:
         """
         The alt text in brackets, then the attribution.
@@ -867,9 +911,9 @@ class ChartBlock(Exhibit, CopyAlignment, Component):
         empty — which is the whole reason that rule exists.
         """
         return self._with_subtitle(
-            wrap(text_markers(self.numbered(self.caption), self.notes)),
+            wrap(text_markers(self.numbered(self.caption), self.notes, self.citing)),
             wrap(f"[{self.image.alt}]"),
-            wrap(text_markers(self.source, self.notes)),
+            wrap(text_markers(self.source, self.notes, self.citing)),
             wrap(self.disclosure),
         )
 
@@ -879,9 +923,9 @@ class ChartBlock(Exhibit, CopyAlignment, Component):
             "chart_alt_text": self.image.alt,
             "chart_image_width": self.image.width or "",
             "chart_source": self.source,
-            "chart_source_parts": split_markers(self.source, self.notes),
+            "chart_source_parts": split_markers(self.source, self.notes, self.citing),
             "caption": self.numbered(self.caption),
-            "caption_parts": split_markers(self.numbered(self.caption), self.notes),
+            "caption_parts": split_markers(self.numbered(self.caption), self.notes, self.citing),
             "anchor": self.resolved_anchor(),
             # Bare, not ``chart_``-prefixed: all three exhibits include one
             # shared partial, so they must agree on the key it reads.
@@ -981,6 +1025,9 @@ class ImageBlock(Exhibit, Component):
     def images(self) -> list[EmailImage]:
         return [self.image]
 
+    def marked_copy(self) -> list[str]:
+        return [self.caption]
+
     def text(self) -> str:
         """
         The alt text in brackets, its caption, and where a linked image goes.
@@ -993,7 +1040,7 @@ class ImageBlock(Exhibit, Component):
         ``align`` projects to nothing: plain text has one column, so an
         alignment is presentation with nothing to present.
         """
-        caption = text_markers(self.numbered(self.caption), self.notes)
+        caption = text_markers(self.numbered(self.caption), self.notes, self.citing)
         if self.image.decorative:
             return self._with_subtitle(wrap(caption), wrap(self.disclosure))
         alt = f"[{self.image.alt}]"
@@ -1012,7 +1059,7 @@ class ImageBlock(Exhibit, Component):
             "image_align": self.align,
             "link_url": self.link_url,
             "caption": self.numbered(self.caption),
-            "caption_parts": split_markers(self.numbered(self.caption), self.notes),
+            "caption_parts": split_markers(self.numbered(self.caption), self.notes, self.citing),
             "anchor": self.resolved_anchor(),
             "disclosure": self.disclosure,
             "subtitle": self.subtitle,
@@ -1077,9 +1124,12 @@ class MathBlock(Exhibit, Component):
     def images(self) -> list[EmailImage]:
         return [self.image]
 
+    def marked_copy(self) -> list[str]:
+        return [self.caption]
+
     def text(self) -> str:
         """The numbered caption, each line of the source in ``$ $``, the disclosure."""
-        caption = text_markers(self.numbered(self.caption), self.notes)
+        caption = text_markers(self.numbered(self.caption), self.notes, self.citing)
         source = "\n".join(f"${line}$" for line in self.lines)
         return self._with_subtitle(wrap(caption), source, wrap(self.disclosure))
 
@@ -1090,7 +1140,7 @@ class MathBlock(Exhibit, Component):
             "image_width": self.image.width or "",
             "image_align": self.align,
             "caption": self.numbered(self.caption),
-            "caption_parts": split_markers(self.numbered(self.caption), self.notes),
+            "caption_parts": split_markers(self.numbered(self.caption), self.notes, self.citing),
             "anchor": self.resolved_anchor(),
             "disclosure": self.disclosure,
         }
@@ -1210,7 +1260,7 @@ class TextBlock(CopyAlignment, Component):
         ctx["body_class"] = "" if on_ground(engine) else "body-text"
         paged = engine.medium.paged
         if self.drop_cap and paged:
-            ctx["text_parts"] = split_markers(_with_drop_cap(self.content), self.notes)
+            ctx["text_parts"] = split_markers(_with_drop_cap(self.content), self.notes, self.citing)
         if self.figure is not None:
             ctx["figure_html"] = self.figure.render(engine)
             ctx["figure_wrap"] = self.figure.wrap if paged else ""
@@ -1224,9 +1274,12 @@ class TextBlock(CopyAlignment, Component):
         """The figure's image, when there is one (standing rule 7)."""
         return self.figure.images() if self.figure is not None else []
 
+    def marked_copy(self) -> list[str]:
+        return [self.content]
+
     def text(self) -> str:
         """The figure, then the prose through #108's degrader — ``content`` is raw HTML."""
-        prose = wrap(html_to_text(text_markers(self.content, self.notes)))
+        prose = wrap(html_to_text(text_markers(self.content, self.notes, self.citing)))
         figure = self.figure.text() if self.figure is not None else ""
         return self._with_subtitle(figure, prose)
 
@@ -1234,7 +1287,7 @@ class TextBlock(CopyAlignment, Component):
         return {
             "text_content": self.content,
             "body_class": "body-text",
-            "text_parts": split_markers(self.content, self.notes),
+            "text_parts": split_markers(self.content, self.notes, self.citing),
             "subtitle": self.subtitle,
             "figure_html": "",
             "figure_wrap": "",
@@ -1413,6 +1466,9 @@ class NumberedList(CopyAlignment, Component):
         self.items = items
         self.subtitle = subtitle
 
+    def marked_copy(self) -> list[str]:
+        return [item.body for item in self.items]
+
     def text(self) -> str:
         """
         ``1. Title`` and its body, one item per block.
@@ -1427,7 +1483,7 @@ class NumberedList(CopyAlignment, Component):
             *(
                 join_blocks(
                     wrap(f"{item.number}. {item.title}"),
-                    wrap(html_to_text(text_markers(item.body, item.footnotes()))),
+                    wrap(html_to_text(text_markers(item.body, item.footnotes(), self.citing))),
                 )
                 for item in self.items
             )
@@ -1447,7 +1503,7 @@ class NumberedList(CopyAlignment, Component):
                     "number": it.number,
                     "title": it.title,
                     "body": it.body,
-                    "body_parts": split_markers(it.body, it.footnotes()),
+                    "body_parts": split_markers(it.body, it.footnotes(), self.citing),
                 }
                 for it in self.items
             ],
@@ -1518,6 +1574,10 @@ class Contents(Component):
     it the section titles and anchors in reading order before each
     projection, leaving out the section that holds the list itself.
 
+    ``of="exhibits"`` lists the numbered exhibits instead (#308), each under
+    the heading it carries, so a list of tables and figures is the same walk
+    read another way. ``label`` narrows it to one label's sequence.
+
     One class and one template serve both media. On paper the paged
     skeleton's stylesheet appends each entry's page number, a figure only the
     print engine knows; in an email the same markup is a linked list with no
@@ -1527,6 +1587,8 @@ class Contents(Component):
 
     Args:
         subtitle: Optional sub-heading rendered above the list.
+        of:       ``"sections"`` (the default) or ``"exhibits"``.
+        label:    With ``of="exhibits"``, list only this label: ``"Table"``.
     """
 
     template_path = "text/contents.html"
@@ -1540,10 +1602,13 @@ class Contents(Component):
         self,
         subtitle: str | None = None,
         spacing: Spacing | Mapping[str, int | float] | None = None,
+        of: str = "sections",
+        label: str | None = None,
     ):
         self.spacing = self._coerce_spacing(spacing)
+        self.of, self.label = check_listing(of, label, "Contents")
         self.subtitle = subtitle
-        #: ``(title, anchor)`` per listed section, assigned by the document.
+        #: ``(title, anchor)`` per listed entry, assigned by the document.
         self.entries: list[tuple[str, str]] = []
 
     def text(self) -> str:
@@ -1555,6 +1620,22 @@ class Contents(Component):
             "subtitle": self.subtitle,
             "contents_entries": contents_entries(self.entries),
         }
+
+
+#: What a contents list may list: the titled sections, or the numbered exhibits.
+LISTINGS = ("sections", "exhibits")
+
+
+def check_listing(of: str, label: str | None, owner: str) -> tuple[str, str | None]:
+    """``(of, label)`` validated: a known listing, and a label only on exhibits."""
+    if of not in LISTINGS:
+        raise ValidationError(f"{owner}(of=...) takes one of {list(LISTINGS)}, got: {of!r}")
+    if label is not None and (of != "exhibits" or not label.strip()):
+        raise ValidationError(
+            f"{owner}(label=...) narrows a list of exhibits to one label, such as 'Table'; "
+            f"got label={label!r} with of={of!r}."
+        )
+    return of, label
 
 
 def contents_entries(entries: list[tuple[str, str]]) -> list[dict[str, str]]:
