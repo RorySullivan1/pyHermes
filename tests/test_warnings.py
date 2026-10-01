@@ -32,7 +32,8 @@ def test_no_module_in_the_package_calls_print():
     offenders = {
         str(path.relative_to(SVC.parent)): lines
         for path in sorted(SVC.rglob("*.py"))
-        if (lines := _print_calls(path))
+        # A __main__ runs only as a program, which owns its stdout; nothing imports it (#278).
+        if path.name != "__main__.py" and (lines := _print_calls(path))
     }
     assert not offenders, f"print() in the library writes into a host's stdout: {offenders}"
 
@@ -85,3 +86,14 @@ def _builder_of(email):
     builder = EmailBuilder()
     builder._email = email
     return builder
+
+
+def test_only_a_program_entry_point_writes_and_the_library_never_imports_one():
+    """The exemption above is safe only while no library module imports a ``__main__``."""
+    importers = [
+        str(path.relative_to(SVC.parent))
+        for path in sorted(SVC.rglob("*.py"))
+        if "__main__" in path.read_text(encoding="utf-8").replace('__name__ == "__main__"', "")
+        and path.name != "__main__.py"
+    ]
+    assert not importers, f"a library module reaches a program's entry point: {importers}"

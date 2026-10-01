@@ -390,3 +390,24 @@ jobs:
           fi
           echo "OK: import svc fails from $env"
           done
+
+      - name: Check a draft with the installed package alone, from each (#278)
+        run: |
+          for env in wheelenv sdistenv; do
+          echo "== $env"
+          mkdir -p /tmp/$env-draft && cd /tmp/$env-draft
+          cat > draft.py <<'PY'
+          from pyhermes.builder import EmailBuilder, FullWidth, TextBlock
+
+
+          def build():
+              return (
+                  EmailBuilder()
+                  .metadata({"email_subject": "Check", "firm_name": "CI", "campaign_name": "check"})
+                  .section(FullWidth(TextBlock("<p>Checked from an install.</p>")))
+              )
+          PY
+          /tmp/$env/bin/python -m pyhermes.check draft.py:build --out out
+          test -s out/draft-build.html && test -s out/draft-build.txt
+          echo "OK: python -m pyhermes.check ran from $env"
+          done

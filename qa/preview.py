@@ -15,19 +15,18 @@ Takes a gallery fixture by name or any ``path.py:callable`` returning an
 from __future__ import annotations
 
 import argparse
-import importlib.util
 import sys
 import webbrowser
 from collections.abc import Callable
 from pathlib import Path
 
-from pyhermes.builder import EmailBuilder
 from pyhermes.builder.document import Document
 from pyhermes.builder.exceptions import EmailBuilderError
+from pyhermes.check import Severity, format_findings, lint_document
+from pyhermes.check.target import TargetError, as_document, load_target
 from pyhermes.pdf import PdfError
 
 from .fixtures import all_brochure_fixtures, all_fixtures, all_paged_fixtures
-from .lint import Severity, format_findings, lint_document
 from .screenshots import ScreenshotError, capture_emails, capture_pages
 
 #: Where rendered HTML lands. Gitignored, per the repo's existing convention.
@@ -38,8 +37,8 @@ EXIT_LINT_ERRORS = 1
 EXIT_BUILD_FAILED = 2
 
 
-class PreviewError(RuntimeError):
-    """A target that could not be resolved into an email."""
+#: A target that could not be resolved into a document. The shipped check's error (#278).
+PreviewError = TargetError
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -92,63 +91,12 @@ def _from_fixture(name: str) -> Document:
 
 
 def _from_spec(target: str) -> tuple[str, Document]:
-    """
-    Load ``path/to/module.py:callable``.
-
-    Split on the *last* colon so a Windows drive letter cannot be mistaken for
-    the separator.
-
-    The file is executed, which is what importing anything means — this is a
-    developer tool pointed at the developer's own draft, the same trust as
-    running the script directly.
-    """
-    path_text, _, attribute = target.rpartition(":")
-    path = Path(path_text)
-    if not attribute:
-        raise PreviewError(f"{target!r} names no callable. Expected path/to/module.py:callable.")
-    if not path.is_file():
-        raise PreviewError(f"No such file: {path}")
-
-    module_name = f"_qa_preview_{path.stem}"
-    spec = importlib.util.spec_from_file_location(module_name, path)
-    if spec is None or spec.loader is None:
-        raise PreviewError(f"{path} is not importable as Python.")
-    module = importlib.util.module_from_spec(spec)
-    # Registered before execution so the module can find itself — dataclasses
-    # and anything else that looks up __module__ need it present.
-    sys.modules[module_name] = module
-    try:
-        spec.loader.exec_module(module)
-    except EmailBuilderError:
-        raise
-    except Exception as exc:
-        raise PreviewError(f"{path} failed to import: {exc}") from exc
-
-    builder = getattr(module, attribute, None)
-    if builder is None:
-        raise PreviewError(f"{path} has no attribute {attribute!r}.")
-    if not callable(builder):
-        raise PreviewError(f"{attribute!r} in {path} is not callable.")
-
-    name = f"{path.stem}-{attribute}"
-    return name, _as_document(builder(), name)
+    """``path/to/module.py:callable``, loaded exactly as ``python -m pyhermes.check`` loads it."""
+    return load_target(target)
 
 
 def _as_document(value: object, name: str) -> Document:
-    """
-    Accept a ``Document``, an ``Email`` or an ``EmailBuilder``.
-
-    All three are public API and a caller should not have to remember which
-    one their own function returns. An ``Email`` *is* a ``Document`` since
-    #162, so the check is one line shorter than it looks.
-    """
-    if isinstance(value, EmailBuilder):
-        return value.build()
-    if isinstance(value, Document):
-        return value
-    raise PreviewError(
-        f"{name} returned {type(value).__name__}, not a Document, Email or EmailBuilder."
-    )
+    return as_document(value, name)
 
 
 # ──────────────────────────────────────────────────────────────────────
