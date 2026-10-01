@@ -21,6 +21,7 @@ from typing import Any
 import jinja2
 
 from .exceptions import ValidationError
+from .prose import prose
 
 
 def validate_hex_color(value: str) -> str:
@@ -239,3 +240,4 @@ def register_all(env: jinja2.Environment) -> None:
     env.filters["percent"] = percent
     env.filters["heat_color"] = heat_color
     env.filters["readable_on"] = readable_on
+    env.filters["prose"] = prose

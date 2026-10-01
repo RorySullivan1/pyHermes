@@ -44,6 +44,8 @@ pyhermes/
 │                         closed-tag-set degrader) + the formatting policy — wrap, underline,
 │                         table, join_blocks/join_sections, format_link/link_line
 │   ├── filters.py      — Jinja filters (e.g. validate_hex_color)
+│   ├── prose.py        — the `prose` filter: theme styles on the eight tags a raw-HTML
+│                         prose field may carry, and the h1/h2 refusal (#280)
 │   ├── formats.py      — finance formatters (#177): number, pct, bps, delta, money,
 │                         compact; stdlib only, half-up, ASCII. `data-layer.md`
 │   ├── exceptions.py   — EmailBuilderError hierarchy

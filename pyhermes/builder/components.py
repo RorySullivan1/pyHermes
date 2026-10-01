@@ -48,6 +48,7 @@ from .models import (
     coerce_groups,
     coerce_notes,
 )
+from .prose import PROSE_TOKENS, refuse_top_headings
 from .sizing import Spacing, coerce_spacing
 from .textgen import (
     LINE_WIDTH,
@@ -350,6 +351,7 @@ class CardGroup(Component):
         "card_value_gap",
         "caption_gap",
         "subtitle_gap",
+        *PROSE_TOKENS,
     )
 
     # Members equal and hash as their string value, so membership tests and
@@ -1160,6 +1162,7 @@ class TextBlock(CopyAlignment, Component):
     SPACING_TOKENS = (
         "block_gap",
         "subtitle_gap",
+        *PROSE_TOKENS,
     )
 
     def __init__(
@@ -1175,6 +1178,7 @@ class TextBlock(CopyAlignment, Component):
         self.spacing = self._coerce_spacing(spacing)
         if not content:
             raise ValidationError("TextBlock requires content.")
+        refuse_top_headings(content, "TextBlock.content")
         if figure is not None and not isinstance(figure, ImageBlock):
             raise ValidationError(
                 f"TextBlock.figure takes an ImageBlock, got: {type(figure).__name__}"
@@ -1390,6 +1394,7 @@ class NumberedList(CopyAlignment, Component):
         "subtitle_gap",
         "list_ordinal_gap",
         "list_title_gap",
+        *PROSE_TOKENS,
     )
 
     def __init__(

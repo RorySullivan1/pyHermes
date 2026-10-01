@@ -125,6 +125,14 @@ name. Often an exhibit was renumbered.
 **Fix:** check the name after `#`. A section titled *Factor Returns* is `#factor-returns`,
 and the first table labelled *Exhibit* is `#exhibit-1`.
 
+### I get "holds an <h2>; the section title owns that level"
+
+**Likely cause:** an `<h1>` or `<h2>` in a `TextBlock`, a card's body or a numbered item's
+body. The section's title is the heading at that level.
+
+**Fix:** use `<h3>` for a subheading, and `<h4>` beneath it. For a heading of its own, start
+a new section with a `title=`.
+
 ### I get "has not been rendered in an email client"
 
 **Likely cause:** `"size_theme": "dense"`, or a custom spacing scheme, in an email.
@@ -221,8 +229,8 @@ a `TextBlock`, such as `style="display:flex"`, may not survive.
 
 **Fix:**
 1. Run `python -m pyhermes.check …`. It lists anything Outlook will ignore or break.
-2. Keep your `TextBlock` HTML to plain tags: `<p>`, `<b>`, `<i>`, `<a>`, `<ul>`, `<li>`,
-   `<br>`. Change colours and spacing through the theme ([Look and feel](05-look-and-feel.md)).
+2. Keep your `TextBlock` HTML to plain tags: `<p>`, `<b>`, `<i>`, `<a>`, `<h3>`, `<ul>`,
+   `<li>`, `<br>`. Change colours and spacing through the theme ([Look and feel](05-look-and-feel.md)).
 3. Send yourself a test and open it in Outlook.
 
 ### I see `&amp;` or `<b>` as text in a title or a table

@@ -66,16 +66,16 @@
   4x, print at 3.125x. So 4.5, not 3** — `data-layer.md`, `config.md` (#276)
 - [2026-10-01] **The size report attributes bytes from the section tree, never new comments; `SizeError`
   carries the refused HTML so the check measures over the limit** — `qa-harness.md` (#259)
+- [2026-10-01] **Prose markup is styled by a closed tag set from a template, the author's `style` wins, and
+  `h1`/`h2` are refused rather than demoted** — `design-axes.md` (#280)
 - [2026-10-01] **A committed example is a golden: a test compares it to a fresh render, masking only
   Content-IDs, whose chart bytes are the machine's** — `qa-harness.md` (#281)
 
 ## Log              (append-only pointers)
 - Older entries, and epic #157's, are in sessions/ARCHIVE-2026.md.
-- [2026-10-01] data-to-email — **#273 implemented** (#274–#276): `Card.from_number`, `chart_style`, the
-  oversize-picture `SizeWarning` — sessions/2026-10-01-data-to-email.md
-- [2026-10-01] size-by-section — **#259 implemented**: per-section size report, check and preview report
-  over 102 KB — sessions/2026-10-01-size-by-section.md
 - [2026-10-01] examples-drift — **#281 implemented**: README facts, three examples regenerated, the
   committed-output test — sessions/2026-10-01-examples-drift.md
 - [2026-10-01] customise-the-layout — **#272 implemented**: manual page 9, every example run —
   sessions/2026-10-01-customise-the-layout.md
+- [2026-10-01] prose-styles — **#280 implemented**: the `prose` filter, three tokens, the h1/h2
+  refusal, manual page 9's tag table — sessions/2026-10-01-prose-styles.md

@@ -228,32 +228,52 @@ searched in order.
 ## What raw HTML in a TextBlock can do
 
 `TextBlock` takes HTML, and the theme styles the paragraph around it: its typeface, size,
-colour and line spacing. Inside it:
+colour and line spacing. The same holds for a card's `body` and a numbered item's `body`.
+Inside them, these tags take the theme's styles too:
 
-- **These work in Outlook and Gmail alike:** `<p>`, `<b>` and `<strong>`, `<i>` and `<em>`,
-  `<a href>`, `<br>`, and an inline `style=` that sets `color`, `font-weight` or
+| Tag | Styled as |
+|---|---|
+| `<h3>` | A subheading: the heading typeface and colour, a little smaller than the section title |
+| `<h4>` | A minor heading: the heading typeface, body size, bold |
+| `<ul>`, `<ol>`, `<li>` | Lists, indented the same way in every mail program, with a small gap between items |
+| `<blockquote>` | A quotation: italic, in the theme's secondary colour, with a rule in the accent colour beside it |
+| `<a href>` | A link: the accent colour, underlined. On a dark section band, the band's text colour |
+| `<hr>` | A thin line in the theme's rule colour |
+
+A tag you give your own `style=` keeps it, and pyHermes adds nothing to it. Changing the
+theme, the density or the typefaces moves all of these with the rest of the email, and
+`spacing=` on the block moves the list indent (`prose_indent`), the gap after a heading,
+list or quotation (`prose_gap`), and the gap between list items (`prose_item_gap`).
+
+`<h1>` and `<h2>` are refused when the block is built, because the section title is the
+heading at that level. Use `<h3>`, or start a new section with its own title.
+
+- **These work in Outlook and Gmail alike:** the tags above, `<p>`, `<b>` and `<strong>`,
+  `<i>` and `<em>`, `<br>`, and an inline `style=` that sets `color`, `font-weight` or
   `font-style` on a `<span>`.
 - **These are not reliable in Outlook:** `padding` or `margin` on a `<div>` or `<p>`,
   borders on a `<div>`, `display:flex`, `position` and `float`. Outlook lays the email out
   with Microsoft Word, which documents only limited support for them. The check reports
   `display:flex`, `position` and `float`; it does not report padding or margins.
-- **Use a block instead** for a dividing line (`Divider`, not `<hr>`, which Outlook draws at
-  its own weight and colour), a boxed passage (`Callout`), a button (`Button`), or several
-  blocks in one column (`Stack`).
+- **Use a block instead** for a dividing line between sections (`Divider`), a boxed passage
+  (`Callout`), a button (`Button`), or several blocks in one column (`Stack`). Outlook draws
+  an `<hr>` at its own weight, so a `Divider` is the line that looks the same everywhere.
 
 ```python
 note = TextBlock(
+    "<h3>Credit</h3>"
     "<p>Spreads <b>tightened</b> for a third week. "
-    '<span style="color:#7A2E2E;">High yield lagged.</span> '
-    '<a href="https://example.com/credit">The credit note</a> has the detail.</p>'
+    '<span style="color:#7A2E2E;">High yield lagged.</span></p>'
+    "<ul><li>Investment grade: 4bp tighter</li><li>High yield: 2bp wider</li></ul>"
+    '<p><a href="https://example.com/credit">The credit note</a> has the detail.</p>'
 )
-email = EmailBuilder().metadata(facts).section(FullWidth(note, title="Credit")).build()
+email = EmailBuilder().metadata(facts).section(FullWidth(note, title="Markets")).build()
 ```
 
-> **Note:** a subheading (`<h3>`), a bulleted list or a quotation inside a `TextBlock` is
-> not yet styled from the theme. Each mail program uses its own default size and spacing.
-> Styling them is tracked in [#280](https://github.com/RorySullivan1/pyHermes/issues/280).
-> Until then, use a section title, or a `NumberedList` for a list.
+To restyle one of these tags for every email you build, copy the packaged
+`text/prose-styles.html` into your own folder, edit its line for that tag, and pass the folder
+as `template_overlay=` ([above](#how-to-change-one-of-pyhermess-own-templates)). Each tag
+must keep its line.
 
 ## What you cannot change, and what to do instead
 
@@ -272,6 +292,6 @@ program, or would let one email drift from the rest of its series.
 | Use a web font | Most mail programs ignore web fonts, and the check reports a linked stylesheet | A font theme naming faces your readers have installed ([Look and feel](05-look-and-feel.md#how-to-change-the-typefaces)) |
 | Use a dark theme | The email tells mail programs to show it in light mode only, and no dark palette ships | A dark band on one section: `background_color` ([Look and feel](05-look-and-feel.md#how-to-put-a-section-on-a-dark-band)) |
 
-Only the `TextBlock` styling above has an open issue. To ask for one of these to change,
+To ask for one of these to change,
 [open an issue](https://github.com/RorySullivan1/pyHermes/issues) saying which mail
 programs you send to; that is what any change would have to be checked in.

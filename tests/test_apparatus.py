@@ -482,7 +482,9 @@ class TestCrossReferences:
         html = email(
             FullWidth(content=table(label="Exhibit")), FullWidth(content=prose(XREF))
         ).render()
-        assert '<a class="xref" href="#exhibit-1">Exhibit 1</a>' in html
+        # The theme styles the link (#280); the reference itself is as written.
+        assert '<a class="xref" href="#exhibit-1" style="' in html
+        assert ">Exhibit 1</a>" in html
         assert "target-counter" not in html
 
     def test_the_text_part_says_the_reference_alone(self):

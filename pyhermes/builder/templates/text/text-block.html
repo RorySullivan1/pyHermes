@@ -30,4 +30,4 @@
    element becomes a real ancestor. `Card.body` and `Footer.disclaimer`
    were already divs; this brings the last three raw-HTML surfaces into
    line with them. #}
-<div class="{{ body_class }}"{% if align %} align="{{ align | escape_html }}"{% endif %} style="font-family: {{ font.body }}; font-size: {{ size.type.body }}px; color: {{ theme.text.primary }}; line-height: {{ size.type.body_line | percent }}; margin: 0 0 {{ size.space.block_gap }}px 0;{% if align %} text-align:{{ align }};{% endif %}">{{ marked(text_parts, true) }}</div>
+<div class="{{ body_class }}"{% if align %} align="{{ align | escape_html }}"{% endif %} style="font-family: {{ font.body }}; font-size: {{ size.type.body }}px; color: {{ theme.text.primary }}; line-height: {{ size.type.body_line | percent }}; margin: 0 0 {{ size.space.block_gap }}px 0;{% if align %} text-align:{{ align }};{% endif %}">{{ marked(text_parts, true) | prose }}</div>

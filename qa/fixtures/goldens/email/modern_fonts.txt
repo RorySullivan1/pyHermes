@@ -17,6 +17,7 @@ Market Snapshot
 Sector Notes
 In Their Words
 Desk Note
+Desk Detail
 Long Read
 Factor Returns
 Cumulative Performance
@@ -67,6 +68,26 @@ Desk Note
 
 The desk's view in brief: the steepener stays on into the next meeting, and
 linkers are the next addition.
+
+
+Desk Detail
+-----------
+
+What changed this week
+
+Three moves, set out in the rates note (https://example.com/rates):
+
+- The front end repriced two cuts out.
+- Breakevens widened on the energy print.
+
+What we would do
+
+- Hold the steepener.
+- Add linkers on weakness.
+
+The curve is pricing a pause, not a pivot.
+
+Levels as of the London close (https://example.com/close).
 
 
 Long Read

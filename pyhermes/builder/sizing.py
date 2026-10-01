@@ -184,6 +184,10 @@ class ComponentScale:
     list_title_gap: int | float = 6
     list_body_line: int | float = 1.68
 
+    prose_gap: int | float = 10
+    prose_indent: int | float = 24
+    prose_item_gap: int | float = 4
+
     author_name_gap: int | float = 4
     author_sep_gap: int | float = 4
     author_rule_gap: int | float = 14
@@ -594,6 +598,9 @@ COMPACT_SIZES = SizeScheme().derive(
         "list_ordinal_gap": 10,
         "list_title_gap": 4,
         "list_body_line": 1.55,
+        "prose_gap": 8,
+        "prose_indent": 22,
+        "prose_item_gap": 3,
         "author_name_gap": 3,
         "author_rule_gap": 10,
         "cta_width": 140,
@@ -776,6 +783,9 @@ DENSE_SIZES = COMPACT_SIZES.derive(
         "list_ordinal_gap": 8,
         "list_title_gap": 3,
         "list_body_line": 1.4,
+        "prose_gap": 5,
+        "prose_indent": 18,
+        "prose_item_gap": 2,
         "author_name_gap": 2,
         "author_sep_gap": 3,
         "author_rule_gap": 8,
