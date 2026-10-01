@@ -3,10 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <title>Quarterly Review</title>
+  <meta name="author" content="Hermes Research">
+  <meta name="description" content="Quarterly Review · Rates Strategy · Quarter ending 30 September">
+  <meta name="keywords" content="Rates Strategy, Issue 001">
   <style type="text/css">
     @page {
       size: 794px 1123px;
-      margin: 28px 0;
+      margin: 76px 76px 76px 76px;
     }
 
     @page {
@@ -38,11 +41,70 @@
       background-color: #FFFFFF;
       font-family: Georgia, 'Times New Roman', serif;
       color: #3B3B3B;
+      orphans: 2;
+      widows: 2;
     }
     table { border-collapse: collapse; }
 
     table[width="100%"] { width: 100%; }
     img { border: 0; }
+
+    .data-table tbody tr { break-inside: avoid; page-break-inside: avoid; }
+    .data-table tr.row-total { break-before: avoid; page-break-before: avoid; }
+    .data-table tr.row-subhead { break-after: avoid; page-break-after: avoid; }
+    .data-table > caption { break-after: avoid; page-break-after: avoid; }
+    .section-title { break-after: avoid; page-break-after: avoid; }
+    .subtitle { break-after: avoid; page-break-after: avoid; }
+    .fine-print { break-before: avoid; page-break-before: avoid; }
+    .figure { break-inside: avoid; page-break-inside: avoid; }
+
+    .contents-entry a::after {
+      content: leader(".") " " target-counter(attr(href), page);
+      color: #A09E97;
+    }
+
+    @page {
+      @footnote {
+        border-top: 1px solid #D6D2CB;
+        padding-top: 8px;
+      }
+    }
+    .footnote {
+      float: footnote;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 9.5px;
+      font-style: normal;
+      font-weight: normal;
+      letter-spacing: 0;
+      line-height: 140%;
+      color: #7A7A72;
+      text-align: left;
+    }
+    .section-title h2 {
+      string-set: running-header content(), running-footer content(),
+        running-header-fallback "", running-footer-fallback "";
+    }
+    .footnote::footnote-call { content: none; }
+    .footnote::footnote-marker { content: attr(data-note) ". "; }
+
+    .drop-cap {
+      float: left;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 56px;
+      line-height: 48px;
+      margin: 4px 8px 0 0;
+      color: #5B8A9A;
+    }
+    .flowed-columns p:first-child { margin-top: 0; }
+    .wrap-left { float: left; margin: 0 16px 8px 0; }
+    .wrap-right { float: right; margin: 0 0 8px 16px; }
+
+    a.xref::after {
+      content: " (p. " target-counter(attr(href), page) ")";
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 9.5px;
+      color: #A09E97;
+    }
   </style>
 </head>
 <body>
@@ -60,16 +122,18 @@
   </tr>
 </table>
 
+  <div class="running-header-start"></div><div class="running-footer-start"></div>
 
-  <table class="document-container" role="presentation" width="794"
+
+  <table class="document-container" role="presentation" width="642"
          cellpadding="0" cellspacing="0" border="0"
-         style="width:794px; background-color:#FFFFFF;">
+         style="width:642px; background-color:#FFFFFF;">
 <tr>
   <td style="padding:1px 1px 1px 1px; background-color:#FFFFFF; border-top:1px solid #D6D2CB; border-bottom:1px solid #D6D2CB;">
-    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#F8F7F5;">
+    <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#F8F7F5;">
       <tr>
         <td style="padding:22px 31px 12px 31px;">
-          <h2 style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:17px; font-weight:bold; color:#2C3E50; line-height:120%;">
+          <h2 id="market-snapshot" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:17px; font-weight:bold; color:#2C3E50; line-height:120%;">
             Market Snapshot
           </h2>
         </td>
@@ -106,10 +170,10 @@
 
 <tr>
   <td style="padding:0; background-color:#FFFFFF;">
-    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+    <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
       <tr>
         <td style="padding:22px 32px 12px 32px;">
-          <h2 style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:17px; font-weight:bold; color:#2C3E50; line-height:120%;">
+          <h2 id="narrative" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:17px; font-weight:bold; color:#2C3E50; line-height:120%;">
             Narrative
           </h2>
         </td>
@@ -128,10 +192,10 @@
 
 <tr>
   <td style="padding:0; background-color:#FFFFFF;">
-    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+    <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
       <tr>
         <td style="padding:22px 32px 12px 32px;">
-          <h2 style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:17px; font-weight:bold; color:#2C3E50; line-height:120%;">
+          <h2 id="factor-returns" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:17px; font-weight:bold; color:#2C3E50; line-height:120%;">
             Factor Returns
           </h2>
         </td>
@@ -141,11 +205,14 @@
       <tr>
         <td class="mobile-pad" style="padding:16px 32px 14px 32px; font-family: Arial, Helvetica, sans-serif; font-size:14px; color:#3B3B3B; line-height:172%;">
           <table class="data-table" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
+  <thead>
   <tr style="border-top: 1px solid #D6D2CB; border-bottom: 2px solid #2C3E50;">
     <th scope="col" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 172%; text-align: left; padding: 12px; letter-spacing: 0.5px;">Factor</th>
     <th scope="col" align="right" style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 172%; text-align: right; padding: 12px; letter-spacing: 0.5px;">1M</th>
     <th scope="col" align="right" style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 172%; text-align: right; padding: 12px; letter-spacing: 0.5px;">YTD</th>
   </tr>
+  </thead>
+  <tbody>
   <tr style="border-bottom: 1px solid #EAE8E4;">
     <th scope="row" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: normal; line-height: 172%; color: #3B3B3B; text-align: left; padding: 12px; background-color: #FFFFFF;">Value</th>
     <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #4A7C59; text-align: right; padding: 12px; background-color: #FFFFFF;">+1.8%</td>
@@ -156,8 +223,9 @@
     <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #B85450; text-align: right; padding: 12px; background-color: #F8F7F5;">-0.4%</td>
     <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; line-height: 172%; color: #4A7C59; text-align: right; padding: 12px; background-color: #F8F7F5;">+11.2%</td>
   </tr>
+  </tbody>
 </table>
-<p style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #A09E97; font-style: italic; margin: 8px 0 0 0; line-height: 172%;">Hermes Research as of 30 September 2026</p>
+<p class="fine-print" style="font-family: Arial, Helvetica, sans-serif; font-size: 9.5px; color: #A09E97; font-style: italic; margin: 8px 0 0 0; line-height: 172%;">Hermes Research as of 30 September 2026</p>
 
         </td>
       </tr>
@@ -167,15 +235,15 @@
 
 <tr style="break-before:page; page-break-before:always;">
   <td style="padding:0;">
-    <table role="presentation" width="794" cellpadding="0" cellspacing="0"
-           border="0" style="width:794px; background-color:#FFFFFF;"
+    <table role="presentation" width="642" cellpadding="0" cellspacing="0"
+           border="0" style="width:642px; background-color:#FFFFFF;"
            bgcolor="#FFFFFF">
 <tr>
   <td style="padding:0; background-color:#FFFFFF;">
-    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+    <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
       <tr>
         <td style="padding:22px 32px 12px 32px;">
-          <h2 style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:17px; font-weight:bold; color:#2C3E50; line-height:120%;">
+          <h2 id="appendix-methodology" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:17px; font-weight:bold; color:#2C3E50; line-height:120%;">
             Appendix — Methodology
           </h2>
         </td>
@@ -198,8 +266,8 @@
 
   </table>
 
-<table role="presentation" width="794" cellpadding="0" cellspacing="0" border="0"
-       style="width:794px; break-before:page; page-break-before:always;">
+<table role="presentation" width="642" cellpadding="0" cellspacing="0" border="0"
+       style="width:642px; break-before:page; page-break-before:always;">
   <tr>
     <td align="left"
         style="padding:22px 32px 24px; text-align:left;">

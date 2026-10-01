@@ -20,6 +20,7 @@ import pytest
 
 from pyhermes.data.exceptions import BackendMissingError as _DataMissing
 from pyhermes.math.exceptions import BackendMissingError as _MathMissing
+from qa.goldens import difference_report
 
 #: An example that needs an extra skips without it: [charts] or [math] (#233).
 DataBackendMissing = (_DataMissing, _MathMissing)
@@ -107,6 +108,38 @@ class TestEveryExampleBuilds:
         assert {"email", "document"} <= media, (
             f"the examples only cover {sorted(media)}; a reader has no worked "
             "example of the other medium"
+        )
+
+
+#: A content-addressed image reference: ``sha256(bytes)[:16]``.
+_CONTENT_ID = re.compile(r"cid:[0-9a-f]{16}")
+
+
+class TestTheCommittedOutputIsCurrent:
+    """
+    Each example's committed ``.html`` is what its script renders today (#281).
+
+    The examples README promises the file renders without running anything;
+    a stale one shows a reader markup the library no longer produces. Three
+    of four had drifted, one since #157. The PDFs are not compared: their
+    bytes depend on the fonts and HarfBuzz of the machine that printed them.
+    For the same reason a Content-ID is masked: it hashes a chart's PNG, and
+    those bytes belong to whichever matplotlib ``~=3.11`` resolved.
+    """
+
+    @pytest.mark.parametrize("path", EXAMPLES, ids=lambda p: p.stem)
+    def test_it_matches_a_fresh_render(self, path):
+        committed = path.with_suffix(".html")
+        script = path.relative_to(REPO_ROOT)
+        actual = _CONTENT_ID.sub("cid:…", _build(path).render())
+        expected = _CONTENT_ID.sub("cid:…", committed.read_text(encoding="utf-8"))
+        assert actual == expected, difference_report(
+            path.stem,
+            "html",
+            committed,
+            expected,
+            actual,
+            remedy=f"Regenerate with `python {script}` and commit the result.",
         )
 
 

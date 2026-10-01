@@ -345,3 +345,5 @@ Decisions and Log entries folded out of `INDEX.md` on 2026-08-29 (#143), verbati
 
 - [2026-09-23] **An image's CSS width is a cap on 100%, never a fixed px.** A px width is WeasyPrint's
   min-content, so a 600px chart in a half column widened the frame and added a sheet — `media.md` (#201)
+- [2026-09-24] **A page opening the body drops its leading break.** The seed leaves ahead of the body
+  table made it open a blank sheet. `add_page` is paged-only shorthand; the `Page` node stays — `media.md`

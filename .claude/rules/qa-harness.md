@@ -1157,3 +1157,22 @@ printed even that above 102 KB, because `render()` raised first.
   returns it instead of raising. `render()` still refuses, the check always measures, and
   `preview` measures only with `--lint`. Without it, an over-limit draft still exits 2 and the
   message says to run with `--lint`.
+
+## The examples are held to their committed output (#281)
+
+`examples/README.md` promised each `.html` was its script's output. Nothing checked it, and
+three of four had drifted: `quarterly-review` since #157, and the two emails since #282's
+one-line `@media` change, which regenerated the goldens but not the examples.
+
+- **`TestTheCommittedOutputIsCurrent`** in `test_examples.py` renders each example and compares
+  it to the committed file. Its failure is the golden harness's report, through
+  `qa.goldens.difference_report`, with the example's own remedy: run the script, not
+  `--update-goldens`. An example that needs an absent extra skips, as its build test does.
+- **A Content-ID is masked before comparing.** It hashes a chart's PNG, and `matplotlib~=3.11`
+  lets CI resolve a different release than the machine that committed the file. The markup
+  around it is still compared byte for byte; a changed title was checked to fail.
+- **The PDFs are not compared**, for the same reason their determinism tests need
+  HarfBuzz-Subset: their bytes are the printing machine's. Regenerate one when its HTML moves.
+- **A builder change that moves an example now fails the suite**, which is the point: the
+  regeneration lands in the same PR as the change, where #282's did not.
+
