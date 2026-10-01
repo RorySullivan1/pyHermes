@@ -350,6 +350,31 @@ def cell_width_of(engine: Renderer) -> int:
     return width if isinstance(width, int) else int(scheme_of(engine).frame.inner)
 
 
+def _surface_theme(engine: Renderer) -> Theme | None:
+    """The theme a section's own ground replaced, or ``None`` off such a ground."""
+    shared = getattr(engine, "shared", {})
+    theme = shared.get("surface_theme") if isinstance(shared, Mapping) else None
+    return theme if isinstance(theme, Theme) else None
+
+
+def grounded(engine: Renderer, ink: Theme | None) -> Renderer:
+    """``engine`` rendering type in ``ink``, a section's ground (#266); itself for ``None``."""
+    if ink is None:
+        return engine
+    return rebind(engine, theme=ink, surface_theme=_surface_theme(engine) or engine.theme)
+
+
+def on_ground(engine: Renderer) -> bool:
+    """Whether ``engine`` renders onto a section's own ground rather than the theme's."""
+    return _surface_theme(engine) is not None
+
+
+def own_surface(engine: Renderer) -> Renderer:
+    """``engine`` back on the theme's type, for a block that paints its own surface."""
+    surface = _surface_theme(engine)
+    return engine if surface is None else rebind(engine, theme=surface, surface_theme=None)
+
+
 def rebind(engine: Renderer, **shared: Any) -> Renderer:
     """``engine`` with ``shared`` bound over whatever it already had."""
     if isinstance(engine, BoundEngine):

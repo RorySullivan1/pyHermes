@@ -1,0 +1,15 @@
+{#
+  BUTTON — a call to action on its own, anywhere a block goes (#269).
+
+  The markup is common/cta.html, which ContactBlock draws too, so the
+  two cannot drift. The cell carries the alignment in both spellings (#125).
+
+  Context: button_url, button_label, align
+#}
+<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
+  <tr>
+    <td{% if align %} align="{{ align | escape_html }}"{% endif %} style="padding:0;{% if align %} text-align:{{ align }};{% endif %}">
+{% include "common/cta.html" %}
+    </td>
+  </tr>
+</table>

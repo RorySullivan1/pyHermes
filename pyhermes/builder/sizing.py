@@ -194,6 +194,8 @@ class ComponentScale:
     contact_pad_x: int | float = 24
     contact_heading_gap: int | float = 6
     contact_cta_gap: int | float = 16
+    callout_pad_y: int | float = 16
+    callout_pad_x: int | float = 20
     contact_line: int | float = 1.55
     legal_line: int | float = 1.6
 
@@ -600,6 +602,8 @@ COMPACT_SIZES = SizeScheme().derive(
         "contact_pad_x": 18,
         "contact_heading_gap": 4,
         "contact_cta_gap": 12,
+        "callout_pad_y": 12,
+        "callout_pad_x": 16,
         "contact_line": 1.45,
         "legal_line": 1.5,
     },
@@ -695,6 +699,8 @@ SPACIOUS_SIZES = SizeScheme().derive(
         "contact_pad_x": 32,
         "contact_heading_gap": 8,
         "contact_cta_gap": 22,
+        "callout_pad_y": 20,
+        "callout_pad_x": 26,
         "contact_line": 1.7,
         "legal_line": 1.75,
     },
@@ -777,6 +783,8 @@ DENSE_SIZES = COMPACT_SIZES.derive(
         "contact_pad_x": 12,
         "contact_heading_gap": 3,
         "contact_cta_gap": 8,
+        "callout_pad_y": 8,
+        "callout_pad_x": 12,
         "contact_line": 1.35,
         "legal_line": 1.35,
     },

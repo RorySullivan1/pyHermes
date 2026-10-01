@@ -22,6 +22,7 @@ from dataclasses import dataclass, field, fields, replace
 from typing import Any, ClassVar
 
 from .exceptions import ValidationError
+from .filters import readable_on
 from .models import _validate_color
 
 
@@ -253,6 +254,34 @@ class Theme:
                 )
             replacements[name] = replace(current, **override)
         return replace(self, **replacements)
+
+    def on_ground(self, background: str | None, text_color: str | None = None) -> Theme | None:
+        """
+        This theme with its type ladder legible on a caller's ``background`` (#266).
+
+        A ``text_color`` sets the whole ladder. Without one, a background the
+        dark type reads worse on than the ``on_dark`` type takes that ladder.
+        ``None`` means this theme already reads there, so nothing rebinds.
+        """
+        if text_color:
+            ink = dict.fromkeys(_LADDER, text_color)
+        elif background and readable_on(background, self.text.primary, self.text.on_dark) != (
+            self.text.primary
+        ):
+            ink = {
+                "primary": self.text.on_dark,
+                "heading": self.text.on_dark,
+                "secondary": self.text.on_dark_secondary,
+                "light": self.text.on_dark_muted,
+                "fine_print": self.text.on_dark_muted,
+            }
+        else:
+            return None
+        return self.derive(text=ink)
+
+
+#: The light-ground type tokens a section's own ground replaces.
+_LADDER = ("primary", "heading", "secondary", "light", "fine_print")
 
 
 @dataclass(frozen=True)
