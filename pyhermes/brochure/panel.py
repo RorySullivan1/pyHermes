@@ -107,7 +107,8 @@ class Panel(Container):
         if not sections:
             raise ValidationError(f"{self._name()} needs at least one section")
         for section in sections:
-            if isinstance(section, (Panel, Page)):
+            # Anything holding sections is a boundary: a page, a slide (#317), a panel.
+            if isinstance(section, (Panel, Page)) or hasattr(section, "sections"):
                 raise ValidationError(
                     f"{self._name()} may not contain a {type(section).__name__.lower()}: "
                     "a boundary inside a panel has no meaning on a folded sheet"

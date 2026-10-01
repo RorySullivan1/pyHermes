@@ -148,6 +148,16 @@ class TestThePanel:
         with pytest.raises(ValidationError, match="may not contain a page"):
             Panel([Page([FullWidth(TextBlock("<p>x</p>"))])])
 
+    @pytest.mark.parametrize("kind", ["slide", "divider"])
+    def test_it_refuses_a_slide_inside(self, kind):
+        # #317: a slide is a sheet of its own, and inside a panel its anchor
+        # pointed nowhere while its titled sections went unregistered.
+        from pyhermes.deck import DividerSlide, Slide
+
+        slide = Slide([FullWidth(TextBlock("<p>x</p>"))]) if kind == "slide" else DividerSlide("P")
+        with pytest.raises(ValidationError, match="may not contain a (slide|dividerslide)"):
+            Panel([slide])
+
     def test_it_holds_containers_only(self):
         with pytest.raises(ValidationError, match="holds containers"):
             Panel([TextBlock("<p>x</p>")])  # type: ignore[list-item]

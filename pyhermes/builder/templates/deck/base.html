@@ -55,6 +55,9 @@
        band. The clip is silent in the PDF; pyhermes.deck.overflowing_slides()
        is what makes it loud. #}
     .slide-body { overflow: hidden; }
+    {# The title band holds one line. A second is clipped rather than painted
+       over the body, and its sentinel makes the clip loud (#316). #}
+    .slide-title-band { overflow: hidden; }
 
     {# A contents list on a slide prints each entry's sheet, as on paper. The
        number is the print engine's, and it agrees with the footer band's,

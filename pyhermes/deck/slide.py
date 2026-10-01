@@ -39,6 +39,8 @@ class SlideBox:
     margin_top: int | float
     title_height: int | float
     footer_height: int | float
+    #: One title line, in px: the height the title is clipped to (#316).
+    title_line: int = 0
 
     @classmethod
     def of(cls, scheme: SizeScheme) -> SlideBox:
@@ -54,6 +56,7 @@ class SlideBox:
             margin_top=margin.top,
             title_height=margin.top + title_line + scheme.space.section_title_bottom,
             footer_height=max(margin.bottom, footer_line),
+            title_line=title_line,
         )
 
     @property

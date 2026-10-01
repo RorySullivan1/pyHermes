@@ -141,7 +141,10 @@ class TestTheDeck:
         assert html.count('class="sheet slide"') == 3
         for number, title in enumerate(("Alpha", "Beta", "Gamma"), start=1):
             sheet = html.split(f'data-slide="{number}"')[1].split('class="sheet')[0]
-            assert f">{title}</h2>" in sheet
+            assert (
+                f'>{title}<span class="slide-title-end" id="slide-{number}-title-end"></span></h2>'
+                in sheet
+            )
             assert f'<span class="slide-number" style="float:right;">{number}</span>' in sheet
 
     def test_the_title_slide_is_sheet_one(self):
