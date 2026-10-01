@@ -79,6 +79,22 @@ logo = EmailImage.attached(HERE / "logo.png", alt="Acme Research", width=120)
 **Fix:** split the figures into two `CardGroup`s in two sections, or stack them with
 `orientation="vertical"`.
 
+### I get "FullWidth.content must be a Component, got list"
+
+**Likely cause:** a section was given a list of blocks, plain text or another section, where
+it takes one block. The message names the slot: `TwoColumn.left`, `ThreeColumn.center` and
+so on.
+
+**Fix:** for several blocks in one cell, wrap them in `Stack([...])`. To split a cell, use
+`Columns([...])` rather than putting a `TwoColumn` inside a section. Put text in a
+`TextBlock`.
+
+### I get "add_section takes a section, got TextBlock"
+
+**Likely cause:** a block was added to the email directly.
+
+**Fix:** wrap it in a section: `email.add_section(FullWidth(TextBlock("...")))`.
+
 ### I get "DataTable row 0 has 1 cells but there are 2 headers"
 
 **Likely cause:** a row with fewer or more entries than the table has columns. Rows count

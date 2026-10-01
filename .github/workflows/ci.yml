@@ -329,6 +329,8 @@ jobs:
               "email_subject": "Wheel smoke test",
               "firm_name": "CI",
               "campaign_name": "wheel",
+              # The footer leaves a default link out when its URL is unset (#258).
+              "unsubscribe_url": "https://example.com/unsubscribe",
           }
 
           out = (

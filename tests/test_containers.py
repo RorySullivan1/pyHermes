@@ -9,10 +9,11 @@ an undefined name raises even when it is only tested for truthiness.
 
 import pytest
 
-from pyhermes.builder import FullWidth, ThreeColumn, TwoColumn
+from pyhermes.builder import Email, FullWidth, TextBlock, ThreeColumn, TwoColumn
 from pyhermes.builder.containers import Container
 from pyhermes.builder.enums import ThreeColumnRatio, TwoColumnRatio
 from pyhermes.builder.exceptions import EmailBuilderError, ValidationError
+from pyhermes.builder.models import EmailMetadata
 
 RATIOS = ["50-50", "30-70", "70-30"]
 THREE_RATIOS = ["33-33-33", "50-25-25", "25-50-25", "25-25-50"]
@@ -199,3 +200,37 @@ class TestContainerBase:
     def test_base_render_is_abstract(self, engine):
         with pytest.raises(NotImplementedError):
             Container().render(engine)
+
+
+class TestSlotsHoldComponents:
+    """A container refuses a non-Component at construction, naming what to use (#270)."""
+
+    BLOCK = TextBlock("a")
+
+    @pytest.mark.parametrize(
+        ("build", "names"),
+        [
+            (lambda b: FullWidth([b, b]), ("FullWidth.content", "got list", "Stack")),
+            (lambda b: FullWidth("text"), ("FullWidth.content", "got str", "TextBlock")),
+            (lambda b: TwoColumn(left=[b, b]), ("TwoColumn.left", "got list", "Stack")),
+            (
+                lambda b: FullWidth(TwoColumn(left=b)),
+                ("FullWidth.content", "got TwoColumn", "Columns"),
+            ),
+            (
+                lambda b: ThreeColumn(center=FullWidth(b)),
+                ("ThreeColumn.center", "got FullWidth", "Columns"),
+            ),
+        ],
+    )
+    def test_a_wrong_slot_raises_at_construction(self, build, names):
+        with pytest.raises(ValidationError) as caught:
+            build(self.BLOCK)
+        for name in names:
+            assert name in str(caught.value)
+
+    def test_add_section_refuses_a_component(self, valid_metadata):
+        email = Email(EmailMetadata(**valid_metadata))
+        with pytest.raises(ValidationError, match="add_section takes a section, got TextBlock"):
+            email.add_section(self.BLOCK)
+        assert email.render()
