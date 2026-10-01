@@ -8,8 +8,8 @@
 - **Shipped**: #157, #153, #169, #170, #171, #172, #193 (PRs #167–#203); #201, #150, #202 (PRs #204–#206);
   #209 (PR #222); #217 (PR #234); #221 (PR #235); #238 (PR #253); #237, #255, #239 (PRs #254–#257); manual
   + #258 (PR #260); #261 + #258's fix (PR #283); #265 (PR #284); #277 (PR #285); #282 (PR #286); #273 (PR #287); #270
-  (PR #289); #259 (PR #292); #281 (PR #293). **#272 implemented on the branch.** #288 is the human Outlook-desktop check.
-  Stubs #218–#220 are still undefined; each is defined in place with the `epic` skill, as #217 was.
+  (PR #289); #259 (PR #292); #281 (PR #293); #272 (PR #294); #280 (PR #295). #288 is the human Outlook-desktop check.
+  Epics defined, not started: #218 deck + PPTX (#296–#301), #219 DOCX (#302–#307), #220 research apparatus (#308–#312).
 - The prose budget is live; the baseline is 44 and may only shrink.
 
 ## Decisions        (append-only; supersede, never delete)
