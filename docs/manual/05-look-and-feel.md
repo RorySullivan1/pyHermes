@@ -5,6 +5,9 @@ everything takes) and **typeface**. Each is one key in the metadata, and each ca
 ready-made preset or your own. You never set a colour or a font size on a single block.
 That keeps every email in a series consistent.
 
+To move the spacing of one section or block, add a block of your own, or see which limits
+are deliberate, read [Customise the layout](09-customise-the-layout.md).
+
 ```python
 from pyhermes.builder import EmailBuilder, FullWidth, TextBlock
 
