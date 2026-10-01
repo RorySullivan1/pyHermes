@@ -327,3 +327,5 @@ Decisions and Log entries folded out of `INDEX.md` on 2026-08-29 (#143), verbati
   library-only sdist, 3.11-3.14 in CI, `svc` renamed `pyhermes` — sessions/2026-09-29-consumer-package.md
 - [2026-09-30] composition — **#261 implemented** (#262–#264): `Stack`, nested `Columns` sized by a bound
   `cell_width`, ratios as weights, `FourColumn`; `composed_layout` — sessions/2026-09-30-composition.md
+- [2026-10-01] surfaces — **#265 implemented** (#266–#269): readable dark bands, section borders, `Callout`,
+  `Button`, `Divider`; `surfaced_layout` — sessions/2026-10-01-surfaces.md

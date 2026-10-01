@@ -821,6 +821,93 @@ class TestEveryColumnCellFillsItsColumn:
 
 
 # ──────────────────────────────────────────────────────────────────────
+# A stacked column still fills its width on a phone (#282)
+# ──────────────────────────────────────────────────────────────────────
+
+_PHONE = 375
+
+#: Columns as (width, cell width); cells as (column width less padding, block width).
+_STACKED_PROBE = """() => ({
+  columns: Array.from(document.querySelectorAll('table.stack-column')).map(table =>
+    [Math.round(table.getBoundingClientRect().width),
+     Math.round(table.querySelector('td').getBoundingClientRect().width)]),
+  content: Array.from(document.querySelectorAll('table.stack-column td.mobile-pad')).map(cell => {
+    const style = getComputedStyle(cell);
+    const column = cell.closest('table.stack-column').getBoundingClientRect().width;
+    const inner = column - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+    const block = cell.querySelector('table:not([role]), div.body-text');
+    return [Math.round(inner), block ? Math.round(block.getBoundingClientRect().width) : null];
+  }),
+})"""
+
+
+def _split_with_a_table():
+    from pyhermes.builder import DataTable, Email, TextBlock, TwoColumn
+    from pyhermes.builder.models import TableRow
+
+    email = Email({"email_subject": "S", "firm_name": "F", "campaign_name": "C"})
+    email.add_section(
+        TwoColumn(
+            "30-70",
+            TextBlock("<p>Left</p>"),
+            DataTable(["Factor", "1M", "YTD"], [TableRow(["Value", "+1.8%", "+7.4%"])]),
+        )
+    )
+    return email
+
+
+@pytest.fixture(scope="module")
+def stacked():
+    """The gallery and the issue's own split, measured at the phone floor."""
+    if not available():
+        pytest.skip('no browser; screenshots are the optional "[qa]" extra')
+
+    emails = {"issue_282": _split_with_a_table, **all_fixtures()}
+    measured = {}
+    with _load_playwright()() as playwright:
+        browser = _launch(playwright)
+        for name, build in emails.items():
+            page = browser.new_page(viewport={"width": _PHONE, "height": 900})
+            page.route("**/*", lambda route: route.abort())
+            page.set_content(build().render())
+            measured[name] = page.evaluate(_STACKED_PROBE)
+            page.close()
+        browser.close()
+    return measured
+
+
+@requires_browser
+class TestAStackedColumnFillsItsWidth:
+    """
+    #282: #129's shrink-wrap, back at the breakpoint. ``display:block`` on the
+    stacked column gave its cells an anonymous table that shrink-wrapped, so a
+    table in a split was about 160px wide on a 375px screen. ``display:table``
+    keeps it a table box, as ``inline-table`` does on desktop.
+    """
+
+    def test_no_stacked_cell_is_narrower_than_its_column(self, stacked):
+        offenders = {
+            name: [(column, cell) for column, cell in found["columns"] if cell < column - 2]
+            for name, found in stacked.items()
+        }
+        offenders = {name: rows for name, rows in offenders.items() if rows}
+        assert not offenders, (
+            f"stacked column cells shrink-wrapped on a phone: {offenders}. "
+            "Check base.html's @media rule still says .stack-column display:table — see #282."
+        )
+
+    def test_a_table_and_a_paragraph_reach_the_edge_of_their_column(self, stacked):
+        content = stacked["issue_282"]["content"]
+        assert len(content) == 2, content
+        for inner, block in content:
+            assert block is not None and abs(inner - block) <= 2, (inner, block)
+
+    def test_the_probe_is_matching(self, stacked):
+        """Guards the guard: an email with no splits passes the first test vacuously."""
+        assert sum(len(found["columns"]) for found in stacked.values()) >= 40
+
+
+# ──────────────────────────────────────────────────────────────────────
 # The supported viewport range (#133)
 # ──────────────────────────────────────────────────────────────────────
 
