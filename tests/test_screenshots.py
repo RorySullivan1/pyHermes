@@ -639,7 +639,8 @@ _INHERITANCE_PROBE = """() => {
     const nodes = leaves.length ? Array.from(leaves) : [wrapper];
     nodes.forEach(el => {
       const text = el.textContent.replace(/\\s+/g, ' ').trim();
-      if (!text || el.children.length) return;
+      // A prose heading takes the heading face by decision (#280).
+      if (!text || el.children.length || el.closest('h3, h4')) return;
       out.push([text.slice(0, 40), wanted, getComputedStyle(el).fontFamily]);
     });
     if (!wrapper.textContent.trim()) out.push(['(EMPTY WRAPPER)', wanted, wanted]);
@@ -738,6 +739,7 @@ class TestBodyCopyKeepsItsOwnStyling:
                     const leaves = wrapper.querySelectorAll('*');
                     (leaves.length ? Array.from(leaves) : [wrapper]).forEach(el => {
                         if (!el.textContent.trim() || el.children.length) return;
+                        if (el.closest('h3, h4')) return;
                         out.push(getComputedStyle(el).fontFamily);
                     });
                 });
