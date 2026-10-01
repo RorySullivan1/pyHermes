@@ -67,7 +67,9 @@ email = (
 
 **Steps:**
 1. Write the text as HTML: `<p>` for paragraphs, `<b>` and `<i>` for emphasis,
-   `<a href="...">` for links, `<ul>`/`<li>` for bullets.
+   `<a href="...">` for links, `<ul>`/`<li>` for bullets, `<h3>` for a subheading.
+   pyHermes styles these from the theme
+   ([Customise the layout](09-customise-the-layout.md#what-raw-html-in-a-textblock-can-do)).
 2. Put it in a `TextBlock`, and the block in a section.
 
 ```python

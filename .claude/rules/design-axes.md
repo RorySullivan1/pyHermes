@@ -725,6 +725,9 @@ frame's horizontal padding is what makes the content 616 wide::
     list_ordinal_gap      12    between ordinal and item body
     list_title_gap         6    below a list item's title
     list_body_line       1.68   list item prose
+    prose_gap             10    below a heading, list or quotation in prose (#280)
+    prose_indent          24    a prose list's margin, a quotation's inset
+    prose_item_gap         4    between prose list items
     author_name_gap        4    below the author's name
     author_sep_gap         4    around the middot between title and email
     author_rule_gap       14    above the byline, both halves of the rule
@@ -1010,3 +1013,34 @@ shape: a bordered cell with zero type, one pixel tall, rather than an `hr`.
 
 `surfaced_layout` is the gallery fixture for all of it, and `tests/test_surfaces.py` holds the
 claims. In stacked columns on a phone a callout fills its column, since #282.
+
+
+## The HTML inside a prose field takes the theme (#280)
+
+`TextBlock.content`, `Card.body` and `NumberedItem.body` are raw HTML, and only their wrapper
+`div` was styled. An author's `h3` got Word's heading style in Outlook and the browser's in
+Gmail, a list's indent was each client's own, and a link was the client's blue.
+
+- **A closed set of eight tags is styled**: `h3`, `h4`, `ul`, `ol`, `li`, `blockquote`, `a`
+  and `hr`, #108's closed-tag idea applied to the markup. The `prose` filter in
+  `pyhermes/builder/prose.py` adds a `style` to each such tag that has none, and an author's
+  own `style` always wins. Prose with none of the tags is returned unchanged, which is why only
+  the goldens carrying one moved.
+- **The declarations live in a template**, `text/prose-styles.html`, one line per tag. So the
+  colour, size and face scans cover them like any other template, and a caller's
+  `template_overlay=` can restyle a tag. An overlay that drops a tag raises `TemplateError`.
+  The filter takes the Jinja context, so it reads whatever theme, size and font are bound,
+  including a section's ground: there a link takes the ground's type colour, because the
+  accent is chosen for the theme's surface.
+- **Three component tokens, not reused ones**: `prose_gap`, `prose_indent`, `prose_item_gap`.
+  `TextBlock`, `CardGroup` and `NumberedList` declare them (`PROSE_TOKENS`), and the spacing
+  sentinel test's instances carry every tag so it can see them read.
+- **A list is indented by `margin-left` with `padding: 0`**, because Outlook's Word engine does not
+  reliably honour a list's padding. Spacing is a bottom margin only; a heading's space above comes from the paragraph
+  before it.
+- **`h1` and `h2` are refused at construction, not demoted.** The section title owns those
+  levels, a silent rewrite would hide that from the author, and refusing now leaves accepting
+  later additive. The message names `h3`.
+- **Not styled, deliberately**: `p`, `span` and `table`; a class does not exempt a tag. A raw `table`
+  inside prose still meets the `table-role` lint rule; a layout inside prose is a `Columns` or
+  a `Stack`.

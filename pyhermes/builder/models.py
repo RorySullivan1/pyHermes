@@ -16,6 +16,7 @@ from . import formats
 from .apparatus import check_markers
 from .enums import ColumnAlign, ColumnKind, RowKind, SizeTheme, Tone
 from .exceptions import ValidationError
+from .prose import refuse_top_headings
 
 if TYPE_CHECKING:  # pragma: no cover - import cycle: images/regions import from here
     from .images import EmailImage
@@ -565,6 +566,7 @@ class Card:
             raise ValidationError(
                 "'card' requires a 'value' or a 'body'; a label alone says nothing."
             )
+        refuse_top_headings(self.body, "card.body")
 
     @classmethod
     def from_number(
@@ -1073,6 +1075,7 @@ class NumberedItem:
     def validate(self) -> None:
         _require(self.title, "numbered_item.title")
         _require(self.body, "numbered_item.body")
+        refuse_top_headings(self.body, "numbered_item.body")
         self.notes = list[Footnote | str](
             coerce_notes(self.notes, [self.body], f"NumberedItem {self.title!r}")
         )

@@ -85,6 +85,10 @@ MARK = f"{SENTINEL}px"
 TEMPLATES = Path(__file__).resolve().parent.parent / "pyhermes" / "builder" / "templates"
 
 
+#: Every tag a prose field is styled on, so each prose token is read (#280).
+PROSE = "<h3>H</h3><ul><li>a</li><li>b</li></ul><blockquote>q</blockquote><hr>"
+
+
 def _panels(count: int = 6) -> list[Panel]:
     return [
         Panel([FullWidth(content=TextBlock(f"<p>Face {n}.</p>"))], title=f"Face {n}")
@@ -468,7 +472,7 @@ INSTANCES: dict[type, list[Any]] = {
     CardGroup: [
         lambda s: CardGroup([KpiItem("A", "1"), KpiItem("B", "2")], subtitle="S", spacing=s),
         lambda s: CardGroup(
-            [Card("A", "1", body="<p>b</p>"), Card("B", "2", body="<p>c</p>")],
+            [Card("A", "1", body=PROSE), Card("B", "2", body="<p>c</p>")],
             orientation=CardOrientation.VERTICAL,
             subtitle="S",
             spacing=s,
@@ -499,7 +503,7 @@ INSTANCES: dict[type, list[Any]] = {
             solid_png(40, 12, (0, 0, 0)), latex="x^2", caption="Cap", disclosure="Fine.", spacing=s
         )
     ],
-    TextBlock: [lambda s: TextBlock("<p>a</p><p>b</p>", subtitle="S", spacing=s)],
+    TextBlock: [lambda s: TextBlock("<p>a</p>" + PROSE, subtitle="S", spacing=s)],
     PullQuote: [lambda s: PullQuote("Quoted.", attribution="Someone", spacing=s)],
     ContactBlock: [
         lambda s: ContactBlock(
@@ -508,7 +512,7 @@ INSTANCES: dict[type, list[Any]] = {
     ],
     NumberedList: [
         lambda s: NumberedList(
-            [NumberedItem("1", "One", "<p>a</p>"), NumberedItem("2", "Two", "<p>b</p>")],
+            [NumberedItem("1", "One", PROSE), NumberedItem("2", "Two", "<p>b</p>")],
             subtitle="S",
             spacing=s,
         )

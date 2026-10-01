@@ -1,0 +1,20 @@
+{#
+  PROSE STYLES — the theme's style for each tag a raw-HTML prose field may
+  carry (#280): `TextBlock.content`, `Card.body`, `NumberedItem.body`.
+
+  One line per tag, `tag: declarations`. The `prose` filter reads them and
+  adds each to a tag the author left without a `style`; an author's own
+  `style` always wins. An overlay may restyle a tag here but not drop one.
+
+  On a section's own ground a link takes the ground's type colour: the
+  accent is chosen to read on the theme's surface, not on a caller's band.
+#}
+{%- set link = theme.text.primary if (surface_theme is defined and surface_theme) else theme.palette.accent %}
+h3: margin: 0 0 {{ size.component.prose_gap }}px 0; font-family: {{ font.heading }}; font-size: {{ size.type.subheading }}px; font-weight: bold; line-height: {{ size.type.heading_line | percent }}; color: {{ theme.text.heading }};
+h4: margin: 0 0 {{ size.component.prose_gap }}px 0; font-family: {{ font.heading }}; font-size: {{ size.type.body }}px; font-weight: bold; line-height: {{ size.type.heading_line | percent }}; color: {{ theme.text.heading }};
+ul: margin: 0 0 {{ size.component.prose_gap }}px {{ size.component.prose_indent }}px; padding: 0;
+ol: margin: 0 0 {{ size.component.prose_gap }}px {{ size.component.prose_indent }}px; padding: 0;
+li: margin: 0 0 {{ size.component.prose_item_gap }}px 0;
+blockquote: margin: 0 0 {{ size.component.prose_gap }}px 0; padding: 0 0 0 {{ size.component.prose_indent }}px; border-left: 3px solid {{ theme.palette.accent }}; font-style: italic; color: {{ theme.text.secondary }};
+a: color: {{ link }}; text-decoration: underline;
+hr: margin: {{ size.component.prose_gap }}px 0; border: 0; border-top: 1px solid {{ theme.palette.rule }}; height: 0;

@@ -347,3 +347,8 @@ Decisions and Log entries folded out of `INDEX.md` on 2026-08-29 (#143), verbati
   min-content, so a 600px chart in a half column widened the frame and added a sheet — `media.md` (#201)
 - [2026-09-24] **A page opening the body drops its leading break.** The seed leaves ahead of the body
   table made it open a blank sheet. `add_page` is paged-only shorthand; the `Page` node stays — `media.md`
+
+- [2026-10-01] data-to-email — **#273 implemented** (#274–#276): `Card.from_number`, `chart_style`, the
+  oversize-picture `SizeWarning` — sessions/2026-10-01-data-to-email.md
+- [2026-10-01] size-by-section — **#259 implemented**: per-section size report, check and preview report
+  over 102 KB — sessions/2026-10-01-size-by-section.md

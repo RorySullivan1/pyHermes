@@ -783,10 +783,10 @@ class TestCallerWrappedContentIsStyledToo:
         """
         surfaces = {
             # Both emitted through the footnote macro since #182, raw all the same.
-            "text/text-block.html": "{{ marked(text_parts, true) }}",
-            "text/numbered-list.html": "{{ marked(item.body_parts, true) }}",
+            "text/text-block.html": "{{ marked(text_parts, true) | prose }}",
+            "text/numbered-list.html": "{{ marked(item.body_parts, true) | prose }}",
             "regions/header-bar.html": "{{header_disclaimer}}",
-            "analysis/card-group.html": "{{ card.body }}",
+            "analysis/card-group.html": "{{ card.body | prose }}",
             "regions/footer.html": "{{ disclaimer }}",
         }
         for name, expression in surfaces.items():

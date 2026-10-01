@@ -346,6 +346,25 @@ def build(
                 ),
             )
         )
+        # Every tag a prose field is styled on (#280), one left as the author styled it.
+        .section(
+            FullWidth(
+                title="Desk Detail",
+                content=TextBlock(
+                    "<h3>What changed this week</h3>"
+                    "<p>Three moves, set out in the "
+                    '<a href="https://example.com/rates">rates note</a>:</p>'
+                    "<ul><li>The front end repriced two cuts out.</li>"
+                    "<li>Breakevens widened on the energy print.</li></ul>"
+                    "<h4>What we would do</h4>"
+                    "<ol><li>Hold the steepener.</li><li>Add linkers on weakness.</li></ol>"
+                    "<blockquote>The curve is pricing a pause, not a pivot.</blockquote>"
+                    "<hr>"
+                    '<p>Levels as of the <a href="https://example.com/close" '
+                    'style="color: inherit;">London close</a>.</p>'
+                ),
+            )
+        )
         # FlowedColumns (#189): one passage through columns on paper, and in an
         # email exactly the FullWidth it degrades to.
         .section(

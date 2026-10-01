@@ -27,7 +27,7 @@
       <p style="font-family: {{ font.label }}; font-size: {{ size.type.micro }}px; color: {{ theme.text.light }}; margin: 0; line-height: {{ size.type.secondary_line | percent }};">{{ card.sublabel | escape_html }}</p>
 {% endif %}
 {% if card.body %}
-      <div style="font-family: {{ font.label }}; font-size: {{ size.type.secondary }}px; color: {{ theme.text.primary }}; line-height: {{ size.component.card_body_line | percent }}; margin: {{ size.space.caption_gap }}px 0 0 0;">{{ card.body }}</div>
+      <div style="font-family: {{ font.label }}; font-size: {{ size.type.secondary }}px; color: {{ theme.text.primary }}; line-height: {{ size.component.card_body_line | percent }}; margin: {{ size.space.caption_gap }}px 0 0 0;">{{ card.body | prose }}</div>
 {% endif %}
     </td>
   </tr>
@@ -43,7 +43,7 @@
       <p style="font-family: {{ font.body }}; font-size: {{ size.component.kpi_value }}px; font-weight: bold; color: {{ card.color | default_color(theme.semantic[card.tone or 'neutral']) }}; margin: 0 0 {{ size.component.card_value_gap }}px 0; line-height: {{ size.type.title_line | percent }};">{{ card.value | escape_html }}</p>
       <p style="font-family: {{ font.label }}; font-size: {{ size.type.micro }}px; color: {{ theme.text.light }}; margin: 0; line-height: {{ size.type.secondary_line | percent }};">{{ card.sublabel | escape_html }}</p>
 {% if card.body %}
-      <div style="font-family: {{ font.label }}; font-size: {{ size.type.secondary }}px; color: {{ theme.text.primary }}; line-height: {{ size.component.card_body_line | percent }}; margin: {{ size.space.caption_gap }}px 0 0 0;">{{ card.body }}</div>
+      <div style="font-family: {{ font.label }}; font-size: {{ size.type.secondary }}px; color: {{ theme.text.primary }}; line-height: {{ size.component.card_body_line | percent }}; margin: {{ size.space.caption_gap }}px 0 0 0;">{{ card.body | prose }}</div>
 {% endif %}
     </td>
 {% endfor %}
