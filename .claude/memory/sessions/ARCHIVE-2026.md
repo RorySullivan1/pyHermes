@@ -319,3 +319,7 @@ Decisions and Log entries folded out of `INDEX.md` on 2026-08-29 (#143), verbati
   `\le` unknown; two stub claims corrected (purity, theme recolour) — sessions/2026-09-24-1312-define-epic-221.md
 - [2026-09-24] table-semantics — **#217 implemented** (#223–#228): groups, cell markers, `Column.format`,
   decimal alignment and units, `HeatScale` and bars; `letter_quant_table` — sessions/2026-09-24-table-semantics.md
+- [2026-09-24] equations — **#221 implemented** (#229–#233): `MathBlock`, `pyhermes/math` + `[math]`, `math_block`,
+  lines shim, `a4_equations`, the factsheet's Sharpe ratio — sessions/2026-09-24-equations.md
+- [2026-09-28] host-seams — **#238 implemented** (#246, #249, #247): warnings not prints, a context-local
+  `Config` with `config=`, `template_overlay=` — sessions/2026-09-28-host-seams.md

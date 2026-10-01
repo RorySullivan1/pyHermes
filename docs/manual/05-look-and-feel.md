@@ -138,3 +138,82 @@ email = (
 ```
 
 `highlight=True` uses the theme's tint. `background_color` sets an exact colour.
+
+## How to put a section on a dark band
+
+```python
+dark = FullWidth(
+    TextBlock("<p>Rates rallied into the close.</p>"),
+    title="The day in one line",
+    background_color="#1B2A38",
+)
+email = EmailBuilder().metadata(facts).section(dark).build()
+```
+
+On a dark `background_color` the title and the text turn light by themselves. To choose the
+text colour yourself, add `text_color="#F2E6C9"`; it applies to the title and to every
+paragraph, list and caption in the section.
+
+Tables, figures rows and contact cards keep their dark text and are set on a white panel
+inside the band, so their figures stay readable.
+
+## How to put a frame around a section
+
+```python
+framed = FullWidth(TextBlock("<p>Positioning is stretched.</p>"), title="Risks", border=True)
+accent = FullWidth(
+    TextBlock("<p>Duration over credit.</p>"),
+    title="Our view",
+    border=True,
+    border_color="#5B8A9A",
+)
+email = EmailBuilder().metadata(facts).section(framed).section(accent).build()
+```
+
+`border=True` draws a 1px frame in the theme's rule colour, and `border_color` changes it.
+It works on `FullWidth` and every split, and with `highlight` or `background_color`.
+`border_color` without `border=True` is refused. The frame is always 1px and square,
+because Outlook ignores rounded corners.
+
+## How to box one passage
+
+```python
+from pyhermes.builder import Callout, Stack
+
+box = Stack(
+    [
+        TextBlock("<p>Breadth narrowed through the week.</p>"),
+        Callout(
+            TextBlock("<p>Stay long the belly; fade the long end.</p>"),
+            tone="positive",
+            label="Key takeaway",
+        ),
+    ]
+)
+email = EmailBuilder().metadata(facts).section(FullWidth(box, title="Rates")).build()
+```
+
+A `Callout` boxes one block, which can be a `Stack` of several. Without a `tone` it uses the
+theme's highlight tint and rule. With `tone="positive"`, `"negative"` or `"neutral"` it takes
+a light tint and a frame in that colour from the theme. `border=False` drops the frame. Its
+padding is the `callout_pad_y` and `callout_pad_x` spacing tokens.
+
+## How to add a button or a dividing line
+
+```python
+from pyhermes.builder import Button, Divider
+
+closing = Stack(
+    [
+        TextBlock("<p>The full note has the charts.</p>"),
+        Divider(),
+        Button("Read the full note", "https://example.com/note", align="center"),
+    ]
+)
+email = EmailBuilder().metadata(facts).section(FullWidth(closing)).build()
+```
+
+`Button` is the same Outlook-safe button `ContactBlock` uses, in the theme's accent. `Divider`
+is a thin rule in the theme's rule colour, with `block_gap` space above and below. Both go
+anywhere a block goes, including a column. In the plain-text part, a button prints as
+`label: url` and a divider as a line of dashes.
