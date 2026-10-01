@@ -455,6 +455,10 @@ reproduces today's output — so an existing email renders unchanged unless it o
   Defaults reproduce what `base.html` used to hardcode, so a newsletter in another language no
   longer needs a template fork. The contact call-to-action is no longer part of the footer —
   use `FullWidth(content=ContactBlock(heading=…, cta_url=…))` as a body section instead.
+  The card sat inside the body's table while the legal copy sat below it, so #55's footer
+  needed two slots in two parent tables and could not draw one box around itself. With the
+  card in the body, the footer is a single table, which is what makes `border` possible.
+  The border is off by default so an existing email does not gain one.
 - **Colour is a parameter — but the whole `Theme` is the atom.** A caller picks a preset or
   builds a theme; they never set a colour at a call site. The masthead has a second atom,
   `Banner.palette` (a `BannerPalette`), for the one surface a caller supplies — same shape,
