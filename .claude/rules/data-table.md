@@ -34,9 +34,22 @@ every existing call site a rewrite.
   render correctly today and quietly make `Column` unreachable, which is the failure mode a
   golden cannot see.
 
-**Column widths are deliberately not here.** They interact with the 680px frame arithmetic
-`sizing.py` owns and with the mobile collapse, so they are a separate decision with their own
-client-testing burden rather than a field to slip in.
+**Superseded (#271): "Column widths are deliberately not here."** They were held back because
+they interact with the frame arithmetic `sizing.py` owns and with the mobile collapse. #271
+admitted them as a **relative weight**, which touches neither: `Column(width=3)` is a share of
+whatever width the table has, so no px enters the API and the frame stays `sizing.py`'s.
+
+- **An unset column weighs 1**, and a table with no weight set emits nothing, so every golden
+  but the one fixture that sets a weight stayed byte-identical.
+- **The shares are whole percents, rounded by largest remainder**, so they sum to exactly 100.
+- **Each share is written twice on the heading cell**, as the `width` attribute and as CSS. The
+  Word engine honours the attribute and ignores the CSS. WeasyPrint does the reverse, because
+  it reads presentational attributes only with `presentational_hints`, which the exporter does
+  not set. The PDF test failed with the attribute alone.
+- **The layout stays automatic.** A cell whose content cannot fit its share still widens it:
+  a share is a preference, not `table-layout: fixed`, which the issue ruled out.
+- `tests/test_table_widths.py` measures the shares in Chromium at 1000px and on a rastered
+  sheet, each against an unweighted table that comes out differently.
 
 ### The data table's cells
 

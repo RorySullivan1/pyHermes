@@ -657,6 +657,23 @@ class DataTable(Exhibit, Component):
                 alt[id(row)] = False
         return alt
 
+    def _widths(self) -> list[str]:
+        """
+        Each column's share as a percentage attribute, or all empty when no weight is set.
+
+        The shares are rounded to whole percents by largest remainder, so they sum
+        to exactly 100.
+        """
+        if all(column.width is None for column in self.columns):
+            return [""] * len(self.columns)
+        weights = [1 if column.width is None else column.width for column in self.columns]
+        exact = [100 * weight / sum(weights) for weight in weights]
+        shares = [int(share) for share in exact]
+        by_remainder = sorted(range(len(exact)), key=lambda i: shares[i] - exact[i])
+        for index in by_remainder[: 100 - sum(shares)]:
+            shares[index] += 1
+        return [f"{share}%" for share in shares]
+
     def context(self) -> dict[str, Any]:
         columns = self.resolved_columns()
         alt_by_row = self._striping()
@@ -669,8 +686,9 @@ class DataTable(Exhibit, Component):
                     "parts": split_markers(c.header, self.notes),
                     "align": c.align,
                     "kind": c.kind,
+                    "width": width,
                 }
-                for c in columns
+                for c, width in zip(columns, self._widths(), strict=True)
             ],
             "groups": [{"label": g.label, "span": g.span} for g in self.groups],
             "units": self._units(),

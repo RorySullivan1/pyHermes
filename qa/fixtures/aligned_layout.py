@@ -119,7 +119,7 @@ def build(template_dir: Path | None = None) -> Email:
                 title="Right-Aligned, Holding A Table",
                 align="right",
                 content=DataTable(
-                    headers=[Column("Factor", kind="text"), "1M", "YTD"],
+                    headers=[Column("Factor", kind="text", width=2), "1M", "YTD"],
                     rows=[
                         TableRow(["Value", "+1.8%", "+7.4%"]),
                         TableRow(["Momentum", "-0.4%", "+11.2%"]),
