@@ -2,6 +2,7 @@
 paths:
   - "qa/**/*"
   - "tests/**/*"
+  - "pyhermes/check/**/*"
 ---
 
 # The QA harness — gallery, goldens, screenshots, lint, preview
@@ -209,7 +210,17 @@ inherited by accident.
   `PYHERMES_CHROMIUM` points the runner at a browser the environment supplies instead of one
   Playwright manages (read at use time, never at import).
 
-## Lint pass — `qa/lint.py`
+## Lint pass — `pyhermes/check/lint.py`, re-exported as `qa.lint`
+
+**It ships in the package since #278.** #57 kept `qa/` out of the wheel as test data, and
+that holds for the gallery, the goldens and the screenshots. The rules are product behaviour
+an installed copy needs, so they moved to `pyhermes/check/`, stdlib only.
+`python -m pyhermes.check path.py:callable` builds a draft, writes its two parts and prints
+the findings with `qa.preview`'s exit codes; `qa.preview` loads drafts through the same
+`load_target`, so there is one path. `qa.lint` re-exports the module by its `__all__`, and a
+test holds that each name is the same object. The wheel job runs the command from each
+installed artefact. The command prints, so `test_warnings` exempts a `__main__.py` by name,
+and a second test holds that no library module reaches one.
 
 The portability rules the repo *documented* but only enforced where someone remembered a
 test (#60). `lint_html(html)` returns `Finding(rule_id, severity, location, message)`;

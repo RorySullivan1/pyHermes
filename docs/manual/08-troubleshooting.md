@@ -190,7 +190,7 @@ lot of web styling. pyHermes's own layout is built for it. Styling you add yours
 a `TextBlock`, such as `style="display:flex"`, may not survive.
 
 **Fix:**
-1. Run `python -m qa.preview … --lint`. It lists anything Outlook will ignore or break.
+1. Run `python -m pyhermes.check …`. It lists anything Outlook will ignore or break.
 2. Keep your `TextBlock` HTML to plain tags: `<p>`, `<b>`, `<i>`, `<a>`, `<ul>`, `<li>`,
    `<br>`. Change colours and spacing through the theme ([Look and feel](05-look-and-feel.md)).
 3. Send yourself a test and open it in Outlook.
@@ -223,15 +223,26 @@ links ([Build an email](02-build-an-email.md#how-to-set-the-footer)).
 Outlook for Windows.
 
 **Fix:** add `message["X-Unsent"] = "1"` before `save_eml`
-([Check and send](06-check-and-send.md#how-to-open-your-email-as-an-outlook-draft)). In
-other mail programs, send through Microsoft 365 or Gmail instead.
+([Check and send](06-check-and-send.md#how-to-open-your-email-as-an-outlook-draft)). With
+classic Outlook on Windows, skip the file and
+[create the draft directly](06-check-and-send.md#how-to-put-the-email-straight-into-your-outlook-drafts).
+In other mail programs, send through Microsoft 365 or Gmail instead.
 
 ### I get "No module named qa"
 
 **Likely cause:** the `preview` command was run from outside the `pyHermes` folder.
 
-**Fix:** `cd` into the `pyHermes` folder first, and give the full path to your script:
-`python -m qa.preview C:\work\weekly.py:build --lint`.
+**Fix:** to check an email, use `python -m pyhermes.check C:\work\weekly.py:build`, which
+works from any folder. Only the screenshots need the `pyHermes` folder and
+`python -m qa.preview`.
+
+### "create_draft" says it needs Windows and classic Outlook
+
+**Likely cause:** you are on a Mac or Linux, you use the new Outlook, or the
+`[outlook-desktop]` extra is not installed.
+
+**Fix:** install the extra with `pip install -e ".[outlook-desktop]"` on Windows with
+classic Outlook. Otherwise save the message with `save_eml` or send it through Microsoft 365.
 
 ### I get "Rendering a PDF needs WeasyPrint" or "could not load a system library"
 

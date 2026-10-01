@@ -3,7 +3,6 @@
   "qa/fixtures/kitchen_sink.py::comment_run:build#b121ddaf": "5 lines against a budget of 4 — a trap or a spec citation, at the length the notice needs",
   "qa/fixtures/kitchen_sink.py::comment_run:build#c3a7a1dc": "6 lines against a budget of 4 — a trap or a spec citation, at the length the notice needs",
   "qa/fixtures/kitchen_sink.py::comment_run:build#ccfc1d92": "8 lines against a budget of 4 — a trap or a spec citation, at the length the notice needs",
-  "qa/lint.py::comment_run:module#7b104410": "7 lines against a budget of 4 — a trap or a spec citation, at the length the notice needs",
   "pyhermes/builder/components.py::class:CopyAlignment": "35 lines against a budget of 28 — a design decision, at the length the decision needs; the standard permits a verbose class",
   "pyhermes/builder/components.py::class:DataTable": "35 lines against a budget of 28 — a design decision, at the length the decision needs; the standard permits a verbose class",
   "pyhermes/builder/components.py::comment_run:DataTable.context#472648ad": "6 lines against a budget of 4 — a trap or a spec citation, at the length the notice needs",

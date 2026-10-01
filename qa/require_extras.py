@@ -14,7 +14,7 @@ from collections.abc import Generator
 import pytest
 
 #: A skip reason naming one of the package's extras: ``"[pdf]"``, ``pyhermes[data]``.
-EXTRA_SKIP = re.compile(r"\[(qa|pdf|data|charts|math)\]")
+EXTRA_SKIP = re.compile(r"\[(qa|pdf|data|charts|math|outlook-desktop)\]")
 
 #: Set to any non-empty value to turn such a skip into a failure.
 ENV = "PYHERMES_REQUIRE_EXTRAS"

@@ -104,6 +104,12 @@ math = [
     "matplotlib~=3.11",
 ]
 
+# Classic Outlook's drafts on Windows, through COM (pyhermes/outlook/desktop.py, #279).
+# The marker keeps it a no-op elsewhere, so `all-extras` still installs on Linux.
+outlook-desktop = [
+    "pywin32>=306; sys_platform == 'win32'",
+]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

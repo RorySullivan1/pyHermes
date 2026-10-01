@@ -94,15 +94,16 @@ copyright line. To add **Unsubscribe** and **View in browser** links, give their
 
 ## Check it before you send it
 
-From the `pyHermes` folder, run the preview command against your file:
+From any folder, run the check against your file:
 
 ```bash
-python -m qa.preview path/to/weekly.py:build --lint --open
+python -m pyhermes.check path/to/weekly.py:build
 ```
 
-It saves the email into `output/`, checks it against the rules Outlook and Gmail enforce,
-and opens it. `No findings.` means it is safe to send. The part after the colon is the
-name of the function in your file that returns the email.
+It saves the email into `output/` and checks it against the rules Outlook and Gmail
+enforce. `No findings.` means it is safe to send. The part after the colon is the name of
+the function in your file that returns the email. Open `output/weekly-build.html` in a
+browser to look at it.
 
 > **Tip:** `output/weekly-build.txt` is the plain-text version of your email, which
 > pyHermes writes for you. It is what a reader sees if their mail program shows text only.

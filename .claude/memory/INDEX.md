@@ -7,9 +7,9 @@
   `.claude/rules/media.md`; do not restate it here.
 - **Shipped**: #157, #153, #169, #170, #171, #172, #193 (PRs #167–#203); #201, #150, #202 (PRs #204–#206);
   #209 (PR #222); #217 (PR #234); #221 (PR #235); #238 (PR #253); #237, #255, #239 (PRs #254–#257); manual
-  + #258 (PR #260); #261 + #258's fix (PR #283). **#265 implemented on the branch.**
+  + #258 (PR #260); #261 + #258's fix (PR #283); #265 (PR #284). **#277 implemented on the branch.**
   Stubs #218–#220 are still undefined; each is defined in place with the `epic` skill, as #217 was.
-- The prose budget is live; the baseline is 45 and may only shrink.
+- The prose budget is live; the baseline is 44 and may only shrink.
 
 ## Decisions        (append-only; supersede, never delete)
 - Older entries, and epic #157's, are in sessions/ARCHIVE-2026.md.
@@ -71,12 +71,12 @@
   composite delegates images and reports no notes of its own — `builder-architecture.md` (#261)
 - [2026-10-01] **A section's ground rebinds the theme for its subtree; a block that paints its own surface
   resets it and, on a ground, sits on the theme's surface** — `design-axes.md` (#265)
+- [2026-10-01] **The lint rules are product behaviour and ship as `pyhermes.check`; the gallery stays test
+  data. Desktop Outlook is drafts only, never send** — `qa-harness.md`, `delivery.md` (#277)
 
 ## Log              (append-only pointers)
 - Older entries, and epic #157's, are in sessions/ARCHIVE-2026.md.
-- [2026-09-29] consumer-package — **#237 implemented** (#243-#245, #248): `py.typed`, MIT metadata and a
-  library-only sdist, 3.11-3.14 in CI, `svc` renamed `pyhermes` — sessions/2026-09-29-consumer-package.md
-- [2026-09-30] composition — **#261 implemented** (#262–#264): `Stack`, nested `Columns` sized by a bound
-  `cell_width`, ratios as weights, `FourColumn`; `composed_layout` — sessions/2026-09-30-composition.md
 - [2026-10-01] surfaces — **#265 implemented** (#266–#269): readable dark bands, section borders, `Callout`,
   `Button`, `Divider`; `surfaced_layout` — sessions/2026-10-01-surfaces.md
+- [2026-10-01] toolchain — **#277 implemented** (#278–#279): `python -m pyhermes.check`, `qa.lint` a
+  re-export; `create_draft` into classic Outlook — sessions/2026-10-01-toolchain.md

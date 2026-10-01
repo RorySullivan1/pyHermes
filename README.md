@@ -305,6 +305,15 @@ session.headers["Authorization"] = f"Bearer {token}"
 send_message(message, transport=GraphApiTransport(session))   # returns None; Graph gives no id
 ```
 
+With classic Outlook on Windows and no Graph token, the `[outlook-desktop]` extra puts the
+message into your drafts instead, with its pictures, and never sends it:
+
+```python
+from pyhermes.outlook.desktop import create_draft
+
+create_draft(message)          # saved in Drafts and opened for you to review and send
+```
+
 **The adapters take an authorized transport, never credentials.** Each defines a one-method
 `Protocol` the caller satisfies. Token acquisition, refresh and revocation stay with the
 caller, where an application's secret handling already lives. Three consequences follow, all
@@ -992,12 +1001,17 @@ own Chromium instead of one Playwright manages, point `PYHERMES_CHROMIUM` at the
 ### The lint pass
 
 Portability checks over rendered HTML — the rules that decide whether an email survives
-Outlook, enforced rather than merely documented:
+Outlook, enforced rather than merely documented. They ship in the package, so an installed
+copy can run them on a draft from any folder:
+
+```bash
+python -m pyhermes.check drafts/weekly.py:build   # writes output/, prints findings, exits 0/1/2
+```
 
 ```python
-from qa.lint import lint_email, format_findings
+from pyhermes.check import check, format_findings
 
-print(format_findings(lint_email(email)))
+print(format_findings(check(email)))
 ```
 
 `img-width-attr` and `img-alt` (Outlook's Word engine ignores CSS `max-width`, and blocked
@@ -1055,10 +1069,11 @@ pyhermes/
 ├── brochure/     the folded medium: Brochure, Panel, the folds, imposition, print checks
 ├── delivery/     transport-neutral MIME assembly + shared retry policy
 ├── gmail/        Gmail send adapter
-├── outlook/      Outlook send adapter over Microsoft Graph
+├── outlook/      Outlook send adapter over Microsoft Graph, and drafts in classic Outlook
+├── check/        the portability check and `python -m pyhermes.check`
 ├── pdf/          the PDF exporter, on the adapters' contract — no network; profiles, attachments
 └── data/         DataFrame -> table and Figure -> chart, each an optional extra
-qa/               the fixture galleries, goldens, screenshots, lint, preview CLI
+qa/               the fixture galleries, goldens, screenshots, preview CLI
 tests/            pytest suite
 ```
 
