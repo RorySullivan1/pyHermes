@@ -129,6 +129,90 @@ class TestTheFixtureIsEngineeredRatherThanLucky:
         assert overflowing_slides(deck) == ["slide 5: Curve by tenor"]
 
 
+class TestATitleThatWrapsIsNamed:
+    """#316: the title band holds one line, and a second one used to paint over the body."""
+
+    LONG = (
+        "A slide title long enough that it cannot possibly fit on one line of a "
+        "sixteen by nine slide at the presentation density"
+    )
+
+    def test_a_wrapping_title_is_named(self):
+        deck = _bare().add_slide(_paragraph(), self.LONG)
+        assert overflowing_slides(deck) == [f"slide 1: {self.LONG} (its title wraps)"]
+
+    def test_a_one_line_title_is_not(self):
+        assert overflowing_slides(_bare().add_slide(_paragraph(), "Short")) == []
+
+    def test_a_wrapping_title_and_an_overfull_body_are_one_entry(self):
+        deck = _bare().add_slide(_long_table(), self.LONG)
+        assert overflowing_slides(deck) == [
+            f"slide 1: {self.LONG} (its title wraps, and its body overflows)"
+        ]
+
+    def test_the_band_clips_the_second_line(self):
+        html = _bare().add_slide(_paragraph(), self.LONG).render()
+        assert ".slide-title-band { overflow: hidden; }" in html
+
+
+class TestADeckThatCannotBeLaidOutIsAFinding:
+    """#315: any PdfError other than a missing backend escaped the check as a traceback."""
+
+    @staticmethod
+    def _hosted_logo_deck() -> Deck:
+        from pyhermes.deck import TitleSlide
+
+        deck = Deck(FACTS, title_slide=TitleSlide(logo_url="https://example.com/logo.png"))
+        return deck.add_slide(_paragraph(), "One")
+
+    def test_lint_document_reports_it_and_does_not_raise(self):
+        from qa.lint import Severity, lint_document
+
+        findings = [
+            f for f in lint_document(self._hosted_logo_deck()) if f.rule_id == "slide-overflow"
+        ]
+        assert [f.severity for f in findings] == [Severity.ERROR]
+        assert "not measured" in findings[0].message
+        assert "https://example.com/logo.png" in findings[0].message
+
+    def test_the_check_prints_the_finding_and_exits_with_a_lint_code(self, tmp_path, capsys):
+        from pyhermes.check.__main__ import EXIT_LINT_ERRORS, main
+
+        draft = tmp_path / "deck.py"
+        draft.write_text(
+            textwrap.dedent(
+                """
+                from pyhermes.builder import FullWidth, TextBlock
+                from pyhermes.deck import Deck, TitleSlide
+
+                def build():
+                    logo = TitleSlide(logo_url="https://example.com/logo.png")
+                    deck = Deck({"firm_name": "F", "campaign_name": "C"}, title_slide=logo)
+                    return deck.add_slide([FullWidth(content=TextBlock("x"))], "One")
+                """
+            )
+        )
+        assert main([f"{draft}:build", "--out", str(tmp_path / "out")]) == EXIT_LINT_ERRORS
+        assert "slide-overflow at whole deck" in capsys.readouterr().out
+
+    def test_preview_writes_both_parts_and_skips_the_pdf(self, tmp_path, capsys):
+        from qa.preview import EXIT_LINT_ERRORS, main
+
+        draft = tmp_path / "deck.py"
+        draft.write_text(
+            "from pyhermes.builder import FullWidth, TextBlock\n"
+            "from pyhermes.deck import Deck, TitleSlide\n\n"
+            "def build():\n"
+            '    logo = TitleSlide(logo_url="https://example.com/logo.png")\n'
+            '    deck = Deck({"firm_name": "F", "campaign_name": "C"}, title_slide=logo)\n'
+            '    return deck.add_slide([FullWidth(content=TextBlock("x"))], "One")\n'
+        )
+        out = tmp_path / "out"
+        assert main([f"{draft}:build", "--lint", "--out", str(out)]) == EXIT_LINT_ERRORS
+        assert (out / "deck-build.html").is_file() and (out / "deck-build.txt").is_file()
+        assert "pdf skipped" in capsys.readouterr().err
+
+
 class TestTheCheckExitsOnOverflow:
     def test_an_overflowing_deck_exits_1_and_names_the_slide(self, tmp_path, capsys):
         from pyhermes.check.__main__ import EXIT_LINT_ERRORS, main

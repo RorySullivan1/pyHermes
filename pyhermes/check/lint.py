@@ -985,10 +985,12 @@ def layout_findings(document: Document) -> list[Finding]:
 
     Each overflowing slide is an error. Without the ``[pdf]`` extra it is one
     warning saying the deck was not measured, so a check never passes a
-    deck it could not see. Empty for any medium the rule does not apply to.
+    deck it could not see. A deck the exporter refuses, such as one with a
+    hosted image, is one error naming the exporter's reason (#315). Empty for
+    any medium the rule does not apply to.
     """
     from pyhermes.deck import Deck, overflowing_slides
-    from pyhermes.pdf import BackendMissingError
+    from pyhermes.pdf import BackendMissingError, PdfError
 
     if "slide-overflow" not in rules_for(document.medium.name) or not isinstance(document, Deck):
         return []
@@ -1006,12 +1008,21 @@ def layout_findings(document: Document) -> list[Finding]:
                 ),
             )
         ]
+    except PdfError as exc:
+        return [
+            Finding(
+                rule_id="slide-overflow",
+                severity=Severity.ERROR,
+                location="whole deck",
+                message=f"not measured: the deck could not be laid out as a PDF. {exc}",
+            )
+        ]
     return [
         Finding(
             rule_id="slide-overflow",
             severity=Severity.ERROR,
             location=name,
-            message="its copy runs past the footer band and is clipped; trim it or split the slide",
+            message="its copy does not fit its band and is clipped; trim it or split the slide",
         )
         for name in overflowing
     ]

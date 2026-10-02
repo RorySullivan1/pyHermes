@@ -73,8 +73,8 @@ construction check. It sees vertical overflow only. The answer was also posted o
   boxes over it, and the colour would show only in the inset strips.
 - **An imaged panel makes its sections' grounds clear**, with a scoped `!important` rule in the
   brochure skeleton, because a picture has no colour to rebind to.
-- **It flattens elsewhere**, byte for byte, as `Page` does. It may hold neither a panel nor a
-  page. A background image still rides the manifest in an email, unreferenced, so do not give
+- **It flattens elsewhere**, byte for byte, as `Page` does. It may hold no boundary: nothing
+  that holds sections, so no panel, page, slide or appendices (#317). A background image still rides the manifest in an email, unreferenced, so do not give
   one to a panel you only send by email.
 
 ## Imposition (#187)

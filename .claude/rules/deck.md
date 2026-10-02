@@ -62,6 +62,8 @@ and it reaches a colleague as a PDF through the unchanged exporter, as a report 
   both read light.
 - **The footer band is laid out left to right whatever the slide's `align`.** A centred slide
   lost its number behind the label in the first photograph.
+- **A panel refuses a slide (#317)**, by refusing anything that holds sections, as `Page`
+  and `Slide` already do. Inside a brochure a slide's anchor was listed and never rendered.
 - **A slide claims an anchor only on a deck**, where the title band prints it; `Deck._anchors`
   adds it, so two slides with one title are refused in `add_slide`.
 
@@ -92,7 +94,11 @@ and it reaches a colleague as a PDF through the unchanged exporter, as a report 
 ## Overflow (#297)
 
 `overflowing_slides(deck)` lays the deck out and reads each slide's closing sentinel,
-`slide-N-end`, against `SlideBox.body_bottom`. The brochure's measuring moved into
+`slide-N-end`, against `SlideBox.body_bottom`. **A title is measured too (#316).** The band
+holds one line: the `h2` is clipped to `SlideBox.title_line`, and a sentinel ending its text,
+`slide-N-title-end`, lands a line lower when it wraps, so past half a line below the first it
+is named `slide N: Title (its title wraps)`. Before the fix a second line painted over the
+body and the check said nothing. The brochure's measuring moved into
 `pyhermes.pdf.anchor_tops`, which both fit checks share. A sentinel below the body, or on no
 sheet at all, names the slide as `slide N: Title`.
 
@@ -100,7 +106,9 @@ The `slide-overflow` lint rule applies to the deck alone. It needs a layout, so 
 markup rule: `layout_findings(document)` runs it, and `lint_document`, `python -m
 pyhermes.check` and `qa.preview --lint` all call it. Without `[pdf]` it is one warning saying
 the deck was not measured, never a silent pass; an overflowing slide is an error, so the
-check exits 1. A deck takes the paged rules and the neutral five, and neither print rule: it
+check exits 1. **A deck the exporter refuses**, such as one with a hosted image, is one error
+naming the exporter's reason (#315); it used to escape as a traceback from the check and from
+`preview --lint`, which now reaches its own "pdf skipped" step. A deck takes the paged rules and the neutral five, and neither print rule: it
 is projected or sent, never pressed.
 
 ## Notes are a third projection (#299)

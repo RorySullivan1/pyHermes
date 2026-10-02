@@ -1,11 +1,13 @@
 {# The bands every slide shares. Macros rather than includes, so each sheet
    says whether its ground is dark: the footer reads light on a divider. A
    slide with a dark ground of its own rebinds the theme, so its title band
-   takes the light heading without asking. #}
-{% macro title_band(box, title, anchor) %}
+   takes the light heading without asking. The title is clipped to one line
+   (#316), and the empty span ending it is its sentinel: on a second line it
+   lands a line lower, and pyhermes.deck.overflowing_slides() names it. #}
+{% macro title_band(box, title, anchor, number) %}
 <div class="slide-band slide-title-band" style="top:0; width:{{ box.width }}px; height:{{ box.title_height }}px; padding:{{ box.margin_top }}px {{ box.inset }}px 0;">
   {% if title %}
-  <h2 class="slide-title"{% if anchor %} id="{{ anchor | escape_html }}"{% endif %} style="margin:0; font-family:{{ font.heading }}; font-size:{{ size.type.title }}px; line-height:{{ size.type.title_line | percent }}; font-weight:normal; color:{{ theme.text.heading }};">{{ title | escape_html }}</h2>
+  <h2 class="slide-title"{% if anchor %} id="{{ anchor | escape_html }}"{% endif %} style="margin:0; font-family:{{ font.heading }}; font-size:{{ size.type.title }}px; line-height:{{ size.type.title_line | percent }}; max-height:{{ box.title_line }}px; overflow:hidden; font-weight:normal; color:{{ theme.text.heading }};">{{ title | escape_html }}<span class="slide-title-end" id="slide-{{ number }}-title-end"></span></h2>
   {% endif %}
 </div>
 {% endmacro %}
