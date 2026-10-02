@@ -24,6 +24,7 @@ from . import (
     a4_editorial,
     a4_equations,
     a4_long_table,
+    a4_placed_layout,
     a4_portrait,
     a4_research_note,
     aligned_layout,
@@ -42,6 +43,7 @@ from . import (
     modern_fonts,
     no_header,
     pitch_16_9,
+    placed_layout,
     research_note,
     rich_table,
     slate_theme,
@@ -102,6 +104,7 @@ def all_fixtures() -> dict[str, FixtureBuilder]:
         "composed_layout": composed_layout.build,
         "surfaced_layout": surfaced_layout.build,
         "research_note": research_note.build,
+        "placed_layout": placed_layout.build,
     }
 
 
@@ -128,6 +131,7 @@ def all_paged_fixtures() -> dict[str, PagedFixtureBuilder]:
         "letter_quant_table": letter_quant_table.build,
         "a4_equations": a4_equations.build,
         "a4_research_note": a4_research_note.build,
+        "a4_placed_layout": a4_placed_layout.build,
     }
 
 

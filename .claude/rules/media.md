@@ -388,3 +388,46 @@ density one medium alone may take.
 **The digital PDF (#193) is not a medium.** It is a `PdfProfile` on this exporter plus an
 attachment path in `pyhermes/delivery`, and `digital-pdf.md` has the decision, the profiles, the size
 budget and the PDF/UA measurement.
+
+## Section breaks a caller can reach (#364)
+
+`keep_together=True` and `break_before=True` are fields on every section container. On paper
+each lands on the section's own `tr` in both spellings, as `Page`'s break does; elsewhere both
+are decided away in Python, so an email moves no byte. A brochure panel and a slide refuse
+them at construction, since neither breaks. A section that opens the body drops its leading
+break for `Page`'s reason, through `Container.opening()`, which `Page` now inherits.
+
+**A kept section taller than a sheet warns.** `break-inside: avoid` cannot hold it, so the
+engine moves it and splits it anyway, stranding the space it left (this file's
+"never on a container that may split" rule, now the caller's choice). The walk gives each kept
+section a row `id`, `kept-section-N`; `layout()` and `render_pdf()` read which sheets carry it
+and raise a `PrintQualityWarning` naming the section when there is more than one. Probed under
+WeasyPrint 70 first: a kept row moves whole, and a split row's `id` appears in both sheets'
+anchors. `render_pdf` takes the two-step path (`render`, then `write_pdf`, which is what
+`HTML.write_pdf` does inside) only for a document with a kept section, so every other PDF
+keeps its code path.
+
+## Shown in chosen media only (#365) — route B
+
+**The owner's decision, 2026-10-01: two wrappers, no field on existing classes.** `Only(block,
+media=...)` is a component on `Stack`'s model; `OnlySections([...], media=...)` a section list on
+`Page`'s. A `media=` field on every class (route A) was rejected; so was hiding by CSS, which
+would ship the bytes.
+
+- **The decision is made in Python, per projection.** A document's `configured()` scope now
+  also binds the medium's name to a context variable (`walking_in`), the `config_override`
+  pattern, and every projection runs inside it, `images()` and `add_section`'s walk included.
+  `Only.children()`, `images()` and `text()` and `OnlySections.sections` read it; `render`
+  reads `engine.medium`. Outside any document a walk shows everything.
+- **What an omitted wrapper leaves out:** its markup (a `Stack` drops the row, the body drops
+  the section and its newline, so an email with a print-only list is byte-identical to one
+  without), its images from the manifest, its text, its contents entries and its anchors, so a
+  link to it from the other medium is named by `validate()`.
+- **Numbering is refused, not degraded.** A labelled exhibit, a footnote or a citation inside
+  either wrapper raises at construction, because omitting one would make "Exhibit 3" or note 7
+  mean different things in two media (the risk the epic named; `test_research_note.py` compares
+  them).
+- **A medium name nothing ships is refused**: `SHIPPED_MEDIA` in `medium.py`, held by a test to
+  the shipped `Medium` objects the kit may not import.
+- In a cell an omitted block leaves the cell empty; `OnlySections` sits at the top of a
+  document, since a page, a panel, a slide and `Appendices` hold sections only.

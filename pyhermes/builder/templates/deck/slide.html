@@ -3,17 +3,21 @@
    The body is a fixed box `box.body_height` tall, and its sections render
    against a frame the sheet's width with pad_x at the page margin, so their
    copy sits level with the title. The empty span closing the body is the
-   overflow sentinel: the print engine records where it lands. #}
+   overflow sentinel: the print engine records where it lands. A laid-out body
+   (#366) is two such boxes side by side, main then side, each its region's
+   width with its own sentinel, so either one overflowing names the slide. #}
 {% from "deck/bands.html" import title_band, footer_band with context %}
 <div class="sheet slide" data-slide="{{ number }}"{% if section_align %} align="{{ section_align | escape_html }}"{% endif %}
      style="background-color:{{ background_color | default(theme.palette.surface) }};{% if section_align %} text-align:{{ section_align }};{% endif %}">
 {{ title_band(box, section_title, section_anchor, number) }}
-  <div class="slide-body" style="top:{{ box.body_top }}px; width:{{ box.width }}px; height:{{ box.body_height }}px;">
-    <table role="presentation" width="{{ box.width }}" cellpadding="0" cellspacing="0" border="0"
-           style="width:{{ box.width }}px;">
-{{ sections_html }}
+{% for region in regions %}
+  <div class="slide-body" style="top:{{ box.body_top }}px;{% if region.left %} left:{{ region.left }}px;{% endif %} width:{{ region.width }}px; height:{{ box.body_height }}px;">
+    <table role="presentation" width="{{ region.width }}" cellpadding="0" cellspacing="0" border="0"
+           style="width:{{ region.width }}px;">
+{{ region.html }}
     </table>
-    <span class="slide-end" id="slide-{{ number }}-end"></span>
+    <span class="slide-end" id="slide-{{ number }}{% if region.name != "main" %}-{{ region.name }}{% endif %}-end"></span>
   </div>
+{% endfor %}
 {{ footer_band(box, number, footer_label) }}
 </div>

@@ -43,7 +43,7 @@ class SizeWarning(UserWarning):
 
 
 class PrintQualityWarning(UserWarning):
-    """An image is short of the pixels it needs to print at the configured dpi."""
+    """Paper prints worse than asked: an image short of its dpi, or a kept section too tall."""
 
 
 def warn_caller(message: str, category: type[Warning]) -> None:

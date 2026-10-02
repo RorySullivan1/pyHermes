@@ -16,7 +16,8 @@ def overflowing_slides(deck: Deck) -> list[str]:
     """
     Every slide whose copy does not fit, named ``slide N: Title``.
 
-    The body is measured against the footer band, and a title against its
+    The body is measured against the footer band, each region of a laid-out
+    body on its own (#366), and a title against its
     band, which holds one line (#316); a slide whose title wraps is named with
     ``(its title wraps)``, and one with both faults once, with both reasons.
     The disclosures slide is measured too. A sentinel lands past its line when
@@ -31,14 +32,20 @@ def overflowing_slides(deck: Deck) -> list[str]:
 
     landed = anchor_tops(deck)
     box = deck.box()
-    named = [(deck.number(slide), slide.title or "") for slide in deck.slides if slide.sections]
+    named = [
+        (deck.number(slide), slide.title or "", slide.layout != "full")
+        for slide in deck.slides
+        if slide.sections
+    ]
     if deck.closing_slide.TEMPLATE_PATHS:
         closing = len(deck.slides) + (1 if deck.title_slide.TEMPLATE_PATHS else 0) + 1
-        named.append((closing, deck.closing_slide.heading))
+        named.append((closing, deck.closing_slide.heading, False))
     overflowing = []
-    for number, title in named:
-        body = landed.get(f"slide-{number}-end")
-        body_overflows = body is None or body > box.body_bottom
+    for number, title, has_side in named:
+        # A laid-out body has a sentinel per region, and either overflowing names it (#366).
+        ends = [f"slide-{number}-end", *([f"slide-{number}-side-end"] if has_side else [])]
+        tops = [landed.get(end) for end in ends]
+        body_overflows = any(top is None or top > box.body_bottom for top in tops)
         title_end = landed.get(f"slide-{number}-title-end")
         # The sentinel ends the title's last line, so past half a line below
         # the first it has wrapped onto a second.

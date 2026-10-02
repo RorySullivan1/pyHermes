@@ -17,9 +17,12 @@ templates read. :class:`Spacing` derives it again for one object's subtree.
 
 from __future__ import annotations
 
+import math
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, fields, replace
 from typing import Any, ClassVar
+
+from pyhermes.config import get_config
 
 from .enums import SizeTheme
 from .exceptions import ValidationError
@@ -1178,3 +1181,67 @@ def _gutter_pad(width: int, scheme: SizeScheme) -> int | float:
         if width >= scheme.frame.narrow_column
         else scheme.space.column_pad_x_narrow
     )
+
+
+# ----------------------------------------------------------------------
+# Stacking on a phone (#362, #363)
+# ----------------------------------------------------------------------
+
+#: The narrowest viewport the package supports (#133): what an unstacked split must fit.
+PHONE_FLOOR = 375
+
+#: The orders a split may stack in on a phone. ``False`` keeps it side by side.
+STACK_ORDERS = ("natural", "reverse")
+
+
+def coerce_stack(stack: object, owner: str) -> str | bool:
+    """
+    ``stack`` as stored: ``"natural"``, ``"reverse"`` or ``False``.
+
+    ``True`` reads as ``"natural"``, the order a stacking split has always had.
+
+    Raises:
+        ValidationError: On any other value, naming the three.
+    """
+    if stack is True:
+        return "natural"
+    if stack is False or (isinstance(stack, str) and stack in STACK_ORDERS):
+        return stack
+    raise ValidationError(f"{owner}'s stack takes 'natural', 'reverse' or False, got: {stack!r}")
+
+
+def shares(widths: Sequence[int | float], gutter: int | float, within: int | float) -> list[str]:
+    """
+    Each column's width, then the gutter's, as a percentage of ``within``, for an unstacked split.
+
+    Floored at four places, so the row never sums past the cell and wraps.
+    """
+
+    def share(px: int | float) -> str:
+        floored = math.floor(px / within * 1_000_000) / 10_000
+        return f"{floored:.4f}".rstrip("0").rstrip(".")
+
+    return [share(width) for width in widths] + [share(gutter)]
+
+
+def check_unstacked(weights: Sequence[int | float], available: int | float, owner: str) -> None:
+    """
+    Refuse ``stack=False`` when a column would fall under ``Config.min_column_px`` on a phone.
+
+    ``available`` is what the columns share at the phone floor, gutters taken
+    out; each column is its weight's share of it.
+
+    Raises:
+        ValidationError: Naming the narrowest column's width at the floor.
+    """
+    floor = get_config().min_column_px
+    total = sum(weights)
+    widths = [available * weight / total for weight in weights]
+    narrowest = min(range(len(widths)), key=widths.__getitem__)
+    if widths[narrowest] < floor:
+        raise ValidationError(
+            f"{owner} with stack=False keeps its columns side by side on a phone, where "
+            f"column {narrowest + 1} is {widths[narrowest]:.0f}px wide at the {PHONE_FLOOR}px "
+            f"floor, below Config.min_column_px ({floor}). Let it stack, or give that column "
+            "more weight."
+        )

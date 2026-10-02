@@ -260,6 +260,9 @@ class TestComponentFieldsAreExercised:
             "text_color",
             "border",
             "border_color",
+            "keep_together",
+            "break_before",
+            "stack",
         ],
     )
     def test_every_container_field_is_exercised(self, field_name):
@@ -280,6 +283,9 @@ class TestComponentFieldsAreExercised:
             "text_color": None,
             "border": False,
             "border_color": None,
+            "keep_together": False,
+            "break_before": False,
+            "stack": "natural",
         }
         assert any(
             getattr(section, field_name, defaults[field_name]) != defaults[field_name]
@@ -524,3 +530,34 @@ class TestDeterministicPng:
     def test_an_out_of_range_channel_is_rejected(self):
         with pytest.raises(ValueError, match="0-255"):
             solid_png(4, 4, (0, 256, 0))
+
+
+class TestThePlacementControlsAreInTheGallery:
+    """#367: every control #361 added is set away from its default somewhere a golden pins."""
+
+    def test_both_stacking_values_are_used(self):
+        stacks = {getattr(section, "stack", "natural") for section in _gallery_sections()}
+        assert {"reverse", False} <= stacks
+
+    def test_a_nested_columns_takes_each_value(self):
+        from pyhermes.builder import Columns
+        from pyhermes.builder.components import descendants
+
+        stacks = {
+            component.stack
+            for section in _gallery_sections()
+            for component in descendants(section.components())
+            if isinstance(component, Columns)
+        }
+        assert {"reverse", False} <= stacks
+
+    def test_both_visibility_wrappers_are_used(self):
+        from pyhermes.builder import OnlySections
+
+        assert any(isinstance(section, OnlySections) for section in _gallery_sections())
+
+    def test_a_slide_is_laid_out(self):
+        from qa.fixtures import all_deck_fixtures
+
+        slides = [slide for build in all_deck_fixtures().values() for slide in build().slides]
+        assert any(slide.layout != "full" for slide in slides)

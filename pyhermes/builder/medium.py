@@ -14,9 +14,13 @@ sits above.
 
 from __future__ import annotations
 
+from collections.abc import Iterator
+from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
+from .exceptions import ValidationError
 from .sizing import DEFAULT_PAGE, PageFormat
 
 if TYPE_CHECKING:  # pragma: no cover - regions imports nothing from here
@@ -102,3 +106,49 @@ class Medium:
 #: no constraints, no client to accommodate. Rendering one component on its
 #: own goes through this, and so would a standalone-HTML deliverable.
 DEFAULT_MEDIUM = Medium(name="html", skeleton="base.html")
+
+
+#: Every medium the package ships, by name: what ``Only`` and ``OnlySections`` may name (#365).
+#: A test holds it to the shipped ``Medium`` objects, which the kit may not import.
+SHIPPED_MEDIA: tuple[str, ...] = ("html", "email", "document", "brochure", "deck")
+
+_WALKING: ContextVar[str | None] = ContextVar("pyhermes_medium", default=None)
+
+
+@contextmanager
+def walking_in(name: str) -> Iterator[None]:
+    """A context in which a walk of the tree reads as the medium ``name`` (#365)."""
+    token = _WALKING.set(name)
+    try:
+        yield
+    finally:
+        _WALKING.reset(token)
+
+
+def walking_medium() -> str | None:
+    """The medium the current walk is for, or ``None`` outside any document's."""
+    return _WALKING.get()
+
+
+def check_media(media: object, owner: str) -> tuple[str, ...]:
+    """
+    ``media`` as a tuple of shipped medium names.
+
+    Raises:
+        ValidationError: On an empty list, or a name nothing ships.
+    """
+    if isinstance(media, str):
+        names: tuple[object, ...] = (media,)
+    elif isinstance(media, (list, tuple, set, frozenset)):
+        names = tuple(media)
+    else:
+        raise ValidationError(f"{owner} takes a medium's name or a list of them, got: {media!r}")
+    if not names:
+        raise ValidationError(f"{owner} needs at least one medium, from {list(SHIPPED_MEDIA)}.")
+    for name in names:
+        if name not in SHIPPED_MEDIA:
+            raise ValidationError(
+                f"{owner} names the medium {name!r}, which nothing ships. "
+                f"Choose from {list(SHIPPED_MEDIA)}."
+            )
+    return tuple(str(name) for name in names)

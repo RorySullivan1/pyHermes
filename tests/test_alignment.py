@@ -524,6 +524,7 @@ STRUCTURALLY_ALIGNED = {
     "Divider": "a rule has no copy to align (#269)",
     "Bibliography": "an entry's hanging indent is its shape, so it fixes its own left (#310)",
     "Glossary": "a term sits beside its definition, so the list fixes its own left (#311)",
+    "Only": "it shows one block or none; the block keeps its own align (#365)",
 }
 
 

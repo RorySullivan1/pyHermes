@@ -117,6 +117,11 @@ class Panel(Container):
                 raise ValidationError(
                     f"{self._name()} holds containers, got: {type(section).__name__}"
                 )
+            if section.keep_together or section.break_before:
+                raise ValidationError(
+                    f"{self._name()} holds a section with keep_together or break_before: "
+                    "a panel is one face of a folded sheet, so nothing in it breaks (#364)"
+                )
         if inset is not None and (
             isinstance(inset, bool) or not isinstance(inset, (int, float)) or inset < 0
         ):

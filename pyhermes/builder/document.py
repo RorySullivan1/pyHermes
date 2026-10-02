@@ -14,8 +14,8 @@ example. `.claude/rules/builder-architecture.md` carries the layer model.
 from __future__ import annotations
 
 import functools
-from collections.abc import Callable
-from contextlib import AbstractContextManager, nullcontext
+from collections.abc import Callable, Iterator
+from contextlib import AbstractContextManager, contextmanager, nullcontext
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Concatenate, ParamSpec, Self, TypeVar
 
@@ -30,12 +30,12 @@ from .apparatus import (
     references,
 )
 from .components import Component, Contents, Endnotes, Exhibit, descendants, leaves
-from .containers import Appendices, Container, FullWidth
+from .containers import Appendices, Container, FullWidth, OnlySections
 from .engine import Renderer, TemplateEngine, TemplateOverlay, overlay_dirs
 from .enums import EmbedStrategy, SizeTheme
 from .exceptions import ValidationError
 from .images import EmailImage, ImageAsset, dedupe_assets
-from .medium import DEFAULT_MEDIUM, Medium
+from .medium import DEFAULT_MEDIUM, Medium, walking_in
 from .models import DocumentMetadata, Footnote
 from .research import Bibliography
 from .sizing import MEDIUM_DENSITIES, PRINT_DENSITIES, SizeScheme, Spacing, resolve_size_scheme
@@ -155,8 +155,19 @@ class Document:
         return self._config
 
     def configured(self) -> AbstractContextManager[object]:
-        """A context with this document's config in force; a no-op when it pins none."""
-        return config_override(self._config) if self._config is not None else nullcontext()
+        """
+        A context with this document's config in force, and its tree walked as its medium.
+
+        The medium is what ``Only`` and ``OnlySections`` read (#365), so every
+        projection sees the blocks its medium shows and no others.
+        """
+        return self._scoped()
+
+    @contextmanager
+    def _scoped(self) -> Iterator[None]:
+        config = config_override(self._config) if self._config is not None else nullcontext()
+        with config, walking_in(self._medium.name):
+            yield
 
     @property
     def medium(self) -> Medium:
@@ -194,6 +205,12 @@ class Document:
             raise ValidationError(
                 f"add_section takes a section, got {type(container).__name__}. {hint}"
             )
+        with self.configured():
+            self._add(container)
+        return self
+
+    def _add(self, container: Container) -> None:
+        """Append ``container`` once its subtree passes this medium's checks, or leave things be."""
         for owner, spacing in _spacings(container):
             spacing.check_medium(self._medium.paged, self._medium.name, owner)
         if isinstance(container, Appendices) and any(
@@ -211,7 +228,6 @@ class Document:
             self._sections.pop()
             self._walk()
             raise
-        return self
 
     def _flat_sections(self) -> list[Container]:
         """
@@ -258,6 +274,7 @@ class Document:
     # The three projections
     # ------------------------------------------------------------------
 
+    @_under_own_config
     def images(self) -> list[EmailImage]:
         """
         Every image this document references, in render order.
@@ -375,7 +392,12 @@ class Document:
 
     def _body_sections(self) -> list[Container]:
         """The sections the body renders, endnotes appended where there is no sheet foot."""
-        sections = list(self._sections)
+        # A section list for other media renders nothing here, and leaves no line (#365).
+        sections = [
+            section
+            for section in self._sections
+            if not isinstance(section, OnlySections) or section.shown_in(self._medium.name)
+        ]
         if (endnotes := self._endnotes()) and not self._medium.paged:
             # A mail client has no sheet foot, so the notes a page floats
             # there are gathered after the last section instead.
@@ -402,6 +424,9 @@ class Document:
         """
         for letter, section in self._lettered():
             section.letter = letter if section.title else ""
+        kept = (section for section in self._flat_sections() if section.keep_together)
+        for number, section in enumerate(kept, start=1):
+            section.kept_mark = f"kept-section-{number}"
         self._number_exhibits()
         for number, note in enumerate(self._footnotes(), start=1):
             note.number = number
@@ -415,6 +440,15 @@ class Document:
             for component in leaves(section.components()):
                 if isinstance(component, Contents):
                     component.entries = self._listing(component.of, component.label, section)
+
+    def kept_sections(self) -> dict[str, str]:
+        """Each section kept together on paper, by its row's ``id`` there, to its name (#364)."""
+        self._walk()
+        return {
+            section.kept_mark: section.heading() or type(section).__name__
+            for section in self._flat_sections()
+            if section.keep_together
+        }
 
     def _raw_html(self) -> list[tuple[str, str]]:
         """Every raw-HTML field in the document, each with who carries it."""

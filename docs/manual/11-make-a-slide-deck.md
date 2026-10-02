@@ -105,6 +105,33 @@ agenda.add_divider("Markets")
 agenda.add_slide([FullWidth(content=TextBlock("<p>Rates rose.</p>"))], "Rates")
 ```
 
+## How to put a sidebar on a slide
+
+**When to use this:** a slide has a main point and a short column of facts beside it, or two
+halves that each hold more than one section.
+
+**Steps:** pass `layout="sidebar"` or `layout="split"`, and the side's sections as `side=`.
+
+```python
+deck.add_slide(
+    [FullWidth(TextBlock("<p>Rates have further to rise at the long end.</p>"), title="Our view")],
+    "The view in brief",
+    layout="sidebar",
+    side=[
+        FullWidth(
+            CardGroup([KpiItem("10Y gilt", "4.21%"), KpiItem("2s10s", "38 bps")],
+                      orientation="vertical"),
+            title="In figures",
+            highlight=True,
+        )
+    ],
+)
+```
+
+**Result:** the main area takes two thirds of the slide and the sidebar the rest; `"split"`
+gives two equal halves. Either region running past the footer names the slide, as a full
+slide does. In an email or a report the slide's sections run main first, then the side.
+
 ## How to find a slide that is too full
 
 A slide never runs onto a second page. If its content does not fit, the bottom is cut off

@@ -8,7 +8,6 @@ nothing, and the sections inside simply run on. One tree, two outputs.
 
 from __future__ import annotations
 
-import copy
 from collections.abc import Mapping
 from typing import TYPE_CHECKING
 
@@ -89,12 +88,6 @@ class Page(Container):
     def spacing_tokens(cls) -> tuple[str, ...]:
         """Every token a section or component reads: a page reaches all of them."""
         return section_spacing_tokens()
-
-    def opening(self) -> Page:
-        """This page without its leading break, for a body that already opens a sheet."""
-        opened = copy.copy(self)
-        opened.break_before = False
-        return opened
 
     def resolved_anchor(self) -> str:
         """None: a page's title is never rendered, so there is no heading to land on."""
