@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from pyhermes.builder.document import Document
+from pyhermes.builder.exceptions import PrintQualityWarning, warn_caller
 
 from .exceptions import BackendError, BackendMissingError, PdfError, UnreachableResourceError
 from .fetcher import build_fetcher
@@ -53,12 +54,17 @@ def render_pdf(document: Document, profile: PdfProfile = PRINT) -> bytes:
     weasyprint = _backend()
     html = document.render()
     fetcher = build_fetcher(document.assets())
+    kept = document.kept_sections()
     with _own_errors():
-        return bytes(
-            weasyprint.HTML(string=html, url_fetcher=fetcher).write_pdf(
-                finisher=_finisher(profile), **profile.options()
-            )
-        )
+        source = weasyprint.HTML(string=html, url_fetcher=fetcher)
+        if not kept:
+            return bytes(source.write_pdf(finisher=_finisher(profile), **profile.options()))
+        # HTML.write_pdf's own two steps, so the layout can be read in between.
+        options = {**weasyprint.DEFAULT_OPTIONS, **profile.options()}
+        laid_out = source.render(**options)
+        _warn_tall_kept(laid_out, kept)
+        known = {key: options[key] for key in weasyprint.DEFAULT_OPTIONS}
+        return bytes(laid_out.write_pdf(finisher=_finisher(profile), **known))
 
 
 def _finisher(profile: PdfProfile) -> Any:
@@ -104,7 +110,30 @@ def layout(document: Document, profile: PdfProfile = PRINT) -> Any:
     html = document.render()
     fetcher = build_fetcher(document.assets())
     with _own_errors():
-        return weasyprint.HTML(string=html, url_fetcher=fetcher).render(**profile.options())
+        laid_out = weasyprint.HTML(string=html, url_fetcher=fetcher).render(**profile.options())
+    _warn_tall_kept(laid_out, document.kept_sections())
+    return laid_out
+
+
+def _warn_tall_kept(laid_out: Any, kept: dict[str, str]) -> None:
+    """
+    Warn for each kept section the engine had to split anyway (#364).
+
+    ``break-inside: avoid`` cannot hold a section taller than a sheet, so it
+    moves to a fresh sheet and splits there, stranding the space it left.
+    """
+    sheets: dict[str, int] = {}
+    for page in laid_out.pages:
+        for anchor in page.anchors:
+            if anchor in kept:
+                sheets[anchor] = sheets.get(anchor, 0) + 1
+    for anchor, count in sheets.items():
+        if count > 1:
+            warn_caller(
+                f"{kept[anchor]} is kept together but runs over {count} sheets, so it "
+                "strands the space before it. Drop keep_together, or split the section.",
+                PrintQualityWarning,
+            )
 
 
 def anchor_tops(document: Document) -> dict[str, float]:

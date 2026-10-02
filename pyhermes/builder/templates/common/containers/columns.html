@@ -31,6 +31,11 @@
                        or its highlight tint when highlighted
     highlight        — When true, tints the band and adds hairline rules top and bottom
     section_border   — The frame's colour when the section is bordered (#267), else empty
+    section_break    — The row's break declarations on paper (#364), empty elsewhere
+    section_kept     — The row's `id` when kept together on paper, for the tall-section check
+    stack            — natural; reverse, where dir=rtl lays the phone order out right to
+                       left on a desktop (#362); or fixed, one fluid row that never stacks (#363)
+    gutter_share     — The gutter as a percentage of the band, for a fixed row
 #}
 {# `inline-table`, NOT `inline-block`, and the difference is #129. With
    `inline-block` the element stops being a table box: the tr and td get an
@@ -66,7 +71,7 @@
 {% set edge_pad = size.frame.pad_x - (1 if highlight else 0) - (1 if section_border else 0) %}
 {# The band also has to *fit*: 2x pad_x plus the computed content width is
    the whole frame, so without the pixel back the last column wraps. #}
-<tr>
+<tr{% if section_kept %} id="{{ section_kept }}"{% endif %}{% if section_break %} style="{{ section_break }}"{% endif %}>
   <td style="{% if highlight %}padding:1px 1px 1px 1px; background-color:{{ theme.palette.surface }}; border-top:1px solid {{ section_border or theme.palette.rule }}; border-bottom:1px solid {{ section_border or theme.palette.rule }};{% if section_border %} border-left:1px solid {{ section_border }}; border-right:1px solid {{ section_border }};{% endif %}{% else %}padding:0; background-color:{{ background_color | default(theme.palette.surface) }};{% if section_border %} border:1px solid {{ section_border }};{% endif %}{% endif %}">
 {% if section_title %}
     <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:{{ background_color | default(theme.palette.highlight_tint if highlight else theme.palette.surface) }};">
@@ -81,14 +86,35 @@
 {% endif %}
     <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:{{ background_color | default(theme.palette.highlight_tint if highlight else theme.palette.surface) }};">
       <tr>
-        <td style="padding:0 {{ edge_pad }}px; font-size:0; line-height:0;">
+{% set rtl = stack == "reverse" %}
+        <td{% if rtl %} dir="rtl"{% endif %} style="padding:0 {{ edge_pad }}px; font-size:0; line-height:0;">
+{% if stack == "fixed" %}
+    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="width:100%; table-layout:fixed;">
+      <tr>
+{% for col in columns %}
+        <td width="{{ col.share }}%" valign="top" style="width:{{ col.share }}%; padding:0;">
+          <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
+            <tr>
+              <td{% if section_align %} align="{{ section_align | escape_html }}"{% endif %} style="padding:{{ size.space.column_top }}px {{ col.pad_right }}px {{ size.space.column_bottom }}px {{ col.pad_left }}px; font-family: {{ font.label }}; font-size:{{ size.type.body }}px; color:{{ theme.text.primary }}; line-height:{{ size.type.body_line | percent }};{% if section_align %} text-align:{{ section_align }};{% endif %}">
+                {{ col.content }}
+              </td>
+            </tr>
+          </table>
+        </td>
+{% if not loop.last %}
+        <td width="{{ gutter_share }}%" style="width:{{ gutter_share }}%; padding:0;"></td>
+{% endif %}
+{% endfor %}
+      </tr>
+    </table>
+{% else %}
     <!--[if mso]>
-    <table role="presentation" width="{{ size.frame.inner }}" border="0" cellpadding="0" cellspacing="0" style="width:{{ size.frame.inner }}px;">
+    <table{% if rtl %} dir="rtl"{% endif %} role="presentation" width="{{ size.frame.inner }}" border="0" cellpadding="0" cellspacing="0" style="width:{{ size.frame.inner }}px;">
       <tr>
         <td width="{{ columns[0].width }}" valign="top" style="width:{{ columns[0].width }}px; padding:0;">
     <![endif]-->
 {% for col in columns %}
-    <table role="presentation" width="{{ col.width }}" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:{{ col.width }}px;{% if not loop.last %} margin-right:{{ size.space.gutter }}px;{% endif %} background-color:{{ background_color | default(theme.palette.highlight_tint if highlight else theme.palette.surface) }};">
+    <table role="presentation" width="{{ col.width }}" border="0" cellpadding="0" cellspacing="0" class="stack-column"{% if rtl %} dir="ltr"{% endif %} style="display:inline-table; vertical-align:top; width:{{ col.width }}px;{% if not loop.last %} margin-{{ "left" if rtl else "right" }}:{{ size.space.gutter }}px;{% endif %} background-color:{{ background_color | default(theme.palette.highlight_tint if highlight else theme.palette.surface) }};">
       <tr>
         <td class="mobile-pad"{% if section_align %} align="{{ section_align | escape_html }}"{% endif %} style="padding:{{ size.space.column_top }}px {{ col.pad_right }}px {{ size.space.column_bottom }}px {{ col.pad_left }}px; font-family: {{ font.label }}; font-size:{{ size.type.body }}px; color:{{ theme.text.primary }}; line-height:{{ size.type.body_line | percent }};{% if section_align %} text-align:{{ section_align }};{% endif %}">
           {{ col.content }}
@@ -107,6 +133,7 @@
       </tr>
     </table>
     <![endif]-->
+{% endif %}
         </td>
       </tr>
     </table>

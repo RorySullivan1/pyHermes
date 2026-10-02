@@ -131,22 +131,26 @@ class Deck(Document):
         notes: str | None = None,
         background_color: str | None = None,
         align: str | TextAlign | None = None,
+        layout: str = "full",
+        side: list[Container] | None = None,
     ) -> Self:
         """
         Append the sections as one :class:`Slide`, or a ``Slide`` you built. Returns ``self``.
+
+        ``layout`` and ``side`` lay the body out in regions, as on a ``Slide`` (#366).
 
         Raises:
             ValidationError: For a slide's own reasons, a footnote, or an
                 anchor the deck already has; the deck is left as it was.
         """
         if isinstance(sections, Slide):
-            if title or notes or background_color or align:
+            if title or notes or background_color or align or side or layout != "full":
                 raise ValidationError(
                     "add_slide takes a Slide or its arguments, not both; set them on the Slide"
                 )
             slide = sections
         else:
-            slide = Slide(sections, title, notes, background_color, align)
+            slide = Slide(sections, title, notes, background_color, align, layout=layout, side=side)
         return self._append(slide)
 
     def add_divider(

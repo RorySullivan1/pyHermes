@@ -16,6 +16,7 @@ Curve by tenor
 The term premium
 What we would do
 Two positions
+The view in brief
 
 
 Where rates stand
@@ -67,6 +68,22 @@ Two positions
 Steepener. Own 30Y against 5Y, sized to the premium's last move.
 
 Linker hedge. Hold breakevens through the next two prints.
+
+
+The view in brief
+-----------------
+
+Our view
+--------
+
+Rates have further to rise at the long end, and the premium is the reason. The
+front end waits on the next two prints.
+
+In figures
+----------
+
+10Y gilt: 4.21% (+18 bps)
+Term premium: 61 bps (+12 bps)
 
 
 Important information

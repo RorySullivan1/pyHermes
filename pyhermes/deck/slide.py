@@ -79,6 +79,46 @@ class SlideBox:
         """The line copy may not pass."""
         return self.body_top + self.body_height
 
+    def regions(self, layout: str, gutter: int | float) -> list[SlideRegion]:
+        """
+        The body's regions for ``layout``, main first: computed like a split's columns (#366).
+
+        The copy between the page margins, less one ``gutter``, is split by the
+        layout's weights, the side region floored. Each region's frame reaches
+        half a gutter past its copy on both sides, so a band in it still has an
+        edge to inset from, and the two frames meet at the gutter's middle.
+        """
+        if layout == "full":
+            return [SlideRegion("main", 0, self.width, self.inset)]
+        main_weight, side_weight = LAYOUTS[layout]
+        available = self.width - 2 * self.inset - gutter
+        side = math.floor(available * side_weight / (main_weight + side_weight))
+        main = available - side
+        half = _px(gutter / 2)
+        return [
+            SlideRegion("main", _px(self.inset - half), _px(main + gutter), half),
+            SlideRegion("side", _px(self.inset + main + half), _px(side + gutter), half),
+        ]
+
+
+@dataclass(frozen=True)
+class SlideRegion:
+    """One region of a slide's body: its name, its frame's left edge and width, and its inset."""
+
+    name: str
+    left: int | float
+    width: int | float
+    inset: int | float
+
+
+def _px(value: int | float) -> int | float:
+    """``value`` as an int when it is whole, since a size token may not be an integral float."""
+    return int(value) if float(value).is_integer() else value
+
+
+#: The weights of each named slide layout, main region first (#366).
+LAYOUTS: dict[str, tuple[int, ...]] = {"full": (1,), "split": (1, 1), "sidebar": (2, 1)}
+
 
 class Slide(Container):
     """
@@ -104,9 +144,15 @@ class Slide(Container):
         background_color: The slide's ground, and the surface its sections sit on.
         align:            Alignment inherited by the copy inside.
         anchor:           The title's ``id``; a slug of the title when unset.
+        layout:           ``"full"``, ``"split"`` (equal halves) or ``"sidebar"``
+                          (a main area two thirds wide, a side beside it) (#366).
+        side:             The side region's sections; ``sections`` fill the main.
     """
 
     template_path = "deck/slide.html"
+
+    #: The body's layout: ``"full"``, ``"split"`` or ``"sidebar"`` (#366).
+    layout: str = "full"
 
     def __init__(
         self,
@@ -116,6 +162,9 @@ class Slide(Container):
         background_color: str | None = None,
         align: str | TextAlign | None = None,
         anchor: str | None = None,
+        *,
+        layout: str = "full",
+        side: list[Container] | None = None,
     ):
         super().__init__(title=title, background_color=background_color, align=align, anchor=anchor)
         self._check_sections(sections)
@@ -123,8 +172,32 @@ class Slide(Container):
             raise ValidationError(
                 f"{self._name()}'s notes are plain text, got: {type(notes).__name__}"
             )
-        self.sections = list(sections)
+        if layout not in LAYOUTS:
+            raise ValidationError(
+                f"{self._name()}'s layout is one of {list(LAYOUTS)}, got: {layout!r}"
+            )
+        if (layout == "full") != (not side):
+            raise ValidationError(
+                f"{self._name()} lays out {layout!r}: "
+                + ("a full body has no side region; drop side=" if side else "give side=[...]")
+            )
+        if side:
+            self._check_sections(side)
+        self.layout = layout
+        # Everywhere but its own sheet, a laid-out slide is its regions in reading order.
+        self.sections = [*sections, *(side or [])]
+        self._side_count = len(side or [])
         self.notes = (notes or "").strip()
+
+    @property
+    def main(self) -> list[Container]:
+        """The main region's sections: all of them on a full body."""
+        return self.sections[: len(self.sections) - self._side_count]
+
+    @property
+    def side(self) -> list[Container]:
+        """The side region's sections; none on a full body."""
+        return self.sections[len(self.sections) - self._side_count :]
 
     def _check_sections(self, sections: list[Container]) -> None:
         """Refuse an empty slide, a boundary inside one, and anything not a section."""
@@ -139,6 +212,11 @@ class Slide(Container):
             if not isinstance(section, Container):
                 raise ValidationError(
                     f"{self._name()} holds containers, got: {type(section).__name__}"
+                )
+            if section.keep_together or section.break_before:
+                raise ValidationError(
+                    f"{self._name()} holds a section with keep_together or break_before: "
+                    "a slide is already one sheet, and never breaks (#364)"
                 )
 
     def _name(self) -> str:
@@ -187,12 +265,21 @@ class Slide(Container):
             palette = replace(engine.theme.palette, surface=self.background_color)
             theme = replace(engine.theme, palette=palette)
             themed = grounded(rebind(engine, theme=theme), theme.on_ground(self.background_color))
-        body = rebind(themed, size=_body_scheme(scheme_of(engine), box))
+        scheme = scheme_of(engine)
+        regions = []
+        for region, sections in zip(
+            box.regions(self.layout, scheme.space.gutter), (self.main, self.side), strict=False
+        ):
+            body = rebind(themed, size=_body_scheme(scheme, box, region))
+            html = "\n".join(section.render(body) for section in sections)
+            regions.append(
+                {"name": region.name, "left": region.left, "width": region.width, "html": html}
+            )
         return themed.render(
             self.template_path,
             {
                 **self._base_context(themed),
-                "sections_html": "\n".join(section.render(body) for section in self.sections),
+                "regions": regions,
                 "box": box,
                 "number": number,
                 "footer_label": label,
@@ -255,20 +342,21 @@ class DividerSlide(Slide):
         )
 
 
-def _body_scheme(scheme: SizeScheme, box: SlideBox) -> SizeScheme:
+def _body_scheme(scheme: SizeScheme, box: SlideBox, region: SlideRegion) -> SizeScheme:
     """
-    The density, on a frame the sheet's width and the body's height.
+    The density, on a frame the region's width and the body's height.
 
-    ``pad_x`` becomes the page margin, the one horizontal padding every
-    container already applies, so the copy sits level with the title. No
-    margin and no breakpoint: a slide's sheet has neither.
+    ``pad_x`` becomes the region's inset, the one horizontal padding every
+    container already applies: the page margin for a full body, so the copy
+    sits level with the title. No margin and no breakpoint: a slide's sheet
+    has neither.
     """
     frame = replace(
         scheme.frame,
-        width=box.width,
+        width=region.width,
         height=box.body_height,
         mobile_breakpoint=None,
         margin=PageMargin(),
-        pad_x=box.inset,
+        pad_x=region.inset,
     )
     return scheme.derive(frame=frame)

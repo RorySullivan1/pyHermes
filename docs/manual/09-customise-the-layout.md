@@ -2,8 +2,9 @@
 
 [Look and feel](05-look-and-feel.md) changes the whole email at once: its colours, density
 and typefaces. This page covers the finer controls: moving the spacing of one section or
-block, setting a house density, adding a block of your own, and replacing one of
-pyHermes's own templates. It ends with what is fixed on purpose, and what to do instead.
+block, placing blocks on a phone, on paper and in one medium only, setting a house density,
+adding a block of your own, and replacing one of pyHermes's own templates. It ends with what
+is fixed on purpose, and what to do instead.
 
 ```python
 from pyhermes.builder import EmailBuilder, FullWidth, TextBlock
@@ -274,6 +275,135 @@ To restyle one of these tags for every email you build, copy the packaged
 `text/prose-styles.html` into your own folder, edit its line for that tag, and pass the folder
 as `template_overlay=` ([above](#how-to-change-one-of-pyhermess-own-templates)). Each tag
 must keep its line.
+
+## How to choose the order columns stack in on a phone
+
+**When to use this:** a split puts text on the left and a chart on the right, and on a phone
+the reader should meet the chart first.
+
+**Steps:** pass `stack="reverse"` to the split.
+
+```python
+from pyhermes.builder import ChartBlock, TwoColumn
+
+chart_first = TwoColumn(
+    "30-70",
+    left=TextBlock("<p>The long end did the work this quarter.</p>"),
+    right=ChartBlock("https://example.com/curve.png", alt_text="Gilt curve"),
+    title="The curve",
+    stack="reverse",
+)
+```
+
+**Result:** on a desktop the split looks exactly as before. On a phone the right-hand column
+comes first. `TwoColumn`, `ThreeColumn`, `FourColumn` and a `Columns` inside a cell all take
+it. Outlook on a desktop never stacks, so it shows the desktop order. On paper and in the
+plain-text part the columns keep the order you wrote them in.
+
+## How to keep two small columns side by side on a phone
+
+**When to use this:** two figures, or a label and its value, would each fill a whole row on a
+phone although both fit side by side.
+
+**Steps:** pass `stack=False`.
+
+```python
+from pyhermes.builder import CardGroup, Columns, Stack
+from pyhermes.builder.models import KpiItem
+
+figures = TwoColumn(
+    "50-50",
+    left=CardGroup([KpiItem("10Y gilt", "4.21%")], orientation="vertical"),
+    right=CardGroup([KpiItem("2s10s", "38 bps")], orientation="vertical"),
+    stack=False,
+)
+label_and_value = FullWidth(
+    Columns(
+        [TextBlock("<p>Modified duration</p>"), TextBlock("<p>6.8 years</p>", align="right")],
+        ratio=(3, 2),
+        stack=False,
+    )
+)
+```
+
+**Result:** the columns keep their proportions down to a 375px phone screen.
+
+> **Note:** a split too wide to fit is refused when you build it, naming its narrowest
+> column's width on a 375px screen. Four equal columns are too narrow; two equal ones fit.
+> Give the narrow column more weight, or let it stack.
+
+## How to keep a section on one sheet, or start it on a new one
+
+**When to use this:** in a report, a short section should not break across two sheets, or a
+section should open a fresh sheet.
+
+**Steps:** pass `keep_together=True` or `break_before=True` to the section.
+
+```python
+from pyhermes.document import PagedDocument
+
+report = PagedDocument({"firm_name": "Acme Research", "campaign_name": "Morning Note"})
+report.add_section(FullWidth(TextBlock("<p>Rates rose.</p>"), title="Summary"))
+report.add_section(
+    FullWidth(TextBlock("<p>The detail.</p>"), title="Detail", keep_together=True)
+)
+report.add_section(
+    FullWidth(TextBlock("<p>What we would do.</p>"), title="Outlook", break_before=True)
+)
+```
+
+**Result:** *Detail* moves whole to the next sheet if it would otherwise break, and
+*Outlook* starts a sheet of its own. Unlike a `Page`, neither wraps anything else.
+
+> **Note:** both are paper's. In an email they add nothing, not even a byte. A brochure panel
+> and a slide refuse them, because neither ever breaks. A kept section taller than a sheet
+> cannot be kept, so printing it warns, naming the section.
+
+## How to show a block or a section in one medium only
+
+**When to use this:** one set of sections makes both an email and a report, and some content
+belongs to one of them: a *Download the PDF* button for the email, a note about the printed
+edition for the report.
+
+**Steps:** wrap a block in `Only`, or a list of sections in `OnlySections`, naming the media
+it shows in: `"email"`, `"document"`, `"brochure"`, `"deck"` or `"html"`.
+
+```python
+from pyhermes.builder import Button, Only, OnlySections
+
+def sections():
+    return [
+        FullWidth(
+            Stack([
+                TextBlock("<p>The full note has the tables.</p>"),
+                Only(Button("Download the PDF", "https://example.com/note.pdf"), media="email"),
+            ]),
+            title="Read the full note",
+        ),
+        OnlySections(
+            [FullWidth(TextBlock("<p>This printed edition carries the tables.</p>"),
+                       title="About this edition")],
+            media="document",
+        ),
+    ]
+
+email = EmailBuilder().metadata(facts)
+for section in sections():
+    email.section(section)
+email = email.build()
+printed = PagedDocument({"firm_name": "Acme Research", "campaign_name": "Morning Note"})
+for section in sections():
+    printed.add_section(section)
+```
+
+**Result:** the email shows the button and not the note; the report the reverse. What is
+left out leaves out everything: its markup, its images from the attachments, its text from the
+plain-text part and its title from any contents list.
+
+> **Note:** a numbered exhibit, a footnote or a citation inside either wrapper is refused,
+> because leaving it out of one medium would number the rest differently there. Keep it
+> outside, or drop its label. In a column, a block left out leaves the column empty; to drop
+> a whole band, use `OnlySections`.
 
 ## What you cannot change, and what to do instead
 

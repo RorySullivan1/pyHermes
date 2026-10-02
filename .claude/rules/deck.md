@@ -156,3 +156,23 @@ holds that every slide fits and that a table appended to one slide is named.
 No PowerPoint export, master or native chart. No animation, builds or transitions: a deck
 here is a printed or sent artefact. No auto-fit or splitting of an overfull slide; the author
 trims, as for a panel. No rich notes or timings.
+
+## Slide layouts (#366)
+
+`Slide(layout="full" | "split" | "sidebar", side=[...])`: the slide's `sections` fill the main
+region and `side` the other. `full` is the default and renders byte-identically.
+
+- **`SlideBox.regions()` computes them like a split, with no px parameter.** The copy between
+  the page margins, less one `gutter`, splits by the layout's weights (`LAYOUTS`: 1:1, 2:1), the
+  side floored. Each region's frame reaches half a gutter past its copy on both sides, so a band
+  in it has an edge to inset from and the main copy sits level with the title; the two frames
+  meet at the gutter's middle.
+- **Each region renders against its own frame and carries its own sentinel**: `slide-N-end` for
+  the main, `slide-N-side-end` for the side. `overflowing_slides` names the slide when either
+  lands past the body's foot.
+- **Elsewhere it is its sections, main first.** `sections` stays the one list (main then side),
+  so an email renders a laid-out slide byte for byte as the same sections in a slide, and a test
+  that appends to `slide.sections` still reaches the sheet.
+- **#348's image beside copy is `layout="split"` with an image section in `side`**, or it
+  generalises this when it starts; that ordering is decided then. `pitch_16_9` gains a sidebar
+  slide, *The view in brief*.

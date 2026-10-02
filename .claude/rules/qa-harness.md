@@ -1194,3 +1194,14 @@ one-line `@media` change, which regenerated the goldens but not the examples.
 - **A builder change that moves an example now fails the suite**, which is the point: the
   regeneration lands in the same PR as the change, where #282's did not.
 
+## Placement across media (#367)
+
+`placed_layout` (email) and `a4_placed_layout` (paged) build one set of sections
+(`qa/fixtures/_placed.py`) carrying every control epic #361 added: a reversed split, an
+unstacked figure pair and label-value pair, a reversed nested `Columns`, an email-only `Button`
+in `Only`, a print-only `OnlySections` page note with an attached image, a kept section and a
+`break_before` one. So the email's goldens pin that paper's controls cost it no byte and its
+manifest lacks the note's image, and the paged golden the reverse. `pitch_16_9` gains a sidebar
+slide. `kitchen_sink`'s button is wrapped in `Only(..., media="email")`, which renders it
+unchanged, so rule 1 holds with its goldens byte-identical. The gallery's 375px tests cover the
+new email, and `tests/test_stacking.py` measures where each column lands at 1000 and 375px.

@@ -239,6 +239,8 @@ these rather than improvising:
   **#218** (the deck medium: `Deck`, `Slide` and dividers, the title and closing slides,
   `slide-overflow`, speaker notes, the `presentation` density and `pitch_16_9`, #296–#301) is
   complete; #300, the PowerPoint export, was closed with #219.
+  **#361** (placement across phones, sheets and media: `stack=` on splits, `keep_together` and
+  `break_before` on sections, `Only`/`OnlySections`, slide layouts, #362–#367) is complete.
   **#259** is fixed: the size report names each body section, and `pyhermes.check` and
   `preview --lint` report on an email over 102 KB. **#281** is fixed: the README states current
   facts, and a test holds each example's committed `.html` to a fresh render. **#272** is done:

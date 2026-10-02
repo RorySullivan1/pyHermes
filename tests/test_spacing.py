@@ -41,6 +41,8 @@ from pyhermes.builder import (
     ImageBlock,
     MathBlock,
     NumberedList,
+    Only,
+    OnlySections,
     PullQuote,
     Reference,
     Spacing,
@@ -544,6 +546,10 @@ INSTANCES: dict[type, list[Any]] = {
     ],
     Glossary: [lambda s: Glossary([Term("T", "D")], title="G", spacing=s)],
     Appendices: [lambda s: Appendices([FullWidth(title="T", content=_Stub())], spacing=s)],
+    Only: [lambda s: Only(_Stub(), "html", spacing=s)],
+    OnlySections: [
+        lambda s: OnlySections([FullWidth(title="T", content=_Stub())], "html", spacing=s)
+    ],
 }
 
 

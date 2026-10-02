@@ -1051,3 +1051,31 @@ Gmail, a list's indent was each client's own, and a link was the client's blue.
 - **Not styled, deliberately**: `p`, `span` and `table`; a class does not exempt a tag. A raw `table`
   inside prose still meets the `table-role` lint rule; a layout inside prose is a `Columns` or
   a `Stack`.
+
+## Stacking on a phone (#362, #363)
+
+A split's `stack` is `"natural"` (the default, byte-identical), `"reverse"` or `False`, on
+`TwoColumn`, `ThreeColumn`, `FourColumn` and a nested `Columns`. Like alignment it is
+geometry per section, never an email-level voice. Nothing stacks on paper, so a paged medium
+renders every value as `"natural"`, and the text part keeps source order.
+
+- **Reverse is the established hybrid-email `dir` technique.** The columns are written in phone
+  order; `dir="rtl"` on the band's inset cell and on the MSO ghost table lays them out right to
+  left on a desktop, and `dir="ltr"` on each column keeps its copy reading forwards. The gutter
+  margin swaps to `margin-left`, because in a right-to-left row the next column sits to the
+  left. Measured in Chromium: at 1000px every box lands where the natural split's does, and at
+  375px the right column comes first. Outlook desktop never stacks; that it shows the desktop
+  order under `dir="rtl"` is the technique's documented behaviour, unverified here, and belongs
+  with #288's human Outlook check.
+- **Unstacked is a different row, not a missing class.** Dropping `.stack-column` alone leaves
+  px-wide inline tables that overflow a phone. An unstacked split is one fluid layout table:
+  each column a percentage of the band (`sizing.shares`, floored at four places so the row never
+  sums past it), the gutter a percentage spacer cell, `table-layout:fixed`, padding on an inner
+  table so a cell's percentage stays its border box. Outlook reads the same percentages. Its
+  columns sit within a pixel of the stacking split's on a desktop.
+- **The guard is the phone floor.** `stack=False` is refused at construction unless each
+  column, at `PHONE_FLOOR` (375, the supported width #133 set) inside the band's inset, stays
+  above `Config.min_column_px`; the message names the narrowest column's width there. A
+  `Columns` is checked against the narrowest cell a stacking section gives it (a stacked
+  column, less its phone padding), and an unstacked `Columns` inside an unstacked split is
+  refused, since two levels never fit.

@@ -8,11 +8,11 @@
 - **Shipped**: #157, #153, #169, #170, #171, #172, #193 (PRs #167–#203); #201, #150, #202 (PRs #204–#206);
   #209 (PR #222); #217 (PR #234); #221 (PR #235); #238 (PR #253); #237, #255, #239 (PRs #254–#257); manual
   + #258 (PR #260); #261 + #258's fix (PR #283); #265 (PR #284); #277 (PR #285); #282 (PR #286); #273 (PR #287); #270
-  (PR #289); #259 (PR #292); #281 (PR #293); #272 (PR #294); #280 (PR #295); #220 (PR #313); #218 (PR #314). #288 is the human Outlook-desktop check.
+  (PR #289); #259 (PR #292); #281 (PR #293); #272 (PR #294); #280 (PR #295); #220 (PR #313); #218 (PR #314); #361 (this branch). #288 is the human Outlook-desktop check.
   #220 research apparatus (#308–#312) shipped in PR #313; epic-autoclose closed it.
   #218 deck medium shipped in PR #314; epic-autoclose closed it. #300 PPTX was closed with #219.
   Epics defined, not started: #219 DOCX (#302–#307); content #318 #324 #329 #335 #340 #346;
-  position #354 #361. Subs #319–#367. Deck bugs #315–#317 come before #346.
+  position #354. Subs #319–#360. #361 implemented (#362–#367). Deck bugs #315–#317 come before #346.
 - The prose budget is live; the baseline is 44 and may only shrink.
 
 ## Decisions        (append-only; supersede, never delete)
@@ -39,7 +39,13 @@
 - [2026-09-29] **The import root is `pyhermes` alone**; the `svc` shim was removed (#255) before any
   release shipped it. Checks read the built wheel and sdist, never the tree — `working-in-the-code.md`
 
+- [2026-10-02] **Placement is decided in Python per medium**: reverse stacking is the `dir=rtl`
+  hybrid technique, unstacked is a fluid percentage row gated at the 375px floor, visibility rides
+  a medium context var beside the config one — `design-axes.md`, `media.md`, `deck.md` (#361)
+
 ## Threads          (open items; remove when closed)
+- **Outlook desktop's handling of `dir=rtl` on a reversed split is unverified here**; add it to #288's
+  human check.
 - **Open deck bugs #315–#317** (overflow check crash, wrapped title, Slide in Panel); #347 waits on #316.
 - **`epic-autoclose` works again**: it closed #273 on 2026-10-01. Still confirm each epic closed.
 - **In this container, PDF byte-determinism tests flake** (no HarfBuzz-Subset), and screenshot
@@ -93,5 +99,7 @@
   sessions/2026-10-01-customise-the-layout.md
 - [2026-10-01] prose-styles — **#280 implemented**: the `prose` filter, three tokens, the h1/h2
   refusal, manual page 9's tag table — sessions/2026-10-01-prose-styles.md
+- [2026-10-02] placement — **#361 implemented** (#362–#367): stack, keep/break, Only/OnlySections,
+  slide layouts, placed_layout fixtures — sessions/2026-10-02-placement.md
 - [2026-10-01] research-apparatus — **#220 implemented** (#308–#312): exhibits list, appendices,
   citations, glossary, the research-note fixtures — sessions/2026-10-01-research-apparatus.md

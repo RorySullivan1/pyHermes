@@ -172,7 +172,7 @@ class PagedDocument(Document):
         open a blank sheet instead.
         """
         sections = super()._body_sections()
-        if sections and isinstance(sections[0], Page):
+        if sections and sections[0].break_before:
             sections = [sections[0].opening(), *sections[1:]]
         return sections
 

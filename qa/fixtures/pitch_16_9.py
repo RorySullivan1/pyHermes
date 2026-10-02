@@ -2,11 +2,11 @@
 A 16:9 pitch deck: the deck medium's gallery fixture (#301).
 
 A title slide, an agenda, two parts each opened by a divider, a KPI slide, a
-table slide, a chart slide with notes, a two-column slide and the closing
-disclosures. Each slide opens on copy no other carries, so a test can find it
-on its sheet. Every ``Slide``, ``DividerSlide``, ``TitleSlide`` and
-``ClosingSlide`` field is set somewhere away from its default, per standing
-rule 9, and every slide fits its body.
+table slide, a chart slide with notes, a two-column slide, a slide laid out
+with a sidebar (#366) and the closing disclosures. Each slide opens on copy no
+other carries, so a test can find it on its sheet. Every ``Slide``,
+``DividerSlide``, ``TitleSlide`` and ``ClosingSlide`` field is set somewhere
+away from its default, per standing rule 9, and every slide fits its body.
 """
 
 from __future__ import annotations
@@ -49,6 +49,7 @@ TITLES: tuple[str, ...] = (
     "The term premium",
     "What we would do",
     "Two positions",
+    "The view in brief",
 )
 
 #: The notes on the chart slide, and a sentinel no projection but the notes may carry.
@@ -160,5 +161,32 @@ def build(template_dir: Path | None = None) -> Deck:
         TITLES[6],
         background_color="#F4F1EA",
         align="center",
+    )
+    # A main area and a sidebar of facts (#366): Slide.layout away from its default.
+    deck.add_slide(
+        [
+            FullWidth(
+                content=TextBlock(
+                    "<p>Rates have further to rise at the long end, and the premium is the "
+                    "reason. The front end waits on the next two prints.</p>"
+                ),
+                title="Our view",
+            )
+        ],
+        TITLES[7],
+        layout="sidebar",
+        side=[
+            FullWidth(
+                content=CardGroup(
+                    [
+                        KpiItem("10Y gilt", "4.21%", sublabel="+18 bps"),
+                        KpiItem("Term premium", "61 bps", sublabel="+12 bps"),
+                    ],
+                    orientation="vertical",
+                ),
+                title="In figures",
+                highlight=True,
+            )
+        ],
     )
     return deck

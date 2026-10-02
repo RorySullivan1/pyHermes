@@ -10,18 +10,35 @@
   Every column but the last pads its foot by block_gap, so the stacked columns do
   not touch on a phone; on a desktop that space falls under the row, unseen.
 
-  Context: columns — each a width and rendered content; within — the cell's width.
+  Context: columns — each a width, its share of the cell and rendered content; within — the
+  cell's width; stack — natural, reverse (dir=rtl lays the phone order out right to left) or
+  fixed (one fluid row that never stacks); gutter_share — the gutter's share when fixed.
 #}
+{% set rtl = stack == "reverse" %}
 <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
   <tr>
-    <td style="padding:0; font-size:0; line-height:0;">
+    <td{% if rtl %} dir="rtl"{% endif %} style="padding:0; font-size:0; line-height:0;">
+{% if stack == "fixed" %}
+    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="width:100%; table-layout:fixed;">
+      <tr>
+{% for col in columns %}
+        <td width="{{ col.share }}%" valign="top" style="width:{{ col.share }}%; padding:0; font-family: {{ font.label }}; font-size:{{ size.type.body }}px; color:{{ theme.text.primary }}; line-height:{{ size.type.body_line | percent }};">
+          {{ col.content }}
+        </td>
+{% if not loop.last %}
+        <td width="{{ gutter_share }}%" style="width:{{ gutter_share }}%; padding:0;"></td>
+{% endif %}
+{% endfor %}
+      </tr>
+    </table>
+{% else %}
     <!--[if mso]>
-    <table role="presentation" width="{{ within }}" border="0" cellpadding="0" cellspacing="0" style="width:{{ within }}px;">
+    <table{% if rtl %} dir="rtl"{% endif %} role="presentation" width="{{ within }}" border="0" cellpadding="0" cellspacing="0" style="width:{{ within }}px;">
       <tr>
         <td width="{{ columns[0].width }}" valign="top" style="width:{{ columns[0].width }}px; padding:0;">
     <![endif]-->
 {% for col in columns %}
-    <table role="presentation" width="{{ col.width }}" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:{{ col.width }}px;{% if not loop.last %} margin-right:{{ size.space.gutter }}px;{% endif %}">
+    <table role="presentation" width="{{ col.width }}" border="0" cellpadding="0" cellspacing="0" class="stack-column"{% if rtl %} dir="ltr"{% endif %} style="display:inline-table; vertical-align:top; width:{{ col.width }}px;{% if not loop.last %} margin-{{ "left" if rtl else "right" }}:{{ size.space.gutter }}px;{% endif %}">
       <tr>
         <td style="padding:{% if loop.last %}0{% else %}0 0 {{ size.space.block_gap }}px 0{% endif %}; font-family: {{ font.label }}; font-size:{{ size.type.body }}px; color:{{ theme.text.primary }}; line-height:{{ size.type.body_line | percent }};">
           {{ col.content }}
@@ -40,6 +57,7 @@
       </tr>
     </table>
     <![endif]-->
+{% endif %}
     </td>
   </tr>
 </table>

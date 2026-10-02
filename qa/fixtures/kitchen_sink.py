@@ -45,6 +45,7 @@ from pyhermes.builder import (
     ImageBlock,
     MathBlock,
     NumberedList,
+    Only,
     PullQuote,
     Reference,
     Rgba,
@@ -610,7 +611,13 @@ def build(
                             label="Key takeaway",
                         ),
                         Divider(),
-                        Button("Read the full note", "https://example.com/note", align="center"),
+                        # Shown in an email alone (#365), so this golden is unmoved by it.
+                        Only(
+                            Button(
+                                "Read the full note", "https://example.com/note", align="center"
+                            ),
+                            media="email",
+                        ),
                     ]
                 ),
             )

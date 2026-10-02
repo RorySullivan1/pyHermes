@@ -16,19 +16,32 @@ split::
 
 from __future__ import annotations
 
+import copy
 from collections.abc import Mapping, Sequence
 from typing import ClassVar
 
 from pyhermes.config import get_config
 
 from .apparatus import slugify, validate_anchor
-from .components import Component
+from .components import Component, descendants
+from .composition import refuse_numbered
 from .engine import Renderer, grounded, rebind, respaced, scheme_of
 from .enums import TextAlign, ThreeColumnRatio, TwoColumnRatio
 from .exceptions import ValidationError
 from .images import EmailImage, ImageAsset
+from .medium import check_media, walking_medium
 from .models import _validate_align, _validate_color
-from .sizing import STANDARD_SIZES, SizeScheme, Spacing, coerce_spacing, column_layout
+from .sizing import (
+    PHONE_FLOOR,
+    STANDARD_SIZES,
+    SizeScheme,
+    Spacing,
+    check_unstacked,
+    coerce_spacing,
+    coerce_stack,
+    column_layout,
+    shares,
+)
 from .textgen import join_blocks, join_sections, underline
 
 
@@ -91,6 +104,9 @@ class Container:
     #: The appendix letter this section opens, set by the document's walk (#309).
     letter: str = ""
 
+    #: The row ``id`` a kept section carries on paper, set by the document's walk (#364).
+    kept_mark: str = ""
+
     def __init__(
         self,
         title: str | None = None,
@@ -103,6 +119,8 @@ class Container:
         text_color: str | None = None,
         border: bool = False,
         border_color: str | None = None,
+        keep_together: bool = False,
+        break_before: bool = False,
     ):
         for value, name in (
             (background_color, "background_color"),
@@ -124,6 +142,11 @@ class Container:
         self.align = align
         self.anchor = anchor
         self.spacing = coerce_spacing(spacing, self.spacing_tokens(), self._owner())
+        for flag, name in ((keep_together, "keep_together"), (break_before, "break_before")):
+            if not isinstance(flag, bool):
+                raise ValidationError(f"{self._owner()}'s {name} is True or False, got: {flag!r}")
+        self.keep_together = keep_together
+        self.break_before = break_before
 
     @classmethod
     def spacing_tokens(cls) -> tuple[str, ...]:
@@ -153,6 +176,12 @@ class Container:
         """``engine`` as this section and everything inside it render against."""
         engine = respaced(engine, self.spacing, self._owner())
         return grounded(engine, engine.theme.on_ground(self.background_color, self.text_color))
+
+    def opening(self) -> Container:
+        """This section without its leading break, for a body that already opens a sheet."""
+        opened = copy.copy(self)
+        opened.break_before = False
+        return opened
 
     def heading(self) -> str:
         """The title as printed: behind its appendix letter when the walk gave it one."""
@@ -190,7 +219,20 @@ class Container:
         ctx["section_border"] = (
             (self.border_color or engine.theme.palette.rule) if self.border else ""
         )
+        ctx["section_break"] = self._break_style(engine)
+        ctx["section_kept"] = self.kept_mark if ctx["section_break"] and self.keep_together else ""
         return ctx
+
+    def _break_style(self, engine: Renderer) -> str:
+        """The section row's break declarations on paper, both spellings; empty elsewhere (#364)."""
+        if not engine.medium.paged:
+            return ""
+        rules = []
+        if self.break_before:
+            rules.append("break-before:page; page-break-before:always;")
+        if self.keep_together:
+            rules.append("break-inside:avoid; page-break-inside:avoid;")
+        return " ".join(rules)
 
     def components(self) -> list[Component]:
         """
@@ -275,6 +317,9 @@ class _SplitContainer(Container):
     #: How many columns this split has, which is how many weights it takes.
     COUNT: ClassVar[int]
 
+    #: How the columns stack on a phone: ``"natural"``, ``"reverse"`` or ``False`` (#362, #363).
+    stack: str | bool = "natural"
+
     @classmethod
     def _check_ratio(cls, ratio: object) -> str | tuple[int | float, ...]:
         """
@@ -304,6 +349,33 @@ class _SplitContainer(Container):
                     f"680px email frame, below Config.min_column_px ({floor})."
                 )
         return weights
+
+    def _check_stack(self, stack: object) -> str | bool:
+        """
+        How this split stacks on a phone (#362, #363), refusing ``False`` where a column won't fit.
+
+        Unstacked, the split keeps its proportions at the phone floor inside
+        the band's inset, so each column must stay above ``Config.min_column_px``
+        there, as it must at the 680px frame.
+        """
+        stack = coerce_stack(stack, type(self).__name__)
+        if stack is False:
+            frame, gutter = STANDARD_SIZES.frame, STANDARD_SIZES.space.gutter
+            phone = PHONE_FLOOR - 2 * frame.pad_x
+            available = phone * (1 - gutter * (self.COUNT - 1) / frame.inner)
+            check_unstacked(self._weights(self.ratio), available, type(self).__name__)
+        return stack
+
+    def _check_nested(self) -> None:
+        """Refuse an unstacked ``Columns`` in an unstacked split: two levels never fit a phone."""
+        if self.stack is not False:
+            return
+        for inner in descendants(self.components()):
+            if getattr(inner, "stack", None) is False:
+                raise ValidationError(
+                    f"{type(self).__name__} with stack=False holds a Columns with stack=False; "
+                    "one of the two must stack on a phone."
+                )
 
     @staticmethod
     def _weights(ratio: str | tuple[int | float, ...]) -> list[int | float]:
@@ -335,16 +407,24 @@ class _SplitContainer(Container):
 
     def _column_context(self, engine: Renderer, contents: list[str], scheme: SizeScheme) -> dict:
         geometry = column_layout(self._weights(self.ratio), scheme)
+        widths = [column.width for column in geometry]
+        *percent, gutter = shares(widths, scheme.space.gutter, scheme.frame.inner)
         ctx = self._base_context(engine)
-        ctx["columns"] = [
+        columns = [
             {
                 "width": column.width,
+                "share": share,
                 "pad_left": column.pad_left,
                 "pad_right": column.pad_right,
                 "content": content,
             }
-            for column, content in zip(geometry, contents, strict=True)
+            for column, share, content in zip(geometry, percent, contents, strict=True)
         ]
+        # Nothing stacks on paper, so a reversed or unstacked split prints as written.
+        stack = self.stack if not engine.medium.paged else "natural"
+        ctx["stack"] = "fixed" if stack is False else stack
+        ctx["gutter_share"] = gutter
+        ctx["columns"] = columns[::-1] if stack == "reverse" else columns
         return ctx
 
 
@@ -384,6 +464,8 @@ class FullWidth(Container):
         text_color: str | None = None,
         border: bool = False,
         border_color: str | None = None,
+        keep_together: bool = False,
+        break_before: bool = False,
     ):
         super().__init__(
             title,
@@ -395,6 +477,8 @@ class FullWidth(Container):
             text_color=text_color,
             border=border,
             border_color=border_color,
+            keep_together=keep_together,
+            break_before=break_before,
         )
         self.content = self._slot("content", content)
 
@@ -450,6 +534,8 @@ class FlowedColumns(FullWidth):
         text_color: str | None = None,
         border: bool = False,
         border_color: str | None = None,
+        keep_together: bool = False,
+        break_before: bool = False,
     ):
         super().__init__(
             content,
@@ -462,6 +548,8 @@ class FlowedColumns(FullWidth):
             text_color=text_color,
             border=border,
             border_color=border_color,
+            keep_together=keep_together,
+            break_before=break_before,
         )
         if isinstance(count, bool) or count not in self.COUNTS:
             raise ValidationError(
@@ -526,6 +614,9 @@ class TwoColumn(_SplitContainer):
         text_color: str | None = None,
         border: bool = False,
         border_color: str | None = None,
+        keep_together: bool = False,
+        break_before: bool = False,
+        stack: str | bool = "natural",
     ):
         super().__init__(
             title,
@@ -537,12 +628,16 @@ class TwoColumn(_SplitContainer):
             text_color=text_color,
             border=border,
             border_color=border_color,
+            keep_together=keep_together,
+            break_before=break_before,
         )
         self.ratio = self._check_ratio(ratio)
+        self.stack = self._check_stack(stack)
         if left is None and right is None:
             raise ValidationError("TwoColumn requires at least one of 'left' or 'right'.")
         self.left = None if left is None else self._slot("left", left)
         self.right = None if right is None else self._slot("right", right)
+        self._check_nested()
 
     def components(self) -> list[Component]:
         return [c for c in (self.left, self.right) if c is not None]
@@ -603,6 +698,9 @@ class ThreeColumn(_SplitContainer):
         text_color: str | None = None,
         border: bool = False,
         border_color: str | None = None,
+        keep_together: bool = False,
+        break_before: bool = False,
+        stack: str | bool = "natural",
     ):
         super().__init__(
             title,
@@ -614,8 +712,11 @@ class ThreeColumn(_SplitContainer):
             text_color=text_color,
             border=border,
             border_color=border_color,
+            keep_together=keep_together,
+            break_before=break_before,
         )
         self.ratio = self._check_ratio(ratio)
+        self.stack = self._check_stack(stack)
         if left is None and center is None and right is None:
             raise ValidationError(
                 "ThreeColumn requires at least one of 'left', 'center', or 'right'."
@@ -623,6 +724,7 @@ class ThreeColumn(_SplitContainer):
         self.left = None if left is None else self._slot("left", left)
         self.center = None if center is None else self._slot("center", center)
         self.right = None if right is None else self._slot("right", right)
+        self._check_nested()
 
     def components(self) -> list[Component]:
         return [c for c in (self.left, self.center, self.right) if c is not None]
@@ -670,6 +772,9 @@ class FourColumn(_SplitContainer):
         text_color: str | None = None,
         border: bool = False,
         border_color: str | None = None,
+        keep_together: bool = False,
+        break_before: bool = False,
+        stack: str | bool = "natural",
     ):
         super().__init__(
             title,
@@ -681,8 +786,11 @@ class FourColumn(_SplitContainer):
             text_color=text_color,
             border=border,
             border_color=border_color,
+            keep_together=keep_together,
+            break_before=break_before,
         )
         self.ratio = self._check_ratio(ratio)
+        self.stack = self._check_stack(stack)
         slots = list(columns)
         if len(slots) != self.COUNT:
             raise ValidationError(f"FourColumn takes four columns, got {len(slots)}.")
@@ -695,6 +803,7 @@ class FourColumn(_SplitContainer):
                     f"got {type(slot).__name__}."
                 )
         self.columns = slots
+        self._check_nested()
 
     def components(self) -> list[Component]:
         return [c for c in self.columns if c is not None]
@@ -804,6 +913,85 @@ class Appendices(Container):
 
 #: The letters an appendix takes, in order.
 LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+
+class OnlySections(Container):
+    """
+    Sections shown in the chosen media and omitted, bytes and all, from the rest (#365).
+
+    A section list that flattens to its sections, as a ``Page`` does, where its
+    medium matches, and to nothing where it does not: no band, no images in
+    the manifest, no text, no contents entry and no anchor. A labelled
+    exhibit, a footnote or a citation inside is refused, because omitting it
+    would renumber the rest of the document.
+
+    It sits at the top of a document. A page, a panel, a slide and
+    ``Appendices`` each hold sections only, and it holds no section list.
+
+    Args:
+        sections: The sections, in reading order.
+        media:    The media they show in: ``"email"``, ``"document"``,
+                  ``"brochure"``, ``"deck"`` or ``"html"``.
+        spacing:  Spacing for every section here: any token one reads.
+    """
+
+    def __init__(
+        self,
+        sections: Sequence[Container],
+        media: Sequence[str] | str,
+        spacing: Spacing | Mapping[str, int | float] | None = None,
+    ):
+        super().__init__(spacing=spacing)
+        held = list(sections)
+        if not held:
+            raise ValidationError("OnlySections needs at least one section.")
+        for section in held:
+            if not isinstance(section, Container) or hasattr(section, "sections"):
+                raise ValidationError(
+                    "OnlySections holds sections such as FullWidth, got "
+                    f"{type(section).__name__}; a page or another section list cannot nest."
+                )
+        self.media = check_media(media, "OnlySections")
+        refuse_numbered(
+            "OnlySections", [component for section in held for component in section.components()]
+        )
+        self._held = held
+
+    def shown_in(self, medium: str | None) -> bool:
+        """Whether ``medium`` shows these sections; ``None``, a walk outside any document, does."""
+        return medium is None or medium in self.media
+
+    @property
+    def sections(self) -> list[Container]:
+        """The sections the current walk's medium shows: all of them, or none."""
+        return list(self._held) if self.shown_in(walking_medium()) else []
+
+    @classmethod
+    def spacing_tokens(cls) -> tuple[str, ...]:
+        """Every token a section or component reads: the list reaches all of them."""
+        return section_spacing_tokens()
+
+    def resolved_anchor(self) -> str:
+        """None: the list has no heading; its sections do."""
+        return ""
+
+    def components(self) -> list[Component]:
+        return [component for section in self.sections for component in section.components()]
+
+    def assets(self) -> list[ImageAsset]:
+        return [asset for section in self.sections for asset in section.assets()]
+
+    def images(self) -> list[EmailImage]:
+        return [image for section in self.sections for image in section.images()]
+
+    def text(self) -> str:
+        return join_sections(*(section.text() for section in self.sections))
+
+    def render(self, engine: Renderer) -> str:
+        if not self.shown_in(engine.medium.name):
+            return ""
+        spaced = self._spaced(engine)
+        return "\n".join(section.render(spaced) for section in self._held)
 
 
 def section_spacing_tokens() -> tuple[str, ...]:
