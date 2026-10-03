@@ -1205,3 +1205,15 @@ manifest lacks the note's image, and the paged golden the reverse. `pitch_16_9` 
 slide. `kitchen_sink`'s button is wrapped in `Only(..., media="email")`, which renders it
 unchanged, so rule 1 holds with its goldens byte-identical. The gallery's 375px tests cover the
 new email, and `tests/test_stacking.py` measures where each column lands at 1000 and 375px.
+
+## Placement within a block's space (#360)
+
+`_placed.py` gains #354's controls after its fresh-sheet section, so no engineered break above
+them moves: a paper-only split aligned middle (in `OnlySections`, since an email refuses it), a
+chart and an equation hosted as floats, a callout, a table, a figures pair and a contents list
+each at a share of the column, placed centre or right by their section, and a narrow measure.
+So `placed_layout` pins the email's fallbacks and `a4_placed_layout` the floats and the split.
+`pitch_16_9` gains a middle-anchored title slide, divider and slide, a measured paragraph and a
+0.6 table; `tri_fold_letter` a bottom-anchored cover. The field tests count a `MathBlock` hosted
+as a figure, the only place its `wrap` means anything. The five new test modules join the `pdf`
+job's line, and `test_cell_share` the screenshot job's.

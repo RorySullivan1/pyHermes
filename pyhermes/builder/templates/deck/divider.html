@@ -2,15 +2,26 @@
    sheet where a slide's body ends, and the footer band, light, so the sheet
    still says where it sits in the deck. The title is the KPI value's size,
    the one token sized to be read across a room. Positioned rather than a
-   valign'd cell: WeasyPrint left the cell's copy at the top. #}
+   valign'd cell: WeasyPrint ignores the attribute. Anchored higher (#355), the
+   band spans the same height from under the title band, and a cell set by
+   CSS `vertical-align` places the title in it. #}
 {% from "deck/bands.html" import footer_band with context %}
 <div class="sheet slide divider" data-slide="{{ number }}" style="background-color:{{ theme.palette.header_bg }};">
+{% if valign == "bottom" %}
   <div class="slide-band" style="bottom:{{ box.footer_height + box.title_height }}px; width:{{ box.width }}px; padding:0 {{ box.inset }}px;">
+{% else %}
+  <div class="slide-band" style="top:{{ box.title_height }}px; height:{{ box.height - box.footer_height - 2 * box.title_height }}px; width:{{ box.width }}px; padding:0 {{ box.inset }}px;">
+    <table role="presentation" class="anchor" width="100%" cellpadding="0" cellspacing="0" border="0"
+           style="width:100%;"><tr><td style="padding:0; height:{{ box.height - box.footer_height - 2 * box.title_height }}px; vertical-align:{{ valign }};">
+{% endif %}
     <div style="width:{{ box.inset * 2 }}px; border-top:4px solid {{ theme.palette.accent }}; margin-bottom:{{ size.space.block_gap }}px;"></div>
     <h2 class="slide-title"{% if section_anchor %} id="{{ section_anchor | escape_html }}"{% endif %} style="margin:0; font-family:{{ font.heading }}; font-size:{{ size.component.kpi_value }}px; line-height:{{ size.type.title_line | percent }}; font-weight:normal; color:{{ theme.text.on_dark }};">{{ section_title | escape_html }}</h2>
     {% if subtitle %}
     <p style="margin:{{ size.space.subtitle_gap }}px 0 0; font-family:{{ font.body }}; font-size:{{ size.type.section }}px; line-height:{{ size.type.heading_line | percent }}; color:{{ theme.text.on_dark_secondary }};">{{ subtitle | escape_html }}</p>
     {% endif %}
+{% if valign != "bottom" %}
+    </td></tr></table>
+{% endif %}
   </div>
 {{ footer_band(box, number, footer_label, dark=true) }}
 </div>

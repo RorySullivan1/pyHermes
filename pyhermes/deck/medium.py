@@ -32,6 +32,7 @@ DECK_MEDIUM = Medium(
     region_types=(TitleSlide, ClosingSlide),
     template_search_path=("deck", "document"),
     paged=True,
+    measure="standard",
 )
 
 

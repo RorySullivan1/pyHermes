@@ -135,6 +135,19 @@ class TextAlign(StrEnum):
     RIGHT = "right"
 
 
+class VerticalAlign(StrEnum):
+    """
+    Where copy sits on the cross axis of a box whose height is known (#354).
+
+    A fixed box (a panel, a slide body) or a split's row on paper. An email
+    never takes anything but ``top``: its height is the copy's own.
+    """
+
+    TOP = "top"
+    MIDDLE = "middle"
+    BOTTOM = "bottom"
+
+
 class ColumnKind(StrEnum):
     """
     What a table column holds, which decides how it is set.

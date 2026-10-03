@@ -350,6 +350,13 @@ def cell_width_of(engine: Renderer) -> int:
     return width if isinstance(width, int) else int(scheme_of(engine).frame.inner)
 
 
+def placement_of(engine: Renderer) -> str:
+    """The alignment of the section ``engine`` renders inside, ``""`` when it sets none (#357)."""
+    shared = getattr(engine, "shared", {})
+    placement = shared.get("placement") if isinstance(shared, Mapping) else None
+    return placement if isinstance(placement, str) else ""
+
+
 def _surface_theme(engine: Renderer) -> Theme | None:
     """The theme a section's own ground replaced, or ``None`` off such a ground."""
     shared = getattr(engine, "shared", {})

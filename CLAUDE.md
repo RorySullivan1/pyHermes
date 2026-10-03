@@ -121,6 +121,8 @@ The rules themselves. `builder-architecture.md` carries why each exists.
   medium refuses it with no switch. A per-object `spacing` that moves a token the
   email's `@media` block reads (`pad_x`, `card_pad_*`, `mobile_*`) is refused off paper
   (`design-axes.md`).
+- **A split's `valign` is paper's.** An email refuses a split or `Columns` aligned anything but
+  `top` when the section is added, naming the Outlook check that would lift it (`design-axes.md`).
 - **The package never prints.** A soft limit is a `SizeWarning` or `PrintQualityWarning` a host
   can filter or promote; an AST test holds `pyhermes/` free of `print` (`config.md`).
 - **Colours are `#RRGGBB`**, validated at construction and again in the templates.
@@ -241,6 +243,9 @@ these rather than improvising:
   complete; #300, the PowerPoint export, was closed with #219.
   **#361** (placement across phones, sheets and media: `stack=` on splits, `keep_together` and
   `break_before` on sections, `Only`/`OnlySections`, slide layouts, #362–#367) is complete.
+  **#354** (placement within a block's space: `valign` in a panel, a slide and a paper split, a
+  `width=` share on four fill-width blocks, the prose measure the medium sets, floated charts and
+  equations, #355–#360) is complete.
   **#259** is fixed: the size report names each body section, and `pyhermes.check` and
   `preview --lint` report on an email over 102 KB. **#281** is fixed: the README states current
   facts, and a test holds each example's committed `.html` to a fresh render. **#272** is done:
