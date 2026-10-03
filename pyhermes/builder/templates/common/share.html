@@ -1,0 +1,27 @@
+{#
+  A BLOCK SET TO A SHARE OF ITS CELL (#357).
+
+  The share is a percentage on both spellings: the attribute, which Outlook's
+  Word engine reads, and the style, which a browser and the print engine read
+  (a print engine does not map a table's width attribute). It is placed by the
+  section's alignment: the outer cell's `align` attribute for Outlook (with its
+  style twin, #125, the section's own value, so nothing new is inherited), the
+  inner table's auto margins for everyone else. `align` on the inner table
+  itself would float it, and copy after it would wrap.
+
+  Context: content — the block, rendered at the share's width; share — its
+  percentage of the cell; place — the section's alignment, empty for left.
+#}
+<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
+  <tr>
+    <td{% if place %} align="{{ place }}"{% endif %} style="padding:0;{% if place %} text-align:{{ place }};{% endif %}">
+      <table role="presentation" width="{{ share }}%" border="0" cellpadding="0" cellspacing="0" style="width:{{ share }}%;{% if place == 'center' %} margin-left:auto; margin-right:auto;{% elif place == 'right' %} margin-left:auto;{% endif %}">
+        <tr>
+          <td style="padding:0;">
+{{ content }}
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>

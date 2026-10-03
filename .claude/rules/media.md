@@ -431,3 +431,11 @@ would ship the bytes.
   the shipped `Medium` objects the kit may not import.
 - In a cell an omitted block leaves the cell empty; `OnlySections` sits at the top of a
   document, since a page, a panel, a slide and `Appendices` hold sections only.
+
+## The medium owns the measure (#358)
+
+`Medium.measure` is the prose measure a `TextBlock` takes when it names none: `"standard"` on
+`PAGED_MEDIUM` (and so every `paged_medium(page)`), `BROCHURE_MEDIUM` and `DECK_MEDIUM`, `None`
+on the email and on `DEFAULT_MEDIUM`. It is the medium's because it is geometry: the same
+density on a 578px column and a 1,124px slide body needs a cap on one and not the other, and
+"density is not width" stands. `design-axes.md` has the tokens and the numbers.

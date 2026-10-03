@@ -8,11 +8,11 @@
 - **Shipped**: #157, #153, #169, #170, #171, #172, #193 (PRs #167–#203); #201, #150, #202 (PRs #204–#206);
   #209 (PR #222); #217 (PR #234); #221 (PR #235); #238 (PR #253); #237, #255, #239 (PRs #254–#257); manual
   + #258 (PR #260); #261 + #258's fix (PR #283); #265 (PR #284); #277 (PR #285); #282 (PR #286); #273 (PR #287); #270
-  (PR #289); #259 (PR #292); #281 (PR #293); #272 (PR #294); #280 (PR #295); #220 (PR #313); #218 (PR #314); #361 (this branch). #288 is the human Outlook-desktop check.
+  (PR #289); #259 (PR #292); #281 (PR #293); #272 (PR #294); #280 (PR #295); #220 (PR #313); #218 (PR #314); #361; #354 (this branch). #288 is the human Outlook-desktop check.
   #220 research apparatus (#308–#312) shipped in PR #313; epic-autoclose closed it.
   #218 deck medium shipped in PR #314; epic-autoclose closed it. #300 PPTX was closed with #219.
   Epics defined, not started: #219 DOCX (#302–#307); content #318 #324 #329 #335 #340 #346;
-  position #354. Subs #319–#360. #361 implemented (#362–#367). Deck bugs #315–#317 come before #346.
+  Subs #319–#353. #361 implemented (#362–#367); #354 implemented (#355–#360). Deck bugs #315–#317 come before #346.
 - The prose budget is live; the baseline is 44 and may only shrink.
 
 ## Decisions        (append-only; supersede, never delete)
@@ -43,7 +43,13 @@
   hybrid technique, unstacked is a fluid percentage row gated at the 375px floor, visibility rides
   a medium context var beside the config one — `design-axes.md`, `media.md`, `deck.md` (#361)
 
+- [2026-10-03] **Placement within a block's space is paper-first**: `valign` anchors a fixed box by a
+  CSS-aligned cell, a split's `valign` is refused in an email (route C), a share is the section's
+  align, and the measure is in `ch` and the medium's (route D) — `design-axes.md`, `deck.md` (#354)
+
 ## Threads          (open items; remove when closed)
+- **Outlook's handling of a share table (`width="60%"`, outer `align`) is unverified here**; add it
+  to #288's human check. The measure counts `ch` of Georgia; this container prints Liberation Serif.
 - **Outlook desktop's handling of `dir=rtl` on a reversed split is unverified here**; add it to #288's
   human check.
 - **Open deck bugs #315–#317** (overflow check crash, wrapped title, Slide in Panel); #347 waits on #316.

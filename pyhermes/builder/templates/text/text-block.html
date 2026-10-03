@@ -9,6 +9,9 @@
     figure_html  — A rendered ImageBlock to place with the prose; empty for none
     figure_wrap  — "left" or "right" to float it, on paper only; empty otherwise
     figure_width — Its display width, which a float needs
+    measure_px   — The longest line in px where the cell is wider than the
+                   measure (#358), else empty, so a column that fits gains no byte
+    measure_place — How a capped block sits: centre or right by its alignment
 #}
 {% from "common/notes.html" import marked with context %}
 {% if subtitle %}
@@ -30,4 +33,4 @@
    element becomes a real ancestor. `Card.body` and `Footer.disclaimer`
    were already divs; this brings the last three raw-HTML surfaces into
    line with them. #}
-<div class="{{ body_class }}"{% if align %} align="{{ align | escape_html }}"{% endif %} style="font-family: {{ font.body }}; font-size: {{ size.type.body }}px; color: {{ theme.text.primary }}; line-height: {{ size.type.body_line | percent }}; margin: 0 0 {{ size.space.block_gap }}px 0;{% if align %} text-align:{{ align }};{% endif %}">{{ marked(text_parts, true) | prose }}</div>
+<div class="{{ body_class }}"{% if align %} align="{{ align | escape_html }}"{% endif %} style="font-family: {{ font.body }}; font-size: {{ size.type.body }}px; color: {{ theme.text.primary }}; line-height: {{ size.type.body_line | percent }}; margin: 0 0 {{ size.space.block_gap }}px 0;{% if align %} text-align:{{ align }};{% endif %}{% if measure_px %} max-width:{{ measure_px }}px;{% if measure_place == 'center' %} margin-left:auto; margin-right:auto;{% elif measure_place == 'right' %} margin-left:auto;{% endif %}{% endif %}">{{ marked(text_parts, true) | prose }}</div>

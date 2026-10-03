@@ -22,7 +22,7 @@
     <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="width:100%; table-layout:fixed;">
       <tr>
 {% for col in columns %}
-        <td width="{{ col.share }}%" valign="top" style="width:{{ col.share }}%; padding:0; font-family: {{ font.label }}; font-size:{{ size.type.body }}px; color:{{ theme.text.primary }}; line-height:{{ size.type.body_line | percent }};">
+        <td width="{{ col.share }}%" valign="{{ valign }}" style="width:{{ col.share }}%; padding:0; font-family: {{ font.label }}; font-size:{{ size.type.body }}px; color:{{ theme.text.primary }}; line-height:{{ size.type.body_line | percent }};">
           {{ col.content }}
         </td>
 {% if not loop.last %}
@@ -35,10 +35,10 @@
     <!--[if mso]>
     <table{% if rtl %} dir="rtl"{% endif %} role="presentation" width="{{ within }}" border="0" cellpadding="0" cellspacing="0" style="width:{{ within }}px;">
       <tr>
-        <td width="{{ columns[0].width }}" valign="top" style="width:{{ columns[0].width }}px; padding:0;">
+        <td width="{{ columns[0].width }}" valign="{{ valign }}" style="width:{{ columns[0].width }}px; padding:0;">
     <![endif]-->
 {% for col in columns %}
-    <table role="presentation" width="{{ col.width }}" border="0" cellpadding="0" cellspacing="0" class="stack-column"{% if rtl %} dir="ltr"{% endif %} style="display:inline-table; vertical-align:top; width:{{ col.width }}px;{% if not loop.last %} margin-{{ "left" if rtl else "right" }}:{{ size.space.gutter }}px;{% endif %}">
+    <table role="presentation" width="{{ col.width }}" border="0" cellpadding="0" cellspacing="0" class="stack-column"{% if rtl %} dir="ltr"{% endif %} style="display:inline-table; vertical-align:{{ valign }}; width:{{ col.width }}px;{% if not loop.last %} margin-{{ "left" if rtl else "right" }}:{{ size.space.gutter }}px;{% endif %}">
       <tr>
         <td style="padding:{% if loop.last %}0{% else %}0 0 {{ size.space.block_gap }}px 0{% endif %}; font-family: {{ font.label }}; font-size:{{ size.type.body }}px; color:{{ theme.text.primary }}; line-height:{{ size.type.body_line | percent }};">
           {{ col.content }}
@@ -48,7 +48,7 @@
 {% if not loop.last %}
     <!--[if mso]>
         </td>
-        <td width="{{ columns[loop.index].width }}" valign="top" style="width:{{ columns[loop.index].width }}px; padding:0;">
+        <td width="{{ columns[loop.index].width }}" valign="{{ valign }}" style="width:{{ columns[loop.index].width }}px; padding:0;">
     <![endif]-->
 {% endif %}
 {% endfor %}

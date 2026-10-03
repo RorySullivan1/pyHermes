@@ -26,11 +26,11 @@ from .apparatus import slugify, validate_anchor
 from .components import Component, descendants
 from .composition import refuse_numbered
 from .engine import Renderer, grounded, rebind, respaced, scheme_of
-from .enums import TextAlign, ThreeColumnRatio, TwoColumnRatio
+from .enums import TextAlign, ThreeColumnRatio, TwoColumnRatio, VerticalAlign
 from .exceptions import ValidationError
 from .images import EmailImage, ImageAsset
 from .medium import check_media, walking_medium
-from .models import _validate_align, _validate_color
+from .models import _validate_align, _validate_color, check_valign
 from .sizing import (
     PHONE_FLOOR,
     STANDARD_SIZES,
@@ -175,6 +175,9 @@ class Container:
     def _spaced(self, engine: Renderer) -> Renderer:
         """``engine`` as this section and everything inside it render against."""
         engine = respaced(engine, self.spacing, self._owner())
+        if self.align:
+            # What places a block sized to a share of its cell (#357).
+            engine = rebind(engine, placement=str(self.align))
         return grounded(engine, engine.theme.on_ground(self.background_color, self.text_color))
 
     def opening(self) -> Container:
@@ -320,6 +323,9 @@ class _SplitContainer(Container):
     #: How the columns stack on a phone: ``"natural"``, ``"reverse"`` or ``False`` (#362, #363).
     stack: str | bool = "natural"
 
+    #: Where each column sits in the row's height, on paper only (#356).
+    valign: str = "top"
+
     @classmethod
     def _check_ratio(cls, ratio: object) -> str | tuple[int | float, ...]:
         """
@@ -424,6 +430,7 @@ class _SplitContainer(Container):
         stack = self.stack if not engine.medium.paged else "natural"
         ctx["stack"] = "fixed" if stack is False else stack
         ctx["gutter_share"] = gutter
+        ctx["valign"] = self.valign
         ctx["columns"] = columns[::-1] if stack == "reverse" else columns
         return ctx
 
@@ -561,7 +568,11 @@ class FlowedColumns(FullWidth):
     def render(self, engine: Renderer) -> str:
         engine = self._spaced(engine)
         ctx = self._base_context(engine)
-        ctx["content"] = self.content.render(_in_cell(engine, int(scheme_of(engine).frame.inner)))
+        scheme = scheme_of(engine)
+        flowing = self.count if engine.medium.paged else 1
+        # On paper the content is set one flowed column wide, which is what a measure reads (#358).
+        within = (scheme.frame.inner - scheme.space.gutter * (flowing - 1)) / flowing
+        ctx["content"] = self.content.render(_in_cell(engine, int(within)))
         ctx["flow_columns"] = self.count if engine.medium.paged else 0
         return engine.render(self.template_path, ctx)
 
@@ -570,9 +581,7 @@ class TwoColumn(_SplitContainer):
     """
     Two-column container with configurable split ratio.
 
-    Slots are positional — ``left`` and ``right`` are the visual columns —
-    and the ``ratio`` string determines their widths.
-
+    Slots are positional: ``left`` and ``right`` are the visual columns.
     Supported ratios (widths shown at the shipped 680 px frame, and
     *derived* from it rather than hardcoded — a different frame width
     yields different columns from the same ratio):
@@ -590,6 +599,7 @@ class TwoColumn(_SplitContainer):
         title:            Optional section heading.
         background_color: Optional hex background override (``#RRGGBB``).
         anchor, spacing:  As on ``FullWidth``.
+        valign:           ``"top"``, ``"middle"`` or ``"bottom"``, on paper; an email refuses it.
 
     Raises:
         ValidationError: On an unsupported ratio, a non-hex background color,
@@ -617,6 +627,7 @@ class TwoColumn(_SplitContainer):
         keep_together: bool = False,
         break_before: bool = False,
         stack: str | bool = "natural",
+        valign: str | VerticalAlign = "top",
     ):
         super().__init__(
             title,
@@ -633,6 +644,7 @@ class TwoColumn(_SplitContainer):
         )
         self.ratio = self._check_ratio(ratio)
         self.stack = self._check_stack(stack)
+        self.valign = check_valign(valign, type(self).__name__)
         if left is None and right is None:
             raise ValidationError("TwoColumn requires at least one of 'left' or 'right'.")
         self.left = None if left is None else self._slot("left", left)
@@ -672,7 +684,7 @@ class ThreeColumn(_SplitContainer):
         right:            Component rendered in the right column.
         title:            Optional section heading.
         background_color: Optional hex background override (``#RRGGBB``).
-        anchor, spacing:  As on ``FullWidth``.
+        anchor, spacing, valign: As on ``TwoColumn``.
 
     Raises:
         ValidationError: On an unsupported ratio, a non-hex background color,
@@ -701,6 +713,7 @@ class ThreeColumn(_SplitContainer):
         keep_together: bool = False,
         break_before: bool = False,
         stack: str | bool = "natural",
+        valign: str | VerticalAlign = "top",
     ):
         super().__init__(
             title,
@@ -717,6 +730,7 @@ class ThreeColumn(_SplitContainer):
         )
         self.ratio = self._check_ratio(ratio)
         self.stack = self._check_stack(stack)
+        self.valign = check_valign(valign, type(self).__name__)
         if left is None and center is None and right is None:
             raise ValidationError(
                 "ThreeColumn requires at least one of 'left', 'center', or 'right'."
@@ -745,7 +759,7 @@ class FourColumn(_SplitContainer):
     Args:
         columns:          Four components, or ``None`` for an empty column.
         ratio:            ``"25-25-25-25"``, or four positive weights.
-        title, background_color, highlight, align, anchor, spacing: As on
+        title, background_color, highlight, align, anchor, spacing, valign: As on
                           ``TwoColumn``.
     """
 
@@ -775,6 +789,7 @@ class FourColumn(_SplitContainer):
         keep_together: bool = False,
         break_before: bool = False,
         stack: str | bool = "natural",
+        valign: str | VerticalAlign = "top",
     ):
         super().__init__(
             title,
@@ -791,6 +806,7 @@ class FourColumn(_SplitContainer):
         )
         self.ratio = self._check_ratio(ratio)
         self.stack = self._check_stack(stack)
+        self.valign = check_valign(valign, type(self).__name__)
         slots = list(columns)
         if len(slots) != self.COUNT:
             raise ValidationError(f"FourColumn takes four columns, got {len(slots)}.")

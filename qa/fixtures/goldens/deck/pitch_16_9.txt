@@ -37,6 +37,10 @@ Term premium: 61 bps (+12 bps)
 Curve by tenor
 --------------
 
+The long end did the work this quarter. Ten-year yields rose eighteen basis
+points while the two-year barely moved, and the term premium explains most of
+the difference.
+
 Tenor  Yield  Change (bps)  Weight
 -----  -----  ------------  ------
 2Y     3.83%            +9     18%

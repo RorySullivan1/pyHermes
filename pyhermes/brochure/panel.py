@@ -14,9 +14,10 @@ from dataclasses import dataclass, replace
 from pyhermes.builder.components import Component
 from pyhermes.builder.containers import Container
 from pyhermes.builder.engine import Renderer, rebind, scheme_of
-from pyhermes.builder.enums import EmbedStrategy, TextAlign
+from pyhermes.builder.enums import EmbedStrategy, TextAlign, VerticalAlign
 from pyhermes.builder.exceptions import ValidationError
 from pyhermes.builder.images import EmailImage, ImageAsset
+from pyhermes.builder.models import check_valign
 from pyhermes.builder.sizing import PageMargin, SizeScheme
 from pyhermes.builder.textgen import join_blocks, underline
 from pyhermes.document.page import Page
@@ -86,6 +87,7 @@ class Panel(Container):
         background_image: A picture filling the panel's ground to the bleed
                           (#189), attached or inline: a printed panel carries
                           its own image. Its sections' grounds go clear over it.
+        valign:           The copy's anchor: ``"top"``, ``"middle"`` or ``"bottom"`` (#355).
     """
 
     template_path = "brochure/panel.html"
@@ -102,6 +104,8 @@ class Panel(Container):
         align: str | TextAlign | None = None,
         inset: int | float | None = None,
         background_image: EmailImage | None = None,
+        *,
+        valign: str | VerticalAlign = "top",
     ):
         super().__init__(title=title, background_color=background_color, align=align)
         if not sections:
@@ -139,6 +143,7 @@ class Panel(Container):
         self.sections = list(sections)
         self.inset = inset
         self.background_image = background_image
+        self.valign = check_valign(valign, self._name())
 
     def _name(self) -> str:
         """How errors name this panel."""
@@ -212,6 +217,7 @@ class Panel(Container):
                 "content_height": _px(box.height - 2 * inset),
                 "ground": box.ground(fold.bleed, fold.panels),
                 "background_image": self.background_image.src if self.background_image else "",
+                "valign": self.valign,
             },
         )
 

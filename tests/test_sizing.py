@@ -67,6 +67,8 @@ AUDIT: dict[str, dict[str, int | float]] = {
         "heading_line": 1.3,
         "body_line": 1.72,
         "secondary_line": 1.4,
+        "measure_standard": 75,
+        "measure_narrow": 60,
     },
     "space": {
         "gutter": 16,
@@ -548,6 +550,10 @@ class TestTheSchemeReachesEveryTemplate:
 #: would go untested.
 NEVER_RENDERED = {
     "frame.narrow_column",
+    # Characters, written as px from the body size, and only on paper by
+    # default; tests/test_measure.py pins both (#358).
+    "type.measure_standard",
+    "type.measure_narrow",
     # No template reads a page height yet: an email is continuous. The paged
     # skeleton in #162 is what makes this token live.
     "frame.height",

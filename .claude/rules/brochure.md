@@ -144,3 +144,16 @@ construction check. It sees vertical overflow only. The answer was also posted o
 No CMYK, ICC or PDF/X. No saddle-stitch or perfect-bound imposition. No dielines, die-cut,
 spot UV, foil or stock metadata. Fold guides appear on a proof only. A sixth editorial
 primitive is a new issue with its own case.
+
+## Anchoring a panel's copy, and floated charts and equations (#355, #359)
+
+`Panel(valign="top" | "middle" | "bottom")` places the copy in the panel's `content_height`,
+the box between the insets. The mechanism and its probe are the slide's (`deck.md`): one
+presentation cell the copy's height, CSS `vertical-align` on it, the sentinel a block at its
+foot, so a bottom cover ends on its safe line exactly and an overfull panel is still named by
+`overflowing_panels`. `tri_fold_letter`'s cover is anchored bottom. In any other medium a
+panel flattens and the field writes nothing.
+
+`ChartBlock(wrap=)` and `MathBlock(wrap=)` join `ImageBlock`'s float through
+`TextBlock(figure=)`: one `check_wrap`, the same width rule, the same refusal of a label or a
+note. In an email each sits above the prose, its own markup byte for byte as unhosted.

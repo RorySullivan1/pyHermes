@@ -2,8 +2,10 @@
 A 16:9 pitch deck: the deck medium's gallery fixture (#301).
 
 A title slide, an agenda, two parts each opened by a divider, a KPI slide, a
-table slide, a chart slide with notes, a two-column slide, a slide laid out
-with a sidebar (#366) and the closing disclosures. Each slide opens on copy no
+table slide (a measured paragraph over a table at 0.6 of the body), a chart
+slide with notes, a two-column slide anchored middle, a slide laid out with a
+sidebar (#366) and the closing disclosures. The title slide and the second
+divider are anchored middle (#355). Each slide opens on copy no
 other carries, so a test can find it on its sheet. Every ``Slide``,
 ``DividerSlide``, ``TitleSlide`` and ``ClosingSlide`` field is set somewhere
 away from its default, per standing rule 9, and every slide fits its body.
@@ -52,6 +54,12 @@ TITLES: tuple[str, ...] = (
     "The view in brief",
 )
 
+#: The table slide's lead-in: long enough that, uncapped, a line would cross the body.
+MEASURED = (
+    "The long end did the work this quarter. Ten-year yields rose eighteen basis points "
+    "while the two-year barely moved, and the term premium explains most of the difference."
+)
+
 #: The notes on the chart slide, and a sentinel no projection but the notes may carry.
 CHART_NOTES = (
     "Walk through the term premium first, then the hedge. The sentinel "
@@ -79,6 +87,7 @@ def build(template_dir: Path | None = None) -> Deck:
             align="right",
             background_color="#EEF2F5",
             text_color="#22313F",
+            valign="middle",
         ),
         closing_slide=ClosingSlide(heading="Important information", align="left"),
         template_dir=template_dir,
@@ -106,6 +115,9 @@ def build(template_dir: Path | None = None) -> Deck:
     )
     deck.add_slide(
         [
+            # A paragraph across the whole body, capped at the standard measure (#358).
+            FullWidth(content=TextBlock(f"<p>{MEASURED}</p>")),
+            # A four-row table at a share of the body, centred by its section (#357).
             FullWidth(
                 content=DataTable(
                     ["Tenor", "Yield", "Change (bps)", "Weight"],
@@ -116,8 +128,10 @@ def build(template_dir: Path | None = None) -> Deck:
                         TableRow(["30Y", "4.78%", "+21", "20%"]),
                     ],
                     source="Hermes Research, as at quarter end",
-                )
-            )
+                    width=0.6,
+                ),
+                align="center",
+            ),
         ],
         TITLES[3],
         notes="The long end did the work; the front end barely moved.",
@@ -143,7 +157,7 @@ def build(template_dir: Path | None = None) -> Deck:
             anchor="premium",
         )
     )
-    deck.add_divider(TITLES[5])
+    deck.add_divider(TITLES[5], valign="middle")
     deck.add_slide(
         [
             TwoColumn(
@@ -161,6 +175,8 @@ def build(template_dir: Path | None = None) -> Deck:
         TITLES[6],
         background_color="#F4F1EA",
         align="center",
+        # A short body set in the middle of the sheet (#355).
+        valign="middle",
     )
     # A main area and a sidebar of facts (#366): Slide.layout away from its default.
     deck.add_slide(
@@ -168,7 +184,8 @@ def build(template_dir: Path | None = None) -> Deck:
             FullWidth(
                 content=TextBlock(
                     "<p>Rates have further to rise at the long end, and the premium is the "
-                    "reason. The front end waits on the next two prints.</p>"
+                    "reason. The front end waits on the next two prints.</p>",
+                    measure="full",
                 ),
                 title="Our view",
             )

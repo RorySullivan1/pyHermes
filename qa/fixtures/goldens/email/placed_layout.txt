@@ -82,4 +82,87 @@ points while the two-year barely moved, and the term premium explains most of
 the difference.
 
 
+A chart the prose wraps round
+-----------------------------
+
+[Term premium]
+
+Hermes Research
+
+The long end did the work this quarter: ten-year yields rose eighteen basis
+points while the two-year barely moved, and the term premium explains most of
+the difference. The long end did the work this quarter: ten-year yields rose
+eighteen basis points while the two-year barely moved, and the term premium
+explains most of the difference.
+
+
+An equation the prose wraps round
+---------------------------------
+
+$P = \sum_t c_t\,e^{-y t}$
+
+The long end did the work this quarter: ten-year yields rose eighteen basis
+points while the two-year barely moved, and the term premium explains most of
+the difference. The long end did the work this quarter: ten-year yields rose
+eighteen basis points while the two-year barely moved, and the term premium
+explains most of the difference.
+
+
+A callout at a share of its column
+----------------------------------
+
+------------------------------------------------------------------------------
+
+KEY TAKEAWAY
+
+The premium, not the policy path, moved the long end.
+
+------------------------------------------------------------------------------
+
+
+A short table, not the whole width
+----------------------------------
+
+Tenor  Yield  Change (bps)
+-----  -----  ------------
+2Y     3.83%            +9
+10Y    4.21%           +18
+
+Hermes Research
+
+
+Two figures to the right
+------------------------
+
+10Y gilt: 4.21%
+2s10s: 38 bps
+
+
+In this note
+------------
+
+The chart comes first on a phone
+Two figures, side by side everywhere
+A label beside its value
+Read the full note
+Kept on one sheet
+Opening a fresh sheet
+A chart the prose wraps round
+An equation the prose wraps round
+A callout at a share of its column
+A short table, not the whole width
+Two figures to the right
+A narrow measure
+
+
+A narrow measure
+----------------
+
+The long end did the work this quarter: ten-year yields rose eighteen basis
+points while the two-year barely moved, and the term premium explains most of
+the difference. The long end did the work this quarter: ten-year yields rose
+eighteen basis points while the two-year barely moved, and the term premium
+explains most of the difference.
+
+
 © Hermes Research

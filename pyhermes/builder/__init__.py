@@ -62,6 +62,7 @@ from .enums import (
     ThreeColumnRatio,
     Tone,
     TwoColumnRatio,
+    VerticalAlign,
 )
 
 # Exceptions
@@ -258,6 +259,7 @@ __all__ = [
     "ImageAlign",
     "SizeTheme",
     "TextAlign",
+    "VerticalAlign",
     # Images
     "EmailImage",
     "ImageAsset",

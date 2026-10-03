@@ -91,6 +91,10 @@ class Medium:
     paged: bool = False
     email: bool = False
 
+    #: The measure a prose block takes when it names none (#358): ``"standard"``,
+    #: ``"narrow"``, or ``None`` for no cap. The medium owns geometry, so it owns this.
+    measure: str | None = None
+
     @property
     def slots(self) -> tuple[str, ...]:
         """Every slot this medium's regions fill, in skeleton order."""

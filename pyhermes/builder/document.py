@@ -213,6 +213,12 @@ class Document:
         """Append ``container`` once its subtree passes this medium's checks, or leave things be."""
         for owner, spacing in _spacings(container):
             spacing.check_medium(self._medium.paged, self._medium.name, owner)
+        if self._medium.email and (aligned := _valigned(container)):
+            raise ValidationError(
+                f"{aligned[0]} sets valign={aligned[1]!r}, which an email refuses: a split's "
+                "columns align at the top until an Outlook check shows the Word engine honours "
+                "valign on the ghost table (#356). It is accepted on paper."
+            )
         if isinstance(container, Appendices) and any(
             isinstance(section, Appendices) for section in self._sections
         ):
@@ -618,6 +624,22 @@ def check_density(size_theme: SizeTheme | str | SizeScheme, medium: Medium) -> N
         "Render it in the clients you send to, then set "
         "Config.allow_custom_email_density (PYHERMES_ALLOW_CUSTOM_EMAIL_DENSITY)."
     )
+
+
+def _valigned(container: Container) -> tuple[str, str] | None:
+    """The first split in one section's subtree aligned off the top, and its value (#356)."""
+    for inner in getattr(container, "sections", ()):
+        if found := _valigned(inner):
+            return found
+    candidates: list[object] = [container]
+    if not hasattr(container, "sections"):
+        candidates.extend(descendants(container.components()))
+    for candidate in candidates:
+        valign = getattr(candidate, "valign", "top")
+        if valign != "top" and not hasattr(candidate, "sections"):
+            owner = candidate._owner() if isinstance(candidate, Container) else "Columns"
+            return owner, valign
+    return None
 
 
 def _spacings(container: Container) -> list[tuple[str, Spacing]]:

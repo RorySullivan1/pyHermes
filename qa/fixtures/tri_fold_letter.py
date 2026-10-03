@@ -80,6 +80,8 @@ def panels() -> list[Panel]:
             background_image=EmailImage.attached(_COVER_PNG, alt="Cover ground"),
             align="center",
             inset=36,
+            # The cover's title sits low, at the safe line (#355).
+            valign="bottom",
         ),
         Panel(
             [

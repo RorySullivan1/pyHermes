@@ -2,7 +2,8 @@
 
 [Look and feel](05-look-and-feel.md) changes the whole email at once: its colours, density
 and typefaces. This page covers the finer controls: moving the spacing of one section or
-block, placing blocks on a phone, on paper and in one medium only, setting a house density,
+block, placing blocks on a phone, on paper and in one medium only, positioning a block in the
+room it has, setting a house density,
 adding a block of your own, and replacing one of pyHermes's own templates. It ends with what
 is fixed on purpose, and what to do instead.
 
@@ -405,6 +406,63 @@ plain-text part and its title from any contents list.
 > outside, or drop its label. In a column, a block left out leaves the column empty; to drop
 > a whole band, use `OnlySections`.
 
+## Position blocks
+
+**When to use this:** a block has more room than it needs. A short table spans a whole slide,
+a cover title should sit low on its panel, a figure should sit level with the middle of the
+commentary beside it, or a paragraph runs too wide on a landscape sheet.
+
+**Steps:** each control is a word or a share, never a size in pixels.
+
+- **Anchor copy in a fixed box:** `valign="top"`, `"middle"` or `"bottom"` on a brochure
+  `Panel`, a deck `Slide`, `DividerSlide` or `TitleSlide`.
+- **Align a split's columns on paper:** `valign=` on `TwoColumn`, `ThreeColumn`, `FourColumn`
+  or `Columns`.
+- **Make a table, figures, callout or contents list narrower:** `width=` from 0.3 to 1.0, a
+  share of its column. The section's `align` places it.
+- **Set how long a line of prose may run:** `TextBlock(measure="narrow")`, or `"full"` for no
+  limit. Reports, brochures and decks use `"standard"` unless you say otherwise; an email uses
+  none.
+- **Float a chart or an equation beside prose on paper:** give it `wrap="left"` or
+  `"right"` and a width, and pass it as the text's `figure`, as for an image.
+
+```python
+from pyhermes.builder import Callout, ChartBlock, TwoColumn
+from pyhermes.builder.images import EmailImage
+
+chart = ChartBlock(
+    EmailImage.hosted("https://example.com/premium.png", alt="Term premium", width=160),
+    wrap="right",
+)
+report = PagedDocument({"firm_name": "Acme Research", "campaign_name": "Morning Note"})
+report.add_section(
+    TwoColumn(
+        "30-70",
+        left=TextBlock("<p><strong>61 bps</strong></p>"),
+        right=TextBlock("<p>The premium explains most of the move at the long end.</p>"),
+        valign="middle",
+    )
+)
+report.add_section(
+    FullWidth(
+        Callout(TextBlock("<p>The premium moved the long end.</p>"), width=0.6),
+        align="center",
+    )
+)
+report.add_section(
+    FullWidth(TextBlock("<p>Rates rose for a third quarter.</p>", figure=chart, measure="narrow"))
+)
+```
+
+**Result:** the short figure sits level with the middle of its commentary, the callout takes
+60% of its column in the centre, and the prose wraps round the chart, no wider than the
+narrow measure.
+
+> **Note:** an email refuses `valign` on a split, naming why: mail programs have not been
+> checked aligning columns other than at the top. In an email a floated chart sits above the
+> prose, placed by its own alignment, and a measure is written only where a column is wider
+> than it, so an email that sets none gains no byte. None of these change the plain-text part.
+
 ## What you cannot change, and what to do instead
 
 These limits are deliberate. Each was decided because the alternative breaks in a mail
@@ -417,7 +475,7 @@ program, or would let one email drift from the rest of its series.
 | Give one block its own type size or typeface | Sizes come from the density and faces from the font theme, so a heading means the same size everywhere | A house density, or a house font theme ([Look and feel](05-look-and-feel.md#how-to-change-the-typefaces)) |
 | Write padding in pixels, such as `"4px 8px"` | Spacing is named, so a density change moves it, and a name the block ignores is caught | `spacing=` with the block's spacing names (above) |
 | Put a margin between sections | Outlook drops a margin on a table cell. The space between sections is padding | `spacing={"content_top": ..., "content_bottom": ...}` |
-| Align columns to the middle or bottom | Columns align to the top. Middle and bottom alignment has not been checked in mail programs | Keep side-by-side columns a similar length, or stack the shorter one under the longer in one column |
+| Align an email's columns to the middle or bottom | Columns align to the top in an email. Middle and bottom alignment has not been checked in mail programs | On paper, `valign=` ([above](#position-blocks)). In an email, keep side-by-side columns a similar length |
 | Round a frame's corners | Outlook ignores rounded corners and draws square ones | Frames and callouts are square in every mail program, so they look the same in all of them |
 | Use a web font | Most mail programs ignore web fonts, and the check reports a linked stylesheet | A font theme naming faces your readers have installed ([Look and feel](05-look-and-feel.md#how-to-change-the-typefaces)) |
 | Use a dark theme | The email tells mail programs to show it in light mode only, and no dark palette ships | A dark band on one section: `background_color` ([Look and feel](05-look-and-feel.md#how-to-put-a-section-on-a-dark-band)) |
