@@ -183,5 +183,7 @@ def test_the_semantic_tokens_now_have_a_render_site():
     from pathlib import Path
 
     templates = Path("pyhermes/builder/templates/analysis")
-    assert "theme.semantic[cell.tone]" in (templates / "data-table.html").read_text()
-    assert "theme.semantic[card.tone" in (templates / "card-group.html").read_text()
+    assert "theme.semantic[cell.tone]" in (templates / "data-table.html").read_text(
+        encoding="utf-8"
+    )
+    assert "theme.semantic[card.tone" in (templates / "card-group.html").read_text(encoding="utf-8")

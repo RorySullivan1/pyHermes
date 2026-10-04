@@ -235,7 +235,7 @@ class TestItChangesNothingElse:
 
         from pyhermes.builder import textgen
 
-        source = pathlib.Path(textgen.__file__).read_text()
+        source = pathlib.Path(textgen.__file__).read_text(encoding="utf-8")
         imported = {
             node.module
             for node in ast.walk(ast.parse(source))

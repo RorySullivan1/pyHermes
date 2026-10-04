@@ -74,13 +74,15 @@ class TestTheBaselineIsARatchet:
         return {f.location for f in pb.scan_tree(ROOT, pb.replace(budgets, baseline=frozenset()))}
 
     def test_every_entry_still_violates(self) -> None:
-        stale = sorted(set(json.loads(BASELINE_PATH.read_text())) - self._all_violations())
+        stale = sorted(
+            set(json.loads(BASELINE_PATH.read_text(encoding="utf-8"))) - self._all_violations()
+        )
         assert not stale, "baseline entries that no longer violate — delete them:\n" + "\n".join(
             f"  {location}" for location in stale
         )
 
     def test_every_entry_carries_a_reason(self) -> None:
-        entries = json.loads(BASELINE_PATH.read_text())
+        entries = json.loads(BASELINE_PATH.read_text(encoding="utf-8"))
         assert all(isinstance(v, str) and v.strip() for v in entries.values())
 
 
@@ -111,11 +113,13 @@ class TestTheGateBites:
     )
     def test_the_read_examples_pass_on_their_merits(self, location: str) -> None:
         """The caps were chosen so these stay legal — not baselined into legality."""
-        assert location not in json.loads(BASELINE_PATH.read_text())
+        assert location not in json.loads(BASELINE_PATH.read_text(encoding="utf-8"))
         path, _, rest = location.partition("::")
         scope, _, name = rest.partition(":")
         budgets = pb.load_budgets(ROOT)
         over = pb.scan_source(
-            (ROOT / path).read_text(), path, pb.replace(budgets, baseline=frozenset())
+            (ROOT / path).read_text(encoding="utf-8"),
+            path,
+            pb.replace(budgets, baseline=frozenset()),
         )
         assert not [f for f in over if f.scope == scope and f.name == name]

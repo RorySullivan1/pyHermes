@@ -246,7 +246,7 @@ class TestTheOpeningAndClosingSlides:
 
         template = (
             Path(pyhermes.builder.__file__).parent / "templates/deck/regions/title-slide.html"
-        ).read_text()
+        ).read_text(encoding="utf-8")
         assert "{{ campaign_name" not in template and "{{ firm_name" not in template
 
     def test_the_title_slide_projects_through_its_text(self):

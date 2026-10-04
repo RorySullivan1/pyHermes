@@ -322,7 +322,7 @@ class TestTheEmailRefusesTokensItsCollapseReads:
     """
 
     def test_every_token_the_media_block_reads_is_named(self) -> None:
-        source = (TEMPLATES / "base.html").read_text()
+        source = (TEMPLATES / "base.html").read_text(encoding="utf-8")
         block = source[source.index("@media only screen") : source.index(":root")]
         read = set(re.findall(r"size\.\w+\.(\w+)", block))
         type_tokens = {name for name, layers in TOKEN_LAYERS.items() if layers[0] == "type"}

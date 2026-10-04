@@ -54,6 +54,8 @@
   human check.
 - **Open deck bugs #315–#317** (overflow check crash, wrapped title, Slide in Panel); #347 waits on #316.
 - **`epic-autoclose` works again**: it closed #273 on 2026-10-01. Still confirm each epic closed.
+- **#372 fixed on this branch: the suite runs on Windows** (encoding guard, drive-letter split,
+  face-aware boundary tests) — `qa-harness.md`. A Windows CI job is not added; the owner's run is the check.
 - **In this container, PDF byte-determinism tests flake** (no HarfBuzz-Subset), and screenshot
   tests skip unless `PYHERMES_CHROMIUM=/opt/pw-browsers/chromium-1194/chrome-linux/chrome`.
 - **Every issue or PR body is written without angle brackets** — GitHub's sanitizer has

@@ -208,10 +208,10 @@ class TestTheConventionCannotCreepBack:
         once. Grep-asserted, because re-introducing it would render correctly
         today and quietly make `Column` unreachable.
         """
-        assert "loop.first" not in TEMPLATE.read_text()
+        assert "loop.first" not in TEMPLATE.read_text(encoding="utf-8")
 
     def test_the_template_reads_the_resolved_keys(self):
-        source = TEMPLATE.read_text()
+        source = TEMPLATE.read_text(encoding="utf-8")
         assert "column.align" in source, "the header row reads the resolved column alignment"
         assert "cell.align" in source, "each body cell reads its own resolved alignment (#118)"
         assert "cell.is_text" in source, "the face follows the resolved kind, not a position"

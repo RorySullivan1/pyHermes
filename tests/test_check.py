@@ -75,6 +75,16 @@ class TestLoadingADraft:
         with pytest.raises(TargetError, match=message):
             load_target(f"{draft}{suffix}")
 
+    @pytest.mark.parametrize("drive", ["C:/u/weekly.py", "c:\\u\\weekly.py"])
+    def test_a_drive_letter_is_never_the_separator(self, drive):
+        """A Windows path with no callable names no callable, on any OS (#372)."""
+        with pytest.raises(TargetError, match="names no callable"):
+            load_target(drive)
+
+    def test_a_drive_path_with_a_callable_splits_on_the_last_colon(self):
+        with pytest.raises(TargetError, match=r"No such file: C:/u/weekly\.py"):
+            load_target("C:/u/weekly.py:build")
+
     def test_preview_loads_through_the_same_loader(self, draft):
         assert preview.PreviewError is TargetError
         name, document = preview.resolve(f"{draft}:build")

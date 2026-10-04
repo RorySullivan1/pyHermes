@@ -201,7 +201,7 @@ class TestTheCoverPresentsFactsItCannotOwn:
         # The grep test #91 introduced, ported. Reading {{ firm_name }} again
         # would render correctly for every document that sets no title, and
         # make the field unreachable with nothing failing.
-        source = (TEMPLATE_DIR / "document" / "regions" / "cover.html").read_text()
+        source = (TEMPLATE_DIR / "document" / "regions" / "cover.html").read_text(encoding="utf-8")
         assert "cover_title" in source and "cover_subtitle" in source
         assert "{{ firm_name" not in source and "{{ campaign_name" not in source
 
@@ -277,7 +277,9 @@ class TestTheBackMatterRendersAFactItDoesNotOwn:
         assert "header_disclaimer" not in {f.name for f in dataclasses.fields(BackMatter)}
 
     def test_raw_html_is_emitted_in_a_div_never_a_p(self):
-        source = (TEMPLATE_DIR / "document" / "regions" / "back-matter.html").read_text()
+        source = (TEMPLATE_DIR / "document" / "regions" / "back-matter.html").read_text(
+            encoding="utf-8"
+        )
         assert "<div" in source
         assert "<p" not in source.split("header_disclaimer")[0].split("<div")[-1]
 
@@ -346,6 +348,6 @@ class TestTheDocumentRegionsAreComplete:
         assert PAGED_MEDIUM.region_types == DOCUMENT_REGIONS
 
     def test_the_skeleton_names_every_slot_the_regions_fill(self):
-        skeleton = (TEMPLATE_DIR / "document" / "base.html").read_text()
+        skeleton = (TEMPLATE_DIR / "document" / "base.html").read_text(encoding="utf-8")
         for slot in PAGED_MEDIUM.slots:
             assert f"{{{{ {slot}_html }}}}" in skeleton

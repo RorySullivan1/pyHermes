@@ -330,7 +330,7 @@ class TestComponentFieldsAreExercised:
         import pathlib as _pathlib
 
         sources = [
-            _pathlib.Path(module).read_text()
+            _pathlib.Path(module).read_text(encoding="utf-8")
             for module in _pathlib.Path("qa/fixtures").glob("*.py")
         ]
         assert any("colors=" in source for source in sources), (
