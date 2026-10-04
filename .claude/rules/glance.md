@@ -127,5 +127,6 @@ there; it stays at 88 KB.
 letter in it a section marker, so `<!--<![endif]-->`, the close of a downlevel-revealed block,
 was one. `cta.html` always emitted it, near the foot; the arrow put one in `kitchen_sink`'s
 first section, and the bare report attributed most of the body to `<![endif]`. `_MARKER` now
-skips it as it skips `[if`. The sparkline also lost a table `align`: a placement attribute with
+skips it as it skips `[if`. That left a brochure with no marker at all, and its report empty;
+when sections are given and none is found or marked, the whole page is now one region. The sparkline also lost a table `align`: a placement attribute with
 no CSS twin fails the alignment audit, and the cell around it already carries the alignment.

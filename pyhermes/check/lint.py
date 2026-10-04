@@ -795,8 +795,8 @@ def size_report(html: str, sections: list[tuple[str, str]] | None = None) -> Siz
     bounds = [(m.start(), m[1]) for m in markers]
     if markers and markers[0].start():
         bounds.insert(0, (0, "(document head)"))
-    elif spans and not markers:
-        # A paged document carries no markers; what its sections leave is one region.
+    elif sections and not markers:
+        # A paged document or a brochure carries no markers: what is left is one region.
         bounds = [(0, "(rest of document)")]
     regions: list[RegionSize] = []
     if bounds:
