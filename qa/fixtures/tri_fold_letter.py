@@ -19,6 +19,7 @@ from pyhermes.builder import (
     ContactBlock,
     FlowedColumns,
     FullWidth,
+    HeroStat,
     ImageBlock,
     NumberedList,
     PullQuote,
@@ -112,6 +113,10 @@ def panels() -> list[Panel]:
                         caption="The 2s10s spread",
                         source="Hermes Research",
                     ),
+                ),
+                # The panel's figure, set alone under its chart (#322).
+                FullWidth(
+                    content=HeroStat("38 bps", "2s10s", "steepest since 2022", align="center"),
                 ),
             ],
             title="Inside centre",

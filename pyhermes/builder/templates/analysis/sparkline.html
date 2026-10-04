@@ -1,0 +1,20 @@
+{#
+  SPARKLINE (#321) — a short series on its own: the bars, then the series'
+  lowest, last and highest in fine print, which is also what the text part reads.
+
+  Context:
+    spark    — Series.drawn(): heights, tone, highlight_last, summary
+    subtitle — Optional italic standfirst
+#}
+{% from "analysis/sparkline-bars.html" import sparkline with context %}
+{% if subtitle %}
+<p class="subtitle" style="font-family: {{ font.body }}; font-size: {{ size.type.secondary }}px; font-style: italic; color: {{ theme.text.secondary }}; margin: 0 0 {{ size.space.subtitle_gap }}px 0; line-height: {{ size.type.secondary_line | percent }};">{{ subtitle | escape_html }}</p>
+{% endif %}
+<table class="figure" role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
+  <tr>
+    <td style="padding: 0;">
+      {{ sparkline(spark) }}
+      <p style="font-family: {{ font.label }}; font-size: {{ size.type.micro }}px; color: {{ theme.text.secondary }}; margin: {{ size.space.caption_gap }}px 0 0 0; line-height: {{ size.type.body_line | percent }};">{{ spark.summary | escape_html }}</p>
+    </td>
+  </tr>
+</table>

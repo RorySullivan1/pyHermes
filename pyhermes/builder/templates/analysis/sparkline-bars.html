@@ -1,0 +1,20 @@
+{#
+  SPARKLINE BARS (#321) — a short series as a row of narrow cells, each filled
+  from the foot to its share of `sparkline_height`. A layout table, because the
+  Word engine sizes a td by its height and a table by its width attribute; the
+  print engine reads the CSS twins. The gap is each bar's left padding, inline
+  and `!important`, so the mobile rule that pads every data-table td cannot
+  move it. The last bar takes the series' tone and the rest the rule, unless
+  every bar is toned. The summary rides as the table's title.
+
+  sparkline(spark, place) — spark is Series.drawn(); place "", "center" or "right".
+#}
+{% macro sparkline(spark, place="") -%}
+{%- set tall = size.component.sparkline_height -%}{%- set wide = size.component.sparkline_bar -%}
+<table role="presentation" class="sparkline" title="{{ spark.summary | escape_html }}"{% if place %} align="{{ place }}"{% endif %} border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse;{% if place == 'center' %} margin: 0 auto;{% elif place == 'right' %} margin: 0 0 0 auto;{% endif %}"><tr>
+{%- for height in spark.heights -%}
+{%- set filled = [1, (tall * height) | round | int] | max -%}
+<td valign="bottom" style="height: {{ tall }}px; vertical-align: bottom; padding: {% if loop.first %}0{% else %}0 0 0 {{ size.component.sparkline_gap }}px{% endif %} !important;"><table role="presentation" border="0" cellpadding="0" cellspacing="0" width="{{ wide }}"><tr><td height="{{ filled }}" style="width: {{ wide }}px; height: {{ filled }}px; background-color: {{ theme.semantic[spark.tone] if (loop.last or not spark.highlight_last) else theme.palette.rule }}; font-size: 0; line-height: 0; padding: 0 !important;"></td></tr></table></td>
+{%- endfor -%}
+</tr></table>
+{%- endmacro %}

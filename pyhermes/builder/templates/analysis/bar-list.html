@@ -1,0 +1,42 @@
+{#
+  BAR LIST (#320) — ranked horizontal bars from labelled values: the label, a
+  bar sized to the largest absolute value, then the figure. A layout table, so
+  the table-role rule holds and no header or rules imply a data table. The bar
+  is the data table's own cell bar, toned by the item; a diverging list splits
+  the track at a centre rule and fills a negative leftward from it. The outer
+  table carries the `figure` hook, so on paper the list stays on one sheet.
+
+  Context:
+    title     — A small heading above the list, plain text; empty for none
+    subtitle  — Optional italic standfirst
+    diverging — Whether the track splits at a centre rule
+    items     — List of dicts: label, value (written), tone, bar (percent), negative
+#}
+{% if subtitle %}
+<p class="subtitle" style="font-family: {{ font.body }}; font-size: {{ size.type.secondary }}px; font-style: italic; color: {{ theme.text.secondary }}; margin: 0 0 {{ size.space.subtitle_gap }}px 0; line-height: {{ size.type.secondary_line | percent }};">{{ subtitle | escape_html }}</p>
+{% endif %}
+<table class="figure bar-list" role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
+  <tr>
+    <td style="padding: 0;">
+{% if title %}
+      <div style="font-family: {{ font.label }}; font-size: {{ size.type.label }}px; font-weight: bold; color: {{ theme.text.heading }}; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 {{ size.space.caption_gap }}px 0; line-height: {{ size.type.body_line | percent }};">{{ title | escape_html }}</div>
+{% endif %}
+      <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
+{% for item in items %}
+{% set ink = theme.semantic[item.tone] if item.tone else theme.palette.accent %}
+        <tr>
+          <td width="35%" style="width: 35%; font-family: {{ font.label }}; font-size: {{ size.type.secondary }}px; color: {{ theme.text.primary }}; line-height: {{ size.type.body_line | percent }}; vertical-align: middle; padding: {{ size.component.bar_list_pad }}px 0;">{{ item.label | escape_html }}</td>
+          <td width="45%" style="width: 45%; vertical-align: middle; padding: {{ size.component.bar_list_pad }}px {{ size.component.table_cell_pad }}px;">
+{% if diverging %}
+            <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;"><tr><td width="50%" style="width: 50%; padding: 0;">{% set cell = {"bar": item.bar if item.negative else 0, "bar_color": ink, "reverse": True} %}{% include "analysis/cell-bar.html" %}</td><td width="50%" style="width: 50%; padding: 0; border-left: 1px solid {{ theme.palette.rule_dark }};">{% set cell = {"bar": 0 if item.negative else item.bar, "bar_color": ink, "reverse": False} %}{% include "analysis/cell-bar.html" %}</td></tr></table>
+{% else %}
+            {% set cell = {"bar": item.bar, "bar_color": ink, "reverse": False} %}{% include "analysis/cell-bar.html" %}
+{% endif %}
+          </td>
+          <td width="20%" align="right" style="width: 20%; font-family: {{ font.numeric }}; font-size: {{ size.type.secondary }}px; font-weight: bold; color: {{ theme.semantic[item.tone or 'neutral'] }}; text-align: right; white-space: nowrap; line-height: {{ size.type.body_line | percent }}; vertical-align: middle; padding: {{ size.component.bar_list_pad }}px 0;">{{ item.value | escape_html }}</td>
+        </tr>
+{% endfor %}
+      </table>
+    </td>
+  </tr>
+</table>

@@ -247,6 +247,96 @@ email = EmailBuilder().metadata(facts).section(FullWidth(table, title="Factor re
 **Notes:** a named index becomes the first column. Pass `total_row=True` to treat the
 last row as a total.
 
+## How to show a trend or a ranking without a chart
+
+**When to use this:** you want a direction, a ranking, a short series or one big number to
+read at a glance, and you want it to show in Outlook with images blocked.
+
+Each of these is drawn from table cells in your theme's colours, not from a picture, so it
+needs no image, and the plain-text version of the email still says what it shows.
+
+```python
+from functools import partial
+
+from pyhermes.builder import BarList, Column, HeroStat, Sparkline, Stack
+from pyhermes.builder.formats import bps, number, pct
+
+# An arrow on a change, and its last quarters under the figure.
+figures = CardGroup([
+    KpiItem.from_number(
+        "UST 10Y", 0.0428, pct, change=0.0006, change_fmt=bps, good="down",
+        arrow=True, trend=[0.0409, 0.0415, 0.0422, 0.0428],
+    ),
+    KpiItem.from_number("VIX", 14.3, partial(number, dp=1), change=-0.6, good="down", arrow=True),
+])
+
+# Top holdings as ranked bars, and contributions either side of zero.
+holdings = BarList(
+    [("Treasury 2034", 0.081), ("Treasury 2038", 0.074), ("Treasury 2042", 0.066)],
+    value_format=partial(pct, dp=1),
+    title="Top holdings",
+)
+contributions = BarList(
+    [("Duration", 0.0042), ("Curve", 0.0018), ("Credit", -0.0009)],
+    value_format=partial(pct, dp=2, sign=True),
+    tone="auto",
+    diverging=True,
+)
+
+# A series on its own, and one figure set large.
+yields = Sparkline([3.62, 3.81, 3.66, 3.88, 3.97, 4.21], tone="auto",
+                   value_format=partial(number, dp=2))
+lead = HeroStat("38 bps", "2s10s", "steepest since 2022", align="center")
+
+# Arrows and a sparkline in a table's columns.
+curve = DataTable(
+    headers=[
+        "Tenor",
+        Column("Change", format=lambda v: f"{v:+d} bps" if v else "0 bps", tone="auto",
+               arrow=True),
+        Column("Two years", kind="sparkline", format=partial(number, dp=2)),
+    ],
+    rows=[
+        TableRow(["2Y", 0, [3.86, 3.91, 3.84, 3.83]]),
+        TableRow(["10Y", 18, [4.00, 4.11, 4.15, 4.21]]),
+    ],
+)
+email = (
+    EmailBuilder()
+    .metadata(facts)
+    .section(FullWidth(Stack([lead, figures]), title="At a glance"))
+    .section(FullWidth(Stack([holdings, contributions]), title="The book"))
+    .section(FullWidth(Stack([yields, curve]), title="The curve"))
+    .build()
+)
+```
+
+**Result:** a large *38 bps* over its label; *4.28%* with a red up arrow before *+6 bps* and
+eight small bars under it; bars for each holding, longest first; green bars right of a centre
+line and a red one left of it; a row of bars ending in a toned one; and a table whose change
+column has an arrow before each figure and whose last column is a row of bars.
+
+**Notes:**
+- The arrow's direction comes from the number's sign, never from you. Its colour is the
+  figure's tone, so with `good="down"` a rising yield gets a red up arrow. A change that shows
+  as zero gets a flat bar. `arrow=True` needs a `change`.
+- In a table, `Column(arrow=True)` reads each cell's raw figure, so the rows must give numbers,
+  not text.
+- A bar list sizes every bar against its largest value. A negative value needs
+  `diverging=True`. Give an item a third entry, such as `("Credit", -0.0009, "negative")`, to
+  set its colour; otherwise `tone="auto"` colours each bar by its sign, and with no tone the
+  bars take your theme's accent.
+- A sparkline draws 2 to 24 values (`Config.sparkline_max`), each scaled to the series' own
+  lowest and highest. The last bar takes the series' tone and the rest are grey; pass
+  `highlight_last=False` to colour them all. In the plain text it reads
+  `min 3.62 · last 4.21 · max 4.21`, written with `value_format`.
+- `trend=` on a card and `kind="sparkline"` on a column take the same lists. A card's
+  summary uses the figure's format when you use `from_number`.
+- `HeroStat` has no box of its own. On a dark section its text turns light by itself. Use
+  `HeroStat.from_number(label, value, fmt, context=...)` to write the figure from a number.
+- None of these are charts: there are no axes or labels. For a real chart, use a
+  [`ChartBlock`](04-images-and-charts.md#how-to-show-a-chart-with-its-source).
+
 ## How to keep a wide table readable on a phone
 
 Keep it to about five columns. Emails are 680 pixels wide on a desktop and 375 on a phone,

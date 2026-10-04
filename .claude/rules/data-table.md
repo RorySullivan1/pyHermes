@@ -342,6 +342,16 @@ the range, and `Column(bar=True)` draws each figure as a bar under it. Both read
 - **Neither projects to text.** The figure is the data, and its sign is already in the string
   (#178's reasoning). A test asserts the text part is byte-identical with and without a scale
   or a bar.
+- **Superseded in part (#320): "the `width` attribute" alone.** The print engine reads only
+  CSS, so on paper every bar printed at one length; each bar cell now carries its width in both
+  spellings. `glance.md` has the measurement.
+
+### An arrow and a sparkline in a column (#319, #321)
+
+`Column(arrow=True)` draws each raw figure's direction before it, and
+`Column(kind="sparkline")` draws a list of figures as a row of bars, its text the series'
+summary. Both read raw data, as the scale and the bar do, and both are refused on a column
+that cannot hold it. `glance.md` has the rest.
 
 ### The proof: a factor book and the factsheet (#228)
 

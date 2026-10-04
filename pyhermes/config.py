@@ -112,6 +112,10 @@ class Config:
     #: equation renders at and the 3.125x print needs; `config.md` has the measurement.
     oversize_image_ratio: float = 4.5
 
+    #: The most values a sparkline draws (#321), so each bar stays wider than a
+    #: hairline at the bar width every density sets. More are refused by name.
+    sparkline_max: int = 24
+
     def __post_init__(self) -> None:
         # Validation at construction, as everywhere else in this codebase --
         # a bad limit should name itself here, not surface later as a
@@ -125,6 +129,7 @@ class Config:
             "print_dpi",
             "min_column_px",
             "citation_authors",
+            "sparkline_max",
             "oversize_image_ratio",
             "attachment_limit_kb",
             "attachment_warn_kb",

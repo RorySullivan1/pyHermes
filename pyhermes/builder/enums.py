@@ -162,6 +162,8 @@ class ColumnKind(StrEnum):
     TEXT = "text"
     #: Figures. Set in the numeric face, bold, aligned right.
     NUMERIC = "numeric"
+    #: A short series per cell, drawn as bars (#321).
+    SPARKLINE = "sparkline"
 
 
 class Tone(StrEnum):
@@ -175,6 +177,19 @@ class Tone(StrEnum):
     POSITIVE = "positive"
     NEGATIVE = "negative"
     NEUTRAL = "neutral"
+
+
+class Trend(StrEnum):
+    """
+    Which way a change moved, read off its sign and drawn as a shape (#319).
+
+    Never the caller's: a tone may be stated, because a rising yield can be bad
+    news, but a direction is what the number says.
+    """
+
+    UP = "up"
+    DOWN = "down"
+    FLAT = "flat"
 
 
 class RowKind(StrEnum):

@@ -25,6 +25,7 @@ from pyhermes.builder import (
     AuthorBlock,
     Banner,
     BannerPalette,
+    BarList,
     Bibliography,
     Button,
     Callout,
@@ -42,6 +43,7 @@ from pyhermes.builder import (
     FullWidth,
     Glossary,
     Header,
+    HeroStat,
     ImageBlock,
     MathBlock,
     NumberedList,
@@ -50,6 +52,7 @@ from pyhermes.builder import (
     Reference,
     Rgba,
     Spacing,
+    Sparkline,
     Stack,
     Term,
     TextBlock,
@@ -276,8 +279,18 @@ def build(
                             sublabel=pct(0.0142, sign=True),
                             tone=tone_of(0.0142),
                         ),
-                        # Rising yields hurt the bond book: up, and still negative.
-                        KpiItem("UST 10Y", pct(0.0428), sublabel=bps(0.0006), tone=Tone.NEGATIVE),
+                        # Rising yields hurt the bond book: up, and still negative. Its
+                        # change is drawn as an arrow and its quarter as a trend (#318).
+                        KpiItem.from_number(
+                            "UST 10Y",
+                            0.0428,
+                            pct,
+                            change=0.0006,
+                            change_fmt=bps,
+                            good="down",
+                            arrow=True,
+                            trend=[0.0409, 0.0415, 0.0422, 0.0428],
+                        ),
                         KpiItem(
                             "Gold",
                             number(2411),
@@ -379,6 +392,32 @@ def build(
                     "<p>On paper this passage runs down one column and on into the "
                     "next, the way a newspaper sets its copy. In an email it is one "
                     "column, because Outlook's Word engine has no multi-column layout.</p>"
+                ),
+            )
+        )
+        # The glance objects (#318): every token they read renders here.
+        .section(
+            FullWidth(
+                title="At a Glance",
+                content=Stack(
+                    [
+                        HeroStat.from_number(
+                            "2s10s",
+                            0.0038,
+                            bps,
+                            context="steepest since 2022",
+                            tone="auto",
+                            align="center",
+                        ),
+                        BarList(
+                            [("Duration", 0.0042), ("Curve", 0.0018)],
+                            value_format=partial(pct, dp=2, sign=True),
+                            tone="auto",
+                        ),
+                        Sparkline(
+                            [3.9, 4.0, 4.2], tone="negative", value_format=partial(number, dp=1)
+                        ),
+                    ]
                 ),
             )
         )

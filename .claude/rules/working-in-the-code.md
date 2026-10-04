@@ -31,6 +31,8 @@ pyhermes/
 │   ├── components.py   — Component, CardGroup, DataTable, ChartBlock, ImageBlock, TextBlock, NumberedList, AuthorBlock, ContactBlock, Contents
 │                         (+ the Exhibit mixin, and the private Endnotes the document appends)
 │   ├── surfaces.py     — Callout, Button, Divider: blocks that set content apart (#265)
+│   ├── glance.py       — BarList, Sparkline, HeroStat: data at a glance, drawn without
+│                         images (#318). `glance.md`
 │   ├── research.py     — Reference + Bibliography, Term + Glossary: a note's sources and
 │                         terms, resolved by the document's walk (#220). `apparatus.md`
 │   ├── models.py       — EmailMetadata (the email's facts), Card, KpiItem, TableRow, NumberedItem, Footnote, SectionConfig

@@ -4,20 +4,16 @@
 - pyHermes builds **documents** and renders each onto a **medium**: `pyhermes/builder` is the
   shared kit, `pyhermes/email`, `document`, `brochure` and `deck` are the media, and exporters sit on
   one contract — `delivery`+`gmail`+`outlook`, and `pdf`. Rationale: CLAUDE.md and `media.md`.
-- **Shipped through PR #371; nothing is in flight.** Epics #157–#220 and #218 (PRs #167–#314); deck bugs
-  #315–#317 (PR #369); #361 (PR #370); #354 and #372 (PR #371). #219 DOCX closed not planned, with #300 PPTX.
-- **Open: six content epics, filed 2026-10-01 against `59be201`.** Order: **#318** glance objects first
-  (#319 arrow probe → #320 → #321; #322 HeroStat; #323) — #346 deck layouts needs #322, and #324 badges
-  reuses #319's shape call; then #346, #324, #329 and #335 (independent); #340 last (three WeasyPrint
-  probes, the `[qr]` extra). #288 is the owner's Outlook-desktop check, run on Windows.
+- **Shipped through PR #371.** Epics #157–#220 and #218 (PRs #167–#314); deck bugs #315–#317
+  (PR #369); #361 (PR #370); #354 and #372 (PR #371). #219 DOCX closed not planned, with #300 PPTX.
+- **#318 implemented on this branch** (#319–#323): arrows, `BarList`, `Sparkline`, `HeroStat`.
+- **Open next, in order:** #346 deck layouts (#349 needs #322, now built), #324 badges (reuse
+  #319's shape call), #329 and #335 (independent), #340 last (three WeasyPrint probes, `[qr]`).
+  #288 is the owner's Outlook-desktop check, run on Windows.
 - The prose budget is live; the baseline is 44 and may only shrink.
 
 ## Decisions        (append-only; supersede, never delete)
 - Older entries, and epic #157's, are in sessions/ARCHIVE-2026.md.
-- [2026-09-28] **A config travels with the work: explicit, then context, then default.** A `ContextVar`
-  over `set_config`; a new thread starts from the default. Soft limits are warnings — `config.md`
-- [2026-09-29] **The import root is `pyhermes` alone**; the `svc` shim was removed (#255) before any
-  release shipped it. Checks read the built wheel and sdist, never the tree — `working-in-the-code.md`
 - [2026-09-30] **A composite is a component; the document walks leaves, containers the top level.** So a
   composite delegates images and reports no notes of its own — `builder-architecture.md` (#261)
 - [2026-10-01] **A section's ground rebinds the theme for its subtree; a block that paints its own surface
@@ -47,11 +43,14 @@
   CSS-aligned cell, a split's `valign` is refused in an email (route C), a share is the section's
   align, and the measure is in `ch` and the medium's (route D) — `design-axes.md`, `deck.md` (#354)
 
+- [2026-10-04] **A glance object is drawn from cells and tokens, never an image; an arrow is a
+  CSS shape with a VML twin, its direction the number's (`Card.arrow` is `init=False`)** — `glance.md` (#318)
+
 ## Threads          (open items; remove when closed)
 - **A share table holds its share in Word's engine** (owner, via COM, PR #371); a real Outlook client
   is still #288's. The measure is `ch`: in Georgia 75ch sets ~99 characters (`design-axes.md`).
-- **Outlook desktop's handling of `dir=rtl` on a reversed split is unverified here**; add it to #288's
-  human check.
+- **Outlook desktop's handling of `dir=rtl` on a reversed split is unverified here**, and so is #319's
+  VML arrow (`v:shape`/`v:rect` in a paragraph); add both to #288's human check.
 - **The suite runs on Windows since #372** (PR #371); no Windows CI job — the owner's run is the check.
 - **`epic-autoclose` works** (closed #273, #354, #361). Still confirm each epic closed after its merge.
 - **In this container, PDF byte-determinism tests flake** (no HarfBuzz-Subset), and screenshot
@@ -81,3 +80,5 @@
 - [2026-10-03] position — **#354 implemented** (#355–#360): valign, `width=` shares, the `ch` measure,
   floated figures; with #372, merged in PR #371 — sessions/2026-10-03-position.md
 - [2026-10-04] memory — State, Threads and the epic order re-synced with GitHub after PR #371.
+- [2026-10-04] glance — **#318 implemented** (#319–#323): arrows, bar lists, sparklines, hero
+  figures; the cell bar's CSS widths — sessions/2026-10-04-glance.md

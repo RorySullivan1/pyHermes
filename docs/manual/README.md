@@ -25,7 +25,7 @@ and ends with an email open in your browser.
 |---|---|
 | [1. Quick start](01-quick-start.md) | Install pyHermes and build your first email |
 | [2. Build an email](02-build-an-email.md) | Add sections, text, figures, the masthead and the footer |
-| [3. Tables and numbers](03-tables-and-numbers.md) | Show a table, format figures, colour gains and losses |
+| [3. Tables and numbers](03-tables-and-numbers.md) | Show a table, format figures, colour gains and losses, draw a trend or a ranking |
 | [4. Images and charts](04-images-and-charts.md) | Add a logo, a picture or a matplotlib chart |
 | [5. Look and feel](05-look-and-feel.md) | Change colours, spacing, typefaces and alignment |
 | [6. Check and send](06-check-and-send.md) | Preview it, open it as an Outlook draft, or send it |

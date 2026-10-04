@@ -375,3 +375,10 @@ Decisions and Log entries folded out of `INDEX.md` on 2026-08-29 (#143), verbati
   sessions/2026-10-01-customise-the-layout.md
 - [2026-10-01] prose-styles — **#280 implemented**: the `prose` filter, three tokens, the h1/h2
   refusal, manual page 9's tag table — sessions/2026-10-01-prose-styles.md
+
+## Folded in from INDEX.md on 2026-10-04 (second pass)
+
+- [2026-09-28] **A config travels with the work: explicit, then context, then default.** A `ContextVar`
+  over `set_config`; a new thread starts from the default. Soft limits are warnings — `config.md`
+- [2026-09-29] **The import root is `pyhermes` alone**; the `svc` shim was removed (#255) before any
+  release shipped it. Checks read the built wheel and sdist, never the tree — `working-in-the-code.md`

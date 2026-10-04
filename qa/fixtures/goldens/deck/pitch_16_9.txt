@@ -17,6 +17,7 @@ The term premium
 What we would do
 Two positions
 The view in brief
+The lead figure
 
 
 Where rates stand
@@ -31,7 +32,7 @@ The quarter in four numbers
 10Y gilt: 4.21% (+18 bps)
 2s10s: 38 bps (+9 bps)
 Breakeven: 3.42% (-4 bps)
-Term premium: 61 bps (+12 bps)
+Term premium: 61 bps (0 bps)
 
 
 Curve by tenor
@@ -88,6 +89,18 @@ In figures
 
 10Y gilt: 4.21% (+18 bps)
 Term premium: 61 bps (+12 bps)
+
+
+The lead figure
+---------------
+
+38 bps — 2s10s, The curve's steepest since 2022
+
+Contribution to return
+
+Duration  +0.42%
+Curve     +0.18%
+Credit    -0.09%
 
 
 Important information

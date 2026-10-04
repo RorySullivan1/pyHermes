@@ -1,0 +1,84 @@
+Rates at a glance
+-----------------
+
+10Y gilt: 4.21% (+18 bps)
+min 3.62% · last 4.21% · max 4.21%
+VIX: 14.3 (-0.6)
+min 14.3 · last 14.3 · max 21.4
+Bank Rate: 4.25% (0 bps)
+min 4.25% · last 4.25% · max 4.25%
+
+
+The lead figure
+---------------
+
+38 bps — 2s10s, steepest since 2022
+
+
+Where the book sits
+-------------------
+
+The long end carries the book
+
+Top ten holdings, by weight
+
+UK Treasury 4.25% 2034      8.1%
+UK Treasury 3.75% 2038      7.4%
+UK Treasury 4.5% 2042       6.6%
+UK Treasury 0.125% IL 2036  5.8%
+UK Treasury 4.0% 2060       5.1%
+UK Treasury 1.5% 2047       4.3%
+UK Treasury 3.5% 2045       3.9%
+UK Treasury 4.75% 2030      3.2%
+UK Treasury 0.625% 2050     2.7%
+UK Treasury 1.25% 2051      1.9%
+
+
+What earned the quarter
+-----------------------
+
+Contribution to return, quarter
+
+Duration   +0.42%
+Curve      +0.18%
+Inflation  +0.06%
+Credit     -0.09%
+Currency   -0.21%
+
+
+Three series, three shapes
+--------------------------
+
+10Y gilt, two years
+
+min 3.62% · last 4.21% · max 4.21%
+
+VIX, two years
+
+min 14.3 · last 14.3 · max 21.4
+
+Bank Rate, two years
+
+min 4.25% · last 4.25% · max 4.25%
+
+
+The curve, tenor by tenor
+-------------------------
+
+Gilt yields and their change on the quarter
+
+Tenor  Yield   Change                        Two years
+-----  -----  -------  -------------------------------
+2Y     3.83%    0 bps  min 3.83 · last 3.83 · max 3.91
+10Y    4.21%  +18 bps  min 4.00 · last 4.21 · max 4.21
+30Y    4.78%   -4 bps  min 4.78 · last 4.78 · max 4.90
+
+Hermes Research
+
+
+On a dark band
+--------------
+
+61 bps — Term premium, Most of the long end's move this quarter
+
++12 bps — On the quarter

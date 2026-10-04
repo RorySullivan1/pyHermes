@@ -167,6 +167,8 @@ class ComponentScale:
     """
 
     kpi_value: int | float = 21
+    #: One figure set alone (#322): larger than ``kpi_value`` in every density.
+    hero_value: int | float = 44
     card_pad_y: int | float = 14
     card_pad_x: int | float = 16
     kpi_pad_y: int | float = 16
@@ -185,6 +187,15 @@ class ComponentScale:
     table_cell_pad_mobile: int | float = 6
     #: The thickness of a figure's in-cell bar (#227). A box, not spacing.
     table_bar_height: int | float = 6
+    #: The height of a change's drawn arrow (#319); its base is 1.2 times it.
+    trend_arrow: int | float = 7
+    #: A sparkline's box (#321): the height of its tallest bar, each bar's
+    #: width, and the gap between two.
+    sparkline_height: int | float = 24
+    sparkline_bar: int | float = 4
+    sparkline_gap: int | float = 1
+    #: Above and below each row of a bar list (#320).
+    bar_list_pad: int | float = 5
 
     list_ordinal_width: int | float = 22
     list_ordinal_gap: int | float = 12
@@ -595,6 +606,11 @@ COMPACT_SIZES = SizeScheme().derive(
     },
     component={
         "kpi_value": 19,
+        "hero_value": 36,
+        "bar_list_pad": 4,
+        "trend_arrow": 6,
+        "sparkline_height": 18,
+        "sparkline_bar": 3,
         "card_pad_y": 10,
         "card_pad_x": 12,
         "kpi_pad_y": 12,
@@ -694,6 +710,12 @@ SPACIOUS_SIZES = SizeScheme().derive(
     },
     component={
         "kpi_value": 24,
+        "hero_value": 52,
+        "bar_list_pad": 7,
+        "trend_arrow": 8,
+        "sparkline_height": 28,
+        "sparkline_bar": 5,
+        "sparkline_gap": 2,
         "card_pad_y": 20,
         "card_pad_x": 22,
         "kpi_pad_y": 22,
@@ -780,6 +802,10 @@ DENSE_SIZES = COMPACT_SIZES.derive(
     },
     component={
         "kpi_value": 17,
+        "hero_value": 30,
+        "bar_list_pad": 2,
+        "trend_arrow": 5,
+        "sparkline_height": 16,
         "card_pad_y": 6,
         "card_pad_x": 8,
         "kpi_pad_y": 6,
@@ -851,6 +877,12 @@ PRESENTATION_SIZES = SPACIOUS_SIZES.derive(
     },
     component={
         "kpi_value": 44,
+        "hero_value": 88,
+        "bar_list_pad": 8,
+        "trend_arrow": 11,
+        "sparkline_height": 40,
+        "sparkline_bar": 8,
+        "sparkline_gap": 2,
         "kpi_pad_y": 20,
         "kpi_pad_x": 18,
         "card_body_line": 1.4,
@@ -928,13 +960,29 @@ WIDTH_TOKENS: frozenset[str] = frozenset(
 #: Component tokens that are type rather than spacing: a font size and the
 #: leadings. The ``type`` layer is refused whole.
 _COMPONENT_TYPE_TOKENS: frozenset[str] = frozenset(
-    {"kpi_value", "card_body_line", "list_body_line", "contact_line", "legal_line"}
+    {
+        "kpi_value",
+        "hero_value",
+        "card_body_line",
+        "list_body_line",
+        "contact_line",
+        "legal_line",
+    }
 )
 
 #: Component tokens that size a box rather than space it: the button, the
-#: column a list's ordinals sit in, and a table cell's bar.
+#: column a list's ordinals sit in, a table cell's bar, a change's arrow and a sparkline.
 _COMPONENT_BOX_TOKENS: frozenset[str] = frozenset(
-    {"cta_width", "cta_height", "list_ordinal_width", "table_bar_height"}
+    {
+        "cta_width",
+        "cta_height",
+        "list_ordinal_width",
+        "table_bar_height",
+        "trend_arrow",
+        "sparkline_height",
+        "sparkline_bar",
+        "sparkline_gap",
+    }
 )
 
 #: Tokens a subtree may not move on a medium that is not paged. The email's

@@ -43,7 +43,7 @@ from .engine import (
     respaced,
     scheme_of,
 )
-from .enums import CardOrientation, ColumnKind, ImageAlign, RowKind
+from .enums import CardOrientation, ColumnKind, ImageAlign, RowKind, Tone
 from .exceptions import ValidationError
 from .images import EmailImage, ImageAsset, _displayed_height, coerce_image
 from .models import (
@@ -53,12 +53,16 @@ from .models import (
     ColumnGroup,
     Footnote,
     NumberedItem,
+    Series,
     TableRow,
     _validate_align,
     _validate_url,
     coerce_column,
     coerce_groups,
     coerce_notes,
+    coerce_series,
+    tone_of,
+    trend_of,
 )
 from .prose import PROSE_TOKENS, refuse_top_headings
 from .sizing import Spacing, coerce_measure, coerce_spacing, measure_px
@@ -508,6 +512,8 @@ class CardGroup(CellShare, Component):
             if card.sublabel:
                 head = f"{head} ({card.sublabel})"
             lines.append(head)
+            if isinstance(card.trend, Series):
+                lines.append(card.trend.summary())
             if card.body:
                 lines.append(html_to_text(card.body))
         return self._with_subtitle(wrap("\n".join(lines)))
@@ -522,6 +528,8 @@ class CardGroup(CellShare, Component):
                     "tone": c.tone,
                     "sublabel": c.sublabel,
                     "body": c.body,
+                    "arrow": c.arrow,
+                    "trend": c.trend.drawn(c.tone) if isinstance(c.trend, Series) else None,
                 }
                 for c in self.cards
             ],
@@ -645,10 +653,10 @@ class DataTable(CellShare, Exhibit, Component):
                     f"{len(columns)} headers; the table would render misaligned."
                 )
         for index, column in enumerate(columns):
-            if column.align_decimal and column.resolved_kind(index) is ColumnKind.TEXT:
+            if column.align_decimal and column.resolved_kind(index) is not ColumnKind.NUMERIC:
                 raise ValidationError(
-                    f"'column.align_decimal' is set on the text column {column.header!r}; "
-                    "only figures have a decimal point to align."
+                    f"'column.align_decimal' is set on the {column.resolved_kind(index)} "
+                    f"column {column.header!r}; only figures have a decimal point to align."
                 )
         for i, row in enumerate(rows):
             row.cells = [
@@ -756,7 +764,12 @@ class DataTable(CellShare, Exhibit, Component):
         return ends
 
     def _figure(self, row: TableRow, cell: Cell, column: Column, end: float) -> dict[str, Any]:
-        """A data cell's heat and bar (#227); neither on a total or a subhead."""
+        """
+        A data cell's heat and bar (#227); neither on a total or a subhead.
+
+        Its arrow (#319) reads the raw figure on any row that carries one but a
+        subhead, since a total's change has a direction too.
+        """
         heat = bar = None
         if row.kind == RowKind.DATA and column.scale is not None:
             position, toward = column.scale.position(cell.value)
@@ -764,7 +777,23 @@ class DataTable(CellShare, Exhibit, Component):
         if row.kind == RowKind.DATA and column.bar:
             fraction = min(1, max(0, cell.value / end)) if end > 0 else 0
             bar = round(fraction * 100)
-        return {"heat": heat, "bar": bar}
+        arrow = ""
+        if column.arrow and row.kind != RowKind.SUBHEAD and cell.value is not None:
+            arrow = str(trend_of(cell.value, column.format))
+        spark = None
+        if isinstance(cell.value, Series):
+            tone = cell.tone or (column.tone if column.tone in tuple(Tone) else "")
+            if column.tone == "auto":
+                tone = str(tone_of(cell.value.values[-1] - cell.value.values[0]))
+            spark = cell.value.drawn(tone)
+        return {
+            "heat": heat,
+            "bar": bar,
+            "bar_color": "",
+            "reverse": False,
+            "arrow": arrow,
+            "spark": spark,
+        }
 
     def _units(self) -> list[str]:
         """One unit per column, or none at all when no column names one."""
@@ -865,18 +894,19 @@ class DataTable(CellShare, Exhibit, Component):
 def _check_figures(columns: list[Column], rows: list[TableRow]) -> None:
     """A scale or a bar reads each data row's raw figure, so each must have one."""
     for index, column in enumerate(columns):
-        if column.scale is None and not column.bar:
+        if column.scale is None and not column.bar and not column.arrow:
             continue
-        if column.resolved_kind(index) is ColumnKind.TEXT:
+        if column.resolved_kind(index) is not ColumnKind.NUMERIC:
             raise ValidationError(
-                f"the text column {column.header!r} carries a scale or a bar; "
-                "only figures can be tinted or drawn."
+                f"the {column.resolved_kind(index)} column {column.header!r} carries a scale, "
+                "a bar or an arrow; only figures can be tinted or drawn."
             )
         for i, row in enumerate(rows):
             if row.kind == RowKind.DATA and row.cells[index].value is None:
                 raise ValidationError(
                     f"DataTable row {i}, column {column.header!r}: the cell "
-                    f"{row.cells[index].text!r} has no raw figure for its scale or bar to read."
+                    f"{row.cells[index].text!r} has no raw figure for its scale, bar "
+                    "or arrow to read."
                 )
 
 
@@ -887,6 +917,23 @@ def _formatted(cell: Cell, column: Column, index: int, row: int) -> Cell:
     The single place a figure becomes text (#225), so the markup and ``text()``
     read one string. A string, or a figure already written, is left as it is.
     """
+    sparkline = column.resolved_kind(index) is ColumnKind.SPARKLINE
+    if isinstance(cell.value, tuple) != sparkline and cell.value is not None:
+        raise ValidationError(
+            f"DataTable row {row}, column {column.header!r}: "
+            + (
+                f"the sparkline column holds {cell.value!r}; give it a list of figures"
+                if sparkline
+                else f"a list of figures {cell.value!r} belongs in a kind='sparkline' column"
+            )
+        )
+    if sparkline and cell.value is not None:
+        series = coerce_series(
+            cell.value, column.format, f"DataTable row {row}, column {column.header!r}"
+        )
+        drawn = Cell(text=series.summary(), align=cell.align, tone=cell.tone, value=series)
+        drawn.validate()
+        return drawn
     if cell.value is None or cell.text:
         return cell
     if column.format is None and column.resolved_kind(index) is ColumnKind.TEXT:
