@@ -260,11 +260,11 @@ class Document:
         """
         self._walk()
         listed = bibliography.keys if (bibliography := self._bibliography()) else set()
-        for component in self._components():
-            for key in (k for copy in component.marked_copy() for k in cited_keys(copy)):
+        for owner, _, marked in self._marked():
+            for key in (k for copy in marked for k in cited_keys(copy)):
                 if key not in listed:
                     raise ValidationError(
-                        f"{type(component).__name__} cites [@{key}], which no Bibliography "
+                        f"{owner} cites [@{key}], which no Bibliography "
                         "in this document lists. Check the key, or add the Reference."
                     )
         defined = {anchor for anchor, _ in self._anchors()}
@@ -420,6 +420,15 @@ class Document:
             [component for section in self._sections for component in section.components()]
         )
 
+    def _marked(self) -> list[tuple[str, Any, list[str]]]:
+        """
+        ``(owner, holder, copy)`` for everything that may cite, in reading order.
+
+        Every leaf component; a medium adds what else carries a citation, as a
+        deck adds each slide's source line, and the walk hands each its ``citing``.
+        """
+        return [(type(c).__name__, c, c.marked_copy()) for c in self._components()]
+
     def _walk(self) -> None:
         """
         Hand every part of the apparatus what only the whole tree knows.
@@ -436,12 +445,12 @@ class Document:
         self._number_exhibits()
         for number, note in enumerate(self._footnotes(), start=1):
             note.number = number
-        components = self._components()
+        marked = self._marked()
         bibliography = self._bibliography()
-        cited = [key for c in components for copy in c.marked_copy() for key in cited_keys(copy)]
+        cited = [key for _, _, copy in marked for text in copy for key in cited_keys(text)]
         citing = bibliography.resolve(cited) if bibliography else UNRESOLVED
-        for component in components:
-            component.citing = citing
+        for _, holder, _ in marked:
+            holder.citing = citing
         for section in self._flat_sections():
             for component in leaves(section.components()):
                 if isinstance(component, Contents):

@@ -6,9 +6,10 @@
   one contract — `delivery`+`gmail`+`outlook`, and `pdf`. Rationale: CLAUDE.md and `media.md`.
 - **Shipped through PR #371.** Epics #157–#220 and #218 (PRs #167–#314); deck bugs #315–#317
   (PR #369); #361 (PR #370); #354 and #372 (PR #371). #219 DOCX closed not planned, with #300 PPTX.
-- **#318 implemented on this branch** (#319–#323): arrows, `BarList`, `Sparkline`, `HeroStat`.
-- **Open next, in order:** #346 deck layouts (#349 needs #322, now built), #324 badges (reuse
-  #319's shape call), #329 and #335 (independent), #340 last (three WeasyPrint probes, `[qr]`).
+- **#318 merged in PR #373.** **#346 implemented on this branch** (#347–#353): slide sources,
+  pictures, statement slides, divider agendas, the handout and the footer counter.
+- **Open next, in order:** #324 badges (reuse #319's shape call), #329 and #335 (independent),
+  #340 last (three WeasyPrint probes, `[qr]`).
   #288 is the owner's Outlook-desktop check, run on Windows.
 - The prose budget is live; the baseline is 44 and may only shrink.
 
@@ -46,6 +47,10 @@
 - [2026-10-04] **A glance object is drawn from cells and tokens, never an image; an arrow is a
   CSS shape with a VML twin, its direction the number's (`Card.arrow` is `init=False`)** — `glance.md` (#318)
 
+- [2026-10-04] **A deck's layouts are per slide and off by default: the box narrows per slide, a
+  photograph's tone is named, and the handout scales the deck's own sheets rather than rastering
+  them, so `[pdf]` alone prints it** — `deck.md` (#346)
+
 ## Threads          (open items; remove when closed)
 - **A share table holds its share in Word's engine** (owner, via COM, PR #371); a real Outlook client
   is still #288's. The measure is `ch`: in Georgia 75ch sets ~99 characters (`design-axes.md`).
@@ -82,3 +87,5 @@
 - [2026-10-04] memory — State, Threads and the epic order re-synced with GitHub after PR #371.
 - [2026-10-04] glance — **#318 implemented** (#319–#323): arrows, bar lists, sparklines, hero
   figures; the cell bar's CSS widths — sessions/2026-10-04-glance.md
+- [2026-10-04] deck-layouts — **#346 implemented** (#347–#353): sources, pictures, statement
+  slides, divider agendas, the handout, the footer counter — sessions/2026-10-04-deck-layouts.md

@@ -45,6 +45,7 @@ from . import (
     modern_fonts,
     no_header,
     pitch_16_9,
+    pitch_layouts_16_9,
     placed_layout,
     research_note,
     rich_table,
@@ -159,7 +160,7 @@ def all_deck_fixtures() -> dict[str, PagedFixtureBuilder]:
     tests read a cover, running boxes and back matter off every fixture, and
     a deck has a title slide and a closing slide instead.
     """
-    return {"pitch_16_9": pitch_16_9.build}
+    return {"pitch_16_9": pitch_16_9.build, "pitch_layouts_16_9": pitch_layouts_16_9.build}
 
 
 __all__ = [

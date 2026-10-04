@@ -26,7 +26,13 @@ FENCE = re.compile(r"^(?P<prefix>[ \t]*(?:>[ \t]?)*)```(?P<lang>\w*)[ \t]*$")
 DIRECTIVE = re.compile(r"<!--\s*manual:\s*(?P<word>skip|needs)(?P<extras>[\w ]*)-->")
 
 #: The files the manual's examples read, as the reader would have them.
-IMAGES = {"logo.png": (240, 80), "chart.png": (1232, 640), "masthead.png": (1360, 400)}
+IMAGES = {
+    "logo.png": (240, 80),
+    "chart.png": (1232, 640),
+    "masthead.png": (1360, 400),
+    "photo.png": (1280, 720),
+    "portrait.png": (640, 720),
+}
 
 
 @dataclass(frozen=True)

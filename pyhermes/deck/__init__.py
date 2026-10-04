@@ -12,8 +12,8 @@ from pyhermes.builder.sizing import SLIDE_4_3, SLIDE_16_9
 from .document import Deck, DeckMetadata
 from .fit import overflowing_slides
 from .medium import DECK_MEDIUM, deck_medium
-from .regions import ClosingSlide, EmptyClosingSlide, EmptyTitleSlide, TitleSlide
-from .slide import DividerSlide, Slide, SlideBox
+from .regions import ClosingSlide, DeckFooter, EmptyClosingSlide, EmptyTitleSlide, TitleSlide
+from .slide import DividerSlide, Slide, SlideBox, StatementSlide
 
 __all__ = [
     "DECK_MEDIUM",
@@ -21,12 +21,14 @@ __all__ = [
     "SLIDE_16_9",
     "ClosingSlide",
     "Deck",
+    "DeckFooter",
     "DeckMetadata",
     "DividerSlide",
     "EmptyClosingSlide",
     "EmptyTitleSlide",
     "Slide",
     "SlideBox",
+    "StatementSlide",
     "TitleSlide",
     "deck_medium",
     "overflowing_slides",

@@ -11,7 +11,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pyhermes.builder.document import Document
 from pyhermes.builder.exceptions import PrintQualityWarning, warn_caller
@@ -20,6 +20,10 @@ from .exceptions import BackendError, BackendMissingError, PdfError, Unreachable
 from .fetcher import build_fetcher
 from .profile import PRINT, PdfProfile
 from .tagging import retag_layout_tables
+
+if TYPE_CHECKING:  # pragma: no cover
+    from pyhermes.builder.sizing import PageFormat
+    from pyhermes.deck import Deck
 
 
 def available() -> bool:
@@ -156,6 +160,41 @@ def save_pdf(document: Document, output_path: str | Path, profile: PdfProfile = 
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_bytes(render_pdf(document, profile))
+    return output_path
+
+
+def render_handout(
+    deck: Deck, page: PageFormat | None = None, profile: PdfProfile = PRINT
+) -> bytes:
+    """
+    A deck's handout as PDF bytes: one ``page`` a sheet, each slide above its notes (#351).
+
+    A view of the notes projection, not a PowerPoint notes page: the markup is
+    :meth:`~pyhermes.deck.Deck.handout`, every slide the deck's own sheet
+    scaled onto ``page`` (A4 portrait unless set), and the resource policy
+    :func:`render_pdf`'s exactly.
+
+    Raises:
+        As :func:`render_pdf`.
+    """
+    weasyprint = _backend()
+    html = deck.handout() if page is None else deck.handout(page)
+    fetcher = build_fetcher(deck.assets())
+    with _own_errors():
+        source = weasyprint.HTML(string=html, url_fetcher=fetcher)
+        return bytes(source.write_pdf(finisher=_finisher(profile), **profile.options()))
+
+
+def save_handout(
+    deck: Deck,
+    output_path: str | Path,
+    page: PageFormat | None = None,
+    profile: PdfProfile = PRINT,
+) -> Path:
+    """Render the handout and write it to disk, returning the resolved path."""
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_bytes(render_handout(deck, page, profile))
     return output_path
 
 

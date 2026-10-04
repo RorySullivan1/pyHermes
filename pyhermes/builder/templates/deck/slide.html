@@ -7,10 +7,17 @@
    (#366) is two such boxes side by side, main then side, each its region's
    width with its own sentinel, so either one overflowing names the slide.
    Anchored lower (#355), each region's copy and sentinel sit in one cell the
-   body's height, as a brochure panel's do. #}
-{% from "deck/bands.html" import title_band, footer_band with context %}
-<div class="sheet slide" data-slide="{{ number }}"{% if section_align %} align="{{ section_align | escape_html }}"{% endif %}
-     style="background-color:{{ background_color | default(theme.palette.surface) }};{% if section_align %} text-align:{{ section_align }};{% endif %}">
+   body's height, as a brochure panel's do. A source (#347) takes a band
+   over the footer band out of the body; a picture (#348) fills the sheet
+   under the bands, or takes half of it, with the bands and the body in the
+   other half. #}
+{% from "deck/bands.html" import title_band, footer_band, source_band with context %}
+<div class="sheet slide{% if background_image %} slide-imaged{% endif %}" data-slide="{{ number }}"{% if section_align %} align="{{ section_align | escape_html }}"{% endif %}
+     style="background-color:{{ background_color | default(theme.palette.surface) }};{% if section_align %} text-align:{{ section_align }};{% endif %}{% if background_image %} background-image:url('{{ background_image | escape_html }}'); background-size:cover; background-position:center;{% endif %}">
+{% if picture %}
+  <img class="slide-picture" src="{{ picture.src | escape_html }}" alt="{{ picture.alt | escape_html }}" width="{{ picture.width }}" height="{{ box.height }}"
+       style="position:absolute; top:0; left:{{ picture.left }}px; width:{{ picture.width }}px; height:{{ box.height }}px; object-fit:cover; display:block; border:0;">
+{% endif %}
 {{ title_band(box, section_title, section_anchor, number) }}
 {% for region in regions %}
   <div class="slide-body" style="top:{{ box.body_top }}px;{% if region.left %} left:{{ region.left }}px;{% endif %} width:{{ region.width }}px; height:{{ box.body_height }}px;">
@@ -28,5 +35,8 @@
 {% endif %}
   </div>
 {% endfor %}
-{{ footer_band(box, number, footer_label) }}
+{% if source %}
+{{ source_band(box, number, source_parts, as_of) }}
+{% endif %}
+{{ footer_band(box, footer_counter, footer_label, mark=footer_mark) }}
 </div>

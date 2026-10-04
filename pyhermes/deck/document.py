@@ -13,19 +13,31 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, ClassVar, Self
 
+from pyhermes.builder.components import leaves
 from pyhermes.builder.containers import Container
 from pyhermes.builder.document import Document, RegionFacts
 from pyhermes.builder.engine import Renderer, TemplateOverlay, scheme_of
 from pyhermes.builder.enums import SizeTheme, TextAlign
 from pyhermes.builder.exceptions import ValidationError
+from pyhermes.builder.glance import HeroStat
+from pyhermes.builder.images import EmailImage
 from pyhermes.builder.models import DocumentMetadata
-from pyhermes.builder.sizing import SLIDE_16_9, PageFormat, resolve_size_scheme
+from pyhermes.builder.sizing import (
+    A4_PORTRAIT,
+    SLIDE_16_9,
+    PageFormat,
+    SizeScheme,
+    resolve_size_scheme,
+)
 from pyhermes.builder.textgen import join_sections, underline, wrap
 from pyhermes.config import Config
 
 from .medium import deck_medium
-from .regions import ClosingSlide, TitleSlide
-from .slide import DividerSlide, Slide, SlideBox
+from .regions import ClosingSlide, DeckFooter, TitleSlide
+from .slide import AgendaEntry, DividerSlide, SheetFooter, Slide, SlideBox, StatementSlide
+
+#: A slide's own picture is shown, not pressed: one source pixel per CSS px (#348).
+SLIDE_DPI = 96
 
 
 @dataclass
@@ -48,9 +60,8 @@ class Deck(Document):
     footer band, a contents list on paper and the notes all agree on which
     slide is 4. The title slide carries no bands, as a cover carries no folio.
 
-    **Footnotes are refused.** A note floats to the foot of a sheet, which a
-    slide's footer band already occupies. Put a source in the exhibit's own
-    ``source`` line.
+    **Footnotes are refused.** A note floats to a sheet's foot, which the footer
+    band occupies; a slide's ``source`` line carries a source instead.
 
     Args:
         metadata:      Mapping of facts, or a ``DocumentMetadata``. A mapping
@@ -59,6 +70,8 @@ class Deck(Document):
         title_slide:   The opening slide; ``EmptyTitleSlide()`` for none.
         closing_slide: The disclosures; ``EmptyClosingSlide()`` for none.
         template_dir, config, template_overlay: As ``Document`` takes them.
+        divider_agenda: Every divider lists every part, the current one marked (#350).
+        footer:        How the footer band counts and what it marks (#352).
 
     Raises:
         ValidationError: If the page leaves no body between the bands.
@@ -76,6 +89,8 @@ class Deck(Document):
         *,
         config: Config | None = None,
         template_overlay: TemplateOverlay = None,
+        divider_agenda: bool = False,
+        footer: DeckFooter | None = None,
     ):
         if page.height is None:
             raise ValidationError("a slide is a fixed sheet; give the page a height")
@@ -88,6 +103,10 @@ class Deck(Document):
         )
         self._title_slide = title_slide if title_slide is not None else TitleSlide()
         self._closing_slide = closing_slide if closing_slide is not None else ClosingSlide()
+        if footer is not None and not isinstance(footer, DeckFooter):
+            raise ValidationError(f"a deck's footer is a DeckFooter, got: {type(footer).__name__}")
+        self.divider_agenda = bool(divider_agenda)
+        self.footer = footer or DeckFooter()
         box = self.box()
         if box.body_height <= 0:
             raise ValidationError(
@@ -113,8 +132,28 @@ class Deck(Document):
 
     def box(self) -> SlideBox:
         """The bands of every sheet in this deck, at its page and density."""
+        return SlideBox.of(self._scheme())
+
+    def slide_box(self, slide: Slide) -> SlideBox:
+        """The bands of ``slide``'s sheet: the deck's, less its source band, beside its picture."""
+        return slide.sheet_box(self.box(), self._scheme())
+
+    def _scheme(self) -> SizeScheme:
+        """The density on this deck's page."""
         scheme = resolve_size_scheme(self._metadata.size_theme)
-        return SlideBox.of(scheme.with_page(self._medium.page_format))
+        return scheme.with_page(self._medium.page_format)
+
+    def sheet_count(self) -> int:
+        """How many sheets the deck prints: the title slide, every slide, the disclosures."""
+        return self._opening() + len(self.slides) + (1 if self._closing_slide.TEMPLATE_PATHS else 0)
+
+    def _opening(self) -> int:
+        """1 when the deck opens on a title slide, which takes sheet one."""
+        return 1 if self._title_slide.TEMPLATE_PATHS else 0
+
+    def _footer(self, number: int) -> SheetFooter:
+        """What sheet ``number``'s footer band prints beside the firm and the part."""
+        return SheetFooter(self.footer.count(number, self.sheet_count()), self.footer.label)
 
     def add_section(self, container: Container) -> Self:
         """Refused: a bare section has no sheet. Use :meth:`add_slide`."""
@@ -134,16 +173,23 @@ class Deck(Document):
         layout: str = "full",
         side: list[Container] | None = None,
         valign: str = "top",
+        source: str | None = None,
+        as_of: str | None = None,
+        background_image: EmailImage | None = None,
+        ground: str | None = None,
+        image: EmailImage | None = None,
+        image_side: str = "left",
     ) -> Self:
         """
         Append the sections as one :class:`Slide`, or a ``Slide`` you built. Returns ``self``.
 
-        ``layout`` and ``side`` lay the body out in regions, and ``valign`` anchors
-        its copy, as on a ``Slide`` (#366, #355).
+        Every other argument is the ``Slide``'s: ``layout``, ``side`` and
+        ``valign`` (#366, #355), the source line (#347) and the pictures (#348).
 
         Raises:
-            ValidationError: For a slide's own reasons, a footnote, or an
-                anchor the deck already has; the deck is left as it was.
+            ValidationError: For a slide's own reasons, a footnote, a picture too
+                coarse for the sheet, or an anchor the deck already has; the
+                deck is left as it was.
         """
         if isinstance(sections, Slide):
             if (
@@ -152,8 +198,14 @@ class Deck(Document):
                 or background_color
                 or align
                 or side
+                or source
+                or as_of
+                or background_image
+                or ground
+                or image
                 or layout != "full"
-                or (valign != "top")
+                or valign != "top"
+                or image_side != "left"
             ):
                 raise ValidationError(
                     "add_slide takes a Slide or its arguments, not both; set them on the Slide"
@@ -169,8 +221,20 @@ class Deck(Document):
                 layout=layout,
                 side=side,
                 valign=valign,
+                source=source,
+                as_of=as_of,
+                background_image=background_image,
+                ground=ground,
+                image=image,
+                image_side=image_side,
             )
         return self._append(slide)
+
+    def add_statement(
+        self, stat: HeroStat, title: str | None = None, *, notes: str | None = None
+    ) -> Self:
+        """Append a :class:`StatementSlide`: one figure on a sheet of its own (#349)."""
+        return self._append(StatementSlide(stat, title, notes))
 
     def add_divider(
         self,
@@ -184,23 +248,41 @@ class Deck(Document):
         return self._append(DividerSlide(title, subtitle, notes, valign=valign))
 
     def _append(self, slide: Slide) -> Self:
-        """Add ``slide`` through the document's checks, then refuse it if it carries a note."""
+        """Add ``slide`` through the document's checks, then refuse a note or a coarse picture."""
+        self._check_pictures(slide)
         Document.add_section(self, slide)
         if self._footnotes():
             self._sections.pop()
             self._walk()
             raise ValidationError(
                 "a deck cannot carry footnotes: a note floats to the foot of a sheet, and a "
-                "slide's foot is its footer band. Put the source in the exhibit's source line."
+                "slide's foot is its footer band. Put the source in the slide's source line."
             )
         return self
 
+    def _check_pictures(self, slide: Slide) -> None:
+        """
+        Hold a slide's own pictures to one source pixel per CSS px of the box each fills.
+
+        Below that warns and below half raises, the brochure's floor at a screen's
+        density rather than a press's (#348).
+        """
+        from pyhermes.brochure.checks import validate_image_resolution
+
+        box = self.box()
+        fills: list[tuple[EmailImage, int | float]] = []
+        if slide.background_image is not None:
+            fills.append((slide.background_image, box.width))
+        if slide.image is not None:
+            fills.append((slide.image, box.picture(slide.image_side)[2]))
+        with self.configured():
+            validate_image_resolution(fills, dpi=SLIDE_DPI)
+
     def number(self, slide: Slide) -> int:
         """The sheet ``slide`` prints on, counting the title slide when there is one."""
-        opening = 1 if self._title_slide.TEMPLATE_PATHS else 0
         for index, candidate in enumerate(self.slides, start=1):
             if candidate is slide:
-                return index + opening
+                return index + self._opening()
         raise ValidationError(f"{slide._name()} is not in this deck")
 
     def notes(self) -> str:
@@ -226,29 +308,102 @@ class Deck(Document):
 
     def trailing_regions(self) -> tuple[RegionFacts, ...]:
         """The disclosures, numbered as the sheet after the last slide."""
-        opening = 1 if self._title_slide.TEMPLATE_PATHS else 0
+        number = len(self.slides) + self._opening() + 1
+        footer = self._footer(number)
         return (
             (
                 self._closing_slide,
                 {
                     **self._facts(CLOSING_FACTS),
                     "deck_box": self.box(),
-                    "closing_number": len(self.slides) + opening + 1,
+                    "closing_number": number,
                     "closing_label": self._metadata.firm_name,
+                    "closing_counter": footer.counter,
+                    "closing_mark": footer.mark,
                 },
             ),
         )
 
     def _body_context(self, engine: Renderer, sections: list[Container]) -> dict[str, Any]:
         """Every slide as a sheet, numbered, its footer naming the firm and the current part."""
+        return {
+            "sections_html": "\n".join(self._sheets(engine)),
+            "imaged": any(slide.background_image for slide in self.slides),
+            "handout": None,
+        }
+
+    def _sheets(self, engine: Renderer) -> list[str]:
+        """Each slide's sheet, in order: its number, its part, its footer and any agenda."""
         box = SlideBox.of(scheme_of(engine))
+        dividers = [slide for slide in self.slides if isinstance(slide, DividerSlide)]
         sheets, part = [], ""
         for slide in self.slides:
+            number = self.number(slide)
             if isinstance(slide, DividerSlide):
                 part = slide.title or ""
             label = " · ".join(filter(None, (self._metadata.firm_name, part)))
-            sheets.append(slide.render_sheet(engine, box, self.number(slide), label))
-        return {"sections_html": "\n".join(sheets)}
+            footer = self._footer(number)
+            if isinstance(slide, DividerSlide) and self.divider_agenda:
+                agenda = tuple(
+                    AgendaEntry(d.title or "", self.number(d), d is slide) for d in dividers
+                )
+                sheets.append(slide.render_sheet(engine, box, number, label, footer, agenda))
+            else:
+                sheets.append(slide.render_sheet(engine, box, number, label, footer))
+        return sheets
+
+    def handout(self, page: PageFormat = A4_PORTRAIT) -> str:
+        """
+        The handout's markup: one ``page`` a sheet, the sheet scaled above its notes (#351).
+
+        Each sheet is the deck's own markup at the deck's own density, scaled
+        to the page's width between its margins, so a slide in the handout is
+        laid out exactly as the slide shown. The title slide and the
+        disclosures get a page too, with no notes. ``pyhermes.pdf.render_handout``
+        lays it onto paper.
+        """
+        if page.height is None:
+            raise ValidationError("a handout is printed; give its page a height")
+        with self.configured():
+            self.validate()
+            engine = self._bound_engine()
+            ctx = self._metadata.to_dict()
+            ctx.update(self._body_context(engine, []))
+            regions: dict[str, Any] = {}
+            for region, facts in self.leading_regions() + self.trailing_regions():
+                regions.update(region.render_slots(engine, facts))
+            ctx.update(regions)
+            pairs = [("", regions["title_slide_html"])] if self._opening() else []
+            pairs += zip((slide.notes for slide in self.slides), self._sheets(engine), strict=True)
+            if self._closing_slide.TEMPLATE_PATHS:
+                pairs.append(("", regions["closing_slide_html"]))
+            box = self.box()
+            margin = page.margin
+            width = page.width - margin.left - margin.right
+            scale = width / box.width
+            ctx["handout"] = {
+                "width": page.width,
+                "height": page.height,
+                "margin": margin,
+                "scale": round(scale, 6),
+                "frame_width": width,
+                "frame_height": round(box.height * scale, 3),
+                "sheets": [
+                    {"html": html, "notes": [p.strip() for p in note.split("\n\n") if p.strip()]}
+                    for note, html in pairs
+                ],
+            }
+            return engine.render(self._medium.skeleton, ctx)
+
+    def _marked(self) -> list[tuple[str, Any, list[str]]]:
+        """Each slide's components, then its source line, slide by slide, in reading order."""
+        marked: list[tuple[str, Any, list[str]]] = []
+        for slide in self.slides:
+            marked.extend(
+                (type(c).__name__, c, c.marked_copy()) for c in leaves(slide.components())
+            )
+            marked.append((slide._name(), slide, [slide.source] if slide.source else []))
+        return marked
 
     def _contents_entries(self, skip: Container | None = None) -> list[tuple[str, str]]:
         """``(title, anchor)`` for every titled slide and divider, less the one ``skip`` sits on."""
@@ -284,4 +439,4 @@ TITLE_FACTS: tuple[str, ...] = ("firm_name", "campaign_name", "department", "dat
 CLOSING_FACTS: tuple[str, ...] = ("header_disclaimer",)
 
 
-__all__ = ["CLOSING_FACTS", "TITLE_FACTS", "Deck", "DeckMetadata"]
+__all__ = ["CLOSING_FACTS", "SLIDE_DPI", "TITLE_FACTS", "Deck", "DeckMetadata"]

@@ -19,7 +19,16 @@ from .exceptions import (
     ProfileError,
     UnreachableResourceError,
 )
-from .exporter import anchor_tops, available, layout, page_count, render_pdf, save_pdf
+from .exporter import (
+    anchor_tops,
+    available,
+    layout,
+    page_count,
+    render_handout,
+    render_pdf,
+    save_handout,
+    save_pdf,
+)
 from .profile import PDF_VARIANTS, PRINT, SCREEN, TAGGED, PdfProfile
 
 __all__ = [
@@ -39,6 +48,8 @@ __all__ = [
     "page_count",
     "PDF_MIME_TYPE",
     "pdf_attachment",
+    "render_handout",
     "render_pdf",
+    "save_handout",
     "save_pdf",
 ]
