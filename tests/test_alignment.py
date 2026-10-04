@@ -33,6 +33,7 @@ from pyhermes.builder import (
     DataTable,
     EmailBuilder,
     FullWidth,
+    HeroStat,
     NumberedList,
     PullQuote,
     TextBlock,
@@ -506,6 +507,7 @@ PROSE_COMPONENTS = (
     ChartBlock,
     PullQuote,
     Button,
+    HeroStat,
 )
 
 #: Components that deliberately do **not** take an ``align``, each with the
@@ -525,6 +527,8 @@ STRUCTURALLY_ALIGNED = {
     "Bibliography": "an entry's hanging indent is its shape, so it fixes its own left (#310)",
     "Glossary": "a term sits beside its definition, so the list fixes its own left (#311)",
     "Only": "it shows one block or none; the block keeps its own align (#365)",
+    "BarList": "a label, a bar and a figure, each fixed in its own cell (#320)",
+    "Sparkline": "a series of bars set from the left, its summary beneath (#321)",
 }
 
 

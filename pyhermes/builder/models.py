@@ -1085,7 +1085,7 @@ def coerce_cell(value: "str | Cell", field_name: str = "cell") -> Cell:
         return value
     if is_figure(value):
         return Cell(value=value)
-    if isinstance(value, (list, tuple)):
+    if isinstance(value, (list, tuple)) and value and all(map(is_figure, value)):
         return Cell(value=tuple(value))
     if not isinstance(value, str):
         raise ValidationError(

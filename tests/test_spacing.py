@@ -22,6 +22,7 @@ from pyhermes.builder import (
     STANDARD_SIZES,
     Appendices,
     AuthorBlock,
+    BarList,
     Bibliography,
     Button,
     Callout,
@@ -38,6 +39,7 @@ from pyhermes.builder import (
     FourColumn,
     FullWidth,
     Glossary,
+    HeroStat,
     ImageBlock,
     MathBlock,
     NumberedList,
@@ -46,6 +48,7 @@ from pyhermes.builder import (
     PullQuote,
     Reference,
     Spacing,
+    Sparkline,
     Stack,
     Term,
     TextBlock,
@@ -545,6 +548,11 @@ INSTANCES: dict[type, list[Any]] = {
         )
     ],
     Glossary: [lambda s: Glossary([Term("T", "D")], title="G", spacing=s)],
+    BarList: [
+        lambda s: BarList([("A", 2), ("B", -1)], diverging=True, title="T", subtitle="S", spacing=s)
+    ],
+    Sparkline: [lambda s: Sparkline([1, 2, 3], subtitle="S", spacing=s)],
+    HeroStat: [lambda s: HeroStat("1", "Label", "Context", spacing=s)],
     Appendices: [lambda s: Appendices([FullWidth(title="T", content=_Stub())], spacing=s)],
     Only: [lambda s: Only(_Stub(), "html", spacing=s)],
     OnlySections: [

@@ -401,12 +401,11 @@ def build(
                 title="At a Glance",
                 content=Stack(
                     [
-                        HeroStat.from_number(
+                        HeroStat(
+                            "+38 bps",
                             "2s10s",
-                            0.0038,
-                            bps,
-                            context="steepest since 2022",
-                            tone="auto",
+                            "steepest since 2022",
+                            tone="positive",
                             align="center",
                         ),
                         BarList(

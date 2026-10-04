@@ -735,8 +735,9 @@ def _declarations(style: str) -> list[tuple[str, str]]:
 #: also use decorative rules (``<!-- ══════ -->``); those are not sections, and
 #: treating them as such made the heaviest "region" a row of box-drawing
 #: characters — a breakdown that names nothing is no better than the total it
-#: was meant to explain. Requiring a letter is what tells the two apart.
-_MARKER = re.compile(r"<!--\s*(?!\[if)(?=[^>]*[A-Za-z])([^>]{1,60}?)\s*-->")
+#: was meant to explain. Requiring a letter is what tells the two apart. The
+#: close of a downlevel-revealed block, ``<!--<![endif]-->``, names nothing either.
+_MARKER = re.compile(r"<!--\s*(?!\[if|<!\[endif)(?=[^>]*[A-Za-z])([^>]{1,60}?)\s*-->")
 
 
 @dataclass(frozen=True)

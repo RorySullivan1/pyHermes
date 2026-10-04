@@ -122,3 +122,10 @@ slide draws its changes as arrows and a new last slide sets a hero figure beside
 list; `tri_fold_letter` sets one under its chart. `kitchen_sink` carries a hero, a bar list and
 a sparkline in one stack, and an arrow and a trend on its UST card, so every new token renders
 there; it stays at 88 KB.
+
+**What the arrow found in the size report.** `size_report` named every short comment with a
+letter in it a section marker, so `<!--<![endif]-->`, the close of a downlevel-revealed block,
+was one. `cta.html` always emitted it, near the foot; the arrow put one in `kitchen_sink`'s
+first section, and the bare report attributed most of the body to `<![endif]`. `_MARKER` now
+skips it as it skips `[if`. The sparkline also lost a table `align`: a placement attribute with
+no CSS twin fails the alignment audit, and the cell around it already carries the alignment.
