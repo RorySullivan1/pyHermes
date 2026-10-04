@@ -49,6 +49,7 @@ def required_pixels(display_width: int | float, dpi: int | None = None) -> int:
 
 def validate_image_resolution(
     images: Sequence[EmailImage | tuple[EmailImage, int | float]],
+    dpi: int | None = None,
 ) -> None:
     """
     Every image carries enough pixels to print at ``Config.print_dpi``.
@@ -58,11 +59,12 @@ def validate_image_resolution(
     fills a box instead, such as a panel's ground. Below the target warns with
     a ``PrintQualityWarning``, as the email's 90 KB threshold does; below half of it raises. A
     hosted image has no bytes to measure, and the PDF exporter refuses it.
+    ``dpi`` sets another target, as a deck sets a screen's (#348).
 
     Raises:
         ValidationError: Naming the image, its pixel width and the width it needs.
     """
-    dpi = get_config().print_dpi
+    dpi = dpi or get_config().print_dpi
     for entry in images:
         image, fills = entry if isinstance(entry, tuple) else (entry, None)
         size = pixel_size(image.data) if image.data else None

@@ -4,13 +4,19 @@
    the one token sized to be read across a room. Positioned rather than a
    valign'd cell: WeasyPrint ignores the attribute. Anchored higher (#355), the
    band spans the same height from under the title band, and a cell set by
-   CSS `vertical-align` places the title in it. #}
+   CSS `vertical-align` places the title in it. With an agenda (#350) the
+   title takes a sidebar layout's main region and every part is listed in
+   its side, the current one in the light ink, each with its first sheet. #}
 {% from "deck/bands.html" import footer_band with context %}
+{# The title's frame: the sheet, or a sidebar layout's main region beside the agenda. #}
+{% macro divider_frame(box, frames) -%}
+{% if frames %}left:{{ frames.main.left }}px; width:{{ frames.main.width }}px; padding:0 {{ frames.main.inset }}px;{% else %}width:{{ box.width }}px; padding:0 {{ box.inset }}px;{% endif %}
+{%- endmacro %}
 <div class="sheet slide divider" data-slide="{{ number }}" style="background-color:{{ theme.palette.header_bg }};">
 {% if valign == "bottom" %}
-  <div class="slide-band" style="bottom:{{ box.footer_height + box.title_height }}px; width:{{ box.width }}px; padding:0 {{ box.inset }}px;">
+  <div class="slide-band" style="bottom:{{ box.footer_height + box.title_height }}px; {{ divider_frame(box, frames) }}">
 {% else %}
-  <div class="slide-band" style="top:{{ box.title_height }}px; height:{{ box.height - box.footer_height - 2 * box.title_height }}px; width:{{ box.width }}px; padding:0 {{ box.inset }}px;">
+  <div class="slide-band" style="top:{{ box.title_height }}px; height:{{ box.height - box.footer_height - 2 * box.title_height }}px; {{ divider_frame(box, frames) }}">
     <table role="presentation" class="anchor" width="100%" cellpadding="0" cellspacing="0" border="0"
            style="width:100%;"><tr><td style="padding:0; height:{{ box.height - box.footer_height - 2 * box.title_height }}px; vertical-align:{{ valign }};">
 {% endif %}
@@ -23,5 +29,13 @@
     </td></tr></table>
 {% endif %}
   </div>
-{{ footer_band(box, number, footer_label, dark=true) }}
+{% if agenda %}
+  <div class="slide-band divider-agenda" style="top:{{ box.title_height }}px; left:{{ frames.side.left }}px; width:{{ frames.side.width }}px; padding:0 {{ frames.side.inset }}px; font-family:{{ font.label }}; font-size:{{ size.type.small }}px; line-height:{{ size.type.secondary_line | percent }};">
+{% for part in agenda %}
+    <p class="divider-agenda-part" style="margin:0 0 {{ size.space.caption_gap }}px; color:{{ theme.text.on_dark if part.current else theme.text.on_dark_muted }};"><span style="float:right;">{{ part.number }}</span>{{ part.title | escape_html }}</p>
+{% endfor %}
+    <span class="slide-end" id="slide-{{ number }}-end" style="display:block;"></span>
+  </div>
+{% endif %}
+{{ footer_band(box, footer_counter, footer_label, dark=true, mark=footer_mark) }}
 </div>

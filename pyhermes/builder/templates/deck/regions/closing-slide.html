@@ -9,5 +9,5 @@
     <div style="font-family:{{ font.body }}; font-size:{{ size.type.small }}px; line-height:{{ size.component.legal_line | percent }}; color:{{ theme.text.fine_print }};">{{ header_disclaimer }}</div>
     <span class="slide-end" id="slide-{{ closing_number }}-end"></span>
   </div>
-{{ footer_band(deck_box, closing_number, closing_label) }}
+{{ footer_band(deck_box, closing_counter, closing_label, mark=closing_mark) }}
 </div>

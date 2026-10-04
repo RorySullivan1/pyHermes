@@ -1,0 +1,19 @@
+{# A statement slide (#349): one figure centred on the theme's dark ground, with
+   no title band, over the footer band. The body is a slide's, so the figure
+   and its sentinel sit in one cell the body's height, anchored middle; the
+   title is never drawn, and its anchor rides the cell so a contents list
+   still finds the sheet. #}
+{% from "deck/bands.html" import footer_band with context %}
+<div class="sheet slide statement" data-slide="{{ number }}" style="background-color:{{ theme.palette.surface }};">
+  <div class="slide-body" style="top:{{ box.body_top }}px; width:{{ box.width }}px; height:{{ box.body_height }}px;">
+    <table role="presentation" class="anchor" width="{{ box.width }}" cellpadding="0" cellspacing="0" border="0"
+           style="width:{{ box.width }}px;"><tr><td{% if section_anchor %} id="{{ section_anchor | escape_html }}"{% endif %} style="padding:0; height:{{ box.body_height }}px; vertical-align:middle;">
+    <table role="presentation" width="{{ box.width }}" cellpadding="0" cellspacing="0" border="0"
+           style="width:{{ box.width }}px;">
+{{ html }}
+    </table>
+    <span class="slide-end" id="slide-{{ number }}-end" style="display:block;"></span>
+    </td></tr></table>
+  </div>
+{{ footer_band(box, footer_counter, footer_label, dark=true, mark=footer_mark) }}
+</div>

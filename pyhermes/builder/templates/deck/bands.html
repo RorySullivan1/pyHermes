@@ -4,8 +4,9 @@
    takes the light heading without asking. The title is clipped to one line
    (#316), and the empty span ending it is its sentinel: on a second line it
    lands a line lower, and pyhermes.deck.overflowing_slides() names it. #}
+{% from "common/notes.html" import marked with context %}
 {% macro title_band(box, title, anchor, number) %}
-<div class="slide-band slide-title-band" style="top:0; width:{{ box.width }}px; height:{{ box.title_height }}px; padding:{{ box.margin_top }}px {{ box.inset }}px 0;">
+<div class="slide-band slide-title-band" style="top:0;{% if box.left %} left:{{ box.left }}px;{% endif %} width:{{ box.width }}px; height:{{ box.title_height }}px; padding:{{ box.margin_top }}px {{ box.inset }}px 0;">
   {% if title %}
   <h2 class="slide-title"{% if anchor %} id="{{ anchor | escape_html }}"{% endif %} style="margin:0; font-family:{{ font.heading }}; font-size:{{ size.type.title }}px; line-height:{{ size.type.title_line | percent }}; max-height:{{ box.title_line }}px; overflow:hidden; font-weight:normal; color:{{ theme.text.heading }};">{{ title | escape_html }}<span class="slide-title-end" id="slide-{{ number }}-title-end"></span></h2>
   {% endif %}
@@ -13,10 +14,25 @@
 {% endmacro %}
 
 {# The footer band is laid out left to right whatever the slide's alignment:
-   centred, the number's float was lost behind the label. #}
-{% macro footer_band(box, number, label, dark=false) %}
-<div class="slide-band slide-footer-band" align="left" style="text-align:left; top:{{ box.footer_top }}px; width:{{ box.width }}px; height:{{ box.footer_height }}px; padding:0 {{ box.inset }}px; font-family:{{ font.label }}; font-size:{{ size.type.micro }}px; line-height:{{ box.footer_height }}px; color:{{ theme.text.on_dark_muted if dark else theme.text.light }};">
+   centred, the number's float was lost behind the label. A mark, such as a
+   confidentiality label, follows the label a gutter on (#352): centred, it
+   met the label on a sheet a picture halves. The counter is Python's: the
+   sheet's number, or "4 / 12". #}
+{% macro footer_band(box, counter, label, dark=false, mark="") %}
+<div class="slide-band slide-footer-band" align="left" style="text-align:left; top:{{ box.footer_top }}px;{% if box.left %} left:{{ box.left }}px;{% endif %} width:{{ box.width }}px; height:{{ box.footer_height }}px; padding:0 {{ box.inset }}px; font-family:{{ font.label }}; font-size:{{ size.type.micro }}px; line-height:{{ box.footer_height }}px; color:{{ theme.text.on_dark_muted if dark else theme.text.light }};">
   <span class="slide-footer-label">{{ label | escape_html }}</span>
-  <span class="slide-number" style="float:right;">{{ number }}</span>
+{% if mark %}
+  <span class="slide-footer-mark" style="padding-left:{{ size.space.gutter }}px;">{{ mark | escape_html }}</span>
+{% endif %}
+  <span class="slide-number" style="float:right;">{{ counter }}</span>
+</div>
+{% endmacro %}
+
+{# A slide's source (#347): one fine-print line pinned over the footer band,
+   in the band the body gave up for it. Clipped to its line, and its sentinel
+   lands a line lower when it wraps, as the title's does. #}
+{% macro source_band(box, number, source_parts, as_of) %}
+<div class="slide-band slide-source-band" style="top:{{ box.source_top }}px;{% if box.left %} left:{{ box.left }}px;{% endif %} width:{{ box.width }}px; height:{{ box.source_height }}px; padding:{{ size.space.caption_gap }}px {{ box.inset }}px 0; overflow:hidden;">
+  <p class="fine-print" style="margin:0; max-height:{{ box.source_line }}px; overflow:hidden; font-family:{{ font.label }}; font-size:{{ size.type.micro }}px; line-height:{{ size.type.body_line | percent }}; font-style:italic; color:{{ theme.text.light }};">{{ marked(source_parts) }}{% if as_of %} as of {{ as_of | escape_html }}{% endif %}<span class="slide-source-end" id="slide-{{ number }}-source-end"></span></p>
 </div>
 {% endmacro %}

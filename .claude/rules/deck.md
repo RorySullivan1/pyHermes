@@ -3,9 +3,11 @@ paths:
   - "pyhermes/deck/**/*"
   - "pyhermes/builder/templates/deck/**/*"
   - "qa/fixtures/pitch_16_9.py"
+  - "qa/fixtures/pitch_layouts_16_9.py"
   - "qa/fixtures/slide_16_9.py"
   - "tests/test_deck.py"
   - "tests/test_deck_pdf.py"
+  - "tests/test_deck_layouts.py"
 ---
 
 # The deck medium — one slide to a sheet (epic #218)
@@ -18,8 +20,8 @@ like a report. `pyhermes/deck/` is the fourth medium, beside `email`, `document`
 | Module | Holds |
 |---|---|
 | `medium.py` | `DECK_MEDIUM` and `deck_medium(page)`: two regions, the `deck/` then `document/` overlay |
-| `slide.py` | `Slide`, the layout unit; `DividerSlide`, a part's title; `SlideBox`, the bands' geometry |
-| `regions.py` | `TitleSlide` and `ClosingSlide`, each with an `Empty` variant |
+| `slide.py` | `Slide`, the layout unit; `DividerSlide`, a part's title; `StatementSlide`, one figure; `SlideBox`, the bands' geometry |
+| `regions.py` | `TitleSlide` and `ClosingSlide`, each with an `Empty` variant; `DeckFooter` |
 | `document.py` | `Deck` and `DeckMetadata`: slides in, sheets numbered, notes out |
 | `fit.py` | `overflowing_slides()`, which asks the print engine |
 
@@ -88,6 +90,7 @@ and it reaches a colleague as a PDF through the unchanged exporter, as a report 
 - **A `Contents` on a slide lists every titled slide and divider but the one it sits on**,
   the paged rule of skipping its own section. An agenda slide does not list itself.
 - **Footnotes are refused**: a note floats to the sheet's foot, which the footer band owns.
+  A slide's `source=` line is where its source goes instead (#347).
 - **Positioned, not valign'd.** The first raster put the title slide's and the divider's copy
   at the top of the sheet, a `valign="bottom"` cell ignored, so both are absolute boxes.
 
@@ -200,3 +203,67 @@ held with it unset. `Deck.add_slide` and `add_divider` pass it on.
 - `pitch_16_9`'s title slide and second divider are anchored middle, and *Two positions* sits
   in the middle of its body. Its table slide carries a paragraph capped at the measure over a
   table at 0.6 of the body (#357, #358).
+
+## Layouts (#346)
+
+Epic #346 added six things a pitchbook needs, every one of them off by default and every
+deck golden byte-identical with it unset. They live in a second fixture,
+`pitch_layouts_16_9`, rather than in `pitch_16_9`, so that fixture's unchanged goldens are
+the proof the defaults render byte for byte (#353's own allowance).
+
+- **A source band (#347).** `Slide(source=, as_of=)` is one `micro` line plus `caption_gap`,
+  taken from the body only on a sourced slide: `SlideBox.with_source` shrinks `body_height`,
+  so `body_bottom`, and every fit check, measures against it. The line is clipped to one line
+  and carries a sentinel, so a wrapping source is named `(its source wraps)`, as a title is.
+  **The box became per slide**: `Deck.slide_box(slide)` is the deck's box as that slide lays
+  it out, and `overflowing_slides` reads each slide's own.
+- **A citation in a source resolves through the walk.** `Document._marked()` is the hook: it
+  lists every holder of marked copy in reading order, components by default, and `Deck`
+  interleaves each slide's source after its components. The walk hands each holder its
+  `citing` and `validate` names a dangling key by its holder, `the slide titled ...`. A
+  footnote marker in a source is refused at construction.
+- **Pictures (#348).** `background_image=` fills the sheet under the bands and needs
+  `ground="light" | "dark"`: a photograph has no one colour for `on_ground` to measure, so the
+  caller names the tone and the theme is rebound as if the ground were white or black. Every
+  section's ground goes clear over it, through one CSS rule the skeleton emits only when a
+  slide carries such a picture. `image=` with `image_side=` takes half the sheet, floored,
+  edge to edge: `SlideBox.picture` moves the copy, every band and the source into the other
+  half at the same inset, and the picture is an `<img>` with `object-fit: cover`, so it keeps
+  its alt text. One picture a slide, and none beside a laid-out body. Both are `IMAGE_FIELDS`
+  (rule 7). **The floor is a screen's, not a press's**: one source pixel per CSS px
+  (`SLIDE_DPI = 96`), below which `validate_image_resolution` warns and below half raises,
+  the brochure's check with its `dpi` passed in. In an email the slide flattens and neither
+  picture is drawn, as a panel's ground is not.
+- **The statement slide (#349)** is a `StatementSlide` holding one `HeroStat`, centred in a
+  cell the body's height on `header_bg`, the divider's ground, with the theme rebound so the
+  figure reads light. No title band: `Slide.TITLE_BAND` is `False` for it and for a divider,
+  so the fit check measures neither's title. Its title is a contents entry and the text part's
+  heading; the sheet carries only the anchor, on the cell, so `target-counter` still finds it.
+- **The divider's agenda (#350).** `Deck(divider_agenda=True)` lists every divider on every
+  divider, in `font.label`, the current one in `on_dark` and the rest `on_dark_muted`, each
+  with its own sheet number from `Deck.number`, the footer's count. A part's first sheet is its
+  divider. The title then takes a sidebar layout's main region and the list its side, reusing
+  `SlideBox.regions`; the list has a sentinel, so a deck with many parts is measured.
+- **The footer (#352).** `Deck(footer=DeckFooter(counter="total", label=...))`. A
+  presentation choice, so it sits beside the regions rather than in the facts. The counter is
+  `str(number)` by default, which is the old `{{ number }}` byte for byte, or `N / total`,
+  the total being `Deck.sheet_count()`. **The mark follows the label a gutter on**: centred
+  across the band, the first raster put it against the label on a sheet a picture halves. The
+  title slide has no bands, so never a mark.
+- **The handout (#351)** is `Deck.handout(page)`, markup, and `pyhermes.pdf.render_handout` /
+  `save_handout`. Each sheet is the deck's own sheet markup, rendered once at the deck's
+  density, inside a frame the page's width between its margins, under `transform: scale()`,
+  with its notes beneath in `font.body`, escaped, one paragraph per blank-line block. The
+  title slide and the disclosures get a page with no notes. **Scaled markup, not a raster**:
+  the issue proposed placing each laid-out sheet as an image, but WeasyPrint has written no
+  image since v53, and rasterising needs pypdfium2, which is `[qa]`; the handout would then
+  need two extras where the issue says it needs `[pdf]`. A scaled copy of the same markup is
+  laid out identically (a test holds that every sheet's markup is in the handout verbatim),
+  keeps its text selectable, and costs nothing. A `Contents` on a slide still prints the right
+  numbers, because the handout is one page per sheet too. It is a view of the notes
+  projection, so #299's decision covers it, and it is not a PowerPoint notes page (#300).
+- **The fixture** opens on an agenda, then a divider, a full-bleed slide, an image-left and
+  an image-right slide, a second divider anchored middle, a sourced table whose source cites
+  the reference the last slide lists, a statement slide carrying the notes sentinel, and the
+  bibliography. `tests/test_deck_layouts.py` reads each layout back from the PDF, and CI's
+  `pdf` job photographs the deck and its handout one image a sheet.

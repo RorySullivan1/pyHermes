@@ -132,6 +132,123 @@ deck.add_slide(
 gives two equal halves. Either region running past the footer names the slide, as a full
 slide does. In an email or a report the slide's sections run main first, then the side.
 
+## How to give a slide its source
+
+**When to use this:** a slide of text, figures or several blocks needs a source, and no single
+table or chart on it has a `source` line of its own.
+
+```python
+deck.add_slide(
+    [FullWidth(content=TextBlock("<p>Ten-year yields rose 18 bps in the quarter.</p>"))],
+    "The quarter in one line",
+    source="Acme Research; Bloomberg",
+    as_of="30 September 2026",
+)
+```
+
+**Result:** one line of fine print just above the footer, reading *Acme Research; Bloomberg
+as of 30 September 2026*. The slide's body gives up that line, so a slide that only just fit
+before may now be too full; [check it](#how-to-find-a-slide-that-is-too-full).
+
+**Notes:**
+
+- A citation such as `[@boe2026]` works in a source, as in a table's, and resolves against a
+  `Bibliography` anywhere in the deck. A footnote marker `[^1]` is refused.
+- In the plain-text version the source follows the slide's content.
+
+## How to put a picture on a slide
+
+**When to use this:** to open a part on a photograph, or to set a picture beside your point.
+
+**Steps:** pass `background_image=` and say whether the picture is `"dark"` or `"light"`, so
+the type is set to read on it. Or pass `image=` and `image_side=` for a picture filling half
+the slide.
+
+```python
+from pyhermes.builder.images import EmailImage
+
+deck.add_slide(
+    [FullWidth(content=TextBlock("<p>The long end did the work.</p>"))],
+    "Where the curve stands",
+    background_image=EmailImage.attached("photo.png", alt="The trading floor"),
+    ground="dark",
+)
+deck.add_slide(
+    [FullWidth(content=TextBlock("<p>The premium rose for a third quarter.</p>"))],
+    "Beside the argument",
+    image=EmailImage.attached("portrait.png", alt="The Bank of England"),
+    image_side="left",
+)
+```
+
+**Result:** the first slide is the photograph edge to edge, with its title and text in light
+type over it. The second has the picture filling its left half, top to bottom, and the title,
+text and footer in the right half.
+
+**Notes:**
+
+- The picture must travel with the deck: `EmailImage.attached(...)`, never `hosted(...)`,
+  because the PDF is made without fetching anything.
+- A picture needs one pixel for each pixel of slide it fills: 1280 wide for a full 16:9
+  slide, 640 for half. Below that you get a warning, and below half of it an error.
+- In an email or a report the slide shows its sections only, and the picture is left out.
+
+## How to make a statement slide
+
+**When to use this:** one number deserves a slide of its own.
+
+```python
+from pyhermes.builder import HeroStat
+
+deck.add_statement(
+    HeroStat("38 bps", "2s10s", "The steepest curve since 2022"),
+    "The lead figure",
+    notes="Let the number sit before saying anything.",
+)
+```
+
+**Result:** the figure, very large, in the middle of a dark slide, with the footer but no
+title. The title is what an agenda lists and what the plain-text version heads it with. In an
+email the slide is just the figure.
+
+## How to show the agenda on every divider, and count the slides
+
+**When to use this:** a long deck, where the audience should see which part they are in, and
+a footer that reads "4 / 12" under a confidentiality notice.
+
+```python
+from pyhermes.deck import DeckFooter
+
+banked = Deck(
+    facts,
+    divider_agenda=True,
+    footer=DeckFooter(counter="total", label="Strictly private and confidential"),
+)
+banked.add_divider("Markets")
+banked.add_slide([FullWidth(content=TextBlock("<p>Rates rose.</p>"))], "Rates")
+banked.add_divider("Positions")
+banked.add_slide([FullWidth(content=TextBlock("<p>Own the long end.</p>"))], "Trades")
+```
+
+**Result:** each divider lists every part, with its first slide's number, and the part you are
+in is set brighter than the rest. Every slide's footer ends *2 / 6*, *3 / 6* and so on, with
+the label beside the firm's name. The title slide shows neither, as it has no footer.
+
+## How to print a handout with your notes
+
+**When to use this:** to rehearse from paper, or to brief a colleague with what you will say.
+
+<!-- manual: needs pdf -->
+```python
+from pyhermes.pdf import save_handout
+
+save_handout(deck, "handout.pdf")
+```
+
+**Result:** an A4 portrait PDF with one page for each slide: the slide, shrunk to the page's
+width, and its notes under it. A slide without notes still gets a page. Pass
+`page=LETTER_PORTRAIT` (from `pyhermes.builder.sizing`) for US Letter.
+
 ## How to find a slide that is too full
 
 A slide never runs onto a second page. If its content does not fit, the bottom is cut off
@@ -157,6 +274,8 @@ print(overflowing_slides(deck))
 - **There is no PowerPoint file.** A deck is shared as a PDF, as a report is. Your charts
   are pictures either way.
 - **Footnotes are not allowed on a slide**, because the footer takes the bottom of the
-  slide. Put a source in a table's or chart's `source` line instead.
+  slide. Give the slide a `source=` line, or put the source in a table's or chart's own.
+- **The handout is not a PowerPoint notes page.** It is the same slides, shrunk, with the
+  notes you already wrote; there is still no `.pptx`.
 - **The same slides work elsewhere.** A `Slide` added to an email or a report shows its
   sections and nothing else, so you can reuse them.

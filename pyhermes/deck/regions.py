@@ -151,4 +151,49 @@ class EmptyClosingSlide(ClosingSlide):
     TEMPLATE_PATHS: ClassVar[dict[str, str]] = {}
 
 
-__all__ = ["ClosingSlide", "EmptyClosingSlide", "EmptyTitleSlide", "TitleSlide"]
+#: How a footer band counts: the sheet's number alone, or ``4 / 12`` (#352).
+COUNTERS: tuple[str, ...] = ("number", "total")
+
+
+@dataclass(frozen=True)
+class DeckFooter:
+    """
+    How every footer band presents its numbers, and what it marks (#352).
+
+    A presentation choice rather than a fact, so it sits beside the regions:
+    the facts say who the deck is from; this says how a sheet counts itself.
+    The default prints the bare number and no mark, as the band did before.
+
+    Args:
+        counter: ``"number"``, or ``"total"`` for ``4 / 12``; the total is the
+                 deck's sheet count, which Python knows.
+        label:   Plain text centred in the band, such as "Strictly private and
+                 confidential", on every banded sheet; never on the title slide.
+    """
+
+    counter: str = "number"
+    label: str = ""
+
+    def __post_init__(self) -> None:
+        if self.counter not in COUNTERS:
+            raise ValidationError(
+                f"a deck footer's counter is one of {list(COUNTERS)}, got: {self.counter!r}"
+            )
+        if not isinstance(self.label, str):
+            raise ValidationError(
+                f"a deck footer's label is plain text, got: {type(self.label).__name__}"
+            )
+
+    def count(self, number: int, total: int) -> str:
+        """What the band prints for sheet ``number`` of ``total``."""
+        return f"{number} / {total}" if self.counter == "total" else str(number)
+
+
+__all__ = [
+    "COUNTERS",
+    "ClosingSlide",
+    "DeckFooter",
+    "EmptyClosingSlide",
+    "EmptyTitleSlide",
+    "TitleSlide",
+]

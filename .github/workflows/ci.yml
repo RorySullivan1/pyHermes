@@ -161,7 +161,7 @@ jobs:
           tests/test_deck_pdf.py tests/test_deck.py tests/test_keep_together.py
           tests/test_slide_layouts.py tests/test_anchoring.py tests/test_split_valign.py
           tests/test_cell_share.py tests/test_measure.py tests/test_hosted_figures.py
-          tests/test_glance.py
+          tests/test_glance.py tests/test_deck_layouts.py
 
       - name: Render the paged, brochure and deck galleries to PDF, and photograph every sheet
         run: |
@@ -182,6 +182,26 @@ jobs:
           print(environment)
           for shot in shots:
               print(f"  {shot.path}  {shot.width}x{shot.height}")
+          PY
+
+      - name: Print each deck's handout (#351), and photograph every page
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          import pypdfium2
+
+          from qa.fixtures import all_deck_fixtures
+          from pyhermes.pdf import save_handout
+
+          pages = Path("output/pdf/handouts")
+          for name, build in sorted(all_deck_fixtures().items()):
+              path = save_handout(build(), pages / f"{name}.handout.pdf")
+              pdf = pypdfium2.PdfDocument(path)
+              for number, page in enumerate(pdf, start=1):
+                  image = pages / f"{name}.handout-{number:02d}.png"
+                  page.render(scale=96 / 72).to_pil().save(image)
+              print(f"{name}: {len(pdf)} handout page(s), {path.stat().st_size} bytes")
           PY
 
       - uses: actions/upload-artifact@v4

@@ -18,8 +18,13 @@
        insets its own bands and copy by the page margin, so a page margin would
        inset them twice, and the title band's ground could not reach the edge. #}
     @page {
+{% if handout %}
+      size: {{ handout.width }}px {{ handout.height }}px;
+      margin: {{ handout.margin.top }}px {{ handout.margin.right }}px {{ handout.margin.bottom }}px {{ handout.margin.left }}px;
+{% else %}
       size: {{ size.frame.sheet_width }}px {{ size.frame.sheet_height }}px;
       margin: 0;
+{% endif %}
     }
 
     body {
@@ -58,6 +63,17 @@
     {# The title band holds one line. A second is clipped rather than painted
        over the body, and its sentinel makes the clip loud (#316). #}
     .slide-title-band { overflow: hidden; }
+{% if imaged %}
+    {# Over a full-bleed picture every section's ground goes clear, as over a
+       brochure panel's (#348): the caller named the tone, not a colour. #}
+    .slide-imaged table, .slide-imaged td { background-color: transparent !important; }
+{% endif %}
+{% if handout %}
+    {# The handout (#351): each sheet laid out at its own size, scaled into a
+       frame across the handout's page, its notes under it. #}
+    .handout-page + .handout-page { break-before: page; page-break-before: always; }
+    .handout-frame { position: relative; overflow: hidden; border: 1px solid {{ theme.palette.rule }}; }
+{% endif %}
 
     {# A contents list on a slide prints each entry's sheet, as on paper. The
        number is the print engine's, and it agrees with the footer band's,
@@ -69,8 +85,25 @@
   </style>
 </head>
 <body>
+{% if handout %}
+{% for sheet in handout.sheets %}
+<div class="handout-page">
+  <div class="handout-frame" style="width:{{ handout.frame_width }}px; height:{{ handout.frame_height }}px;">
+    <div style="transform:scale({{ handout.scale }}); transform-origin:0 0; width:{{ size.frame.sheet_width }}px;">
+{{ sheet.html }}
+    </div>
+  </div>
+  <div class="handout-notes" style="margin-top:{{ size.space.block_gap }}px; font-family:{{ font.body }}; font-size:{{ size.type.body }}px; line-height:{{ size.type.body_line | percent }}; color:{{ theme.text.primary }};">
+{% for paragraph in sheet.notes %}
+    <p style="margin:0 0 {{ size.space.caption_gap }}px;">{{ paragraph | escape_html }}</p>
+{% endfor %}
+  </div>
+</div>
+{% endfor %}
+{% else %}
 {{ title_slide_html }}
 {{ sections_html }}
 {{ closing_slide_html }}
+{% endif %}
 </body>
 </html>

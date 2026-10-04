@@ -1,0 +1,81 @@
+Quarterly Review
+================
+
+Hermes Research
+Rates Strategy · Quarter ending 30 September
+
+
+Agenda
+------
+
+The picture
+Where the curve stands
+Beside the argument
+The other side
+The evidence
+Sourced figures
+The lead figure
+References
+
+
+The picture
+-----------
+
+Pictures on a slide
+
+
+Where the curve stands
+----------------------
+
+Ten-year yields ended the quarter eighteen basis points higher, and the long
+end did the work.
+
+
+Beside the argument
+-------------------
+
+The premium rose for a third quarter. It now explains most of the move at the
+long end, and little of the front.
+
+
+The other side
+--------------
+
+The front end waits on the next two prints.
+
+
+The evidence
+------------
+
+Figures, sourced
+
+
+Sourced figures
+---------------
+
+Tenor  Yield  Change (bps)
+-----  -----  ------------
+2Y     3.83%            +9
+10Y    4.21%           +18
+30Y    4.78%           +21
+
+Hermes Research; Bank of England (Bank of England 2026) as of 30 September
+2026
+
+
+The lead figure
+---------------
+
+38 bps — 2s10s, The steepest curve since 2022
+
+
+References
+----------
+
+Bank of England. 2026. Monetary Policy Report. September.
+
+
+Disclosures
+-----------
+
+For illustrative purposes. Not investment advice.
