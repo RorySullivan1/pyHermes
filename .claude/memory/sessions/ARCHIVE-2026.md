@@ -352,3 +352,26 @@ Decisions and Log entries folded out of `INDEX.md` on 2026-08-29 (#143), verbati
   oversize-picture `SizeWarning` — sessions/2026-10-01-data-to-email.md
 - [2026-10-01] size-by-section — **#259 implemented**: per-section size report, check and preview report
   over 102 KB — sessions/2026-10-01-size-by-section.md
+
+## Folded in from INDEX.md on 2026-10-04
+
+- [2026-09-24] **Re-syncing from claudeBrain is a 3-way merge, never a copy.** Base = the factory
+  blob nearest our file; pyHermes-adapted agents/hooks stay ours — sessions/2026-09-24-sync-claudebrain-assets.md
+- [2026-09-24] **Spacing has two levels: a preset (or a derived scheme), then `spacing=` per object as a
+  derive of the bound scheme.** The email gates both; no px enters the API — `design-axes.md`,
+  sessions/2026-09-24-spacing-two-levels.md
+- [2026-09-24] **A `colspan` is admitted in a `thead` only, and Outlook's handling of it is unverified
+  here.** A cell note is the `[^n]` marker, never a field — #217, sessions/2026-09-24-1208-define-epic-217.md
+- [2026-09-24] **A cell's text on its own heat tint takes the more legible theme token, and a
+  marker hangs past the point on paper.** Both were found only by the #228 rasters —
+  sessions/2026-09-24-table-semantics.md
+- [2026-09-24] **An equation's component takes bytes and the [math] extra renders them**, because the
+  builder never imports a backend; **the picture is painted for the theme the caller passes** — `math.md`
+- [2026-10-01] deck-medium — **#218 implemented**: Deck, Slide, overflow, notes, `presentation`,
+  `pitch_16_9` — sessions/2026-10-01-deck-medium.md
+- [2026-10-01] examples-drift — **#281 implemented**: README facts, three examples regenerated, the
+  committed-output test — sessions/2026-10-01-examples-drift.md
+- [2026-10-01] customise-the-layout — **#272 implemented**: manual page 9, every example run —
+  sessions/2026-10-01-customise-the-layout.md
+- [2026-10-01] prose-styles — **#280 implemented**: the `prose` filter, three tokens, the h1/h2
+  refusal, manual page 9's tag table — sessions/2026-10-01-prose-styles.md
