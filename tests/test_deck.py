@@ -246,7 +246,7 @@ class TestTheOpeningAndClosingSlides:
 
         template = (
             Path(pyhermes.builder.__file__).parent / "templates/deck/regions/title-slide.html"
-        ).read_text()
+        ).read_text(encoding="utf-8")
         assert "{{ campaign_name" not in template and "{{ firm_name" not in template
 
     def test_the_title_slide_projects_through_its_text(self):
@@ -393,6 +393,9 @@ class TestEveryDeckFieldIsExercised:
         for name in ("title", "notes", "background_color", "align", "anchor"):
             assert any(getattr(slide, name) for slide in slides), name
         assert any(getattr(slide, "subtitle", "") for slide in slides)
+        # valign is never falsy, so each kind's default is named (#355).
+        assert any(type(s) is Slide and s.valign != "top" for s in slides)
+        assert any(isinstance(s, DividerSlide) and s.valign != "bottom" for s in slides)
 
     @pytest.mark.parametrize("region", ["title_slide", "closing_slide"])
     def test_each_region_field_differs_from_its_default(self, region):

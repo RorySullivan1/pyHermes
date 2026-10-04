@@ -32,6 +32,7 @@ PAGED_MEDIUM = Medium(
     region_types=(Cover, ContentsPage, ExhibitsPage, RunningHeader, RunningFooter, BackMatter),
     template_search_path=("document",),
     paged=True,
+    measure="standard",
 )
 
 

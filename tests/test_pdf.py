@@ -10,15 +10,18 @@ must refuse what it is not given. The **render** half skips when the
 from __future__ import annotations
 
 import ast
+import functools
 import importlib.util
 import pathlib
 import re
+import sys
 import zlib
 
 import pytest
 
 from pyhermes.builder import FullWidth, TextBlock
 from pyhermes.builder.images import EmailImage
+from pyhermes.builder.typography import DEFAULT_FONTS
 from pyhermes.document import (
     Cover,
     EmptyBackMatter,
@@ -76,6 +79,40 @@ def document(*sections) -> PagedDocument:
     for section in sections or (FullWidth(content=TextBlock("<p>Short.</p>")),):
         built.add_section(section)
     return built
+
+
+def _face_key(name: str) -> str:
+    """``ABCDEF+Liberation-Serif`` as ``liberationserif``: no subset tag, spacing or case."""
+    return re.sub(r"[^a-z0-9]", "", name.split("+")[-1].lower())
+
+
+def _is_body_face(face: str) -> bool:
+    """Whether ``face`` is one the body stack names, or a serif standing in for its generic."""
+    key = _face_key(face)
+    named = {_face_key(family) for family in DEFAULT_FONTS.body.families[:-1]}
+    return any(key.startswith(family) for family in named) or "serif" in key
+
+
+#: The face the engineered sheet boundaries were tuned in: CI installs
+#: ``fonts-liberation``, and without Georgia the body stack resolves to it.
+TUNED_FACE = "liberationserif"
+
+
+@functools.cache
+def _long_table_faces() -> frozenset[str]:
+    """The faces the print engine embeds in ``a4_long_table``, rendered once per session."""
+    blob = _decompressed(render_pdf(long_table.build()))
+    return frozenset(n.decode() for n in re.findall(rb"/BaseFont\s*/([A-Za-z0-9+#\-]+)", blob))
+
+
+def _require_tuned_face() -> None:
+    """Skip, naming both faces, where the print engine sets the body in another face (#372)."""
+    faces = _long_table_faces()
+    if TUNED_FACE not in {_face_key(face) for face in faces}:
+        pytest.skip(
+            f"the engineered boundaries are tuned in Liberation Serif; this print engine "
+            f"sets the body in {sorted(faces)}, so the boundaries fall elsewhere"
+        )
 
 
 class TestTheCoreNeverImportsTheBackend:
@@ -330,8 +367,11 @@ class TestTheBytesAreAPdf:
         assert b"/FontFile" in blob, "no font embedded; the PDF would not be portable"
         faces = {name.decode() for name in re.findall(rb"/BaseFont\s*/([A-Za-z0-9+#\-]+)", blob)}
         assert faces, "no face named"
-        assert any("serif" in face.lower() for face in faces), (
-            f"the classic theme asks for a serif and the PDF embeds {sorted(faces)}"
+        # The body stack's own faces, or the generic serif that ends it: Georgia on a
+        # machine that has it, Liberation Serif standing in on one that does not (#372).
+        assert any(_is_body_face(face) for face in faces), (
+            f"the classic theme asks for {DEFAULT_FONTS.body.css} and the PDF embeds "
+            f"{sorted(faces)}"
         )
 
 
@@ -542,6 +582,7 @@ class TestTheFixtureIsEngineeredRatherThanLucky:
 
     @pytest.fixture(scope="class", params=_HEADS, ids=_HEAD_IDS)
     def sheets(self, request):
+        _require_tuned_face()
         return _sheets(request.param(), strip_break_rules=True)
 
     def test_without_its_rule_the_total_opens_a_sheet_alone(self, sheets):
@@ -561,6 +602,7 @@ class TestTheFixtureIsEngineeredRatherThanLucky:
 def test_without_its_rule_a_subtitle_ends_the_sheet_its_figure_left():
     # The two rules interact: the figure's moves the chart whole, and only the
     # subtitle's stops it leaving its standfirst behind. So this strips one.
+    _require_tuned_face()
     sheets = _sheets(long_table.build(), strip_rule=".subtitle")
     assert not sheets[_sheet_of(sheets, long_table.CHART_SUBTITLE)][1]
 
@@ -599,3 +641,39 @@ class TestRemovingTheTheadIsCaught:
         sheets = _sheets(long_table.build(template_dir=_without_thead(tmp_path)))
         second = _table_sheets(sheets)[1]
         assert long_table.HEADERS[0].upper() not in sheets[second][0]
+
+
+class TestTheFontChecksFollowTheBodyStack:
+    """#372: the face checks hold for Georgia as well as the Liberation stand-in."""
+
+    @pytest.mark.parametrize(
+        "face",
+        [
+            "ABCDEF+Georgia",
+            "Georgia-Bold",
+            "Times-New-Roman",
+            "QWERTY+Liberation-Serif",
+            "DejaVuSerif",
+        ],
+    )
+    def test_a_face_the_body_stack_names_or_its_generic_is_accepted(self, face):
+        assert _is_body_face(face)
+
+    @pytest.mark.parametrize("face", ["ABCDEF+DejaVuSans", "Liberation-Sans", "Courier"])
+    def test_a_sans_or_mono_fallback_is_refused(self, face):
+        assert not _is_body_face(face)
+
+    def test_the_boundaries_skip_in_another_face_and_say_which(self, monkeypatch):
+        monkeypatch.setattr(
+            sys.modules[__name__], "_long_table_faces", lambda: frozenset({"ABCDEF+Georgia"})
+        )
+        with pytest.raises(pytest.skip.Exception, match=r"Liberation Serif.*Georgia"):
+            _require_tuned_face()
+
+    def test_the_boundaries_run_in_the_tuned_face(self, monkeypatch):
+        monkeypatch.setattr(
+            sys.modules[__name__],
+            "_long_table_faces",
+            lambda: frozenset({"SWSLVQ+Liberation-Serif", "VRMYHF+Liberation-Sans"}),
+        )
+        _require_tuned_face()

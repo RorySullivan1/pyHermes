@@ -1205,3 +1205,36 @@ manifest lacks the note's image, and the paged golden the reverse. `pitch_16_9` 
 slide. `kitchen_sink`'s button is wrapped in `Only(..., media="email")`, which renders it
 unchanged, so rule 1 holds with its goldens byte-identical. The gallery's 375px tests cover the
 new email, and `tests/test_stacking.py` measures where each column lands at 1000 and 375px.
+
+## Placement within a block's space (#360)
+
+`_placed.py` gains #354's controls after its fresh-sheet section, so no engineered break above
+them moves: a paper-only split aligned middle (in `OnlySections`, since an email refuses it), a
+chart and an equation hosted as floats, a callout, a table, a figures pair and a contents list
+each at a share of the column, placed centre or right by their section, and a narrow measure.
+So `placed_layout` pins the email's fallbacks and `a4_placed_layout` the floats and the split.
+`pitch_16_9` gains a middle-anchored title slide, divider and slide, a measured paragraph and a
+0.6 table; `tri_fold_letter` a bottom-anchored cover. The field tests count a `MathBlock` hosted
+as a figure, the only place its `wrap` means anything. The five new test modules join the `pdf`
+job's line, and `test_cell_share` the screenshot job's.
+
+## The suite runs on Windows (#372)
+
+The owner's Windows 11 run (PR #371) failed 14 tests on `main`, from three causes, none of them
+this repo's Linux CI could see.
+
+- **Text I/O names its encoding.** A bare `read_text()` reads the locale's encoding, cp1252 on
+  Windows, and a template holding an em dash failed there. `tests/test_encoding.py` walks the
+  syntax tree of `pyhermes/`, `qa/` and `tests/` and fails on any `read_text` or `write_text`
+  without `encoding=`, naming file and line. The tree is checked rather than grepped, so a
+  call split over lines is seen.
+- **A drive letter is never the target's separator.** `load_target` split on the last colon,
+  so `C:/x/weekly.py` with no callable reported `No such file: C`. A drive (`C:/` or `C:\`) is
+  now taken off first; the tests run on any OS, since the split never touches the filesystem.
+- **The engineered boundaries are Liberation Serif's.** CI installs `fonts-liberation`, which
+  stands in for the body stack's `'Times New Roman'` with no Georgia present, and
+  `a4_long_table`'s paragraph counts were tuned in it. In real Georgia the breaks fall
+  elsewhere. The counterfactual tests now skip, naming both faces, when the engine embeds
+  another body face; the skip names no extra, so `all-extras` is unaffected, and in CI they
+  still run. The embedded-face check accepts any face the body stack names, or a serif
+  standing in for its generic, so an embedded Georgia passes.

@@ -176,3 +176,27 @@ region and `side` the other. `full` is the default and renders byte-identically.
 - **#348's image beside copy is `layout="split"` with an image section in `side`**, or it
   generalises this when it starts; that ordering is decided then. `pitch_16_9` gains a sidebar
   slide, *The view in brief*.
+
+## Anchoring a slide's copy (#355)
+
+`Slide(valign="top" | "middle" | "bottom")`, `DividerSlide(valign=)` and `TitleSlide(valign=)`.
+`top` is a slide's default and `bottom` the divider's and the title slide's, so every golden
+held with it unset. `Deck.add_slide` and `add_divider` pass it on.
+
+- **The probe under WeasyPrint 70, recorded.** Flex auto margins are ignored: copy in a
+  `display:flex` column with `margin-top:auto` stayed at the top. The `valign` attribute on a cell
+  is ignored too (an unset cell sits middle, the UA default), which is the old divider comment's
+  "WeasyPrint left a valign'd cell's copy at the top". CSS `vertical-align` on a cell works, but
+  only when the height is on the **cell**, not the table. So an anchored body is one presentation
+  table whose cell is the body's height and carries the anchor; `top` writes no such table.
+- **The sentinel stays the copy's last element, inside the cell, and is a block there.** An empty
+  inline span opens a line box after the copy, so bottom-anchored it landed one line above the
+  foot; as a block it lands on the copy's last line, at `body_bottom` exactly. An overfull cell
+  grows downward, so the sentinel still lands past the foot and `overflowing_slides` names it.
+  Each region of a laid-out slide is anchored with its own sentinel.
+- **The divider and the title slide** keep their positioned band for `bottom`. Higher, the band
+  spans the sheet under the title band (the title slide: less a title band at each edge) and its
+  cell carries the anchor.
+- `pitch_16_9`'s title slide and second divider are anchored middle, and *Two positions* sits
+  in the middle of its body. Its table slide carries a paragraph capped at the measure over a
+  table at 0.6 of the body (#357, #358).

@@ -88,6 +88,22 @@ def _validate_align(value: str, name: str) -> None:
         )
 
 
+def check_valign(value: object, owner: str) -> str:
+    """
+    ``value`` as stored: one of :class:`~pyhermes.builder.enums.VerticalAlign`'s three (#354).
+
+    Raises:
+        ValidationError: On anything else, naming the three.
+    """
+    from .enums import VerticalAlign
+
+    if isinstance(value, str) and value in tuple(VerticalAlign):
+        return str(VerticalAlign(value))
+    raise ValidationError(
+        f"{owner}'s valign is one of {[a.value for a in VerticalAlign]}, got: {value!r}"
+    )
+
+
 # Schemes safe to emit into an href/src in an HTML email.  `cid` covers
 # images embedded as MIME parts.
 _ALLOWED_URL_SCHEMES = frozenset({"http", "https", "mailto", "cid"})

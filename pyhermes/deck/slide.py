@@ -15,9 +15,10 @@ from dataclasses import dataclass, replace
 from pyhermes.builder.components import Component
 from pyhermes.builder.containers import Container
 from pyhermes.builder.engine import Renderer, grounded, rebind, scheme_of
-from pyhermes.builder.enums import TextAlign
+from pyhermes.builder.enums import TextAlign, VerticalAlign
 from pyhermes.builder.exceptions import ValidationError
 from pyhermes.builder.images import EmailImage, ImageAsset
+from pyhermes.builder.models import check_valign
 from pyhermes.builder.sizing import PageMargin, SizeScheme
 from pyhermes.builder.textgen import join_blocks, underline, wrap
 from pyhermes.document.page import Page
@@ -147,6 +148,7 @@ class Slide(Container):
         layout:           ``"full"``, ``"split"`` (equal halves) or ``"sidebar"``
                           (a main area two thirds wide, a side beside it) (#366).
         side:             The side region's sections; ``sections`` fill the main.
+        valign:           The copy's anchor: ``"top"``, ``"middle"`` or ``"bottom"`` (#355).
     """
 
     template_path = "deck/slide.html"
@@ -165,6 +167,7 @@ class Slide(Container):
         *,
         layout: str = "full",
         side: list[Container] | None = None,
+        valign: str | VerticalAlign = "top",
     ):
         super().__init__(title=title, background_color=background_color, align=align, anchor=anchor)
         self._check_sections(sections)
@@ -184,6 +187,7 @@ class Slide(Container):
         if side:
             self._check_sections(side)
         self.layout = layout
+        self.valign = check_valign(valign, self._name())
         # Everywhere but its own sheet, a laid-out slide is its regions in reading order.
         self.sections = [*sections, *(side or [])]
         self._side_count = len(side or [])
@@ -283,6 +287,7 @@ class Slide(Container):
                 "box": box,
                 "number": number,
                 "footer_label": label,
+                "valign": self.valign,
             },
         )
 
@@ -301,6 +306,8 @@ class DividerSlide(Slide):
         subtitle: A line under it.
         notes:    As a ``Slide`` takes them.
         anchor:   The title's ``id``; a slug of the title when unset.
+        valign:   Where the title sits in the body's height; ``"bottom"``, where
+                  a slide's body ends, unless set (#355).
     """
 
     template_path = "deck/divider.html"
@@ -311,6 +318,8 @@ class DividerSlide(Slide):
         subtitle: str | None = None,
         notes: str | None = None,
         anchor: str | None = None,
+        *,
+        valign: str | VerticalAlign = "bottom",
     ):
         if not isinstance(title, str) or not title.strip():
             raise ValidationError("a divider needs a title: it is what the slides after it follow")
@@ -319,7 +328,7 @@ class DividerSlide(Slide):
                 f"a divider's subtitle is plain text, got: {type(subtitle).__name__}"
             )
         self.subtitle = subtitle or ""
-        super().__init__([], title=title, notes=notes, anchor=anchor)
+        super().__init__([], title=title, notes=notes, anchor=anchor, valign=valign)
 
     def _check_sections(self, sections: list[Container]) -> None:
         """Nothing to check: a divider has no body."""
@@ -335,6 +344,7 @@ class DividerSlide(Slide):
             {
                 **self._base_context(engine),
                 "subtitle": self.subtitle,
+                "valign": self.valign,
                 "box": box,
                 "number": number,
                 "footer_label": label,

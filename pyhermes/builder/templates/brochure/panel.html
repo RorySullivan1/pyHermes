@@ -8,15 +8,27 @@
    pad_x, which every container already applies, vertically through the
    box's own padding -- and is clipped at the safe line rather than painting
    into its neighbour. The empty span closing the copy is the overflow
-   sentinel: the print engine records where it lands. #}
+   sentinel: the print engine records where it lands. Anchored lower (#355),
+   the copy and its sentinel sit in one cell the copy's height, set by CSS
+   `vertical-align`: WeasyPrint ignores the `valign` attribute, and a height
+   on the table rather than the cell. The sentinel is a block there, so it
+   opens no line box and lands on the copy's last line. An overfull cell
+   grows downward, so the sentinel still lands past the safe line. #}
 <div class="panel-ground" style="left:{{ ground.left }}px; top:{{ ground.top }}px; width:{{ ground.width }}px; height:{{ ground.height }}px; background-color:{{ background_color | default(theme.palette.surface) }};{% if background_image %} background-image:url('{{ background_image | escape_html }}'); background-size:cover; background-position:center;{% endif %}"></div>
 <div class="panel{% if background_image %} panel-imaged{% endif %}" data-reader="{{ box.reader }}"{% if section_align %} align="{{ section_align | escape_html }}"{% endif %}
      style="left:{{ box.left }}px; width:{{ box.width }}px; height:{{ box.height }}px; padding:{{ inset }}px 0;{% if section_align %} text-align:{{ section_align }};{% endif %}">
   <div class="panel-copy" style="height:{{ content_height }}px;">
+{% if valign != "top" %}
+    <table role="presentation" class="anchor" width="{{ box.width }}" cellpadding="0" cellspacing="0" border="0"
+           style="width:{{ box.width }}px;"><tr><td style="padding:0; height:{{ content_height }}px; vertical-align:{{ valign }};">
+{% endif %}
     <table role="presentation" width="{{ box.width }}" cellpadding="0" cellspacing="0" border="0"
            style="width:{{ box.width }}px;">
 {{ sections_html }}
     </table>
-    <span class="panel-end" id="panel-{{ box.reader }}-end"></span>
+    <span class="panel-end" id="panel-{{ box.reader }}-end"{% if valign != "top" %} style="display:block;"{% endif %}></span>
+{% if valign != "top" %}
+    </td></tr></table>
+{% endif %}
   </div>
 </div>

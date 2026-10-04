@@ -57,7 +57,7 @@ class TestConstruction:
             TemplateEngine(tmp_path / "does-not-exist")
 
     def test_accepts_an_explicit_dir(self, tmp_path):
-        (tmp_path / "x.html").write_text("hi")
+        (tmp_path / "x.html").write_text("hi", encoding="utf-8")
         assert TemplateEngine(tmp_path).render("x.html", {}) == "hi"
 
 

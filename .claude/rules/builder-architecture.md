@@ -914,3 +914,10 @@ indent is older and separate.
 **`Only` (#365) is the third composite**: one block, shown in chosen media. Its `children()`
 are its block or nothing according to the medium the walk is for, so the document's leaf walk,
 the manifest and the text part all leave an omitted block out. `media.md` has route B.
+
+**`CellShare` (#357) is a mixin, not a wrapper.** `DataTable`, `CardGroup`, `Callout` and
+`Contents` take `width=`, and `CellShare.render` wraps the block's own render (`_fill`) in a
+layout table the share of its cell, rebinding `cell_width` to the share for what is inside. A
+`Wide(block, 0.6)` wrapper was the alternative; it would have been one more composite in the
+walk for a field four blocks share. `design-axes.md` has the placement and the markup.
+

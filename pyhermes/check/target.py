@@ -5,6 +5,7 @@ Load a document from ``path/to/module.py:callable``, the form the check command 
 from __future__ import annotations
 
 import importlib.util
+import re
 import sys
 from pathlib import Path
 
@@ -21,7 +22,8 @@ def load_target(target: str) -> tuple[str, Document]:
     """
     ``(name, document)`` from ``path/to/module.py:callable``.
 
-    Split on the last colon, so a Windows drive letter is not the separator.
+    Split on the last colon after any Windows drive (``C:/`` or ``C:\\``), so a
+    drive letter is never the separator, even when no callable follows (#372).
     The callable takes no arguments and returns a ``Document``, an ``Email``
     or an ``EmailBuilder``. The name is ``{stem}-{callable}``, so two files
     that both define ``build`` do not overwrite each other's output.
@@ -30,7 +32,9 @@ def load_target(target: str) -> tuple[str, Document]:
         TargetError: For a missing file or callable, or one that fails to import.
         EmailBuilderError: When the builder rejects the email; its message names the field.
     """
-    path_text, _, attribute = target.rpartition(":")
+    drive = target[:2] if re.match(r"[A-Za-z]:[\\/]", target) else ""
+    path_text, _, attribute = target[len(drive) :].rpartition(":")
+    path_text = drive + path_text if path_text else ""
     path = Path(path_text)
     if not path_text or not attribute:
         raise TargetError(f"{target!r} names no callable. Expected path/to/module.py:callable.")

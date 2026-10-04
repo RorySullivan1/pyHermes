@@ -33,7 +33,16 @@ from .apparatus import (
     unmarked,
     validate_anchor,
 )
-from .engine import Renderer, on_ground, own_surface, respaced
+from .engine import (
+    Renderer,
+    cell_width_of,
+    on_ground,
+    own_surface,
+    placement_of,
+    rebind,
+    respaced,
+    scheme_of,
+)
 from .enums import CardOrientation, ColumnKind, ImageAlign, RowKind
 from .exceptions import ValidationError
 from .images import EmailImage, ImageAsset, _displayed_height, coerce_image
@@ -52,7 +61,7 @@ from .models import (
     coerce_notes,
 )
 from .prose import PROSE_TOKENS, refuse_top_headings
-from .sizing import Spacing, coerce_spacing
+from .sizing import Spacing, coerce_measure, coerce_spacing, measure_px
 from .textgen import (
     LINE_WIDTH,
     decimal_pads,
@@ -121,6 +130,73 @@ class CopyAlignment:
         name raises rather than testing falsey.
         """
         return {"align": self.align}
+
+
+#: The sides a hosted figure may float to; empty means it does not float (#189, #359).
+WRAPS = ("", "left", "right")
+
+
+def check_wrap(wrap: object, width: int | None, owner: str) -> str:
+    """``wrap`` as stored, refusing an unknown side or a float with no width to float at."""
+    if wrap not in WRAPS:
+        raise ValidationError(f"Unsupported wrap {wrap!r}. Use: {list(WRAPS[1:])}")
+    if wrap and not width:
+        raise ValidationError(
+            f"a wrapped {owner} needs a display width: a float with no width "
+            "takes the whole measure and leaves the prose nowhere to wrap"
+        )
+    return str(wrap)
+
+
+#: The narrowest share of its cell a fill-width block may take (#357), the column floor's kin.
+MIN_SHARE = 0.3
+
+
+class CellShare:
+    """
+    A fill-width block set to a share of its cell (#357), mixed into four.
+
+    A share is not a pixel, as a split's weights are not (#264). The block is
+    placed by its section's alignment, read from the engine, because these
+    blocks align structurally and take no ``align`` of their own. Unset, or
+    ``1.0``, the block fills its cell and renders as it always has.
+    """
+
+    #: The share of its cell, or ``None`` to fill it.
+    width: float | None = None
+
+    def validate_share(self, width: object) -> float | None:
+        """``width`` as stored; ``1.0`` is the same as unset."""
+        if width is None:
+            return None
+        if isinstance(width, bool) or not isinstance(width, (int, float)):
+            raise ValidationError(
+                f"{type(self).__name__}'s width is a share of its cell, got: {width!r}"
+            )
+        if not MIN_SHARE <= width <= 1:
+            raise ValidationError(
+                f"{type(self).__name__}'s width is a share of its cell from {MIN_SHARE} "
+                f"to 1.0, got: {width!r}"
+            )
+        return None if width == 1 else float(width)
+
+    def _fill(self, engine: Renderer) -> str:
+        """The block at its cell's full width."""
+        return Component.render(self, engine)  # type: ignore[arg-type]
+
+    def render(self, engine: Renderer) -> str:
+        """The block, inside a layout table the share of its cell wide when it has one."""
+        if self.width is None:
+            return self._fill(engine)
+        inner = rebind(engine, cell_width=int(cell_width_of(engine) * self.width))
+        return engine.render(
+            "common/share.html",
+            {
+                "content": self._fill(inner),
+                "share": f"{self.width * 100:g}",
+                "place": placement_of(engine),
+            },
+        )
 
 
 class Exhibit:
@@ -346,7 +422,7 @@ def leaves(components: Sequence[Component]) -> list[Component]:
 # ──────────────────────────────────────────────────────────────────────
 
 
-class CardGroup(Component):
+class CardGroup(CellShare, Component):
     """
     A set of callout cards, laid out horizontally or vertically.
 
@@ -358,6 +434,7 @@ class CardGroup(Component):
         cards:       List of Card (or KpiItem) instances.
         orientation: ``"horizontal"`` (default) or ``"vertical"``.
         subtitle:    Optional sub-heading rendered above the group.
+        width:       A share of the cell, 0.3 to 1.0, placed by the section's align (#357).
 
     Raises:
         ValidationError: On an unsupported orientation, a card count outside
@@ -390,8 +467,11 @@ class CardGroup(Component):
         orientation: str | CardOrientation = CardOrientation.HORIZONTAL,
         subtitle: str | None = None,
         spacing: Spacing | Mapping[str, int | float] | None = None,
+        *,
+        width: float | None = None,
     ):
         self.spacing = self._coerce_spacing(spacing)
+        self.width = self.validate_share(width)
         if orientation not in self.ORIENTATIONS:
             raise ValidationError(
                 f"Unsupported orientation '{orientation}'. "
@@ -472,7 +552,7 @@ class KpiStrip(CardGroup):
         return self.cards
 
 
-class DataTable(Exhibit, Component):
+class DataTable(CellShare, Exhibit, Component):
     """
     Financial data table with headers, alternating row colours, and
     colour-coded numeric cells.
@@ -540,8 +620,11 @@ class DataTable(Exhibit, Component):
         notes: Sequence[Footnote | str] | None = None,
         spacing: Spacing | Mapping[str, int | float] | None = None,
         groups: Sequence[ColumnGroup] | None = None,
+        *,
+        width: float | None = None,
     ):
         self.spacing = self._coerce_spacing(spacing)
+        self.width = self.validate_share(width)
         self.validate_exhibit(label, anchor)
         if not headers:
             raise ValidationError("DataTable requires at least one header.")
@@ -849,6 +932,7 @@ class ChartBlock(Exhibit, CopyAlignment, Component):
         caption:  Optional heading line above the chart, where its number goes.
         label, anchor: Numbering and its ``id``; see :class:`Exhibit`.
         notes:    Footnotes called by ``[^n]`` in ``caption`` or ``source``.
+        wrap:     As on :class:`ImageBlock`, when a :class:`TextBlock` hosts it (#359).
     """
 
     template_path = "analysis/chart-block.html"
@@ -872,6 +956,7 @@ class ChartBlock(Exhibit, CopyAlignment, Component):
         anchor: str = "",
         notes: Sequence[Footnote | str] | None = None,
         spacing: Spacing | Mapping[str, int | float] | None = None,
+        wrap: str = "",
     ):
         self.spacing = self._coerce_spacing(spacing)
         if not image_url:
@@ -886,6 +971,7 @@ class ChartBlock(Exhibit, CopyAlignment, Component):
         self.subtitle = subtitle
         self.disclosure = disclosure
         self.caption = caption
+        self.wrap = check_wrap(wrap, self.image.width, "ChartBlock")
 
     @property
     def image_url(self) -> str:
@@ -972,8 +1058,7 @@ class ImageBlock(Exhibit, Component):
         "subtitle_gap",
     )
 
-    #: The sides a figure may float to; empty means it does not float.
-    WRAPS = ("", "left", "right")
+    WRAPS = WRAPS
 
     ALIGNMENTS = tuple(ImageAlign)
 
@@ -997,8 +1082,7 @@ class ImageBlock(Exhibit, Component):
         self.spacing = self._coerce_spacing(spacing)
         if not image:
             raise ValidationError("ImageBlock requires an image.")
-        if wrap not in self.WRAPS:
-            raise ValidationError(f"Unsupported wrap {wrap!r}. Use: {list(self.WRAPS[1:])}")
+        check_wrap(wrap, 1, "ImageBlock")
         self.validate_exhibit(label, anchor)
         self.notes = coerce_notes(notes, [caption], "ImageBlock")
         if align not in self.ALIGNMENTS:
@@ -1015,12 +1099,7 @@ class ImageBlock(Exhibit, Component):
         self.align = align
         self.subtitle = subtitle
         self.disclosure = disclosure
-        if wrap and not self.image.width:
-            raise ValidationError(
-                "a wrapped ImageBlock needs a display width: a float with no width "
-                "takes the whole measure and leaves the prose nowhere to wrap"
-            )
-        self.wrap = wrap
+        self.wrap = check_wrap(wrap, self.image.width, "ImageBlock")
 
     def images(self) -> list[EmailImage]:
         return [self.image]
@@ -1081,7 +1160,7 @@ class MathBlock(Exhibit, Component):
         lines:   Instead of ``latex``, the sources of a multi-line display, one
                  image; the source is then the lines joined by newlines (#232).
         width:   Display width in px, used only when ``image`` is bytes.
-        caption, disclosure, label, anchor, notes: as on :class:`ImageBlock`.
+        caption, disclosure, label, anchor, notes, wrap: as on :class:`ImageBlock` (#359).
         align:   ``"center"`` (default), ``"left"`` or ``"right"``.
     """
 
@@ -1104,6 +1183,7 @@ class MathBlock(Exhibit, Component):
         notes: Sequence[Footnote | str] | None = None,
         spacing: Spacing | Mapping[str, int | float] | None = None,
         lines: Sequence[str] | None = None,
+        wrap: str = "",
     ):
         self.spacing = self._coerce_spacing(spacing)
         self.lines = _equation_lines(latex, lines)
@@ -1120,6 +1200,7 @@ class MathBlock(Exhibit, Component):
         self.caption = caption
         self.align = align
         self.disclosure = disclosure
+        self.wrap = check_wrap(wrap, self.image.width, "MathBlock")
 
     def images(self) -> list[EmailImage]:
         return [self.image]
@@ -1201,10 +1282,13 @@ class TextBlock(CopyAlignment, Component):
                   renders byte for byte as without it: the Word engine's
                   ``::first-letter`` is unreliable, and a wrong drop cap is
                   worse than none.
-        figure:   An :class:`ImageBlock` the prose wraps round on paper, to the
-                  side its ``wrap`` names (#189); above the prose in an email.
-                  Unnumbered and unnoted: the document's walk sees this block,
-                  not what it hosts.
+        figure:   An :class:`ImageBlock`, :class:`ChartBlock` or :class:`MathBlock`
+                  the prose wraps round on paper, to the side its ``wrap`` names
+                  (#189, #359); above the prose in an email. Unnumbered and
+                  unnoted: the document's walk sees this block, not what it hosts.
+        measure:  ``"standard"``, ``"narrow"`` or ``"full"`` (none): the longest
+                  line, written only where the cell is wider (#358). Unset takes
+                  the medium's, which only paper sets.
     """
 
     template_path = "text/text-block.html"
@@ -1222,16 +1306,19 @@ class TextBlock(CopyAlignment, Component):
         align: str | None = None,
         notes: Sequence[Footnote | str] | None = None,
         drop_cap: bool = False,
-        figure: ImageBlock | None = None,
+        figure: ImageBlock | ChartBlock | MathBlock | None = None,
         spacing: Spacing | Mapping[str, int | float] | None = None,
+        *,
+        measure: str | None = None,
     ):
         self.spacing = self._coerce_spacing(spacing)
         if not content:
             raise ValidationError("TextBlock requires content.")
         refuse_top_headings(content, "TextBlock.content")
-        if figure is not None and not isinstance(figure, ImageBlock):
+        if figure is not None and not isinstance(figure, (ImageBlock, ChartBlock, MathBlock)):
             raise ValidationError(
-                f"TextBlock.figure takes an ImageBlock, got: {type(figure).__name__}"
+                "TextBlock.figure takes an ImageBlock, a ChartBlock or a MathBlock, "
+                f"got: {type(figure).__name__}"
             )
         if figure is not None and (figure.label or figure.notes):
             raise ValidationError(
@@ -1244,6 +1331,7 @@ class TextBlock(CopyAlignment, Component):
         self.subtitle = subtitle
         self.drop_cap = drop_cap
         self.figure = figure
+        self.measure = coerce_measure(measure, "TextBlock")
 
     def render(self, engine: Renderer) -> str:
         """
@@ -1265,7 +1353,18 @@ class TextBlock(CopyAlignment, Component):
             ctx["figure_html"] = self.figure.render(engine)
             ctx["figure_wrap"] = self.figure.wrap if paged else ""
             ctx["figure_width"] = self.figure.image.width or ""
+        ctx["measure_px"], ctx["measure_place"] = self._measure(engine)
         return engine.render(self.template_path, ctx)
+
+    def _measure(self, engine: Renderer) -> tuple[int | str, str]:
+        """The px this block's lines cap at, and how it sits; ``""`` where its cell already fits."""
+        measure = self.measure or engine.medium.measure
+        if not measure or measure == "full":
+            return "", ""
+        cap = measure_px(scheme_of(engine), measure)
+        if cell_width_of(engine) <= cap:
+            return "", ""
+        return cap, self.align or placement_of(engine)
 
     def raw_html(self) -> list[str]:
         return [self.content]
@@ -1565,7 +1664,7 @@ class AuthorBlock(CopyAlignment, Component):
         }
 
 
-class Contents(Component):
+class Contents(CellShare, Component):
     """
     An "In this issue" list: every titled section, linked to its heading.
 
@@ -1589,6 +1688,7 @@ class Contents(Component):
         subtitle: Optional sub-heading rendered above the list.
         of:       ``"sections"`` (the default) or ``"exhibits"``.
         label:    With ``of="exhibits"``, list only this label: ``"Table"``.
+        width:    A share of the cell, 0.3 to 1.0, placed by the section's align (#357).
     """
 
     template_path = "text/contents.html"
@@ -1604,8 +1704,11 @@ class Contents(Component):
         spacing: Spacing | Mapping[str, int | float] | None = None,
         of: str = "sections",
         label: str | None = None,
+        *,
+        width: float | None = None,
     ):
         self.spacing = self._coerce_spacing(spacing)
+        self.width = self.validate_share(width)
         self.of, self.label = check_listing(of, label, "Contents")
         self.subtitle = subtitle
         #: ``(title, anchor)`` per listed entry, assigned by the document.

@@ -444,11 +444,14 @@ column (#129 — ``inline-block`` stopped it being a table box), and body copy e
 own styling element (#130). All three are fixed; each needed a browser to see.
 Screenshot the change.
 
-**Non-goals, as decisions**: no `align_theme` (see above); **no vertical alignment** —
-`columns.html` hardcodes `valign="top"`, and unequal-height columns aligning middle or
-bottom is the cross axis, with no inheritance story and its own client-testing burden; and
-no `justify`, which does nothing to a single short line and whose absence `TextAlign`
-records.
+**Non-goals, as decisions**: no `align_theme` (see above); **vertical alignment is paper's
+only** — superseded (#356): this said "no vertical alignment", since `columns.html` hardcoded
+`valign="top"` and unequal-height columns aligning middle or bottom is the cross axis, with no
+inheritance story and its own client-testing burden. Every reason was about the email. The
+owner's decision (2026-10-01, route C) keeps them there: the field exists on every split, paper
+honours it, and an email refuses it until an Outlook check lifts that (*Placement within a
+block's space* below); and no `justify`, which does nothing to a single short line and whose
+absence `TextAlign` records.
 
 ### Typography — the face is one selected vocabulary
 
@@ -1079,3 +1082,76 @@ renders every value as `"natural"`, and the text part keeps source order.
   `Columns` is checked against the narrowest cell a stacking section gives it (a stacked
   column, less its phone padding), and an unstacked `Columns` inside an unstacked split is
   refused, since two levels never fit.
+
+
+## Placement within a block's space (#354)
+
+Four controls, each a preset, a share or a named token, never a pixel. With none set every
+golden was byte-identical, except where the measure's default writes.
+
+**A split's columns on the cross axis (#356), route C.** `valign="top" | "middle" | "bottom"`
+on `TwoColumn`, `ThreeColumn`, `FourColumn` and `Columns`, one value per split; a nested
+`Columns` takes its own. On paper the inline columns take `vertical-align`, which WeasyPrint 70
+honours on an inline table (probed), and the ghost table's cells the `valign` attribute.
+`Document.add_section` refuses anything but `top` on the email medium, through a `Page` or a
+`Stack` too, naming the Outlook gate; the spacing refusal is the precedent. Per-column values
+are a non-goal.
+
+**A fill-width block at a share of its cell (#357).** `width=` from 0.3 to 1.0 on `DataTable`,
+`CardGroup`, `Callout` and `Contents`, through the `CellShare` mixin; 1.0 is the same as unset.
+A share is not a pixel, as weights are not (#264).
+
+- **It is placed by its section's `align`**, because these four align structurally and take no
+  `align` of their own (`CopyAlignment`'s reasoning). A container with an `align` binds it as
+  `placement` while it renders, as it binds `cell_width`; nothing else reads it, and no golden
+  moved when it went in.
+- **The markup is two layout tables.** The outer cell carries `align` for Outlook (with its
+  `text-align` twin, #125, the section's own value, so nothing new inherits), and the inner
+  table the percentage on both spellings, placed by auto margins elsewhere. `align` on the inner
+  table would float it, and copy after it would wrap. A percentage needs no print-engine cap,
+  so #201's image pattern is not needed here. The block renders into a cell the share wide, so
+  a split inside a callout is computed from the share.
+- **Measured** in Chromium at 1000 and 375px (a centred 0.6 table is 60% of its cell, centred,
+  with no horizontal scroll) and in the PDF's own layout boxes. **In Word's engine too**, the
+  one classic Outlook renders mail with (#150's oracle): the owner opened `placed_layout` in
+  Word on Windows 11 and read every nested table through COM. Inner over outer cell width was
+  0.600 for the centred callout and table and the left contents list, 0.500 for the right
+  figures, and the row alignment matched each (PR #371). A real Outlook client stays #288's.
+
+**A prose measure the medium sets (#358), route D.** Two type tokens, `measure_standard` 75
+and `measure_narrow` 60, in `ch`, CSS's unit for a measure: the advance of "0", converted at
+`CH_EM` 0.6 of the body size, so the px scales with density. `Medium.measure` is the default:
+`standard` for the paged medium, the brochure and the deck, `None` for the email and plain
+HTML, because the medium owns geometry and density is not width. `TextBlock(measure=)`
+overrides it, `full` turning it off; an email block may ask for one. Spacing cannot move the
+tokens, since the type layer is refused whole.
+
+- **Written only where it bites.** `max-width` is written when the block's cell is wider than
+  the measure, so a column that fits gains no byte; a centred or right-placed block takes auto
+  margins under its cap. `FlowedColumns` now binds its flowed column's width on paper, which is
+  what the measure reads; nothing else in the gallery moved for it.
+- **What moved:** `slide_16_9` and `letter_landscape_report` (each diff is `max-width:630px`
+  and nothing else, checked by stripping it), the dense factsheet example by one line, and
+  `pitch_16_9`, which opted in. Every portrait sheet, every email and every brochure panel
+  held, because a 578 to 608px column is inside 630px.
+- **The number, measured, so nobody reopens it by guessing.** Georgia's "0" is 0.61em. This
+  container has no Georgia, and the print engine sets the stack's `'Times New Roman'` as
+  Liberation Serif, whose "0" is 0.5em and whose running text averages 0.41em a character. So
+  A4's 578px column carries about 100 characters a line at 14px here, and the email's 616px
+  about 107. The issue took the email's width as readable; counted in characters it is not.
+  Converting at 0.4em (the measured running average) would have capped A4 at 420px and
+  retuned every engineered paged fixture; `ch` keeps the owner's stated outcome. Tightening
+  is two token values, with the fixtures that move.
+- **Re-measured in real Georgia** (owner, Windows 11, WeasyPrint 70, PR #371): the "0" is
+  0.613em and running text about 0.46em a character, so a `ch` is about 1.33 average characters.
+  At 14px A4's 578px column sets about 90 characters a line and the email's 616px about 96;
+  the 630px `measure_standard` cap about 99 and `measure_narrow`'s 504px about 78. So the
+  tokens read as `ch`, not characters. A measure that reads as 75 characters would be about
+  three quarters of each value, with the fixture retuning above.
+
+**A chart or an equation floats too (#359).** `ChartBlock(wrap=)` and `MathBlock(wrap=)`,
+hosted by `TextBlock(figure=)`, share `ImageBlock`'s float and its rules (`brochure.md`).
+Floating a table is a non-goal.
+
+**Position projects to nothing.** The plain-text projection is byte-identical with and without
+every control, and a test per control holds it.

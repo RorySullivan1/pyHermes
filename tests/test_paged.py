@@ -164,6 +164,9 @@ class TestThePageReachesTheRender:
         slide = all_paged_fixtures()["slide_16_9"]().render()
 
         assert a4 != slide, "the two pages rendered identically; the page reached nothing"
+        # The measure (#358) is written only where a column is wider than it,
+        # so the wide page gains it and the narrow one does not: a dimension too.
+        slide = re.sub(r" max-width:\d+px;", "", slide)
         assert re.sub(r"\d+", "N", a4) == re.sub(r"\d+", "N", slide), (
             "something that is not a dimension moved with the page"
         )

@@ -10,7 +10,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
-from .components import Component, CopyAlignment
+from .components import CellShare, Component, CopyAlignment
 from .engine import Renderer, cell_width_of, own_surface, rebind, respaced, scheme_of
 from .exceptions import ValidationError
 from .images import EmailImage
@@ -24,7 +24,7 @@ TONES = ("positive", "negative", "neutral")
 _RULE = "-" * LINE_WIDTH
 
 
-class Callout(Component):
+class Callout(CellShare, Component):
     """
     One block boxed inside a section: a key takeaway, what changed, a risk note.
 
@@ -41,6 +41,7 @@ class Callout(Component):
         border:  Whether the box is framed.
         spacing: Moves ``callout_pad_y`` and ``callout_pad_x``, the box's padding, and
                  ``caption_gap``, the space under the label.
+        width:   A share of the cell, 0.3 to 1.0, placed by the section's align (#357).
     """
 
     OWN_SURFACE = True
@@ -56,8 +57,11 @@ class Callout(Component):
         label: str | None = None,
         border: bool = True,
         spacing: Spacing | Mapping[str, int | float] | None = None,
+        *,
+        width: float | None = None,
     ):
         self.spacing = self._coerce_spacing(spacing)
+        self.width = self.validate_share(width)
         if not isinstance(content, Component):
             raise ValidationError(
                 f"Callout holds one component, got {type(content).__name__}. "
@@ -84,7 +88,7 @@ class Callout(Component):
     def context(self) -> dict[str, Any]:
         raise NotImplementedError("Callout renders its block first; see render().")
 
-    def render(self, engine: Renderer) -> str:
+    def _fill(self, engine: Renderer) -> str:
         engine = respaced(own_surface(engine), self.spacing, type(self).__name__)
         component = scheme_of(engine).component
         inset = 2 * component.callout_pad_x + (2 if self.border else 0)

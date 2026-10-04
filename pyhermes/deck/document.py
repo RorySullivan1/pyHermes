@@ -133,24 +133,43 @@ class Deck(Document):
         align: str | TextAlign | None = None,
         layout: str = "full",
         side: list[Container] | None = None,
+        valign: str = "top",
     ) -> Self:
         """
         Append the sections as one :class:`Slide`, or a ``Slide`` you built. Returns ``self``.
 
-        ``layout`` and ``side`` lay the body out in regions, as on a ``Slide`` (#366).
+        ``layout`` and ``side`` lay the body out in regions, and ``valign`` anchors
+        its copy, as on a ``Slide`` (#366, #355).
 
         Raises:
             ValidationError: For a slide's own reasons, a footnote, or an
                 anchor the deck already has; the deck is left as it was.
         """
         if isinstance(sections, Slide):
-            if title or notes or background_color or align or side or layout != "full":
+            if (
+                title
+                or notes
+                or background_color
+                or align
+                or side
+                or layout != "full"
+                or (valign != "top")
+            ):
                 raise ValidationError(
                     "add_slide takes a Slide or its arguments, not both; set them on the Slide"
                 )
             slide = sections
         else:
-            slide = Slide(sections, title, notes, background_color, align, layout=layout, side=side)
+            slide = Slide(
+                sections,
+                title,
+                notes,
+                background_color,
+                align,
+                layout=layout,
+                side=side,
+                valign=valign,
+            )
         return self._append(slide)
 
     def add_divider(
@@ -159,9 +178,10 @@ class Deck(Document):
         subtitle: str | None = None,
         *,
         notes: str | None = None,
+        valign: str = "bottom",
     ) -> Self:
         """Append a divider: a part's title, which the slides after it follow. Returns ``self``."""
-        return self._append(DividerSlide(title, subtitle, notes))
+        return self._append(DividerSlide(title, subtitle, notes, valign=valign))
 
     def _append(self, slide: Slide) -> Self:
         """Add ``slide`` through the document's checks, then refuse it if it carries a note."""

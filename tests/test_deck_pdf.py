@@ -190,7 +190,8 @@ class TestADeckThatCannotBeLaidOutIsAFinding:
                     deck = Deck({"firm_name": "F", "campaign_name": "C"}, title_slide=logo)
                     return deck.add_slide([FullWidth(content=TextBlock("x"))], "One")
                 """
-            )
+            ),
+            encoding="utf-8",
         )
         assert main([f"{draft}:build", "--out", str(tmp_path / "out")]) == EXIT_LINT_ERRORS
         assert "slide-overflow at whole deck" in capsys.readouterr().out
@@ -205,7 +206,8 @@ class TestADeckThatCannotBeLaidOutIsAFinding:
             "def build():\n"
             '    logo = TitleSlide(logo_url="https://example.com/logo.png")\n'
             '    deck = Deck({"firm_name": "F", "campaign_name": "C"}, title_slide=logo)\n'
-            '    return deck.add_slide([FullWidth(content=TextBlock("x"))], "One")\n'
+            '    return deck.add_slide([FullWidth(content=TextBlock("x"))], "One")\n',
+            encoding="utf-8",
         )
         out = tmp_path / "out"
         assert main([f"{draft}:build", "--lint", "--out", str(out)]) == EXIT_LINT_ERRORS
@@ -230,7 +232,8 @@ class TestTheCheckExitsOnOverflow:
                     deck = Deck({"firm_name": "F", "campaign_name": "C"})
                     return deck.add_slide([FullWidth(content=DataTable(["A", "B"], rows))], "Full")
                 """
-            )
+            ),
+            encoding="utf-8",
         )
         assert main([f"{draft}:build", "--out", str(tmp_path / "out")]) == EXIT_LINT_ERRORS
         assert "slide-overflow at slide 2: Full" in capsys.readouterr().out
@@ -240,6 +243,7 @@ class TestTheCheckExitsOnOverflow:
 
         draft = tmp_path / "deck.py"
         draft.write_text(
-            "from qa.fixtures import pitch_16_9\n\ndef build():\n    return pitch_16_9.build()\n"
+            "from qa.fixtures import pitch_16_9\n\ndef build():\n    return pitch_16_9.build()\n",
+            encoding="utf-8",
         )
         assert main([f"{draft}:build", "--out", str(tmp_path / "out")]) == EXIT_OK

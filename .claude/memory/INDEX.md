@@ -8,11 +8,11 @@
 - **Shipped**: #157, #153, #169, #170, #171, #172, #193 (PRs #167–#203); #201, #150, #202 (PRs #204–#206);
   #209 (PR #222); #217 (PR #234); #221 (PR #235); #238 (PR #253); #237, #255, #239 (PRs #254–#257); manual
   + #258 (PR #260); #261 + #258's fix (PR #283); #265 (PR #284); #277 (PR #285); #282 (PR #286); #273 (PR #287); #270
-  (PR #289); #259 (PR #292); #281 (PR #293); #272 (PR #294); #280 (PR #295); #220 (PR #313); #218 (PR #314); #361 (this branch). #288 is the human Outlook-desktop check.
+  (PR #289); #259 (PR #292); #281 (PR #293); #272 (PR #294); #280 (PR #295); #220 (PR #313); #218 (PR #314); #361; #354 (this branch). #288 is the human Outlook-desktop check.
   #220 research apparatus (#308–#312) shipped in PR #313; epic-autoclose closed it.
   #218 deck medium shipped in PR #314; epic-autoclose closed it. #300 PPTX was closed with #219.
   Epics defined, not started: #219 DOCX (#302–#307); content #318 #324 #329 #335 #340 #346;
-  position #354. Subs #319–#360. #361 implemented (#362–#367). Deck bugs #315–#317 come before #346.
+  Subs #319–#353. #361 implemented (#362–#367); #354 implemented (#355–#360). Deck bugs #315–#317 come before #346.
 - The prose budget is live; the baseline is 44 and may only shrink.
 
 ## Decisions        (append-only; supersede, never delete)
@@ -43,11 +43,19 @@
   hybrid technique, unstacked is a fluid percentage row gated at the 375px floor, visibility rides
   a medium context var beside the config one — `design-axes.md`, `media.md`, `deck.md` (#361)
 
+- [2026-10-03] **Placement within a block's space is paper-first**: `valign` anchors a fixed box by a
+  CSS-aligned cell, a split's `valign` is refused in an email (route C), a share is the section's
+  align, and the measure is in `ch` and the medium's (route D) — `design-axes.md`, `deck.md` (#354)
+
 ## Threads          (open items; remove when closed)
+- **A share table holds its share in Word's engine** (owner, via COM, PR #371); a real Outlook client
+  is still #288's. The measure is `ch`: in Georgia 75ch sets ~99 characters (`design-axes.md`).
 - **Outlook desktop's handling of `dir=rtl` on a reversed split is unverified here**; add it to #288's
   human check.
 - **Open deck bugs #315–#317** (overflow check crash, wrapped title, Slide in Panel); #347 waits on #316.
 - **`epic-autoclose` works again**: it closed #273 on 2026-10-01. Still confirm each epic closed.
+- **#372 fixed on this branch: the suite runs on Windows** (encoding guard, drive-letter split,
+  face-aware boundary tests) — `qa-harness.md`. A Windows CI job is not added; the owner's run is the check.
 - **In this container, PDF byte-determinism tests flake** (no HarfBuzz-Subset), and screenshot
   tests skip unless `PYHERMES_CHROMIUM=/opt/pw-browsers/chromium-1194/chrome-linux/chrome`.
 - **Every issue or PR body is written without angle brackets** — GitHub's sanitizer has

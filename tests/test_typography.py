@@ -355,7 +355,7 @@ class TestNoLiteralSurvives:
     def test_no_template_declares_a_literal_family(self):
         offenders = []
         for path in _all_templates():
-            for raw in re.findall(r"font-family:[^;\"]*", path.read_text()):
+            for raw in re.findall(r"font-family:[^;\"]*", path.read_text(encoding="utf-8")):
                 if "{{ font." not in raw:
                     offenders.append(f"{path.name}: {raw.strip()}")
         assert not offenders, (
@@ -371,7 +371,7 @@ class TestNoLiteralSurvives:
         for path in sorted(Path("pyhermes").rglob("*.py")):
             if path.name == "typography.py":  # the vocabulary is where they live
                 continue
-            source = path.read_text()
+            source = path.read_text(encoding="utf-8")
             for family in ("Georgia", "Helvetica", "Courier New"):
                 assert family not in source, f"{path} carries a font literal"
 
@@ -383,7 +383,7 @@ class TestNoLiteralSurvives:
         Georgia in Outlook — the half-themed failure rules 4 and 5 exist to
         prevent, in the client hardest to check.
         """
-        base = (TEMPLATE_DIR / "base.html").read_text()
+        base = (TEMPLATE_DIR / "base.html").read_text(encoding="utf-8")
         mso = base[base.index("<!--[if mso]>") : base.index("<![endif]-->")]
         assert "body, td, th { font-family: {{ font.body }}; }" in mso
 
@@ -394,7 +394,7 @@ class TestNoLiteralSurvives:
         future edit adding a face to either must read a token like everything
         else, which the literal test above already enforces.
         """
-        base = (TEMPLATE_DIR / "base.html").read_text()
+        base = (TEMPLATE_DIR / "base.html").read_text(encoding="utf-8")
         media = base[base.index("@media only screen") : base.index("Force light rendering")]
         dark = base[base.index("Force light rendering") : base.index("</style>")]
         assert "font-family" not in media
@@ -450,7 +450,7 @@ class TestNoLiteralSurvives:
         on it, and no signature in the section tree changed to carry them.
         The binder moved to ``Document`` in #162 — the claim did not.
         """
-        source = (Path("pyhermes/builder") / "document.py").read_text()
+        source = (Path("pyhermes/builder") / "document.py").read_text(encoding="utf-8")
         bind = source[source.index("def _bound_engine(") : source.index("def _body_sections(")]
         assert source.count("self._engine.bound(") == 1
         assert bind.count("bound(") == 1

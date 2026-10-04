@@ -207,11 +207,13 @@ class TestComponentFieldsAreExercised:
         """#229's fields, read off ``__init__`` as DataTable's are."""
         from pyhermes.builder import MathBlock
 
+        # A block hosted as a TextBlock's figure (#359) counts: it is where wrap means anything.
         blocks = [
-            component
+            held
             for section in _gallery_sections()
             for component in section.components()
-            if isinstance(component, MathBlock)
+            for held in (component, getattr(component, "figure", None))
+            if isinstance(held, MathBlock)
         ]
         assert blocks, "the gallery builds no MathBlock"
         aliases = {
@@ -328,7 +330,7 @@ class TestComponentFieldsAreExercised:
         import pathlib as _pathlib
 
         sources = [
-            _pathlib.Path(module).read_text()
+            _pathlib.Path(module).read_text(encoding="utf-8")
             for module in _pathlib.Path("qa/fixtures").glob("*.py")
         ]
         assert any("colors=" in source for source in sources), (

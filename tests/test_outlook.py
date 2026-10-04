@@ -179,7 +179,7 @@ class TestGraphApiTransport:
 
         import pyhermes.outlook.sender as sender
 
-        tree = ast.parse(pathlib.Path(sender.__file__).read_text())
+        tree = ast.parse(pathlib.Path(sender.__file__).read_text(encoding="utf-8"))
         imported: list[str] = []
         for node in ast.walk(tree):
             if isinstance(node, ast.Import):

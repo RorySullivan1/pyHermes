@@ -18,6 +18,7 @@ from .engine import Renderer, cell_width_of, rebind, respaced, scheme_of
 from .exceptions import ValidationError
 from .images import EmailImage
 from .medium import check_media, walking_medium
+from .models import check_valign
 from .sizing import (
     PHONE_FLOOR,
     STANDARD_SIZES,
@@ -117,6 +118,7 @@ class Columns(Component):
         spacing:    Moves ``gutter`` and ``block_gap``, the gap when stacked.
         stack:      ``"natural"``, ``"reverse"`` to put the last column first on a
                     phone, or ``False`` to keep the columns side by side there.
+        valign:     Where each column sits in the row's height, on paper (#356).
     """
 
     template_path = "common/nested-columns.html"
@@ -131,8 +133,10 @@ class Columns(Component):
         ratio: Sequence[int | float] | None = None,
         spacing: Spacing | Mapping[str, int | float] | None = None,
         stack: str | bool = "natural",
+        valign: str = "top",
     ):
         self.spacing = self._coerce_spacing(spacing)
+        self.valign = check_valign(valign, "Columns")
         slots = list(components)
         if len(slots) not in self.COUNTS:
             raise ValidationError(f"Columns takes 2 to 4 components, got {len(slots)}.")
@@ -195,6 +199,7 @@ class Columns(Component):
                 "within": within,
                 "stack": "fixed" if stack is False else stack,
                 "gutter_share": gutter,
+                "valign": self.valign,
             },
         )
 

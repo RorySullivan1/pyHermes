@@ -118,7 +118,7 @@ def test_the_extras_are_declared_separately():
     """A table author should not have to install a plotting library."""
     import tomllib
 
-    extras = tomllib.loads(pathlib.Path("pyproject.toml").read_text())["project"][
+    extras = tomllib.loads(pathlib.Path("pyproject.toml").read_text(encoding="utf-8"))["project"][
         "optional-dependencies"
     ]
     assert any(dep.startswith("pandas") for dep in extras["data"])
@@ -137,9 +137,9 @@ def test_mypy_ignores_both_spellings_of_each_backend():
     """
     import tomllib
 
-    overrides = tomllib.loads(pathlib.Path("pyproject.toml").read_text())["tool"]["mypy"][
-        "overrides"
-    ]
+    overrides = tomllib.loads(pathlib.Path("pyproject.toml").read_text(encoding="utf-8"))["tool"][
+        "mypy"
+    ]["overrides"]
     modules = {name for block in overrides for name in block["module"]}
     for backend in ("pandas", "matplotlib", "numpy"):
         assert {backend, f"{backend}.*"} <= modules, backend
@@ -155,9 +155,9 @@ def test_mypy_skips_the_backends_rather_than_reading_them():
     """
     import tomllib
 
-    overrides = tomllib.loads(pathlib.Path("pyproject.toml").read_text())["tool"]["mypy"][
-        "overrides"
-    ]
+    overrides = tomllib.loads(pathlib.Path("pyproject.toml").read_text(encoding="utf-8"))["tool"][
+        "mypy"
+    ]["overrides"]
     for backend in ("pandas", "matplotlib", "numpy"):
         block = next(b for b in overrides if backend in b["module"])
         assert block.get("follow_imports") == "skip", backend

@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from pyhermes.builder.exceptions import ValidationError
-from pyhermes.builder.models import _validate_align
+from pyhermes.builder.models import _validate_align, check_valign
 from pyhermes.builder.regions import BoxSurface, Region
 from pyhermes.builder.textgen import html_to_text, join_blocks, underline, wrap
 
@@ -51,10 +51,13 @@ class TitleSlide(BoxSurface, Region):
     logo_alt: str = ""
     logo_width: int | None = None
     background_image_url: str | EmailImage = ""
+    #: Where the copy sits on the sheet: low, as a cover sets its title, unless set (#355).
+    valign: str = "bottom"
 
     def validate(self) -> None:
         super().validate()
         self.validate_box_surface(self.CONTEXT_NAME)
+        self.valign = check_valign(self.valign, f"'{self.CONTEXT_NAME}'")
         if self.logo_width is not None and self.logo_width <= 0:
             raise ValidationError(
                 f"'title_slide.logo_width' must be positive, got: {self.logo_width}"

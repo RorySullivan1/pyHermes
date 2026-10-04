@@ -86,6 +86,10 @@ class TypeScale:
     body_line: int | float = 1.72
     secondary_line: int | float = 1.4
 
+    #: A prose block's longest line, in ``ch`` (#358): written as px from ``body``.
+    measure_standard: int | float = 75
+    measure_narrow: int | float = 60
+
     def __post_init__(self) -> None:
         _validate_size_fields(self, "type")
 
@@ -1245,3 +1249,34 @@ def check_unstacked(weights: Sequence[int | float], available: int | float, owne
             f"floor, below Config.min_column_px ({floor}). Let it stack, or give that column "
             "more weight."
         )
+
+
+# ----------------------------------------------------------------------
+# The measure — a prose block's longest line (#358)
+# ----------------------------------------------------------------------
+
+#: The measures a prose block takes: two token names, and ``full`` for none.
+MEASURES = ("standard", "narrow", "full")
+
+#: One ``ch`` in em: CSS's unit for a measure, the advance of "0", in the body
+#: stack's named face (0.61em). `design-axes.md` has the measurements, including
+#: the substitute face a print engine without that face sets.
+CH_EM = 0.6
+
+
+def coerce_measure(measure: object, owner: str) -> str | None:
+    """
+    ``measure`` as stored: one of :data:`MEASURES`, or ``None`` for the medium's.
+
+    Raises:
+        ValidationError: On anything else, naming the three.
+    """
+    if measure is None or (isinstance(measure, str) and measure in MEASURES):
+        return measure
+    raise ValidationError(f"{owner}'s measure is one of {list(MEASURES)} or None, got: {measure!r}")
+
+
+def measure_px(scheme: SizeScheme, measure: str) -> int:
+    """The px a ``standard`` or ``narrow`` measure caps a line at, at ``scheme``'s body size."""
+    characters = getattr(scheme.type, f"measure_{measure}")
+    return math.ceil(characters * scheme.type.body * CH_EM)

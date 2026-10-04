@@ -31,6 +31,7 @@ BROCHURE_MEDIUM = Medium(
     page_format=TRI_FOLD_LETTER.sheet,
     template_search_path=("brochure", "document"),
     paged=True,
+    measure="standard",
 )
 
 
