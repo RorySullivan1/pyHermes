@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Self
 
 from . import formats
 from .apparatus import check_markers
-from .enums import ColumnAlign, ColumnKind, RowKind, SizeTheme, Tone
+from .enums import ColumnAlign, ColumnKind, RowKind, SizeTheme, Tone, Trend
 from .exceptions import ValidationError
 from .prose import refuse_top_headings
 
@@ -537,6 +537,85 @@ class LinkRow:
                 )
 
 
+#: The share of a sparkline's height its lowest value still fills, so no bar vanishes.
+SERIES_FLOOR = 0.15
+
+
+@dataclass(frozen=True)
+class Series:
+    """
+    A short run of figures, drawn as a sparkline (#321).
+
+    Each value is scaled to the series' own lowest and highest, so the shape is
+    the series' and never an axis's. The lowest still fills ``SERIES_FLOOR`` of
+    the height; a flat series fills half throughout.
+
+    Attributes:
+        values: Two to ``Config.sparkline_max`` figures, oldest first.
+        fmt:    How the plain text writes the lowest, the last and the highest.
+    """
+
+    values: tuple[Any, ...]
+    fmt: Callable[[Any], str] = formats.number
+
+    def validate(self, owner: str = "sparkline") -> None:
+        from pyhermes.config import get_config
+
+        limit = get_config().sparkline_max
+        if not 2 <= len(self.values) <= limit:
+            raise ValidationError(
+                f"a {owner} draws 2 to {limit} values (Config.sparkline_max), "
+                f"got {len(self.values)}"
+            )
+        for i, value in enumerate(self.values):
+            if not is_figure(value) or value != value:
+                raise ValidationError(f"{owner} value {i} must be a number, got: {value!r}")
+        if not callable(self.fmt):
+            raise ValidationError(f"a {owner}'s format must be callable, got: {self.fmt!r}")
+
+    def heights(self) -> list[float]:
+        """Each value's share of the full height, to four places."""
+        low, high = min(self.values), max(self.values)
+        if high == low:
+            return [0.5] * len(self.values)
+        span = 1 - SERIES_FLOOR
+        return [
+            round(SERIES_FLOOR + span * float((value - low) / (high - low)), 4)
+            for value in self.values
+        ]
+
+    def drawn(self, tone: str = "", highlight_last: bool = True) -> dict[str, Any]:
+        """What ``analysis/sparkline-bars.html`` draws: the heights, the tone and the summary."""
+        return {
+            "heights": self.heights(),
+            "tone": tone or str(Tone.NEUTRAL),
+            "highlight_last": highlight_last,
+            "summary": self.summary(),
+        }
+
+    def summary(self) -> str:
+        """``min 3.1 · last 4.2 · max 4.2``: the series in plain text."""
+        ends = (min(self.values), self.values[-1], max(self.values))
+        low, last, high = (self.fmt(value) for value in ends)
+        return f"min {low} · last {last} · max {high}"
+
+
+def coerce_series(
+    values: Any, fmt: Callable[[Any], str] | None = None, owner: str = "sparkline"
+) -> Series:
+    """A :class:`Series`, or a sequence of figures written with ``fmt``, validated."""
+    if isinstance(values, Series):
+        series = values if fmt is None else replace(values, fmt=fmt)
+    elif isinstance(values, (list, tuple)):
+        series = Series(tuple(values), fmt or formats.number)
+    else:
+        raise ValidationError(
+            f"a {owner} takes a list of figures or a Series, got: {type(values).__name__}"
+        )
+    series.validate(owner)
+    return series
+
+
 @dataclass
 class Card:
     """
@@ -561,6 +640,8 @@ class Card:
         tone:     What the value *means* — ``positive``, ``negative`` or
                   ``neutral`` — resolved to the live theme's semantic token
                   at render (#178). An explicit ``color`` still wins.
+        trend:    Figures, or a :class:`Series`, drawn as a sparkline under the value (#321).
+        arrow:    The change's direction (#319), set only by :meth:`from_number`.
 
     Either ``value`` or ``body`` must be present: a card with only a label
     has nothing to say.
@@ -572,6 +653,12 @@ class Card:
     sublabel: str = ""
     body: str = ""
     tone: str = ""
+    trend: "Series | Sequence[Any] | None" = None
+    arrow: str = field(default="", init=False)
+
+    def __post_init__(self) -> None:
+        if self.trend is not None:
+            self.trend = coerce_series(self.trend, owner="card trend")
 
     def validate(self) -> None:
         _require(self.label, "card.label")
@@ -596,6 +683,8 @@ class Card:
         tone: str = "auto",
         good: str = "up",
         body: str = "",
+        arrow: bool = False,
+        trend: "Sequence[Any] | None" = None,
     ) -> Self:
         """
         A headline figure, its change beneath it, toned by what the move means (#274).
@@ -606,16 +695,30 @@ class Card:
         :func:`tone_of`, so a change shown as zero is never coloured.
         ``good="down"`` flips it, for a figure whose rise is bad news: a yield,
         the VIX. Pass a :class:`~pyhermes.builder.enums.Tone` to state it instead.
+        ``arrow=True`` draws the change's direction before it, in the same tone,
+        and ``trend`` a series under the value, its summary written with ``fmt``.
         """
         if good not in ("up", "down"):
             raise ValidationError(f"good must be 'up' or 'down', got: {good!r}")
+        if arrow and change is None:
+            raise ValidationError("an arrow marks a change; pass 'change' to draw one")
         change_fmt = change_fmt or fmt
         if tone == "auto":
             moved = tone_of(change, change_fmt) if change is not None else tone_of(value, fmt)
             flip = {Tone.POSITIVE: Tone.NEGATIVE, Tone.NEGATIVE: Tone.POSITIVE}
             tone = flip.get(moved, moved) if good == "down" else moved
         sublabel = change_fmt(change) if change is not None else ""
-        card = cls(label=label, value=fmt(value), sublabel=sublabel, body=body, tone=str(tone))
+        series = None if trend is None else coerce_series(trend, fmt, "card trend")
+        card = cls(
+            label=label,
+            value=fmt(value),
+            sublabel=sublabel,
+            body=body,
+            tone=str(tone),
+            trend=series,
+        )
+        if arrow:
+            card.arrow = str(trend_of(change, change_fmt))
         card.validate()
         return card
 
@@ -666,7 +769,7 @@ class Column:
         scale:  A :class:`HeatScale` tinting each cell by its raw figure (#227).
         bar:    Draw each raw figure as a bar in its cell (#227).
         width:  A relative weight for this column's share of the width (#271).
-                Unset weighs 1; with no weight set, the client decides.
+        arrow:  Draw each raw figure's direction before it (#319).
     """
 
     header: str
@@ -679,6 +782,7 @@ class Column:
     scale: "HeatScale | None" = None
     bar: bool = False
     width: int | float | None = None
+    arrow: bool = False
 
     def validate(self) -> None:
         _require(self.header, "column.header")
@@ -950,6 +1054,16 @@ def tone_of(value: Any, fmt: Callable[[Any], str] | None = None) -> Tone:
     return Tone.NEGATIVE if value < 0 else Tone.NEUTRAL
 
 
+def trend_of(value: Any, fmt: Callable[[Any], str] | None = None) -> Trend:
+    """
+    The direction a change's sign implies, on :func:`tone_of`'s rule (#319).
+
+    A figure ``fmt`` renders as zero is flat, so the arrow cannot contradict the
+    string beside it; so are zero, ``None`` and NaN.
+    """
+    return {Tone.POSITIVE: Trend.UP, Tone.NEGATIVE: Trend.DOWN}.get(tone_of(value, fmt), Trend.FLAT)
+
+
 def _validate_tone(value: str, field_name: str) -> None:
     if value and value not in tuple(Tone):
         raise ValidationError(
@@ -971,6 +1085,8 @@ def coerce_cell(value: "str | Cell", field_name: str = "cell") -> Cell:
         return value
     if is_figure(value):
         return Cell(value=value)
+    if isinstance(value, (list, tuple)) and value and all(map(is_figure, value)):
+        return Cell(value=tuple(value))
     if not isinstance(value, str):
         raise ValidationError(
             f"{field_name!r} must be a Cell, a string or a number, got: {type(value).__name__}"

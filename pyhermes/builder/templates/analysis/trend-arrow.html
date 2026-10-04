@@ -1,0 +1,16 @@
+{#
+  TREND ARROW (#319) — a change's direction, drawn as a shape rather than a
+  glyph, so it never depends on the faces Outlook falls back to.
+
+  Every other client draws a zero-size span's borders: two transparent sides
+  and a coloured base make the triangle, a top border alone the flat bar. The
+  Word engine draws neither a transparent border nor an inline-block's width,
+  so it takes a VML shape instead, the CTA's route. The base is 1.2 times the
+  height; the flat bar's 2px is a shape, like a rule.
+
+  arrow(direction, ink) — direction is "up", "down" or "flat"; ink a hex.
+#}
+{% macro arrow(direction, ink) -%}
+{%- set tall = size.component.trend_arrow -%}{%- set half = (tall * 0.6) | round | int -%}
+<!--[if mso]>{% if direction == "flat" %}<v:rect xmlns:v="urn:schemas-microsoft-com:vml" fillcolor="{{ ink }}" stroked="f" style="width:{{ half * 2 }}px;height:2px;"></v:rect>{% else %}<v:shape xmlns:v="urn:schemas-microsoft-com:vml" coordsize="2,2" path="{% if direction == 'up' %}m 0,2 l 1,0 2,2 x e{% else %}m 0,0 l 2,0 1,2 x e{% endif %}" fillcolor="{{ ink }}" stroked="f" style="width:{{ half * 2 }}px;height:{{ tall }}px;"></v:shape>{% endif %}<![endif]--><!--[if !mso]><!--><span class="trend trend-{{ direction }}" style="display:inline-block; vertical-align:middle; font-size:0; line-height:0; {% if direction == 'flat' %}width:{{ half * 2 }}px; height:0; border-top:2px solid {{ ink }};{% else %}width:0; height:0; border-left:{{ half }}px solid transparent; border-right:{{ half }}px solid transparent; border-{% if direction == 'up' %}bottom{% else %}top{% endif %}:{{ tall }}px solid {{ ink }};{% endif %}"></span><!--<![endif]-->&nbsp;
+{%- endmacro %}

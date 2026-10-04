@@ -735,8 +735,9 @@ def _declarations(style: str) -> list[tuple[str, str]]:
 #: also use decorative rules (``<!-- ══════ -->``); those are not sections, and
 #: treating them as such made the heaviest "region" a row of box-drawing
 #: characters — a breakdown that names nothing is no better than the total it
-#: was meant to explain. Requiring a letter is what tells the two apart.
-_MARKER = re.compile(r"<!--\s*(?!\[if)(?=[^>]*[A-Za-z])([^>]{1,60}?)\s*-->")
+#: was meant to explain. Requiring a letter is what tells the two apart. The
+#: close of a downlevel-revealed block, ``<!--<![endif]-->``, names nothing either.
+_MARKER = re.compile(r"<!--\s*(?!\[if|<!\[endif)(?=[^>]*[A-Za-z])([^>]{1,60}?)\s*-->")
 
 
 @dataclass(frozen=True)
@@ -794,8 +795,8 @@ def size_report(html: str, sections: list[tuple[str, str]] | None = None) -> Siz
     bounds = [(m.start(), m[1]) for m in markers]
     if markers and markers[0].start():
         bounds.insert(0, (0, "(document head)"))
-    elif spans and not markers:
-        # A paged document carries no markers; what its sections leave is one region.
+    elif sections and not markers:
+        # A paged document or a brochure carries no markers: what is left is one region.
         bounds = [(0, "(rest of document)")]
     regions: list[RegionSize] = []
     if bounds:

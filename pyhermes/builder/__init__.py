@@ -61,6 +61,7 @@ from .enums import (
     TextAlign,
     ThreeColumnRatio,
     Tone,
+    Trend,
     TwoColumnRatio,
     VerticalAlign,
 )
@@ -74,6 +75,7 @@ from .exceptions import (
     TemplateError,
     ValidationError,
 )
+from .glance import BarItem, BarList, HeroStat, Sparkline
 
 # Images
 from .images import (
@@ -96,8 +98,10 @@ from .models import (
     KpiItem,
     NumberedItem,
     SectionConfig,
+    Series,
     TableRow,
     tone_of,
+    trend_of,
 )
 
 # Regions
@@ -208,10 +212,13 @@ __all__ = [
     "TableRow",
     "Tone",
     "tone_of",
+    "Trend",
+    "trend_of",
     "Column",
     "ColumnGroup",
     "HeatScale",
     "Cell",
+    "Series",
     "NumberedItem",
     "SectionConfig",
     # Components
@@ -234,6 +241,11 @@ __all__ = [
     "Callout",
     "Button",
     "Divider",
+    # Data at a glance (#318)
+    "BarList",
+    "BarItem",
+    "Sparkline",
+    "HeroStat",
     # The research apparatus (#220)
     "Bibliography",
     "Reference",

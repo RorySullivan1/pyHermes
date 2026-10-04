@@ -55,6 +55,7 @@ COLOURLESS = {
     "stack.html": "rows of blocks in a cell whose band the container already paints (#262)",
     "button.html": "a cell around common/cta.html, which takes the colours (#269)",
     "share.html": "a layout table sizing a block that paints its own colours (#357)",
+    "trend-arrow.html": "a macro drawing the ink its caller resolved from the theme (#319)",
 }
 
 

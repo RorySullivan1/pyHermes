@@ -13,18 +13,22 @@ away from its default, per standing rule 9, and every slide fits its body.
 
 from __future__ import annotations
 
+from functools import partial
 from pathlib import Path
 from typing import Any
 
 from pyhermes.builder import (
+    BarList,
     CardGroup,
     ChartBlock,
     Contents,
     DataTable,
     FullWidth,
+    HeroStat,
     TextBlock,
     TwoColumn,
 )
+from pyhermes.builder.formats import pct
 from pyhermes.builder.images import EmailImage
 from pyhermes.builder.models import KpiItem, TableRow
 from pyhermes.deck import SLIDE_16_9, ClosingSlide, Deck, Slide, TitleSlide
@@ -52,6 +56,7 @@ TITLES: tuple[str, ...] = (
     "What we would do",
     "Two positions",
     "The view in brief",
+    "The lead figure",
 )
 
 #: The table slide's lead-in: long enough that, uncapped, a line would cross the body.
@@ -65,6 +70,17 @@ CHART_NOTES = (
     "Walk through the term premium first, then the hedge. The sentinel "
     "ZEBRANOTES7 marks what only the presenter reads."
 )
+
+
+_PCT = partial(pct, dp=2)
+
+
+def _bps_change(value: float) -> str:
+    return f"{value:+d} bps" if value else "0 bps"
+
+
+def _bps_level(value: float) -> str:
+    return f"{value} bps"
 
 
 def facts() -> dict[str, Any]:
@@ -103,10 +119,24 @@ def build(template_dir: Path | None = None) -> Deck:
             FullWidth(
                 content=CardGroup(
                     [
-                        KpiItem("10Y gilt", "4.21%", sublabel="+18 bps"),
-                        KpiItem("2s10s", "38 bps", sublabel="+9 bps"),
-                        KpiItem("Breakeven", "3.42%", sublabel="-4 bps"),
-                        KpiItem("Term premium", "61 bps", sublabel="+12 bps"),
+                        # Each change drawn as an arrow in its own tone (#319).
+                        KpiItem.from_number(
+                            "10Y gilt", 0.0421, _PCT, change=18, change_fmt=_bps_change, arrow=True
+                        ),
+                        KpiItem.from_number(
+                            "2s10s", 38, _bps_level, change=9, change_fmt=_bps_change, arrow=True
+                        ),
+                        KpiItem.from_number(
+                            "Breakeven", 0.0342, _PCT, change=-4, change_fmt=_bps_change, arrow=True
+                        ),
+                        KpiItem.from_number(
+                            "Term premium",
+                            61,
+                            _bps_level,
+                            change=0,
+                            change_fmt=_bps_change,
+                            arrow=True,
+                        ),
                     ]
                 )
             )
@@ -205,5 +235,24 @@ def build(template_dir: Path | None = None) -> Deck:
                 highlight=True,
             )
         ],
+    )
+    # One figure set alone beside what earned it (#322, #320): the statement the
+    # deck-layouts epic's statement slide builds on.
+    deck.add_slide(
+        [
+            TwoColumn(
+                "50-50",
+                left=HeroStat("38 bps", "2s10s", "The curve's steepest since 2022", align="center"),
+                right=BarList(
+                    [("Duration", 0.0042), ("Curve", 0.0018), ("Credit", -0.0009)],
+                    value_format=partial(pct, dp=2, sign=True),
+                    tone="auto",
+                    diverging=True,
+                    title="Contribution to return",
+                ),
+            )
+        ],
+        TITLES[8],
+        valign="middle",
     )
     return deck

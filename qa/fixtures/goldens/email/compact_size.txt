@@ -19,6 +19,7 @@ In Their Words
 Desk Note
 Desk Detail
 Long Read
+At a Glance
 Factor Returns
 Cumulative Performance
 Portfolio Variance
@@ -40,6 +41,7 @@ Market Snapshot
 
 S&P 500: 5,234 (+1.42%)
 UST 10Y: 4.28% (+6 bps)
+min 4.09% · last 4.28% · max 4.28%
 Gold: 2,411 (+0.85%)
 VIX: 14.32 (-2.18 pts)
 
@@ -97,6 +99,17 @@ Long Read
 On paper this passage runs down one column and on into the next, the way a
 newspaper sets its copy. In an email it is one column, because Outlook's Word
 engine has no multi-column layout.
+
+
+At a Glance
+-----------
+
++38 bps — 2s10s, steepest since 2022
+
+Duration  +0.42%
+Curve     +0.18%
+
+min 3.9 · last 4.2 · max 4.2
 
 
 Factor Returns

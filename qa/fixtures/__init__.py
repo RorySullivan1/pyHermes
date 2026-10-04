@@ -23,6 +23,7 @@ from pyhermes.builder.document import Document
 from . import (
     a4_editorial,
     a4_equations,
+    a4_glance_layout,
     a4_long_table,
     a4_placed_layout,
     a4_portrait,
@@ -32,6 +33,7 @@ from . import (
     composed_layout,
     custom_banner,
     custom_footer,
+    glance_layout,
     image_matrix,
     kitchen_sink,
     letter_dense,
@@ -105,6 +107,7 @@ def all_fixtures() -> dict[str, FixtureBuilder]:
         "surfaced_layout": surfaced_layout.build,
         "research_note": research_note.build,
         "placed_layout": placed_layout.build,
+        "glance_layout": glance_layout.build,
     }
 
 
@@ -132,6 +135,7 @@ def all_paged_fixtures() -> dict[str, PagedFixtureBuilder]:
         "a4_equations": a4_equations.build,
         "a4_research_note": a4_research_note.build,
         "a4_placed_layout": a4_placed_layout.build,
+        "a4_glance_layout": a4_glance_layout.build,
     }
 
 
