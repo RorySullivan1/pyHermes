@@ -48,8 +48,8 @@
   align, and the measure is in `ch` and the medium's (route D) — `design-axes.md`, `deck.md` (#354)
 
 ## Threads          (open items; remove when closed)
-- **Outlook's handling of a share table (`width="60%"`, outer `align`) is unverified here**; add it
-  to #288's human check. The measure counts `ch` of Georgia; this container prints Liberation Serif.
+- **A share table holds its share in Word's engine** (owner, via COM, PR #371); a real Outlook client
+  is still #288's. The measure is `ch`: in Georgia 75ch sets ~99 characters (`design-axes.md`).
 - **Outlook desktop's handling of `dir=rtl` on a reversed split is unverified here**; add it to #288's
   human check.
 - **Open deck bugs #315–#317** (overflow check crash, wrapped title, Slide in Panel); #347 waits on #316.

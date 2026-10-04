@@ -1112,9 +1112,11 @@ A share is not a pixel, as weights are not (#264).
   so #201's image pattern is not needed here. The block renders into a cell the share wide, so
   a split inside a callout is computed from the share.
 - **Measured** in Chromium at 1000 and 375px (a centred 0.6 table is 60% of its cell, centred,
-  with no horizontal scroll) and in the PDF's own layout boxes. That Outlook lays it out at the
-  share is the documented behaviour of a percentage table width, unverified here; it belongs
-  with #288's human check.
+  with no horizontal scroll) and in the PDF's own layout boxes. **In Word's engine too**, the
+  one classic Outlook renders mail with (#150's oracle): the owner opened `placed_layout` in
+  Word on Windows 11 and read every nested table through COM. Inner over outer cell width was
+  0.600 for the centred callout and table and the left contents list, 0.500 for the right
+  figures, and the row alignment matched each (PR #371). A real Outlook client stays #288's.
 
 **A prose measure the medium sets (#358), route D.** Two type tokens, `measure_standard` 75
 and `measure_narrow` 60, in `ch`, CSS's unit for a measure: the advance of "0", converted at
@@ -1140,6 +1142,12 @@ tokens, since the type layer is refused whole.
   Converting at 0.4em (the measured running average) would have capped A4 at 420px and
   retuned every engineered paged fixture; `ch` keeps the owner's stated outcome. Tightening
   is two token values, with the fixtures that move.
+- **Re-measured in real Georgia** (owner, Windows 11, WeasyPrint 70, PR #371): the "0" is
+  0.613em and running text about 0.46em a character, so a `ch` is about 1.33 average characters.
+  At 14px A4's 578px column sets about 90 characters a line and the email's 616px about 96;
+  the 630px `measure_standard` cap about 99 and `measure_narrow`'s 504px about 78. So the
+  tokens read as `ch`, not characters. A measure that reads as 75 characters would be about
+  three quarters of each value, with the fixture retuning above.
 
 **A chart or an equation floats too (#359).** `ChartBlock(wrap=)` and `MathBlock(wrap=)`,
 hosted by `TextBlock(figure=)`, share `ImageBlock`'s float and its rules (`brochure.md`).
