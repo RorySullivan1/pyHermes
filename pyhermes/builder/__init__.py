@@ -75,6 +75,7 @@ from .exceptions import (
     TemplateError,
     ValidationError,
 )
+from .exhibits import FigureGrid, Legend, LegendEntry
 from .glance import BarItem, BarList, HeroStat, Sparkline
 
 # Images
@@ -245,6 +246,10 @@ __all__ = [
     "Button",
     "Divider",
     "TagRow",
+    # Exhibits that group (#335)
+    "FigureGrid",
+    "Legend",
+    "LegendEntry",
     # Organising content (#329)
     "FactList",
     "Timeline",

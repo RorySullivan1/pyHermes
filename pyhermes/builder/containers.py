@@ -22,7 +22,7 @@ from typing import ClassVar
 
 from pyhermes.config import get_config
 
-from .apparatus import slugify, validate_anchor
+from .apparatus import UNRESOLVED, Citing, slugify, split_markers, text_markers, validate_anchor
 from .components import Component, descendants
 from .composition import refuse_numbered
 from .engine import Renderer, grounded, on_ground, rebind, respaced, scheme_of
@@ -32,11 +32,13 @@ from .images import EmailImage, ImageAsset
 from .medium import check_media, walking_medium
 from .models import (
     Badge,
+    Footnote,
     _validate_align,
     _validate_color,
     check_kicker,
     check_valign,
     coerce_badge,
+    coerce_notes,
 )
 from .sizing import (
     PHONE_FLOOR,
@@ -49,7 +51,7 @@ from .sizing import (
     column_layout,
     shares,
 )
-from .textgen import join_blocks, join_sections, underline
+from .textgen import join_blocks, join_sections, underline, wrap
 
 
 class Container:
@@ -114,6 +116,9 @@ class Container:
     #: The row ``id`` a kept section carries on paper, set by the document's walk (#364).
     kept_mark: str = ""
 
+    #: How a citation in ``source`` is spelled, handed down by the document's walk (#338).
+    citing: Citing = UNRESOLVED
+
     def __init__(
         self,
         title: str | None = None,
@@ -130,6 +135,9 @@ class Container:
         break_before: bool = False,
         badge: Badge | str | None = None,
         kicker: str | None = None,
+        source: str | None = None,
+        as_of: str | None = None,
+        source_notes: Sequence[Footnote | str] | None = None,
     ):
         for value, name in (
             (background_color, "background_color"),
@@ -162,6 +170,33 @@ class Container:
                 f"{self._owner()}'s badge sits after its title (#325); give the section a title"
             )
         self.kicker = check_kicker(kicker, title, self._owner())
+        self._check_source(source, as_of)
+        self.source = source or ""
+        self.as_of = as_of or ""
+        self.source_notes = coerce_notes(source_notes, [self.source], f"{self._owner()}'s source")
+
+    def _check_source(self, source: str | None, as_of: str | None) -> None:
+        """Refuse a source line that is not plain text, and a date with no source to date."""
+        for name, value in (("source", source), ("as_of", as_of)):
+            if value is not None and not isinstance(value, str):
+                raise ValidationError(
+                    f"{self._owner()}'s {name} is plain text, got: {type(value).__name__}"
+                )
+        if as_of and not source:
+            raise ValidationError(f"{self._owner()} has an as_of date but no source to date")
+
+    def footnotes(self) -> list[Footnote]:
+        """The notes this section's own source line calls (#338); its blocks report theirs."""
+        return list(self.source_notes)
+
+    def marked_copy(self) -> list[str]:
+        """This section's own copy that may carry a marker: its source line (#338)."""
+        return [self.source] if self.source else []
+
+    def source_text(self) -> str:
+        """``Source: X as of Y``, the source line as the text part prints it, or ``""``."""
+        source = text_markers(self.source, self.source_notes, self.citing)
+        return f"{source} as of {self.as_of}" if self.as_of else source
 
     @classmethod
     def spacing_tokens(cls) -> tuple[str, ...]:
@@ -247,6 +282,10 @@ class Container:
         )
         ctx["section_break"] = self._break_style(engine)
         ctx["section_kept"] = self.kept_mark if ctx["section_break"] and self.keep_together else ""
+        ctx["section_source"] = (
+            split_markers(self.source, self.source_notes, self.citing) if self.source else []
+        )
+        ctx["section_as_of"] = self.as_of
         return ctx
 
     def _break_style(self, engine: Renderer) -> str:
@@ -292,7 +331,9 @@ class Container:
         nothing. They are presentation, and a plain-text part has no surface
         for them to sit on.
         """
-        return join_blocks(self.headed(), *(c.text() for c in self.components()))
+        return join_blocks(
+            self.headed(), *(c.text() for c in self.components()), wrap(self.source_text())
+        )
 
     def headed(self) -> str:
         """The title underlined, and the kicker on the line above it (#333)."""
@@ -484,6 +525,10 @@ class FullWidth(Container):
                           the title (#325); every section takes one.
         kicker:           A short label set above the title, plain text (#333); every
                           section takes one, and a titled one only.
+        source, as_of:    One fine-print line at the section's foot, for every block in
+                          it (#338): plain text, ``[^n]`` and ``[@key]`` allowed, as on an
+                          exhibit's source. ``source_notes`` are the notes it calls. Every
+                          section takes one.
     """
 
     template_path = "common/containers/full-width.html"
@@ -514,6 +559,9 @@ class FullWidth(Container):
         break_before: bool = False,
         badge: Badge | str | None = None,
         kicker: str | None = None,
+        source: str | None = None,
+        as_of: str | None = None,
+        source_notes: Sequence[Footnote | str] | None = None,
     ):
         super().__init__(
             title,
@@ -529,6 +577,9 @@ class FullWidth(Container):
             break_before=break_before,
             badge=badge,
             kicker=kicker,
+            source=source,
+            as_of=as_of,
+            source_notes=source_notes,
         )
         self.content = self._slot("content", content)
 
@@ -588,6 +639,9 @@ class FlowedColumns(FullWidth):
         break_before: bool = False,
         badge: Badge | str | None = None,
         kicker: str | None = None,
+        source: str | None = None,
+        as_of: str | None = None,
+        source_notes: Sequence[Footnote | str] | None = None,
     ):
         super().__init__(
             content,
@@ -604,6 +658,9 @@ class FlowedColumns(FullWidth):
             break_before=break_before,
             badge=badge,
             kicker=kicker,
+            source=source,
+            as_of=as_of,
+            source_notes=source_notes,
         )
         if isinstance(count, bool) or count not in self.COUNTS:
             raise ValidationError(
@@ -677,6 +734,9 @@ class TwoColumn(_SplitContainer):
         kicker: str | None = None,
         stack: str | bool = "natural",
         valign: str | VerticalAlign = "top",
+        source: str | None = None,
+        as_of: str | None = None,
+        source_notes: Sequence[Footnote | str] | None = None,
     ):
         super().__init__(
             title,
@@ -692,6 +752,9 @@ class TwoColumn(_SplitContainer):
             break_before=break_before,
             badge=badge,
             kicker=kicker,
+            source=source,
+            as_of=as_of,
+            source_notes=source_notes,
         )
         self.ratio = self._check_ratio(ratio)
         self.stack = self._check_stack(stack)
@@ -767,6 +830,9 @@ class ThreeColumn(_SplitContainer):
         kicker: str | None = None,
         stack: str | bool = "natural",
         valign: str | VerticalAlign = "top",
+        source: str | None = None,
+        as_of: str | None = None,
+        source_notes: Sequence[Footnote | str] | None = None,
     ):
         super().__init__(
             title,
@@ -782,6 +848,9 @@ class ThreeColumn(_SplitContainer):
             break_before=break_before,
             badge=badge,
             kicker=kicker,
+            source=source,
+            as_of=as_of,
+            source_notes=source_notes,
         )
         self.ratio = self._check_ratio(ratio)
         self.stack = self._check_stack(stack)
@@ -847,6 +916,9 @@ class FourColumn(_SplitContainer):
         kicker: str | None = None,
         stack: str | bool = "natural",
         valign: str | VerticalAlign = "top",
+        source: str | None = None,
+        as_of: str | None = None,
+        source_notes: Sequence[Footnote | str] | None = None,
     ):
         super().__init__(
             title,
@@ -862,6 +934,9 @@ class FourColumn(_SplitContainer):
             break_before=break_before,
             badge=badge,
             kicker=kicker,
+            source=source,
+            as_of=as_of,
+            source_notes=source_notes,
         )
         self.ratio = self._check_ratio(ratio)
         self.stack = self._check_stack(stack)

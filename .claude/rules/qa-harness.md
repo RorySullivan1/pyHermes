@@ -1262,3 +1262,14 @@ holds the claims, including a browser measure of the rule meeting every marker a
 read-backs; it joins the `pdf` and `screenshots` jobs' lines. Nothing set, every other golden
 is byte-identical.
 
+## Exhibits that group (#339)
+
+The research-note pair carries epic #335: Exhibit 3 is a two-panel grid with a key, cited at
+its panel (b) by a cross-reference; *Results* has one source line for its two exhibits, citing
+and calling a note; Appendix B gains B.2, a grid with a column key, a tone and a hex. So both
+goldens pin the panel anchors and the lettered numbering in each medium, and
+`tests/test_grouped_exhibits.py` reads the panel reference's page back from the PDF.
+`kitchen_sink`'s chart became a grid of a chart and a picture with a two-entry key, and the
+two equations joined it in one section to pay for it: `modern_fonts` is at 89.7 KB, 323 bytes
+under the warning. The container-field test lists `source`, `as_of` and `source_notes`, which
+`research_note` sets; the spacing sentinel instances carry a source on every section.

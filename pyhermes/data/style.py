@@ -12,7 +12,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from pyhermes.builder.theming import Theme, resolve_theme
+from pyhermes.builder.theming import SERIES_TOKENS as SERIES_TOKENS
+from pyhermes.builder.theming import Theme, chart_colors, resolve_theme
 from pyhermes.builder.typography import FontTheme, resolve_font_theme
 
 from .charts import _backend
@@ -30,15 +31,6 @@ RC_TOKENS: dict[str, tuple[str, str]] = {
     "xtick.color": ("text", "secondary"),
     "ytick.color": ("text", "secondary"),
 }
-
-#: The series colours, first to last, as theme tokens.
-SERIES_TOKENS: tuple[tuple[str, str], ...] = (
-    ("palette", "accent"),
-    ("palette", "header_bg"),
-    ("semantic", "neutral"),
-    ("text", "secondary"),
-    ("text", "light"),
-)
 
 
 class ChartStyle(dict[str, Any]):
@@ -74,7 +66,7 @@ def chart_style(
     matplotlib = _backend()
     resolved = resolve_theme(theme)
     stack = getattr(resolve_font_theme(font_theme), role)
-    series = tuple(dict.fromkeys(_token(resolved, layer, name) for layer, name in SERIES_TOKENS))
+    series = chart_colors(resolved)
     style = ChartStyle(
         {key: _token(resolved, layer, name) for key, (layer, name) in RC_TOKENS.items()}
     )

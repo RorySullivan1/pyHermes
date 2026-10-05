@@ -1,0 +1,70 @@
+{#
+  FIGURE GRID (#336) — two to four lettered panels as one numbered exhibit.
+
+  The grid is one `figure` table, so the paged break rule keeps it on one
+  sheet and its `id` lands on the heading a reader was sent to, as a chart's
+  does. Beneath the heading, each row of panels is a layout table of its own,
+  so a short last row keeps its panels the width of the rest. Each panel is a
+  `stack-column` cell carrying its own `id`, the grid's and its letter, so a
+  cross-reference to one panel lands on it and on paper reads its page. Its
+  title is the letter and the panel's own subtitle, in the label face at the
+  heading line's size and a step lighter, so it reads under the exhibit's number.
+
+  Between two panels is an empty cell the gutter wide, which stacks to
+  nothing. The gap under a panel is padding, as in a Stack: on paper under
+  every row but the last, in an email under every panel but the last, so
+  stacked panels do not touch on a phone. A row table separates its borders:
+  the model is inherited, and a stacked cell in a collapsing table drops its
+  padding (#332).
+
+  Context:
+    subtitle, caption, caption_parts, anchor — the grid's, as on a chart
+    rows    — lists of panels: title, anchor, src, alt, width, bordered,
+              link_url, legend (rendered) and gap
+    share   — each panel's share of the cell, a percent
+    columns — panels a row
+    source, source_parts, disclosure — the copy shared by every panel
+#}
+{% from "common/notes.html" import marked with context %}
+{% if subtitle %}
+<p class="subtitle" style="font-family: {{ font.body }}; font-size: {{ size.type.secondary }}px; font-style: italic; color: {{ theme.text.secondary }}; margin: 0 0 {{ size.space.subtitle_gap }}px 0; line-height: {{ size.type.secondary_line | percent }};">{{ subtitle | escape_html }}</p>
+{% endif %}
+<table class="figure"{% if anchor %} id="{{ anchor | escape_html }}"{% endif %} role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
+{% if caption %}
+  <tr>
+    <td style="padding: 0 0 {{ size.space.caption_gap }}px 0; font-family: {{ font.label }}; font-size: {{ size.type.label }}px; font-weight: bold; color: {{ theme.text.heading }}; letter-spacing: 0.5px; line-height: {{ size.type.body_line | percent }};">{{ marked(caption_parts) }}</td>
+  </tr>
+{% endif %}
+  <tr>
+    <td style="padding: 0;">
+{% for row in rows %}
+      <table class="figure-grid" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse: separate;">
+        <tr>
+{% for panel in row %}
+          <td class="stack-column"{% if panel.anchor %} id="{{ panel.anchor | escape_html }}"{% endif %} width="{{ share }}%" valign="top" style="width: {{ share }}%; vertical-align: top; padding: {% if panel.gap %}0 0 {{ size.space.block_gap }}px 0{% else %}0{% endif %};">
+            <p style="font-family: {{ font.label }}; font-size: {{ size.type.label }}px; font-weight: bold; color: {{ theme.text.secondary }}; margin: 0 0 {{ size.space.caption_gap }}px 0; line-height: {{ size.type.body_line | percent }};">{{ panel.title | escape_html }}</p>
+            {% if panel.link_url %}<a href="{{ panel.link_url | escape_html }}" style="text-decoration: none; border: 0;">{% endif %}<img src="{{ panel.src | escape_html }}" alt="{{ panel.alt | escape_html }}" width="{{ panel.width }}" style="display: block; width: 100%; max-width: {{ panel.width }}px; height: auto; border: {% if panel.bordered %}1px solid {{ theme.palette.rule }}{% else %}0{% endif %};{% if panel.link_url %} outline: none; text-decoration: none;{% endif %}">{% if panel.link_url %}</a>{% endif %}
+{% if panel.legend %}
+            {{ panel.legend }}
+{% endif %}
+          </td>
+{% if not loop.last or row | length < columns %}
+          <td class="stack-column" width="{{ size.space.gutter }}" style="width: {{ size.space.gutter }}px; padding: 0;"></td>
+{% endif %}
+{% endfor %}
+{% for _ in range(columns - row | length) %}
+          <td class="stack-column" width="{{ share }}%" style="width: {{ share }}%; padding: 0;"></td>
+{% if not loop.last %}
+          <td class="stack-column" width="{{ size.space.gutter }}" style="width: {{ size.space.gutter }}px; padding: 0;"></td>
+{% endif %}
+{% endfor %}
+        </tr>
+      </table>
+{% endfor %}
+    </td>
+  </tr>
+</table>
+{% if source %}
+<p class="fine-print" style="font-family: {{ font.label }}; font-size: {{ size.type.micro }}px; color: {{ theme.text.light }}; font-style: italic; margin: {{ size.space.caption_gap }}px 0 0 0; line-height: {{ size.type.body_line | percent }};">{{ marked(source_parts) }}</p>
+{% endif %}
+{% include "common/disclosure.html" %}

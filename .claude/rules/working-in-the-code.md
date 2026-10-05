@@ -37,6 +37,8 @@ pyhermes/
 │                         content (#329). `design-axes.md`
 │   ├── research.py     — Reference + Bibliography, Term + Glossary: a note's sources and
 │                         terms, resolved by the document's walk (#220). `apparatus.md`
+│   ├── exhibits.py     — FigureGrid, Legend + LegendEntry: lettered panels in one exhibit,
+│                         and a chart's key in markup (#335). `apparatus.md`, `data-layer.md`
 │   ├── models.py       — EmailMetadata (the email's facts), Card, KpiItem, TableRow, NumberedItem, Footnote, SectionConfig
 │   ├── images.py       — EmailImage (hosted/attached/inline), ImageAsset manifest, format sniffing
 │   ├── enums.py        — StrEnum vocab: TwoColumnRatio, ThreeColumnRatio, CardOrientation, EmbedStrategy, ImageAlign, SizeTheme

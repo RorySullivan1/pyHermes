@@ -7,7 +7,7 @@
 - **Shipped through PR #378.** Epics #157–#220 and #218 (PRs #167–#314); deck bugs #315–#317
   (PR #369); #361 (PR #370); #354 and #372 (PR #371); #318 (PR #373); #346 (PR #374); #324 (PR #376);
   #329 (PR #378). #219 DOCX closed not planned, with #300 PPTX.
-- **Open next, in order:** #335, then #340 last (WeasyPrint probes, `[qr]`).
+- **#335 implemented on the branch** (#336–#339), PR pending. **Open next:** #340 last (WeasyPrint probes, `[qr]`).
   #288 is the owner's Outlook-desktop check, run on Windows.
 - The prose budget is live; the baseline is 44 and may only shrink.
 
@@ -37,13 +37,18 @@
   border; a kicker is the `h2`'s sibling, never inside it; four kitchen_sink sections became two Stacks
   to pay for #329's bytes** — `design-axes.md`, `builder-architecture.md` (#329)
 
+- [2026-10-05] **A grid is one exhibit: `leaves()` stops at any `Exhibit`, panels anchor `<grid>-<letter>`;
+  a legend names theme colours (a hex is checked in `add_section`), never reads the plot; a section's
+  source is `source_notes`, read by the walk after its blocks** — `apparatus.md`, `data-layer.md` (#335)
+
 ## Threads          (open items; remove when closed)
 - **A share table holds its share in Word's engine** (owner, via COM, PR #371); a real Outlook client
   is still #288's. The measure is `ch`: in Georgia 75ch sets ~99 characters (`design-axes.md`).
 - **Outlook desktop's handling of `dir=rtl` on a reversed split is unverified here**, nor #319's VML
-  arrow, nor #325's square badge and dot, nor #331's empty rule cells (`font-size:0`); all join #288's check.
-- **`kitchen_sink` is at its 90 KB ceiling**: `modern_fonts` has 615 bytes left after #329, which merged
-  four sections into two to fit; the next epic must merge or move, not add (`design-axes.md`).
+  arrow, nor #325's square badge and dot, nor #331's empty rule cells (`font-size:0`), nor #337's legend
+  swatch; all join #288's check.
+- **`kitchen_sink` is at its 90 KB ceiling**: `modern_fonts` has 323 bytes left after #335, which merged
+  the chart and the equations into one section to fit; the next epic must merge or move, not add.
 - **The suite runs on Windows since #372** (PR #371); no Windows CI job — the owner's run is the check.
 - **`epic-autoclose` works** (closed #273, #354, #361, #346, #324, #329). Still confirm each epic closed after its merge.
 - **A dark split leaves a light seam under its left column on paper**, on `main` since before #324;
@@ -68,13 +73,9 @@
 
 ## Log              (append-only pointers)
 - Older entries, and epic #157's, are in sessions/ARCHIVE-2026.md.
-- [2026-10-04] deck-layouts — **#346 implemented** (#347–#353): sources, pictures, statement
-  slides, divider agendas, the handout, the footer counter — sessions/2026-10-04-deck-layouts.md
-- [2026-10-05] memory — State and Threads re-synced with GitHub after PR #374; four decisions and
-  two log pointers folded into the archive.
 - [2026-10-05] labels — **#324 implemented** (#325–#328): badges, status dots, tag rows, the
   labelled fixtures — sessions/2026-10-05-labels.md
-- [2026-10-05] memory — State and Threads re-synced with GitHub after PR #376.
 - [2026-10-05] organising — **#329 implemented** (#330–#334): fact lists, timelines, teaser lists,
   kickers, the organised fixtures — sessions/2026-10-05-organising.md
-- [2026-10-05] memory — State and Threads re-synced with GitHub after PR #378.
+- [2026-10-05] grouped — **#335 implemented** (#336–#339): figure grids, legends, section source
+  lines, the research note's grids — sessions/2026-10-05-grouped-exhibits.md

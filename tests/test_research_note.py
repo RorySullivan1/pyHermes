@@ -46,7 +46,8 @@ def apparatus(text: str) -> dict[str, list[str]]:
 class TestTheMediaAgree:
     def test_every_exhibit_appendix_and_citation_reads_the_same(self, email, paper):
         assert apparatus(email.text()) == apparatus(paper.text())
-        assert len(apparatus(email.text())["citations"]) == 8
+        # Eight in the copy, one in a section's source line and one under a grid (#339).
+        assert len(apparatus(email.text())["citations"]) == 10
 
     def test_the_exhibits_are_the_ones_the_note_promises(self, email):
         assert apparatus(email.text())["exhibits"] == _research.EXHIBITS
@@ -67,9 +68,9 @@ class TestTheMediaAgree:
     def test_the_markup_numbers_them_in_both(self, email, paper):
         for document in (email, paper):
             html = document.render()
-            for anchor in ("exhibit-1", "exhibit-2", "exhibit-a-1", "exhibit-b-1"):
+            for anchor in ("exhibit-1", "exhibit-2", "exhibit-3", "exhibit-a-1", "exhibit-b-2"):
                 assert f'id="{anchor}"' in html
-            assert html.count('class="citation"') == 8
+            assert html.count('class="citation"') == 10
 
 
 @requires_pdf

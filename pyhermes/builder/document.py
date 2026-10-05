@@ -34,6 +34,7 @@ from .containers import Appendices, Container, FullWidth, OnlySections
 from .engine import Renderer, TemplateEngine, TemplateOverlay, overlay_dirs
 from .enums import EmbedStrategy, SizeTheme
 from .exceptions import ValidationError
+from .exhibits import legends
 from .images import EmailImage, ImageAsset, dedupe_assets
 from .medium import DEFAULT_MEDIUM, Medium, walking_in
 from .models import DocumentMetadata, Footnote
@@ -219,6 +220,8 @@ class Document:
                 "columns align at the top until an Outlook check shows the Word engine honours "
                 "valign on the ghost table (#356). It is accepted on paper."
             )
+        for legend in legends(_held(container)):
+            legend.check_theme(self._metadata.theme)
         if isinstance(container, Appendices) and any(
             isinstance(section, Appendices) for section in self._sections
         ):
@@ -420,14 +423,28 @@ class Document:
             [component for section in self._sections for component in section.components()]
         )
 
+    def _holders(self) -> list[Component | Container]:
+        """
+        Everything that may call a note or cite, in reading order.
+
+        Each section's leaf components, then the section itself, whose source
+        line sits at its foot (#338).
+        """
+        holders: list[Component | Container] = []
+        for section in self._flat_sections():
+            holders.extend(leaves(section.components()))
+            holders.append(section)
+        return holders
+
     def _marked(self) -> list[tuple[str, Any, list[str]]]:
         """
         ``(owner, holder, copy)`` for everything that may cite, in reading order.
 
-        Every leaf component; a medium adds what else carries a citation, as a
-        deck adds each slide's source line, and the walk hands each its ``citing``.
+        Every leaf component and section; a medium adds what else carries a
+        citation, as a deck adds each slide's source line, and the walk hands
+        each its ``citing``.
         """
-        return [(type(c).__name__, c, c.marked_copy()) for c in self._components()]
+        return [(_named(h), h, h.marked_copy()) for h in self._holders()]
 
     def _walk(self) -> None:
         """
@@ -492,7 +509,7 @@ class Document:
 
     def _footnotes(self) -> list[Footnote]:
         """Every note the tree calls, in reading order."""
-        return [note for component in self._components() for note in component.footnotes()]
+        return [note for holder in self._holders() for note in holder.footnotes()]
 
     def _endnotes(self) -> Endnotes | None:
         """The notes gathered for the end of the document, or ``None`` if it has none."""
@@ -589,6 +606,11 @@ class Document:
         )
 
 
+def _named(holder: Component | Container) -> str:
+    """How a refusal names something that may cite: a block by its class, a section by its title."""
+    return holder._owner() if isinstance(holder, Container) else type(holder).__name__
+
+
 def _flatten(section: Container) -> list[Container]:
     """A section, or the sections a page holds in its place."""
     inner = getattr(section, "sections", None)
@@ -649,6 +671,14 @@ def _valigned(container: Container) -> tuple[str, str] | None:
             owner = candidate._owner() if isinstance(candidate, Container) else "Columns"
             return owner, valign
     return None
+
+
+def _held(container: Container) -> list[Component]:
+    """Every block one section's subtree holds, through a page's or a slide's sections."""
+    inner = getattr(container, "sections", None)
+    if isinstance(inner, list):
+        return [block for section in inner for block in _held(section)]
+    return descendants(container.components())
 
 
 def _spacings(container: Container) -> list[tuple[str, Spacing]]:

@@ -2,9 +2,11 @@
 A research note's content, shared by the paged and the email fixture (#312).
 
 Every long-form piece at once: citations, a glossary the body links to, a
-key-takeaways callout, two body exhibits, a bibliography, a glossary and two
-lettered appendices. Both media build the same sections, so their goldens pin
-that the numbering agrees across them.
+key-takeaways callout, three body exhibits, one a lettered grid with a key and
+a cross-reference to a panel, a source line shared by a section, a
+bibliography, a glossary and two lettered appendices, the second holding a
+grid. Both media build the same sections, so their goldens pin that the
+numbering agrees across them.
 """
 
 from __future__ import annotations
@@ -16,8 +18,11 @@ from pyhermes.builder import (
     ChartBlock,
     Container,
     DataTable,
+    FigureGrid,
     FullWidth,
     Glossary,
+    Legend,
+    LegendEntry,
     Reference,
     Stack,
     Term,
@@ -34,13 +39,21 @@ _DECILE_PNG = solid_png(600, 90, (91, 138, 154))
 #: The cost chart in Appendix B.
 _COST_PNG = solid_png(600, 70, (122, 150, 120))
 
+#: A grid panel's chart: one region's spread, or one turnover's costs (#339).
+_PANEL_PNG = solid_png(300, 120, (91, 138, 154))
+
 #: Every exhibit heading, in reading order, as each projection must print it.
 EXHIBITS = [
     "Exhibit 1 · Momentum decile returns",
     "Exhibit 2 · The winner-minus-loser spread",
+    "Exhibit 3 · The spread by region",
     "Exhibit A.1 · Data coverage",
     "Exhibit B.1 · Returns after trading costs",
+    "Exhibit B.2 · Costs by turnover",
 ]
+
+#: The panels of the grids, as each projection anchors them.
+PANELS = ["exhibit-3-a", "exhibit-3-b", "exhibit-b-2-a", "exhibit-b-2-b"]
 
 REFERENCES = [
     Reference(
@@ -116,6 +129,41 @@ def _coverage() -> DataTable:
     )
 
 
+def _panel(alt: str, subtitle: str, legend: Legend | None = None) -> ChartBlock:
+    return ChartBlock(
+        EmailImage.attached(_PANEL_PNG, alt=alt, width=300), subtitle=subtitle, legend=legend
+    )
+
+
+def _regions() -> FigureGrid:
+    """Exhibit 3: one chart a region, the key naming the two lines by their chart colours."""
+    key = Legend(["Winners", "Losers"])
+    return FigureGrid(
+        [
+            _panel("Spread in the United States", "United States", key),
+            _panel("Spread in Europe", "Europe", key),
+        ],
+        caption="The spread by region",
+    )
+
+
+def _turnover() -> FigureGrid:
+    """Exhibit B.2: a grid in an appendix, its key naming a tone and a hex."""
+    key = Legend(
+        [LegendEntry("Net of costs", tone="positive"), LegendEntry("Costs", color="#5A5A5A")],
+        layout="column",
+    )
+    return FigureGrid(
+        [
+            _panel("Costs at low turnover", "Low turnover", key),
+            _panel("Costs at high turnover", "High turnover"),
+        ],
+        caption="Costs by turnover",
+        source="Hermes Research [@afmp2018]",
+        disclosure="Costs are estimated from a model of market impact, not observed trades.",
+    )
+
+
 def sections() -> list[Container]:
     """The note's sections in reading order, built fresh on every call."""
     return [
@@ -167,17 +215,22 @@ def sections() -> list[Container]:
                         ),
                         caption="The winner-minus-loser spread",
                         label="Exhibit",
-                        source="Hermes Research",
                     ),
                     TextBlock(
                         "<p>The spread is positive in most years and negative in a few "
-                        "deep ones [@dm2016]. After costs at the "
-                        '<a href="#term-turnover">turnover</a> the strategy needs, '
-                        '<a class="xref" href="#exhibit-b-1">Exhibit B.1</a> keeps most '
-                        "of it [@afmp2018].</p>"
+                        "deep ones [@dm2016], and Europe's is the steadier, in "
+                        '<a class="xref" href="#exhibit-3-b">Exhibit 3(b)</a>. After '
+                        'costs at the <a href="#term-turnover">turnover</a> the strategy '
+                        'needs, <a class="xref" href="#exhibit-b-1">Exhibit B.1</a> keeps '
+                        "most of it [@afmp2018].</p>"
                     ),
+                    _regions(),
                 ]
             ),
+            # One line for both exhibits (#338), citing and calling a note.
+            source="Hermes Research [@jt1993][^1]",
+            as_of="30 September 2026",
+            source_notes=["Returns are in US dollars, before costs."],
         ),
         FullWidth(title="References", content=Bibliography(REFERENCES)),
         FullWidth(title="Glossary", content=Glossary(TERMS)),
@@ -186,11 +239,18 @@ def sections() -> list[Container]:
                 FullWidth(title="Data sources", content=_coverage()),
                 FullWidth(
                     title="Robustness",
-                    content=ChartBlock(
-                        EmailImage.attached(_COST_PNG, alt="Returns after costs", width=600),
-                        caption="Returns after trading costs",
-                        label="Exhibit",
-                        source="Hermes Research [@afmp2018]",
+                    content=Stack(
+                        [
+                            ChartBlock(
+                                EmailImage.attached(
+                                    _COST_PNG, alt="Returns after costs", width=600
+                                ),
+                                caption="Returns after trading costs",
+                                label="Exhibit",
+                                source="Hermes Research [@afmp2018]",
+                            ),
+                            _turnover(),
+                        ]
                     ),
                 ),
             ]

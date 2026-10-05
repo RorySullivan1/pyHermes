@@ -1,0 +1,22 @@
+{#
+  LEGEND (#337) — a chart's key in markup: a swatch, then what it stands for.
+
+  The swatch is the status dot's shape made square: an inline box holding one
+  non-breaking space, shaded in a colour the theme gives a chart. It needs no
+  image, so the key reads with images blocked. The Word engine shades the
+  space and drops an inline box's margin, so a space inside an mso conditional
+  stands in for the gap after the swatch, and the line break between two
+  entries in a row is a real space there.
+
+  It keeps `caption_gap` above it, so under a chart it needs no wrapper.
+
+  Context:
+    entries — [{"label", "fill"}], each fill resolved from the theme in Python
+    layout  — "row", wrapping along a line, or "column", one entry a line
+#}
+{% set across = size.component.status_dot %}
+<div class="legend" style="margin: {{ size.space.caption_gap }}px 0 0 0; font-family: {{ font.label }}; font-size: {{ size.type.secondary }}px; color: {{ theme.text.secondary }}; line-height: {{ size.type.body_line | percent }};">
+{% for entry in entries %}
+  {% if layout == "row" %}<span style="display: inline-block; white-space: nowrap; margin: 0 {{ size.space.gutter }}px 0 0;">{% else %}<div style="margin: 0;">{% endif %}<span class="legend-swatch" style="display: inline-block; vertical-align: middle; width: {{ across }}px; height: {{ across }}px; background-color: {{ entry.fill | validate_hex_color }}; font-size: {{ across }}px; line-height: {{ across }}px; margin: 0 {{ size.space.caption_gap }}px 0 0;">&nbsp;</span><!--[if mso]>&nbsp;<![endif]-->{{ entry.label | escape_html }}{% if layout == "row" %}</span>{% else %}</div>{% endif %}
+{% endfor %}
+</div>

@@ -21,6 +21,8 @@
     section_kept     — The row's `id` when kept together on paper, for the tall-section check
     flow_columns     — Columns the content flows through (#189); 0 for none. Only
                        FlowedColumns sets it, and only on paper
+    section_source   — The section's source line, cut at its markers (#338); empty for none
+    section_as_of    — Its date, or empty
 #}
 {# A highlighted band spends 1px a side on its hairline frame, so every
    horizontal inset inside it gives that pixel back. Content then starts at
@@ -35,6 +37,7 @@
    prose inside the cell and inheritance is #126's whole mechanism. #}
 {% from "common/badge.html" import badge with context %}
 {% from "common/kicker.html" import kicker with context %}
+{% from "common/source-line.html" import source_line with context %}
 {% set edge_pad = size.frame.pad_x - (1 if highlight else 0) - (1 if section_border else 0) %}
 <tr{% if section_kept %} id="{{ section_kept }}"{% endif %}{% if section_break %} style="{{ section_break }}"{% endif %}>
   <td style="{% if highlight %}padding:1px 1px 1px 1px; background-color:{{ theme.palette.surface }}; border-top:1px solid {{ section_border or theme.palette.rule }}; border-bottom:1px solid {{ section_border or theme.palette.rule }};{% if section_border %} border-left:1px solid {{ section_border }}; border-right:1px solid {{ section_border }};{% endif %}{% else %}padding:0; background-color:{{ background_color | default(theme.palette.surface) }};{% if section_border %} border:1px solid {{ section_border }};{% endif %}{% endif %}">
@@ -61,6 +64,9 @@
 {% if flow_columns %}<div class="flowed-columns" style="column-count:{{ flow_columns }}; column-gap:{{ size.space.gutter }}px;">{% endif %}
           {{ content }}
 {% if flow_columns %}</div>{% endif %}
+{% if section_source %}
+          {{ source_line(section_source, section_as_of) }}
+{% endif %}
         </td>
       </tr>
     </table>

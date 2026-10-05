@@ -472,3 +472,22 @@ def resolve_theme(value: Theme | str) -> Theme:
                 f"{sorted(THEMES)}. Pass a Theme instance for a custom palette."
             ) from None
     raise ValidationError(f"'theme' must be a Theme or a preset name, got: {type(value).__name__}")
+
+
+#: A chart's series colours, first to last, as theme tokens (#275): what
+#: ``chart_style`` cycles through and what a ``Legend`` entry names (#337).
+SERIES_TOKENS: tuple[tuple[str, str], ...] = (
+    ("palette", "accent"),
+    ("palette", "header_bg"),
+    ("semantic", "neutral"),
+    ("text", "secondary"),
+    ("text", "light"),
+)
+
+
+def chart_colors(value: Theme | str) -> tuple[str, ...]:
+    """A theme's series colours in cycle order, a colour two tokens share kept once."""
+    theme = resolve_theme(value)
+    return tuple(
+        dict.fromkeys(getattr(getattr(theme, layer), name) for layer, name in SERIES_TOKENS)
+    )

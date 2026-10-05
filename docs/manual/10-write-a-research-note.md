@@ -1,8 +1,8 @@
 # 10. Write a research note
 
 A research note or a methodology paper needs more than sections: it cites its sources,
-defines its terms, lists its tables and figures, and puts the detail in lettered
-appendices. pyHermes numbers all of it for you, once, so the email, the PDF and the
+defines its terms, groups related charts, lists its tables and figures, and puts the detail
+in lettered appendices. pyHermes numbers all of it for you, once, so the email, the PDF and the
 plain-text part always agree.
 
 Every example on this page adds to the one before it.
@@ -131,6 +131,72 @@ the table reads "Exhibit A.1". A table in the body still counts 1, 2, 3.
 - A document has one `Appendices`, and its first section must have a title.
 - On paper the appendices start on a new page. Pass `break_before=False` to run on.
 
+## How to group several charts under one exhibit
+
+**When to use this:** two to four small charts that belong together, such as one chart a
+region, numbered as one exhibit with lettered panels.
+
+```python
+from pyhermes.builder import ChartBlock, FigureGrid, Legend
+from pyhermes.builder.images import EmailImage
+
+
+def panel(alt, title, legend=None):
+    image = EmailImage.attached("chart.png", alt=alt, width=300)
+    return ChartBlock(image, subtitle=title, legend=legend)
+
+
+key = Legend(["Winners", "Losers"])
+regions = FullWidth(
+    FigureGrid(
+        [
+            panel("Momentum in the United States", "United States", key),
+            panel("Momentum in Europe", "Europe", key),
+        ],
+        caption="Momentum by region",
+        source="Acme Research",
+    ),
+    title="By Region",
+)
+```
+
+**Result:** "Exhibit 1 · Momentum by region" over two charts side by side, headed "(a) United
+States" and "(b) Europe", each with its key beneath it, and one source line under both. On a
+phone the two charts stack. The grid is numbered like any other exhibit and listed once in a
+list of exhibits.
+
+To point at one panel, link to the grid's anchor and its letter:
+`<a class="xref" href="#exhibit-1-b">Exhibit 1(b)</a>`. On paper the link gains the panel's
+page number.
+
+When several blocks in one section share a source, give the section the source line instead
+of each block:
+
+```python
+evidence = FullWidth(
+    regions.content,
+    title="By Region",
+    source="Prices from the national exchanges[^1]",
+    as_of="30 September 2026",
+    source_notes=["In US dollars, before costs."],
+)
+```
+
+**Result:** "Prices from the national exchanges¹ as of 30 September 2026" in fine print at the
+foot of the section. Every section and split takes `source=`, `as_of=` and `source_notes=`, and
+a citation such as `[@jt1993]` works in it too.
+
+**Notes:**
+- A grid takes two to four `ChartBlock`s or `ImageBlock`s. `columns=` sets how many sit
+  across (two by default).
+- A panel takes no `caption`, `source`, `label` or notes of its own: the grid carries one of
+  each for all of them. A panel's `subtitle` becomes its title after the letter.
+- A key's colours come from your theme: a label alone takes the next chart colour, the one
+  `chart_style` hands your plot. Use `LegendEntry("Down", tone="negative")` for a semantic
+  colour. A hex `color=` must be one of the theme's chart colours, or the section is refused.
+- The plain-text part prints the key as `Key: Winners, Losers`, so a reader with images
+  blocked still knows which line is which.
+
 ## How to list your tables and figures
 
 **When to use this:** a long note, where a reader wants to find an exhibit quickly.
@@ -145,6 +211,7 @@ note = (
     .section(FullWidth(Contents(of="exhibits"), title="Tables and Figures"))
     .section(summary)
     .section(method)
+    .section(evidence)
     .section(sources)
     .section(glossary)
     .section(appendices)
@@ -173,7 +240,7 @@ report = PagedDocument(
     contents=ContentsPage(),
     exhibits=ExhibitsPage(heading="Tables and Figures"),
 )
-for section in (summary, method, sources, glossary, appendices):
+for section in (summary, method, evidence, sources, glossary, appendices):
     report.add_section(section)
 report.save("note-print.html")
 ```

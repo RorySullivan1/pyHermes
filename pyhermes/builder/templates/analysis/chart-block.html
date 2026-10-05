@@ -18,6 +18,7 @@
     disclosure        — Compliance copy beneath the attribution; the key is
                         bare rather than `chart_`-prefixed because all three
                         exhibits include one shared partial
+    legend            — The chart's key, already rendered (#337); empty for none
 #}
 {% from "common/notes.html" import marked with context %}
 {% if subtitle %}
@@ -48,6 +49,9 @@
     </td>
   </tr>
 </table>
+{% if legend %}
+{{ legend }}
+{% endif %}
 {% if chart_source %}
 <p class="fine-print"{% if align %} align="{{ align | escape_html }}"{% endif %} style="font-family: {{ font.label }}; font-size: {{ size.type.micro }}px; color: {{ theme.text.light }}; font-style: italic; margin: {{ size.space.caption_gap }}px 0 0 0; line-height: {{ size.type.body_line | percent }};{% if align %} text-align:{{ align }};{% endif %}">{{ marked(chart_source_parts) }}</p>
 {% endif %}
