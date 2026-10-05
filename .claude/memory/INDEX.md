@@ -10,6 +10,8 @@
 - **#340 implemented** on `claude/integrate-claude-assets-pyhermes-d4spzb` (#341–#345), pushed, awaiting
   its PR. #288 is the owner's Outlook-desktop check, run on Windows.
 - The prose budget is live; the baseline is 44 and may only shrink.
+- **Paper band seam fixed, uncommitted** in worktree `vibrant-almeida-8d2f96`: on paper a split's column paints
+  no fill (8 goldens moved by that one declaration). sessions/2026-10-05-1903-paper-band-seam.md
 
 ## Decisions        (append-only; supersede, never delete)
 - Older entries, and epic #157's, are in sessions/ARCHIVE-2026.md.
@@ -75,6 +77,8 @@
 - **The baseline may only shrink.** #138 and #139 empty it; nothing may be added.
 - **Everything in `.claude/` is a factory asset** except `agents/python-developer.md` and
   `agents/finance-quantitative-developer.md`. No project name may enter the others.
+- [2026-10-05] **On paper a split's column paints no fill; the band cell does** — an inline-table paints after
+  every block background, so its fill overwrote the next section's half-pixel row at a band edge — `design-axes.md`
 
 ## Log              (append-only pointers)
 - Older entries, and epic #157's, are in sessions/ARCHIVE-2026.md.
@@ -87,3 +91,5 @@
 - [2026-10-05] memory — State and Threads re-synced with GitHub after PR #380.
 - [2026-10-05] page-level — **#340 implemented** (#341–#345): landscape pages, stamps, asides, QR codes,
   `a4_wide_appendix` — sessions/2026-10-05-page-level.md
+- [2026-10-05] paper-band-seam — 1px seam at a band edge on paper, fixed in `columns.html`;
+  paint order, two forms — sessions/2026-10-05-1903-paper-band-seam.md

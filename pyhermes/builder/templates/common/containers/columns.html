@@ -74,6 +74,10 @@
    Both spellings travel together per #125 — the attribute for Outlook's
    Word engine, the style because an attribute is not inherited by the
    prose inside the cell and inheritance is #126's whole mechanism. #}
+{# On paper a column paints no fill of its own. An inline table is painted
+   after every block background, so its fill would cover the half-pixel row
+   the next section owns at the band's edge, under the tallest column only.
+   The band's cell already paints that ground. #}
 {% from "common/badge.html" import badge with context %}
 {% from "common/kicker.html" import kicker with context %}
 {% from "common/source-line.html" import source_line with context %}
@@ -129,7 +133,7 @@
         <td width="{{ columns[0].width }}" valign="{{ valign }}" style="width:{{ columns[0].width }}px; padding:0;">
     <![endif]-->
 {% for col in columns %}
-    <table role="presentation" width="{{ col.width }}" border="0" cellpadding="0" cellspacing="0" class="stack-column"{% if rtl %} dir="ltr"{% endif %} style="display:inline-table; vertical-align:{{ valign }}; width:{{ col.width }}px;{% if not loop.last %} margin-{{ "left" if rtl else "right" }}:{{ size.space.gutter }}px;{% endif %} background-color:{{ background_color | default(theme.palette.highlight_tint if highlight else theme.palette.surface) }};">
+    <table role="presentation" width="{{ col.width }}" border="0" cellpadding="0" cellspacing="0" class="stack-column"{% if rtl %} dir="ltr"{% endif %} style="display:inline-table; vertical-align:{{ valign }}; width:{{ col.width }}px;{% if not loop.last %} margin-{{ "left" if rtl else "right" }}:{{ size.space.gutter }}px;{% endif %}{% if not medium.paged %} background-color:{{ background_color | default(theme.palette.highlight_tint if highlight else theme.palette.surface) }};{% endif %}">
       <tr>
         <td class="mobile-pad"{% if section_align %} align="{{ section_align | escape_html }}"{% endif %} style="padding:{{ size.space.column_top }}px {{ col.pad_right }}px {{ size.space.column_bottom }}px {{ col.pad_left }}px; font-family: {{ font.label }}; font-size:{{ size.type.body }}px; color:{{ theme.text.primary }}; line-height:{{ size.type.body_line | percent }};{% if section_align %} text-align:{{ section_align }};{% endif %}">
           {{ col.content }}
