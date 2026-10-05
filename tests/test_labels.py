@@ -170,9 +170,9 @@ class TestAStatusColumn:
         with pytest.raises(ValidationError, match="go together"):
             Column("Status", statuses=STATUSES).validate()
 
-    def test_a_status_takes_a_semantic_tone_only(self):
+    def test_a_status_takes_a_tone_never_a_hex(self):
         with pytest.raises(ValidationError, match="must be one of"):
-            Column("Status", kind="status", statuses={"Late": "amber"}).validate()
+            Column("Status", kind="status", statuses={"Late": "#FFBF00"}).validate()
 
     def test_a_subhead_and_an_empty_cell_draw_no_dot(self):
         table = DataTable(

@@ -46,7 +46,12 @@
   fact set OVER the copy, translucent (under, grounds hid it), and no constructor `stamp=`; an aside is a
   value object rendered through `Callout`; a gallery QR is a module-matrix constant** — `media.md`, `brochure.md` (#340)
 
+- [2026-10-05] **A brand tone is a name on the theme (`Theme.tones`), resolved by one `Theme.tone` every template
+  reads, refused undeclared by a walk in `Document._add`; `section.background_color` stays a hex** — `design-axes.md` (#387)
+
 ## Threads          (open items; remove when closed)
+- **Epic #384 (brand tones) is under way**: #387 is on the branch, unmerged; #388 (solid fill), #389 (legend +
+  `chart_colors`) and #390 (dashed frame, column rule) remain. #388 and #389 build on `Theme.tone`.
 - **A share table holds its share in Word's engine** (owner, via COM, PR #371); a real Outlook client
   is still #288's. The measure is `ch`: in Georgia 75ch sets ~99 characters (`design-axes.md`).
 - **Outlook desktop's handling of `dir=rtl` on a reversed split is unverified here**, nor #319's VML

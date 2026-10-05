@@ -414,7 +414,7 @@ class TestALegendRefusal:
         [
             (LegendEntry("A"), "one way"),
             (LegendEntry("A", tone="positive", series=0), "one way"),
-            (LegendEntry("A", tone="up"), "tone is one of"),
+            (LegendEntry("A", tone="Up"), "tone' must be one of"),
             (LegendEntry("A", color="teal"), "hex color"),
             (LegendEntry("A", series=5), "series indexes"),
             (LegendEntry("A", series=True), "series indexes"),

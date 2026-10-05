@@ -1186,11 +1186,22 @@ def trend_of(value: Any, fmt: Callable[[Any], str] | None = None) -> Trend:
     return {Tone.POSITIVE: Trend.UP, Tone.NEGATIVE: Trend.DOWN}.get(tone_of(value, fmt), Trend.FLAT)
 
 
+#: What a brand tone's name may be: a lowercase word the theme declares (#387).
+TONE_NAME = re.compile(r"[a-z][a-z0-9_]*\Z")
+
+
 def _validate_tone(value: str, field_name: str) -> None:
-    if value and value not in tuple(Tone):
+    """
+    Refuse a tone that is not a word: a semantic one, or a name a theme may declare.
+
+    Whether a brand tone's name is declared is the document's question, asked
+    when its section is added, because only the document knows its theme.
+    """
+    if value and not (isinstance(value, str) and TONE_NAME.match(value)):
         raise ValidationError(
-            f"{field_name!r} must be one of {[t.value for t in Tone]}, got: {value!r}. "
-            "A tone is a word the theme resolves; pass a hex as 'color' instead."
+            f"{field_name!r} must be one of {[t.value for t in Tone]} or a tone the theme "
+            f"declares, got: {value!r}. A tone is a word the theme resolves; pass a hex as "
+            "'color' instead."
         )
 
 

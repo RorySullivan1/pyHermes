@@ -43,7 +43,7 @@ from .engine import (
     respaced,
     scheme_of,
 )
-from .enums import CardOrientation, ColumnKind, ImageAlign, RowKind, Tone
+from .enums import CardOrientation, ColumnKind, ImageAlign, RowKind
 from .exceptions import ValidationError
 from .images import EmailImage, ImageAsset, _displayed_height, coerce_image
 from .models import (
@@ -819,7 +819,7 @@ class DataTable(CellShare, Exhibit, Component):
             arrow = str(trend_of(cell.value, column.format))
         spark = None
         if isinstance(cell.value, Series):
-            tone = cell.tone or (column.tone if column.tone in tuple(Tone) else "")
+            tone = cell.tone or (column.tone if column.tone != "auto" else "")
             if column.tone == "auto":
                 tone = str(tone_of(cell.value.values[-1] - cell.value.values[0]))
             spark = cell.value.drawn(tone)

@@ -12,10 +12,10 @@ from collections.abc import Callable, Mapping
 from typing import Any
 
 from pyhermes.builder import DataTable
-from pyhermes.builder.enums import ColumnKind, RowKind, Tone
+from pyhermes.builder.enums import ColumnKind, RowKind
 from pyhermes.builder.exceptions import ValidationError
 from pyhermes.builder.formats import MISSING, number
-from pyhermes.builder.models import Cell, Column, TableRow
+from pyhermes.builder.models import Cell, Column, TableRow, _validate_tone
 
 from .exceptions import BackendMissingError
 
@@ -55,7 +55,7 @@ def table_from_frame(
         frame:       The DataFrame. Flat columns and a flat index only.
         formats:     Column → formatter. A numeric column with none uses
                      ``formats.number``: whole if integer, two places if float.
-        tones:       Column → ``"auto"`` (the sign decides) or a ``Tone``.
+        tones:       Column → ``"auto"`` (the sign decides), a ``Tone`` or a brand tone.
         index:       Include the index as the first, row-header column. ``None``
                      includes it unless it is a default ``RangeIndex``.
         index_label: The index column's heading, if the index has no name.
@@ -81,8 +81,8 @@ def table_from_frame(
         for name in frame.columns
     }
     for name, tone in tones.items():
-        if tone != AUTO and tone not in tuple(Tone):
-            raise ValidationError(f"tones[{name!r}] must be 'auto' or a Tone, got {tone!r}")
+        if tone != AUTO:
+            _validate_tone(tone, f"tones[{name!r}]")
         if tone == AUTO and not numeric[name]:
             raise ValidationError(f"tones[{name!r}] is 'auto', but {name!r} is not numeric")
     fmt = {

@@ -30,6 +30,7 @@ from . import (
     a4_placed_layout,
     a4_portrait,
     a4_research_note,
+    a4_toned_layout,
     a4_wide_appendix,
     aligned_layout,
     compact_size,
@@ -58,6 +59,7 @@ from . import (
     slide_16_9,
     spacious_size,
     surfaced_layout,
+    toned_layout,
     tri_fold_letter,
 )
 
@@ -116,6 +118,7 @@ def all_fixtures() -> dict[str, FixtureBuilder]:
         "glance_layout": glance_layout.build,
         "labelled_layout": labelled_layout.build,
         "organised_layout": organised_layout.build,
+        "toned_layout": toned_layout.build,
     }
 
 
@@ -147,6 +150,7 @@ def all_paged_fixtures() -> dict[str, PagedFixtureBuilder]:
         "a4_labelled_layout": a4_labelled_layout.build,
         "a4_organised_layout": a4_organised_layout.build,
         "a4_wide_appendix": a4_wide_appendix.build,
+        "a4_toned_layout": a4_toned_layout.build,
     }
 
 

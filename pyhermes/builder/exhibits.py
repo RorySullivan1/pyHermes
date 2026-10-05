@@ -19,10 +19,9 @@ from typing import Any
 from .apparatus import split_markers, text_markers
 from .components import ChartBlock, Component, Exhibit, ImageBlock
 from .engine import Renderer, cell_width_of, respaced, scheme_of
-from .enums import Tone
 from .exceptions import ValidationError
 from .images import EmailImage
-from .models import Footnote, _validate_color, coerce_notes
+from .models import Footnote, _validate_color, _validate_tone, coerce_notes
 from .sizing import Spacing
 from .textgen import join_blocks, wrap
 from .theming import SERIES_TOKENS, Theme, chart_colors, resolve_theme
@@ -45,7 +44,7 @@ class LegendEntry:
 
     Attributes:
         label:  What the colour stands for, plain text.
-        tone:   ``positive``, ``negative`` or ``neutral``.
+        tone:   ``positive``, ``negative``, ``neutral`` or a tone the theme declares.
         color:  A ``#RRGGBB`` from the theme's chart colours.
         series: ``0`` for the first chart colour, and so on.
     """
@@ -64,8 +63,8 @@ class LegendEntry:
                 f"{owner} names its colour one way, by tone=, color= or series=; "
                 f"got {named or 'none'}"
             )
-        if self.tone is not None and self.tone not in tuple(Tone):
-            raise ValidationError(f"{owner}.tone is one of {[t.value for t in Tone]}")
+        if self.tone is not None:
+            _validate_tone(self.tone, f"{owner}.tone")
         if self.color is not None:
             _validate_color(self.color, f"{owner}.color")
         if self.series is not None and (
@@ -81,7 +80,7 @@ class LegendEntry:
     def fill(self, theme: Theme) -> str:
         """The swatch's colour in ``theme``."""
         if self.tone is not None:
-            return str(getattr(theme.semantic, self.tone))
+            return theme.tone[self.tone]
         if self.color is not None:
             return self.color
         return chart_colors(theme)[self.series or 0]

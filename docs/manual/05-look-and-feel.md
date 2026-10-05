@@ -65,6 +65,27 @@ like `#036` are refused.
 > **Tip:** define `house` once in a shared module and import it into every script, so the
 > whole series stays on brand.
 
+## How to add brand tones
+
+**When to use this:** a box, a badge or a figure should be in a brand colour, not in green,
+red or grey, which say gain, loss and neither.
+
+```python
+from pyhermes.builder import Callout
+
+branded = DEFAULT_THEME.derive(tones={"brand": "#B8860B", "sky": "#0077A8"})
+facts_box = FullWidth(Callout(TextBlock("<p>0.03% a year.</p>"), tone="brand", label="Cost"))
+email = EmailBuilder().metadata({**facts, "theme": branded}).section(facts_box).build()
+```
+
+**Result:** the box takes a light gold tint and a gold frame. A tone name works anywhere a
+`tone=` does: a `Callout`, a `Badge`, a card, a table cell, a status column, a bar, a hero
+figure, a fact and a chart key. `positive`, `negative` and `neutral` keep their colours.
+
+A name is a lowercase word, and it may not be `positive`, `negative` or `neutral`; to change
+those, set `semantic`. A tone the theme does not declare is refused when its section is added,
+and the message lists the tones the theme has.
+
 ## How to make the email more compact or more spacious
 
 ```python
@@ -197,8 +218,9 @@ email = EmailBuilder().metadata(facts).section(FullWidth(box, title="Rates")).bu
 ```
 
 A `Callout` boxes one block, which can be a `Stack` of several. Without a `tone` it uses the
-theme's highlight tint and rule. With `tone="positive"`, `"negative"` or `"neutral"` it takes
-a light tint and a frame in that colour from the theme. `border=False` drops the frame. Its
+theme's highlight tint and rule. With `tone="positive"`, `"negative"`, `"neutral"` or a
+[brand tone](#how-to-add-brand-tones) it takes a light tint and a frame in that colour from the
+theme. `border=False` drops the frame. Its
 padding is the `callout_pad_y` and `callout_pad_x` spacing tokens.
 
 ## How to add a button or a dividing line

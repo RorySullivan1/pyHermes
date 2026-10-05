@@ -2,8 +2,8 @@
 Every colour and shadow in the email, as one validated object.
 
 A ``Theme`` is four frozen layers — ``palette``, ``text``, ``semantic`` and
-``shadow`` — with no optional token field, each value validated as
-``#RRGGBB`` at construction.
+``shadow`` — with no optional token field, plus the brand ``tones`` it
+declares by name (#387), each value validated as ``#RRGGBB`` at construction.
 
 ``EmailMetadata.theme`` names a preset or supplies a custom ``Theme``;
 :meth:`Email.render` resolves it once and binds it as the ``theme``
@@ -19,11 +19,13 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass, field, fields, replace
+from functools import cached_property
 from typing import Any, ClassVar
 
+from .enums import Tone
 from .exceptions import ValidationError
 from .filters import readable_on
-from .models import _validate_color
+from .models import TONE_NAME, _validate_color
 
 
 def _validate_hex_fields(instance: object, prefix: str) -> None:
@@ -193,6 +195,9 @@ class Theme:
     text: TextColors = field(default_factory=TextColors)
     semantic: SemanticColors = field(default_factory=SemanticColors)
     shadow: ShadowStyle = field(default_factory=ShadowStyle)
+    #: Brand tones by name, each a ``#RRGGBB``: what a block names beyond the
+    #: three semantic tones, as ``Callout(tone="brand")`` (#387).
+    tones: Mapping[str, str] = field(default_factory=dict, hash=False)
 
     LAYERS: ClassVar[dict[str, type]] = {
         "palette": Palette,
@@ -208,6 +213,43 @@ class Theme:
                     f"'theme.{name}' must be a {layer_cls.__name__}, got: "
                     f"{type(getattr(self, name)).__name__}"
                 )
+        if not isinstance(self.tones, Mapping):
+            raise ValidationError(
+                f"'theme.tones' maps names to hex colours, got: {type(self.tones).__name__}"
+            )
+        for name, value in self.tones.items():
+            if not isinstance(name, str) or not TONE_NAME.match(name):
+                raise ValidationError(f"a brand tone's name is a lowercase word, got: {name!r}")
+            if name in tuple(Tone):
+                raise ValidationError(
+                    f"brand tone {name!r} shadows a semantic tone; set theme.semantic.{name} "
+                    "to recolour it, or choose another name"
+                )
+            if not isinstance(value, str):
+                raise ValidationError(
+                    f"'theme.tones.{name}' must be a hex color string, got: {type(value).__name__}"
+                )
+            _validate_color(value, f"theme.tones.{name}")
+        object.__setattr__(self, "tones", dict(self.tones))
+
+    @cached_property
+    def tone(self) -> dict[str, str]:
+        """
+        Every tone this theme resolves, semantic first, by name to its colour.
+
+        The one place a tone becomes a colour: a template reads ``theme.tone[name]``,
+        so a brand tone reaches every object that takes a tone, in every medium.
+        """
+        semantic = {str(name): str(getattr(self.semantic, name)) for name in Tone}
+        return {**semantic, **self.tones}
+
+    def check_tone(self, name: str, owner: str) -> None:
+        """Refuse a tone this theme does not declare, naming the ones it does."""
+        if name not in self.tone:
+            raise ValidationError(
+                f"{owner} names tone {name!r}, which this theme does not declare; its tones "
+                f"are {list(self.tone)}. Declare it as Theme(tones={{{name!r}: '#RRGGBB'}})."
+            )
 
     def derive(self, **layers: Any) -> Theme:
         """
@@ -220,7 +262,8 @@ class Theme:
                                           "accent": "#7FA8B8"})
 
         Each keyword names a layer and takes either a mapping of the tokens
-        to change or a whole replacement layer. Everything else is inherited,
+        to change or a whole replacement layer; ``tones=`` adds brand tones
+        to the ones this theme declares. Everything else is inherited,
         and the result is a normal ``Theme`` — frozen, complete, and
         **re-validated**, so a derived theme cannot be less valid than one
         built from scratch.
@@ -229,12 +272,20 @@ class Theme:
             ValidationError: For an unknown layer, an unknown token within a
                 layer, or a value that fails its own rule.
         """
+        replacements: dict[str, Any] = {}
+        if "tones" in layers:
+            tones = layers.pop("tones")
+            if not isinstance(tones, Mapping):
+                raise ValidationError(
+                    f"'tones' must be a mapping of names to hex colours, got: "
+                    f"{type(tones).__name__}"
+                )
+            replacements["tones"] = {**self.tones, **tones}
         unknown = set(layers) - set(self.LAYERS)
         if unknown:
             raise ValidationError(
                 f"unknown theme layer(s) {sorted(unknown)}; known layers: {sorted(self.LAYERS)}"
             )
-        replacements: dict[str, Any] = {}
         for name, override in layers.items():
             layer_cls = self.LAYERS[name]
             if isinstance(override, layer_cls):
