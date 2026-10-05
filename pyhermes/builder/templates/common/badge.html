@@ -1,0 +1,36 @@
+{#
+  BADGE (#325) and STATUS DOT (#326) — a toned label, and the dot a status
+  column draws, from one partial so the two cannot drift.
+
+  The badge is an inline span on a light tint of its tone's semantic colour,
+  in that colour, set in the label face. Rounded in a browser and on paper.
+  The Word engine draws neither `border-radius` nor an inline element's
+  padding: it paints the span's background behind the text alone, so Outlook
+  shows a square label, and a non-breaking space either side, inside an mso
+  conditional, stands in for the horizontal padding. No VML: a roundrect is a
+  fixed box that cannot size itself to a label, and a shape inline in a line of
+  text is what #288's human check is still to confirm for #319's arrow.
+
+  The dot is the badge's shape with no label: a span holding one non-breaking
+  space, its background the tone's colour. A browser draws it as a circle the
+  size of `status_dot`; the Word engine shades the space, a small square.
+
+  badge(badge, gap=0) — badge is {"label", "tone"}, Badge.drawn(); a gap keeps
+                        that much space to its right and below it, and means the
+                        badge sits in a tag row, whose wrapper sets its type once.
+  dot(tone)           — tone is "positive", "negative" or "neutral".
+#}
+{% macro badge(badge, gap=0) -%}
+{%- set ink = theme.semantic[badge.tone] -%}{%- set fill = 0.14 | heat_color(theme.palette.surface, ink) -%}
+<span class="badge" style="display:inline-block; vertical-align:middle; white-space:nowrap;{% if not gap %} {{ badge_type() }}{% endif %} color:{{ ink }}; background-color:{{ fill }}; padding:{{ size.component.badge_pad_y }}px {{ size.component.badge_pad_x }}px; border-radius:3px;{% if gap %} margin:0 {{ gap }}px {{ gap }}px 0;{% endif %}"><!--[if mso]>&nbsp;<![endif]-->{{ badge.label | escape_html }}<!--[if mso]>&nbsp;<![endif]--></span>
+{%- endmacro %}
+
+{# The badge's type, once: on each badge, or on a tag row's wrapper. #}
+{% macro badge_type() -%}
+font-family:{{ font.label }}; font-size:{{ size.type.label }}px; line-height:{{ size.type.secondary_line | percent }}; font-weight:bold; letter-spacing:0.5px; text-transform:uppercase;
+{%- endmacro %}
+
+{% macro dot(tone) -%}
+{%- set across = size.component.status_dot -%}
+<span class="status-dot" style="display:inline-block; vertical-align:middle; width:{{ across }}px; height:{{ across }}px; border-radius:50%; background-color:{{ theme.semantic[tone] }}; font-size:{{ across }}px; line-height:{{ across }}px;">&nbsp;</span>&nbsp;
+{%- endmacro %}

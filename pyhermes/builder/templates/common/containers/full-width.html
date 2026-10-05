@@ -11,6 +11,7 @@
                        email that states none byte-identical (#126)
     section_title    — Optional heading text
     section_anchor   — The heading's `id`, empty when untitled (#183)
+    section_badge    — The title's badge, {label, tone}, or none (#325)
     background_color — Optional hex override; defaults to the theme's surface,
                        or its highlight tint when highlighted
     highlight        — When true, tints the band and adds hairline rules top and bottom
@@ -31,6 +32,7 @@
    Both spellings travel together per #125 — the attribute for Outlook's
    Word engine, the style because an attribute is not inherited by the
    prose inside the cell and inheritance is #126's whole mechanism. #}
+{% from "common/badge.html" import badge with context %}
 {% set edge_pad = size.frame.pad_x - (1 if highlight else 0) - (1 if section_border else 0) %}
 <tr{% if section_kept %} id="{{ section_kept }}"{% endif %}{% if section_break %} style="{{ section_break }}"{% endif %}>
   <td style="{% if highlight %}padding:1px 1px 1px 1px; background-color:{{ theme.palette.surface }}; border-top:1px solid {{ section_border or theme.palette.rule }}; border-bottom:1px solid {{ section_border or theme.palette.rule }};{% if section_border %} border-left:1px solid {{ section_border }}; border-right:1px solid {{ section_border }};{% endif %}{% else %}padding:0; background-color:{{ background_color | default(theme.palette.surface) }};{% if section_border %} border:1px solid {{ section_border }};{% endif %}{% endif %}">
@@ -40,6 +42,9 @@
         <td{% if section_align %} align="{{ section_align | escape_html }}"{% endif %} style="padding:{{ size.space.section_title_top }}px {{ edge_pad }}px {{ size.space.section_title_bottom }}px {{ edge_pad }}px;{% if section_align %} text-align:{{ section_align }};{% endif %}">
           <h2{% if section_anchor %} id="{{ section_anchor | escape_html }}"{% endif %} style="margin:0; font-family: {{ font.heading }}; font-size:{{ size.type.section }}px; font-weight:bold; color:{{ theme.text.heading }}; line-height:{{ size.type.title_line | percent }};">
             {{ section_title | escape_html }}
+{% if section_badge %}
+            {{ badge(section_badge) }}
+{% endif %}
           </h2>
         </td>
       </tr>

@@ -56,6 +56,7 @@ COLOURLESS = {
     "button.html": "a cell around common/cta.html, which takes the colours (#269)",
     "share.html": "a layout table sizing a block that paints its own colours (#357)",
     "trend-arrow.html": "a macro drawing the ink its caller resolved from the theme (#319)",
+    "tag-row.html": "inline boxes around common/badge.html, which takes the colours (#327)",
 }
 
 

@@ -117,6 +117,9 @@ AUDIT: dict[str, dict[str, int | float]] = {
         "sparkline_bar": 4,
         "sparkline_gap": 1,
         "bar_list_pad": 5,
+        "badge_pad_y": 2,
+        "badge_pad_x": 6,
+        "status_dot": 8,
         "list_ordinal_width": 22,
         "list_ordinal_gap": 12,
         "list_title_gap": 6,
@@ -636,11 +639,19 @@ class TestTheTokensAreLive:
     @pytest.fixture()
     def perturbed_html(self, monkeypatch: pytest.MonkeyPatch) -> str:
         from pyhermes.builder import sizing
-        from qa.fixtures import kitchen_sink
+        from qa.fixtures import kitchen_sink, labelled_layout
 
         scheme = _sentinel_scheme()
         monkeypatch.setitem(sizing.SIZE_SCHEMES, SizeTheme.SPACIOUS, scheme)
-        builder = kitchen_sink.build()
+        self.scheme = scheme
+        # kitchen_sink is the exhaustive fixture; labelled_layout carries the
+        # status column it has no bytes left for under the 90 KB warning (#326).
+        return "\n".join(
+            self._perturbed(build()) for build in (kitchen_sink.build, labelled_layout.build)
+        )
+
+    @staticmethod
+    def _perturbed(builder):
         # The document's own tokens are under test, and a per-object override
         # (#213) replaces one by design, so the fixture's overrides step aside.
         for section in builder._sections:
@@ -650,7 +661,6 @@ class TestTheTokensAreLive:
         # The page is the medium's since #159, so the sentinel has to reach
         # the render the way a real one would rather than through the scheme.
         builder._medium = replace(builder.medium, page_format=SENTINEL_PAGE)
-        self.scheme = scheme
         return builder.render()
 
     @pytest.mark.parametrize(

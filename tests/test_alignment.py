@@ -529,6 +529,7 @@ STRUCTURALLY_ALIGNED = {
     "Only": "it shows one block or none; the block keeps its own align (#365)",
     "BarList": "a label, a bar and a figure, each fixed in its own cell (#320)",
     "Sparkline": "a series of bars set from the left, its summary beneath (#321)",
+    "TagRow": "a run of inline tags, which follows the section's align as text does (#327)",
 }
 
 

@@ -30,7 +30,7 @@ from .enums import TextAlign, ThreeColumnRatio, TwoColumnRatio, VerticalAlign
 from .exceptions import ValidationError
 from .images import EmailImage, ImageAsset
 from .medium import check_media, walking_medium
-from .models import _validate_align, _validate_color, check_valign
+from .models import Badge, _validate_align, _validate_color, check_valign, coerce_badge
 from .sizing import (
     PHONE_FLOOR,
     STANDARD_SIZES,
@@ -121,6 +121,7 @@ class Container:
         border_color: str | None = None,
         keep_together: bool = False,
         break_before: bool = False,
+        badge: Badge | str | None = None,
     ):
         for value, name in (
             (background_color, "background_color"),
@@ -147,6 +148,11 @@ class Container:
                 raise ValidationError(f"{self._owner()}'s {name} is True or False, got: {flag!r}")
         self.keep_together = keep_together
         self.break_before = break_before
+        self.badge = coerce_badge(badge, f"{type(self).__name__}.badge")
+        if self.badge is not None and not title:
+            raise ValidationError(
+                f"{self._owner()}'s badge sits after its title (#325); give the section a title"
+            )
 
     @classmethod
     def spacing_tokens(cls) -> tuple[str, ...]:
@@ -211,7 +217,11 @@ class Container:
         undefined value, not an empty one — and that default now depends on
         ``highlight``, so the flag is always injected too.
         """
-        ctx: dict = {"section_title": self.heading(), "highlight": self.highlight}
+        ctx: dict = {
+            "section_title": self.heading(),
+            "section_badge": self.badge.drawn() if self.badge else None,
+            "highlight": self.highlight,
+        }
         if self.background_color:
             ctx["background_color"] = self.background_color
         # Always injected, empty when unset: the templates gate on it with
@@ -269,7 +279,12 @@ class Container:
         nothing. They are presentation, and a plain-text part has no surface
         for them to sit on.
         """
-        return join_blocks(underline(self.heading()), *(c.text() for c in self.components()))
+        return join_blocks(underline(self.titled()), *(c.text() for c in self.components()))
+
+    def titled(self) -> str:
+        """The title as the text part prints it: the heading, and its badge after it (#325)."""
+        heading = self.heading()
+        return f"{heading} {self.badge.text()}" if heading and self.badge else heading
 
     def render(self, engine: Renderer) -> str:
         raise NotImplementedError
@@ -446,6 +461,8 @@ class FullWidth(Container):
         anchor:           The title's ``id``; a slug of the title when unset.
         spacing:          A :class:`~pyhermes.builder.sizing.Spacing`, or a mapping of
                           the ``SPACING_TOKENS`` it moves, for this section.
+        badge:            A :class:`~pyhermes.builder.models.Badge`, or a label, after
+                          the title (#325); every section takes one.
     """
 
     template_path = "common/containers/full-width.html"
@@ -473,6 +490,7 @@ class FullWidth(Container):
         border_color: str | None = None,
         keep_together: bool = False,
         break_before: bool = False,
+        badge: Badge | str | None = None,
     ):
         super().__init__(
             title,
@@ -486,6 +504,7 @@ class FullWidth(Container):
             border_color=border_color,
             keep_together=keep_together,
             break_before=break_before,
+            badge=badge,
         )
         self.content = self._slot("content", content)
 
@@ -543,6 +562,7 @@ class FlowedColumns(FullWidth):
         border_color: str | None = None,
         keep_together: bool = False,
         break_before: bool = False,
+        badge: Badge | str | None = None,
     ):
         super().__init__(
             content,
@@ -557,6 +577,7 @@ class FlowedColumns(FullWidth):
             border_color=border_color,
             keep_together=keep_together,
             break_before=break_before,
+            badge=badge,
         )
         if isinstance(count, bool) or count not in self.COUNTS:
             raise ValidationError(
@@ -626,6 +647,7 @@ class TwoColumn(_SplitContainer):
         border_color: str | None = None,
         keep_together: bool = False,
         break_before: bool = False,
+        badge: Badge | str | None = None,
         stack: str | bool = "natural",
         valign: str | VerticalAlign = "top",
     ):
@@ -641,6 +663,7 @@ class TwoColumn(_SplitContainer):
             border_color=border_color,
             keep_together=keep_together,
             break_before=break_before,
+            badge=badge,
         )
         self.ratio = self._check_ratio(ratio)
         self.stack = self._check_stack(stack)
@@ -712,6 +735,7 @@ class ThreeColumn(_SplitContainer):
         border_color: str | None = None,
         keep_together: bool = False,
         break_before: bool = False,
+        badge: Badge | str | None = None,
         stack: str | bool = "natural",
         valign: str | VerticalAlign = "top",
     ):
@@ -727,6 +751,7 @@ class ThreeColumn(_SplitContainer):
             border_color=border_color,
             keep_together=keep_together,
             break_before=break_before,
+            badge=badge,
         )
         self.ratio = self._check_ratio(ratio)
         self.stack = self._check_stack(stack)
@@ -788,6 +813,7 @@ class FourColumn(_SplitContainer):
         border_color: str | None = None,
         keep_together: bool = False,
         break_before: bool = False,
+        badge: Badge | str | None = None,
         stack: str | bool = "natural",
         valign: str | VerticalAlign = "top",
     ):
@@ -803,6 +829,7 @@ class FourColumn(_SplitContainer):
             border_color=border_color,
             keep_together=keep_together,
             break_before=break_before,
+            badge=badge,
         )
         self.ratio = self._check_ratio(ratio)
         self.stack = self._check_stack(stack)

@@ -1,0 +1,48 @@
+Hermes Research
+===============
+
+Rates, Labelled
+
+
+Recommendations [PRELIMINARY]
+-----------------------------
+
+10Y gilt [UPGRADE]: Overweight
+Linkers [NEW]: Neutral
+Sterling credit [AT RISK]: Underweight
+
+
+Risk dashboard
+--------------
+
+Books against their limits
+
+Book         Rating           Status    Limit
+-----------  ---------------  --------  -----
+Rates
+Gilts        A [UPGRADE]      On track    62%
+Linkers      A-               Watch       81%
+Credit
+Sterling IG  BBB [DOWNGRADE]  Breach     104%
+Covered      AA [NEW]         On track    40%
+
+Hermes Risk
+
+
+Coverage [UPDATED]
+------------------
+
+The desk covers twelve markets this quarter, two more than last, and publishes
+on each at least monthly.
+
+Tags: Rates, Credit, FX
+
+
+Markets covered
+---------------
+
+Tags: Rates, Credit, FX, Equities, Commodities, Inflation, Emerging markets,
+Money markets, Covered bonds, Supranationals, Municipals, Securitised
+
+
+© Hermes Research

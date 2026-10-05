@@ -252,6 +252,8 @@ these rather than improvising:
   **#346** (deck layouts: a slide's source line, full-bleed and half-sheet pictures, the
   statement slide, divider agendas, a printed handout of slides and notes, and a `4 / 12`
   footer with a mark, #347–#353) is complete.
+  **#324** (labels and status: a `Badge` on a card, a cell or a section title, a status column
+  drawn as dots, and `TagRow`, #325–#328) is complete.
   **#259** is fixed: the size report names each body section, and `pyhermes.check` and
   `preview --lint` report on an email over 102 KB. **#281** is fixed: the README states current
   facts, and a test holds each example's committed `.html` to a fresh render. **#272** is done:

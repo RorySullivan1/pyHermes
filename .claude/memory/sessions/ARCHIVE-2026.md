@@ -397,3 +397,10 @@ Decisions and Log entries folded out of `INDEX.md` on 2026-08-29 (#143), verbati
   citations, glossary, the research-note fixtures — sessions/2026-10-01-research-apparatus.md
 - [2026-10-02] placement — **#361 implemented** (#362–#367): stack, keep/break, Only/OnlySections,
   slide layouts, placed_layout fixtures — sessions/2026-10-02-placement.md
+
+## Folded in from INDEX.md on 2026-10-05 (decisions of #259 and #280)
+
+- [2026-10-01] **The size report attributes bytes from the section tree, never new comments; `SizeError`
+  carries the refused HTML so the check measures over the limit** — `qa-harness.md` (#259)
+- [2026-10-01] **Prose markup is styled by a closed tag set from a template, the author's `style` wins, and
+  `h1`/`h2` are refused rather than demoted** — `design-axes.md` (#280)
