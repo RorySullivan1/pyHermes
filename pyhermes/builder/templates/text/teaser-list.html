@@ -1,0 +1,81 @@
+{#
+  TEASER LIST (#332) — further reading: a date, a linked title, a line of
+  summary, a thumbnail and tags per teaser, each teaser the same shape.
+
+  Each row of teasers is a layout table whose cells are `stack-column`s, so
+  two or three across stack on a phone with no change to the `@media` block;
+  an empty cell the gutter wide sits between two, and stacks to
+  nothing. A short last row is padded with empty cells to keep its columns
+  the others' width. The row table does not collapse its borders: the model is
+  inherited, and a stacked cell, a table on a phone, would drop the padding
+  that parts one teaser from the next. Alone in its column a thumbnail sits beside the copy, in a
+  column `teaser_thumb` wide so every teaser's copy starts at one edge;
+  across, it tops its column at the column's width. The width attribute is
+  Outlook's; the CSS cap is the print engine's (#201). The title is the link,
+  in the heading's colour so it reads on any ground. Tags are the tag row's
+  neutral badges.
+
+  Context:
+    subtitle — Optional italic standfirst
+    across   — Teasers to a row: 1 on paper and on a slide
+    share    — Each column's share of the cell, a percent
+    rows     — Lists of dicts: title, url, date, summary, image {src, alt, width, url}, tags
+#}
+{% from "common/badge.html" import badge, badge_type with context %}
+{% macro thumb(image) -%}
+<a href="{{ image.url | escape_html }}" style="text-decoration: none; border: 0;"><img src="{{ image.src | escape_html }}" alt="{{ image.alt | escape_html }}" width="{{ image.width }}" style="display: block; width: 100%; max-width: {{ image.width }}px; height: auto; border: 0;"></a>
+{%- endmacro %}
+{% macro copy(teaser) -%}
+{% if teaser.date %}
+        <p style="margin: 0 0 {{ size.space.caption_gap }}px 0; font-family: {{ font.label }}; font-size: {{ size.type.micro }}px; color: {{ theme.text.secondary }}; letter-spacing: 0.5px; text-transform: uppercase; line-height: {{ size.type.secondary_line | percent }};">{{ teaser.date | escape_html }}</p>
+{% endif %}
+        <p style="margin: 0; font-family: {{ font.heading }}; font-size: {{ size.type.body }}px; font-weight: bold; line-height: {{ size.type.title_line | percent }};"><a href="{{ teaser.url | escape_html }}" style="color: {{ theme.text.heading }}; text-decoration: none;">{{ teaser.title | escape_html }}</a></p>
+{% if teaser.summary %}
+        <p style="margin: {{ size.space.caption_gap }}px 0 0 0; font-family: {{ font.body }}; font-size: {{ size.type.secondary }}px; color: {{ theme.text.primary }}; line-height: {{ size.type.secondary_line | percent }};">{{ teaser.summary | escape_html }}</p>
+{% endif %}
+{% if teaser.tags %}
+        <div class="tag-row" style="margin: {{ size.space.caption_gap }}px 0 0 0; {{ badge_type() }}">
+{% for tag in teaser.tags %}
+          {{ badge(tag, size.space.caption_gap) }}
+{% endfor %}
+        </div>
+{% endif %}
+{%- endmacro %}
+{% if subtitle %}
+<p class="subtitle" style="font-family: {{ font.body }}; font-size: {{ size.type.secondary }}px; font-style: italic; color: {{ theme.text.secondary }}; margin: 0 0 {{ size.space.subtitle_gap }}px 0; line-height: {{ size.type.secondary_line | percent }};">{{ subtitle | escape_html }}</p>
+{% endif %}
+{% for row in rows %}
+{% set final_row = loop.last %}
+<table class="teaser-list" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
+  <tr>
+{% for teaser in row %}
+    <td class="stack-column" width="{{ share }}%" align="left" valign="top" style="width: {{ share }}%; text-align: left; vertical-align: top; padding: 0 0 {{ 0 if final_row and loop.last else size.space.block_gap }}px 0;">
+{% if teaser.image and across == 1 %}
+      <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+        <tr>
+          <td width="{{ size.component.teaser_thumb }}" valign="top" style="width: {{ size.component.teaser_thumb }}px; vertical-align: top; padding: 0 {{ size.space.block_gap }}px 0 0;">{{ thumb(teaser.image) }}</td>
+          <td align="left" valign="top" style="text-align: left; vertical-align: top; padding: 0;">
+{{ copy(teaser) }}
+          </td>
+        </tr>
+      </table>
+{% else %}
+{% if teaser.image %}
+      <div style="margin: 0 0 {{ size.space.caption_gap }}px 0;">{{ thumb(teaser.image) }}</div>
+{% endif %}
+{{ copy(teaser) }}
+{% endif %}
+    </td>
+{% if not loop.last or row | length < across %}
+    <td class="stack-column" width="{{ size.space.gutter }}" style="width: {{ size.space.gutter }}px; padding: 0;"></td>
+{% endif %}
+{% endfor %}
+{% for _ in range(across - row | length) %}
+    <td class="stack-column" width="{{ share }}%" style="width: {{ share }}%; padding: 0;"></td>
+{% if not loop.last %}
+    <td class="stack-column" width="{{ size.space.gutter }}" style="width: {{ size.space.gutter }}px; padding: 0;"></td>
+{% endif %}
+{% endfor %}
+  </tr>
+</table>
+{% endfor %}

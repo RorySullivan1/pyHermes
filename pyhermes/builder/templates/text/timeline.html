@@ -1,0 +1,58 @@
+{#
+  TIMELINE (#331) — dated milestones on a vertical rule.
+
+  Each event is a layout table of its own, so on paper `break-inside: avoid`
+  keeps one whole, and the tables stack with no gap between them. No cell
+  spans rows or columns: a browser shares a spanning cell's height among every
+  row it spans, which stretched a fixed marker, and the lint refuses a merged
+  body cell. The first row is the date, the marker and the title; the second
+  the rule and the body. The marker is a capsule as tall as the title's line,
+  drawn as two half-cells each bordered on three sides, so it meets the rule
+  above and below it with no gap. The rule is the left border of the right
+  half of the marker's column, which is the border's width the wider, so the
+  rule runs through the capsule's centre. Nothing runs above the first marker or below
+  the last, whose rule cell is the border's width wider so its copy keeps the
+  others' edge.
+
+  A done event's marker is filled in the accent, the next one is a ring in the
+  accent on its tint, and one still to come is a ring in the rule's tone. A
+  browser rounds the capsule; WeasyPrint and the Word engine draw a rectangle,
+  which reads as the same marker.
+
+  Context:
+    subtitle — Optional italic standfirst
+    events   — List of dicts: date, title, body, state, last
+#}
+{% set rule = size.component.timeline_rule %}
+{% set half = ((size.component.timeline_marker - rule) / 2) | round(0, "floor") | int %}
+{% set line = (size.type.body * size.type.body_line) | round | int %}
+{% set pad = size.component.table_cell_pad %}
+{% if subtitle %}
+<p class="subtitle" style="font-family: {{ font.body }}; font-size: {{ size.type.secondary }}px; font-style: italic; color: {{ theme.text.secondary }}; margin: 0 0 {{ size.space.subtitle_gap }}px 0; line-height: {{ size.type.secondary_line | percent }};">{{ subtitle | escape_html }}</p>
+{% endif %}
+{% for event in events %}
+{% set ink = theme.palette.accent if event.state else theme.palette.rule_dark %}
+{% set fill = theme.palette.accent if event.state == "done" else (0.2 | heat_color(theme.palette.surface, theme.palette.accent) if event.state == "next" else theme.palette.surface) %}
+<table class="timeline-event" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0"{% if medium.paged %} style="break-inside: avoid; page-break-inside: avoid;"{% endif %}>
+  <tr>
+    <td width="{{ size.component.timeline_date }}" align="right" valign="top" style="width: {{ size.component.timeline_date }}px; text-align: right; vertical-align: top; font-family: {{ font.label }}; font-size: {{ size.type.secondary }}px; color: {{ theme.text.secondary }}; line-height: {{ line }}px; padding: 0 {{ pad }}px 0 0;">{{ event.date | escape_html }}</td>
+    <td width="{{ half - rule }}" style="width: {{ half - rule }}px; padding: 0; font-size: 0; line-height: 0; background-color: {{ fill }}; border: {{ rule }}px solid {{ ink }}; border-right: 0; border-radius: {{ half }}px 0 0 {{ half }}px;"></td>
+    <td width="{{ half }}" style="width: {{ half }}px; padding: 0; font-size: 0; line-height: 0; background-color: {{ fill }}; border: {{ rule }}px solid {{ ink }}; border-left: 0; border-radius: 0 {{ half }}px {{ half }}px 0;"></td>
+    <td align="left" valign="top" style="text-align: left; vertical-align: top; font-family: {{ font.label }}; font-size: {{ size.type.body }}px; font-weight: bold; color: {{ theme.text.heading }}; line-height: {{ line }}px; padding: 0 0 0 {{ pad }}px;">{{ event.title | escape_html }}</td>
+  </tr>
+  <tr>
+    <td style="padding: 0;"></td>
+    <td width="{{ half }}" style="width: {{ half }}px; padding: 0; font-size: 0; line-height: 0;"></td>
+{% if event.last %}
+    <td width="{{ half + rule }}" style="width: {{ half + rule }}px; padding: 0; font-size: 0; line-height: 0;"></td>
+{% else %}
+    <td width="{{ half }}" style="width: {{ half }}px; padding: 0; font-size: 0; line-height: 0; border-left: {{ rule }}px solid {{ theme.palette.rule }};"></td>
+{% endif %}
+{% if event.body %}
+    <td align="left" valign="top" style="text-align: left; vertical-align: top; font-family: {{ font.body }}; font-size: {{ size.type.secondary }}px; color: {{ theme.text.primary }}; line-height: {{ size.type.secondary_line | percent }}; padding: 0 0 {{ 0 if event.last else size.component.timeline_gap }}px {{ pad }}px;">{{ event.body | escape_html }}</td>
+{% else %}
+    <td style="padding: 0 0 {{ 0 if event.last else size.component.timeline_gap }}px 0;"></td>
+{% endif %}
+  </tr>
+</table>
+{% endfor %}

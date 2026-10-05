@@ -38,6 +38,8 @@ from pyhermes.builder import (
     Divider,
     Email,
     EmailBuilder,
+    Event,
+    FactList,
     FlowedColumns,
     Footer,
     FullWidth,
@@ -55,9 +57,12 @@ from pyhermes.builder import (
     Sparkline,
     Stack,
     TagRow,
+    Teaser,
+    TeaserList,
     Term,
     TextBlock,
     ThreeColumn,
+    Timeline,
     TwoColumn,
 )
 from pyhermes.builder.engine import TemplateOverlay
@@ -338,49 +343,45 @@ def build(
                 ),
             )
         )
-        # PullQuote (#189): centred, attributed, the same band in every medium.
-        .section(
-            FullWidth(
-                title="In Their Words",
-                content=PullQuote(
-                    "Duration earned its place in the book again this quarter.",
-                    attribution="Head of Rates Strategy",
-                    align="center",
-                ),
-            )
-        )
         # A figure the prose wraps round on paper (#189); in an email it sits
-        # above the prose, placed by its own align.
+        # above the prose, placed by its own align. Under it a PullQuote (#189),
+        # centred and attributed, and the styled prose tags; one section holds all
+        # three, for the bytes the 90 KB warning leaves (#329).
         .section(
             FullWidth(
                 title="Desk Note",
-                content=TextBlock(
-                    "<p>The desk's view in brief: the steepener stays on into the next "
-                    "meeting, and linkers are the next addition.</p>",
-                    figure=ImageBlock(
-                        EmailImage.attached(_DESK_PNG, alt="The desk", width=120),
-                        align="right",
-                        wrap="right",
-                    ),
-                ),
-            )
-        )
-        # Every tag a prose field is styled on (#280), one left as the author styled it.
-        .section(
-            FullWidth(
-                title="Desk Detail",
-                content=TextBlock(
-                    "<h3>What changed this week</h3>"
-                    "<p>Three moves, set out in the "
-                    '<a href="https://example.com/rates">rates note</a>:</p>'
-                    "<ul><li>The front end repriced two cuts out.</li>"
-                    "<li>Breakevens widened on the energy print.</li></ul>"
-                    "<h4>What we would do</h4>"
-                    "<ol><li>Hold the steepener.</li><li>Add linkers on weakness.</li></ol>"
-                    "<blockquote>The curve is pricing a pause, not a pivot.</blockquote>"
-                    "<hr>"
-                    '<p>Levels as of the <a href="https://example.com/close" '
-                    'style="color: inherit;">London close</a>.</p>'
+                content=Stack(
+                    [
+                        TextBlock(
+                            "<p>The desk's view in brief: the steepener stays on into the "
+                            "next meeting, and linkers are the next addition.</p>",
+                            figure=ImageBlock(
+                                EmailImage.attached(_DESK_PNG, alt="The desk", width=120),
+                                align="right",
+                                wrap="right",
+                            ),
+                        ),
+                        PullQuote(
+                            "Duration earned its place in the book again this quarter.",
+                            attribution="Head of Rates Strategy",
+                            align="center",
+                        ),
+                        # Every tag a prose field is styled on (#280), one left as
+                        # the author styled it.
+                        TextBlock(
+                            "<h3>What changed this week</h3>"
+                            "<p>Three moves, set out in the "
+                            '<a href="https://example.com/rates">rates note</a>:</p>'
+                            "<ul><li>The front end repriced two cuts out.</li>"
+                            "<li>Breakevens widened on the energy print.</li></ul>"
+                            "<h4>What we would do</h4>"
+                            "<ol><li>Hold the steepener.</li><li>Add linkers on weakness.</li></ol>"
+                            "<blockquote>The curve is pricing a pause, not a pivot.</blockquote>"
+                            "<hr>"
+                            '<p>Levels as of the <a href="https://example.com/close" '
+                            'style="color: inherit;">London close</a>.</p>'
+                        ),
+                    ]
                 ),
             )
         )
@@ -491,36 +492,36 @@ def build(
             )
         )
         # MathBlock (#229) — solid bytes, never a real render, so the golden
-        # does not depend on matplotlib. Every field is set.
+        # does not depend on matplotlib. Every field is set. Beneath it, a
+        # multi-line display (#232), one image, right-aligned as a block; one
+        # section holds both, for the bytes the 90 KB warning leaves (#329).
         .section(
             FullWidth(
                 title="Portfolio Variance",
-                content=MathBlock(
-                    _EQUATION_PNG,
-                    latex=r"\sigma_p^2 = w^\top \Sigma w",
-                    width=110,
-                    caption="Portfolio variance[^1]",
-                    label="Equation",
-                    anchor="variance-identity",
-                    notes=["The covariance matrix is estimated over 36 months."],
-                    disclosure="The estimate assumes stable correlations.",
-                    align="left",
-                    spacing={"caption_gap": 5},
-                ),
-            )
-        )
-        # A multi-line display (#232), one image, right-aligned as a block.
-        .section(
-            FullWidth(
-                title="Tail Risk",
-                content=MathBlock(
-                    _TAIL_PNG,
-                    lines=[
-                        r"\text{VaR}_{99\%} = -q_{0.01}(r)",
-                        r"\text{ES}_{99\%} = \mathbb{E}[r \mid r \leq q_{0.01}]",
-                    ],
-                    width=103,
-                    caption="Value at risk and expected shortfall",
+                content=Stack(
+                    [
+                        MathBlock(
+                            _EQUATION_PNG,
+                            latex=r"\sigma_p^2 = w^\top \Sigma w",
+                            width=110,
+                            caption="Portfolio variance[^1]",
+                            label="Equation",
+                            anchor="variance-identity",
+                            notes=["The covariance matrix is estimated over 36 months."],
+                            disclosure="The estimate assumes stable correlations.",
+                            align="left",
+                            spacing={"caption_gap": 5},
+                        ),
+                        MathBlock(
+                            _TAIL_PNG,
+                            lines=[
+                                r"\text{VaR}_{99\%} = -q_{0.01}(r)",
+                                r"\text{ES}_{99\%} = \mathbb{E}[r \mid r \leq q_{0.01}]",
+                            ],
+                            width=103,
+                            caption="Value at risk and expected shortfall",
+                        ),
+                    ]
                 ),
             )
         )
@@ -584,10 +585,13 @@ def build(
             ThreeColumn(
                 ratio=ThreeColumnRatio.EQUAL,
                 title="Three Equal",
+                # A label above the title (#333).
+                kicker="Desk view",
                 anchor="thirds",
-                left=TextBlock("<p>First third.</p>"),
-                center=TextBlock("<p>Second third.</p>"),
-                right=TextBlock("<p>Final third.</p>"),
+                # Organising content (#329): a dated event, a fact, further reading.
+                left=Timeline([Event("14 Oct", "Earnings", state="done")]),
+                center=FactList({"AUM": 1200}),
+                right=TeaserList([Teaser("Rates outlook", "https://example.com/r", "2 Oct")]),
             )
         )
         .section(

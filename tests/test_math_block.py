@@ -13,6 +13,7 @@ import re
 import pytest
 
 from pyhermes.builder import ChartBlock, DataTable, FullWidth, MathBlock, TextBlock
+from pyhermes.builder.components import descendants
 from pyhermes.builder.email import Email
 from pyhermes.builder.engine import TemplateEngine
 from pyhermes.builder.exceptions import ValidationError
@@ -135,7 +136,8 @@ class TestTheGalleryHoldsIt:
         [block] = [
             c
             for section in kitchen_sink.build()._sections
-            for c in section.components()
+            # A block a Stack holds counts: the document reads leaves (#261).
+            for c in descendants(section.components())
             if isinstance(c, MathBlock) and c.label
         ]
         assert block.caption and block.label and block.anchor and block.notes

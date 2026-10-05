@@ -65,7 +65,7 @@ applies to and loads **only when a matching file is read** — so a session that
 |---|---|---|
 | `working-in-the-code.md` | any of `pyhermes/`, `qa/`, `tests/` | The annotated repo map, and the ten standing rules in full |
 | `builder-architecture.md` | `pyhermes/builder/**` | The four-layer model, the facts-flow-down ownership rule, the public API, images and the asset manifest, parameters, validation, exceptions, the hard constraints in full |
-| `design-axes.md` | theming / sizing / typography / enums / containers / `templates/**` | Colour, density, typeface and alignment — the three themes plus the axis that deliberately is not one — and spacing per object |
+| `design-axes.md` | theming / sizing / typography / enums / containers / organising / `templates/**` | Colour, density, typeface and alignment — the three themes plus the axis that deliberately is not one — spacing per object, and the organising objects (#329) |
 | `data-table.md` | `models.py`, `components.py`, `templates/analysis/**` | Columns, cells, row kinds, caption and row headers; groups, units, markers, formats, decimal alignment, scales and bars (#217) |
 | `glance.md` | `glance.py`, the arrow, bar-list, sparkline and hero templates, the cell bar | Data at a glance without images: the trend arrow as a shape, ranked and diverging bars, the sparkline and its limit, the hero figure and `hero_value` (#318) |
 | `disclosure.md` | `components.py`, `templates/analysis/**` + `media/**`, the shared partial | An exhibit's two kinds of fine print: attribution, and the compliance copy beneath it |
@@ -254,6 +254,8 @@ these rather than improvising:
   footer with a mark, #347–#353) is complete.
   **#324** (labels and status: a `Badge` on a card, a cell or a section title, a status column
   drawn as dots, and `TagRow`, #325–#328) is complete.
+  **#329** (organising content: `FactList`, `Timeline`, `TeaserList` and a `kicker` above any
+  section's title, #330–#334) is complete.
   **#259** is fixed: the size report names each body section, and `pyhermes.check` and
   `preview --lint` report on an email over 102 KB. **#281** is fixed: the README states current
   facts, and a test holds each example's committed `.html` to a fresh render. **#272** is done:

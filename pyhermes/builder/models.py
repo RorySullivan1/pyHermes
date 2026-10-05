@@ -670,6 +670,33 @@ def coerce_badge(value: "Badge | str | None", owner: str = "badge") -> "Badge | 
     return value
 
 
+def check_kicker(value: object, title: str | None, owner: str) -> str:
+    """
+    ``value`` as a section's kicker (#333): plain text within ``Config.kicker_max_chars``.
+
+    Raises:
+        ValidationError: On a non-string, a blank, an overlong label, or a
+            kicker on an untitled section, which would label nothing.
+    """
+    from pyhermes.config import get_config
+
+    if value is None:
+        return ""
+    if not isinstance(value, str) or not value.strip():
+        raise ValidationError(f"{owner}'s kicker is plain text, got: {value!r}")
+    if not title:
+        raise ValidationError(
+            f"{owner}'s kicker sits above its title (#333); give the section a title"
+        )
+    limit = get_config().kicker_max_chars
+    if len(value) > limit:
+        raise ValidationError(
+            f"{owner}'s kicker {value!r} is {len(value)} characters; a kicker takes at most "
+            f"{limit} (Config.kicker_max_chars). It orients the reader; the title says the rest."
+        )
+    return value
+
+
 @dataclass
 class Card:
     """

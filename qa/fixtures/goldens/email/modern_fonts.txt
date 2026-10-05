@@ -15,15 +15,12 @@ Every section below, linked to its heading
 
 Market Snapshot
 Sector Notes
-In Their Words
 Desk Note
-Desk Detail
 Long Read
 At a Glance
 Factor Returns
 Cumulative Performance
 Portfolio Variance
-Tail Risk
 Equal Columns
 Narrow then Wide
 Wide then Narrow
@@ -57,13 +54,6 @@ Energy: -0.7% (week)
 Crude gave back the prior week's gain.
 
 
-In Their Words
---------------
-
-    "Duration earned its place in the book again this quarter."
-    -- Head of Rates Strategy
-
-
 Desk Note
 ---------
 
@@ -72,9 +62,8 @@ Desk Note
 The desk's view in brief: the steepener stays on into the next meeting, and
 linkers are the next addition.
 
-
-Desk Detail
------------
+    "Duration earned its place in the book again this quarter."
+    -- Head of Rates Strategy
 
 What changed this week
 
@@ -157,10 +146,6 @@ $\sigma_p^2 = w^\top \Sigma w$
 
 The estimate assumes stable correlations.
 
-
-Tail Risk
----------
-
 Value at risk and expected shortfall
 
 $\text{VaR}_{99\%} = -q_{0.01}(r)$
@@ -202,14 +187,16 @@ A. Analyst
 Head of Research · research@example.com
 
 
+Desk view
 Three Equal
 -----------
 
-First third.
+14 Oct  Earnings (done)
 
-Second third.
+AUM:  1,200
 
-Final third.
+Rates outlook: https://example.com/r
+2 Oct
 
 
 Wide Left

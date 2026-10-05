@@ -200,6 +200,16 @@ class ComponentScale:
     badge_pad_y: int | float = 2
     badge_pad_x: int | float = 6
     status_dot: int | float = 8
+    #: Above and below each fact in a fact list (#330).
+    fact_pad: int | float = 6
+    #: A timeline's date column, its marker and the rule joining them (#331), and
+    #: the space under each event.
+    timeline_date: int | float = 96
+    timeline_marker: int | float = 10
+    timeline_rule: int | float = 2
+    timeline_gap: int | float = 14
+    #: A teaser's thumbnail in a one-column list (#332).
+    teaser_thumb: int | float = 120
 
     list_ordinal_width: int | float = 22
     list_ordinal_gap: int | float = 12
@@ -615,6 +625,11 @@ COMPACT_SIZES = SizeScheme().derive(
         "badge_pad_y": 1,
         "badge_pad_x": 5,
         "status_dot": 7,
+        "fact_pad": 4,
+        "timeline_date": 84,
+        "timeline_marker": 8,
+        "timeline_gap": 10,
+        "teaser_thumb": 96,
         "trend_arrow": 6,
         "sparkline_height": 18,
         "sparkline_bar": 3,
@@ -722,6 +737,11 @@ SPACIOUS_SIZES = SizeScheme().derive(
         "badge_pad_y": 3,
         "badge_pad_x": 8,
         "status_dot": 9,
+        "fact_pad": 8,
+        "timeline_date": 108,
+        "timeline_marker": 12,
+        "timeline_gap": 20,
+        "teaser_thumb": 144,
         "trend_arrow": 8,
         "sparkline_height": 28,
         "sparkline_bar": 5,
@@ -817,6 +837,11 @@ DENSE_SIZES = COMPACT_SIZES.derive(
         "badge_pad_y": 1,
         "badge_pad_x": 4,
         "status_dot": 6,
+        "fact_pad": 3,
+        "timeline_date": 76,
+        "timeline_marker": 7,
+        "timeline_gap": 8,
+        "teaser_thumb": 88,
         "trend_arrow": 5,
         "sparkline_height": 16,
         "card_pad_y": 6,
@@ -895,6 +920,12 @@ PRESENTATION_SIZES = SPACIOUS_SIZES.derive(
         "badge_pad_y": 3,
         "badge_pad_x": 9,
         "status_dot": 11,
+        "fact_pad": 9,
+        "timeline_date": 150,
+        "timeline_marker": 16,
+        "timeline_rule": 3,
+        "timeline_gap": 22,
+        "teaser_thumb": 180,
         "trend_arrow": 11,
         "sparkline_height": 40,
         "sparkline_bar": 8,
@@ -987,7 +1018,8 @@ _COMPONENT_TYPE_TOKENS: frozenset[str] = frozenset(
 )
 
 #: Component tokens that size a box rather than space it: the button, the
-#: column a list's ordinals sit in, a table cell's bar, a change's arrow, a sparkline and a dot.
+#: column a list's ordinals sit in, a table cell's bar, a change's arrow, a sparkline, a dot,
+#: a timeline's date column, marker and rule, and a teaser's thumbnail.
 _COMPONENT_BOX_TOKENS: frozenset[str] = frozenset(
     {
         "cta_width",
@@ -999,6 +1031,10 @@ _COMPONENT_BOX_TOKENS: frozenset[str] = frozenset(
         "sparkline_bar",
         "sparkline_gap",
         "status_dot",
+        "timeline_date",
+        "timeline_marker",
+        "timeline_rule",
+        "teaser_thumb",
     }
 )
 

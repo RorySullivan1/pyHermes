@@ -179,12 +179,14 @@ class Deck(Document):
         ground: str | None = None,
         image: EmailImage | None = None,
         image_side: str = "left",
+        kicker: str | None = None,
     ) -> Self:
         """
         Append the sections as one :class:`Slide`, or a ``Slide`` you built. Returns ``self``.
 
         Every other argument is the ``Slide``'s: ``layout``, ``side`` and
-        ``valign`` (#366, #355), the source line (#347) and the pictures (#348).
+        ``valign`` (#366, #355), the source line (#347), the pictures (#348)
+        and the kicker over the title (#333).
 
         Raises:
             ValidationError: For a slide's own reasons, a footnote, a picture too
@@ -203,6 +205,7 @@ class Deck(Document):
                 or background_image
                 or ground
                 or image
+                or kicker
                 or layout != "full"
                 or valign != "top"
                 or image_side != "left"
@@ -227,6 +230,7 @@ class Deck(Document):
                 ground=ground,
                 image=image,
                 image_side=image_side,
+                kicker=kicker,
             )
         return self._append(slide)
 

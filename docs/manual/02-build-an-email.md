@@ -326,6 +326,74 @@ email = (
 
 **Result:** a linked list of every titled section, filled in for you.
 
+## Fact boxes, timelines and further reading
+
+**When to use this:** a box of facts (inception, fund size, fees), a calendar of dated events, a
+"recent publications" list at the foot of a note, or a small label above a section's title.
+
+```python
+from pyhermes.builder import Event, FactList, Teaser, TeaserList, Timeline
+from pyhermes.builder.models import Cell
+
+facts_box = FactList(
+    {
+        "Inception": "12 March 2019",
+        "Fund size": "GBP 1.24bn",
+        "Ongoing charge": "0.45%",
+        "1 year": Cell("+3.4%", tone="positive"),
+    },
+    columns=2,
+)
+calendar = Timeline(
+    [
+        Event("9 Oct", "Gilt auction", "Long-dated supply.", state="done"),
+        Event("14 Oct", "UK CPI", "The services line matters most.", state="next"),
+        ("29 Oct", "FOMC", "A hold is priced."),
+    ]
+)
+reading = TeaserList(
+    [
+        Teaser("The long end reprices", "https://example.com/long-end", "2 Oct 2026",
+               "Term premium is back.", tags=["Rates"]),
+        Teaser("Credit at the tights", "https://example.com/credit", "28 Sep 2026",
+               "Quality over carry."),
+    ],
+    columns=2,
+)
+organised = (
+    EmailBuilder()
+    .metadata(facts)
+    .section(FullWidth(facts_box, title="Fund facts", kicker="Gilt Fund · Factsheet"))
+    .section(FullWidth(calendar, title="The calendar", kicker="Markets · Week 40"))
+    .section(FullWidth(reading, title="Further reading"))
+    .build()
+)
+print(organised.text())
+```
+
+**Result:** the facts in two columns of label and value, a vertical calendar whose markers show
+what has happened and what is next, and two teasers side by side, each title a link. Above the
+first two titles sits a small label in capitals. On a phone the columns stack. In the plain-text
+part the facts read `Inception:       12 March 2019`, each event `9 Oct   Gilt auction —
+Long-dated supply. (done)`, each teaser its title and address, and the label sits on the line
+above its title.
+
+**Notes:**
+
+- A `FactList` takes a dictionary, kept in the order you wrote it, or a list of
+  `(label, value)` pairs. A value can be text, a number (written by `value_format=`), or a
+  `Cell` whose `tone` colours it. One to three columns, no more than there are facts.
+- An `Event`'s `state` is `"done"`, `"next"` or left out. A timeline is always vertical, and on
+  paper no event is split across two sheets.
+- An event's body, a teaser's summary and a kicker are plain text: any `<` or `&` in them is
+  printed as written, not read as HTML.
+- A `Teaser` can carry a thumbnail, `image=EmailImage.attached(...)`; it travels with the email
+  like any other attached image. Two or three across sit side by side in an email, and in one
+  column on paper and on a slide. The address follows the same rules as every other link.
+- `kicker=` works on every section, and on a slide, where it sits over the slide's title. It
+  needs the section to have a title, and is at most 40 characters (`Config.kicker_max_chars`).
+  It is set in capitals by the email, so the plain-text part keeps your own capitals.
+
 ## How to build sections in a loop
 
 **When to use this:** the number of sections depends on your data.

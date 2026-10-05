@@ -26,6 +26,7 @@ from . import (
     a4_glance_layout,
     a4_labelled_layout,
     a4_long_table,
+    a4_organised_layout,
     a4_placed_layout,
     a4_portrait,
     a4_research_note,
@@ -46,6 +47,7 @@ from . import (
     minimal_footer,
     modern_fonts,
     no_header,
+    organised_layout,
     pitch_16_9,
     pitch_layouts_16_9,
     placed_layout,
@@ -112,6 +114,7 @@ def all_fixtures() -> dict[str, FixtureBuilder]:
         "placed_layout": placed_layout.build,
         "glance_layout": glance_layout.build,
         "labelled_layout": labelled_layout.build,
+        "organised_layout": organised_layout.build,
     }
 
 
@@ -141,6 +144,7 @@ def all_paged_fixtures() -> dict[str, PagedFixtureBuilder]:
         "a4_placed_layout": a4_placed_layout.build,
         "a4_glance_layout": a4_glance_layout.build,
         "a4_labelled_layout": a4_labelled_layout.build,
+        "a4_organised_layout": a4_organised_layout.build,
     }
 
 

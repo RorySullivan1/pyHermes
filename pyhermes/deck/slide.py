@@ -199,6 +199,8 @@ class Slide(Container):
         ground:           ``"light"`` or ``"dark"``, the tone the type is set for.
         image:            A picture taking half the sheet, edge to edge (#348), on
         image_side:       ``"left"`` or ``"right"``.
+        kicker:           A short label above the title, in the title band's top
+                          margin, so the title keeps its line (#333).
     """
 
     template_path = "deck/slide.html"
@@ -233,8 +235,15 @@ class Slide(Container):
         ground: str | None = None,
         image: EmailImage | None = None,
         image_side: str = "left",
+        kicker: str | None = None,
     ):
-        super().__init__(title=title, background_color=background_color, align=align, anchor=anchor)
+        super().__init__(
+            title=title,
+            background_color=background_color,
+            align=align,
+            anchor=anchor,
+            kicker=kicker,
+        )
         self._check_sections(sections)
         if notes is not None and not isinstance(notes, str):
             raise ValidationError(
@@ -377,9 +386,9 @@ class Slide(Container):
         return f"{source} as of {self.as_of}" if self.as_of else source
 
     def text(self) -> str:
-        """This slide as plain text: its title, underlined, then its sections and its source."""
+        """This slide as plain text: its title, kicked and underlined, its sections, its source."""
         return join_blocks(
-            underline(self.title or ""),
+            self.headed(),
             *(section.text() for section in self.sections),
             wrap(self.source_text()),
         )
@@ -465,8 +474,15 @@ class Slide(Container):
                 "as_of": self.as_of,
                 "background_image": self.background_image.src if self.background_image else "",
                 "picture": picture,
+                "kicker_rise": self.kicker_rise(scheme),
             },
         )
+
+    def kicker_rise(self, scheme: SizeScheme) -> int | float:
+        """How far the kicker lifts the title band's top padding: its line and its gap (#333)."""
+        if not self.kicker:
+            return 0
+        return math.ceil(scheme.type.label * scheme.type.secondary_line) + scheme.space.caption_gap
 
 
 @dataclass(frozen=True)

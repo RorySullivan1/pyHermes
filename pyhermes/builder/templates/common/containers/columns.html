@@ -28,6 +28,7 @@
     section_title    — Optional heading spanning every column
     section_anchor   — The heading's `id`, empty when untitled (#183)
     section_badge    — The title's badge, {label, tone}, or none (#325)
+    section_kicker   — The label above the title, {text, grounded}, or none (#333)
     background_color — Optional hex override; defaults to the theme's surface,
                        or its highlight tint when highlighted
     highlight        — When true, tints the band and adds hairline rules top and bottom
@@ -70,6 +71,7 @@
    Word engine, the style because an attribute is not inherited by the
    prose inside the cell and inheritance is #126's whole mechanism. #}
 {% from "common/badge.html" import badge with context %}
+{% from "common/kicker.html" import kicker with context %}
 {% set edge_pad = size.frame.pad_x - (1 if highlight else 0) - (1 if section_border else 0) %}
 {# The band also has to *fit*: 2x pad_x plus the computed content width is
    the whole frame, so without the pixel back the last column wraps. #}
@@ -79,6 +81,9 @@
     <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:{{ background_color | default(theme.palette.highlight_tint if highlight else theme.palette.surface) }};">
       <tr>
         <td{% if section_align %} align="{{ section_align | escape_html }}"{% endif %} style="padding:{{ size.space.section_title_top }}px {{ edge_pad }}px {{ size.space.section_title_bottom }}px {{ edge_pad }}px;{% if section_align %} text-align:{{ section_align }};{% endif %}">
+{% if section_kicker %}
+          {{ kicker(section_kicker) }}
+{% endif %}
           <h2{% if section_anchor %} id="{{ section_anchor | escape_html }}"{% endif %} style="margin:0; font-family: {{ font.heading }}; font-size:{{ size.type.section }}px; font-weight:bold; color:{{ theme.text.heading }}; line-height:{{ size.type.title_line | percent }};">
             {{ section_title | escape_html }}
 {% if section_badge %}

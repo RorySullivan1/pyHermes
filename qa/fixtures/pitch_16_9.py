@@ -4,9 +4,9 @@ A 16:9 pitch deck: the deck medium's gallery fixture (#301).
 A title slide, an agenda, two parts each opened by a divider, a KPI slide, a
 table slide (a measured paragraph over a table at 0.6 of the body), a chart
 slide with notes, a two-column slide anchored middle, a slide laid out with a
-sidebar (#366) and the closing disclosures. The title slide and the second
-divider are anchored middle (#355). Each slide opens on copy no
-other carries, so a test can find it on its sheet. Every ``Slide``,
+sidebar of figures and facts under a kicker (#366, #330, #333) and the closing
+disclosures. The title slide and the second divider are anchored middle (#355).
+Each slide opens on copy no other carries, so a test can find it on its sheet. Every ``Slide``,
 ``DividerSlide``, ``TitleSlide`` and ``ClosingSlide`` field is set somewhere
 away from its default, per standing rule 9, and every slide fits its body.
 """
@@ -23,8 +23,10 @@ from pyhermes.builder import (
     ChartBlock,
     Contents,
     DataTable,
+    FactList,
     FullWidth,
     HeroStat,
+    Stack,
     TextBlock,
     TwoColumn,
 )
@@ -224,17 +226,25 @@ def build(template_dir: Path | None = None) -> Deck:
         layout="sidebar",
         side=[
             FullWidth(
-                content=CardGroup(
+                content=Stack(
                     [
-                        KpiItem("10Y gilt", "4.21%", sublabel="+18 bps"),
-                        KpiItem("Term premium", "61 bps", sublabel="+12 bps"),
-                    ],
-                    orientation="vertical",
+                        CardGroup(
+                            [
+                                KpiItem("10Y gilt", "4.21%", sublabel="+18 bps"),
+                                KpiItem("Term premium", "61 bps", sublabel="+12 bps"),
+                            ],
+                            orientation="vertical",
+                        ),
+                        # A fact box under the figures (#330).
+                        FactList({"Duration": "7.2 yrs", "Fee": "0.45%"}),
+                    ]
                 ),
                 title="In figures",
                 highlight=True,
-            )
+            ),
         ],
+        # A label over the title, in the band's top margin (#333).
+        kicker="Positioning",
     )
     # One figure set alone beside what earned it (#322, #320): the statement the
     # deck-layouts epic's statement slide builds on.

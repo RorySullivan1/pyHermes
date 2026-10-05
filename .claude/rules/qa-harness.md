@@ -1249,3 +1249,16 @@ tests cover the email. `kitchen_sink` gains a two-tag `TagRow` only, because a s
 put it over the 90 KB warning; `TestTheTokensAreLive` now renders `labelled_layout` beside it
 for `status_dot` (`design-axes.md` has the numbers).
 
+## Organising content (#334)
+
+`organised_layout` (email) and `a4_organised_layout` (paged) build one set of sections
+(`qa/fixtures/_organised.py`): a two-column fact list under a kicker, a six-event timeline in
+every state beside a toned fact list, a three-column fact list on a dark band, a three-across
+teaser list with thumbnails and tags, a one-column one, and a closing note. `pitch_16_9`'s
+sidebar slide gains a fact list under its cards and a kicker over its title. `kitchen_sink`
+carries one of each object in *Three Equal* and a kicker over it, and four of its sections
+became two to pay for them (`design-axes.md` has the numbers). `tests/test_organising.py`
+holds the claims, including a browser measure of the rule meeting every marker and two PDF
+read-backs; it joins the `pdf` and `screenshots` jobs' lines. Nothing set, every other golden
+is byte-identical.
+

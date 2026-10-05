@@ -549,6 +549,10 @@ data.
     reveals it, which is why the guard lives with the screenshots. `Card.body` and
     `Footer.disclaimer` were already `div`s; the other three joined them. A test asserts
     all five, so a sixth cannot be added wrongly.
+  - **A timeline's body is plain text (#331), as `disclosure` is (#154).** An event's line of
+    detail is the one field there that could want markup, and a sixth raw-HTML field would
+    reopen the closed set. Widening later is additive and narrowing is not, so it is escaped,
+    and so are a teaser's summary and a section's kicker.
   - **Attributes** (`src`, `href`, `alt`, `<title>`) are always escaped, quotes included,
     so a value cannot break out of the attribute it sits in.
 

@@ -942,18 +942,24 @@ class TestTheSlatePreset:
 
 def _heat_colours(candidates: set[str]) -> set[str]:
     """
-    The candidates a heat scale (#227) or a callout's tint (#268) derives from a theme's tokens.
+    The candidates a heat scale (#227), a callout's tint (#268) or a timeline's
+    next marker (#331) derives from a theme's tokens.
 
-    A tint is interpolated from ``palette.surface`` toward a semantic token, so
-    it is theme-derived without being a token; one the filter cannot produce
-    from some theme's pair is still a colour that bypassed the theme.
+    A tint is interpolated from ``palette.surface`` toward a semantic token or
+    the accent, so it is theme-derived without being a token; one the filter
+    cannot produce from some theme's pair is still a colour that bypassed the theme.
     """
     from pyhermes.builder.filters import heat_color
 
     derived = {
-        heat_color(step / 1000, theme.palette.surface, getattr(theme.semantic, toward))
+        heat_color(step / 1000, theme.palette.surface, toward)
         for theme in (DEFAULT_THEME, SLATE_THEME)
-        for toward in ("positive", "negative", "neutral")
+        for toward in (
+            theme.semantic.positive,
+            theme.semantic.negative,
+            theme.semantic.neutral,
+            theme.palette.accent,
+        )
         for step in range(1001)
     }
     return candidates & derived
