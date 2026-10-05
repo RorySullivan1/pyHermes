@@ -4,6 +4,7 @@ Section surfaces (#265): a ground whose type stays readable, a border, a boxed b
 
 from __future__ import annotations
 
+import importlib.util
 import re
 
 import pytest
@@ -26,6 +27,8 @@ from pyhermes.builder import (
 )
 from pyhermes.builder.exceptions import ValidationError
 from pyhermes.builder.models import KpiItem, TableRow
+from pyhermes.document import EmptyBackMatter, EmptyCover, PagedDocument
+from pyhermes.pdf import available as pdf_available
 
 FACTS = {"email_subject": "S", "firm_name": "F", "campaign_name": "C"}
 NAVY = "#1B2A38"
@@ -267,3 +270,77 @@ class TestAButtonAndADivider:
             "50-50", Stack([Divider(), Button("Go", "https://example.com")]), TextBlock("<p>R</p>")
         )
         assert "v:roundrect" in _render(section)
+
+
+requires_pdf = pytest.mark.skipif(
+    not pdf_available() or importlib.util.find_spec("pypdfium2") is None,
+    reason='reading a sheet back needs the "[pdf]" and "[qa]" extras',
+)
+
+PAPER_FACTS = {"firm_name": "F", "campaign_name": "C"}
+TALL = "<p>" + "The desk covers twelve markets this quarter and publishes on each. " * 2 + "</p>"
+
+
+def _split(**kwargs) -> TwoColumn:
+    return TwoColumn("70-30", TextBlock(TALL), TextBlock("<p>Rates</p>"), title="Split", **kwargs)
+
+
+def _paged(*sections) -> PagedDocument:
+    document = PagedDocument(PAPER_FACTS, cover=EmptyCover(), back_matter=EmptyBackMatter())
+    for section in sections:
+        document.add_section(section)
+    return document
+
+
+def _ragged_rows(document: PagedDocument) -> list[str]:
+    """The rows at a navy band's top and foot that are navy across part of its width only."""
+    import pypdfium2
+
+    from pyhermes.pdf import render_pdf
+
+    sheet = pypdfium2.PdfDocument(render_pdf(document))[0]
+    image = sheet.render(scale=96 / 72).to_pil().convert("RGB")
+    px, (width, height) = image.load(), image.size
+    ink = tuple(int(NAVY[i : i + 2], 16) for i in (1, 3, 5))
+
+    def navy(x: int, y: int) -> bool:
+        return sum(abs(a - b) for a, b in zip(px[x, y], ink, strict=True)) < 12
+
+    widest = max(range(height), key=lambda y: sum(navy(x, y) for x in range(width)))
+    xs = [x for x in range(width) if navy(x, widest)]
+    left, right = xs[0], xs[-1]
+    rows = [y for y in range(height) if navy(left + 2, y)]
+    ragged = []
+    for y in (rows[0] - 1, rows[0], rows[-1], rows[-1] + 1):
+        dark = sum(navy(x, y) for x in range(left, right + 1))
+        if 0 < dark < right + 1 - left:
+            ragged.append(f"row {y}: {dark} of {right + 1 - left}px navy")
+    return ragged
+
+
+class TestABandsEdgeIsStraightOnPaper:
+    """
+    A column is an inline table, painted after every block background. Its own fill
+    covered the half-pixel row at a band's edge under the tallest column, so on paper
+    the band's cell paints the ground and the column none.
+    """
+
+    def test_on_paper_a_column_paints_no_fill_of_its_own(self):
+        html = _paged(_split(background_color=NAVY)).render()
+        columns = re.findall(r'class="stack-column"[^>]*style="([^"]*)"', html)
+        assert len(columns) == 2
+        assert not any("background-color" in style for style in columns)
+
+    def test_in_an_email_it_still_does(self):
+        columns = re.findall(r'class="stack-column"[^>]*style="([^"]*)"', _render(_split()))
+        assert all(f"background-color:{DEFAULT_THEME.palette.surface};" in s for s in columns)
+
+    @requires_pdf
+    def test_a_dark_split_ends_in_one_straight_edge(self):
+        document = _paged(_split(background_color=NAVY), FullWidth(TextBlock("<p>After.</p>")))
+        assert _ragged_rows(document) == []
+
+    @requires_pdf
+    def test_a_light_split_leaves_the_dark_band_after_it_whole(self):
+        after = FullWidth(TextBlock("<p>After.</p>"), title="After", background_color=NAVY)
+        assert _ragged_rows(_paged(_split(), after)) == []

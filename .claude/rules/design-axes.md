@@ -1009,6 +1009,14 @@ list above; the existing one was completed.
   `edge_pad` loses one for each, so a bordered split still fills the frame. A highlighted
   band with a border draws all four sides in the border colour. `border_color` without
   `border=True` raises, since it would draw nothing.
+- **On paper a split's column paints no fill; the band's cell does.** A column is an
+  `inline-table`, and CSS paints an inline after every block background, so its copy of the
+  ground covered the half-pixel row the next section owns at a fractional band edge. Only the
+  tallest column reaches the edge, so the band's foot grew a 1px tongue under it, or, with a
+  plain split before a dark band, the band's top lost a 1px notch. Both were in the gallery
+  (`a4_labelled_layout`, `a4_organised_layout`). The email keeps the fill, byte-identical.
+  The fill was redundant on paper: re-rastering every moved fixture, 35 sheets, changed those
+  two pixel rows and nothing else. `TestABandsEdgeIsStraightOnPaper` reads the raster.
 
 **A `Callout` names a tone, never a colour** (#268). Its fill is the highlight tint, or a
 tint of a semantic token through `heat_color` at 0.08, and its frame is the rule or that
