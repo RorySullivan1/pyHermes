@@ -4,11 +4,10 @@
 - pyHermes builds **documents** and renders each onto a **medium**: `pyhermes/builder` is the
   shared kit, `pyhermes/email`, `document`, `brochure` and `deck` are the media, and exporters sit on
   one contract — `delivery`+`gmail`+`outlook`, and `pdf`. Rationale: CLAUDE.md and `media.md`.
-- **Shipped through PR #374.** Epics #157–#220 and #218 (PRs #167–#314); deck bugs #315–#317
-  (PR #369); #361 (PR #370); #354 and #372 (PR #371); #318 (PR #373); #346 (PR #374, its CI
-  green on every job, the handout's determinism included). #219 DOCX closed not planned, with #300 PPTX.
-- **#324 implemented on this branch** (#325–#328): `Badge` on cards, cells and sections, status dots,
-  `TagRow`. **Open next, in order:** #329 and #335 (independent), #340 last (WeasyPrint probes, `[qr]`).
+- **Shipped through PR #376.** Epics #157–#220 and #218 (PRs #167–#314); deck bugs #315–#317
+  (PR #369); #361 (PR #370); #354 and #372 (PR #371); #318 (PR #373); #346 (PR #374); #324 (PR #376,
+  CI green on every job). #219 DOCX closed not planned, with #300 PPTX.
+- **Open next, in order:** #329 and #335 (independent), #340 last (WeasyPrint probes, `[qr]`).
   #288 is the owner's Outlook-desktop check, run on Windows.
 - The prose budget is live; the baseline is 44 and may only shrink.
 
@@ -46,7 +45,9 @@
   arrow, nor #325's square badge and dot (span shading, nbsp padding); all three join #288's check.
 - **`kitchen_sink` is at its 90 KB ceiling**: `modern_fonts` has ~400 bytes left (#324, `design-axes.md`).
 - **The suite runs on Windows since #372** (PR #371); no Windows CI job — the owner's run is the check.
-- **`epic-autoclose` works** (closed #273, #354, #361, #346). Still confirm each epic closed after its merge.
+- **`epic-autoclose` works** (closed #273, #354, #361, #346, #324). Still confirm each epic closed after its merge.
+- **A dark split leaves a light seam under its left column on paper**, on `main` since before #324;
+  queued as a suggested task, not yet an issue (repro in sessions/2026-10-05-labels.md).
 - **In this container, PDF byte-determinism tests flake** (no HarfBuzz-Subset), and screenshot
   tests skip unless `PYHERMES_CHROMIUM=/opt/pw-browsers/chromium-1194/chrome-linux/chrome`.
 - **Every issue or PR body is written without angle brackets** — GitHub's sanitizer has
@@ -67,8 +68,6 @@
 
 ## Log              (append-only pointers)
 - Older entries, and epic #157's, are in sessions/ARCHIVE-2026.md.
-- [2026-10-03] position — **#354 implemented** (#355–#360): valign, `width=` shares, the `ch` measure,
-  floated figures; with #372, merged in PR #371 — sessions/2026-10-03-position.md
 - [2026-10-04] memory — State, Threads and the epic order re-synced with GitHub after PR #371.
 - [2026-10-04] glance — **#318 implemented** (#319–#323): arrows, bar lists, sparklines, hero
   figures; the cell bar's CSS widths — sessions/2026-10-04-glance.md
@@ -78,3 +77,4 @@
   two log pointers folded into the archive.
 - [2026-10-05] labels — **#324 implemented** (#325–#328): badges, status dots, tag rows, the
   labelled fixtures — sessions/2026-10-05-labels.md
+- [2026-10-05] memory — State and Threads re-synced with GitHub after PR #376.

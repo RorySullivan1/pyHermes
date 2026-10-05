@@ -404,3 +404,8 @@ Decisions and Log entries folded out of `INDEX.md` on 2026-08-29 (#143), verbati
   carries the refused HTML so the check measures over the limit** — `qa-harness.md` (#259)
 - [2026-10-01] **Prose markup is styled by a closed tag set from a template, the author's `style` wins, and
   `h1`/`h2` are refused rather than demoted** — `design-axes.md` (#280)
+
+## Folded in from INDEX.md on 2026-10-05 (the #354 log pointer)
+
+- [2026-10-03] position — **#354 implemented** (#355–#360): valign, `width=` shares, the `ch` measure,
+  floated figures; with #372, merged in PR #371 — sessions/2026-10-03-position.md
