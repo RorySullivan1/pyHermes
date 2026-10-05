@@ -14,7 +14,7 @@
 <table class="figure hero-stat" role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
   <tr>
     <td{% if align %} align="{{ align | escape_html }}"{% endif %} style="padding: 0;{% if align %} text-align:{{ align }};{% endif %}">
-      <div style="font-family: {{ font.body }}; font-size: {{ size.component.hero_value }}px; font-weight: bold; color: {{ theme.semantic[tone] if tone else theme.text.heading }}; margin: 0 0 {{ size.component.card_value_gap }}px 0; line-height: {{ size.type.title_line | percent }};">{{ value | escape_html }}</div>
+      <div style="font-family: {{ font.body }}; font-size: {{ size.component.hero_value }}px; font-weight: bold; color: {{ theme.tone[tone] if tone else theme.text.heading }}; margin: 0 0 {{ size.component.card_value_gap }}px 0; line-height: {{ size.type.title_line | percent }};">{{ value | escape_html }}</div>
       <div style="font-family: {{ font.label }}; font-size: {{ size.type.label }}px; font-weight: bold; color: {{ theme.text.secondary }}; letter-spacing: 0.5px; margin: 0{% if context %} 0 {{ size.component.card_label_gap }}px 0{% endif %}; line-height: {{ size.type.secondary_line | percent }};">{{ label | escape_html }}</div>
 {% if context %}
       <div style="font-family: {{ font.body }}; font-size: {{ size.type.body }}px; color: {{ theme.text.primary }}; margin: 0; line-height: {{ size.type.body_line | percent }};">{{ context | escape_html }}</div>

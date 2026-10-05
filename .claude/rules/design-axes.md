@@ -1266,3 +1266,33 @@ projects to text that keeps its shape. They live in `pyhermes/builder/organising
   bytes under the warning; `TestTheTokensAreLive` renders `organised_layout` beside it for a
   thumbnail and a timeline's gaps.
 
+## Brand tones (#387)
+
+A brief needed a gold fact box and sky-framed boxes on one sheet, and the only route was to
+repaint `highlight_tint` and `semantic.neutral` for the whole document. The owner's rule stands,
+**a block takes a tone, never a colour**; this widens the set of tones and keeps them on the
+theme, so rule 4 holds.
+
+- **`Theme.tones` is a mapping of names to `#RRGGBB`**, validated at construction: a name is a
+  lowercase word (`TONE_NAME` in `models.py`) and may not shadow a semantic tone. It is a field
+  beside the four layers, not a fifth layer, because its keys are the caller's. It is excluded
+  from the hash, and the theme keeps its own copy. `derive(tones=...)` adds to what is declared.
+- **One resolver, `Theme.tone`**: the semantic three, then the brand tones, by name. Every
+  template reads `theme.tone[name]` where it read `theme.semantic[name]`, and `LegendEntry.fill`
+  reads it too, so `Badge`, `Cell`, `Card`, `HeroStat`, `BarItem`, a status dot, `Fact`,
+  `LegendEntry` and `Callout` took a brand tone with no change of their own, in every medium.
+  `theme.semantic.neutral` as a fallback colour is unchanged: it is a token, not a tone.
+- **One validation path, in two halves.** At construction `_validate_tone` refuses what is not
+  a word (a hex still names `color`); whether a word is declared is asked by `Document._add`,
+  which walks the section's own objects for every `tone` and every `statuses` and calls
+  `Theme.check_tone`, naming the theme's tones. It is a walk, not a list, so an object that
+  gains a tone later is checked without a line there. The cost: a misspelt tone on a block
+  rendered alone, outside a document, fails at render with a `KeyError`, not at construction.
+- **`chart_style(theme).tones`** returns the brand tones, so a series plots in the tone its
+  legend names. Appending them to `chart_colors` is #389's.
+- **Left open: a section's `background_color` still takes a hex**, as `Cover` and a slide's
+  ground do. Accepting a tone name there is a wider change to the closed colour-exception list,
+  so it is not in #387.
+- `toned_layout` and `a4_toned_layout` (`qa/fixtures/_toned.py`) name two brand tones on every
+  reader beside an untoned box; `tests/test_brand_tones.py` holds the claims, including a slide
+  and a brochure panel. Nothing set, every golden is byte-identical.

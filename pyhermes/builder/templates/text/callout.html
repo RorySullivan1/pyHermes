@@ -12,8 +12,8 @@
     tone    — "positive", "negative", "neutral", or empty for the highlight tint
     border  — Whether the box is framed
 #}
-{% set edge = theme.semantic[tone] if tone else theme.palette.rule %}
-{% set fill = (0.08 | heat_color(theme.palette.surface, theme.semantic[tone])) if tone else theme.palette.highlight_tint %}
+{% set edge = theme.tone[tone] if tone else theme.palette.rule %}
+{% set fill = (0.08 | heat_color(theme.palette.surface, theme.tone[tone])) if tone else theme.palette.highlight_tint %}
 <table class="callout" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
   <tr>
     <td bgcolor="{{ fill }}" style="padding:{{ size.component.callout_pad_y }}px {{ size.component.callout_pad_x }}px; background-color:{{ fill }};{% if border %} border:1px solid {{ edge }};{% endif %}">

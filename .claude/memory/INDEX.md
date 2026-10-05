@@ -4,13 +4,14 @@
 - pyHermes builds **documents** and renders each onto a **medium**: `pyhermes/builder` is the
   shared kit, `pyhermes/email`, `document`, `brochure` and `deck` are the media, and exporters sit on
   one contract — `delivery`+`gmail`+`outlook`, and `pdf`. Rationale: CLAUDE.md and `media.md`.
-- **Shipped through PR #380.** Epics #157–#220 and #218 (PRs #167–#314); deck bugs #315–#317
+- **Shipped through PR #382.** Epics #157–#220 and #218 (PRs #167–#314); deck bugs #315–#317
   (PR #369); #361 (PR #370); #354 and #372 (PR #371); #318 (PR #373); #346 (PR #374); #324 (PR #376);
-  #329 (PR #378); #335 (PR #380). #219 DOCX closed not planned, with #300 PPTX.
-- **#340 implemented** on `claude/integrate-claude-assets-pyhermes-d4spzb` (#341–#345), pushed, awaiting
-  its PR. #288 is the owner's Outlook-desktop check, run on Windows.
+  #329 (PR #378); #335 (PR #380); #340 (PR #382). #219 DOCX closed not planned, with #300 PPTX.
+- **#340 shipped** in PR #382 (#341–#345); the epic was closed by hand when its autoclose runs sat queued.
+  Its merge turned `main`'s `pdf` job red (a stamped deck's handout lacked `stamp_type`), fixed after.
+  #288 is the owner's Outlook-desktop check, run on Windows.
 - The prose budget is live; the baseline is 44 and may only shrink.
-- **Paper band seam fixed, uncommitted** in worktree `vibrant-almeida-8d2f96`: on paper a split's column paints
+- **Paper band seam fixed, PR #408 open** (branch `claude/vibrant-almeida-8d2f96`): on paper a split's column paints
   no fill (8 goldens moved by that one declaration). sessions/2026-10-05-1903-paper-band-seam.md
 
 ## Decisions        (append-only; supersede, never delete)
@@ -47,7 +48,12 @@
   fact set OVER the copy, translucent (under, grounds hid it), and no constructor `stamp=`; an aside is a
   value object rendered through `Callout`; a gallery QR is a module-matrix constant** — `media.md`, `brochure.md` (#340)
 
+- [2026-10-05] **A brand tone is a name on the theme (`Theme.tones`), resolved by one `Theme.tone` every template
+  reads, refused undeclared by a walk in `Document._add`; `section.background_color` stays a hex** — `design-axes.md` (#387)
+
 ## Threads          (open items; remove when closed)
+- **Epic #384 (brand tones) is under way**: #387 is on the branch, unmerged; #388 (solid fill), #389 (legend +
+  `chart_colors`) and #390 (dashed frame, column rule) remain. #388 and #389 build on `Theme.tone`.
 - **A share table holds its share in Word's engine** (owner, via COM, PR #371); a real Outlook client
   is still #288's. The measure is `ch`: in Georgia 75ch sets ~99 characters (`design-axes.md`).
 - **Outlook desktop's handling of `dir=rtl` on a reversed split is unverified here**, nor #319's VML
@@ -91,5 +97,7 @@
 - [2026-10-05] memory — State and Threads re-synced with GitHub after PR #380.
 - [2026-10-05] page-level — **#340 implemented** (#341–#345): landscape pages, stamps, asides, QR codes,
   `a4_wide_appendix` — sessions/2026-10-05-page-level.md
+- [2026-10-05] windows — the 7 reported Windows failures were already fixed by #372; its own drive-path
+  test still failed (a `WindowsPath` prints backslashes), fixed — sessions/2026-10-05-1657-windows-suite-recheck.md
 - [2026-10-05] paper-band-seam — 1px seam at a band edge on paper, fixed in `columns.html`;
   paint order, two forms — sessions/2026-10-05-1903-paper-band-seam.md

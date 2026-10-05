@@ -235,6 +235,7 @@ test (#60). `lint_html(html)` returns `Finding(rule_id, severity, location, mess
 | `outlook-unsupported-css` | error | `display:flex/grid`, `position:absolute/fixed` in an inline style |
 | `outlook-line-height` | error | A **unitless** `line-height`; Outlook Classic ignores it. `0` is allowed |
 | `outlook-transparent-background` | error | `background-color` carrying an alpha channel — Outlook demotes it to a background image |
+| `outlook-caption` | error | A `caption` Outlook can see, **emails only** (#403). The Word engine draws a nested table's caption above the copy before it and outside its frame; hide it with `mso-hide:all` and give Outlook an `[if mso]` copy. Suppressed inside `<!--[if !mso]><!-->` |
 | `empty-url` | error | `url()` with nothing in it; a client may resolve it against the message body |
 | `table-role` | error | A layout table with no `role`, **and** a data table carrying one (#114) |
 | `table-structure` | error | A data table with no `thead`, **paged documents only** (#176). A print engine repeats only a `thead` on each sheet |
@@ -344,8 +345,8 @@ Four decisions:
 - **Two target forms, told apart by the `:`** — a bare name is a gallery fixture; a
   `path/to/module.py:callable` is any zero-argument callable returning an `Email` *or* an
   `EmailBuilder`. Both are public API, so a caller should not have to remember which their own
-  function returns. Split on the **last** colon, so a Windows drive letter is not mistaken for
-  the separator. The output name is `{module_stem}-{callable}`, so two files both defining
+  function returns. Split on the **last** colon after any Windows drive (`C:/` or `C:\`) is
+  taken off, so a drive letter is never the separator, even with no callable (#372). The output name is `{module_stem}-{callable}`, so two files both defining
   `build()` do not collide in `output/`.
 - **Exit codes are the interface**: `0` clean, `1` lint errors, `2` unbuildable or
   unresolvable. Warnings alone do not fail. That is what lets it run in a hook rather than be
@@ -1289,3 +1290,11 @@ printed galleries, and installs `[qr]` for the adapter's own decode test.
 ratios**, which also drops their contents entries: 2,040 bytes back. The stamp costs 187 and
 the code's button about 1,500, so `modern_fonts` is at 91,198 bytes, 962 under the warning.
 Its code's image never reaches the email manifest, which `test_qr` asserts.
+
+## Brand tones (#387)
+
+`toned_layout` (email) and `a4_toned_layout` (paged) build one set of sections
+(`qa/fixtures/_toned.py`) on a theme declaring two brand tones: a gold fact box, a sky box beside
+an untoned one, toned and badged cards, a hero figure, a table with brand-toned cells and status
+dots, a bar list and a key. `kitchen_sink` is untouched, because it is at its size ceiling and a
+brand tone is a theme setting, not a component. Nothing set, every other golden is byte-identical.

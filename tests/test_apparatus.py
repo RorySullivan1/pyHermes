@@ -154,9 +154,20 @@ class TestExhibitNumbering:
         )
 
     def test_the_order_is_reading_order_in_the_markup(self, document):
+        """
+        In each engine's view of the markup. Since #403 a table caption is
+        written twice in an email: the ``caption`` every client reads, and an
+        ``[if mso]`` copy for Outlook, which hides the ``caption``. Reading the
+        raw string would count both.
+        """
         html = document.render()
-        found = re.findall(r"Exhibit (\d) · (\w+)", html)
-        assert found == [("1", "Factor"), ("2", "Cumulative"), ("3", "The")]
+        mso_block = re.compile(r"<!--\[if mso\]>(.*?)<!\[endif\]-->", re.DOTALL)
+        browser = mso_block.sub("", html)
+        hidden = re.compile(r"<caption[^>]*mso-hide:all[^>]*>.*?</caption>", re.DOTALL)
+        outlook = mso_block.sub(r"\1", hidden.sub("", html))
+        for view in (browser, outlook):
+            found = re.findall(r"Exhibit (\d) · (\w+)", view)
+            assert found == [("1", "Factor"), ("2", "Cumulative"), ("3", "The")]
 
     def test_the_order_is_the_same_in_the_text(self, document):
         found = re.findall(r"Exhibit (\d) · (\w+)", document.text())

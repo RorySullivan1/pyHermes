@@ -38,13 +38,15 @@ class ChartStyle(dict[str, Any]):
     matplotlib ``rc`` settings drawn from a theme, with the colours a chart picks by meaning.
 
     A ``dict``, so ``plt.rc_context(style)`` takes it as it is. ``positive`` and
-    ``negative`` colour a bar by its sign, and ``series`` is the colour cycle in
-    order, for a chart that sets colours itself.
+    ``negative`` colour a bar by its sign, ``series`` is the colour cycle in
+    order, for a chart that sets colours itself, and ``tones`` the theme's brand
+    tones by name, so a series plots in the tone its legend names (#387).
     """
 
     positive: str
     negative: str
     series: tuple[str, ...]
+    tones: dict[str, str]
 
 
 def chart_style(
@@ -75,6 +77,7 @@ def chart_style(
     style.positive = resolved.semantic.positive
     style.negative = resolved.semantic.negative
     style.series = series
+    style.tones = dict(resolved.tones)
     return style
 
 

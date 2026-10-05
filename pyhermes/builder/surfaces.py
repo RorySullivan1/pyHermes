@@ -20,12 +20,9 @@ from .exceptions import ValidationError
 from .filters import escape_html
 from .images import EmailImage
 from .medium import PAGED_MEDIA, walking_medium
-from .models import Badge, _validate_url
+from .models import Badge, _validate_tone, _validate_url
 from .sizing import Spacing
 from .textgen import LINE_WIDTH, link_line, wrap
-
-#: The semantic tones a callout may take; ``None`` is the highlight tint.
-TONES = ("positive", "negative", "neutral")
 
 _RULE = "-" * LINE_WIDTH
 
@@ -42,7 +39,8 @@ class Callout(CellShare, Component):
 
     Args:
         content: The block to box; any component, a ``Stack`` included.
-        tone:    ``"positive"``, ``"negative"`` or ``"neutral"``; unset for the highlight tint.
+        tone:    ``"positive"``, ``"negative"``, ``"neutral"`` or a tone the theme
+                 declares (#387); unset for the highlight tint.
         label:   A small heading above the block, such as "Key takeaway".
         border:  Whether the box is framed.
         spacing: Moves ``callout_pad_y`` and ``callout_pad_x``, the box's padding, and
@@ -73,8 +71,8 @@ class Callout(CellShare, Component):
                 f"Callout holds one component, got {type(content).__name__}. "
                 "Put several in a Stack."
             )
-        if tone is not None and tone not in TONES:
-            raise ValidationError(f"Callout tone must be one of {TONES} or None, got: {tone!r}")
+        if tone is not None:
+            _validate_tone(tone, "callout.tone")
         self.content = content
         self.tone = tone
         self.label = label

@@ -96,3 +96,11 @@ def test_the_font_ends_at_the_generic_and_never_warns(font_theme, role):
 def test_an_unknown_theme_is_refused():
     with pytest.raises(ValidationError):
         chart_style("neon")
+
+
+class TestBrandTones:
+    def test_the_style_carries_the_themes_brand_tones(self):
+        """A series plots in the tone its legend names (#387)."""
+        theme = DEFAULT_THEME.derive(tones={"brand": "#B8860B"})
+        assert chart_style(theme).tones == {"brand": "#B8860B"}
+        assert chart_style(DEFAULT_THEME).tones == {}

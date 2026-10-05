@@ -30,7 +30,7 @@
 {% for fact in column %}
         <tr>
           <td align="left" valign="top" style="text-align: left; vertical-align: top; font-family: {{ font.label }}; font-size: {{ size.type.secondary }}px; color: {{ theme.text.secondary }}; line-height: {{ size.type.body_line | percent }}; padding: {{ size.component.fact_pad }}px {{ size.component.fact_pad }}px {{ size.component.fact_pad }}px 0; border-bottom: 1px solid {{ theme.palette.rule }};">{{ fact.label | escape_html }}</td>
-          <td align="right" valign="top" style="text-align: right; vertical-align: top; font-family: {{ font.numeric if fact.numeric else font.body }}; font-size: {{ size.type.body }}px;{% if fact.numeric %} font-weight: bold;{% endif %} color: {{ theme.semantic[fact.tone] if fact.tone else theme.text.primary }}; line-height: {{ size.type.body_line | percent }}; padding: {{ size.component.fact_pad }}px 0; border-bottom: 1px solid {{ theme.palette.rule }};">{{ fact.value | escape_html }}</td>
+          <td align="right" valign="top" style="text-align: right; vertical-align: top; font-family: {{ font.numeric if fact.numeric else font.body }}; font-size: {{ size.type.body }}px;{% if fact.numeric %} font-weight: bold;{% endif %} color: {{ theme.tone[fact.tone] if fact.tone else theme.text.primary }}; line-height: {{ size.type.body_line | percent }}; padding: {{ size.component.fact_pad }}px 0; border-bottom: 1px solid {{ theme.palette.rule }};">{{ fact.value | escape_html }}</td>
         </tr>
 {% endfor %}
       </table>

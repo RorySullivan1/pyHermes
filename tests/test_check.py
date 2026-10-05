@@ -82,7 +82,8 @@ class TestLoadingADraft:
             load_target(drive)
 
     def test_a_drive_path_with_a_callable_splits_on_the_last_colon(self):
-        with pytest.raises(TargetError, match=r"No such file: C:/u/weekly\.py"):
+        # Either separator: a WindowsPath prints backslashes, a PosixPath keeps the slashes.
+        with pytest.raises(TargetError, match=r"No such file: C:[/\\]u[/\\]weekly\.py"):
             load_target("C:/u/weekly.py:build")
 
     def test_preview_loads_through_the_same_loader(self, draft):
