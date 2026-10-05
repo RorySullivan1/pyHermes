@@ -6,6 +6,8 @@ paths:
   - "pyhermes/builder/medium.py"
   - "pyhermes/builder/document.py"
   - "pyhermes/builder/templates/document/**/*"
+  - "pyhermes/builder/templates/common/stamp.html"
+  - "pyhermes/qr/**/*"
 ---
 
 # Media — one section tree, several destinations
@@ -439,3 +441,77 @@ would ship the bytes.
 on the email and on `DEFAULT_MEDIUM`. It is the medium's because it is geometry: the same
 density on a 578px column and a 1,124px slide body needs a cap on one and not the other, and
 "density is not width" stands. `design-axes.md` has the tokens and the numbers.
+
+## A page laid the other way up (#341)
+
+`Page(orientation="landscape")`, and the same keyword on `add_page`, lays that page's sheets
+on the medium's sheet turned on its side, at the same margin. `"portrait"` turns a landscape
+medium's; a page already that way up, a square sheet or a continuous one does not turn.
+
+**Probed under WeasyPrint 70 first**, on a 794 × 1123 sheet with a 76px margin:
+
+| Markup | Sheets |
+|---|---|
+| `page: landscape` on a body table's `tr` | four portrait: the property is inert on a row |
+| on a block or a table in the body's flow | landscape, with the running boxes and `target-counter` right |
+| the portrait content after it, no break | stayed on the landscape sheet: `page: auto` forces no break back |
+| the same, with `break-before: page` | back on portrait |
+| a zero-height leaf ahead of an opening landscape block | a blank portrait sheet first |
+
+- **So a turned page is a body table of its own.** `PagedDocument._body_context` lays the body
+  as runs of sheets one way up; the skeleton writes one `document-container` table a run, as
+  wide as its frame, the turned one carrying `page: landscape`, the run after it
+  `break-before: page`. Unturned, the body is one run and every golden is byte-identical.
+- **Each run's first section drops its leading break** in `_body_sections`, which the size
+  report shares, so `TestEverySectionIsFound` still finds every section.
+- **The page renders against the turned frame**, rebinding the size scheme as a `Panel`
+  does, so a table on it is as wide as the landscape frame (read back from the layout).
+- **The seed leaves take the turned page's name** when the body opens on one and no contents
+  or exhibits sheet sits between, which is the blank-sheet case above.
+- `a4_wide_appendix` carries it; `tests/test_landscape_pages.py` reads the sheet sizes, the
+  repeated head, the running boxes and two cross-references' page numbers back from the PDF.
+
+## A stamp across every sheet (#342)
+
+`DocumentMetadata.stamp`, plain text up to `STAMP_MAX` (24) characters. It is a fact, not a
+region's presentation, so every medium reads it: paper sets it across each sheet, an email in
+its header strip's first line, and the text part opens on `[DRAFT]`. **The issue also named
+`stamp=` on each document's constructor; that would be a second source for one fact, so the
+ownership bullet won.** An email with an `EmptyHeader` would drop the stamp silently, so
+`Email.validate` refuses it.
+
+**Probed on the paged, brochure and deck fixtures:** a `position: fixed` box repeats on every
+sheet the print engine lays out, the cover, a named page and a title slide included, and its
+word is in each sheet's text. **The issue asked for the stamp under the content; it goes over,
+translucent.** Under (`z-index: -1`) it vanished behind every painted ground: a section's
+surface, the brochure's tinted panel, the cover band. Over, in the theme's `rule` colour at
+0.6 opacity, the copy reads through it.
+
+- **Centred by `left: 50%` and half its width back**, one box the diagonal wide. A box wider
+  than the page area placed by `left: -50%` drifted; the glyph boxes now centre on every sheet
+  within 6pt (`tests/test_stamp.py`, read from the PDF).
+- **Its size is the sheet's**: a fifth of the short side, smaller where a long word would run
+  past three quarters of the diagonal at 0.78em a bold capital (measured), slanted along the
+  diagonal. `stamp_type()` in `builder/document.py` computes it, and the template reads it.
+- `kitchen_sink` and `a4_wide_appendix` say DRAFT, `pitch_16_9` CONFIDENTIAL.
+
+## A way back from paper to the web (#344)
+
+`QrCode(image, url, caption=None, size=96)` holds a PNG and the URL it encodes, on `MathBlock`'s
+split: **the component takes bytes, the `[qr]` extra renders them.** `pyhermes.qr.qr_code(url)`
+paints the symbol through segno (pure Python, no system library) in the theme's primary text
+on its surface, with whole-pixel modules enough for `Config.print_dpi` at the printed size,
+and writes no metadata chunk, so two renders share a Content-ID. `[qr]` is the sixth extra,
+by the owner's decision (2026-10-01).
+
+- **On paper it prints at `size` px** with the caption and the URL beneath. **In an email it is
+  the theme's `Button`, byte for byte**, since a code on a screen is pointless, and its image
+  leaves the manifest: `images()` reads the walk's medium against `PAGED_MEDIA`, which a test
+  holds to the shipped media's `paged`.
+- **A URL a phone cannot open is refused**: the builder's scheme check, then `http`, `https` or
+  `mailto` only. Below 72px it is refused as too small to scan.
+- **The gallery's code is a constant.** Goldens run where segno is absent, so
+  `qa/fixtures/_qr.py` holds the module matrix and `_png.matrix_png` draws it; a `[qr]` test
+  holds the constant to segno's encoding of its URL. `zxing-cpp`, a self-contained wheel, joins
+  `[qa]` as the decoder, and `tests/test_qr.py` decodes the code from a rasterised paged page
+  and the brochure's back panel.

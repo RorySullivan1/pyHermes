@@ -1,0 +1,27 @@
+{#
+  QR CODE — a printed way back to the web (#344), on paper only.
+
+  An email draws a Button instead (QrCode.render), so this template never
+  reaches a mail client. The image takes a fixed CSS width, as the paged
+  cover's does: a code that shrinks below its printed size stops scanning.
+  The URL is printed beneath it, for a reader without a camera.
+
+  Context:
+    image_src — The code's src, a cid: reference served from the manifest
+    image_alt — "QR code for" the URL
+    qr_size   — The printed width and height in px
+    url       — What the code encodes
+    caption   — A line above the URL; empty for none
+    align     — left, center or right; empty inherits
+#}
+<table class="figure qr-code" role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
+  <tr>
+    <td{% if align %} align="{{ align | escape_html }}"{% endif %} style="padding: 0;{% if align %} text-align: {{ align }};{% endif %}">
+      <div style="font-size: 0; line-height: 0;"><img src="{{ image_src | escape_html }}" alt="{{ image_alt | escape_html }}" width="{{ qr_size }}" height="{{ qr_size }}" style="display: inline-block; width: {{ qr_size }}px; height: {{ qr_size }}px; border: 0;"></div>
+{% if caption %}
+      <div style="font-family: {{ font.label }}; font-size: {{ size.type.label }}px; font-weight: bold; color: {{ theme.text.primary }}; margin: {{ size.space.caption_gap }}px 0 0 0; line-height: {{ size.type.secondary_line | percent }};">{{ caption | escape_html }}</div>
+{% endif %}
+      <div style="font-family: {{ font.label }}; font-size: {{ size.type.micro }}px; color: {{ theme.text.secondary }}; margin: {% if caption %}0{% else %}{{ size.space.caption_gap }}px 0 0 0{% endif %}; line-height: {{ size.type.secondary_line | percent }}; word-break: break-all;">{{ url | escape_html }}</div>
+    </td>
+  </tr>
+</table>

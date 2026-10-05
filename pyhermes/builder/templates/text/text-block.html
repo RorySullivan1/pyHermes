@@ -9,6 +9,9 @@
     figure_html  — A rendered ImageBlock to place with the prose; empty for none
     figure_wrap  — "left" or "right" to float it, on paper only; empty otherwise
     figure_width — Its display width, which a float needs
+    aside_html   — A rendered Aside, a callout (#343); empty for none
+    aside_side   — "left" or "right" to float it, on paper only; empty otherwise
+    aside_width  — Its width: a third of the column on paper
     measure_px   — The longest line in px where the cell is wider than the
                    measure (#358), else empty, so a column that fits gains no byte
     measure_place — How a capped block sits: centre or right by its alignment
@@ -22,6 +25,11 @@
    email it simply sits above, placed by its own align. #}
 {% if figure_html %}
 <div class="wrapped-figure{% if figure_wrap %} wrap-{{ figure_wrap }}{% endif %}"{% if figure_wrap %} style="width:{{ figure_width }}px;"{% endif %}>{{ figure_html }}</div>
+{% endif %}
+{# An aside (#343) is the second float a text block hosts, on the figure's
+   terms: beside the prose on paper, a callout above it in an email. #}
+{% if aside_html %}
+<div class="wrapped-aside{% if aside_side %} wrap-{{ aside_side }}{% endif %}" style="{% if aside_side %}width:{{ aside_width }}px;{% else %}margin:0 0 {{ size.space.block_gap }}px 0;{% endif %}">{{ aside_html }}</div>
 {% endif %}
 {# A DIV, not a p, and that is the fix for #130. This element carries the
    component's own font, size, colour, leading and alignment, and the field

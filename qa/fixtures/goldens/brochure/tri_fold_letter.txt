@@ -14,7 +14,16 @@ Why the curve
 -------------
 
 The curve steepened through the quarter as the front end repriced. Duration
-added to returns for the first time in four quarters.
+added to returns for the first time in four quarters, and the long end held
+its ground.
+
+------------------------------------------------------------------------------
+
+2S10S
+
+Two-year against ten-year gilt yields.
+
+------------------------------------------------------------------------------
 
     "Duration earned its place in the book again."
     -- Head of Rates Strategy
@@ -66,6 +75,8 @@ Hermes Research
 Hermes Research covers rates, credit and currencies for institutional clients.
 This brochure summarises the quarterly review; the full document carries the
 method and every exhibit.
+
+The full review online: https://example.com/rates-folded
 
 
 Inside flap

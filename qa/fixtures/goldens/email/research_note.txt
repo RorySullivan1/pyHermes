@@ -54,6 +54,14 @@ Stocks are ranked each month on their return over the prior twelve months,
 skipping the most recent (Jegadeesh and Titman 1993). The winner-minus-loser
 portfolio is set out in Exhibit 1, and the sample in Exhibit A.1.
 
+------------------------------------------------------------------------------
+
+WHY SKIP A MONTH
+
+The latest month is skipped, because short-horizon returns reverse.
+
+------------------------------------------------------------------------------
+
 Exhibit 1 · Momentum decile returns
 
 Decile        Return  Volatility

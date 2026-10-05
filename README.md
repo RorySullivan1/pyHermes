@@ -252,9 +252,10 @@ pip install -e ".[qa]"      # optional: Playwright + pypdfium2, for screenshots
 pip install -e ".[data]"    # optional: pandas, to build a table from a DataFrame
 pip install -e ".[charts]"  # optional: matplotlib, to build a chart from a Figure
 pip install -e ".[math]"    # optional: matplotlib, to render an equation from LaTeX
+pip install -e ".[qr]"      # optional: segno, to render a QR code to a web version
 ```
 
-**The optional extras are genuinely optional**, all five of them, and the suite proves it
+**The optional extras are genuinely optional**, all six of them, and the suite proves it
 rather than claiming it: their tests *skip* when the extra is absent, so `pip install -e ".[dev]"` and
 `pytest` run anywhere. `[pdf]` needs Pango and Cairo from the system, which is exactly why
 it is not in the floor.
@@ -888,6 +889,24 @@ render them for the theme the document uses. mathtext is a subset of TeX: `\leq`
 `\le`, `\dfrac` for a display fraction, and no `aligned` environment. Several lines are set
 as one block.
 
+**A printed page can turn, carry a stamp, wrap prose round an aside, and point back to the
+web.** Each degrades in an email in a stated way:
+
+```python
+from pyhermes.builder import Aside, FullWidth, TextBlock
+from pyhermes.document import PagedDocument
+from pyhermes.qr import qr_code   # the [qr] extra
+
+report = PagedDocument({"firm_name": "Hermes Research", "campaign_name": "Q3",
+                        "stamp": "DRAFT"})                     # every sheet, and the email's strip
+report.add_section(FullWidth(title="Summary", content=TextBlock(
+    "<p>The curve did the work.</p>",
+    aside=Aside("Weight less benchmark weight.", title="Active"))))  # a callout in an email
+report.add_page([FullWidth(title="Holdings", content=wide_table)],
+                orientation="landscape")                       # flattens in an email
+report.add_section(FullWidth(content=qr_code("https://example.com/q3")))  # a button in an email
+```
+
 ## What it enforces
 
 These are the failures that are invisible until a reader reports them, so they are checked
@@ -1152,7 +1171,8 @@ pyhermes/
 ├── check/        the portability check and `python -m pyhermes.check`
 ├── pdf/          the PDF exporter, on the adapters' contract — no network; profiles, attachments
 ├── data/         DataFrame -> table and Figure -> chart, each an optional extra
-└── math/         LaTeX -> equation image, the optional [math] extra
+├── math/         LaTeX -> equation image, the optional [math] extra
+└── qr/           URL -> QR code image, the optional [qr] extra
 qa/               the fixture galleries, goldens, screenshots, preview CLI
 tests/            pytest suite
 ```

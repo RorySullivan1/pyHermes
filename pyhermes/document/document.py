@@ -16,7 +16,7 @@ from typing import Any, ClassVar, Self
 from pyhermes.builder.components import contents_entries
 from pyhermes.builder.containers import Container
 from pyhermes.builder.document import Document, RegionFacts
-from pyhermes.builder.engine import TemplateOverlay
+from pyhermes.builder.engine import Renderer, TemplateOverlay, scheme_of
 from pyhermes.builder.enums import TextAlign
 from pyhermes.builder.medium import Medium
 from pyhermes.builder.models import DocumentMetadata
@@ -137,6 +137,8 @@ class PagedDocument(Document):
         background_color: str | None = None,
         align: str | TextAlign | None = None,
         spacing: Spacing | Mapping[str, int | float] | None = None,
+        *,
+        orientation: str | None = None,
     ) -> Self:
         """
         Append the sections as one :class:`Page`. Returns ``self`` for chaining.
@@ -145,7 +147,16 @@ class PagedDocument(Document):
         page is still a node in the tree, so the sections flatten as ever
         where a medium has no sheets.
         """
-        page = Page(sections, break_before, break_after, title, background_color, align, spacing)
+        page = Page(
+            sections,
+            break_before,
+            break_after,
+            title,
+            background_color,
+            align,
+            spacing,
+            orientation=orientation,
+        )
         return self.add_section(page)
 
     def leading_regions(self) -> tuple[RegionFacts, ...]:
@@ -174,7 +185,58 @@ class PagedDocument(Document):
         sections = super()._body_sections()
         if sections and sections[0].break_before:
             sections = [sections[0].opening(), *sections[1:]]
-        return sections
+        # A run of sheets turned the other way already opens one, as does the run after it (#341).
+        sheets = [self._sheet(section) for section in sections]
+        return [
+            section.opening() if n and sheets[n] != sheets[n - 1] else section
+            for n, section in enumerate(sections)
+        ]
+
+    def _sheet(self, section: Container) -> str:
+        """The named page ``section`` lays on: a turned page's orientation, else ``""``."""
+        if isinstance(section, Page) and section.turned_sheet(self._medium) is not None:
+            return section.orientation or ""
+        return ""
+
+    def _body_context(self, engine: Renderer, sections: list[Container]) -> dict[str, Any]:
+        """
+        The body as runs of sheets laid the same way up, each its own table (#341).
+
+        A named page applies only to a block in the body's flow, never to a
+        table row, so a page turned on its side closes the body table and opens
+        one of its own, as wide as its frame. The run after it breaks back onto
+        the medium's sheet; :meth:`_body_sections` has dropped the leading break
+        of each run's first section. Unturned, the body is one run.
+        """
+        runs: list[dict[str, Any]] = []
+        for section in sections:
+            page = self._sheet(section)
+            if not runs or runs[-1]["page"] != page:
+                turned = section.turned_sheet(self._medium) if isinstance(section, Page) else None
+                frame = scheme_of(engine).with_page(turned or self._medium.page_format).frame
+                breaks = bool(runs) and not page
+                runs.append({"page": page, "width": frame.width, "breaks": breaks, "sections": []})
+            runs[-1]["sections"].append(section)
+        if not runs:
+            frame = scheme_of(engine).frame
+            runs.append({"page": "", "width": frame.width, "breaks": False, "sections": []})
+        for run in runs:
+            run["html"] = "\n".join(section.render(engine) for section in run.pop("sections"))
+        turned_page = next((run["page"] for run in runs if run["page"]), "")
+        sheet = self._medium.page_format
+        opens_turned = bool(runs) and bool(runs[0]["page"]) and self._lists_empty()
+        return {
+            "body_runs": runs,
+            "turned_page": turned_page,
+            "turned_size": f"{sheet.height}px {sheet.width}px" if turned_page else "",
+            "seed_page": runs[0]["page"] if opens_turned else "",
+        }
+
+    def _lists_empty(self) -> bool:
+        """Whether no contents or exhibits sheet sits between the seed leaves and the body."""
+        return isinstance(self._contents, EmptyContentsPage) and isinstance(
+            self._exhibits, EmptyExhibitsPage
+        )
 
     def _listed(self, sheet: ContentsPage) -> dict[str, Any]:
         """What a contents sheet lists, as the fact it is handed."""

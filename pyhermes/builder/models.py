@@ -46,6 +46,21 @@ def _validate_color(value: str, name: str) -> None:
 _LANGUAGE_TAG = re.compile(r"^[A-Za-z0-9]+(-[A-Za-z0-9]+)*$")
 
 
+#: The longest stamp a sheet can carry across its diagonal at a readable size.
+STAMP_MAX = 24
+
+
+def _validate_stamp(value: str) -> None:
+    """Raise unless ``value`` is empty or one line of at most :data:`STAMP_MAX` characters."""
+    if not isinstance(value, str):
+        raise ValidationError(f"'metadata.stamp' must be a string, got: {type(value).__name__}")
+    if value and (not value.strip() or not value.isprintable() or len(value) > STAMP_MAX):
+        raise ValidationError(
+            f"'metadata.stamp' must be one line of 1 to {STAMP_MAX} printable "
+            f"characters, such as 'DRAFT', got: {value!r}"
+        )
+
+
 def _validate_language(value: str, name: str) -> None:
     """
     Raise unless value is shaped like a language tag.
@@ -225,6 +240,11 @@ class DocumentMetadata:
     date_range: str = ""
     issue_label: str = ""
     current_year: str = ""
+    #: A status word such as ``"DRAFT"`` on every sheet, or ``""`` for none
+    #: (#342). A fact, since every medium shows it: a paper medium sets it
+    #: across each sheet, an email in its header strip, and the text part
+    #: opens on it. Plain text, escaped, at most :data:`STAMP_MAX` characters.
+    stamp: str = ""
 
     #: Every colour and shadow the document renders with. A
     #: :class:`~pyhermes.builder.theming.Theme` instance or the name of a curated
@@ -259,6 +279,7 @@ class DocumentMetadata:
         from .typography import resolve_font_theme
 
         _validate_language(self.language, "metadata.language")
+        _validate_stamp(self.stamp)
 
         # Resolve only to check: a preset name that names nothing is a typo,
         # and a typo belongs to construction, not to render. The field keeps
@@ -354,11 +375,10 @@ class EmailMetadata(DocumentMetadata):
         "footer",
     }
 
-    #: Document facts the strip renders. One today, and it stays a fact
-    #: rather than moving onto the region with the box's presentation: it is
-    #: legal copy that belongs to the *document*, the same call the footer's
-    #: two URLs get.
-    HEADER_FACTS = ("header_disclaimer",)
+    #: Document facts the strip renders. Each stays a fact rather than moving
+    #: onto the region with the box's presentation: legal copy and a status
+    #: belong to the *document*, the same call the footer's two URLs get.
+    HEADER_FACTS = ("header_disclaimer", "stamp")
 
     #: Document facts the masthead renders. Passed *down* to it; the banner
     #: layers them over its own context, so it cannot shadow one.

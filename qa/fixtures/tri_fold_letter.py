@@ -13,6 +13,7 @@ from pathlib import Path
 
 from pyhermes.brochure import TRI_FOLD_LETTER, Brochure, Panel
 from pyhermes.builder import (
+    Aside,
     AuthorBlock,
     CardGroup,
     ChartBlock,
@@ -23,6 +24,7 @@ from pyhermes.builder import (
     ImageBlock,
     NumberedList,
     PullQuote,
+    QrCode,
     TextBlock,
 )
 from pyhermes.builder.enums import CardOrientation
@@ -31,6 +33,8 @@ from pyhermes.builder.models import Card, NumberedItem
 
 from . import _paged
 from ._png import solid_png
+from ._qr import URL as QR_URL
+from ._qr import qr_png
 
 #: A chart that fits a full panel's copy (356px less a 24px inset a side) and
 #: prints at 300 dpi there: 300px displayed needs 938 source pixels (#188).
@@ -91,8 +95,10 @@ def panels() -> list[Panel]:
                     content=TextBlock(
                         "<p>The curve steepened through the quarter as the front end "
                         "repriced. Duration added to returns for the first time in "
-                        "four quarters.</p>",
+                        "four quarters, and the long end held its ground.</p>",
                         drop_cap=True,
+                        # A boxout the prose wraps round inside the panel (#343).
+                        aside=Aside("Two-year against ten-year gilt yields.", title="2s10s"),
                     ),
                 ),
                 FullWidth(
@@ -155,6 +161,8 @@ def panels() -> list[Panel]:
                         "exhibit.</p>"
                     ),
                 ),
+                # The way back to the web (#344): a code printed at one inch.
+                FullWidth(content=QrCode(qr_png(), QR_URL, caption="The full review online")),
             ],
             title="Back cover",
             align="right",

@@ -89,7 +89,8 @@ class TestOneSlideIsOneSheet:
         assert "Important information" in sheets[-1]
         for slide, sheet in zip(deck.slides, sheets[1:-1], strict=True):
             assert slide.title in sheet
-            assert str(deck.number(slide)) in sheet.split()[-1]
+            # The stamp (#342) is extracted last; the folio is the word before it.
+            assert str(deck.number(slide)) in sheet.replace(pitch_16_9.STAMP, "").split()[-1]
 
     def test_the_notes_never_reach_the_pdf(self):
         assert not any("ZEBRANOTES7" in sheet for sheet in _sheets(pitch_16_9.build()))

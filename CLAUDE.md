@@ -23,7 +23,8 @@ PDF — and a PDF can ride a message as an attachment, rendered under a screen p
 Jinja2 alone. Figures arrive as numbers:
 `pyhermes/builder/formats.py` formats them and `pyhermes/data/` adapts a DataFrame or a Figure, each
 adapter behind an optional extra. Equations arrive as LaTeX: `pyhermes/math/` renders them to the
-image a `MathBlock` takes, behind the `[math]` extra.
+image a `MathBlock` takes, behind the `[math]` extra; and a URL arrives as a QR code from
+`pyhermes/qr/`, the image a `QrCode` takes, behind the sixth extra, `[qr]`.
 
 ## Commands
 
@@ -38,6 +39,7 @@ pip install -e ".[pdf]"       # optional: WeasyPrint, for PDF (needs Pango/Cairo
 pip install -e ".[data]"      # optional: pandas, for DataFrame -> DataTable
 pip install -e ".[charts]"    # optional: matplotlib, for Figure -> chart image
 pip install -e ".[math]"      # optional: matplotlib, for LaTeX -> equation image
+pip install -e ".[qr]"        # optional: segno, for URL -> QR code image
 python -m qa.screenshots      # gallery → output/screenshots/ (gitignored)
 pytest --update-goldens       # the ONLY way to regenerate a golden (#58)
 python -m qa.preview kitchen_sink --lint --screenshot --open   # an email
@@ -73,7 +75,7 @@ applies to and loads **only when a matching file is read** — so a session that
 | `math.md` | `pyhermes/math/**`, the math tests, `templates/media/math-block.html` | Equations: the component takes bytes and the extra renders them, the fontset and scale, the mathtext subset, the multi-line shim, the theme limitation, the Outlook gap |
 | `plain-text.md` | `textgen.py`, `email.py` | The second projection of the section tree |
 | `apparatus.md` | `apparatus.py`, `document.py`, `research.py`, `exhibits.py`, the notes / contents / running-box / bibliography / glossary / figure-grid / source-line templates | Exhibit numbers, footnotes, contents, cross-references, the running section, the list of exhibits, lettered appendices, citations, the glossary, grouped exhibits and a section's source line — Python numbers all but the page |
-| `media.md` | `pyhermes/email/`, `pyhermes/document/`, `pyhermes/pdf/`, `medium.py`, `document.py`, `templates/document/**` | The medium model, the page, the template fork rule, each medium's regions, the exporter's resource policy |
+| `media.md` | `pyhermes/email/`, `pyhermes/document/`, `pyhermes/pdf/`, `pyhermes/qr/`, `medium.py`, `document.py`, `templates/document/**` | The medium model, the page, the template fork rule, each medium's regions, the exporter's resource policy, landscape pages, the stamp and the QR code (#340) |
 | `digital-pdf.md` | `pyhermes/pdf/**`, `pyhermes/delivery/message.py`, the digital-PDF tests | The `PdfProfile` and its two presets, attachments and the message's size budget, metadata and determinism, the PDF/UA decision with its numbers, and why a screen PDF is not a medium |
 | `brochure.md` | `pyhermes/brochure/**`, `templates/brochure/**`, the editorial partial | Folds, the panel, imposition, bleed and marks, the editorial primitives and each one's email degradation |
 | `deck.md` | `pyhermes/deck/**`, `templates/deck/**`, the deck fixtures and tests | The slide against the panel and the page, the bands, numbering and parts, overflow, notes as a third projection, the `presentation` density and its measurements, and why there is no PowerPoint export |
@@ -256,6 +258,9 @@ these rather than improvising:
   drawn as dots, and `TagRow`, #325–#328) is complete.
   **#329** (organising content: `FactList`, `Timeline`, `TeaserList` and a `kicker` above any
   section's title, #330–#334) is complete.
+  **#340** (page-level presentation for print: a landscape `Page` in a portrait document, a
+  `stamp` on every sheet, an `Aside` the prose wraps round, and `QrCode` behind the sixth
+  extra, `[qr]`, #341–#345) is complete.
   **#335** (exhibits that group: `FigureGrid`'s lettered panels in one numbered exhibit, a
   chart's key stated in HTML by `Legend`, and one `source=` line for a whole section, #336–#339)
   is complete.

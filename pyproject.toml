@@ -70,6 +70,10 @@ qa = [
     # *system* binary to an extra that is meant to be `pip install` and
     # nothing else, which is the whole reason [qa] is separable.
     "pypdfium2~=5.13",
+    # Reads a printed QR code back from a raster (#344), so a test can say the
+    # code on the sheet decodes to its URL. A self-contained wheel, for the
+    # reason pypdfium2 is: no system library inside an extra.
+    "zxing-cpp~=3.0",
 ]
 
 # The PDF exporter (#164) is a third extra, on the [qa] reasoning exactly: it
@@ -102,6 +106,12 @@ charts = [
 # reason: an equation author is not a chart author. Same pin as [charts].
 math = [
     "matplotlib~=3.11",
+]
+
+# The QR renderer (pyhermes/qr, #344), the sixth extra by decision (2026-10-01).
+# segno is pure Python with no system library, so the extra installs anywhere.
+qr = [
+    "segno~=1.6",
 ]
 
 # Classic Outlook's drafts on Windows, through COM (pyhermes/outlook/desktop.py, #279).
@@ -184,6 +194,11 @@ module = [
     "weasyprint.*",
     "pypdfium2",
     "pypdfium2.*",
+    # The [qr] backend, and the decoder [qa] reads a printed code back with (#344).
+    "segno",
+    "segno.*",
+    "zxingcpp",
+    "zxingcpp.*",
 ]
 ignore_missing_imports = true
 

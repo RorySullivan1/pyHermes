@@ -39,6 +39,11 @@
        appear on it. A zero margin renders no margin box at all, which is the
        shortest way to say "not here" without repeating every box by name. #}
     @page cover { margin: 0; }
+{% if turned_page %}
+    {# A page laid the other way up (#341): the medium's sheet on its side,
+       with the same margin and running boxes. #}
+    @page {{ turned_page }} { size: {{ turned_size }}; }
+{% endif %}
 
     body {
       margin: 0;
@@ -135,24 +140,33 @@
   </style>
 </head>
 <body>
+{% if stamp %}
+{% include "common/stamp.html" %}
+{% endif %}
 
 {{ cover_html }}
   {# Zero-height leaves where a following running box seeds its fallback.
      A leaf, because a string set on an element spanning sheets -- the body,
      the document table -- wins on every sheet it spans and the section
      titles below would never show. After the cover, because an element
-     ahead of a named page opens a blank sheet of its own. #}
-  <div class="running-header-start"></div><div class="running-footer-start"></div>
+     ahead of a named page opens a blank sheet of its own, which is why the
+     leaves take a turned page's name when the body opens on one (#341). #}
+  <div class="running-header-start"{% if seed_page %} style="page: {{ seed_page }};"{% endif %}></div><div class="running-footer-start"{% if seed_page %} style="page: {{ seed_page }};"{% endif %}></div>
 {{ contents_html }}{{ exhibits_html }}
 
   {# The body table is frame.width, not frame.inner: every container computes
      its column widths from the frame and pads inside that, so narrowing the
      table here would overflow each split by its own padding. #}
-  <table class="document-container" role="presentation" width="{{ size.frame.width }}"
+  {# One table per run of sheets laid the same way up (#341): a named page
+     applies to a block in the body's flow and never to a table row, so a
+     turned page is a table of its own, as wide as its frame. #}
+{% for run in body_runs %}
+  <table class="document-container" role="presentation" width="{{ run.width }}"
          cellpadding="0" cellspacing="0" border="0"
-         style="width:{{ size.frame.width }}px; background-color:{{ theme.palette.surface }};">
-{{ sections_html }}
+         style="width:{{ run.width }}px; background-color:{{ theme.palette.surface }};{% if run.page %} page: {{ run.page }};{% endif %}{% if run.breaks %} break-before: page; page-break-before: always;{% endif %}">
+{{ run.html }}
   </table>
+{% endfor %}
 
 {{ back_matter_html }}
 

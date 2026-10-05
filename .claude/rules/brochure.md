@@ -120,6 +120,7 @@ construction check. It sees vertical overflow only. The answer was also posted o
 | `FlowedColumns` | one passage through `column-count` columns | a `FullWidth`, byte for byte |
 | `TextBlock(figure=ImageBlock(wrap=...))` | the image floated, the prose wrapping | the image above the prose, by its `align` |
 | `Panel(background_image=...)` | a picture to the bleed | not drawn (a panel flattens) |
+| `TextBlock(aside=Aside(...))` | a boxout floated a third of the column wide, the prose wrapping | a `Callout` above the prose (#343) |
 
 - **The drop cap is a real element.** A floated `::first-letter` is laid out after the first
   line in WeasyPrint, so the line ran over the letter, whether the pseudo-element sat on the
@@ -142,8 +143,8 @@ construction check. It sees vertical overflow only. The answer was also posted o
 ## Non-goals, as decisions
 
 No CMYK, ICC or PDF/X. No saddle-stitch or perfect-bound imposition. No dielines, die-cut,
-spot UV, foil or stock metadata. Fold guides appear on a proof only. A sixth editorial
-primitive is a new issue with its own case.
+spot UV, foil or stock metadata. Fold guides appear on a proof only. A seventh editorial
+primitive is a new issue with its own case, as #343 was for the sixth.
 
 ## Anchoring a panel's copy, and floated charts and equations (#355, #359)
 
@@ -157,3 +158,24 @@ panel flattens and the field writes nothing.
 `ChartBlock(wrap=)` and `MathBlock(wrap=)` join `ImageBlock`'s float through
 `TextBlock(figure=)`: one `check_wrap`, the same width rule, the same refusal of a label or a
 note. In an email each sits above the prose, its own markup byte for byte as unhosted.
+
+## The aside, the sixth primitive (#343)
+
+**The case:** a boxout (a definition, a key number, a method note) is the commonest editorial
+device the set lacked, and it needs no new layout model: it is a second float a `TextBlock`
+hosts, on `figure`'s terms. `Aside(body, title=None, side="right", tone=None)` is a value
+object, not a component, so it renders through `Callout` and the email's degradation is that
+callout exactly. Its copy is plain text, escaped; a `[^n]` or `[@key]` in it is refused, since
+the walk sees the text block and not what it hosts; and a block hosts one float, so `figure`
+and `aside` together are refused.
+
+- **Probed in both boxes first:** a float in a paged column and inside a panel's absolute,
+  `overflow: hidden` box both wrap the prose round it, and `overflowing_panels` names nothing.
+  `tests/test_aside.py` reads a prose line level with the aside, and ending short of it, from
+  the PDF in each.
+- **Its width is a third of the column, or up to half a narrow one**: at least
+  `8 × callout_pad_x` where half allows, so a panel's aside (154px of a 308px column) keeps
+  room for copy inside its padding. A page column's is 192px.
+- The plain text is the prose, then the title and body between two rules, the callout's own
+  projection. `tri_fold_letter`'s inside-left panel, `a4_wide_appendix` and the research-note
+  pair carry one.

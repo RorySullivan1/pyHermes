@@ -49,6 +49,7 @@ from pyhermes.builder import (
     Only,
     OnlySections,
     PullQuote,
+    QrCode,
     Reference,
     Spacing,
     Sparkline,
@@ -84,6 +85,7 @@ from pyhermes.document import Page, PagedDocument, paged_medium
 from pyhermes.pdf import available
 from qa.fixtures import all_brochure_fixtures, all_fixtures, all_paged_fixtures, letter_dense
 from qa.fixtures._png import solid_png
+from qa.fixtures._qr import qr_png
 
 requires_pdf = pytest.mark.skipif(
     not available() or importlib.util.find_spec("pypdfium2") is None,
@@ -581,6 +583,7 @@ INSTANCES: dict[type, list[Any]] = {
     ],
     Callout: [lambda s: Callout(_Stub(), tone="positive", label="L", spacing=s)],
     Button: [lambda s: Button("Go", "https://example.com", spacing=s)],
+    QrCode: [lambda s: QrCode(qr_png(), "https://example.com/web", caption="Online", spacing=s)],
     Divider: [lambda s: Divider(spacing=s)],
     TagRow: [lambda s: TagRow(["Rates", "Credit", "FX"], spacing=s)],
     FactList: [

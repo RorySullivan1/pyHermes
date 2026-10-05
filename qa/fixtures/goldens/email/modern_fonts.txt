@@ -1,3 +1,6 @@
+[DRAFT]
+
+
 For illustrative purposes. Not investment advice.
 
 
@@ -24,9 +27,6 @@ Equal Columns
 Narrow then Wide
 Wide then Narrow
 Three Equal
-Wide Left
-Wide Centre
-Wide Right
 What We Are Watching
 Bottom Line
 Sources and Terms
@@ -193,9 +193,6 @@ Rates outlook: https://example.com/r
 2 Oct
 
 
-Wide Left
----------
-
 The 50% column.
 
 Quarter.
@@ -203,18 +200,12 @@ Quarter.
 Quarter.
 
 
-Wide Centre
------------
-
 Quarter.
 
 The 50% column.
 
 Quarter.
 
-
-Wide Right
-----------
 
 Quarter.
 
@@ -257,6 +248,8 @@ Stay long the belly; fade the long end.
 ------------------------------------------------------------------------------
 
 Tags: Rates, Credit
+
+Read the folded edition: https://example.com/rates-folded
 
 Read the full note: https://example.com/note
 

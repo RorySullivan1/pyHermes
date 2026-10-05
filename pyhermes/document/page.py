@@ -9,19 +9,24 @@ nothing, and the sections inside simply run on. One tree, two outputs.
 from __future__ import annotations
 
 from collections.abc import Mapping
+from dataclasses import replace
 from typing import TYPE_CHECKING
 
 from pyhermes.builder.components import Component
 from pyhermes.builder.containers import Container, section_spacing_tokens
-from pyhermes.builder.engine import Renderer
+from pyhermes.builder.engine import Renderer, rebind, scheme_of
 from pyhermes.builder.enums import TextAlign
 from pyhermes.builder.exceptions import ValidationError
 from pyhermes.builder.images import ImageAsset
-from pyhermes.builder.sizing import Spacing
+from pyhermes.builder.medium import Medium
+from pyhermes.builder.sizing import PageFormat, Spacing
 from pyhermes.builder.textgen import join_blocks, underline
 
 if TYPE_CHECKING:  # pragma: no cover
     from pyhermes.builder.images import EmailImage
+
+#: The ways up a page's sheets may be laid (#341).
+ORIENTATIONS: tuple[str, ...] = ("portrait", "landscape")
 
 
 class Page(Container):
@@ -36,14 +41,11 @@ class Page(Container):
     "this starts a new page", and a reader in a mail client, where the idea
     has no meaning, is not shown an artefact of it.
 
-    The decision is made in Python rather than left to CSS. ``break-before``
-    is inert in a mail client, so emitting it would *look* harmless — but the
-    wrapper element around it is not, and an email would carry a ``div`` that
-    exists for a medium it is not being read in.
+    The decision is made in Python rather than left to CSS: ``break-before``
+    is inert in a mail client, but the wrapper element around it is not.
 
-    **A page may not hold a page.** Nesting has no meaning — an inner break
-    would either duplicate the outer one or contradict it — so it is refused
-    at construction rather than rendered into something arbitrary.
+    **A page may not hold a page:** an inner break would either duplicate
+    the outer one or contradict it, so it is refused at construction.
 
     Args:
         sections:     The containers on this page, in reading order.
@@ -52,6 +54,9 @@ class Page(Container):
         title:        An optional heading, as any container may carry.
         spacing:      Spacing for every section on this page: any token a
                       section or component reads.
+        orientation:  ``"portrait"`` or ``"landscape"``: the medium's sheet, turned
+                      where it is the other way up (#341). A turned page starts
+                      and ends a sheet, whatever its breaks say.
     """
 
     template_path = "document/page.html"
@@ -65,6 +70,8 @@ class Page(Container):
         background_color: str | None = None,
         align: str | TextAlign | None = None,
         spacing: Spacing | Mapping[str, int | float] | None = None,
+        *,
+        orientation: str | None = None,
     ):
         super().__init__(
             title=title, background_color=background_color, align=align, spacing=spacing
@@ -80,9 +87,28 @@ class Page(Container):
                 )
             if not isinstance(section, Container):
                 raise ValidationError(f"a page holds containers, got: {type(section).__name__}")
+        if orientation is not None and orientation not in ORIENTATIONS:
+            raise ValidationError(
+                f"a page's orientation must be one of {ORIENTATIONS} or None, got: {orientation!r}"
+            )
         self.sections = list(sections)
         self.break_before = break_before
         self.break_after = break_after
+        self.orientation = orientation
+
+    def turned_sheet(self, medium: Medium) -> PageFormat | None:
+        """
+        The sheet this page lays on when it is not ``medium``'s own, else ``None``.
+
+        Only a paged medium with a sheet height has a way up to turn; a
+        square sheet is both, so it never turns.
+        """
+        page = medium.page_format
+        if not medium.paged or self.orientation is None or page.height is None:
+            return None
+        if page.orientation in (self.orientation, "square"):
+            return None
+        return replace(page, width=page.height, height=page.width)
 
     @classmethod
     def spacing_tokens(cls) -> tuple[str, ...]:
@@ -123,6 +149,9 @@ class Page(Container):
         The flattening is byte-exact: what a non-paged medium gets is what
         the same sections would have produced without the ``Page`` at all.
         """
+        if (turned := self.turned_sheet(engine.medium)) is not None:
+            # Column widths are computed for the sheet the sections print on.
+            engine = rebind(engine, size=scheme_of(engine).with_page(turned))
         spaced = self._spaced(engine)
         inner = "\n".join(section.render(spaced) for section in self.sections)
         if not engine.medium.paged:

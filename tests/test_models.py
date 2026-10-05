@@ -132,6 +132,7 @@ class TestTheDocumentFactsSplitFromTheEmailOnes:
         assert {f.name for f in dataclasses.fields(DocumentMetadata)} == {
             "language",
             "header_disclaimer",
+            "stamp",
             "firm_name",
             "campaign_name",
             "department",

@@ -3,6 +3,10 @@
           {# ══════════════════════════════════════════ #}
           <tr>
             <td align="{{ align | escape_html }}" style="background-color:{{ header_background }}; padding:{{ size.space.masthead_bar_y }}px {{ size.frame.pad_x }}px; text-align:{{ align }};" bgcolor="{{ header_background }}">
+{# A stamp (#342) is the strip's first line: an email has no sheet to set it across. #}
+{% if stamp %}
+              <div style="margin:0 0 {{ size.space.caption_gap }}px 0; font-family: {{ font.label }}; font-size:{{ size.type.label }}px; font-weight:bold; letter-spacing:2px; color:{{ header_text }}; line-height:{{ size.type.secondary_line | percent }};">{{ stamp | escape_html }}</div>
+{% endif %}
               <div style="margin:0; font-family: {{ font.label }}; font-size:{{ size.type.micro }}px;
                         font-weight:300; color:{{ header_text }}; letter-spacing:0.3px; line-height:{{ size.type.secondary_line | percent }};">
                 {{header_disclaimer}}
