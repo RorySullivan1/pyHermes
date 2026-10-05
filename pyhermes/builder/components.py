@@ -303,6 +303,10 @@ class Component:
         """Return the template context dict for this component."""
         raise NotImplementedError
 
+    def render_context(self, engine: Renderer) -> dict[str, Any]:
+        """:meth:`context`, and what this block renders of the blocks it holds; a leaf adds none."""
+        return self.context()
+
     def images(self) -> list[EmailImage]:
         """
         Return every :class:`EmailImage` this component renders.
@@ -404,7 +408,7 @@ class Component:
         grounded = self.OWN_SURFACE and on_ground(engine)
         engine = own_surface(engine) if self.OWN_SURFACE else engine
         engine = respaced(engine, self.spacing, type(self).__name__)
-        html = engine.render(self.template_path, self.context())
+        html = engine.render(self.template_path, self.render_context(engine))
         return engine.render("common/surface.html", {"content": html}) if grounded else html
 
 
@@ -418,8 +422,20 @@ def descendants(components: Sequence[Component]) -> list[Component]:
 
 
 def leaves(components: Sequence[Component]) -> list[Component]:
-    """The components that hold none, in reading order: what the document numbers and walks."""
-    return [component for component in descendants(components) if not component.children()]
+    """
+    The components that hold none, in reading order: what the document numbers and walks.
+
+    An exhibit is one stop even when it holds blocks, a grid its panels or a
+    chart its key (#335): the walk numbers the exhibit, never what it holds.
+    """
+    found: list[Component] = []
+    for component in components:
+        held = component.children()
+        if held and not isinstance(component, Exhibit):
+            found.extend(leaves(held))
+        else:
+            found.append(component)
+    return found
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -1003,9 +1019,8 @@ class ChartBlock(Exhibit, CopyAlignment, Component):
             an ``EmailImage``, which carries its own.
         source:    Attribution string.
         subtitle:  Optional sub-heading rendered above the chart.
-        width:     Display width in px.  Ignored when ``image_url`` is an
-            ``EmailImage``, which carries its own.  ``None`` renders full
-            width, as before.
+        width:     Display width in px, unless ``image_url`` is an ``EmailImage``,
+            which carries its own. ``None`` renders full width, as before.
         disclosure: Optional compliance copy qualifying this exhibit —
                   justified fine print beneath the attribution. Plain
                   text, escaped on the way out; see `disclosure.md` for when
@@ -1014,6 +1029,7 @@ class ChartBlock(Exhibit, CopyAlignment, Component):
         label, anchor: Numbering and its ``id``; see :class:`Exhibit`.
         notes:    Footnotes called by ``[^n]`` in ``caption`` or ``source``.
         wrap:     As on :class:`ImageBlock`, when a :class:`TextBlock` hosts it (#359).
+        legend:   The chart's key in markup, beneath it (#337).
     """
 
     template_path = "analysis/chart-block.html"
@@ -1038,10 +1054,16 @@ class ChartBlock(Exhibit, CopyAlignment, Component):
         notes: Sequence[Footnote | str] | None = None,
         spacing: Spacing | Mapping[str, int | float] | None = None,
         wrap: str = "",
+        legend: Component | None = None,
     ):
+        from .exhibits import Legend  # the legend module builds on this one
+
         self.spacing = self._coerce_spacing(spacing)
         if not image_url:
             raise ValidationError("ChartBlock requires an image_url.")
+        if legend is not None and not isinstance(legend, Legend):
+            raise ValidationError(f"ChartBlock's legend is a Legend, got {type(legend).__name__}.")
+        self.legend = legend
         self.validate_exhibit(label, anchor)
         self.notes = coerce_notes(notes, [caption, source], "ChartBlock")
         self.align = self.validate_alignment(align)
@@ -1067,12 +1089,15 @@ class ChartBlock(Exhibit, CopyAlignment, Component):
     def images(self) -> list[EmailImage]:
         return [self.image]
 
+    def children(self) -> list[Component]:
+        return [self.legend] if self.legend else []
+
     def marked_copy(self) -> list[str]:
         return [self.caption, self.source]
 
     def text(self) -> str:
         """
-        The alt text in brackets, then the attribution.
+        The alt text in brackets, its key, then the attribution.
 
         ``alt`` is required at construction, so this projection is never
         empty — which is the whole reason that rule exists.
@@ -1080,9 +1105,14 @@ class ChartBlock(Exhibit, CopyAlignment, Component):
         return self._with_subtitle(
             wrap(text_markers(self.numbered(self.caption), self.notes, self.citing)),
             wrap(f"[{self.image.alt}]"),
+            self.legend.text() if self.legend else "",
             wrap(text_markers(self.source, self.notes, self.citing)),
             wrap(self.disclosure),
         )
+
+    def render_context(self, engine: Renderer) -> dict[str, Any]:
+        legend = self.legend.render(engine) if self.legend else ""
+        return {**self.context(), "legend": legend}
 
     def context(self) -> dict[str, Any]:
         return {
@@ -1098,6 +1128,7 @@ class ChartBlock(Exhibit, CopyAlignment, Component):
             # shared partial, so they must agree on the key it reads.
             "disclosure": self.disclosure,
             "subtitle": self.subtitle,
+            "legend": "",
             **self.alignment_context(),
         }
 

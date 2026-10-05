@@ -20,7 +20,6 @@ Long Read
 At a Glance
 Factor Returns
 Cumulative Performance
-Portfolio Variance
 Equal Columns
 Narrow then Wide
 Wide then Narrow
@@ -125,20 +124,15 @@ revision.
 Cumulative Performance
 ----------------------
 
-Indexed to 100
-
 Exhibit 2 · Cumulative factor performance
 
-[Cumulative factor performance]
+(a) Value [Value, long-short]
+
+Key: Long, Short
+
+(b) Momentum [Momentum, long-short]
 
 Hermes Research
-
-The chart above is indexed to 100 at inception and excludes the effect of the
-0.75% management fee.
-
-
-Portfolio Variance
-------------------
 
 Equation 1 · Portfolio variance[2]
 

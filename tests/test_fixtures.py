@@ -268,6 +268,9 @@ class TestComponentFieldsAreExercised:
             "stack",
             "badge",
             "kicker",
+            "source",
+            "as_of",
+            "source_notes",
         ],
     )
     def test_every_container_field_is_exercised(self, field_name):
@@ -293,6 +296,9 @@ class TestComponentFieldsAreExercised:
             "stack": "natural",
             "badge": None,
             "kicker": "",
+            "source": "",
+            "as_of": "",
+            "source_notes": [],
         }
         assert any(
             getattr(section, field_name, defaults[field_name]) != defaults[field_name]

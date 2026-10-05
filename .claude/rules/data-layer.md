@@ -1,6 +1,8 @@
 ---
 paths:
   - "pyhermes/builder/formats.py"
+  - "pyhermes/builder/exhibits.py"
+  - "pyhermes/builder/templates/analysis/legend.html"
   - "pyhermes/data/**/*"
   - "tests/test_formats.py"
   - "tests/test_frames.py"
@@ -159,6 +161,34 @@ test holds that `slate` differs from `classic` exactly where those tokens do. Th
 keeps only the families `font_manager.findfont` resolves without falling back, then the
 stack's generic family, so a missing Georgia produces no warning. `chart_from_figure` is
 untouched, and nothing changes outside the context.
+
+**The series colours moved to the builder (#337)**, as `theming.SERIES_TOKENS` and
+`chart_colors(theme)`, because a `Legend` names them and the builder may not import the
+`[charts]` layer; `pyhermes.data.style` re-exports the tokens and builds `series` from the one
+function, so the cycle and the key cannot disagree about order.
+
+**The legend never styles the plot (#337).** A chart's key drawn into the picture is lost when
+Outlook blocks images, its default, and in the plain-text part. `Legend(entries)` states it
+again in markup: a swatch, a shaded inline box the status dot's size, then the label, and
+`Key: 10Y gilt, 2Y gilt` in the text. Each `LegendEntry` names its colour one way: a `tone`, a
+`series` (an index into `chart_colors`, what `chart_style` cycles), or a `color` hex that must
+be one of the theme's chart colours. **The key and the picture agree because both read the
+theme, never because the legend reads the chart.** Reading colours out of a matplotlib figure
+would make the builder depend on the `[charts]` extra the dependency rule forbids, and would
+key whatever the caller happened to draw rather than what the theme says a series is. So the
+caller draws inside `chart_style` and names series by number, and the two match by
+construction; a caller who styles the plot by hand keeps the job of matching it.
+
+- **A hex is checked against the document's theme in `add_section`**, the precedent the
+  email's `valign` refusal set (#356), because only the document knows its theme; the entry
+  itself checks the shape at construction. A hex outside the chart colours, or a `series` past
+  the end of a cycle whose tokens coincide, is refused there by name. So the palette stays
+  closed, and a theme switch that orphans a hex fails loudly rather than keying a colour the
+  picture cannot contain. `series` and `tone` recolour with the theme; prefer them.
+- **No line-style or marker swatch, and nothing drawn on the image**, by the epic's decision.
+- **The Word engine shades the swatch's non-breaking space**, a square, as it does the status
+  dot (#326), and drops an inline box's margin, so a space in an mso conditional stands in for
+  the gap after the swatch; unverified in a real Outlook here, so it joins #288's check.
 
 **A picture far wider than it is shown warns (#276).** `EmailImage.__post_init__` reads the
 pixel width with `pixel_size` and raises a `SizeWarning` through `warn_caller` when it is

@@ -419,3 +419,9 @@ Decisions and Log entries folded out of `INDEX.md` on 2026-08-29 (#143), verbati
 - [2026-10-04] memory — State, Threads and the epic order re-synced with GitHub after PR #371.
 - [2026-10-04] glance — **#318 implemented** (#319–#323): arrows, bar lists, sparklines, hero
   figures; the cell bar's CSS widths — sessions/2026-10-04-glance.md
+- [2026-10-04] deck-layouts — **#346 implemented** (#347–#353): sources, pictures, statement
+  slides, divider agendas, the handout, the footer counter — sessions/2026-10-04-deck-layouts.md
+- [2026-10-05] memory — State and Threads re-synced with GitHub after PR #374; four decisions and
+  two log pointers folded into the archive.
+- [2026-10-05] memory — State and Threads re-synced with GitHub after PR #376.
+- [2026-10-05] memory — State and Threads re-synced with GitHub after PR #378.

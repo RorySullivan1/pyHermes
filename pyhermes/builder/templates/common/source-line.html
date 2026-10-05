@@ -1,0 +1,14 @@
+{#
+  SOURCE LINE (#338) — one attribution for every block in a section, at its foot.
+
+  An exhibit's source line in shape: fine print in the label face, plain text
+  escaped, a footnote marker or a citation drawn by the notes macro, and the
+  date after it as `as of`. The `fine-print` hook is what the paged skeleton
+  keeps with the section above it, so the line never opens a sheet alone.
+
+  source_line(parts, as_of) — parts is what `split_markers` cut; empty draws nothing.
+#}
+{% from "common/notes.html" import marked with context %}
+{% macro source_line(parts, as_of) -%}
+<p class="fine-print section-source" style="font-family: {{ font.label }}; font-size: {{ size.type.micro }}px; color: {{ theme.text.light }}; font-style: italic; margin: {{ size.space.caption_gap }}px 0 0 0; line-height: {{ size.type.body_line | percent }};">{{ marked(parts) }}{% if as_of %} as of {{ as_of | escape_html }}{% endif %}</p>
+{%- endmacro %}

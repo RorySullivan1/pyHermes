@@ -857,6 +857,14 @@ every container and every template for the same result.
   numbers, footnotes, raw-HTML link checks and a nested `Contents` all reach blocks inside a
   `Stack`. A composite therefore reports **no** notes or raw HTML of its own; if it did, the
   document would count them twice.
+- **An exhibit is a leaf to the walk even when it holds blocks (#336).** A `FigureGrid` holds
+  its panels and a `ChartBlock` its `Legend`, and `leaves()` stops at the exhibit: it is the
+  one numbered, and it reports the notes and markers of its shared copy, while its panels may
+  carry none. `descendants()` still reaches the panels, so the medium checks and the gallery
+  tests see them. `apparatus.md` has the anchor scheme.
+- **A block may render what it holds through `render_context(engine)`**, which is `context()`
+  for a leaf; `ChartBlock` adds its legend's markup there, so `context()` keeps taking no
+  engine.
 - **Containers read the top level.** `Container.images()`, `Page` and `Panel` walk
   `section.components()` without descending, so a composite **delegates** `images()` (and so
   `assets()`) to its children. Standing rule 7 applies to it like any other block.

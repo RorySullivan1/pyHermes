@@ -162,7 +162,7 @@ jobs:
           tests/test_slide_layouts.py tests/test_anchoring.py tests/test_split_valign.py
           tests/test_cell_share.py tests/test_measure.py tests/test_hosted_figures.py
           tests/test_glance.py tests/test_deck_layouts.py tests/test_labels.py
-          tests/test_organising.py
+          tests/test_organising.py tests/test_grouped_exhibits.py
 
       - name: Render the paged, brochure and deck galleries to PDF, and photograph every sheet
         run: |

@@ -36,12 +36,14 @@ from pyhermes.builder import (
     Email,
     EmailBuilder,
     FactList,
+    FigureGrid,
     FlowedColumns,
     FourColumn,
     FullWidth,
     Glossary,
     HeroStat,
     ImageBlock,
+    Legend,
     MathBlock,
     NumberedList,
     Only,
@@ -477,10 +479,16 @@ def _image() -> EmailImage:
 
 #: Each class, built so that every branch its template has is taken.
 INSTANCES: dict[type, list[Any]] = {
-    FullWidth: [lambda s: FullWidth(title="T", kicker="K", content=_Stub(), spacing=s)],
-    FlowedColumns: [lambda s: FlowedColumns(title="T", kicker="K", content=_Stub(), spacing=s)],
+    FullWidth: [
+        lambda s: FullWidth(title="T", kicker="K", content=_Stub(), source="Src", spacing=s)
+    ],
+    FlowedColumns: [
+        lambda s: FlowedColumns(title="T", kicker="K", content=_Stub(), source="Src", spacing=s)
+    ],
     TwoColumn: [
-        lambda s: TwoColumn("30-70", title="T", kicker="K", left=_Stub(), right=_Stub(), spacing=s)
+        lambda s: TwoColumn(
+            "30-70", title="T", kicker="K", left=_Stub(), right=_Stub(), source="Src", spacing=s
+        )
     ],
     ThreeColumn: [
         lambda s: ThreeColumn(
@@ -490,6 +498,7 @@ INSTANCES: dict[type, list[Any]] = {
             left=_Stub(),
             center=_Stub(),
             right=_Stub(),
+            source="Src",
             spacing=s,
         )
     ],
@@ -522,6 +531,22 @@ INSTANCES: dict[type, list[Any]] = {
     ImageBlock: [
         lambda s: ImageBlock(_image(), caption="Cap", subtitle="S", disclosure="Fine.", spacing=s)
     ],
+    FigureGrid: [
+        # Three panels in two columns, so a row has a gap under it on paper too.
+        lambda s: FigureGrid(
+            [
+                ChartBlock(_image(), subtitle="A", legend=Legend(["x", "y"])),
+                ChartBlock(_image(), subtitle="B"),
+                ImageBlock(_image(), alt_text="C"),
+            ],
+            caption="Cap",
+            source="Src",
+            disclosure="Fine.",
+            subtitle="S",
+            spacing=s,
+        )
+    ],
+    Legend: [lambda s: Legend(["A", "B"], spacing=s)],
     MathBlock: [
         lambda s: MathBlock(
             solid_png(40, 12, (0, 0, 0)), latex="x^2", caption="Cap", disclosure="Fine.", spacing=s
@@ -550,7 +575,9 @@ INSTANCES: dict[type, list[Any]] = {
     Stack: [lambda s: Stack([_Stub(), _Stub()], spacing=s)],
     Columns: [lambda s: Columns([_Stub(), _Stub()], spacing=s)],
     FourColumn: [
-        lambda s: FourColumn([_Stub(), _Stub(), None, _Stub()], title="T", kicker="K", spacing=s)
+        lambda s: FourColumn(
+            [_Stub(), _Stub(), None, _Stub()], title="T", kicker="K", source="Src", spacing=s
+        )
     ],
     Callout: [lambda s: Callout(_Stub(), tone="positive", label="L", spacing=s)],
     Button: [lambda s: Button("Go", "https://example.com", spacing=s)],
@@ -649,6 +676,9 @@ FALLBACK_READS: dict[type, dict[str, str]] = {
         "pad_x": "alone it splits the frame's content width; in a cell it splits the cell's (#263)"
     },
     FactList: {"pad_x": "alone its columns share the frame's content width; in a cell, the cell's"},
+    FigureGrid: {
+        "pad_x": "alone its panels share the frame's content width; in a cell, the cell's"
+    },
 }
 
 

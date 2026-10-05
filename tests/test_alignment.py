@@ -533,6 +533,8 @@ STRUCTURALLY_ALIGNED = {
     "FactList": "each label sets itself left and each value right, as a box of facts reads (#330)",
     "Timeline": "the date sets itself right and the copy left, either side of the rule (#331)",
     "TeaserList": "each teaser sets itself left, so a row of them lines up (#332)",
+    "FigureGrid": "its panels sit in fixed cells; a panel's copy is its title (#336)",
+    "Legend": "a run of swatches and labels, which follows the section's align as text does (#337)",
 }
 
 

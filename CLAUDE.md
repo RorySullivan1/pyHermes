@@ -69,10 +69,10 @@ applies to and loads **only when a matching file is read** — so a session that
 | `data-table.md` | `models.py`, `components.py`, `templates/analysis/**` | Columns, cells, row kinds, caption and row headers; groups, units, markers, formats, decimal alignment, scales and bars (#217) |
 | `glance.md` | `glance.py`, the arrow, bar-list, sparkline and hero templates, the cell bar | Data at a glance without images: the trend arrow as a shape, ranked and diverging bars, the sparkline and its limit, the hero figure and `hero_value` (#318) |
 | `disclosure.md` | `components.py`, `templates/analysis/**` + `media/**`, the shared partial | An exhibit's two kinds of fine print: attribution, and the compliance copy beneath it |
-| `data-layer.md` | `formats.py`, `pyhermes/data/**` | Figures as numbers: the formatters, the two adapters, why the dependency runs one way |
+| `data-layer.md` | `formats.py`, `exhibits.py`, `pyhermes/data/**` | Figures as numbers: the formatters, the two adapters, why the dependency runs one way, and why a legend never styles the plot |
 | `math.md` | `pyhermes/math/**`, the math tests, `templates/media/math-block.html` | Equations: the component takes bytes and the extra renders them, the fontset and scale, the mathtext subset, the multi-line shim, the theme limitation, the Outlook gap |
 | `plain-text.md` | `textgen.py`, `email.py` | The second projection of the section tree |
-| `apparatus.md` | `apparatus.py`, `document.py`, `research.py`, the notes / contents / running-box / bibliography / glossary templates | Exhibit numbers, footnotes, contents, cross-references, the running section, the list of exhibits, lettered appendices, citations and the glossary — Python numbers all but the page |
+| `apparatus.md` | `apparatus.py`, `document.py`, `research.py`, `exhibits.py`, the notes / contents / running-box / bibliography / glossary / figure-grid / source-line templates | Exhibit numbers, footnotes, contents, cross-references, the running section, the list of exhibits, lettered appendices, citations, the glossary, grouped exhibits and a section's source line — Python numbers all but the page |
 | `media.md` | `pyhermes/email/`, `pyhermes/document/`, `pyhermes/pdf/`, `medium.py`, `document.py`, `templates/document/**` | The medium model, the page, the template fork rule, each medium's regions, the exporter's resource policy |
 | `digital-pdf.md` | `pyhermes/pdf/**`, `pyhermes/delivery/message.py`, the digital-PDF tests | The `PdfProfile` and its two presets, attachments and the message's size budget, metadata and determinism, the PDF/UA decision with its numbers, and why a screen PDF is not a medium |
 | `brochure.md` | `pyhermes/brochure/**`, `templates/brochure/**`, the editorial partial | Folds, the panel, imposition, bleed and marks, the editorial primitives and each one's email degradation |
@@ -256,6 +256,9 @@ these rather than improvising:
   drawn as dots, and `TagRow`, #325–#328) is complete.
   **#329** (organising content: `FactList`, `Timeline`, `TeaserList` and a `kicker` above any
   section's title, #330–#334) is complete.
+  **#335** (exhibits that group: `FigureGrid`'s lettered panels in one numbered exhibit, a
+  chart's key stated in HTML by `Legend`, and one `source=` line for a whole section, #336–#339)
+  is complete.
   **#259** is fixed: the size report names each body section, and `pyhermes.check` and
   `preview --lint` report on an email over 102 KB. **#281** is fixed: the README states current
   facts, and a test holds each example's committed `.html` to a fresh render. **#272** is done:

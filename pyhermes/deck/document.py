@@ -400,12 +400,19 @@ class Deck(Document):
             return engine.render(self._medium.skeleton, ctx)
 
     def _marked(self) -> list[tuple[str, Any, list[str]]]:
-        """Each slide's components, then its source line, slide by slide, in reading order."""
+        """
+        Each slide's sections, then its source line, slide by slide, in reading order.
+
+        A section's own source line (#338) follows its blocks, and the slide's
+        follows them all: the two are kept apart, as the sheet keeps them.
+        """
         marked: list[tuple[str, Any, list[str]]] = []
         for slide in self.slides:
-            marked.extend(
-                (type(c).__name__, c, c.marked_copy()) for c in leaves(slide.components())
-            )
+            for section in slide.sections:
+                marked.extend(
+                    (type(c).__name__, c, c.marked_copy()) for c in leaves(section.components())
+                )
+                marked.append((section._owner(), section, section.marked_copy()))
             marked.append((slide._name(), slide, [slide.source] if slide.source else []))
         return marked
 

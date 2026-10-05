@@ -40,6 +40,7 @@ from pyhermes.builder import (
     EmailBuilder,
     Event,
     FactList,
+    FigureGrid,
     FlowedColumns,
     Footer,
     FullWidth,
@@ -47,6 +48,8 @@ from pyhermes.builder import (
     Header,
     HeroStat,
     ImageBlock,
+    Legend,
+    LegendEntry,
     MathBlock,
     NumberedList,
     Only,
@@ -474,32 +477,39 @@ def build(
                 ),
             )
         )
-        # ChartBlock — attached, so the fixture also exercises Email.assets().
+        # A FigureGrid (#336) of an attached chart, keyed by a Legend (#337), and a
+        # picture; then MathBlock (#229) on solid bytes, every field set, and a
+        # multi-line display (#232). One section holds all three for the bytes the
+        # 90 KB warning leaves (#329, #335).
         .section(
             FullWidth(
                 title="Cumulative Performance",
-                content=ChartBlock(
-                    EmailImage.attached(_CHART_PNG, alt="Cumulative factor performance", width=320),
-                    source="Hermes Research",
-                    subtitle="Indexed to 100",
-                    caption="Cumulative factor performance",
-                    label="Exhibit",
-                    disclosure=(
-                        "The chart above is indexed to 100 at inception and "
-                        "excludes the effect of the 0.75% management fee."
-                    ),
-                ),
-            )
-        )
-        # MathBlock (#229) — solid bytes, never a real render, so the golden
-        # does not depend on matplotlib. Every field is set. Beneath it, a
-        # multi-line display (#232), one image, right-aligned as a block; one
-        # section holds both, for the bytes the 90 KB warning leaves (#329).
-        .section(
-            FullWidth(
-                title="Portfolio Variance",
                 content=Stack(
                     [
+                        FigureGrid(
+                            [
+                                ChartBlock(
+                                    EmailImage.attached(
+                                        _CHART_PNG, alt="Value, long-short", width=320
+                                    ),
+                                    subtitle="Value",
+                                    legend=Legend(
+                                        [
+                                            LegendEntry("Long", series=1),
+                                            LegendEntry("Short", tone="negative"),
+                                        ]
+                                    ),
+                                ),
+                                ImageBlock(
+                                    EmailImage.attached(
+                                        _CHART_PNG, alt="Momentum, long-short", width=320
+                                    ),
+                                    subtitle="Momentum",
+                                ),
+                            ],
+                            source="Hermes Research",
+                            caption="Cumulative factor performance",
+                        ),
                         MathBlock(
                             _EQUATION_PNG,
                             latex=r"\sigma_p^2 = w^\top \Sigma w",

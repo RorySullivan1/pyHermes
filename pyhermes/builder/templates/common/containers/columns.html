@@ -35,6 +35,10 @@
     section_border   — The frame's colour when the section is bordered (#267), else empty
     section_break    — The row's break declarations on paper (#364), empty elsewhere
     section_kept     — The row's `id` when kept together on paper, for the tall-section check
+    section_source   — The section's source line, cut at its markers (#338); empty for none.
+                       It is a table of its own under the columns, at the band's inset,
+                       and carries the `fine-print` hook so paper keeps it with them
+    section_as_of    — Its date, or empty
     stack            — natural; reverse, where dir=rtl lays the phone order out right to
                        left on a desktop (#362); or fixed, one fluid row that never stacks (#363)
     gutter_share     — The gutter as a percentage of the band, for a fixed row
@@ -72,6 +76,7 @@
    prose inside the cell and inheritance is #126's whole mechanism. #}
 {% from "common/badge.html" import badge with context %}
 {% from "common/kicker.html" import kicker with context %}
+{% from "common/source-line.html" import source_line with context %}
 {% set edge_pad = size.frame.pad_x - (1 if highlight else 0) - (1 if section_border else 0) %}
 {# The band also has to *fit*: 2x pad_x plus the computed content width is
    the whole frame, so without the pixel back the last column wraps. #}
@@ -147,5 +152,14 @@
         </td>
       </tr>
     </table>
+{% if section_source %}
+    <table class="fine-print" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:{{ background_color | default(theme.palette.highlight_tint if highlight else theme.palette.surface) }};">
+      <tr>
+        <td{% if section_align %} align="{{ section_align | escape_html }}"{% endif %} style="padding:0 {{ edge_pad }}px {{ size.space.column_bottom }}px {{ edge_pad }}px;{% if section_align %} text-align:{{ section_align }};{% endif %}">
+          {{ source_line(section_source, section_as_of) }}
+        </td>
+      </tr>
+    </table>
+{% endif %}
   </td>
 </tr>

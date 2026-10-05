@@ -2,6 +2,9 @@
 paths:
   - "pyhermes/builder/apparatus.py"
   - "pyhermes/builder/document.py"
+  - "pyhermes/builder/exhibits.py"
+  - "pyhermes/builder/templates/analysis/figure-grid.html"
+  - "pyhermes/builder/templates/common/source-line.html"
   - "pyhermes/builder/research.py"
   - "pyhermes/builder/templates/text/bibliography.html"
   - "pyhermes/builder/templates/text/glossary.html"
@@ -20,6 +23,8 @@ name. Five sub-issues: exhibit numbering (#181), footnotes (#182), a contents li
 cross-references (#184) and a running header that follows the section (#185). Epic #220 added
 the long-form half on the same walk: a list of exhibits (#308), lettered appendices (#309),
 citations and a bibliography (#310), a glossary (#311), and a research-note fixture (#312).
+Epic #335 let exhibits group: lettered panels in one exhibit (#336), a chart's key in markup
+(#337) and one source line for a section (#338), carried by the research note (#339).
 
 | Apparatus | Paged | Email | Plain text |
 |---|---|---|---|
@@ -33,6 +38,8 @@ citations and a bibliography (#310), a glossary (#311), and a research-note fixt
 | Citation | "(Fama and French 1993)" or "[3]", linked to `ref-<key>` | the same | the same, unlinked |
 | Bibliography | entries hung under their first line | the same | hung by four spaces, or under the label |
 | Glossary term | `term-<slug>`, a two-column table | the same, stacked on a phone | "Term: definition" |
+| Grid panel | "(b) Europe" over the panel, `id="exhibit-3-b"`, a reference reads its page | the same, stacked on a phone | "(b) Europe [alt]" under the heading |
+| Section source | one fine-print line at the section's foot, kept with it | the same | the line after the section's blocks |
 
 ## The one rule: Python numbers everything but the page
 
@@ -308,5 +315,64 @@ citations, glossary links, a key-takeaways `Callout`, two body exhibits, a bibli
 glossary and two appendices. `test_research_note.py` reads each medium's exhibits, appendix
 headings and citations against the other's, and reads both lists' page numbers back from the
 PDF. Every other golden was byte-identical except the kitchen-sink family, which gained the
-section rule 1 required.
+section rule 1 required. Since #339 it also carries a grid in the body (Exhibit 3, with a key
+and a reference to its panel (b)), a section source line citing and calling a note, and a
+grid in Appendix B (B.2); `test_grouped_exhibits.py` reads the panel reference's page back.
 
+
+## Grouped exhibits (#335)
+
+**A grid is one exhibit, and the walk stops at it.** `FigureGrid(panels)` holds two to four
+`ChartBlock`s or `ImageBlock`s, and its `children()` are the panels, so the spacing checks and
+the gallery tests see them. The walk reads `leaves()`, which since #336 treats **any `Exhibit`
+as one stop even when it holds blocks**: the grid is numbered, listed and cited once, and a
+panel is never numbered. `ChartBlock(legend=)` rides the same rule, its key a child the walk
+never reaches. A panel's `label`, `anchor`, `caption`, `source`, `disclosure`, `notes` and
+`wrap` are refused, because the grid carries one of each for all of them; its `subtitle` is
+kept as its title. A decorative panel is refused, since a panel carries information.
+
+**The panel anchor scheme: the grid's anchor, a hyphen, the letter.** `exhibit-3-a`, in an
+appendix `exhibit-a-1-a`, and with `anchor="premia"` `premia-a`. A panel's letter is its place
+in the grid (`(a)` to `(d)`), fixed at construction, so only the prefix is the walk's. Panel
+anchors join the document's through `Component.anchors()`, as a glossary's terms do (#311), so
+`href="#exhibit-3-b"` validates, a missing panel is named by `validate()`, and a section that
+slugs to a panel's anchor is refused in `add_section`. An unlabelled grid with no anchor has
+no panel anchors. Each panel's `id` sits on its own cell, so on paper `target-counter` reads
+the panel's page, which `test_grouped_exhibits.py` and the research note read back from a PDF.
+
+**One `figure` table holds the whole grid**, its caption row first, as a chart's does, so the
+paged `.figure` rule keeps the grid on one sheet; a sweep test fails with that rule stripped.
+The panels sit in one layout table a row, `stack-column` cells with a gutter cell between, so
+a short last row keeps the others' width and a phone stacks them. The row tables separate
+their borders: the model is inherited from the collapsing `figure` table, and a stacked cell
+in a collapsing table drops its padding (#332). Each panel's image is capped at its cell,
+`(cell - gutters) / columns`, in both spellings (#201). The gap under a panel is `block_gap`:
+on paper and a slide under every row but the last, in an email under every panel but the last,
+so stacked panels never touch; on a desktop that space falls below a row, as `Columns`' does.
+
+**A section's source line is the exhibit's, a level up (#338).** `source`, `as_of` and
+`source_notes` on every container render one `fine-print` line, "X as of Y" as an exhibit's
+source reads, at the foot of the section: inside the content cell of a full-width section,
+and as a table of its own under a split's columns, at the band's inset. The paged
+`.fine-print` rule keeps it with the section above; a sweep test fails with that rule
+stripped, in both shapes. A `[^n]` and an `[@key]` work in it as in an exhibit's source, so
+`Container.footnotes()` and `marked_copy()` report it and **the walk reads sections as holders
+too**, each after its own blocks (`Document._holders()`). The keyword is `source_notes`, not
+`notes`, because a `Slide` is a `Container` whose `notes` are what the presenter says.
+
+**On a slide the two lines are kept apart.** The slide's own `source` (#347) is its band over
+the footer; a section's line sits at the section's foot inside the body, and the deck's walk
+reads each section's line before the slide's. A deck still refuses a footnote, here as
+anywhere.
+
+**The caption heads the grid, and the rest of the shared copy sits beneath it.** #336 put
+"one caption, one source line and one disclosure beneath all the panels". The caption went
+above instead, in the figure table's first row as on a chart (#181), because it carries the
+number, and the number heads an exhibit in every medium and in the list of exhibits; the source
+and the disclosure sit beneath every panel, through the exhibits' shared lines.
+
+**The plain text** prints a grid's heading once, then `(a) UK [alt]` a panel, a panel's key
+after it, then the shared source and disclosure; a section's line follows its blocks.
+
+**Non-goals, as decisions**: no nested grid, no table in a grid (a table is its own exhibit),
+more than four panels, and a per-row source in a table, which is a footnote marker's job.

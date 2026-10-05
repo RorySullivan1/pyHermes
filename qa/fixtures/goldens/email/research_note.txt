@@ -24,8 +24,10 @@ Tables and figures
 
 Exhibit 1 · Momentum decile returns
 Exhibit 2 · The winner-minus-loser spread
+Exhibit 3 · The spread by region
 Exhibit A.1 · Data coverage
 Exhibit B.1 · Returns after trading costs
+Exhibit B.2 · Costs by turnover
 
 
 Summary
@@ -71,11 +73,22 @@ Exhibit 2 · The winner-minus-loser spread
 
 [Winner-minus-loser spread by year]
 
-Hermes Research
-
 The spread is positive in most years and negative in a few deep ones (Daniel
-and Moskowitz 2016). After costs at the turnover the strategy needs, Exhibit
-B.1 keeps most of it (Frazzini et al. 2018).
+and Moskowitz 2016), and Europe's is the steadier, in Exhibit 3(b). After
+costs at the turnover the strategy needs, Exhibit B.1 keeps most of it
+(Frazzini et al. 2018).
+
+Exhibit 3 · The spread by region
+
+(a) United States [Spread in the United States]
+
+Key: Winners, Losers
+
+(b) Europe [Spread in Europe]
+
+Key: Winners, Losers
+
+Hermes Research (Jegadeesh and Titman 1993)[2] as of 30 September 2026
 
 
 References
@@ -128,11 +141,24 @@ Exhibit B.1 · Returns after trading costs
 
 Hermes Research (Frazzini et al. 2018)
 
+Exhibit B.2 · Costs by turnover
+
+(a) Low turnover [Costs at low turnover]
+
+Key: Net of costs, Costs
+
+(b) High turnover [Costs at high turnover]
+
+Hermes Research (Frazzini et al. 2018)
+
+Costs are estimated from a model of market impact, not observed trades.
+
 
 Notes
 -----
 
 [1] The sample ends on 30 September 2026.
+[2] Returns are in US dollars, before costs.
 
 
 © Hermes Research
