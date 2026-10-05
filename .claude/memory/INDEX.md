@@ -4,11 +4,10 @@
 - pyHermes builds **documents** and renders each onto a **medium**: `pyhermes/builder` is the
   shared kit, `pyhermes/email`, `document`, `brochure` and `deck` are the media, and exporters sit on
   one contract — `delivery`+`gmail`+`outlook`, and `pdf`. Rationale: CLAUDE.md and `media.md`.
-- **Shipped through PR #378.** Epics #157–#220 and #218 (PRs #167–#314); deck bugs #315–#317
+- **Shipped through PR #380.** Epics #157–#220 and #218 (PRs #167–#314); deck bugs #315–#317
   (PR #369); #361 (PR #370); #354 and #372 (PR #371); #318 (PR #373); #346 (PR #374); #324 (PR #376);
-  #329 (PR #378). #219 DOCX closed not planned, with #300 PPTX.
-- **#335 implemented on the branch** (#336–#339), PR pending. **Open next:** #340 last (WeasyPrint probes, `[qr]`).
-  #288 is the owner's Outlook-desktop check, run on Windows.
+  #329 (PR #378); #335 (PR #380). #219 DOCX closed not planned, with #300 PPTX.
+- **Open next:** #340 (WeasyPrint probes, `[qr]`). #288 is the owner's Outlook-desktop check, run on Windows.
 - The prose budget is live; the baseline is 44 and may only shrink.
 
 ## Decisions        (append-only; supersede, never delete)
@@ -50,7 +49,7 @@
 - **`kitchen_sink` is at its 90 KB ceiling**: `modern_fonts` has 323 bytes left after #335, which merged
   the chart and the equations into one section to fit; the next epic must merge or move, not add.
 - **The suite runs on Windows since #372** (PR #371); no Windows CI job — the owner's run is the check.
-- **`epic-autoclose` works** (closed #273, #354, #361, #346, #324, #329). Still confirm each epic closed after its merge.
+- **`epic-autoclose` works** (closed #273, #354, #361, #346, #324, #329, #335). Still confirm each epic closed after its merge.
 - **A dark split leaves a light seam under its left column on paper**, on `main` since before #324;
   queued as a suggested task, not yet an issue (repro in sessions/2026-10-05-labels.md).
 - **In this container, PDF byte-determinism tests flake** (no HarfBuzz-Subset), and screenshot
@@ -79,3 +78,4 @@
   kickers, the organised fixtures — sessions/2026-10-05-organising.md
 - [2026-10-05] grouped — **#335 implemented** (#336–#339): figure grids, legends, section source
   lines, the research note's grids — sessions/2026-10-05-grouped-exhibits.md
+- [2026-10-05] memory — State and Threads re-synced with GitHub after PR #380.
