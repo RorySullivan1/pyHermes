@@ -95,6 +95,54 @@ save_eml(message, "review.eml")
 PDF sized for reading on screen, with images reduced to keep the file small. Open or send
 the `.eml` as described in [Check and send](06-check-and-send.md).
 
+## Draft stamps, landscape pages and QR codes
+
+Four things a printed report can carry that an email cannot, each with a stated stand-in
+when the same sections go out by email.
+
+**A draft stamp.** Set `stamp` in the facts, up to 24 characters. Every sheet, the cover
+included, carries the word large and light across it; an email shows it as the first line
+of the strip at the top, and its text part opens on `[DRAFT]`.
+
+**A landscape page.** `add_page(..., orientation="landscape")` turns that page's sheets on
+their side, so a wide table keeps all its columns. The report returns to portrait after it,
+and the page numbers and running lines carry on. In an email the page simply runs on.
+
+**An aside.** `TextBlock(aside=Aside(...))` sets a short boxout beside the paragraph, with the
+prose wrapping round it on paper. In an email it is a box above the paragraph.
+
+```python
+from pyhermes.builder import Aside
+
+draft = PagedDocument({**facts, "stamp": "DRAFT"})
+draft.add_section(FullWidth(
+    TextBlock(
+        "<p>The curve steepened as the front end repriced, and duration paid.</p>",
+        aside=Aside("Two-year against ten-year yields.", title="2s10s"),
+    ),
+    title="Summary",
+))
+draft.add_page([returns], orientation="landscape")
+draft.save("draft.html")
+```
+
+**A QR code back to the web version.** It needs the `[qr]` extra (`pip install -e ".[qr]"`).
+On paper it prints at one inch with the address beneath it; in an email, where the reader is
+already online, it is a button to the same address.
+
+<!-- manual: needs qr -->
+```python
+from pyhermes.qr import qr_code
+
+draft.add_section(FullWidth(qr_code("https://example.com/q3", "Read it online")))
+draft.save("draft.html")
+```
+
+**Notes:**
+- A stamp is plain text: no markup, and one line.
+- A turned page always starts a fresh sheet and ends one.
+- A QR code takes an `http`, `https` or `mailto` address, and nothing a phone cannot open.
+
 ## Other printed forms
 
 The project [README](../../README.md) covers two more:

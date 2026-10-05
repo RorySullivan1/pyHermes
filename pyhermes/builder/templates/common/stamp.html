@@ -1,0 +1,14 @@
+{#
+  STAMP — a status word across every sheet (#342), on paper only.
+
+  A fixed box repeats on every sheet the print engine lays out, the cover and
+  a title slide included, centred on each sheet's page area by `left: 50%`
+  and half its width back: a box wider than the page area drifted. It sits OVER the copy, translucent, because a
+  section's ground is opaque and hid a stamp set under it (`media.md` has the
+  probe). In the theme's rule colour, so it never competes with the copy.
+
+  Context:
+    stamp      — The word, plain text
+    stamp_type — Its size and box width in px and its slant in degrees, from the sheet
+#}
+<div class="sheet-stamp" aria-hidden="true" align="center" style="position: fixed; top: 50%; left: 50%; width: {{ stamp_type.width }}px; height: {{ stamp_type.px }}px; margin-top: -{{ (stamp_type.px / 2) | round | int }}px; margin-left: -{{ (stamp_type.width / 2) | round | int }}px; z-index: 10; text-align: center; white-space: nowrap; font-family: {{ font.heading }}; font-size: {{ stamp_type.px }}px; line-height: {{ stamp_type.px }}px; font-weight: bold; letter-spacing: 4px; color: {{ theme.palette.rule }}; opacity: 0.6; transform: rotate(-{{ stamp_type.angle }}deg);">{{ stamp | escape_html }}</div>

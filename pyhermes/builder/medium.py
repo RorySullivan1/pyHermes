@@ -116,6 +116,9 @@ DEFAULT_MEDIUM = Medium(name="html", skeleton="base.html")
 #: A test holds it to the shipped ``Medium`` objects, which the kit may not import.
 SHIPPED_MEDIA: tuple[str, ...] = ("html", "email", "document", "brochure", "deck")
 
+#: The shipped media that print onto sheets, by name; the same test holds it to ``paged``.
+PAGED_MEDIA: tuple[str, ...] = ("document", "brochure", "deck")
+
 _WALKING: ContextVar[str | None] = ContextVar("pyhermes_medium", default=None)
 
 

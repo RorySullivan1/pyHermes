@@ -24,6 +24,7 @@ from pyhermes.email import EMAIL_MEDIUM
 from .containers import Container
 from .document import Document, RegionFacts
 from .engine import TemplateOverlay
+from .exceptions import ValidationError
 from .images import ImageAsset
 from .medium import Medium
 from .models import EmailMetadata
@@ -154,6 +155,20 @@ class Email(Document):
         """
         self._footer = footer
         return self
+
+    def validate(self) -> None:
+        """
+        As :meth:`Document.validate`, and a stamp has its strip.
+
+        An email sets its stamp in the header strip (#342), so an ``EmptyHeader``
+        would drop a DRAFT silently: that is refused, naming the fix.
+        """
+        super().validate()
+        if self._metadata.stamp and not self._header.TEMPLATE_PATHS:
+            raise ValidationError(
+                f"this email is stamped {self._metadata.stamp!r}, and an email shows its "
+                "stamp in the header strip, which an EmptyHeader omits. Use a Header."
+            )
 
     def leading_regions(self) -> tuple[RegionFacts, ...]:
         """The strip and the masthead, each with the facts it renders."""

@@ -141,15 +141,16 @@ jobs:
             fonts-liberation
 
       - name: Install (with the PDF and QA extras)
+        # [qr] renders the adapter's own codes, which [qa]'s decoder reads back (#344).
         # [qa] comes along for pypdfium2: the paged half of the gallery is
         # photographed from its PDF rather than through a browser, because a
         # browser renders a paged document as one long scroll and so cannot
         # show the one property the medium exists for.
-        run: pip install -e ".[dev,pdf,qa,math]"
+        run: pip install -e ".[dev,pdf,qa,math,qr]"
 
       - name: PDF tests
         # The modules that read a PDF back, run here to prove [pdf] works with
-        # only [qa] and [math] beside it. A module missing from this line is
+        # only [qa], [math] and [qr] beside it. A module missing from this line is
         # still run by `all-extras`, which fails on any skip naming an extra.
         run: >-
           pytest tests/test_pdf.py tests/test_medium_aware_harness.py
@@ -163,6 +164,7 @@ jobs:
           tests/test_cell_share.py tests/test_measure.py tests/test_hosted_figures.py
           tests/test_glance.py tests/test_deck_layouts.py tests/test_labels.py
           tests/test_organising.py tests/test_grouped_exhibits.py
+          tests/test_landscape_pages.py tests/test_stamp.py tests/test_aside.py tests/test_qr.py
 
       - name: Render the paged, brochure and deck galleries to PDF, and photograph every sheet
         run: |
@@ -277,7 +279,7 @@ jobs:
             fonts-liberation
 
       - name: Install (every extra)
-        run: pip install -e ".[dev,qa,pdf,data,charts,math,outlook-desktop]"
+        run: pip install -e ".[dev,qa,pdf,data,charts,math,qr,outlook-desktop]"
 
       - name: Install Chromium
         run: playwright install --with-deps chromium

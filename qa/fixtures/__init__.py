@@ -30,6 +30,7 @@ from . import (
     a4_placed_layout,
     a4_portrait,
     a4_research_note,
+    a4_wide_appendix,
     aligned_layout,
     compact_size,
     composed_layout,
@@ -145,6 +146,7 @@ def all_paged_fixtures() -> dict[str, PagedFixtureBuilder]:
         "a4_glance_layout": a4_glance_layout.build,
         "a4_labelled_layout": a4_labelled_layout.build,
         "a4_organised_layout": a4_organised_layout.build,
+        "a4_wide_appendix": a4_wide_appendix.build,
     }
 
 

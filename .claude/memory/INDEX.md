@@ -7,7 +7,8 @@
 - **Shipped through PR #380.** Epics #157–#220 and #218 (PRs #167–#314); deck bugs #315–#317
   (PR #369); #361 (PR #370); #354 and #372 (PR #371); #318 (PR #373); #346 (PR #374); #324 (PR #376);
   #329 (PR #378); #335 (PR #380). #219 DOCX closed not planned, with #300 PPTX.
-- **Open next:** #340 (WeasyPrint probes, `[qr]`). #288 is the owner's Outlook-desktop check, run on Windows.
+- **#340 implemented** on `claude/integrate-claude-assets-pyhermes-d4spzb` (#341–#345), pushed, awaiting
+  its PR. #288 is the owner's Outlook-desktop check, run on Windows.
 - The prose budget is live; the baseline is 44 and may only shrink.
 
 ## Decisions        (append-only; supersede, never delete)
@@ -40,14 +41,18 @@
   a legend names theme colours (a hex is checked in `add_section`), never reads the plot; a section's
   source is `source_notes`, read by the walk after its blocks** — `apparatus.md`, `data-layer.md` (#335)
 
+- [2026-10-05] **A turned page is a body table of its own (a named page is inert on a `tr`); a stamp is a
+  fact set OVER the copy, translucent (under, grounds hid it), and no constructor `stamp=`; an aside is a
+  value object rendered through `Callout`; a gallery QR is a module-matrix constant** — `media.md`, `brochure.md` (#340)
+
 ## Threads          (open items; remove when closed)
 - **A share table holds its share in Word's engine** (owner, via COM, PR #371); a real Outlook client
   is still #288's. The measure is `ch`: in Georgia 75ch sets ~99 characters (`design-axes.md`).
 - **Outlook desktop's handling of `dir=rtl` on a reversed split is unverified here**, nor #319's VML
   arrow, nor #325's square badge and dot, nor #331's empty rule cells (`font-size:0`), nor #337's legend
   swatch; all join #288's check.
-- **`kitchen_sink` is at its 90 KB ceiling**: `modern_fonts` has 323 bytes left after #335, which merged
-  the chart and the equations into one section to fit; the next epic must merge or move, not add.
+- **`kitchen_sink` is at its 90 KB ceiling**: `modern_fonts` has 962 bytes left after #340, which untitled
+  the three wide `ThreeColumn` ratios to pay for the stamp and the QR button; the next epic must merge or move.
 - **The suite runs on Windows since #372** (PR #371); no Windows CI job — the owner's run is the check.
 - **`epic-autoclose` works** (closed #273, #354, #361, #346, #324, #329, #335). Still confirm each epic closed after its merge.
 - **A dark split leaves a light seam under its left column on paper**, on `main` since before #324;
@@ -60,7 +65,8 @@
   #167 named only the epic and left all nine children open; #168, #191 and #192 named every
   issue and closed every one. One `Closes #N` per sub-issue, and check that summary after
   any epic merge.
-- **Five optional extras:** `[pdf]`, `[qa]`, `[data]`, `[charts]`, `[math]`. `[dev]` alone stays free of
+- **Six optional extras:** `[pdf]`, `[qa]`, `[data]`, `[charts]`, `[math]`, `[qr]` (#344; `zxing-cpp` joined
+  `[qa]` as the decoder). `[dev]` alone stays free of
   them; CI's `all-extras` fails on any skip naming one (#239), so a skip reason must name its extra.
 - **CLAUDE.md is a router**; the detail is in path-scoped `.claude/rules/*.md`, which load
   only when a matching file is read. Add reasoning there, not back into the router.
@@ -79,3 +85,5 @@
 - [2026-10-05] grouped — **#335 implemented** (#336–#339): figure grids, legends, section source
   lines, the research note's grids — sessions/2026-10-05-grouped-exhibits.md
 - [2026-10-05] memory — State and Threads re-synced with GitHub after PR #380.
+- [2026-10-05] page-level — **#340 implemented** (#341–#345): landscape pages, stamps, asides, QR codes,
+  `a4_wide_appendix` — sessions/2026-10-05-page-level.md

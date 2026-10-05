@@ -211,7 +211,9 @@ class TestTheMediumIsWired:
                 "campaign_name": "x",
                 # The facts the head's PDF metadata reads (#195).
                 **dict.fromkeys(("firm_name", "department", "date_range", "issue_label"), ""),
-                "sections_html": "",
+                # The body as runs of sheets laid one way up (#341).
+                "body_runs": [],
+                **dict.fromkeys(("turned_page", "turned_size", "seed_page", "stamp"), ""),
                 **empty_slots,
             },
         )

@@ -75,7 +75,7 @@ def _missing(extra: str) -> bool:
         from pyhermes.pdf import available
 
         return not available()
-    module = {"data": "pandas", "charts": "matplotlib", "math": "matplotlib"}[extra]
+    module = {"data": "pandas", "charts": "matplotlib", "math": "matplotlib", "qr": "segno"}[extra]
     return importlib.util.find_spec(module) is None
 
 

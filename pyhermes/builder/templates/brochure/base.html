@@ -93,6 +93,9 @@
   </style>
 </head>
 <body>
+{% if stamp %}
+{% include "common/stamp.html" %}
+{% endif %}
 {{ sections_html }}
 </body>
 </html>

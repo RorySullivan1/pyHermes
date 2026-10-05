@@ -30,7 +30,8 @@ pyhermes/
 │                         and Appendices, which letters its sections (#309)
 │   ├── components.py   — Component, CardGroup, DataTable, ChartBlock, ImageBlock, TextBlock, NumberedList, AuthorBlock, ContactBlock, Contents
 │                         (+ the Exhibit mixin, and the private Endnotes the document appends)
-│   ├── surfaces.py     — Callout, Button, Divider: blocks that set content apart (#265)
+│   ├── surfaces.py     — Callout, Button, Divider: blocks that set content apart (#265);
+│                         Aside, the boxout a TextBlock floats (#343); QrCode (#344)
 │   ├── glance.py       — BarList, Sparkline, HeroStat: data at a glance, drawn without
 │                         images (#318). `glance.md`
 │   ├── organising.py   — FactList, Timeline + Event, TeaserList + Teaser: organising
@@ -109,6 +110,9 @@ pyhermes/
 │   ├── frames.py       — table_from_frame: a DataFrame as a DataTable
 │   ├── charts.py       — image_from_figure / chart_from_figure: a Figure as an image
 │   └── exceptions.py   — DataError, BackendMissingError (a sibling of EmailBuilderError)
+├── qr/                 ← the QR renderer (#344); "[qr]" extra, segno. `media.md`
+│   ├── adapter.py      — render_qr / qr_code: a URL as a QrCode, in the theme's ink
+│   └── exceptions.py   — QrError, BackendMissingError
 ├── math/               ← the equation renderer (#221); "[math]" extra. `math.md`
 │   ├── render.py       — render_math: LaTeX → PNG through mathtext, lazily imported
 │   ├── adapter.py      — math_block / image_from_math: painted for a theme and a density

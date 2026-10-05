@@ -12,8 +12,8 @@ import pathlib
 
 import pytest
 
-#: What only ``pyhermes.data`` may import, and only inside a function.
-_OPTIONAL = {"pandas", "matplotlib", "numpy"}
+#: What only the adapters may import, and only inside a function.
+_OPTIONAL = {"pandas", "matplotlib", "numpy", "segno"}
 
 
 def _imports(path: pathlib.Path, *, module_level_only: bool = False) -> set[str]:
@@ -54,10 +54,11 @@ class TestTheCoreNeverImportsTheAdapters:
             roots = {name.split(".")[0] for name in _imports(path)}
             assert not roots & _OPTIONAL, f"{path} imports {roots & _OPTIONAL}"
             assert not any(
-                name.startswith(("pyhermes.data", "pyhermes.math")) for name in _imports(path)
+                name.startswith(("pyhermes.data", "pyhermes.math", "pyhermes.qr"))
+                for name in _imports(path)
             ), path
 
-    @pytest.mark.parametrize("package", ["pyhermes/data", "pyhermes/math"])
+    @pytest.mark.parametrize("package", ["pyhermes/data", "pyhermes/math", "pyhermes/qr"])
     def test_the_adapters_import_their_backends_lazily(self, package):
         for path in sorted(pathlib.Path(package).glob("*.py")):
             roots = {name.split(".")[0] for name in _imports(path, module_level_only=True)}
@@ -106,6 +107,18 @@ class TestAMissingBackendNamesTheInstall:
         with pytest.raises(BackendMissingError, match=r"pyhermes\[math\]"):
             render_math("x", font_px=14, color="#3B3B3B", scale=2, fontset="cm")
         assert pyhermes.math.available() is False
+
+    def test_a_qr_code_without_segno_says_install_qr(self, refuse):
+        import importlib
+
+        import pyhermes.qr
+
+        importlib.reload(pyhermes.qr)
+        from pyhermes.qr import BackendMissingError, qr_code
+
+        with pytest.raises(BackendMissingError, match=r"pyhermes\[qr\]"):
+            qr_code("https://example.com/web")
+        assert pyhermes.qr.available() is False
 
     def test_availability_reports_each_backend(self, refuse):
         from pyhermes.data import charts_available, frames_available

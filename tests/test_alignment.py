@@ -36,6 +36,7 @@ from pyhermes.builder import (
     HeroStat,
     NumberedList,
     PullQuote,
+    QrCode,
     TextBlock,
     TwoColumn,
     ValidationError,
@@ -508,6 +509,7 @@ PROSE_COMPONENTS = (
     PullQuote,
     Button,
     HeroStat,
+    QrCode,
 )
 
 #: Components that deliberately do **not** take an ``align``, each with the

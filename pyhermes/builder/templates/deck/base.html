@@ -85,6 +85,9 @@
   </style>
 </head>
 <body>
+{% if stamp %}
+{% include "common/stamp.html" %}
+{% endif %}
 {% if handout %}
 {% for sheet in handout.sheets %}
 <div class="handout-page">

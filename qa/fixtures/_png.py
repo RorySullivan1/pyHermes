@@ -8,7 +8,8 @@ PNG files into the repo would solve determinism but reintroduces binary
 fixtures nobody can diff; generating them from constants solves both.
 
 Only what the builder actually needs: a solid-colour image, small enough that
-the inline-strategy fixture stays well under ``inline_image_limit_kb``.
+the inline-strategy fixture stays well under ``inline_image_limit_kb``, and a
+two-colour grid of modules for a QR code (#344).
 """
 
 from __future__ import annotations
@@ -56,4 +57,32 @@ def solid_png(width: int, height: int, rgb: tuple[int, int, int]) -> bytes:
     scanline = b"\x00" + bytes(rgb) * width
     pixels = zlib.compress(scanline * height, _COMPRESSION_LEVEL)
 
+    return _SIGNATURE + _chunk(b"IHDR", header) + _chunk(b"IDAT", pixels) + _chunk(b"IEND", b"")
+
+
+def matrix_png(
+    rows: tuple[str, ...] | list[str],
+    *,
+    scale: int,
+    border: int,
+    dark: tuple[int, int, int],
+    light: tuple[int, int, int] = (255, 255, 255),
+) -> bytes:
+    """
+    A grid of square modules, ``1`` dark and ``0`` light, ``scale`` px each, inside a light border.
+
+    Returns:
+        Complete PNG bytes — the same bytes for the same arguments, always.
+    """
+    width = len(rows[0]) + 2 * border
+    blank = "0" * width
+    grid = [blank] * border + [f"{'0' * border}{row}{'0' * border}" for row in rows]
+    grid += [blank] * border
+    colours = {"0": bytes(light), "1": bytes(dark)}
+    lines = [b"\x00" + b"".join(colours[cell] * scale for cell in row) for row in grid]
+    pixels = zlib.compress(
+        b"".join(line for line in lines for _ in range(scale)), _COMPRESSION_LEVEL
+    )
+    side = width * scale
+    header = struct.pack(">IIBBBBB", side, side, 8, 2, 0, 0, 0)
     return _SIGNATURE + _chunk(b"IHDR", header) + _chunk(b"IDAT", pixels) + _chunk(b"IEND", b"")

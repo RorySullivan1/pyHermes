@@ -14,6 +14,7 @@ example. `.claude/rules/builder-architecture.md` carries the layer model.
 from __future__ import annotations
 
 import functools
+import math
 from collections.abc import Callable, Iterator
 from contextlib import AbstractContextManager, contextmanager, nullcontext
 from pathlib import Path
@@ -31,7 +32,7 @@ from .apparatus import (
 )
 from .components import Component, Contents, Endnotes, Exhibit, descendants, leaves
 from .containers import Appendices, Container, FullWidth, OnlySections
-from .engine import Renderer, TemplateEngine, TemplateOverlay, overlay_dirs
+from .engine import Renderer, TemplateEngine, TemplateOverlay, overlay_dirs, scheme_of
 from .enums import EmbedStrategy, SizeTheme
 from .exceptions import ValidationError
 from .exhibits import legends
@@ -39,7 +40,14 @@ from .images import EmailImage, ImageAsset, dedupe_assets
 from .medium import DEFAULT_MEDIUM, Medium, walking_in
 from .models import DocumentMetadata, Footnote
 from .research import Bibliography
-from .sizing import MEDIUM_DENSITIES, PRINT_DENSITIES, SizeScheme, Spacing, resolve_size_scheme
+from .sizing import (
+    MEDIUM_DENSITIES,
+    PRINT_DENSITIES,
+    FrameGeometry,
+    SizeScheme,
+    Spacing,
+    resolve_size_scheme,
+)
 from .textgen import join_sections
 from .theming import resolve_theme
 from .typography import resolve_font_theme
@@ -333,6 +341,8 @@ class Document:
         for region, facts in self.leading_regions() + self.trailing_regions():
             ctx.update(region.render_slots(engine, facts))
 
+        if self._metadata.stamp:
+            ctx["stamp_type"] = stamp_type(self._metadata.stamp, scheme_of(engine).frame)
         html = engine.render(self._medium.skeleton, ctx)
         self._medium.validate(html, self._inline_image_hint())
         return html
@@ -352,6 +362,7 @@ class Document:
         self.validate()
         endnotes = self._endnotes()
         return join_sections(
+            f"[{self._metadata.stamp}]" if self._metadata.stamp else "",
             *(region.text(facts) for region, facts in self.leading_regions()),
             *(section.text() for section in self._sections),
             endnotes.text() if endnotes else "",
@@ -695,3 +706,21 @@ def _spacings(container: Container) -> list[tuple[str, Spacing]]:
             if component.spacing is not None
         )
     return found
+
+
+def stamp_type(stamp: str, frame: FrameGeometry) -> dict[str, int]:
+    """
+    The stamp's size, box and slant on ``frame``'s sheet: set along the diagonal (#342).
+
+    As large as a fifth of the short side allows, and smaller where a long
+    word would run past three quarters of the diagonal, at the 0.78em a bold
+    capital measured. The box is the diagonal wide, so the word never wraps.
+    """
+    width, height = frame.sheet_width, frame.sheet_height or frame.sheet_width
+    diagonal = math.hypot(width, height)
+    px = min(0.2 * min(width, height), 0.75 * diagonal / (0.78 * len(stamp)))
+    return {
+        "px": round(px),
+        "width": round(diagonal),
+        "angle": round(math.degrees(math.atan2(height, width))),
+    }

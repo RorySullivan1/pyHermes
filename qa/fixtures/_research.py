@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from pyhermes.builder import (
     Appendices,
+    Aside,
     Bibliography,
     Callout,
     ChartBlock,
@@ -199,7 +200,14 @@ def sections() -> list[Container]:
                         '<a href="#term-winner-minus-loser">winner-minus-loser</a> '
                         'portfolio is set out in <a class="xref" href="#exhibit-1">'
                         "Exhibit 1</a>, and the sample in "
-                        '<a class="xref" href="#exhibit-a-1">Exhibit A.1</a>.</p>'
+                        '<a class="xref" href="#exhibit-a-1">Exhibit A.1</a>.</p>',
+                        # A method note beside the prose on paper, a callout above it
+                        # in the email (#343).
+                        aside=Aside(
+                            "The latest month is skipped, because short-horizon returns reverse.",
+                            title="Why skip a month",
+                            tone="neutral",
+                        ),
                     ),
                     _deciles(),
                 ]

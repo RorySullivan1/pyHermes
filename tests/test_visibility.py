@@ -25,7 +25,7 @@ from pyhermes.builder import (
     ValidationError,
 )
 from pyhermes.builder.images import EmailImage
-from pyhermes.builder.medium import DEFAULT_MEDIUM, SHIPPED_MEDIA
+from pyhermes.builder.medium import DEFAULT_MEDIUM, PAGED_MEDIA, SHIPPED_MEDIA
 from pyhermes.builder.models import Footnote, TableRow
 from pyhermes.document import Page, PagedDocument
 from qa.fixtures._png import solid_png
@@ -194,5 +194,7 @@ def test_the_shipped_media_are_the_ones_named():
     from pyhermes.document import PAGED_MEDIUM
     from pyhermes.email import EMAIL_MEDIUM
 
-    shipped = {m.name for m in (DEFAULT_MEDIUM, EMAIL_MEDIUM, PAGED_MEDIUM, BROCHURE_MEDIUM)}
-    assert shipped | {DECK_MEDIUM.name} == set(SHIPPED_MEDIA)
+    media = (DEFAULT_MEDIUM, EMAIL_MEDIUM, PAGED_MEDIUM, BROCHURE_MEDIUM, DECK_MEDIUM)
+    assert {m.name for m in media} == set(SHIPPED_MEDIA)
+    # What a QrCode reads to leave its image out of an email's manifest (#344).
+    assert {m.name for m in media if m.paged} == set(PAGED_MEDIA)

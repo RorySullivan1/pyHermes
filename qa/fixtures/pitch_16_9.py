@@ -85,6 +85,10 @@ def _bps_level(value: float) -> str:
     return f"{value} bps"
 
 
+#: The status on every slide, the title slide included (#342).
+STAMP = "CONFIDENTIAL"
+
+
 def facts() -> dict[str, Any]:
     """The paged gallery's facts, at the density a deck is read at."""
     return {**_paged.facts(), "size_theme": "presentation"}
@@ -93,7 +97,8 @@ def facts() -> dict[str, Any]:
 def build(template_dir: Path | None = None) -> Deck:
     """Build the deck. Deterministic: same bytes every call."""
     deck = Deck(
-        facts(),
+        # Stamped on every slide, the title slide included (#342).
+        {**facts(), "stamp": STAMP},
         page=SLIDE_16_9,
         title_slide=TitleSlide(
             title="Rates, Projected",

@@ -54,6 +54,7 @@ from pyhermes.builder import (
     NumberedList,
     Only,
     PullQuote,
+    QrCode,
     Reference,
     Rgba,
     Spacing,
@@ -91,6 +92,8 @@ from pyhermes.builder.models import (
 )
 
 from ._png import solid_png
+from ._qr import URL as QR_URL
+from ._qr import qr_png
 
 #: Fixed so the render never moves. A fixture that reads the clock cannot be
 #: snapshotted.
@@ -151,6 +154,8 @@ def _metadata() -> dict[str, Any]:
         "date_range": "Week ending 24 August",
         "issue_label": "Issue 001",
         "header_disclaimer": "For illustrative purposes. Not investment advice.",
+        # The strip's first line in an email (#342), and the text part's.
+        "stamp": "DRAFT",
         # Named rather than omitted, so this golden pins that the string
         # path resolves to the same bytes as the default object — true of all
         # three design-system axes.
@@ -590,7 +595,8 @@ def build(
                 ),
             )
         )
-        # ThreeColumn — all four ratios.
+        # ThreeColumn — all four ratios. The three wide ones carry no title,
+        # and so no contents entry, to pay for #340's stamp and QR code.
         .section(
             ThreeColumn(
                 ratio=ThreeColumnRatio.EQUAL,
@@ -607,7 +613,6 @@ def build(
         .section(
             ThreeColumn(
                 ratio=ThreeColumnRatio.WIDE_LEFT,
-                title="Wide Left",
                 left=TextBlock("<p>The 50% column.</p>"),
                 center=TextBlock("<p>Quarter.</p>"),
                 right=TextBlock("<p>Quarter.</p>"),
@@ -616,7 +621,6 @@ def build(
         .section(
             ThreeColumn(
                 ratio=ThreeColumnRatio.WIDE_CENTER,
-                title="Wide Centre",
                 left=TextBlock("<p>Quarter.</p>"),
                 center=TextBlock("<p>The 50% column.</p>"),
                 right=TextBlock("<p>Quarter.</p>"),
@@ -625,7 +629,6 @@ def build(
         .section(
             ThreeColumn(
                 ratio=ThreeColumnRatio.WIDE_RIGHT,
-                title="Wide Right",
                 left=TextBlock("<p>Quarter.</p>"),
                 center=TextBlock("<p>Quarter.</p>"),
                 right=TextBlock("<p>The 50% column.</p>"),
@@ -666,6 +669,8 @@ def build(
                         Divider(),
                         # The desks it touches, as neutral tags (#327).
                         TagRow(["Rates", "Credit"]),
+                        # A printed code on paper; in this email, its button (#344).
+                        QrCode(qr_png(), QR_URL, caption="Read the folded edition"),
                         # Shown in an email alone (#365), so this golden is unmoved by it.
                         Only(
                             Button(

@@ -16,7 +16,7 @@ from __future__ import annotations
 import textwrap
 import warnings
 from collections.abc import Mapping, Sequence
-from typing import Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from pyhermes.config import get_config
 
@@ -78,6 +78,9 @@ from .textgen import (
     underline,
     wrap,
 )
+
+if TYPE_CHECKING:  # pragma: no cover
+    from .surfaces import Aside
 
 
 class CopyAlignment:
@@ -1401,6 +1404,9 @@ class TextBlock(CopyAlignment, Component):
         measure:  ``"standard"``, ``"narrow"`` or ``"full"`` (none): the longest
                   line, written only where the cell is wider (#358). Unset takes
                   the medium's, which only paper sets.
+        aside:    An :class:`~pyhermes.builder.surfaces.Aside` the prose wraps round
+                  on paper, a third of the column wide; a callout above the
+                  prose in an email (#343). One float a block: not with ``figure``.
     """
 
     template_path = "text/text-block.html"
@@ -1422,10 +1428,20 @@ class TextBlock(CopyAlignment, Component):
         spacing: Spacing | Mapping[str, int | float] | None = None,
         *,
         measure: str | None = None,
+        aside: Aside | None = None,
     ):
+        from .surfaces import Aside  # a surface renders through this very class
+
         self.spacing = self._coerce_spacing(spacing)
         if not content:
             raise ValidationError("TextBlock requires content.")
+        if aside is not None and not isinstance(aside, Aside):
+            raise ValidationError(f"TextBlock.aside takes an Aside, got: {type(aside).__name__}")
+        if aside is not None and figure is not None:
+            raise ValidationError(
+                "a TextBlock hosts one float: a figure or an aside, not both. "
+                "Put the second in a block of its own."
+            )
         refuse_top_headings(content, "TextBlock.content")
         if figure is not None and not isinstance(figure, (ImageBlock, ChartBlock, MathBlock)):
             raise ValidationError(
@@ -1443,6 +1459,7 @@ class TextBlock(CopyAlignment, Component):
         self.subtitle = subtitle
         self.drop_cap = drop_cap
         self.figure = figure
+        self.aside = aside
         self.measure = coerce_measure(measure, "TextBlock")
 
     def render(self, engine: Renderer) -> str:
@@ -1465,6 +1482,16 @@ class TextBlock(CopyAlignment, Component):
             ctx["figure_html"] = self.figure.render(engine)
             ctx["figure_wrap"] = self.figure.wrap if paged else ""
             ctx["figure_width"] = self.figure.image.width or ""
+        if self.aside is not None:
+            width = cell_width_of(engine)
+            if paged:
+                # A third of the column, or up to half a narrow one (a panel's), so
+                # the box keeps room for copy inside its padding.
+                floor = 8 * scheme_of(engine).component.callout_pad_x
+                width = int(max(width // 3, min(width // 2, floor)))
+            ctx["aside_html"] = self.aside.render(engine, width)
+            ctx["aside_side"] = self.aside.side if paged else ""
+            ctx["aside_width"] = width
         ctx["measure_px"], ctx["measure_place"] = self._measure(engine)
         return engine.render(self.template_path, ctx)
 
@@ -1492,7 +1519,8 @@ class TextBlock(CopyAlignment, Component):
         """The figure, then the prose through #108's degrader — ``content`` is raw HTML."""
         prose = wrap(html_to_text(text_markers(self.content, self.notes, self.citing)))
         figure = self.figure.text() if self.figure is not None else ""
-        return self._with_subtitle(figure, prose)
+        aside = self.aside.text() if self.aside is not None else ""
+        return self._with_subtitle(figure, prose, aside)
 
     def context(self) -> dict[str, Any]:
         return {
@@ -1503,6 +1531,9 @@ class TextBlock(CopyAlignment, Component):
             "figure_html": "",
             "figure_wrap": "",
             "figure_width": "",
+            "aside_html": "",
+            "aside_side": "",
+            "aside_width": "",
             **self.alignment_context(),
         }
 

@@ -1273,3 +1273,19 @@ goldens pin the panel anchors and the lettered numbering in each medium, and
 two equations joined it in one section to pay for it: `modern_fonts` is at 89.7 KB, 323 bytes
 under the warning. The container-field test lists `source`, `as_of` and `source_notes`, which
 `research_note` sets; the spacing sentinel instances carry a source on every section.
+
+## Page-level presentation (#345)
+
+`a4_wide_appendix` is the paged gallery's page-level fixture (#340): a portrait report with a
+DRAFT stamp, an aside in its summary, a landscape page holding a ten-column table that crosses
+three turned sheets, and a portrait method note after it, with two cross-references whose page
+numbers the PDF test reads back. `tri_fold_letter` gains an aside in its inside-left panel and
+a QR code on its back cover; `pitch_16_9` a CONFIDENTIAL stamp, so `test_deck_pdf` reads each
+slide's folio as the word before the stamp; the research-note pair an aside, so the email
+gallery shows its callout form. CI's `pdf` job photographs all of them with the rest of the
+printed galleries, and installs `[qr]` for the adapter's own decode test.
+
+**`kitchen_sink` paid for its stamp and QR code by untitling its three wide `ThreeColumn`
+ratios**, which also drops their contents entries: 2,040 bytes back. The stamp costs 187 and
+the code's button about 1,500, so `modern_fonts` is at 91,198 bytes, 962 under the warning.
+Its code's image never reaches the email manifest, which `test_qr` asserts.
