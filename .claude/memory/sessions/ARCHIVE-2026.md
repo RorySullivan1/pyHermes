@@ -382,3 +382,18 @@ Decisions and Log entries folded out of `INDEX.md` on 2026-08-29 (#143), verbati
   over `set_config`; a new thread starts from the default. Soft limits are warnings — `config.md`
 - [2026-09-29] **The import root is `pyhermes` alone**; the `svc` shim was removed (#255) before any
   release shipped it. Checks read the built wheel and sdist, never the tree — `working-in-the-code.md`
+
+## Folded in from INDEX.md on 2026-10-05 (decisions of #261, #265, #277 and #276, and two log lines)
+
+- [2026-09-30] **A composite is a component; the document walks leaves, containers the top level.** So a
+  composite delegates images and reports no notes of its own — `builder-architecture.md` (#261)
+- [2026-10-01] **A section's ground rebinds the theme for its subtree; a block that paints its own surface
+  resets it and, on a ground, sits on the theme's surface** — `design-axes.md` (#265)
+- [2026-10-01] **The lint rules are product behaviour and ship as `pyhermes.check`; the gallery stays test
+  data. Desktop Outlook is drafts only, never send** — `qa-harness.md`, `delivery.md` (#277)
+- [2026-10-01] **An oversize-picture threshold must clear the package's own deliberate density: equations at
+  4x, print at 3.125x. So 4.5, not 3** — `data-layer.md`, `config.md` (#276)
+- [2026-10-01] research-apparatus — **#220 implemented** (#308–#312): exhibits list, appendices,
+  citations, glossary, the research-note fixtures — sessions/2026-10-01-research-apparatus.md
+- [2026-10-02] placement — **#361 implemented** (#362–#367): stack, keep/break, Only/OnlySections,
+  slide layouts, placed_layout fixtures — sessions/2026-10-02-placement.md
