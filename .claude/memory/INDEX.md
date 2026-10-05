@@ -88,3 +88,5 @@
 - [2026-10-05] memory — State and Threads re-synced with GitHub after PR #380.
 - [2026-10-05] page-level — **#340 implemented** (#341–#345): landscape pages, stamps, asides, QR codes,
   `a4_wide_appendix` — sessions/2026-10-05-page-level.md
+- [2026-10-05] windows — the 7 reported Windows failures were already fixed by #372; its own drive-path
+  test still failed (a `WindowsPath` prints backslashes), fixed — sessions/2026-10-05-1657-windows-suite-recheck.md

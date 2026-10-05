@@ -345,8 +345,8 @@ Four decisions:
 - **Two target forms, told apart by the `:`** — a bare name is a gallery fixture; a
   `path/to/module.py:callable` is any zero-argument callable returning an `Email` *or* an
   `EmailBuilder`. Both are public API, so a caller should not have to remember which their own
-  function returns. Split on the **last** colon, so a Windows drive letter is not mistaken for
-  the separator. The output name is `{module_stem}-{callable}`, so two files both defining
+  function returns. Split on the **last** colon after any Windows drive (`C:/` or `C:\`) is
+  taken off, so a drive letter is never the separator, even with no callable (#372). The output name is `{module_stem}-{callable}`, so two files both defining
   `build()` do not collide in `output/`.
 - **Exit codes are the interface**: `0` clean, `1` lint errors, `2` unbuildable or
   unresolvable. Warnings alone do not fail. That is what lets it run in a hook rather than be
