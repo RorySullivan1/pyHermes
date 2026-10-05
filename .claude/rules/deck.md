@@ -267,3 +267,13 @@ the proof the defaults render byte for byte (#353's own allowance).
   the reference the last slide lists, a statement slide carrying the notes sentinel, and the
   bibliography. `tests/test_deck_layouts.py` reads each layout back from the PDF, and CI's
   `pdf` job photographs the deck and its handout one image a sheet.
+
+## A kicker over a slide's title (#333)
+
+`Slide(kicker=)` and `Deck.add_slide(kicker=)` set a short label above the title, in the title
+band. The band's top padding drops by the kicker's line and `caption_gap`
+(`Slide.kicker_rise`), so the title stays on the line `overflowing_slides` measures and the
+body does not move. A margin narrower than the rise clamps at zero and the title moves down,
+which the fit check then names. The text part prints it on the line above the underlined title.
+`pitch_16_9`'s sidebar slide carries one.
+

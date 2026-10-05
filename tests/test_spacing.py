@@ -35,6 +35,7 @@ from pyhermes.builder import (
     Divider,
     Email,
     EmailBuilder,
+    FactList,
     FlowedColumns,
     FourColumn,
     FullWidth,
@@ -51,13 +52,16 @@ from pyhermes.builder import (
     Sparkline,
     Stack,
     TagRow,
+    Teaser,
+    TeaserList,
     Term,
     TextBlock,
     ThreeColumn,
+    Timeline,
     TwoColumn,
 )
 from pyhermes.builder import engine as engine_module
-from pyhermes.builder.components import Component
+from pyhermes.builder.components import Component, descendants
 from pyhermes.builder.containers import Container, section_spacing_tokens
 from pyhermes.builder.document import Document
 from pyhermes.builder.engine import Renderer, TemplateEngine
@@ -378,7 +382,8 @@ class TestTheRebindCostsNothingUnused:
     @staticmethod
     def _strip(document: Document) -> Document:
         for section in document._sections:
-            for node in [section, *getattr(section, "sections", ()), *section.components()]:
+            held = descendants(section.components())  # a Stack's blocks too (#261)
+            for node in [section, *getattr(section, "sections", ()), *held]:
                 node.spacing = None
                 # A section's own ground rebinds the theme (#266): a colour, not a spacing cost.
                 for ground in ("background_color", "text_color"):
@@ -472,12 +477,20 @@ def _image() -> EmailImage:
 
 #: Each class, built so that every branch its template has is taken.
 INSTANCES: dict[type, list[Any]] = {
-    FullWidth: [lambda s: FullWidth(title="T", content=_Stub(), spacing=s)],
-    FlowedColumns: [lambda s: FlowedColumns(title="T", content=_Stub(), spacing=s)],
-    TwoColumn: [lambda s: TwoColumn("30-70", title="T", left=_Stub(), right=_Stub(), spacing=s)],
+    FullWidth: [lambda s: FullWidth(title="T", kicker="K", content=_Stub(), spacing=s)],
+    FlowedColumns: [lambda s: FlowedColumns(title="T", kicker="K", content=_Stub(), spacing=s)],
+    TwoColumn: [
+        lambda s: TwoColumn("30-70", title="T", kicker="K", left=_Stub(), right=_Stub(), spacing=s)
+    ],
     ThreeColumn: [
         lambda s: ThreeColumn(
-            "50-25-25", title="T", left=_Stub(), center=_Stub(), right=_Stub(), spacing=s
+            "50-25-25",
+            title="T",
+            kicker="K",
+            left=_Stub(),
+            center=_Stub(),
+            right=_Stub(),
+            spacing=s,
         )
     ],
     CardGroup: [
@@ -536,11 +549,24 @@ INSTANCES: dict[type, list[Any]] = {
     Contents: [lambda s: _with_entries(Contents(subtitle="S", spacing=s))],
     Stack: [lambda s: Stack([_Stub(), _Stub()], spacing=s)],
     Columns: [lambda s: Columns([_Stub(), _Stub()], spacing=s)],
-    FourColumn: [lambda s: FourColumn([_Stub(), _Stub(), None, _Stub()], title="T", spacing=s)],
+    FourColumn: [
+        lambda s: FourColumn([_Stub(), _Stub(), None, _Stub()], title="T", kicker="K", spacing=s)
+    ],
     Callout: [lambda s: Callout(_Stub(), tone="positive", label="L", spacing=s)],
     Button: [lambda s: Button("Go", "https://example.com", spacing=s)],
     Divider: [lambda s: Divider(spacing=s)],
     TagRow: [lambda s: TagRow(["Rates", "Credit", "FX"], spacing=s)],
+    FactList: [
+        lambda s: FactList({"A": "1", "B": 2}, columns=2, title="T", subtitle="S", spacing=s)
+    ],
+    Timeline: [lambda s: Timeline([("1 Oct", "A", "B"), ("2 Oct", "C")], subtitle="S", spacing=s)],
+    TeaserList: [
+        lambda s: TeaserList(
+            [Teaser("T", "https://example.com", "1 Oct", "Sum.", image=_image(), tags=["Rates"])],
+            subtitle="S",
+            spacing=s,
+        )
+    ],
     Bibliography: [
         lambda s: Bibliography(
             [Reference("k", ["A, B."], 2020, "T", "V", url="https://example.com")],
@@ -622,6 +648,7 @@ FALLBACK_READS: dict[type, dict[str, str]] = {
     Columns: {
         "pad_x": "alone it splits the frame's content width; in a cell it splits the cell's (#263)"
     },
+    FactList: {"pad_x": "alone its columns share the frame's content width; in a cell, the cell's"},
 }
 
 

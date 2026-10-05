@@ -75,6 +75,7 @@ Steepener. Own 30Y against 5Y, sized to the premium's last move.
 Linker hedge. Hold breakevens through the next two prints.
 
 
+Positioning
 The view in brief
 -----------------
 
@@ -89,6 +90,9 @@ In figures
 
 10Y gilt: 4.21% (+18 bps)
 Term premium: 61 bps (+12 bps)
+
+Duration:  7.2 yrs
+Fee:       0.45%
 
 
 The lead figure

@@ -18,7 +18,7 @@
   <img class="slide-picture" src="{{ picture.src | escape_html }}" alt="{{ picture.alt | escape_html }}" width="{{ picture.width }}" height="{{ box.height }}"
        style="position:absolute; top:0; left:{{ picture.left }}px; width:{{ picture.width }}px; height:{{ box.height }}px; object-fit:cover; display:block; border:0;">
 {% endif %}
-{{ title_band(box, section_title, section_anchor, number) }}
+{{ title_band(box, section_title, section_anchor, number, section_kicker, kicker_rise) }}
 {% for region in regions %}
   <div class="slide-body" style="top:{{ box.body_top }}px;{% if region.left %} left:{{ region.left }}px;{% endif %} width:{{ region.width }}px; height:{{ box.body_height }}px;">
 {% if valign != "top" %}

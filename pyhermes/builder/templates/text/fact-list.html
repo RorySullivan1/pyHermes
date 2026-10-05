@@ -1,0 +1,43 @@
+{#
+  FACT LIST (#330) — label and value rows, in one to three columns.
+
+  A layout table with no anchors: the label in the label face, muted; the
+  value in the body face, or the numeric face and its tone when it is a
+  figure, set to the right so a column of figures lines up. A hairline under
+  each fact keeps a label with its value across the gap. The columns are
+  cells of one row, the facts flowing down each in turn, and each is a
+  `stack-column`, so on a phone they stack in reading order with no change to
+  the `@media` block. Between two columns is an empty cell the gutter wide,
+  which stacks to nothing.
+
+  Context:
+    title    — A small heading above the list, plain text; empty for none
+    subtitle — Optional italic standfirst
+    columns  — List of lists of dicts: label, value, numeric, tone
+    share    — Each column's share of the cell, a percent
+#}
+{% if subtitle %}
+<p class="subtitle" style="font-family: {{ font.body }}; font-size: {{ size.type.secondary }}px; font-style: italic; color: {{ theme.text.secondary }}; margin: 0 0 {{ size.space.subtitle_gap }}px 0; line-height: {{ size.type.secondary_line | percent }};">{{ subtitle | escape_html }}</p>
+{% endif %}
+{% if title %}
+<p style="font-family: {{ font.label }}; font-size: {{ size.type.label }}px; font-weight: bold; color: {{ theme.text.heading }}; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 {{ size.space.caption_gap }}px 0; line-height: {{ size.type.body_line | percent }};">{{ title | escape_html }}</p>
+{% endif %}
+<table class="fact-list" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+  <tr>
+{% for column in columns %}
+    <td class="stack-column" width="{{ share }}%" valign="top" style="width: {{ share }}%; vertical-align: top; padding: 0;">
+      <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+{% for fact in column %}
+        <tr>
+          <td align="left" valign="top" style="text-align: left; vertical-align: top; font-family: {{ font.label }}; font-size: {{ size.type.secondary }}px; color: {{ theme.text.secondary }}; line-height: {{ size.type.body_line | percent }}; padding: {{ size.component.fact_pad }}px {{ size.component.fact_pad }}px {{ size.component.fact_pad }}px 0; border-bottom: 1px solid {{ theme.palette.rule }};">{{ fact.label | escape_html }}</td>
+          <td align="right" valign="top" style="text-align: right; vertical-align: top; font-family: {{ font.numeric if fact.numeric else font.body }}; font-size: {{ size.type.body }}px;{% if fact.numeric %} font-weight: bold;{% endif %} color: {{ theme.semantic[fact.tone] if fact.tone else theme.text.primary }}; line-height: {{ size.type.body_line | percent }}; padding: {{ size.component.fact_pad }}px 0; border-bottom: 1px solid {{ theme.palette.rule }};">{{ fact.value | escape_html }}</td>
+        </tr>
+{% endfor %}
+      </table>
+    </td>
+{% if not loop.last %}
+    <td class="stack-column" width="{{ size.space.gutter }}" style="width: {{ size.space.gutter }}px; padding: 0;"></td>
+{% endif %}
+{% endfor %}
+  </tr>
+</table>

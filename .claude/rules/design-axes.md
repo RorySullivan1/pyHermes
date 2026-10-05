@@ -5,6 +5,7 @@ paths:
   - "pyhermes/builder/typography.py"
   - "pyhermes/builder/enums.py"
   - "pyhermes/builder/containers.py"
+  - "pyhermes/builder/organising.py"
   - "pyhermes/builder/templates/**/*"
 ---
 
@@ -1195,4 +1196,65 @@ so they are not a colour exception: a badge recolours with the theme as `Card.to
 - `labelled_layout` and `a4_labelled_layout` carry every placement, all three tones, a status
   column with subheads, a badge on a dark band and a twelve-tag row; `tests/test_labels.py`
   holds the claims. Nothing set, every golden is byte-identical.
+
+
+## Organising content (#329)
+
+Four shapes a research mailer, a factsheet and a pitchbook all carry, each a layout table of
+plain-text fields, so each renders in Outlook, stacks on a phone where it has columns, and
+projects to text that keeps its shape. They live in `pyhermes/builder/organising.py`.
+
+- **`FactList(facts, columns=1)`** (#330): a mapping in its insertion order, or `(label, value)`
+  pairs. The label is `font.label` in the secondary tone; the value `font.body`, or
+  `font.numeric`, bold, set right, when it is a figure (written by `value_format`) or a `Cell`,
+  whose `tone` it keeps. A `Cell` carrying a colour, a background or a badge is refused: a fact
+  takes a tone. A hairline under each fact. With two or three columns the facts flow down, then
+  across, the earlier columns the longer; each column is a `stack-column` cell and the gutter an
+  empty one `gutter` wide, so it stacks to nothing and the `@media` block did not move. It
+  reads `gutter`, so it declares it, and `pad_x` only through the frame fallback outside a cell
+  (`test_spacing.FALLBACK_READS`, `Columns`' reason). No anchors: that is `Glossary`'s job.
+- **`Timeline(events)`** (#331): `Event(date, title, body="", state="")`, `state` `"done"`,
+  `"next"` or unset. Vertical in every medium. **No cell spans rows or columns.** The first
+  draft spanned the date and the copy over three rows around a fixed marker, and Chromium
+  shared the copy's height among all three, stretching the marker into an oval; a pinned row
+  height did not stop it. The `table-header-tier` lint also refuses a merged body cell. So each
+  event is its own table of two rows: date, marker, title; then the rule beside the body. The
+  marker is a **capsule as tall as the title's line**, two half-cells bordered on three sides,
+  so it meets the rule above and below with no gap; the rule is the left border of the right
+  half of the marker's column, so it runs through the capsule's centre (measured in a browser,
+  `TestInABrowser`). Nothing runs above the first marker or below the last, whose rule cell is
+  the border's width wider so its copy keeps the others' edge. Done is filled in the accent,
+  next a ring in the accent on its 0.2 tint, one to come a ring in `rule_dark`. A browser
+  rounds the capsule; WeasyPrint and the Word engine draw a rectangle. On paper each event
+  table carries `break-inside: avoid`, inline and only when `medium.paged`, so the paged
+  skeleton and every email golden did not move. Four tokens: `timeline_date`,
+  `timeline_marker` and `timeline_rule` (box), and `timeline_gap` under each event.
+- **`TeaserList(teasers, columns=1)`** (#332): `Teaser(title, url, date, summary, image, tags)`.
+  The title is the link, in the heading's colour so it reads on any ground; the URL is checked
+  like every other. Tags are the badge partial's neutral badges, as `TagRow` draws them. Two or
+  three across sit side by side in an email; **on paper and on a slide the list is one column**,
+  because `render()` reads `medium.paged`. Alone in a column a thumbnail sits beside the copy in
+  a column `teaser_thumb` wide; across, it tops its column at the column's width. Each row is
+  its own table, a short last row padded with empty cells. **The row table does not collapse
+  its borders**: `border-collapse` is inherited, and a stacked cell, a table on a phone, took
+  the collapsing model and dropped the padding that parts one teaser from the next (seen in
+  the first phone screenshot). Its thumbnails reach `assets()` through `images()`.
+- **`kicker=`** (#333) on every section and on a slide: plain text above the title, in
+  `font.label` at `size.type.label`, upper case by CSS so the text part keeps the caller's
+  case, in the accent; on a ground of its own (`on_ground`) it takes the rebound secondary
+  type, since the accent may not read there. It is a **sibling of the `h2`, never inside it**:
+  on paper the `h2`'s text sets the running boxes (#185). It sits in the `section-title` table,
+  so the break rule that keeps a title with its first line keeps the kicker with both
+  (`TestOnPaper` sweeps a section across a sheet boundary). On a slide it rises into the
+  title band's top margin by its own line and `caption_gap`, so the title keeps the line the
+  fit check measures. Refused on an untitled section, and capped at
+  `Config.kicker_max_chars` (40). The sections declare `caption_gap` for it.
+- **`kitchen_sink` had no bytes for them, and four sections became two.** With the three
+  objects added it measured 93.8 KB in `modern_fonts`. They took `Three Equal`'s three filler
+  blocks, and two pairs of one-block sections became one section holding a `Stack` each: the
+  two equations under *Portfolio Variance*, and the pull quote and the prose-tags block under
+  *Desk Note*. Every block is still there; the gallery tests that looked only at a section's
+  top level now walk `descendants`, as the document does. `modern_fonts` is at 89.4 KB, 615
+  bytes under the warning; `TestTheTokensAreLive` renders `organised_layout` beside it for a
+  thumbnail and a timeline's gaps.
 

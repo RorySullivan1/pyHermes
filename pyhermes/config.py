@@ -120,6 +120,9 @@ class Config:
     #: label is a sentence, and belongs in the copy.
     badge_max_chars: int = 24
 
+    #: The longest kicker a section takes above its title (#333).
+    kicker_max_chars: int = 40
+
     def __post_init__(self) -> None:
         # Validation at construction, as everywhere else in this codebase --
         # a bad limit should name itself here, not surface later as a
@@ -135,6 +138,7 @@ class Config:
             "citation_authors",
             "sparkline_max",
             "badge_max_chars",
+            "kicker_max_chars",
             "oversize_image_ratio",
             "attachment_limit_kb",
             "attachment_warn_kb",

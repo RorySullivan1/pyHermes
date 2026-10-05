@@ -25,12 +25,19 @@ from pyhermes.config import get_config
 from .apparatus import slugify, validate_anchor
 from .components import Component, descendants
 from .composition import refuse_numbered
-from .engine import Renderer, grounded, rebind, respaced, scheme_of
+from .engine import Renderer, grounded, on_ground, rebind, respaced, scheme_of
 from .enums import TextAlign, ThreeColumnRatio, TwoColumnRatio, VerticalAlign
 from .exceptions import ValidationError
 from .images import EmailImage, ImageAsset
 from .medium import check_media, walking_medium
-from .models import Badge, _validate_align, _validate_color, check_valign, coerce_badge
+from .models import (
+    Badge,
+    _validate_align,
+    _validate_color,
+    check_kicker,
+    check_valign,
+    coerce_badge,
+)
 from .sizing import (
     PHONE_FLOOR,
     STANDARD_SIZES,
@@ -122,6 +129,7 @@ class Container:
         keep_together: bool = False,
         break_before: bool = False,
         badge: Badge | str | None = None,
+        kicker: str | None = None,
     ):
         for value, name in (
             (background_color, "background_color"),
@@ -153,6 +161,7 @@ class Container:
             raise ValidationError(
                 f"{self._owner()}'s badge sits after its title (#325); give the section a title"
             )
+        self.kicker = check_kicker(kicker, title, self._owner())
 
     @classmethod
     def spacing_tokens(cls) -> tuple[str, ...]:
@@ -220,6 +229,10 @@ class Container:
         ctx: dict = {
             "section_title": self.heading(),
             "section_badge": self.badge.drawn() if self.badge else None,
+            # On a ground of its own the accent may not read, so it takes the rebound type.
+            "section_kicker": (
+                {"text": self.kicker, "grounded": on_ground(engine)} if self.kicker else None
+            ),
             "highlight": self.highlight,
         }
         if self.background_color:
@@ -279,7 +292,12 @@ class Container:
         nothing. They are presentation, and a plain-text part has no surface
         for them to sit on.
         """
-        return join_blocks(underline(self.titled()), *(c.text() for c in self.components()))
+        return join_blocks(self.headed(), *(c.text() for c in self.components()))
+
+    def headed(self) -> str:
+        """The title underlined, and the kicker on the line above it (#333)."""
+        title = underline(self.titled())
+        return f"{self.kicker}\n{title}" if title and self.kicker else title
 
     def titled(self) -> str:
         """The title as the text part prints it: the heading, and its badge after it (#325)."""
@@ -317,6 +335,7 @@ class _SplitContainer(Container):
     SPACING_TOKENS: ClassVar[tuple[str, ...]] = (
         "section_title_top",
         "section_title_bottom",
+        "caption_gap",
         "column_top",
         "column_bottom",
         "column_pad_x",
@@ -463,6 +482,8 @@ class FullWidth(Container):
                           the ``SPACING_TOKENS`` it moves, for this section.
         badge:            A :class:`~pyhermes.builder.models.Badge`, or a label, after
                           the title (#325); every section takes one.
+        kicker:           A short label set above the title, plain text (#333); every
+                          section takes one, and a titled one only.
     """
 
     template_path = "common/containers/full-width.html"
@@ -470,6 +491,7 @@ class FullWidth(Container):
     SPACING_TOKENS: ClassVar[tuple[str, ...]] = (
         "section_title_top",
         "section_title_bottom",
+        "caption_gap",
         "content_top",
         "content_bottom",
         "pad_x",
@@ -491,6 +513,7 @@ class FullWidth(Container):
         keep_together: bool = False,
         break_before: bool = False,
         badge: Badge | str | None = None,
+        kicker: str | None = None,
     ):
         super().__init__(
             title,
@@ -505,6 +528,7 @@ class FullWidth(Container):
             keep_together=keep_together,
             break_before=break_before,
             badge=badge,
+            kicker=kicker,
         )
         self.content = self._slot("content", content)
 
@@ -563,6 +587,7 @@ class FlowedColumns(FullWidth):
         keep_together: bool = False,
         break_before: bool = False,
         badge: Badge | str | None = None,
+        kicker: str | None = None,
     ):
         super().__init__(
             content,
@@ -578,6 +603,7 @@ class FlowedColumns(FullWidth):
             keep_together=keep_together,
             break_before=break_before,
             badge=badge,
+            kicker=kicker,
         )
         if isinstance(count, bool) or count not in self.COUNTS:
             raise ValidationError(
@@ -648,6 +674,7 @@ class TwoColumn(_SplitContainer):
         keep_together: bool = False,
         break_before: bool = False,
         badge: Badge | str | None = None,
+        kicker: str | None = None,
         stack: str | bool = "natural",
         valign: str | VerticalAlign = "top",
     ):
@@ -664,6 +691,7 @@ class TwoColumn(_SplitContainer):
             keep_together=keep_together,
             break_before=break_before,
             badge=badge,
+            kicker=kicker,
         )
         self.ratio = self._check_ratio(ratio)
         self.stack = self._check_stack(stack)
@@ -736,6 +764,7 @@ class ThreeColumn(_SplitContainer):
         keep_together: bool = False,
         break_before: bool = False,
         badge: Badge | str | None = None,
+        kicker: str | None = None,
         stack: str | bool = "natural",
         valign: str | VerticalAlign = "top",
     ):
@@ -752,6 +781,7 @@ class ThreeColumn(_SplitContainer):
             keep_together=keep_together,
             break_before=break_before,
             badge=badge,
+            kicker=kicker,
         )
         self.ratio = self._check_ratio(ratio)
         self.stack = self._check_stack(stack)
@@ -814,6 +844,7 @@ class FourColumn(_SplitContainer):
         keep_together: bool = False,
         break_before: bool = False,
         badge: Badge | str | None = None,
+        kicker: str | None = None,
         stack: str | bool = "natural",
         valign: str | VerticalAlign = "top",
     ):
@@ -830,6 +861,7 @@ class FourColumn(_SplitContainer):
             keep_together=keep_together,
             break_before=break_before,
             badge=badge,
+            kicker=kicker,
         )
         self.ratio = self._check_ratio(ratio)
         self.stack = self._check_stack(stack)

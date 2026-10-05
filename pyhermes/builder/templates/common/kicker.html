@@ -1,0 +1,16 @@
+{#
+  KICKER (#333) — a short label above a section's title: "Markets · Week 40".
+
+  A sibling of the `h2`, never inside it: on paper the title's text sets the
+  running boxes (#185), and a kicker there would print in every running
+  header. It sits in the `section-title` table, so the break rule that keeps
+  a title with its first line keeps the kicker with both. Upper case is the
+  CSS's, so the text part keeps the caller's case. The accent is the kicker's
+  ink on the theme's own surface; on a ground of its own, where the accent may
+  not read, it takes the rebound secondary type, as everything there does.
+
+  kicker(kicker) — kicker is {"text", "grounded"}
+#}
+{% macro kicker(kicker) -%}
+<p class="kicker" style="margin:0 0 {{ size.space.caption_gap }}px 0; font-family: {{ font.label }}; font-size:{{ size.type.label }}px; font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; color:{{ theme.text.secondary if kicker.grounded else theme.palette.accent }}; line-height:{{ size.type.secondary_line | percent }};">{{ kicker.text | escape_html }}</p>
+{%- endmacro %}

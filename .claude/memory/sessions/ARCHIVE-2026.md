@@ -409,3 +409,13 @@ Decisions and Log entries folded out of `INDEX.md` on 2026-08-29 (#143), verbati
 
 - [2026-10-03] position — **#354 implemented** (#355–#360): valign, `width=` shares, the `ch` measure,
   floated figures; with #372, merged in PR #371 — sessions/2026-10-03-position.md
+
+## Folded in from INDEX.md on 2026-10-05 (decisions of #281 and #218, the #318 log pointers)
+
+- [2026-10-01] **A committed example is a golden: a test compares it to a fresh render, masking only
+  Content-IDs, whose chart bytes are the machine's** — `qa-harness.md` (#281)
+- [2026-10-01] **A deck is a medium, superseding "a slide is a page"; one slide is one sheet, overflow a
+  finding; `presentation` is the first density one medium alone may take** — `deck.md` (#218)
+- [2026-10-04] memory — State, Threads and the epic order re-synced with GitHub after PR #371.
+- [2026-10-04] glance — **#318 implemented** (#319–#323): arrows, bar lists, sparklines, hero
+  figures; the cell bar's CSS widths — sessions/2026-10-04-glance.md

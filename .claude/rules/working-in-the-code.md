@@ -33,6 +33,8 @@ pyhermes/
 │   ├── surfaces.py     — Callout, Button, Divider: blocks that set content apart (#265)
 │   ├── glance.py       — BarList, Sparkline, HeroStat: data at a glance, drawn without
 │                         images (#318). `glance.md`
+│   ├── organising.py   — FactList, Timeline + Event, TeaserList + Teaser: organising
+│                         content (#329). `design-axes.md`
 │   ├── research.py     — Reference + Bibliography, Term + Glossary: a note's sources and
 │                         terms, resolved by the document's walk (#220). `apparatus.md`
 │   ├── models.py       — EmailMetadata (the email's facts), Card, KpiItem, TableRow, NumberedItem, Footnote, SectionConfig

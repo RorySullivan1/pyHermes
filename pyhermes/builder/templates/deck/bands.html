@@ -3,10 +3,16 @@
    slide with a dark ground of its own rebinds the theme, so its title band
    takes the light heading without asking. The title is clipped to one line
    (#316), and the empty span ending it is its sentinel: on a second line it
-   lands a line lower, and pyhermes.deck.overflowing_slides() names it. #}
+   lands a line lower, and pyhermes.deck.overflowing_slides() names it. A
+   kicker (#333) rises into the top margin by its own line and gap, so the
+   title keeps the line the fit check measures. #}
 {% from "common/notes.html" import marked with context %}
-{% macro title_band(box, title, anchor, number) %}
-<div class="slide-band slide-title-band" style="top:0;{% if box.left %} left:{{ box.left }}px;{% endif %} width:{{ box.width }}px; height:{{ box.title_height }}px; padding:{{ box.margin_top }}px {{ box.inset }}px 0;">
+{% from "common/kicker.html" import kicker as kicker_line with context %}
+{% macro title_band(box, title, anchor, number, kicker=none, rise=0) %}
+<div class="slide-band slide-title-band" style="top:0;{% if box.left %} left:{{ box.left }}px;{% endif %} width:{{ box.width }}px; height:{{ box.title_height }}px; padding:{{ [box.margin_top - rise, 0] | max }}px {{ box.inset }}px 0;">
+  {% if kicker %}
+  {{ kicker_line(kicker) }}
+  {% endif %}
   {% if title %}
   <h2 class="slide-title"{% if anchor %} id="{{ anchor | escape_html }}"{% endif %} style="margin:0; font-family:{{ font.heading }}; font-size:{{ size.type.title }}px; line-height:{{ size.type.title_line | percent }}; max-height:{{ box.title_line }}px; overflow:hidden; font-weight:normal; color:{{ theme.text.heading }};">{{ title | escape_html }}<span class="slide-title-end" id="slide-{{ number }}-title-end"></span></h2>
   {% endif %}

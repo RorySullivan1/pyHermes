@@ -20,7 +20,7 @@ import inspect
 import pytest
 
 import pyhermes.builder as builder_api
-from pyhermes.builder.components import Component, DataTable
+from pyhermes.builder.components import Component, DataTable, descendants
 from pyhermes.builder.models import Cell, Column, EmailMetadata, TableRow
 from pyhermes.delivery import collect_cid_references
 from qa.fixtures import DEPRECATED_COMPONENTS, all_fixtures
@@ -211,7 +211,8 @@ class TestComponentFieldsAreExercised:
         blocks = [
             held
             for section in _gallery_sections()
-            for component in section.components()
+            # A block a Stack holds counts: the document reads leaves (#261).
+            for component in descendants(section.components())
             for held in (component, getattr(component, "figure", None))
             if isinstance(held, MathBlock)
         ]
@@ -266,6 +267,7 @@ class TestComponentFieldsAreExercised:
             "break_before",
             "stack",
             "badge",
+            "kicker",
         ],
     )
     def test_every_container_field_is_exercised(self, field_name):
@@ -290,6 +292,7 @@ class TestComponentFieldsAreExercised:
             "break_before": False,
             "stack": "natural",
             "badge": None,
+            "kicker": "",
         }
         assert any(
             getattr(section, field_name, defaults[field_name]) != defaults[field_name]

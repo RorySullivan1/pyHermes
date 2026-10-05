@@ -1,0 +1,86 @@
+Hermes Research
+===============
+
+Gilt Fund, Organised
+
+
+Gilt Fund · Factsheet
+Fund facts
+----------
+
+Inception:       12 March 2019
+Fund size:       GBP 1.24bn
+ISIN:            GB00B1YW4409
+Benchmark:       FTSE Actuaries Gilts
+Ongoing charge:  0.45%
+Dealing:         Daily, 12:00 UK
+
+
+Markets · Week 40
+The calendar
+------------
+
+What we watch, and what has passed
+
+2 Oct   Quarter-end review — Positioning rolled into Q4. (done)
+9 Oct   Gilt auction — Long-dated supply, 30-year. (done)
+14 Oct  UK CPI — September print; the services line matters most. (next)
+29 Oct  FOMC — A hold is priced; the dots are not.
+6 Nov   Bank of England — Decision and the Monetary Policy Report.
+10 Dec  ECB — Last meeting of the year.
+
+Where we stand
+
+Bank Rate:   4.00%
+10Y gilt:    4.21%
+Since last:  +18 bps
+
+
+Performance
+By the numbers
+--------------
+
+1 month:       +0.8%
+3 months:      -1.2%
+1 year:        +3.4%
+3 years:       4.1% p.a.
+5 years:       2.7% p.a.
+Since launch:  2.2% p.a.
+
+
+Research
+Further reading
+---------------
+
+From the desk this month
+
+The long end reprices: https://example.com/research/long-end
+2 Oct 2026 — Term premium is back, and the curve is steepening for the right
+reasons.
+Tags: Rates, Macro
+
+Credit at the tights: https://example.com/research/credit
+28 Sep 2026 — Why we still prefer quality over carry into year end.
+Tags: Credit
+
+The dollar smile: https://example.com/research/dollar
+21 Sep 2026 — Three regimes, and which one we are in.
+
+
+Also this week
+--------------
+
+The long end reprices: https://example.com/research/long-end
+2 Oct 2026 — Term premium is back, and the curve is steepening for the right
+reasons.
+Tags: Rates, Macro
+
+Credit at the tights: https://example.com/research/credit
+28 Sep 2026 — Why we still prefer quality over carry into year end.
+Tags: Credit
+
+
+Past performance is not a guide to future returns.
+
+
+© Hermes Research

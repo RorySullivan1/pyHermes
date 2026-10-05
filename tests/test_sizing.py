@@ -120,6 +120,12 @@ AUDIT: dict[str, dict[str, int | float]] = {
         "badge_pad_y": 2,
         "badge_pad_x": 6,
         "status_dot": 8,
+        "fact_pad": 6,
+        "timeline_date": 96,
+        "timeline_marker": 10,
+        "timeline_rule": 2,
+        "timeline_gap": 14,
+        "teaser_thumb": 120,
         "list_ordinal_width": 22,
         "list_ordinal_gap": 12,
         "list_title_gap": 6,
@@ -639,16 +645,16 @@ class TestTheTokensAreLive:
     @pytest.fixture()
     def perturbed_html(self, monkeypatch: pytest.MonkeyPatch) -> str:
         from pyhermes.builder import sizing
-        from qa.fixtures import kitchen_sink, labelled_layout
+        from qa.fixtures import kitchen_sink, labelled_layout, organised_layout
 
         scheme = _sentinel_scheme()
         monkeypatch.setitem(sizing.SIZE_SCHEMES, SizeTheme.SPACIOUS, scheme)
         self.scheme = scheme
         # kitchen_sink is the exhaustive fixture; labelled_layout carries the
-        # status column it has no bytes left for under the 90 KB warning (#326).
-        return "\n".join(
-            self._perturbed(build()) for build in (kitchen_sink.build, labelled_layout.build)
-        )
+        # status column it has no bytes left for under the 90 KB warning (#326),
+        # and organised_layout a teaser's thumbnail and a timeline's gaps (#329).
+        builds = (kitchen_sink.build, labelled_layout.build, organised_layout.build)
+        return "\n".join(self._perturbed(build()) for build in builds)
 
     @staticmethod
     def _perturbed(builder):

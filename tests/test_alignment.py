@@ -530,6 +530,9 @@ STRUCTURALLY_ALIGNED = {
     "BarList": "a label, a bar and a figure, each fixed in its own cell (#320)",
     "Sparkline": "a series of bars set from the left, its summary beneath (#321)",
     "TagRow": "a run of inline tags, which follows the section's align as text does (#327)",
+    "FactList": "each label sets itself left and each value right, as a box of facts reads (#330)",
+    "Timeline": "the date sets itself right and the copy left, either side of the rule (#331)",
+    "TeaserList": "each teaser sets itself left, so a row of them lines up (#332)",
 }
 
 

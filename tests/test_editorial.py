@@ -17,7 +17,7 @@ from pyhermes.builder import (
     PullQuote,
     TextBlock,
 )
-from pyhermes.builder.components import _with_drop_cap
+from pyhermes.builder.components import _with_drop_cap, descendants
 from pyhermes.builder.exceptions import ValidationError
 from pyhermes.builder.images import EmailImage
 from pyhermes.document import PagedDocument
@@ -216,7 +216,8 @@ class TestEveryPrimitiveIsInTheGallery:
                 isinstance(component, PullQuote)
                 for build in gallery.values()
                 for section in build()._flat_sections()
-                for component in section.components()
+                # A block a Stack holds counts: the document reads leaves (#261).
+                for component in descendants(section.components())
             )
 
     def test_a_pull_quote_sets_its_attribution_and_alignment(self):
