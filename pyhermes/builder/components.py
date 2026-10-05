@@ -47,6 +47,7 @@ from .enums import CardOrientation, ColumnKind, ImageAlign, RowKind, Tone
 from .exceptions import ValidationError
 from .images import EmailImage, ImageAsset, _displayed_height, coerce_image
 from .models import (
+    Badge,
     Card,
     Cell,
     Column,
@@ -508,7 +509,10 @@ class CardGroup(CellShare, Component):
         """
         lines = []
         for card in self.cards:
-            head = f"{card.label}: {card.value}" if card.value else card.label
+            label = card.label
+            if isinstance(card.badge, Badge):
+                label = f"{label} {card.badge.text()}"
+            head = f"{label}: {card.value}" if card.value else label
             if card.sublabel:
                 head = f"{head} ({card.sublabel})"
             lines.append(head)
@@ -530,6 +534,7 @@ class CardGroup(CellShare, Component):
                     "body": c.body,
                     "arrow": c.arrow,
                     "trend": c.trend.drawn(c.tone) if isinstance(c.trend, Series) else None,
+                    "badge": c.badge.drawn() if isinstance(c.badge, Badge) else None,
                 }
                 for c in self.cards
             ],
@@ -664,6 +669,7 @@ class DataTable(CellShare, Exhibit, Component):
                 for index, (cell, column) in enumerate(zip(row.cells, columns, strict=True))
             ]
         _check_figures(columns, rows)
+        _check_statuses(columns, rows)
         # Reading order, so a marker anywhere in the table is checked once (#224).
         copy = [caption, source, *(c.header for c in columns)]
         self.notes = coerce_notes(
@@ -709,8 +715,13 @@ class DataTable(CellShare, Exhibit, Component):
             table(
                 [text_markers(header, self.notes, self.citing) for header in self.headers],
                 [
-                    [text + " " * pad for text, pad in zip(texts, pads, strict=True)]
-                    for texts, pads in zip(self._spelled(), self._pads(), strict=True)
+                    [
+                        text + " " * pad + (f" {cell.badge.text()}" if cell.badge else "")
+                        for text, pad, cell in zip(texts, pads, row.cells, strict=True)
+                    ]
+                    for texts, pads, row in zip(
+                        self._spelled(), self._pads(), self.rows, strict=True
+                    )
                 ],
                 aligns=[column.align for column in self.resolved_columns()],
                 kinds=[row.kind for row in self.rows],
@@ -762,6 +773,13 @@ class DataTable(CellShare, Exhibit, Component):
             else:
                 ends.append(column.scale.high if column.scale else max(figures, default=0))
         return ends
+
+    @staticmethod
+    def _status(row: TableRow, cell: Cell, column: Column) -> str:
+        """The tone of a status cell's dot (#326); empty off a status column or a subhead."""
+        if column.kind != ColumnKind.STATUS or row.kind == RowKind.SUBHEAD or not cell.text:
+            return ""
+        return (column.statuses or {})[cell.text]
 
     def _figure(self, row: TableRow, cell: Cell, column: Column, end: float) -> dict[str, Any]:
         """
@@ -861,7 +879,9 @@ class DataTable(CellShare, Exhibit, Component):
                             "color": cell.color,
                             "tone": cell.tone,
                             "background": cell.background,
-                            "is_text": column.kind == ColumnKind.TEXT,
+                            "is_text": column.kind in (ColumnKind.TEXT, ColumnKind.STATUS),
+                            "status": self._status(r, cell, column),
+                            "badge": cell.badge.drawn() if isinstance(cell.badge, Badge) else None,
                             # A row header, not a data cell: the first column
                             # labels the figures beside it, so it is the `th`
                             # a reader navigates by. Keyed on the resolved
@@ -889,6 +909,20 @@ class DataTable(CellShare, Exhibit, Component):
             "anchor": self.resolved_anchor(),
             "disclosure": self.disclosure,
         }
+
+
+def _check_statuses(columns: list[Column], rows: list[TableRow]) -> None:
+    """Every word in a status column is one its statuses name (#326); a subhead holds none."""
+    for index, column in enumerate(columns):
+        if column.kind != ColumnKind.STATUS:
+            continue
+        for row in rows:
+            word = row.cells[index].text
+            if row.kind != RowKind.SUBHEAD and word and word not in (column.statuses or {}):
+                raise ValidationError(
+                    f"status column {column.header!r} has no status {word!r}; "
+                    f"it names {list(column.statuses or {})}"
+                )
 
 
 def _check_figures(columns: list[Column], rows: list[TableRow]) -> None:

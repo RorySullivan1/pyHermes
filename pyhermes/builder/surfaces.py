@@ -1,5 +1,5 @@
 """
-Blocks that set content apart: a boxed block, a button, a rule (#265).
+Blocks that set content apart: a boxed block, a button, a rule (#265), a row of tags (#327).
 
 Each draws on a surface the theme owns, so a caller names a tone or nothing,
 never a colour. `.claude/rules/design-axes.md` records why.
@@ -14,7 +14,7 @@ from .components import CellShare, Component, CopyAlignment
 from .engine import Renderer, cell_width_of, own_surface, rebind, respaced, scheme_of
 from .exceptions import ValidationError
 from .images import EmailImage
-from .models import _validate_url
+from .models import Badge, _validate_url
 from .sizing import Spacing
 from .textgen import LINE_WIDTH, link_line, wrap
 
@@ -166,3 +166,42 @@ class Divider(Component):
 
     def context(self) -> dict[str, Any]:
         return {}
+
+
+class TagRow(Component):
+    """
+    Two to twelve neutral tags along one line, wrapping: *Rates · Credit · FX* (#327).
+
+    Each tag is a :class:`~pyhermes.builder.models.Badge` in the neutral tone,
+    drawn by the badge partial, so a tag and a badge cannot drift. The row is
+    a run of inline elements, so it wraps on a phone and on paper without a
+    stacking rule. A tag labels; it does not link.
+
+    Args:
+        tags:    The labels, plain text, each within ``Config.badge_max_chars``.
+        spacing: Moves ``badge_pad_y`` and ``badge_pad_x``, inside each tag, and
+                 ``caption_gap``, between tags and between wrapped lines.
+    """
+
+    template_path = "text/tag-row.html"
+
+    SPACING_TOKENS = ("badge_pad_y", "badge_pad_x", "caption_gap")
+
+    #: The fewest and the most tags a row takes.
+    BOUNDS = (2, 12)
+
+    def __init__(self, tags: list[str], spacing: Spacing | Mapping[str, int | float] | None = None):
+        self.spacing = self._coerce_spacing(spacing)
+        low, high = self.BOUNDS
+        if not isinstance(tags, (list, tuple)) or not low <= len(tags) <= high:
+            count = len(tags) if isinstance(tags, (list, tuple)) else type(tags).__name__
+            raise ValidationError(f"TagRow takes {low} to {high} tags, got: {count}")
+        self.tags = [Badge(tag) for tag in tags]
+        for index, tag in enumerate(self.tags):
+            tag.validate(f"tag_row.tags[{index}]")
+
+    def text(self) -> str:
+        return self._with_subtitle(wrap("Tags: " + ", ".join(tag.label for tag in self.tags)))
+
+    def context(self) -> dict[str, Any]:
+        return {"tags": [tag.drawn() for tag in self.tags]}

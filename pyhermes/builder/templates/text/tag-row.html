@@ -1,0 +1,16 @@
+{#
+  TAG ROW (#327) — neutral badges in a run of inline boxes that wraps on a
+  phone and on paper with no stacking rule. Each tag keeps `caption_gap`
+  to its right and below it, so a wrapped line clears the one above. The
+  Word engine drops an inline box's margin, so the line break between two
+  tags is also a real space there.
+
+  Context:
+    tags — [{"label", "tone"}], each Badge.drawn()
+#}
+{% from "common/badge.html" import badge, badge_type with context %}
+<div class="tag-row" style="margin:0; {{ badge_type() }}">
+{% for tag in tags %}
+  {{ badge(tag, size.space.caption_gap) }}
+{% endfor %}
+</div>

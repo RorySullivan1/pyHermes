@@ -7,17 +7,13 @@
 - **Shipped through PR #374.** Epics #157–#220 and #218 (PRs #167–#314); deck bugs #315–#317
   (PR #369); #361 (PR #370); #354 and #372 (PR #371); #318 (PR #373); #346 (PR #374, its CI
   green on every job, the handout's determinism included). #219 DOCX closed not planned, with #300 PPTX.
-- **Open next, in order:** #324 badges (reuse #319's shape call), #329 and #335 (independent),
-  #340 last (three WeasyPrint probes, `[qr]`).
+- **#324 implemented on this branch** (#325–#328): `Badge` on cards, cells and sections, status dots,
+  `TagRow`. **Open next, in order:** #329 and #335 (independent), #340 last (WeasyPrint probes, `[qr]`).
   #288 is the owner's Outlook-desktop check, run on Windows.
 - The prose budget is live; the baseline is 44 and may only shrink.
 
 ## Decisions        (append-only; supersede, never delete)
 - Older entries, and epic #157's, are in sessions/ARCHIVE-2026.md.
-- [2026-10-01] **The size report attributes bytes from the section tree, never new comments; `SizeError`
-  carries the refused HTML so the check measures over the limit** — `qa-harness.md` (#259)
-- [2026-10-01] **Prose markup is styled by a closed tag set from a template, the author's `style` wins, and
-  `h1`/`h2` are refused rather than demoted** — `design-axes.md` (#280)
 - [2026-10-01] **A committed example is a golden: a test compares it to a fresh render, masking only
   Content-IDs, whose chart bytes are the machine's** — `qa-harness.md` (#281)
 - [2026-10-01] **A deck is a medium, superseding "a slide is a page"; one slide is one sheet, overflow a
@@ -40,11 +36,15 @@
   photograph's tone is named, and the handout scales the deck's own sheets rather than rastering
   them, so `[pdf]` alone prints it** — `deck.md` (#346)
 
+- [2026-10-05] **A badge takes a tone, never a colour, and is square in Outlook by decision: no VML,
+  nbsp padding in an mso conditional; a status dot is the same span unlabelled** — `design-axes.md` (#324)
+
 ## Threads          (open items; remove when closed)
 - **A share table holds its share in Word's engine** (owner, via COM, PR #371); a real Outlook client
   is still #288's. The measure is `ch`: in Georgia 75ch sets ~99 characters (`design-axes.md`).
-- **Outlook desktop's handling of `dir=rtl` on a reversed split is unverified here**, and so is #319's
-  VML arrow (`v:shape`/`v:rect` in a paragraph); add both to #288's human check.
+- **Outlook desktop's handling of `dir=rtl` on a reversed split is unverified here**, nor #319's VML
+  arrow, nor #325's square badge and dot (span shading, nbsp padding); all three join #288's check.
+- **`kitchen_sink` is at its 90 KB ceiling**: `modern_fonts` has ~400 bytes left (#324, `design-axes.md`).
 - **The suite runs on Windows since #372** (PR #371); no Windows CI job — the owner's run is the check.
 - **`epic-autoclose` works** (closed #273, #354, #361, #346). Still confirm each epic closed after its merge.
 - **In this container, PDF byte-determinism tests flake** (no HarfBuzz-Subset), and screenshot
@@ -76,3 +76,5 @@
   slides, divider agendas, the handout, the footer counter — sessions/2026-10-04-deck-layouts.md
 - [2026-10-05] memory — State and Threads re-synced with GitHub after PR #374; four decisions and
   two log pointers folded into the archive.
+- [2026-10-05] labels — **#324 implemented** (#325–#328): badges, status dots, tag rows, the
+  labelled fixtures — sessions/2026-10-05-labels.md

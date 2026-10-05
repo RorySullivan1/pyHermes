@@ -1238,3 +1238,14 @@ this repo's Linux CI could see.
   another body face; the skip names no extra, so `all-extras` is unaffected, and in CI they
   still run. The embedded-face check accepts any face the body stack names, or a serif
   standing in for its generic, so an embedded Georgia passes.
+
+## Labels and status (#328)
+
+`labelled_layout` (email) and `a4_labelled_layout` (paged) build one set of sections
+(`qa/fixtures/_labelled.py`): badged cards in three tones, a recommendation table with badged
+ratings beside a status column, a badged split on a dark band and a twelve-tag row. CI's `pdf`
+job photographs the paged one with the rest of the paged gallery, and the gallery's 375px
+tests cover the email. `kitchen_sink` gains a two-tag `TagRow` only, because a status column
+put it over the 90 KB warning; `TestTheTokensAreLive` now renders `labelled_layout` beside it
+for `status_dot` (`design-axes.md` has the numbers).
+

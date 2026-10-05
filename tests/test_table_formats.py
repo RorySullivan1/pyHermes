@@ -99,8 +99,9 @@ class TestTheRawFigureIsKept:
         assert _table(TableRow(["A", "1.4%"])).rows[0].cells[1].value is None
 
     def test_cell_gained_exactly_one_field(self):
+        # ``badge`` followed it (#325); ``value`` is still the one #225 added.
         names = [spec.name for spec in dataclasses.fields(Cell)]
-        assert names == ["text", "align", "color", "background", "tone", "value"]
+        assert names == ["text", "align", "color", "background", "tone", "value", "badge"]
 
 
 class TestAFormatMakesTheColumnNumeric:

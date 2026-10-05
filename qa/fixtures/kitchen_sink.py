@@ -54,6 +54,7 @@ from pyhermes.builder import (
     Spacing,
     Sparkline,
     Stack,
+    TagRow,
     Term,
     TextBlock,
     ThreeColumn,
@@ -649,6 +650,8 @@ def build(
                             label="Key takeaway",
                         ),
                         Divider(),
+                        # The desks it touches, as neutral tags (#327).
+                        TagRow(["Rates", "Credit"]),
                         # Shown in an email alone (#365), so this golden is unmoved by it.
                         Only(
                             Button(

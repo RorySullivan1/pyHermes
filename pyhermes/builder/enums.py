@@ -164,6 +164,8 @@ class ColumnKind(StrEnum):
     NUMERIC = "numeric"
     #: A short series per cell, drawn as bars (#321).
     SPARKLINE = "sparkline"
+    #: A word per cell from a closed set, each drawn after a dot in its tone (#326).
+    STATUS = "status"
 
 
 class Tone(StrEnum):

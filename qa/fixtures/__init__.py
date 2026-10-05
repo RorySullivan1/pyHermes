@@ -24,6 +24,7 @@ from . import (
     a4_editorial,
     a4_equations,
     a4_glance_layout,
+    a4_labelled_layout,
     a4_long_table,
     a4_placed_layout,
     a4_portrait,
@@ -36,6 +37,7 @@ from . import (
     glance_layout,
     image_matrix,
     kitchen_sink,
+    labelled_layout,
     letter_dense,
     letter_landscape_report,
     letter_quant_table,
@@ -109,6 +111,7 @@ def all_fixtures() -> dict[str, FixtureBuilder]:
         "research_note": research_note.build,
         "placed_layout": placed_layout.build,
         "glance_layout": glance_layout.build,
+        "labelled_layout": labelled_layout.build,
     }
 
 
@@ -137,6 +140,7 @@ def all_paged_fixtures() -> dict[str, PagedFixtureBuilder]:
         "a4_research_note": a4_research_note.build,
         "a4_placed_layout": a4_placed_layout.build,
         "a4_glance_layout": a4_glance_layout.build,
+        "a4_labelled_layout": a4_labelled_layout.build,
     }
 
 

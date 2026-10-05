@@ -220,3 +220,54 @@ email = EmailBuilder().metadata(facts).section(FullWidth(closing)).build()
 is a thin rule in the theme's rule colour, with `block_gap` space above and below. Both go
 anywhere a block goes, including a column. In the plain-text part, a button prints as
 `label: url` and a divider as a line of dashes.
+
+## Label and flag items
+
+**When to use this:** to mark a card, a table cell or a section *New*, *Upgrade* or
+*Preliminary*; to show a column of statuses as coloured dots; or to list a few topics lightly.
+
+```python
+from pyhermes.builder import Badge, CardGroup, Column, DataTable, TagRow
+from pyhermes.builder.models import Cell, KpiItem, TableRow
+
+calls = CardGroup(
+    [
+        KpiItem("10Y gilt", "Overweight", badge=Badge("Upgrade", "positive")),
+        KpiItem("Linkers", "Neutral", badge="New"),
+    ]
+)
+statuses = {"On track": "positive", "Watch": "neutral", "Breach": "negative"}
+dashboard = DataTable(
+    ["Book", Column("Rating", kind="text"), Column("Status", kind="status", statuses=statuses)],
+    [
+        TableRow(["Gilts", Cell("A", badge=Badge("Upgrade", "positive")), "On track"]),
+        TableRow(["Sterling IG", "BBB", "Breach"]),
+    ],
+)
+labelled = (
+    EmailBuilder()
+    .metadata(facts)
+    .section(FullWidth(calls, title="Recommendations", badge="Preliminary"))
+    .section(FullWidth(dashboard, title="Risk dashboard"))
+    .section(FullWidth(TagRow(["Rates", "Credit", "FX"]), title="Markets covered"))
+    .build()
+)
+print(labelled.text())
+```
+
+**Result:** each card's label carries its badge, the gilt's rating has an *Upgrade* badge after
+it, every status has a dot in its colour before it, and the last section lists three tags. In
+the plain-text part a badge reads `[UPGRADE]` beside what it labels, a status is the word
+alone, and the tags read `Tags: Rates, Credit, FX`.
+
+**Notes:**
+
+- A badge takes a tone, `"positive"`, `"negative"` or `"neutral"` (the default), never a
+  colour, so it follows the theme. A plain label such as `badge="New"` is a neutral badge.
+- A label is at most 24 characters (`Config.badge_max_chars`). A section's badge needs the
+  section to have a title, because it sits after it.
+- A status column needs `statuses=`, naming every word its cells may hold and each word's tone.
+  A word it does not name is refused when the table is built.
+- A `TagRow` takes two to twelve tags and wraps onto more lines when it runs out of room.
+- Badges and dots are rounded in a browser and in a PDF. Outlook on Windows draws them square.
+

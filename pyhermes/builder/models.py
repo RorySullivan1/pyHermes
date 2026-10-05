@@ -7,7 +7,7 @@ metadata for the email skeleton, typed data for each component, etc.
 """
 
 import re
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import InitVar, dataclass, field, fields, replace
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any, ClassVar, Self
@@ -616,6 +616,60 @@ def coerce_series(
     return series
 
 
+@dataclass(frozen=True)
+class Badge:
+    """
+    A short toned label on a card, a cell or a section title (#325).
+
+    It takes a tone, never a colour, so it recolours with the theme as
+    ``Card.tone`` does: drawn on a light tint of the tone's semantic colour,
+    in that colour. Unset, the tone is ``neutral``. The plain-text part
+    reads it as ``[LABEL]`` beside what it labels.
+
+    Attributes:
+        label: Plain text, escaped on the way out; at most ``Config.badge_max_chars``.
+        tone:  ``positive``, ``negative`` or ``neutral``.
+    """
+
+    label: str
+    tone: str = "neutral"
+
+    def validate(self, owner: str = "badge") -> None:
+        from pyhermes.config import get_config
+
+        if not isinstance(self.label, str) or not self.label.strip():
+            raise ValidationError(f"{owner!r} needs a label: plain text, got: {self.label!r}")
+        limit = get_config().badge_max_chars
+        if len(self.label) > limit:
+            raise ValidationError(
+                f"{owner!r} label {self.label!r} is {len(self.label)} characters; a badge takes "
+                f"at most {limit} (Config.badge_max_chars). Put a longer note in the copy."
+            )
+        _validate_tone(self.tone, f"{owner}.tone")
+        if not self.tone:
+            raise ValidationError(f"{owner!r} needs a tone: {[t.value for t in Tone]}")
+
+    def text(self) -> str:
+        """``[LABEL]``: how the plain-text part marks what this labels."""
+        return f"[{self.label.upper()}]"
+
+    def drawn(self) -> dict[str, str]:
+        """What the badge partial draws: the label and the tone."""
+        return {"label": self.label, "tone": self.tone}
+
+
+def coerce_badge(value: "Badge | str | None", owner: str = "badge") -> "Badge | None":
+    """``value`` as a validated :class:`Badge`: a bare label takes the neutral tone."""
+    if value is None:
+        return None
+    if isinstance(value, str):
+        value = Badge(value)
+    if not isinstance(value, Badge):
+        raise ValidationError(f"{owner!r} must be a Badge or a label, got: {type(value).__name__}")
+    value.validate(owner)
+    return value
+
+
 @dataclass
 class Card:
     """
@@ -628,11 +682,9 @@ class Card:
     Attributes:
         label:    Short eyebrow above the value (e.g. "S&P 500"). Required.
         value:    The headline figure or phrase, set large.
-        color:    Hex colour for the value. **Unset by default**, and
-                  resolved at render to the active theme's neutral — a
-                  construction-time default could not see a render-time
-                  theme, and would pin one colour outside the palette.
-                  An explicit value is validated here, exactly as before.
+        color:    Hex colour for the value. **Unset by default**, and resolved
+                  at render to the active theme's neutral, which a
+                  construction-time default could not see. Validated if set.
         sublabel: Small caption under the value (e.g. "+1.42% WoW").
         body:     Optional prose beneath the card. **HTML field** — emitted
                   raw so callers can pass markup, so escaping untrusted text
@@ -641,6 +693,7 @@ class Card:
                   ``neutral`` — resolved to the live theme's semantic token
                   at render (#178). An explicit ``color`` still wins.
         trend:    Figures, or a :class:`Series`, drawn as a sparkline under the value (#321).
+        badge:    A :class:`Badge`, or a label, set beside the card's label (#325).
         arrow:    The change's direction (#319), set only by :meth:`from_number`.
 
     Either ``value`` or ``body`` must be present: a card with only a label
@@ -654,11 +707,13 @@ class Card:
     body: str = ""
     tone: str = ""
     trend: "Series | Sequence[Any] | None" = None
+    badge: "Badge | str | None" = None
     arrow: str = field(default="", init=False)
 
     def __post_init__(self) -> None:
         if self.trend is not None:
             self.trend = coerce_series(self.trend, owner="card trend")
+        self.badge = coerce_badge(self.badge, "card.badge")
 
     def validate(self) -> None:
         _require(self.label, "card.label")
@@ -759,9 +814,8 @@ class Column:
         header: The column's heading. Plain text, escaped on the way out.
         align:  ``left`` / ``center`` / ``right``. Empty resolves from
                 :attr:`kind`.
-        kind:   ``text`` or ``numeric``. Empty resolves from the column's
-                *position*: the first column is text, the rest are numeric —
-                which is what ``loop.first`` meant. A ``format`` makes it numeric.
+        kind:   ``text``, ``numeric``, ``sparkline`` or ``status``. Empty resolves from
+                the *position* (first text, the rest numeric); a ``format`` makes it numeric.
         format: How a raw figure in this column is written (#225).
         tone:   ``auto`` (the sign decides) or a ``Tone`` for its raw figures.
         align_decimal: Pad the figures so their decimal points line up (#226).
@@ -770,6 +824,7 @@ class Column:
         bar:    Draw each raw figure as a bar in its cell (#227).
         width:  A relative weight for this column's share of the width (#271).
         arrow:  Draw each raw figure's direction before it (#319).
+        statuses: For ``kind="status"`` (#326), ``{word: tone}``: a dot before the word.
     """
 
     header: str
@@ -783,9 +838,11 @@ class Column:
     bar: bool = False
     width: int | float | None = None
     arrow: bool = False
+    statuses: "Mapping[str, str] | None" = None
 
     def validate(self) -> None:
         _require(self.header, "column.header")
+        self._check_statuses()
         if self.width is not None and not (
             isinstance(self.width, (int, float))
             and not isinstance(self.width, bool)
@@ -812,6 +869,19 @@ class Column:
                 f"'column.kind' must be one of {[k.value for k in ColumnKind]}, got: {self.kind!r}"
             )
 
+    def _check_statuses(self) -> None:
+        """A status column names its words and their tones, and only a status column does."""
+        if (self.kind == ColumnKind.STATUS) != bool(self.statuses):
+            raise ValidationError(
+                f"column {self.header!r}: kind='status' and statuses={{word: tone}} go together"
+            )
+        for word, tone in (self.statuses or {}).items():
+            if not isinstance(word, str) or not word:
+                raise ValidationError(f"column {self.header!r} has a status that is not a word")
+            _validate_tone(tone, f"column {self.header} status {word!r}")
+            if not tone:
+                raise ValidationError(f"column {self.header!r} status {word!r} needs a tone")
+
     def resolved_kind(self, index: int) -> ColumnKind:
         """
         What this column holds, falling back to its position.
@@ -836,9 +906,9 @@ class Column:
         """
         if self.align:
             return ColumnAlign(self.align)
-        return (
-            ColumnAlign.LEFT if self.resolved_kind(index) is ColumnKind.TEXT else ColumnAlign.RIGHT
-        )
+        kind = self.resolved_kind(index)
+        textual = kind in (ColumnKind.TEXT, ColumnKind.STATUS)
+        return ColumnAlign.LEFT if textual else ColumnAlign.RIGHT
 
     def resolved(self, index: int) -> "Column":
         """This column with both presentation fields filled in."""
@@ -990,6 +1060,7 @@ class Cell:
         tone:       ``positive`` / ``negative`` / ``neutral``, as the live
                     theme's semantic token. Empty takes the column's kind.
         value:      The raw figure ``text`` was formatted from (#225).
+        badge:      A :class:`Badge`, or a label, after the cell's text (#325).
     """
 
     text: str = ""
@@ -998,6 +1069,10 @@ class Cell:
     background: str = ""
     tone: str = ""
     value: Any = None
+    badge: "Badge | str | None" = None
+
+    def __post_init__(self) -> None:
+        self.badge = coerce_badge(self.badge, "cell.badge")
 
     def validate(self) -> None:
         if self.align and self.align not in tuple(ColumnAlign):

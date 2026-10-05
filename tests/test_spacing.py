@@ -50,6 +50,7 @@ from pyhermes.builder import (
     Spacing,
     Sparkline,
     Stack,
+    TagRow,
     Term,
     TextBlock,
     ThreeColumn,
@@ -539,6 +540,7 @@ INSTANCES: dict[type, list[Any]] = {
     Callout: [lambda s: Callout(_Stub(), tone="positive", label="L", spacing=s)],
     Button: [lambda s: Button("Go", "https://example.com", spacing=s)],
     Divider: [lambda s: Divider(spacing=s)],
+    TagRow: [lambda s: TagRow(["Rates", "Credit", "FX"], spacing=s)],
     Bibliography: [
         lambda s: Bibliography(
             [Reference("k", ["A, B."], 2020, "T", "V", url="https://example.com")],

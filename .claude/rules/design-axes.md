@@ -1155,3 +1155,44 @@ Floating a table is a non-goal.
 
 **Position projects to nothing.** The plain-text projection is byte-identical with and without
 every control, and a test per control holds it.
+
+
+## Labels and status (#324)
+
+A badge marks an item *New*, *Upgrade* or *At risk*; a status column says *on track* or
+*breach* at a glance; a tag row lists sectors lightly. All three take a tone and nothing else,
+so they are not a colour exception: a badge recolours with the theme as `Card.tone` does.
+
+- **`Badge(label, tone="neutral")` is a model, not a component.** It is a field value in three
+  places: `Card.badge` beside the label, `Cell.badge` after the text, and `badge=` on every
+  section after its title (owner's call, 2026-10-01: on `Container`, beside epic #329's
+  kicker). A bare label is a neutral badge. One partial, `common/badge.html`, draws it
+  everywhere: the label face at `size.type.label`, in the tone's semantic colour on a 0.14
+  `heat_color` tint of it, padded by `badge_pad_y` and `badge_pad_x`. The label is at most
+  `Config.badge_max_chars` (24), and the text part brackets it, `[UPGRADE]`, beside what it
+  labels. A section badge needs a title, since it sits after one.
+- **The Outlook shape is square, by decision, not VML.** The Word engine draws neither
+  `border-radius` nor an inline element's padding: it paints a span's background behind the
+  text alone. So Outlook shows a square label, and a non-breaking space either side, inside an
+  `mso` conditional, stands in for the padding. A `v:roundrect` was the alternative and was
+  refused: it is a fixed box that cannot size itself to a label, and a VML shape inline in a
+  line of text is the very thing #319's arrow still waits on #288 to confirm. This is
+  unverified in a real Outlook here; it joins #288's human check.
+- **The status dot is the badge's shape with no label**: a span holding one non-breaking
+  space, its background the tone's colour, `status_dot` across (a box token). A browser draws
+  a circle; the Word engine shades the space, a small square, which is the badge's decision
+  again. A VML oval was drafted and dropped for #319's reason, and for its bytes.
+- **`TagRow(tags)`**: two to twelve neutral badges as inline boxes, so it wraps on a phone and
+  on paper with no stacking rule. Its wrapper sets the badge type once rather than on every
+  tag, and each tag keeps `caption_gap` to its right and below it. It projects as `Tags: Rates,
+  Credit, FX`. A tag labels; it does not link.
+- **`kitchen_sink` is at its size ceiling, and that decided where the status column lives.**
+  With a tag row and a status column it measured 91.5 KB, over the 90 KB warning its own render
+  would raise. Slimmed, the four `kitchen_sink` goldens sit at 88.7 to 89.6 KB with the tag row
+  alone, and `TestTheTokensAreLive` renders `labelled_layout` beside it, which carries the
+  status column. The test is widened, not weakened: every token still has to reach a render.
+  The next epic to add to `kitchen_sink` has about 400 bytes before `modern_fonts` warns.
+- `labelled_layout` and `a4_labelled_layout` carry every placement, all three tones, a status
+  column with subheads, a badge on a dark band and a twelve-tag row; `tests/test_labels.py`
+  holds the claims. Nothing set, every golden is byte-identical.
+

@@ -353,6 +353,16 @@ the range, and `Column(bar=True)` draws each figure as a bar under it. Both read
 summary. Both read raw data, as the scale and the bar do, and both are refused on a column
 that cannot hold it. `glance.md` has the rest.
 
+### A status column, drawn as dots (#326)
+
+`Column(kind="status", statuses={"On track": "positive", "Watch": "neutral", "Breach":
+"negative"})` draws a dot in each word's tone before it, the word as written; the plain text
+prints the word alone. The two arguments go together, and a word the mapping does not name is
+refused at construction, naming the column and the word. A subhead or an empty cell draws
+no dot. The column resolves left and is set like text. Its tones are the three semantic ones;
+a fourth colour is a non-goal. The dot is the badge's partial (`design-axes.md`), and a
+`Cell.badge` sits after a cell's text on any column (#325).
+
 ### The proof: a factor book and the factsheet (#228)
 
 `letter_quant_table` is the paged fixture that carries every word above: Letter portrait,

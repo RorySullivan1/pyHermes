@@ -196,6 +196,10 @@ class ComponentScale:
     sparkline_gap: int | float = 1
     #: Above and below each row of a bar list (#320).
     bar_list_pad: int | float = 5
+    #: A badge's padding inside its tint (#325), and a status column's dot (#326).
+    badge_pad_y: int | float = 2
+    badge_pad_x: int | float = 6
+    status_dot: int | float = 8
 
     list_ordinal_width: int | float = 22
     list_ordinal_gap: int | float = 12
@@ -608,6 +612,9 @@ COMPACT_SIZES = SizeScheme().derive(
         "kpi_value": 19,
         "hero_value": 36,
         "bar_list_pad": 4,
+        "badge_pad_y": 1,
+        "badge_pad_x": 5,
+        "status_dot": 7,
         "trend_arrow": 6,
         "sparkline_height": 18,
         "sparkline_bar": 3,
@@ -712,6 +719,9 @@ SPACIOUS_SIZES = SizeScheme().derive(
         "kpi_value": 24,
         "hero_value": 52,
         "bar_list_pad": 7,
+        "badge_pad_y": 3,
+        "badge_pad_x": 8,
+        "status_dot": 9,
         "trend_arrow": 8,
         "sparkline_height": 28,
         "sparkline_bar": 5,
@@ -804,6 +814,9 @@ DENSE_SIZES = COMPACT_SIZES.derive(
         "kpi_value": 17,
         "hero_value": 30,
         "bar_list_pad": 2,
+        "badge_pad_y": 1,
+        "badge_pad_x": 4,
+        "status_dot": 6,
         "trend_arrow": 5,
         "sparkline_height": 16,
         "card_pad_y": 6,
@@ -879,6 +892,9 @@ PRESENTATION_SIZES = SPACIOUS_SIZES.derive(
         "kpi_value": 44,
         "hero_value": 88,
         "bar_list_pad": 8,
+        "badge_pad_y": 3,
+        "badge_pad_x": 9,
+        "status_dot": 11,
         "trend_arrow": 11,
         "sparkline_height": 40,
         "sparkline_bar": 8,
@@ -971,7 +987,7 @@ _COMPONENT_TYPE_TOKENS: frozenset[str] = frozenset(
 )
 
 #: Component tokens that size a box rather than space it: the button, the
-#: column a list's ordinals sit in, a table cell's bar, a change's arrow and a sparkline.
+#: column a list's ordinals sit in, a table cell's bar, a change's arrow, a sparkline and a dot.
 _COMPONENT_BOX_TOKENS: frozenset[str] = frozenset(
     {
         "cta_width",
@@ -982,6 +998,7 @@ _COMPONENT_BOX_TOKENS: frozenset[str] = frozenset(
         "sparkline_height",
         "sparkline_bar",
         "sparkline_gap",
+        "status_dot",
     }
 )
 

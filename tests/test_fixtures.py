@@ -265,6 +265,7 @@ class TestComponentFieldsAreExercised:
             "keep_together",
             "break_before",
             "stack",
+            "badge",
         ],
     )
     def test_every_container_field_is_exercised(self, field_name):
@@ -288,6 +289,7 @@ class TestComponentFieldsAreExercised:
             "keep_together": False,
             "break_before": False,
             "stack": "natural",
+            "badge": None,
         }
         assert any(
             getattr(section, field_name, defaults[field_name]) != defaults[field_name]

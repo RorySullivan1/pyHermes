@@ -88,6 +88,7 @@ from .medium import DEFAULT_MEDIUM, Constraint, Medium
 
 # Models
 from .models import (
+    Badge,
     Card,
     Cell,
     Column,
@@ -133,7 +134,7 @@ from .sizing import (
     SpacingScale,
     TypeScale,
 )
-from .surfaces import Button, Callout, Divider
+from .surfaces import Button, Callout, Divider, TagRow
 from .theming import (
     DEFAULT_THEME,
     SLATE_THEME,
@@ -209,6 +210,7 @@ __all__ = [
     "EmailMetadata",
     "Card",
     "KpiItem",
+    "Badge",
     "TableRow",
     "Tone",
     "tone_of",
@@ -241,6 +243,7 @@ __all__ = [
     "Callout",
     "Button",
     "Divider",
+    "TagRow",
     # Data at a glance (#318)
     "BarList",
     "BarItem",
