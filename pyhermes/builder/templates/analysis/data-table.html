@@ -36,6 +36,19 @@
 {% if subtitle %}
 <p class="subtitle" style="font-family: {{ font.body }}; font-size: {{ size.type.secondary }}px; font-style: italic; color: {{ theme.text.secondary }}; margin: 0 0 {{ size.space.subtitle_gap }}px 0; line-height: {{ size.type.secondary_line | percent }};">{{ subtitle | escape_html }}</p>
 {% endif %}
+{% if caption and medium.email %}
+{# Outlook's copy of the caption (#403). The Word engine moves a nested
+   table's `caption` out of place: when the table sits in any row but the
+   first of an enclosing layout table, the caption is drawn at the top of
+   that layout table, above the copy before it and outside any frame, where
+   on a dark band it reads dark-on-dark. Measured in classic Outlook, not
+   argued. So the `caption` below is hidden from Outlook with `mso-hide:all`,
+   which the engine honours by dropping it, and Outlook reads this paragraph
+   instead: same face and spacing, in place, directly above the table.
+   `ids=false` keeps each marker's id written once. Email only, since no
+   other medium has a Word engine to read it. #}
+<!--[if mso]><p align="left" style="margin: 0; text-align: left; font-family: {{ font.label }}; font-size: {{ size.type.label }}px; font-weight: bold; color: {{ theme.text.heading }}; letter-spacing: 0.5px; padding: 0 0 {{ size.space.caption_gap }}px 0;">{{ marked(caption_parts, ids=false) }}</p><![endif]-->
+{% endif %}
 <table class="data-table"{% if anchor %} id="{{ anchor | escape_html }}"{% endif %} border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
 {% if caption %}
   {# The table's accessible NAME, not a standfirst — see the component's
@@ -50,7 +63,7 @@
      side of the table in a legacy renderer, which is the opposite of a
      no-op. The two spellings are equivalent on td/th/p/div and nowhere
      else. #}
-  <caption style="caption-side: top; text-align: left; font-family: {{ font.label }}; font-size: {{ size.type.label }}px; font-weight: bold; color: {{ theme.text.heading }}; letter-spacing: 0.5px; padding: 0 0 {{ size.space.caption_gap }}px 0;">{{ marked(caption_parts) }}</caption>
+  <caption style="caption-side: top; text-align: left; font-family: {{ font.label }}; font-size: {{ size.type.label }}px; font-weight: bold; color: {{ theme.text.heading }}; letter-spacing: 0.5px; padding: 0 0 {{ size.space.caption_gap }}px 0;{% if medium.email %} mso-hide:all;{% endif %}">{{ marked(caption_parts) }}</caption>
 {% endif %}
   {# Header row #}
   <thead>

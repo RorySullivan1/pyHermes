@@ -13,11 +13,15 @@
 
   Every tag below sits on one logical line with whitespace control, because
   a field with no marker must render byte-identically to before.
+
+  `ids=false` drops the marker's `id`, keeping its link. It is for a second
+  copy of a field that only one engine reads (#403's Outlook caption), so the
+  document still names each marker exactly once.
 #}
-{% macro marked(parts, raw=false) -%}
+{% macro marked(parts, raw=false, ids=true) -%}
 {%- for part in parts -%}
 {%- if part.note -%}
-<sup class="note-ref" style="line-height: 0;"><a href="#note-{{ part.note }}" id="note-ref-{{ part.note }}" style="color: {{ theme.palette.accent }}; text-decoration: none;">{{ part.note }}</a></sup>
+<sup class="note-ref" style="line-height: 0;"><a href="#note-{{ part.note }}"{% if ids %} id="note-ref-{{ part.note }}"{% endif %} style="color: {{ theme.palette.accent }}; text-decoration: none;">{{ part.note }}</a></sup>
 {%- if medium.paged -%}
 <span class="footnote" id="note-{{ part.note }}" data-note="{{ part.note }}">{{ part.note_text | escape_html }}</span>
 {%- endif -%}
