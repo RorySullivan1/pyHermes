@@ -43,7 +43,6 @@ from .research import Bibliography
 from .sizing import (
     MEDIUM_DENSITIES,
     PRINT_DENSITIES,
-    FrameGeometry,
     SizeScheme,
     Spacing,
     resolve_size_scheme,
@@ -342,7 +341,9 @@ class Document:
             ctx.update(region.render_slots(engine, facts))
 
         if self._metadata.stamp:
-            ctx["stamp_type"] = stamp_type(self._metadata.stamp, scheme_of(engine).frame)
+            frame = scheme_of(engine).frame
+            sheet = (frame.sheet_width, frame.sheet_height or frame.sheet_width)
+            ctx["stamp_type"] = stamp_type(self._metadata.stamp, *sheet)
         html = engine.render(self._medium.skeleton, ctx)
         self._medium.validate(html, self._inline_image_hint())
         return html
@@ -708,15 +709,14 @@ def _spacings(container: Container) -> list[tuple[str, Spacing]]:
     return found
 
 
-def stamp_type(stamp: str, frame: FrameGeometry) -> dict[str, int]:
+def stamp_type(stamp: str, width: int | float, height: int | float) -> dict[str, int]:
     """
-    The stamp's size, box and slant on ``frame``'s sheet: set along the diagonal (#342).
+    The stamp's size, box and slant on a ``width`` by ``height`` sheet: along its diagonal (#342).
 
     As large as a fifth of the short side allows, and smaller where a long
     word would run past three quarters of the diagonal, at the 0.78em a bold
     capital measured. The box is the diagonal wide, so the word never wraps.
     """
-    width, height = frame.sheet_width, frame.sheet_height or frame.sheet_width
     diagonal = math.hypot(width, height)
     px = min(0.2 * min(width, height), 0.75 * diagonal / (0.78 * len(stamp)))
     return {

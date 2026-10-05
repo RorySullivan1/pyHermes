@@ -15,7 +15,7 @@ from typing import Any, ClassVar, Self
 
 from pyhermes.builder.components import leaves
 from pyhermes.builder.containers import Container
-from pyhermes.builder.document import Document, RegionFacts
+from pyhermes.builder.document import Document, RegionFacts, stamp_type
 from pyhermes.builder.engine import Renderer, TemplateOverlay, scheme_of
 from pyhermes.builder.enums import SizeTheme, TextAlign
 from pyhermes.builder.exceptions import ValidationError
@@ -381,6 +381,9 @@ class Deck(Document):
             pairs += zip((slide.notes for slide in self.slides), self._sheets(engine), strict=True)
             if self._closing_slide.TEMPLATE_PATHS:
                 pairs.append(("", regions["closing_slide_html"]))
+            if self._metadata.stamp:
+                # Sized for the paper the handout prints on, not for the slide.
+                ctx["stamp_type"] = stamp_type(self._metadata.stamp, page.width, page.height)
             box = self.box()
             margin = page.margin
             width = page.width - margin.left - margin.right

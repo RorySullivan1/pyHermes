@@ -4,11 +4,12 @@
 - pyHermes builds **documents** and renders each onto a **medium**: `pyhermes/builder` is the
   shared kit, `pyhermes/email`, `document`, `brochure` and `deck` are the media, and exporters sit on
   one contract — `delivery`+`gmail`+`outlook`, and `pdf`. Rationale: CLAUDE.md and `media.md`.
-- **Shipped through PR #380.** Epics #157–#220 and #218 (PRs #167–#314); deck bugs #315–#317
+- **Shipped through PR #382.** Epics #157–#220 and #218 (PRs #167–#314); deck bugs #315–#317
   (PR #369); #361 (PR #370); #354 and #372 (PR #371); #318 (PR #373); #346 (PR #374); #324 (PR #376);
-  #329 (PR #378); #335 (PR #380). #219 DOCX closed not planned, with #300 PPTX.
-- **#340 implemented** on `claude/integrate-claude-assets-pyhermes-d4spzb` (#341–#345), pushed, awaiting
-  its PR. #288 is the owner's Outlook-desktop check, run on Windows.
+  #329 (PR #378); #335 (PR #380); #340 (PR #382). #219 DOCX closed not planned, with #300 PPTX.
+- **#340 shipped** in PR #382 (#341–#345); the epic was closed by hand when its autoclose runs sat queued.
+  Its merge turned `main`'s `pdf` job red (a stamped deck's handout lacked `stamp_type`), fixed after.
+  #288 is the owner's Outlook-desktop check, run on Windows.
 - The prose budget is live; the baseline is 44 and may only shrink.
 
 ## Decisions        (append-only; supersede, never delete)

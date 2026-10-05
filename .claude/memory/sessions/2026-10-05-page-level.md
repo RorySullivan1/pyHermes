@@ -29,3 +29,9 @@ centres. The aside float wraps in a page column and in a panel's clipped box.
 
 Same container flakes as before: PDF byte determinism in `test_digital_pdf`, `test_attachments`
 and the handout test, each also failing on clean `main` here.
+
+**After the merge (PR #382):** `main`'s `pdf` job failed on its handout step. `Deck.handout()`
+builds its own skeleton context and never computed `stamp_type`, and `pitch_16_9` is now stamped;
+no test rendered a stamped handout. `stamp_type` now takes a sheet's width and height, the handout
+sizes its stamp for its paper, and `test_stamp.py` renders the handout and reads the stamp centred
+on every handout page. Lesson: a new skeleton key needs every path that renders that skeleton.

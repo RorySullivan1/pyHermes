@@ -17,7 +17,7 @@ from pyhermes.builder.document import stamp_type
 from pyhermes.builder.exceptions import ValidationError
 from pyhermes.builder.models import STAMP_MAX, DocumentMetadata
 from pyhermes.builder.regions import EmptyHeader
-from pyhermes.builder.sizing import A4_PORTRAIT, SLIDE_16_9, STANDARD_SIZES
+from pyhermes.builder.sizing import A4_PORTRAIT, SLIDE_16_9
 from pyhermes.document import PagedDocument
 from pyhermes.pdf import available as pdf_available
 from qa.fixtures import all_brochure_fixtures, all_deck_fixtures, all_paged_fixtures
@@ -61,14 +61,14 @@ class TestTheFact:
 
 class TestTheGeometry:
     def test_a_short_word_takes_a_fifth_of_the_short_side(self):
-        sized = stamp_type("DRAFT", STANDARD_SIZES.with_page(A4_PORTRAIT).frame)
+        sized = stamp_type("DRAFT", A4_PORTRAIT.width, A4_PORTRAIT.height)
         assert sized["px"] == round(0.2 * A4_PORTRAIT.width)
         assert sized["angle"] == 55
 
     def test_a_long_word_shrinks_to_fit_the_diagonal(self):
-        frame = STANDARD_SIZES.with_page(SLIDE_16_9).frame
-        assert stamp_type("X" * STAMP_MAX, frame)["px"] < stamp_type("DRAFT", frame)["px"]
-        assert stamp_type("DRAFT", frame)["angle"] == 29
+        slide = (SLIDE_16_9.width, SLIDE_16_9.height)
+        assert stamp_type("X" * STAMP_MAX, *slide)["px"] < stamp_type("DRAFT", *slide)["px"]
+        assert stamp_type("DRAFT", *slide)["angle"] == 29
 
 
 class TestInAnEmail:
@@ -116,6 +116,15 @@ class TestOnPaperMarkup:
 
     def test_the_text_part_opens_on_it_on_paper_too(self):
         assert all_paged_fixtures()["a4_wide_appendix"]().text().startswith("[DRAFT]\n")
+
+    def test_a_stamped_decks_handout_carries_it_sized_for_its_paper(self):
+        # The handout builds its own context, which first shipped without the stamp's size.
+        from pyhermes.builder.sizing import A4_LANDSCAPE
+
+        html = all_deck_fixtures()["pitch_16_9"]().handout(A4_LANDSCAPE)
+        assert html.count('class="sheet-stamp"') == 1
+        width = stamp_type("CONFIDENTIAL", A4_LANDSCAPE.width, A4_LANDSCAPE.height)["width"]
+        assert f"width: {width}px;" in html
 
     def test_unset_no_skeleton_carries_it(self):
         html = PagedDocument(FACTS).add_section(FullWidth(content=TextBlock("<p>x</p>"))).render()
@@ -169,5 +178,23 @@ class TestOnEverySheet:
             centre_x = (min(b[0] for b in boxes) + max(b[2] for b in boxes)) / 2
             centre_y = (min(b[1] for b in boxes) + max(b[3] for b in boxes)) / 2
             width, height = sheet.get_size()
+            assert centre_x == pytest.approx(width / 2, abs=6)
+            assert centre_y == pytest.approx(height / 2, abs=6)
+
+    def test_every_handout_page_carries_it_at_its_centre(self):
+        import pypdfium2
+
+        from pyhermes.pdf import render_handout
+
+        deck = all_deck_fixtures()["pitch_16_9"]()
+        for sheet in pypdfium2.PdfDocument(render_handout(deck)):
+            text = sheet.get_textpage()
+            found = text.search("CONFIDENTIAL").get_next()
+            assert found, "the stamp is missing from a handout page"
+            start, count = found
+            boxes = [text.get_charbox(n) for n in range(start, start + count)]
+            width, height = sheet.get_size()
+            centre_x = (min(b[0] for b in boxes) + max(b[2] for b in boxes)) / 2
+            centre_y = (min(b[1] for b in boxes) + max(b[3] for b in boxes)) / 2
             assert centre_x == pytest.approx(width / 2, abs=6)
             assert centre_y == pytest.approx(height / 2, abs=6)
