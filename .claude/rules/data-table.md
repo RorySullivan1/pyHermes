@@ -153,6 +153,17 @@ tinted label band.
 - **It is not visually hidden.** `display:none` removes it from screen readers too, defeating
   the point, and the clip-rect idiom is unreliable across email clients. It renders, and a
   caller who wants none sets none.
+- **In an email, Outlook reads a copy of it, not the element (#403).** The Word engine moves a
+  nested table's `caption` out of place: when the table sits in any row but the first of an
+  enclosing layout table, the caption is drawn at the top of that layout table, above the copy
+  before it and outside any frame, so on a dark band it reads dark-on-dark. A single-row parent
+  keeps it in place, which is why a minimal probe looked fine and only a `Stack` showed it.
+  The `caption` therefore carries `mso-hide:all`, which the engine honours by dropping it, and
+  an `[if mso]` paragraph directly before the table repeats it in the same face. Its markers
+  link but carry no `id` (`marked(ids=false)`), so each is still named once. Every other client
+  still reads the `caption` as the table's name, and no other medium changes. Measured by
+  reading probe drafts back through `Inspector.WordEditor`, not argued; `outlook-caption` lints
+  for it.
 - **`scope="row"` follows the column's resolved `kind`, not the position.** A table whose
   first column is genuinely numeric — a rank — does not claim to head its row, which is only
   expressible because #117 made the kind a resolved value.

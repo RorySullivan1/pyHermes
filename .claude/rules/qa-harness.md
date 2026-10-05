@@ -235,6 +235,7 @@ test (#60). `lint_html(html)` returns `Finding(rule_id, severity, location, mess
 | `outlook-unsupported-css` | error | `display:flex/grid`, `position:absolute/fixed` in an inline style |
 | `outlook-line-height` | error | A **unitless** `line-height`; Outlook Classic ignores it. `0` is allowed |
 | `outlook-transparent-background` | error | `background-color` carrying an alpha channel — Outlook demotes it to a background image |
+| `outlook-caption` | error | A `caption` Outlook can see, **emails only** (#403). The Word engine draws a nested table's caption above the copy before it and outside its frame; hide it with `mso-hide:all` and give Outlook an `[if mso]` copy. Suppressed inside `<!--[if !mso]><!-->` |
 | `empty-url` | error | `url()` with nothing in it; a client may resolve it against the message body |
 | `table-role` | error | A layout table with no `role`, **and** a data table carrying one (#114) |
 | `table-structure` | error | A data table with no `thead`, **paged documents only** (#176). A print engine repeats only a `thead` on each sheet |

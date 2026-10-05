@@ -97,6 +97,17 @@ SOURCES: dict[str, str] = {
         "Microsoft, VML Fill Element: the type attribute selects the fill "
         "style, and frame is the one that requires a source image."
     ),
+    "outlook-caption": (
+        "Outlook's Word engine moves a nested table's caption out of place: "
+        "when the table sits in any row but the first of an enclosing layout "
+        "table, the caption is drawn at the top of that layout table, above "
+        "the copy before it and outside any frame, so on a dark band it reads "
+        "dark-on-dark (#403). Measured by putting probe drafts into classic "
+        "Outlook and reading the paragraphs back through Inspector.WordEditor; "
+        "a single-row parent keeps it in place, which is why a minimal test "
+        "case looks fine. mso-hide:all makes the engine drop the element, and "
+        "the data table gives Outlook its own copy in an [if mso] paragraph."
+    ),
     "no-external-css": (
         "Microsoft, on Outlook Classic: styles that are not fully inline "
         "'may be stripped or misapplied'. learn.microsoft.com/troubleshoot/"
@@ -275,6 +286,7 @@ RULE_MEDIA: dict[str, frozenset[str]] = {
     "outlook-transparent-background": frozenset({"email"}),
     "vml-fill-empty-src": frozenset({"email"}),
     "vml-fill-frame-without-src": frozenset({"email"}),
+    "outlook-caption": frozenset({"email"}),
     # Gmail's clipping limit. The size *report* stays available everywhere --
     # knowing where the bytes went is useful for any document -- but the
     # threshold is a fact about one mail client.
@@ -303,7 +315,12 @@ def rules_for(medium: str) -> frozenset[str]:
 #: Claims about Outlook, suppressed inside ``<!--[if !mso]><!-->``; named, not prefix-matched.
 #: `qa-harness.md` records why ``img-width-attr`` keeps firing there.
 _OUTLOOK_ONLY_RULES = frozenset(
-    {"outlook-line-height", "outlook-transparent-background", "outlook-unsupported-css"}
+    {
+        "outlook-caption",
+        "outlook-line-height",
+        "outlook-transparent-background",
+        "outlook-unsupported-css",
+    }
 )
 
 #: A ``line-height`` with no unit — the form Outlook Classic ignores. ``0`` is
@@ -438,6 +455,8 @@ class _Linter(HTMLParser):
             self._tables[-1].head_rows += self._tables[-1].in_thead
         if tag == "img":
             self._check_image(attributes)
+        if tag == "caption":
+            self._check_caption(attributes)
         if tag == "link":
             self._check_link(attributes)
         if "style" in attributes:
@@ -509,6 +528,21 @@ class _Linter(HTMLParser):
                     "than falling back to color/opacity. Gate type with the src.",
                     tag[:60],
                 )
+
+    def _check_caption(self, attributes: dict[str, str]) -> None:
+        """A ``caption`` Outlook can see is one it may draw out of place (#403)."""
+        hidden = any(
+            prop == "mso-hide" and value.strip().lower() == "all"
+            for prop, value in _declarations(attributes.get("style", ""))
+        )
+        if not hidden:
+            self._report(
+                "outlook-caption",
+                Severity.ERROR,
+                "<caption> is visible to Outlook, whose Word engine draws a nested "
+                "table's caption above the copy before it and outside its frame. "
+                "Hide it with mso-hide:all and give Outlook an [if mso] copy.",
+            )
 
     def _check_span(self, tag: str, attributes: dict[str, str]) -> None:
         """A span sits in the header tier only, and a spanning head says so."""

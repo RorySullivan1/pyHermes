@@ -53,13 +53,14 @@ class TestEveryRuleSaysWhereItApplies:
         # #165 must not quietly narrow what an email is judged by. The count
         # is a tripwire, not a target: it moved from ten to eleven when #150
         # added vml-fill-frame-without-src, which is a rule being *added* to
-        # what an email is judged by, and to twelve when #223 added
-        # table-header-tier. Narrowing the set is what this guards.
+        # what an email is judged by, to twelve when #223 added
+        # table-header-tier, and to thirteen when #403 added outlook-caption.
+        # Narrowing the set is what this guards.
         paged_only = {"page-size-declared", "paged-table-width", "table-structure"}
         print_only = {"print-marks", "rgb-only"}
         deck_only = {"slide-overflow"}
         assert rules_for("email") == set(SOURCES) - paged_only - print_only - deck_only
-        assert len(rules_for("email")) == 12
+        assert len(rules_for("email")) == 13
 
     def test_the_brochure_is_judged_as_print(self):
         """Every paged rule, the neutral five, and the two about a press (#188)."""
