@@ -4,10 +4,9 @@
 - pyHermes builds **documents** and renders each onto a **medium**: `pyhermes/builder` is the
   shared kit, `pyhermes/email`, `document`, `brochure` and `deck` are the media, and exporters sit on
   one contract — `delivery`+`gmail`+`outlook`, and `pdf`. Rationale: CLAUDE.md and `media.md`.
-- **Shipped through PR #371.** Epics #157–#220 and #218 (PRs #167–#314); deck bugs #315–#317
-  (PR #369); #361 (PR #370); #354 and #372 (PR #371). #219 DOCX closed not planned, with #300 PPTX.
-- **#318 merged in PR #373.** **#346 implemented on this branch** (#347–#353): slide sources,
-  pictures, statement slides, divider agendas, the handout and the footer counter.
+- **Shipped through PR #374.** Epics #157–#220 and #218 (PRs #167–#314); deck bugs #315–#317
+  (PR #369); #361 (PR #370); #354 and #372 (PR #371); #318 (PR #373); #346 (PR #374, its CI
+  green on every job, the handout's determinism included). #219 DOCX closed not planned, with #300 PPTX.
 - **Open next, in order:** #324 badges (reuse #319's shape call), #329 and #335 (independent),
   #340 last (three WeasyPrint probes, `[qr]`).
   #288 is the owner's Outlook-desktop check, run on Windows.
@@ -15,14 +14,6 @@
 
 ## Decisions        (append-only; supersede, never delete)
 - Older entries, and epic #157's, are in sessions/ARCHIVE-2026.md.
-- [2026-09-30] **A composite is a component; the document walks leaves, containers the top level.** So a
-  composite delegates images and reports no notes of its own — `builder-architecture.md` (#261)
-- [2026-10-01] **A section's ground rebinds the theme for its subtree; a block that paints its own surface
-  resets it and, on a ground, sits on the theme's surface** — `design-axes.md` (#265)
-- [2026-10-01] **The lint rules are product behaviour and ship as `pyhermes.check`; the gallery stays test
-  data. Desktop Outlook is drafts only, never send** — `qa-harness.md`, `delivery.md` (#277)
-- [2026-10-01] **An oversize-picture threshold must clear the package's own deliberate density: equations at
-  4x, print at 3.125x. So 4.5, not 3** — `data-layer.md`, `config.md` (#276)
 - [2026-10-01] **The size report attributes bytes from the section tree, never new comments; `SizeError`
   carries the refused HTML so the check measures over the limit** — `qa-harness.md` (#259)
 - [2026-10-01] **Prose markup is styled by a closed tag set from a template, the author's `style` wins, and
@@ -43,10 +34,8 @@
 - [2026-10-03] **Placement within a block's space is paper-first**: `valign` anchors a fixed box by a
   CSS-aligned cell, a split's `valign` is refused in an email (route C), a share is the section's
   align, and the measure is in `ch` and the medium's (route D) — `design-axes.md`, `deck.md` (#354)
-
 - [2026-10-04] **A glance object is drawn from cells and tokens, never an image; an arrow is a
   CSS shape with a VML twin, its direction the number's (`Card.arrow` is `init=False`)** — `glance.md` (#318)
-
 - [2026-10-04] **A deck's layouts are per slide and off by default: the box narrows per slide, a
   photograph's tone is named, and the handout scales the deck's own sheets rather than rastering
   them, so `[pdf]` alone prints it** — `deck.md` (#346)
@@ -57,7 +46,7 @@
 - **Outlook desktop's handling of `dir=rtl` on a reversed split is unverified here**, and so is #319's
   VML arrow (`v:shape`/`v:rect` in a paragraph); add both to #288's human check.
 - **The suite runs on Windows since #372** (PR #371); no Windows CI job — the owner's run is the check.
-- **`epic-autoclose` works** (closed #273, #354, #361). Still confirm each epic closed after its merge.
+- **`epic-autoclose` works** (closed #273, #354, #361, #346). Still confirm each epic closed after its merge.
 - **In this container, PDF byte-determinism tests flake** (no HarfBuzz-Subset), and screenshot
   tests skip unless `PYHERMES_CHROMIUM=/opt/pw-browsers/chromium-1194/chrome-linux/chrome`.
 - **Every issue or PR body is written without angle brackets** — GitHub's sanitizer has
@@ -78,10 +67,6 @@
 
 ## Log              (append-only pointers)
 - Older entries, and epic #157's, are in sessions/ARCHIVE-2026.md.
-- [2026-10-01] research-apparatus — **#220 implemented** (#308–#312): exhibits list, appendices,
-  citations, glossary, the research-note fixtures — sessions/2026-10-01-research-apparatus.md
-- [2026-10-02] placement — **#361 implemented** (#362–#367): stack, keep/break, Only/OnlySections,
-  slide layouts, placed_layout fixtures — sessions/2026-10-02-placement.md
 - [2026-10-03] position — **#354 implemented** (#355–#360): valign, `width=` shares, the `ch` measure,
   floated figures; with #372, merged in PR #371 — sessions/2026-10-03-position.md
 - [2026-10-04] memory — State, Threads and the epic order re-synced with GitHub after PR #371.
@@ -89,3 +74,5 @@
   figures; the cell bar's CSS widths — sessions/2026-10-04-glance.md
 - [2026-10-04] deck-layouts — **#346 implemented** (#347–#353): sources, pictures, statement
   slides, divider agendas, the handout, the footer counter — sessions/2026-10-04-deck-layouts.md
+- [2026-10-05] memory — State and Threads re-synced with GitHub after PR #374; four decisions and
+  two log pointers folded into the archive.
