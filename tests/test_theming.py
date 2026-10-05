@@ -29,6 +29,7 @@ from pyhermes.builder.theming import (
     Theme,
     resolve_theme,
 )
+from qa.fixtures import _toned
 
 TEMPLATE_DIR = TemplateEngine().template_dir
 
@@ -84,12 +85,13 @@ class TestTheLayersAreATightVocabulary:
             assert spec.type == "str", f"{layer.__name__}.{spec.name} is not a plain token"
             assert spec.default is not dataclasses.MISSING
 
-    def test_the_theme_is_exactly_four_layers(self):
+    def test_the_theme_is_exactly_four_layers_and_its_brand_tones(self):
         assert [f.name for f in dataclasses.fields(Theme)] == [
             "palette",
             "text",
             "semantic",
             "shadow",
+            "tones",
         ]
 
 
@@ -252,6 +254,7 @@ class TestTheAuditIsTrue:
             for layer in (theme.palette, theme.text, theme.semantic)
             for spec in dataclasses.fields(layer)
         } | {DEFAULT_THEME.shadow.scrim.color, SLATE_THEME.shadow.scrim.color}
+        known |= set(_toned.THEME.tones.values())  # brand tones are theme tokens (#387)
         # The fixtures pass their own KpiItem/TableRow colours — caller data
         # about the numbers, which the theme deliberately does not own.
         # Caller data, not theme tokens: a KpiItem/Card colour, a cell's text
@@ -945,20 +948,21 @@ def _heat_colours(candidates: set[str]) -> set[str]:
     The candidates a heat scale (#227), a callout's tint (#268) or a timeline's
     next marker (#331) derives from a theme's tokens.
 
-    A tint is interpolated from ``palette.surface`` toward a semantic token or
-    the accent, so it is theme-derived without being a token; one the filter
+    A tint is interpolated from ``palette.surface`` toward a semantic token, a
+    brand tone (#387) or the accent, so it is theme-derived without being a token; one the filter
     cannot produce from some theme's pair is still a colour that bypassed the theme.
     """
     from pyhermes.builder.filters import heat_color
 
     derived = {
         heat_color(step / 1000, theme.palette.surface, toward)
-        for theme in (DEFAULT_THEME, SLATE_THEME)
+        for theme in (DEFAULT_THEME, SLATE_THEME, _toned.THEME)
         for toward in (
             theme.semantic.positive,
             theme.semantic.negative,
             theme.semantic.neutral,
             theme.palette.accent,
+            *theme.tones.values(),
         )
         for step in range(1001)
     }

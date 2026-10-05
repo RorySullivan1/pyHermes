@@ -57,7 +57,7 @@ class TestConstruction:
 
     def test_a_tone_is_the_callouts(self):
         with pytest.raises(ValidationError, match="tone"):
-            Aside("Body.", tone="loud")
+            Aside("Body.", tone="Loud!")
 
     @pytest.mark.parametrize("body", ["See the note.[^1]", "As shown [@jt1993]."])
     def test_a_note_or_a_citation_is_refused(self, body):

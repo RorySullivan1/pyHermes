@@ -155,8 +155,8 @@ the same strings.
 
 **Offered, never applied (#275).** `pyhermes.data.chart_style(theme, font_theme, *, role)`
 returns a `ChartStyle`: a `dict` of matplotlib `rc` settings for `plt.rc_context`, with
-`positive`, `negative` and `series` as attributes, because `rc_context` refuses keys it does not
-know. The colour settings are listed in `RC_TOKENS`, each with the theme token it reads, and a
+`positive`, `negative`, `series` and, since #387, `tones` (the theme's brand tones by name) as
+attributes, because `rc_context` refuses keys it does not know. The colour settings are listed in `RC_TOKENS`, each with the theme token it reads, and a
 test holds that `slate` differs from `classic` exactly where those tokens do. The font list
 keeps only the families `font_manager.findfont` resolves without falling back, then the
 stack's generic family, so a missing Georgia produces no warning. `chart_from_figure` is

@@ -1289,3 +1289,11 @@ printed galleries, and installs `[qr]` for the adapter's own decode test.
 ratios**, which also drops their contents entries: 2,040 bytes back. The stamp costs 187 and
 the code's button about 1,500, so `modern_fonts` is at 91,198 bytes, 962 under the warning.
 Its code's image never reaches the email manifest, which `test_qr` asserts.
+
+## Brand tones (#387)
+
+`toned_layout` (email) and `a4_toned_layout` (paged) build one set of sections
+(`qa/fixtures/_toned.py`) on a theme declaring two brand tones: a gold fact box, a sky box beside
+an untoned one, toned and badged cards, a hero figure, a table with brand-toned cells and status
+dots, a bar list and a key. `kitchen_sink` is untouched, because it is at its size ceiling and a
+brand tone is a theme setting, not a component. Nothing set, every other golden is byte-identical.

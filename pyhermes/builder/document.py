@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import functools
 import math
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterator, Mapping
 from contextlib import AbstractContextManager, contextmanager, nullcontext
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Concatenate, ParamSpec, Self, TypeVar
@@ -48,7 +48,7 @@ from .sizing import (
     resolve_size_scheme,
 )
 from .textgen import join_sections
-from .theming import resolve_theme
+from .theming import Theme, resolve_theme
 from .typography import resolve_font_theme
 
 if TYPE_CHECKING:  # pragma: no cover - regions imports models, which imports this
@@ -229,6 +229,9 @@ class Document:
             )
         for legend in legends(_held(container)):
             legend.check_theme(self._metadata.theme)
+        theme = resolve_theme(self._metadata.theme)
+        for owner, tone in _tones(container):
+            theme.check_tone(tone, owner)
         if isinstance(container, Appendices) and any(
             isinstance(section, Appendices) for section in self._sections
         ):
@@ -691,6 +694,38 @@ def _held(container: Container) -> list[Component]:
     if isinstance(inner, list):
         return [block for section in inner for block in _held(section)]
     return descendants(container.components())
+
+
+def _tones(root: object) -> list[tuple[str, str]]:
+    """
+    Every tone one section's subtree names, with the object that names it (#387).
+
+    It reads every ``tone`` and every status column's ``statuses`` on the
+    package's own objects, so a new object that takes a tone is checked
+    without a line here.
+    """
+    found: list[tuple[str, str]] = []
+    seen: set[int] = set()
+    stack: list[object] = [root]
+    while stack:
+        node = stack.pop()
+        if id(node) in seen or isinstance(node, (str, bytes, Theme)):
+            continue
+        seen.add(id(node))
+        if isinstance(node, Mapping):
+            stack.extend(node.values())
+        elif isinstance(node, (list, tuple, set, frozenset)):
+            stack.extend(node)
+        elif type(node).__module__.startswith("pyhermes.") and hasattr(node, "__dict__"):
+            owner = type(node).__name__
+            for name, value in vars(node).items():
+                if name == "tone" and isinstance(value, str) and value not in ("", "auto"):
+                    found.append((owner, value))
+                elif name == "statuses" and isinstance(value, Mapping):
+                    found.extend((f"{owner} status {word!r}", tone) for word, tone in value.items())
+                else:
+                    stack.append(value)
+    return found
 
 
 def _spacings(container: Container) -> list[tuple[str, Spacing]]:

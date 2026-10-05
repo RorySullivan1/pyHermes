@@ -224,7 +224,7 @@ class TestACallout:
         ("build", "message"),
         [
             (lambda: Callout("text"), "holds one component"),
-            (lambda: Callout(TextBlock("<p>x</p>"), tone="warning"), "tone must be one of"),
+            (lambda: Callout(TextBlock("<p>x</p>"), tone="Warning"), "callout.tone"),
         ],
     )
     def test_bad_input_is_refused(self, build, message):

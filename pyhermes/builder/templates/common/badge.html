@@ -21,7 +21,7 @@
   dot(tone)           — tone is "positive", "negative" or "neutral".
 #}
 {% macro badge(badge, gap=0) -%}
-{%- set ink = theme.semantic[badge.tone] -%}{%- set fill = 0.14 | heat_color(theme.palette.surface, ink) -%}
+{%- set ink = theme.tone[badge.tone] -%}{%- set fill = 0.14 | heat_color(theme.palette.surface, ink) -%}
 <span class="badge" style="display:inline-block; vertical-align:middle; white-space:nowrap;{% if not gap %} {{ badge_type() }}{% endif %} color:{{ ink }}; background-color:{{ fill }}; padding:{{ size.component.badge_pad_y }}px {{ size.component.badge_pad_x }}px; border-radius:3px;{% if gap %} margin:0 {{ gap }}px {{ gap }}px 0;{% endif %}"><!--[if mso]>&nbsp;<![endif]-->{{ badge.label | escape_html }}<!--[if mso]>&nbsp;<![endif]--></span>
 {%- endmacro %}
 
@@ -32,5 +32,5 @@ font-family:{{ font.label }}; font-size:{{ size.type.label }}px; line-height:{{ 
 
 {% macro dot(tone) -%}
 {%- set across = size.component.status_dot -%}
-<span class="status-dot" style="display:inline-block; vertical-align:middle; width:{{ across }}px; height:{{ across }}px; border-radius:50%; background-color:{{ theme.semantic[tone] }}; font-size:{{ across }}px; line-height:{{ across }}px;">&nbsp;</span>&nbsp;
+<span class="status-dot" style="display:inline-block; vertical-align:middle; width:{{ across }}px; height:{{ across }}px; border-radius:50%; background-color:{{ theme.tone[tone] }}; font-size:{{ across }}px; line-height:{{ across }}px;">&nbsp;</span>&nbsp;
 {%- endmacro %}

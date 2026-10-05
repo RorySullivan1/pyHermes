@@ -170,7 +170,7 @@ class TestWhatItRefuses:
             ({"formats": {"1m": pct}}, "formats names columns"),
             ({"tones": {"YTD": "auto"}}, "tones names columns"),
             ({"subheads": {"Carry": "Style"}}, "subheads names rows"),
-            ({"tones": {"1M": "up"}}, "'auto' or a Tone"),
+            ({"tones": {"1M": "Up"}}, r"tones\['1M'\]"),
         ],
     )
     def test_a_mapping_naming_nothing_raises_by_name(self, kwargs, match):

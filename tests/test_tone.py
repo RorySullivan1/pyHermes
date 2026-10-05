@@ -43,7 +43,7 @@ class TestTheVocabulary:
         assert {tone.value for tone in Tone} == tokens
 
     @pytest.mark.parametrize("model", [Cell, lambda **kw: Card("S&P 500", "5,234", **kw)])
-    @pytest.mark.parametrize("bad", ["#B85450", "red", "Positive", "up"])
+    @pytest.mark.parametrize("bad", ["#B85450", "Red", "Positive", "up arrow"])
     def test_a_tone_is_a_word_never_a_hex(self, model, bad):
         """
         The boundary that keeps ``tone`` from being a fifth colour exception:
@@ -161,7 +161,7 @@ class TestFromNumber:
 
     def test_an_unknown_tone_raises(self):
         with pytest.raises(ValidationError, match="cell.tone"):
-            Cell.from_number(1.0, tone="up")
+            Cell.from_number(1.0, tone="Up")
 
 
 class TestThePlainTextProjection:
@@ -178,12 +178,10 @@ class TestThePlainTextProjection:
 def test_the_semantic_tokens_now_have_a_render_site():
     """
     The gap #170 was filed on: positive and negative rendered nowhere.
-    Both templates now read the semantic token a tone names.
+    Both templates now read the colour a tone names, through ``theme.tone`` (#387).
     """
     from pathlib import Path
 
     templates = Path("pyhermes/builder/templates/analysis")
-    assert "theme.semantic[cell.tone]" in (templates / "data-table.html").read_text(
-        encoding="utf-8"
-    )
-    assert "theme.semantic[card.tone" in (templates / "card-group.html").read_text(encoding="utf-8")
+    assert "theme.tone[cell.tone]" in (templates / "data-table.html").read_text(encoding="utf-8")
+    assert "theme.tone[card.tone" in (templates / "card-group.html").read_text(encoding="utf-8")
