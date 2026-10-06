@@ -276,7 +276,7 @@ class BoxSurface:
     #: of the same three strings: a box and a section align the same thing,
     #: and the moment they disagree an email's header and its first section
     #: mean different things by the same word.
-    ALIGNMENTS: ClassVar[frozenset[str]] = frozenset(TextAlign)
+    ALIGNMENTS: ClassVar[frozenset[str]] = frozenset(TextAlign) - {TextAlign.JUSTIFY}
 
     align: str = "center"
     background_color: str = ""

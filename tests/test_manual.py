@@ -34,6 +34,13 @@ IMAGES = {
     "portrait.png": (640, 720),
 }
 
+#: The font files a page names, each a copy of the gallery's specimen face (#391).
+FONTS_DIR = Path(__file__).resolve().parent.parent / "qa" / "fixtures" / "fonts"
+FONTS = {
+    "house-sans-regular.ttf": "SpecimenCondensed-Regular.ttf",
+    "house-sans-bold.ttf": "SpecimenCondensed-Bold.ttf",
+}
+
 
 @dataclass(frozen=True)
 class Block:
@@ -89,6 +96,8 @@ def test_the_example_runs(block: Block, tmp_path, monkeypatch):
             pytest.skip(f'needs the "[{extra}]" extra')
     for name, (width, height) in IMAGES.items():
         (tmp_path / name).write_bytes(solid_png(width, height, (44, 62, 80)))
+    for name, specimen in FONTS.items():
+        (tmp_path / name).write_bytes((FONTS_DIR / specimen).read_bytes())
     monkeypatch.chdir(tmp_path)
     setup = [b for b in RUNNABLE if b.page == block.page and b.line < block.line]
     namespace: dict[str, object] = {"__name__": "__main__", "__file__": str(tmp_path / "x.py")}

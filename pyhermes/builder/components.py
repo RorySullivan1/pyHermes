@@ -63,6 +63,7 @@ from .models import (
     coerce_groups,
     coerce_notes,
     coerce_series,
+    justified,
     tone_of,
     trend_of,
 )
@@ -125,9 +126,13 @@ class CopyAlignment:
     #: What the caller set, or ``""`` for *inherit from the container*.
     align: str = ""
 
+    #: Whether this block may be justified (#394): prose that runs to a paragraph.
+    JUSTIFIES: ClassVar[bool] = False
+
     def validate_alignment(self, align: str | None) -> str:
         """Validate and normalise this component's alignment."""
-        _validate_align(align or "", f"{type(self).__name__.lower()}.align")
+        name = f"{type(self).__name__.lower()}.align"
+        _validate_align(align or "", name, justify=self.JUSTIFIES)
         return align or ""
 
     def alignment_context(self) -> dict[str, Any]:
@@ -234,6 +239,17 @@ class Exhibit:
 
     #: The letter of the appendix this exhibit sits in, set by the walk (#309).
     appendix: str = ""
+
+    #: A plain-text line under the subtitle naming the measure and window (#395).
+    qualifier: str = ""
+
+    def check_qualifier(self, qualifier: object) -> str:
+        """``qualifier`` as stored: plain text, escaped on the way out, as ``disclosure`` is."""
+        if not isinstance(qualifier, str):
+            raise ValidationError(
+                f"{type(self).__name__}'s qualifier is plain text, got: {type(qualifier).__name__}"
+            )
+        return qualifier
 
     def validate_exhibit(self, label: str, anchor: str) -> None:
         """Validate and store the two caller-facing fields."""
@@ -394,7 +410,9 @@ class Component:
         field, so this reads the attribute defensively rather than assuming.
         """
         subtitle = getattr(self, "subtitle", None)
-        return join_blocks(wrap(subtitle) if subtitle else "", *blocks)
+        qualifier = getattr(self, "qualifier", "")
+        head = "\n".join(wrap(line) for line in (subtitle, qualifier) if line)
+        return join_blocks(head, *blocks)
 
     def render(self, engine: Renderer) -> str:
         """
@@ -599,6 +617,7 @@ class DataTable(CellShare, Exhibit, Component):
         source:   Attribution string (e.g. "Source: Bloomberg").
         as_of:    Date string (e.g. "March 28, 2026").
         subtitle: Optional sub-heading rendered above the table.
+        qualifier: A plain-text line under it naming the measure and window (#395).
         caption:  Optional table caption (#120). Renders as a ``caption``
                   element — the table's own accessible **name**, which is
                   what a screen reader announces when it reaches the table.
@@ -658,8 +677,10 @@ class DataTable(CellShare, Exhibit, Component):
         *,
         width: float | None = None,
         frame: str | None = None,
+        qualifier: str = "",
     ):
         self.spacing = self._coerce_spacing(spacing)
+        self.qualifier = self.check_qualifier(qualifier)
         self.width = self.validate_share(width)
         self.validate_exhibit(label, anchor)
         if frame is not None:
@@ -932,6 +953,7 @@ class DataTable(CellShare, Exhibit, Component):
             "source_parts": split_markers(self.source, self.notes, self.citing),
             "as_of": self.as_of,
             "subtitle": self.subtitle,
+            "qualifier": self.qualifier,
             "caption": self.numbered(self.caption),
             "caption_parts": split_markers(self.numbered(self.caption), self.notes, self.citing),
             "anchor": self.resolved_anchor(),
@@ -1030,7 +1052,7 @@ class ChartBlock(Exhibit, CopyAlignment, Component):
         alt_text:  Accessibility alt text.  Ignored when ``image_url`` is
             an ``EmailImage``, which carries its own.
         source:    Attribution string.
-        subtitle:  Optional sub-heading rendered above the chart.
+        subtitle, qualifier: The line above the chart, and the measure and window under it (#395).
         width:     Display width in px, unless ``image_url`` is an ``EmailImage``,
             which carries its own. ``None`` renders full width, as before.
         disclosure: Optional compliance copy qualifying this exhibit —
@@ -1067,10 +1089,12 @@ class ChartBlock(Exhibit, CopyAlignment, Component):
         spacing: Spacing | Mapping[str, int | float] | None = None,
         wrap: str = "",
         legend: Component | None = None,
+        qualifier: str = "",
     ):
         from .exhibits import Legend  # the legend module builds on this one
 
         self.spacing = self._coerce_spacing(spacing)
+        self.qualifier = self.check_qualifier(qualifier)
         if not image_url:
             raise ValidationError("ChartBlock requires an image_url.")
         if legend is not None and not isinstance(legend, Legend):
@@ -1140,6 +1164,7 @@ class ChartBlock(Exhibit, CopyAlignment, Component):
             # shared partial, so they must agree on the key it reads.
             "disclosure": self.disclosure,
             "subtitle": self.subtitle,
+            "qualifier": self.qualifier,
             "legend": "",
             **self.alignment_context(),
         }
@@ -1163,7 +1188,7 @@ class ImageBlock(Exhibit, Component):
                   it belongs here rather than on ``Footer.disclaimer``.
         link_url: Optional URL the image links to.
         align:    ``"center"`` (default), ``"left"`` or ``"right"``.
-        subtitle: Optional sub-heading rendered above the image.
+        subtitle, qualifier: The line above the image, and the measure under it (#395).
         width:    Display width in px, used only when ``image`` is a bare
             URL string.  ``None`` renders full width.
         label, anchor, notes: As on :class:`ChartBlock`; markers go in ``caption``.
@@ -1202,8 +1227,10 @@ class ImageBlock(Exhibit, Component):
         notes: Sequence[Footnote | str] | None = None,
         wrap: str = "",
         spacing: Spacing | Mapping[str, int | float] | None = None,
+        qualifier: str = "",
     ):
         self.spacing = self._coerce_spacing(spacing)
+        self.qualifier = self.check_qualifier(qualifier)
         if not image:
             raise ValidationError("ImageBlock requires an image.")
         check_wrap(wrap, 1, "ImageBlock")
@@ -1266,6 +1293,7 @@ class ImageBlock(Exhibit, Component):
             "anchor": self.resolved_anchor(),
             "disclosure": self.disclosure,
             "subtitle": self.subtitle,
+            "qualifier": self.qualifier,
         }
 
 
@@ -1426,6 +1454,8 @@ class TextBlock(CopyAlignment, Component):
         *PROSE_TOKENS,
     )
 
+    JUSTIFIES: ClassVar[bool] = True
+
     def __init__(
         self,
         content: str,
@@ -1502,6 +1532,7 @@ class TextBlock(CopyAlignment, Component):
             ctx["aside_side"] = self.aside.side if paged else ""
             ctx["aside_width"] = width
         ctx["measure_px"], ctx["measure_place"] = self._measure(engine)
+        ctx["align"] = justified(self.align, paged)
         return engine.render(self.template_path, ctx)
 
     def _measure(self, engine: Renderer) -> tuple[int | str, str]:

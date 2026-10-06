@@ -22,8 +22,9 @@
 #}
 {% from "common/notes.html" import marked with context %}
 {% if subtitle %}
-<p class="subtitle"{% if align %} align="{{ align | escape_html }}"{% endif %} style="font-family: {{ font.body }}; font-size: {{ size.type.secondary }}px; font-style: italic; color: {{ theme.text.secondary }}; margin: 0 0 {{ size.space.subtitle_gap }}px 0; line-height: {{ size.type.secondary_line | percent }};{% if align %} text-align:{{ align }};{% endif %}">{{ subtitle | escape_html }}</p>
+<p class="subtitle"{% if align %} align="{{ align | escape_html }}"{% endif %} style="font-family: {{ font.body }}; font-size: {{ size.type.secondary }}px; font-style: italic; color: {{ theme.text.secondary }}; margin: 0 0 {% if qualifier %}0{% else %}{{ size.space.subtitle_gap }}px{% endif %} 0; line-height: {{ size.type.secondary_line | percent }};{% if align %} text-align:{{ align }};{% endif %}">{{ subtitle | escape_html }}</p>
 {% endif %}
+{% include "common/qualifier.html" %}
 {# The caption is a row of the figure table rather than a paragraph above
    it, so the figure's break rule keeps it with its chart and the anchor on
    the table lands on the heading a reader was sent to. #}

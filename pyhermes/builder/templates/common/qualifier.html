@@ -1,0 +1,7 @@
+{# An exhibit's qualifier (#395): the measure and window, in the label face,
+   bold italic, under its subtitle. Plain text, escaped here, as `disclosure`
+   is. Empty renders nothing, which keeps every exhibit without one as it was. #}
+{% if qualifier %}
+{% set qualifier_align = align | default("") %}
+<p class="qualifier"{% if qualifier_align %} align="{{ qualifier_align | escape_html }}"{% endif %} style="font-family: {{ font.label }}; font-size: {{ size.type.secondary }}px; font-weight: bold; font-style: italic; color: {{ theme.text.secondary }}; margin: 0 0 {{ size.space.subtitle_gap }}px 0; line-height: {{ size.type.secondary_line | percent }};{% if qualifier_align %} text-align:{{ qualifier_align }};{% endif %}">{{ qualifier | escape_html }}</p>
+{% endif %}

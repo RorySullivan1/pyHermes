@@ -90,11 +90,11 @@
 {% if section_title %}
     <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:{{ background_color | default(theme.palette.highlight_tint if highlight else theme.palette.surface) }};">
       <tr>
-        <td{% if section_align %} align="{{ section_align | escape_html }}"{% endif %} style="padding:{{ size.space.section_title_top }}px {{ edge_pad }}px {{ size.space.section_title_bottom }}px {{ edge_pad }}px;{% if section_align %} text-align:{{ section_align }};{% endif %}">
+        <td{% if section_align %} align="{{ section_align | escape_html }}"{% endif %} style="padding:{{ size.space.section_title_top }}px {{ edge_pad }}px {{ size.space.section_title_bottom }}px {{ edge_pad }}px;{% if section_align %} text-align:{{ section_align }};{% if section_align == "justify" %} hyphens:auto;{% endif %}{% endif %}">
 {% if section_kicker %}
           {{ kicker(section_kicker) }}
 {% endif %}
-          <h2{% if section_anchor %} id="{{ section_anchor | escape_html }}"{% endif %} style="margin:0; font-family: {{ font.heading }}; font-size:{{ size.type.section }}px; font-weight:bold; color:{{ theme.text.heading }}; line-height:{{ size.type.title_line | percent }};">
+          <h2{% if section_anchor %} id="{{ section_anchor | escape_html }}"{% endif %}{% if section_display %} class="mobile-title"{% endif %} style="margin:0; font-family: {{ font.heading }}; font-size:{{ size.type.title if section_display else size.type.section }}px; font-weight:bold; color:{{ theme.text.heading }}; line-height:{{ size.type.title_line | percent }};{% if section_upper %} text-transform:uppercase;{% endif %}">
             {{ section_title | escape_html }}
 {% if section_badge %}
             {{ badge(section_badge) }}
@@ -115,7 +115,7 @@
         <td width="{{ col.share }}%" valign="{{ valign }}" style="width:{{ col.share }}%; padding:0;">
           <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
             <tr>
-              <td{% if section_align %} align="{{ section_align | escape_html }}"{% endif %} style="padding:{{ size.space.column_top }}px {{ col.pad_right }}px {{ size.space.column_bottom }}px {{ col.pad_left }}px; font-family: {{ font.label }}; font-size:{{ size.type.body }}px; color:{{ theme.text.primary }}; line-height:{{ size.type.body_line | percent }};{% if section_align %} text-align:{{ section_align }};{% endif %}">
+              <td{% if section_align %} align="{{ section_align | escape_html }}"{% endif %} style="padding:{{ size.space.column_top }}px {{ col.pad_right }}px {{ size.space.column_bottom }}px {{ col.pad_left }}px; font-family: {{ font.label }}; font-size:{{ size.type.body }}px; color:{{ theme.text.primary }}; line-height:{{ size.type.body_line | percent }};{% if section_align %} text-align:{{ section_align }};{% if section_align == "justify" %} hyphens:auto;{% endif %}{% endif %}">
                 {{ col.content }}
               </td>
             </tr>
@@ -136,7 +136,7 @@
 {% for col in columns %}
     <table role="presentation" width="{{ col.width }}" border="0" cellpadding="0" cellspacing="0" class="stack-column"{% if rtl %} dir="ltr"{% endif %} style="display:inline-table; vertical-align:{{ valign }}; width:{{ col.width }}px;{% if not loop.last %} margin-{{ "left" if rtl else "right" }}:{{ size.space.gutter }}px;{% endif %}{% if not medium.paged %} background-color:{{ background_color | default(theme.palette.highlight_tint if highlight else theme.palette.surface) }};{% endif %}">
       <tr>
-        <td class="mobile-pad"{% if section_align %} align="{{ section_align | escape_html }}"{% endif %} style="padding:{{ size.space.column_top }}px {{ col.pad_right }}px {{ size.space.column_bottom }}px {{ col.pad_left }}px; font-family: {{ font.label }}; font-size:{{ size.type.body }}px; color:{{ theme.text.primary }}; line-height:{{ size.type.body_line | percent }};{% if section_align %} text-align:{{ section_align }};{% endif %}">
+        <td class="mobile-pad"{% if section_align %} align="{{ section_align | escape_html }}"{% endif %} style="padding:{{ size.space.column_top }}px {{ col.pad_right }}px {{ size.space.column_bottom }}px {{ col.pad_left }}px; font-family: {{ font.label }}; font-size:{{ size.type.body }}px; color:{{ theme.text.primary }}; line-height:{{ size.type.body_line | percent }};{% if section_align %} text-align:{{ section_align }};{% if section_align == "justify" %} hyphens:auto;{% endif %}{% endif %}">
           {{ col.content }}
         </td>
       </tr>
@@ -160,7 +160,7 @@
 {% if section_source %}
     <table class="fine-print" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:{{ background_color | default(theme.palette.highlight_tint if highlight else theme.palette.surface) }};">
       <tr>
-        <td{% if section_align %} align="{{ section_align | escape_html }}"{% endif %} style="padding:0 {{ edge_pad }}px {{ size.space.column_bottom }}px {{ edge_pad }}px;{% if section_align %} text-align:{{ section_align }};{% endif %}">
+        <td{% if section_align %} align="{{ section_align | escape_html }}"{% endif %} style="padding:0 {{ edge_pad }}px {{ size.space.column_bottom }}px {{ edge_pad }}px;{% if section_align %} text-align:{{ section_align }};{% if section_align == "justify" %} hyphens:auto;{% endif %}{% endif %}">
           {{ source_line(section_source, section_as_of) }}
         </td>
       </tr>

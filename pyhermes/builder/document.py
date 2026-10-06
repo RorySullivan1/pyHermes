@@ -325,6 +325,18 @@ class Document:
         assets.extend(asset for region, _ in self.trailing_regions() for asset in region.assets())
         return dedupe_assets(assets)
 
+    def fonts(self) -> list[ImageAsset]:
+        """
+        The house typeface's files a printed document embeds, one entry per file (#391).
+
+        Empty off paper: an email walks its font stack, and a font must never
+        ride a message. Kept apart from :meth:`assets`, which a delivery layer
+        attaches; only the PDF exporter serves these.
+        """
+        if not self._medium.paged:
+            return []
+        return resolve_font_theme(self._metadata.font_theme).assets()
+
     @_under_own_config
     def render(self) -> str:
         """

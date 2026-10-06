@@ -109,7 +109,12 @@ class TestTheDefaultIsPinnedToTodaysValues:
         }
         seen: set[str] = set()
         for build in all_fixtures().values():
-            seen |= _families(build().render())
+            email = build()
+            own = email.metadata.font_theme
+            if not isinstance(own, str):
+                # A fixture's own theme is vocabulary too (#391's brief); a literal still is not.
+                declared |= {getattr(own, spec.name).css for spec in dataclasses.fields(own)}
+            seen |= _families(email.render())
         assert seen <= declared, f"undeclared stack(s) rendered: {sorted(seen - declared)}"
 
 

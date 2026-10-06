@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, ClassVar, Self
 
-from pyhermes.builder.components import leaves
+from pyhermes.builder.components import Exhibit, leaves
 from pyhermes.builder.containers import Container
 from pyhermes.builder.document import Document, RegionFacts, stamp_type
 from pyhermes.builder.engine import Renderer, TemplateOverlay, scheme_of
@@ -295,14 +295,25 @@ class Deck(Document):
 
         A third reading of the tree, beside the markup and the text part. The
         text part is the deck as a reader reads it; the notes are what the
-        presenter says over it, so neither projection carries them.
+        presenter says over it, so neither projection carries them. An exhibit's
+        qualifier (#395) joins its slide's block, since the presenter states the
+        measure and window aloud.
         """
         self.validate()
         return join_sections(
             *(
-                f"{underline(_notes_heading(self.number(slide), slide))}\n\n{wrap(slide.notes)}"
+                "\n\n".join(
+                    filter(
+                        None,
+                        [
+                            underline(_notes_heading(self.number(slide), slide)),
+                            wrap(slide.notes),
+                            *(wrap(line) for line in _qualified(slide)),
+                        ],
+                    )
+                )
                 for slide in self.slides
-                if slide.notes
+                if slide.notes or _qualified(slide)
             )
         )
 
@@ -439,6 +450,16 @@ class Deck(Document):
     def _facts(self, names: tuple[str, ...]) -> dict[str, Any]:
         """The named facts, read off the metadata this deck was built from."""
         return {name: getattr(self._metadata, name) for name in names}
+
+
+def _qualified(slide: Slide) -> list[str]:
+    """``Exhibit 3: qualifier`` for each exhibit on ``slide`` that carries a qualifier."""
+    return [
+        f"{block.listed() or getattr(block, 'subtitle', '') or type(block).__name__}: "
+        f"{block.qualifier}"
+        for block in leaves(slide.components())
+        if isinstance(block, Exhibit) and block.qualifier
+    ]
 
 
 def _notes_heading(number: int, slide: Slide) -> str:

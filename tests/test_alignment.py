@@ -258,18 +258,28 @@ class TestTheTwoSpellingsTravelTogether:
         }
         assert not strays, f"alignment values outside the vocabulary: {sorted(strays)}"
 
-    def test_the_caller_facing_vocabulary_still_excludes_justify(self):
+    def test_a_caller_reaches_justify_on_paper_only_and_in_two_places(self):
         """
-        The other half of ``_TEMPLATE_FIXED_ALIGNMENTS``, and the reason
-        widening the audit above is not a hole. A template may fix an
-        alignment the axis does not offer; a **caller** may not reach one.
-        Without this, admitting ``justify`` to the audit would quietly become
-        permission to add it to the enum.
-        """
-        from pyhermes.builder.enums import TextAlign
+        The other half of ``_TEMPLATE_FIXED_ALIGNMENTS``, superseded by #394.
 
-        assert "justify" not in {member.value for member in TextAlign}
+        This said a caller may never reach ``justify``. #394 admits it for a
+        section and a ``TextBlock``, and only paper renders it, so a box, a
+        pull quote or a list still refuses it, and an email renders a
+        justified section as an unset one.
+        """
+        from pyhermes.builder import Email, FullWidth, PullQuote, TextBlock
+        from pyhermes.builder.enums import TextAlign
+        from pyhermes.builder.exceptions import ValidationError
+
+        assert "justify" in {member.value for member in TextAlign}
         assert "justify" not in _ALIGNMENTS
+        with pytest.raises(ValidationError):
+            PullQuote("A line", align="justify")
+        email = Email({"email_subject": "S", "firm_name": "F", "campaign_name": "C"})
+        email.add_section(
+            FullWidth(content=TextBlock("<p>Copy.</p>", align="justify"), align="justify")
+        )
+        assert "justify" not in email.render()
 
 
 class TestTheStyleOnlyElementsAreDeliberate:

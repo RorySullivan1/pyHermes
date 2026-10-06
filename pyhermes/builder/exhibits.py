@@ -204,7 +204,7 @@ def legends(components: Sequence[Component]) -> list[Legend]:
 PANEL_KINDS = (ChartBlock, ImageBlock)
 
 #: What a panel may not carry, because the grid carries it once for all of them.
-_GRID_OWNED = ("label", "anchor", "caption", "source", "disclosure", "notes", "wrap")
+_GRID_OWNED = ("label", "anchor", "caption", "source", "disclosure", "notes", "wrap", "qualifier")
 
 
 class FigureGrid(Exhibit, Component):
@@ -232,6 +232,7 @@ class FigureGrid(Exhibit, Component):
         columns:    Panels across, 1 to 4, and no more than there are panels.
         notes:      Footnotes called by ``[^n]`` in ``caption`` or ``source``.
         subtitle:   The italic standfirst every component may carry.
+        qualifier:  The line under it naming the measure and window (#395), once for the grid.
         spacing:    Moves ``gutter``, between panels, ``block_gap``, between
                     rows, and the caption and subtitle gaps.
     """
@@ -254,8 +255,10 @@ class FigureGrid(Exhibit, Component):
         notes: Sequence[Footnote | str] | None = None,
         subtitle: str | None = None,
         spacing: Spacing | Mapping[str, int | float] | None = None,
+        qualifier: str = "",
     ):
         self.spacing = self._coerce_spacing(spacing)
+        self.qualifier = self.check_qualifier(qualifier)
         held: list[object] = [panels] if isinstance(panels, Component) else list(panels)
         if len(held) not in self.PANELS:
             raise ValidationError(f"FigureGrid takes 2 to 4 panels, got {len(held)}.")
@@ -358,6 +361,7 @@ class FigureGrid(Exhibit, Component):
     def context(self) -> dict[str, Any]:
         return {
             "subtitle": self.subtitle,
+            "qualifier": self.qualifier,
             "caption_parts": split_markers(self.numbered(self.caption), self.notes, self.citing),
             "caption": self.numbered(self.caption),
             "anchor": self.resolved_anchor(),
