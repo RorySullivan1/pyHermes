@@ -881,10 +881,8 @@ class Column:
     convention that decided alignment, typeface and weight in the template and
     again in :mod:`pyhermes.builder.textgen`; `data-table.md` records why.
 
-    Both presentation fields default to empty, meaning **resolve** — and the
-    resolution reproduces the old convention exactly, so a table built from
-    plain strings renders byte-identically to one built before this class
-    existed.
+    Both presentation fields default to empty, meaning **resolve**: the old
+    convention exactly, so a table of plain strings renders as it always has.
 
     Attributes:
         header: The column's heading. Plain text, escaped on the way out.

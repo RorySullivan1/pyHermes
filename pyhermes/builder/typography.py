@@ -143,10 +143,8 @@ class FontStack:
     containing a space is quoted on emission with single quotes — never stored
     pre-quoted, so ``families`` is always the plain names.
 
-    **A house typeface (#391).** ``files`` declares the font files of the
-    first family, keyed by weight: ``{"400": path, "700": path}``, with
-    ``"400 italic"`` for an italic. A paged document embeds them; an email
-    ignores them and walks the chain, since ``css`` does not change.
+    **A house typeface (#391).** ``files`` maps a weight (``"400"``,
+    ``"700 italic"``) to the first family's font file; paper embeds them.
 
     Args:
         families: The chain, in order, ending in a CSS generic family.

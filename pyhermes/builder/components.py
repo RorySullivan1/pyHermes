@@ -617,8 +617,7 @@ class DataTable(CellShare, Exhibit, Component):
         source:   Attribution string (e.g. "Source: Bloomberg").
         as_of:    Date string (e.g. "March 28, 2026").
         subtitle: Optional sub-heading rendered above the table.
-        qualifier: A line under the subtitle naming the measure and window, bold
-                   italic, plain text (#395). The list of exhibits takes no part of it.
+        qualifier: A plain-text line under it naming the measure and window (#395).
         caption:  Optional table caption (#120). Renders as a ``caption``
                   element — the table's own accessible **name**, which is
                   what a screen reader announces when it reaches the table.
@@ -1053,9 +1052,7 @@ class ChartBlock(Exhibit, CopyAlignment, Component):
         alt_text:  Accessibility alt text.  Ignored when ``image_url`` is
             an ``EmailImage``, which carries its own.
         source:    Attribution string.
-        subtitle:  Optional sub-heading rendered above the chart.
-        qualifier: A line under the subtitle naming the measure and window, bold
-                   italic, plain text (#395). The list of exhibits takes no part of it.
+        subtitle, qualifier: The line above the chart, and the measure and window under it (#395).
         width:     Display width in px, unless ``image_url`` is an ``EmailImage``,
             which carries its own. ``None`` renders full width, as before.
         disclosure: Optional compliance copy qualifying this exhibit —
@@ -1191,9 +1188,7 @@ class ImageBlock(Exhibit, Component):
                   it belongs here rather than on ``Footer.disclaimer``.
         link_url: Optional URL the image links to.
         align:    ``"center"`` (default), ``"left"`` or ``"right"``.
-        subtitle: Optional sub-heading rendered above the image.
-        qualifier: A line under the subtitle naming the measure and window, bold
-                   italic, plain text (#395). The list of exhibits takes no part of it.
+        subtitle, qualifier: The line above the image, and the measure under it (#395).
         width:    Display width in px, used only when ``image`` is a bare
             URL string.  ``None`` renders full width.
         label, anchor, notes: As on :class:`ChartBlock`; markers go in ``caption``.
