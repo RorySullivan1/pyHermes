@@ -1,11 +1,12 @@
 """
 Brand tones (#387), shared by the email and the paged fixture.
 
-A theme that declares two brand tones beside the semantic three, and every
+A theme that declares three brand tones beside the semantic three, and every
 object that takes a tone naming one: a fact box and a framed box beside an
-untoned one, badged and toned cards, a hero figure, a table whose cells and
-status dots are in brand tones, a bar list and a key. No semantic token is
-repainted, so a gain is still green beside the brand's gold.
+untoned one, a black ticker chip and a gold one filled solid (#388), badged and
+toned cards, a hero figure, a table whose cells and status dots are in brand
+tones, a bar list and a key. No semantic token is repainted, so a gain is still
+green beside the brand's gold.
 """
 
 from __future__ import annotations
@@ -29,8 +30,8 @@ from pyhermes.builder.glance import BarItem
 from pyhermes.builder.models import Cell, KpiItem, TableRow
 from pyhermes.builder.theming import DEFAULT_THEME
 
-#: The classic theme with a brand's gold and sky, its semantic tones untouched.
-THEME = DEFAULT_THEME.derive(tones={"brand": "#B8860B", "sky": "#0077A8"})
+#: The classic theme with a brand's gold, sky and ink, its semantic tones untouched.
+THEME = DEFAULT_THEME.derive(tones={"brand": "#B8860B", "sky": "#0077A8", "ink": "#111111"})
 
 #: Each sleeve a holding sits in, and the tone its dot is drawn in.
 SLEEVES = {"Core": "brand", "Satellite": "sky", "Hedge": "neutral"}
@@ -59,6 +60,17 @@ def sections() -> list[Container]:
             right=Callout(
                 TextBlock("<p>Concentrated in its ten largest names.</p>"),
                 label="Watch",
+            ),
+        ),
+        TwoColumn(
+            left=Callout(
+                TextBlock("<p><strong>HRMF</strong> on NYSE Arca</p>"),
+                tone="ink",
+                label="Ticker",
+                fill="solid",
+            ),
+            right=Callout(
+                TextBlock("<p>12 March 2019</p>"), tone="brand", label="Inception", fill="solid"
             ),
         ),
         FullWidth(

@@ -33,8 +33,8 @@
   every block background, so its fill overwrote the next section's half-pixel row at a band edge — `design-axes.md`
 
 ## Threads          (open items; remove when closed)
-- **Epic #384 (brand tones) is under way**: #387 merged (PR #406); #388 (solid fill), #389 (legend +
-  `chart_colors`) and #390 (dashed frame, column rule) remain. #388 and #389 build on `Theme.tone`.
+- **Epic #384 (brand tones) is under way**: #387 merged (PR #406); #388 (`Callout(fill="solid")`) is on
+  `claude/integrate-claude-assets-pyhermes-d4spzb`, no PR yet; #389 (legend + `chart_colors`) and #390 remain.
 - **A share table holds its share in Word's engine** (owner, via COM, PR #371); a real Outlook client
   is still #288's. The measure is `ch`: in Georgia 75ch sets ~99 characters (`design-axes.md`).
 - **Outlook desktop's handling of `dir=rtl` on a reversed split is unverified here**, nor #319's VML

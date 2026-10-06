@@ -14,7 +14,7 @@ from typing import Any
 
 from .apparatus import CITATION, MARKER
 from .components import CellShare, Component, CopyAlignment, TextBlock
-from .engine import Renderer, cell_width_of, own_surface, rebind, respaced, scheme_of
+from .engine import Renderer, cell_width_of, grounded, own_surface, rebind, respaced, scheme_of
 from .enums import EmbedStrategy
 from .exceptions import ValidationError
 from .filters import escape_html
@@ -25,6 +25,9 @@ from .sizing import Spacing
 from .textgen import LINE_WIDTH, link_line, wrap
 
 _RULE = "-" * LINE_WIDTH
+
+#: How a ``Callout`` paints its tone: a light tint, or the full colour (#388).
+FILLS = ("tint", "solid")
 
 
 class Callout(CellShare, Component):
@@ -37,12 +40,20 @@ class Callout(CellShare, Component):
     the theme's rule or that colour. It paints its own surface, so on a
     section's dark ground the block inside keeps the theme's dark type.
 
+    A ``"solid"`` fill paints the tone's full colour instead, a chip such as a
+    ticker in black, and sets the block on the type that reads there, the way a
+    section's ground does (#266): the theme's ``on_dark`` ladder on a dark tone,
+    its own type on a light one. The fill is a cell's ``bgcolor``, so the Word
+    engine paints it with no VML.
+
     Args:
         content: The block to box; any component, a ``Stack`` included.
         tone:    ``"positive"``, ``"negative"``, ``"neutral"`` or a tone the theme
                  declares (#387); unset for the highlight tint.
         label:   A small heading above the block, such as "Key takeaway".
         border:  Whether the box is framed.
+        fill:    ``"tint"``, a light tint of the tone, or ``"solid"``, its full colour,
+                 which needs a tone (#388).
         spacing: Moves ``callout_pad_y`` and ``callout_pad_x``, the box's padding, and
                  ``caption_gap``, the space under the label.
         width:   A share of the cell, 0.3 to 1.0, placed by the section's align (#357).
@@ -63,6 +74,7 @@ class Callout(CellShare, Component):
         spacing: Spacing | Mapping[str, int | float] | None = None,
         *,
         width: float | None = None,
+        fill: str = "tint",
     ):
         self.spacing = self._coerce_spacing(spacing)
         self.width = self.validate_share(width)
@@ -73,7 +85,15 @@ class Callout(CellShare, Component):
             )
         if tone is not None:
             _validate_tone(tone, "callout.tone")
+        if fill not in FILLS:
+            raise ValidationError(f"'callout.fill' must be one of {list(FILLS)}, got: {fill!r}")
+        if fill == "solid" and not tone:
+            raise ValidationError(
+                "A solid Callout fills with its tone's colour, so it needs a tone; "
+                "name one, such as tone='ink' declared on the theme."
+            )
         self.content = content
+        self.fill = fill
         self.tone = tone
         self.label = label
         self.border = border
@@ -94,6 +114,8 @@ class Callout(CellShare, Component):
 
     def _fill(self, engine: Renderer) -> str:
         engine = respaced(own_surface(engine), self.spacing, type(self).__name__)
+        if self.fill == "solid":
+            engine = grounded(engine, engine.theme.on_ground(engine.theme.tone[str(self.tone)]))
         component = scheme_of(engine).component
         inset = 2 * component.callout_pad_x + (2 if self.border else 0)
         inner = rebind(engine, cell_width=int(cell_width_of(engine) - inset))
@@ -102,6 +124,7 @@ class Callout(CellShare, Component):
             "label": self.label or "",
             "tone": self.tone or "",
             "border": self.border,
+            "solid": self.fill == "solid",
         }
         return engine.render(self.template_path, context)
 

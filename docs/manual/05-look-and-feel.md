@@ -223,6 +223,18 @@ theme's highlight tint and rule. With `tone="positive"`, `"negative"`, `"neutral
 theme. `border=False` drops the frame. Its
 padding is the `callout_pad_y` and `callout_pad_x` spacing tokens.
 
+For a chip such as a ticker in black, fill the box with its tone's full colour:
+
+```python
+inked = DEFAULT_THEME.derive(tones={"ink": "#111111"})
+chip = Callout(TextBlock("<p>HRMF</p>"), tone="ink", label="Ticker", fill="solid")
+email = EmailBuilder().metadata({**facts, "theme": inked}).section(FullWidth(chip)).build()
+```
+
+**Result:** a black box with white type. The type inside switches to the theme's `on_dark`
+colours on a dark tone and keeps the theme's own type on a light one, as a dark section does,
+so you never choose it. A solid box needs a `tone`. Outlook draws the fill as well.
+
 ## How to add a button or a dividing line
 
 ```python
