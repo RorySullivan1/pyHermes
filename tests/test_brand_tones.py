@@ -8,6 +8,8 @@ once, when its section is added.
 
 from __future__ import annotations
 
+import re
+
 import pytest
 
 from pyhermes.brochure import Brochure, Panel
@@ -26,7 +28,7 @@ from pyhermes.builder.exceptions import ValidationError
 from pyhermes.builder.exhibits import Legend, LegendEntry
 from pyhermes.builder.glance import BarItem
 from pyhermes.builder.models import Cell, TableRow
-from pyhermes.builder.theming import DEFAULT_THEME, Theme
+from pyhermes.builder.theming import DEFAULT_THEME, Theme, chart_colors
 from pyhermes.deck import Deck
 from pyhermes.document import EmptyBackMatter, EmptyCover, PagedDocument
 from qa.fixtures import _paged
@@ -191,3 +193,44 @@ class TestEveryReaderTakesOneInEveryMedium:
     def test_a_legend_swatch_takes_the_tone(self):
         html = _email(FullWidth(Legend([LegendEntry("Fund", tone="brand")]))).render()
         assert BRAND in html
+
+
+class TestAChartsColoursNameABrandTone:
+    """#389: the chart cycle ends in the brand tones, so a key and a plot can name one."""
+
+    def test_the_brand_tones_follow_the_series_colours_in_order(self):
+        assert chart_colors(THEME) == (*chart_colors(DEFAULT_THEME), BRAND, SKY)
+
+    def test_a_brand_tone_a_series_colour_already_draws_is_kept_once(self):
+        accent = DEFAULT_THEME.palette.accent
+        theme = DEFAULT_THEME.derive(tones={"house": accent})
+        assert chart_colors(theme) == chart_colors(DEFAULT_THEME)
+
+    @pytest.mark.parametrize("build", [_email, _paper], ids=["email", "paper"])
+    def test_a_key_in_two_brand_tones_draws_the_plotted_colours(self, build):
+        key = Legend([LegendEntry("Gold", tone="brand"), LegendEntry("Sky", tone="sky")])
+        html = build(FullWidth(key)).render()
+        swatches = re.findall(
+            r'class="legend-swatch"[^>]*background-color: (#[0-9A-Fa-f]{6})', html
+        )
+        assert swatches == list(chart_colors(THEME)[-2:]) == [BRAND, SKY]
+
+    def test_a_series_past_the_tokens_names_a_brand_tone(self):
+        first_brand = len(chart_colors(DEFAULT_THEME))
+        key = Legend([LegendEntry("Gold", series=first_brand), LegendEntry("Sky", color=SKY)])
+        html = _email(FullWidth(key)).render()
+        assert BRAND in html and SKY in html
+
+    def test_without_the_tone_the_series_is_refused_naming_colours_and_tones(self):
+        key = Legend([LegendEntry("Gold", series=len(chart_colors(DEFAULT_THEME)))])
+        with pytest.raises(ValidationError, match=r"chart colours are \[.*\] and its tones \["):
+            _email(FullWidth(key), theme=DEFAULT_THEME)
+
+    def test_an_undeclared_tone_is_refused_naming_colours_and_tones(self):
+        key = Legend([LegendEntry("Gold", tone="gold")])
+        with pytest.raises(
+            ValidationError,
+            match=r"'gold'.*chart colours are \[.*\] and its tones \['positive', 'negative', "
+            r"'neutral', 'brand', 'sky'\]",
+        ):
+            _email(FullWidth(key))

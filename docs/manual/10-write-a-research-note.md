@@ -193,7 +193,9 @@ a citation such as `[@jt1993]` works in it too.
   each for all of them. A panel's `subtitle` becomes its title after the letter.
 - A key's colours come from your theme: a label alone takes the next chart colour, the one
   `chart_style` hands your plot. Use `LegendEntry("Down", tone="negative")` for a semantic
-  colour. A hex `color=` must be one of the theme's chart colours, or the section is refused.
+  colour, or `tone="brand"` for a brand tone your theme declares; the theme's chart colours
+  end in its brand tones, so a series drawn in one is keyed by its name. A hex `color=` must
+  be one of those chart colours, or the section is refused, naming the colours and tones.
 - The plain-text part prints the key as `Key: Winners, Losers`, so a reader with images
   blocked still knows which line is which.
 

@@ -165,7 +165,13 @@ untouched, and nothing changes outside the context.
 **The series colours moved to the builder (#337)**, as `theming.SERIES_TOKENS` and
 `chart_colors(theme)`, because a `Legend` names them and the builder may not import the
 `[charts]` layer; `pyhermes.data.style` re-exports the tokens and builds `series` from the one
-function, so the cycle and the key cannot disagree about order.
+function, so the cycle and the key cannot disagree about order. **Since #389 the cycle ends
+in the theme's brand tones**, in declared order and each kept once, so a chart plotted in a
+brand tone is one a key can name by `tone`, `series` or hex. A `series` index is therefore
+bounded by the theme, not the five tokens: construction refuses only a negative one, and
+`Legend.check_theme` refuses one past the end, as it refuses an undeclared tone, naming the
+theme's chart colours and its tones. The five-token default themes declare no tones, so no
+golden moved.
 
 **The legend never styles the plot (#337).** A chart's key drawn into the picture is lost when
 Outlook blocks images, its default, and in the plain-text part. `Legend(entries)` states it

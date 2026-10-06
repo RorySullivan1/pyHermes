@@ -537,8 +537,12 @@ SERIES_TOKENS: tuple[tuple[str, str], ...] = (
 
 
 def chart_colors(value: Theme | str) -> tuple[str, ...]:
-    """A theme's series colours in cycle order, a colour two tokens share kept once."""
+    """
+    A theme's series colours in cycle order, a colour two tokens share kept once.
+
+    The brand tones follow the series tokens in the order the theme declares
+    them (#389), so a chart plotted in a brand tone is one the key can name.
+    """
     theme = resolve_theme(value)
-    return tuple(
-        dict.fromkeys(getattr(getattr(theme, layer), name) for layer, name in SERIES_TOKENS)
-    )
+    tokens = (getattr(getattr(theme, layer), name) for layer, name in SERIES_TOKENS)
+    return tuple(dict.fromkeys([*tokens, *theme.tones.values()]))

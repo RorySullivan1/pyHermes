@@ -82,6 +82,10 @@ email = EmailBuilder().metadata({**facts, "theme": branded}).section(facts_box).
 `tone=` does: a `Callout`, a `Badge`, a card, a table cell, a status column, a bar, a hero
 figure, a fact and a chart key. `positive`, `negative` and `neutral` keep their colours.
 
+A chart plots in them too: `chart_style(branded)` cycles through the theme's chart colours and
+then its brand tones, in the order you declared them, and `chart_style(branded).tones["brand"]`
+is the gold by name. So `LegendEntry("Gold", tone="brand")` keys the series you drew in it.
+
 A name is a lowercase word, and it may not be `positive`, `negative` or `neutral`; to change
 those, set `semantic`. A tone the theme does not declare is refused when its section is added,
 and the message lists the tones the theme has.

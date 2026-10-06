@@ -38,9 +38,10 @@ class LegendEntry:
 
     The swatch names its colour exactly one way: a ``tone``, a ``series``, the
     index of a colour in the theme's chart cycle (what ``chart_style`` hands the
-    plot), or a ``color``, which must be one of those chart colours. A hex is
-    checked against the document's theme when its section is added, because
-    only the document knows its theme.
+    plot, its brand tones last), or a ``color``, which must be one of those chart
+    colours. A tone, a hex and a series's reach are checked against the
+    document's theme when its section is added, because only the document knows
+    its theme.
 
     Attributes:
         label:  What the colour stands for, plain text.
@@ -68,13 +69,10 @@ class LegendEntry:
         if self.color is not None:
             _validate_color(self.color, f"{owner}.color")
         if self.series is not None and (
-            isinstance(self.series, bool)
-            or not isinstance(self.series, int)
-            or not 0 <= self.series < len(SERIES_TOKENS)
+            isinstance(self.series, bool) or not isinstance(self.series, int) or self.series < 0
         ):
             raise ValidationError(
-                f"{owner}.series indexes the {len(SERIES_TOKENS)} chart colours, "
-                f"0 to {len(SERIES_TOKENS) - 1}, got: {self.series!r}"
+                f"{owner}.series indexes the theme's chart colours from 0, got: {self.series!r}"
             )
 
     def fill(self, theme: Theme) -> str:
@@ -150,22 +148,32 @@ class Legend(Component):
         """
         Refuse an entry whose colour ``theme`` does not draw a chart in.
 
-        A hex outside the theme's chart colours would key a colour the
-        picture cannot contain, and a series past the end of a cycle whose
-        tokens coincide names no colour at all.
+        A tone the theme does not declare, or a hex outside its chart colours,
+        would key a colour the picture cannot contain, and a series past the
+        end of the cycle names no colour at all. Each refusal names the
+        theme's chart colours and its tones, the two ways to name one.
         """
-        colors = chart_colors(resolve_theme(theme))
+        resolved = resolve_theme(theme)
+        colors = chart_colors(resolved)
+        palette = (
+            f"this theme's chart colours are {list(colors)} and its tones {list(resolved.tone)}"
+        )
         for index, entry in enumerate(self.entries):
+            where = f"{owner}'s entry {index} ({entry.label!r})"
+            if entry.tone is not None and entry.tone not in resolved.tone:
+                raise ValidationError(
+                    f"{where} names tone {entry.tone!r}, which this theme does not declare; "
+                    f"{palette}. Declare it as Theme(tones={{{entry.tone!r}: '#RRGGBB'}})."
+                )
             if entry.color is not None and entry.color.upper() not in map(str.upper, colors):
                 raise ValidationError(
-                    f"{owner}'s entry {index} ({entry.label!r}) is {entry.color}, which is not "
-                    f"one of this theme's chart colours {list(colors)}. Name it by series= or "
-                    "tone=, so the key recolours with the theme."
+                    f"{where} is {entry.color}, which is not one of {palette}. Name it by "
+                    "series= or tone=, so the key recolours with the theme."
                 )
             if entry.series is not None and entry.series >= len(colors):
                 raise ValidationError(
-                    f"{owner}'s entry {index} ({entry.label!r}) names series {entry.series}, "
-                    f"and this theme draws {len(colors)} distinct chart colours."
+                    f"{where} names series {entry.series}, and {palette}: "
+                    f"{len(colors)} distinct chart colours in all."
                 )
 
     def text(self) -> str:
