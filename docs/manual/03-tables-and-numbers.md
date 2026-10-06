@@ -220,6 +220,33 @@ at the end of the email.
   from a `label="Exhibit"`.
 - `disclosure` is plain text. Do not put HTML in it.
 
+## How to frame a table, or rule off its label column
+
+**When to use this:** a comparison table whose labels should stand apart from the figures,
+or a verdict table that should read as set aside from the copy around it.
+
+```python
+from pyhermes.builder import Column
+
+table = DataTable(
+    headers=[Column("Fund", rule_after=True), "Cost", "Verdict"],
+    rows=[
+        TableRow(["Core", "0.03%", "Buy"]),
+        TableRow(["Satellite", "0.12%", "Hold"]),
+    ],
+    frame="dashed",
+)
+email = EmailBuilder().metadata(facts).section(FullWidth(table, title="Comparison")).build()
+```
+
+**Result:** a dashed frame in the theme's rule colour round the table, a cell's padding inside
+it, and a darker vertical rule after the *Fund* column, from the heading to the last row.
+
+**Notes:**
+- `frame` is `"solid"` or `"dashed"`; leave it out for no frame. The same word frames a
+  [section and a box](05-look-and-feel.md#how-to-put-a-frame-around-a-section).
+- `rule_after=True` works on any column, and on more than one.
+
 ## How to build a table from a pandas DataFrame
 
 **When to use this:** your figures are already in a DataFrame. Needs the `[data]` extra.

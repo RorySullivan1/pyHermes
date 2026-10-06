@@ -203,6 +203,11 @@ It works on `FullWidth` and every split, and with `highlight` or `background_col
 `border_color` without `border=True` is refused. The frame is always 1px and square,
 because Outlook ignores rounded corners.
 
+Add `frame="dashed"` beside `border=True` for a dashed frame. The same word works on a
+[`Callout`](#how-to-box-one-passage) and a
+[`DataTable`](03-tables-and-numbers.md#how-to-frame-a-table-or-rule-off-its-label-column), so a
+section, a box and a table frame alike. A dashed frame without a border is refused.
+
 ## How to box one passage
 
 ```python
@@ -224,7 +229,7 @@ email = EmailBuilder().metadata(facts).section(FullWidth(box, title="Rates")).bu
 A `Callout` boxes one block, which can be a `Stack` of several. Without a `tone` it uses the
 theme's highlight tint and rule. With `tone="positive"`, `"negative"`, `"neutral"` or a
 [brand tone](#how-to-add-brand-tones) it takes a light tint and a frame in that colour from the
-theme. `border=False` drops the frame. Its
+theme. `border=False` drops the frame, and `frame="dashed"` dashes it. Its
 padding is the `callout_pad_y` and `callout_pad_x` spacing tokens.
 
 For a chip such as a ticker in black, fill the box with its tone's full colour:

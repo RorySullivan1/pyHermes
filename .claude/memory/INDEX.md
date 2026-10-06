@@ -33,8 +33,8 @@
   every block background, so its fill overwrote the next section's half-pixel row at a band edge — `design-axes.md`
 
 ## Threads          (open items; remove when closed)
-- **Epic #384 (brand tones) is under way**: #387 (PR #406) and #388 (PR #411) merged; #389 (`chart_colors`
-  ends in the brand tones) is in review; #390 (dashed frame, column rule) remains.
+- **Epic #384 (brand tones)**: #387 (PR #406) and #388 (PR #411) merged; #389 and #390 (dashed frame,
+  `Column(rule_after=)`) are in PR #412. Outlook's dashed cell border is documented, not seen: #288's.
 - **A share table holds its share in Word's engine** (owner, via COM, PR #371); a real Outlook client
   is still #288's. The measure is `ch`: in Georgia 75ch sets ~99 characters (`design-axes.md`).
 - **Outlook desktop's handling of `dir=rtl` on a reversed split is unverified here**, nor #319's VML

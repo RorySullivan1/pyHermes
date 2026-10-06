@@ -35,6 +35,7 @@ from .models import (
     Footnote,
     _validate_align,
     _validate_color,
+    _validate_frame,
     check_kicker,
     check_valign,
     coerce_badge,
@@ -131,6 +132,7 @@ class Container:
         text_color: str | None = None,
         border: bool = False,
         border_color: str | None = None,
+        frame: str = "solid",
         keep_together: bool = False,
         break_before: bool = False,
         badge: Badge | str | None = None,
@@ -148,6 +150,9 @@ class Container:
                 _validate_color(value, f"container.{name}")
         if border_color and not border:
             raise ValidationError("container.border_color needs border=True to draw anything.")
+        _validate_frame(frame, "container.frame")
+        if frame != "solid" and not border:
+            raise ValidationError(f"container.frame={frame!r} needs border=True to draw anything.")
         _validate_align(align or "", "container.align")
         validate_anchor(anchor or "", "container.anchor")
         self.title = title
@@ -155,6 +160,7 @@ class Container:
         self.text_color = text_color
         self.border = border
         self.border_color = border_color
+        self.frame = frame
         self.highlight = highlight
         self.align = align
         self.anchor = anchor
@@ -280,6 +286,7 @@ class Container:
         ctx["section_border"] = (
             (self.border_color or engine.theme.palette.rule) if self.border else ""
         )
+        ctx["section_frame"] = self.frame
         ctx["section_break"] = self._break_style(engine)
         ctx["section_kept"] = self.kept_mark if ctx["section_break"] and self.keep_together else ""
         ctx["section_source"] = (
@@ -555,6 +562,7 @@ class FullWidth(Container):
         text_color: str | None = None,
         border: bool = False,
         border_color: str | None = None,
+        frame: str = "solid",
         keep_together: bool = False,
         break_before: bool = False,
         badge: Badge | str | None = None,
@@ -573,6 +581,7 @@ class FullWidth(Container):
             text_color=text_color,
             border=border,
             border_color=border_color,
+            frame=frame,
             keep_together=keep_together,
             break_before=break_before,
             badge=badge,
@@ -635,6 +644,7 @@ class FlowedColumns(FullWidth):
         text_color: str | None = None,
         border: bool = False,
         border_color: str | None = None,
+        frame: str = "solid",
         keep_together: bool = False,
         break_before: bool = False,
         badge: Badge | str | None = None,
@@ -654,6 +664,7 @@ class FlowedColumns(FullWidth):
             text_color=text_color,
             border=border,
             border_color=border_color,
+            frame=frame,
             keep_together=keep_together,
             break_before=break_before,
             badge=badge,
@@ -728,6 +739,7 @@ class TwoColumn(_SplitContainer):
         text_color: str | None = None,
         border: bool = False,
         border_color: str | None = None,
+        frame: str = "solid",
         keep_together: bool = False,
         break_before: bool = False,
         badge: Badge | str | None = None,
@@ -748,6 +760,7 @@ class TwoColumn(_SplitContainer):
             text_color=text_color,
             border=border,
             border_color=border_color,
+            frame=frame,
             keep_together=keep_together,
             break_before=break_before,
             badge=badge,
@@ -824,6 +837,7 @@ class ThreeColumn(_SplitContainer):
         text_color: str | None = None,
         border: bool = False,
         border_color: str | None = None,
+        frame: str = "solid",
         keep_together: bool = False,
         break_before: bool = False,
         badge: Badge | str | None = None,
@@ -844,6 +858,7 @@ class ThreeColumn(_SplitContainer):
             text_color=text_color,
             border=border,
             border_color=border_color,
+            frame=frame,
             keep_together=keep_together,
             break_before=break_before,
             badge=badge,
@@ -910,6 +925,7 @@ class FourColumn(_SplitContainer):
         text_color: str | None = None,
         border: bool = False,
         border_color: str | None = None,
+        frame: str = "solid",
         keep_together: bool = False,
         break_before: bool = False,
         badge: Badge | str | None = None,
@@ -930,6 +946,7 @@ class FourColumn(_SplitContainer):
             text_color=text_color,
             border=border,
             border_color=border_color,
+            frame=frame,
             keep_together=keep_together,
             break_before=break_before,
             badge=badge,

@@ -13,7 +13,8 @@
                resolved (#117), so this template decides neither. A column's
                position means nothing here; its `kind` carries the face and
                its `align` the alignment. `width` is a percentage, or empty
-               when the table sets no weights (#271).
+               when the table sets no weights (#271). `rule_after` draws a
+               rule in `rule_dark` down the column's right edge (#390).
     rows     — List of dicts with keys: kind, cells (list), alt (bool). A
                `total` is ruled off above and bold across; a `subhead` is a
                tinted label band. Both draw from theme tokens only — a row's
@@ -24,6 +25,10 @@
                empty color or background means "the theme's". `row_header`
                marks the cell a screen reader navigates the row by — the
                first column, when its resolved kind is text.
+    frame    — "solid" or "dashed" for a frame round the table, else empty (#390).
+               It is a wrapping cell's border, inset by a cell's padding: on the
+               table itself, a collapsed border loses to the solid rules on its
+               first and last rows, and the dashed edge would show on two sides.
     source   — Attribution string (optional)
     as_of    — Date string (optional)
     anchor   — The table's `id`, empty when it has none (#181). The caption
@@ -49,6 +54,7 @@
    other medium has a Word engine to read it. #}
 <!--[if mso]><p align="left" style="margin: 0; text-align: left; font-family: {{ font.label }}; font-size: {{ size.type.label }}px; font-weight: bold; color: {{ theme.text.heading }}; letter-spacing: 0.5px; padding: 0 0 {{ size.space.caption_gap }}px 0;">{{ marked(caption_parts, ids=false) }}</p><![endif]-->
 {% endif %}
+{% if frame %}<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse;"><tr><td style="padding: {{ size.component.table_cell_pad }}px; border: 1px {{ frame }} {{ theme.palette.rule }};">{% endif %}
 <table class="data-table"{% if anchor %} id="{{ anchor | escape_html }}"{% endif %} border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
 {% if caption %}
   {# The table's accessible NAME, not a standfirst — see the component's
@@ -77,14 +83,14 @@
 {% endif %}
   <tr style="border-top: 1px solid {{ theme.palette.rule }}; border-bottom: {% if units %}1px solid {{ theme.palette.rule_subtle }}{% else %}2px solid {{ theme.palette.rule_dark }}{% endif %};">
 {% for column in columns %}
-    <th scope="col" align="{{ column.align | escape_html }}"{% if column.width %} width="{{ column.width }}"{% endif %} style="{% if column.width %}width: {{ column.width }}; {% endif %}font-family: {{ font.label }}; font-size: {{ size.type.label }}px; font-weight: bold; color: {{ theme.semantic.neutral }}; text-transform: uppercase; line-height: {{ size.type.body_line | percent }}; text-align: {{ column.align }}; padding: {{ size.component.table_cell_pad }}px; letter-spacing: 0.5px;">{{ marked(column.parts) }}</th>
+    <th scope="col" align="{{ column.align | escape_html }}"{% if column.width %} width="{{ column.width }}"{% endif %} style="{% if column.width %}width: {{ column.width }}; {% endif %}font-family: {{ font.label }}; font-size: {{ size.type.label }}px; font-weight: bold; color: {{ theme.semantic.neutral }}; text-transform: uppercase; line-height: {{ size.type.body_line | percent }}; text-align: {{ column.align }}; padding: {{ size.component.table_cell_pad }}px; letter-spacing: 0.5px;{% if column.rule_after %} border-right: 1px solid {{ theme.palette.rule_dark }};{% endif %}">{{ marked(column.parts) }}</th>
 {% endfor %}
   </tr>
 {% if units %}
   {# The units row (#226): each unit once, beneath its head. #}
   <tr style="border-bottom: 2px solid {{ theme.palette.rule_dark }};">
 {% for column in columns %}
-    <th scope="col" align="{{ column.align | escape_html }}" style="font-family: {{ font.label }}; font-size: {{ size.type.label }}px; font-weight: normal; color: {{ theme.text.secondary }}; line-height: {{ size.type.body_line | percent }}; text-align: {{ column.align }}; padding: 0 {{ size.component.table_cell_pad }}px {{ size.component.table_cell_pad }}px {{ size.component.table_cell_pad }}px;">{{ units[loop.index0] | escape_html }}</th>
+    <th scope="col" align="{{ column.align | escape_html }}" style="font-family: {{ font.label }}; font-size: {{ size.type.label }}px; font-weight: normal; color: {{ theme.text.secondary }}; line-height: {{ size.type.body_line | percent }}; text-align: {{ column.align }}; padding: 0 {{ size.component.table_cell_pad }}px {{ size.component.table_cell_pad }}px {{ size.component.table_cell_pad }}px;{% if column.rule_after %} border-right: 1px solid {{ theme.palette.rule_dark }};{% endif %}">{{ units[loop.index0] | escape_html }}</th>
 {% endfor %}
   </tr>
 {% endif %}
@@ -95,12 +101,13 @@
   <tr{% if row.kind == "total" %} class="row-total"{% elif row.kind == "subhead" %} class="row-subhead"{% endif %} style="border-bottom: 1px solid {% if loop.last %}{{ theme.palette.rule }}{% else %}{{ theme.palette.rule_subtle }}{% endif %};{% if row.kind == "total" %} border-top: 2px solid {{ theme.palette.rule_dark }};{% endif %}">
 {% for cell in row.cells %}
 {% set subhead = row.kind == "subhead" %}{% set bold = subhead or row.kind == "total" or not cell.is_text %}
-    <{% if cell.row_header %}th scope="row"{% else %}td{% endif %} align="{{ cell.align | escape_html }}" style="font-family: {% if subhead or cell.is_text %}{{ font.label }}{% else %}{{ font.numeric }}{% endif %}; font-size: {{ size.type.secondary }}px; font-weight: {% if bold %}bold{% else %}normal{% endif %}; line-height: {{ size.type.body_line | percent }}; color: {% if subhead %}{{ theme.text.heading }}{% elif cell.color %}{{ cell.color | validate_hex_color }}{% elif cell.heat %}{{ cell.heat.position | heat_color(theme.palette.surface, theme.tone[cell.heat.toward]) | readable_on(theme.text.primary, theme.text.on_accent) }}{% elif cell.tone %}{{ theme.tone[cell.tone] }}{% elif cell.is_text %}{{ theme.text.primary }}{% else %}{{ theme.semantic.neutral }}{% endif %}; text-align: {{ cell.align }}; padding: {{ size.component.table_cell_pad }}px; background-color: {% if subhead %}{{ theme.palette.highlight_tint }}{% elif cell.background %}{{ cell.background | validate_hex_color }}{% elif cell.heat %}{{ cell.heat.position | heat_color(theme.palette.surface, theme.tone[cell.heat.toward]) }}{% elif row.alt %}{{ theme.palette.row_alt }}{% else %}{{ theme.palette.surface }}{% endif %};">{% if cell.spark %}{{ sparkline(cell.spark, cell.align if cell.align != "left" else "") }}{% else %}{% if cell.arrow %}{{ arrow(cell.arrow, cell.color | validate_hex_color if cell.color else theme.tone[cell.tone or 'neutral']) }}{% endif %}{% if cell.status %}{{ dot(cell.status) }}{% endif %}{{ marked(cell.parts) }}{{ "&nbsp;" * cell.pad }}{% if cell.badge %} {{ badge(cell.badge) }}{% endif %}{% if cell.bar is not none %}{% include "analysis/cell-bar.html" %}{% endif %}{% endif %}</{% if cell.row_header %}th{% else %}td{% endif %}>
+    <{% if cell.row_header %}th scope="row"{% else %}td{% endif %} align="{{ cell.align | escape_html }}" style="font-family: {% if subhead or cell.is_text %}{{ font.label }}{% else %}{{ font.numeric }}{% endif %}; font-size: {{ size.type.secondary }}px; font-weight: {% if bold %}bold{% else %}normal{% endif %}; line-height: {{ size.type.body_line | percent }}; color: {% if subhead %}{{ theme.text.heading }}{% elif cell.color %}{{ cell.color | validate_hex_color }}{% elif cell.heat %}{{ cell.heat.position | heat_color(theme.palette.surface, theme.tone[cell.heat.toward]) | readable_on(theme.text.primary, theme.text.on_accent) }}{% elif cell.tone %}{{ theme.tone[cell.tone] }}{% elif cell.is_text %}{{ theme.text.primary }}{% else %}{{ theme.semantic.neutral }}{% endif %}; text-align: {{ cell.align }}; padding: {{ size.component.table_cell_pad }}px; background-color: {% if subhead %}{{ theme.palette.highlight_tint }}{% elif cell.background %}{{ cell.background | validate_hex_color }}{% elif cell.heat %}{{ cell.heat.position | heat_color(theme.palette.surface, theme.tone[cell.heat.toward]) }}{% elif row.alt %}{{ theme.palette.row_alt }}{% else %}{{ theme.palette.surface }}{% endif %};{% if columns[loop.index0].rule_after %} border-right: 1px solid {{ theme.palette.rule_dark }};{% endif %}">{% if cell.spark %}{{ sparkline(cell.spark, cell.align if cell.align != "left" else "") }}{% else %}{% if cell.arrow %}{{ arrow(cell.arrow, cell.color | validate_hex_color if cell.color else theme.tone[cell.tone or 'neutral']) }}{% endif %}{% if cell.status %}{{ dot(cell.status) }}{% endif %}{{ marked(cell.parts) }}{{ "&nbsp;" * cell.pad }}{% if cell.badge %} {{ badge(cell.badge) }}{% endif %}{% if cell.bar is not none %}{% include "analysis/cell-bar.html" %}{% endif %}{% endif %}</{% if cell.row_header %}th{% else %}td{% endif %}>
 {% endfor %}
   </tr>
 {% endfor %}
   </tbody>
 </table>
+{% if frame %}</td></tr></table>{% endif %}
 {% if source %}
 <p class="fine-print" style="font-family: {{ font.label }}; font-size: {{ size.type.micro }}px; color: {{ theme.text.light }}; font-style: italic; margin: {{ size.space.caption_gap }}px 0 0 0; line-height: {{ size.type.body_line | percent }};">{{ marked(source_parts) }}{% if as_of %} as of {{ as_of | escape_html }}{% endif %}</p>
 {% endif %}
