@@ -1,0 +1,37 @@
+{#
+  SEPARATED COLUMNS — a row whose slots are joined by a glyph or a connector arrow (#398, #399).
+
+  One real table row rather than nested-columns.html's inline tables: a
+  separator has to sit in the middle of the row's height, and only a table cell
+  centres against its neighbours in every engine, Word's included, so no MSO
+  ghost table is needed. The separator cells sit outside the weights, so equal
+  weights give equal slots. On a phone each cell takes .stack-column and the row
+  stacks, the separator between the slots it joins; a connector then points
+  down, by the skeleton's "connector" rule, which the right-pointing arrow and
+  its hidden twin read. Fixed, or on paper, the row never stacks.
+
+  Context: cells — each {share, content} for a slot or {share, separator: true}; stack —
+  natural or fixed; valign — where a slot sits in the row's height; separator — "arrow" or
+  the glyph.
+#}
+{% from "analysis/trend-arrow.html" import connector with context %}
+<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="width:100%; table-layout:fixed;">
+  <tr>
+{% for cell in cells %}
+{% if cell.separator %}
+    <td{% if stack == "natural" %} class="stack-column"{% endif %} width="{{ cell.share }}%" align="center" valign="middle" style="width:{{ cell.share }}%; padding:{{ size.space.caption_gap }}px 0; text-align:center; vertical-align:middle; font-family: {{ font.heading }}; font-size:{{ size.type.section }}px; font-weight:bold; color:{{ theme.text.heading }}; line-height:{{ size.type.title_line | percent }};">
+{% if separator == "arrow" %}
+      <span class="connector-across">{{ connector("right", theme.text.heading) }}</span>{% if stack == "natural" %}<!--[if !mso]><!--><span class="connector-stacked" style="display:none;">{{ connector("down", theme.text.heading, word=False) }}</span><!--<![endif]-->{% endif %}
+
+{% else %}
+      {{ separator | escape_html }}
+{% endif %}
+    </td>
+{% else %}
+    <td{% if stack == "natural" %} class="stack-column"{% endif %} width="{{ cell.share }}%" valign="{{ valign }}" style="width:{{ cell.share }}%; padding:0; vertical-align:{{ valign }}; font-family: {{ font.label }}; font-size:{{ size.type.body }}px; color:{{ theme.text.primary }}; line-height:{{ size.type.body_line | percent }};">
+      {{ cell.content }}
+    </td>
+{% endif %}
+{% endfor %}
+  </tr>
+</table>

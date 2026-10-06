@@ -153,6 +153,10 @@ def _px(value: int | float) -> int | float:
 #: The weights of each named slide layout, main region first (#366).
 LAYOUTS: dict[str, tuple[int, ...]] = {"full": (1,), "split": (1, 1), "sidebar": (2, 1)}
 
+#: How far a bled section's ground runs past its frame on a slide (#396): nowhere, since
+#: a full body's frame is the sheet's width and a laid-out region's box clips at its edge.
+SLIDE_BLEED: dict[str, int] = {"left": 0, "right": 0, "top": 0}
+
 #: The tones a caller names for a full-bleed picture, which has no one colour to measure (#348).
 GROUNDS: tuple[str, ...] = ("light", "dark")
 
@@ -450,7 +454,13 @@ class Slide(Container):
         for region, sections in zip(
             box.regions(self.layout, scheme.space.gutter), (self.main, self.side), strict=False
         ):
-            body = rebind(themed, size=_body_scheme(scheme, box, region))
+            body = rebind(
+                themed,
+                size=_body_scheme(scheme, box, region),
+                # A region's frame already spans its box, which clips; a pin sits on its foot.
+                bleed=SLIDE_BLEED,
+                pin={"mode": "box", "bottom": 0},
+            )
             html = "\n".join(section.render(body) for section in sections)
             regions.append(
                 {"name": region.name, "left": region.left, "width": region.width, "html": html}

@@ -241,6 +241,10 @@ class RunningBox(Region):
     with ``label`` as the fallback for sheets before the first one. The title
     reaches the margin through the print engine's named strings, not the
     facts: which section a sheet holds is the page's own knowledge.
+
+    ``skip_first=True`` leaves the box off the document's first sheet (#400),
+    as a deck's title slide carries no bands. The count is unchanged, so the
+    second sheet still reads 2.
     """
 
     #: What a box may follow instead of its fixed label. Closed, like the boxes.
@@ -256,6 +260,7 @@ class RunningBox(Region):
     box: str = ""
     show_page_number: bool = False
     follow: str | None = None
+    skip_first: bool = False
 
     def validate(self) -> None:
         super().validate()
@@ -263,6 +268,10 @@ class RunningBox(Region):
             raise ValidationError(
                 f"'{self.CONTEXT_NAME}.follow' must be one of {list(self.FOLLOWS)} or None, "
                 f"got: {self.follow!r}"
+            )
+        if not isinstance(self.skip_first, bool):
+            raise ValidationError(
+                f"'{self.CONTEXT_NAME}.skip_first' is True or False, got: {self.skip_first!r}"
             )
         if self.box and self.box not in MARGIN_BOXES:
             raise ValidationError(
@@ -283,6 +292,7 @@ class RunningBox(Region):
             "running_box": self.resolved_box(),
             "running_label": self.resolved_label(str(facts.get(self.LABEL_FACT, ""))),
             "running_string": self.CONTEXT_NAME.replace("_", "-"),
+            "skip_first": self.skip_first,
         }
         return {**super().context({}), **resolved, **facts}
 

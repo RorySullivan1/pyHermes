@@ -1318,3 +1318,16 @@ field and the qualifier are found there by `TestComponentFieldsAreExercised`.
 frames and the label column's rule) and regenerated the email golden only, so `main` failed
 `test_paged`; the diff is exactly #390's, checked line by line.
 
+
+## Single-sheet print pieces (#386)
+
+`product_brief_layout` (email) and `letter_product_brief` (paged, US Letter, `SHEETS = 3`)
+build one set of sections (`qa/fixtures/_product_brief.py`) on a theme with gold, sky and ink
+tones and the brief's house face: a bled navy masthead in display capitals, a gold fund box
+beside a solid ink ticker chip, three equal boxes joined by "+", a chart with a toned key and
+a qualifier, a scenario table ruled off its label column pointing by a connector at a dashed
+verdict, a grey bled band, a fine-print justified disclosures sheet and a logo pinned to its
+foot, with neither running box on the first sheet. `TestComponentFieldsAreExercised` finds
+`bleed` and `pin` there. `tests/test_print_pieces.py` reads the sheet count, the edges, the
+foot and the folios back from the PDF and joins the `pdf` job's line. The email's screenshots
+show the row stacking with its "+" signs and the connector pointing down at 375px.

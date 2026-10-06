@@ -1,0 +1,25 @@
+{#
+  PLACED — a section's contents run past its frame or set at its foot, on paper only.
+
+  bleed (#396): a block whose negative margins carry the section's ground to the
+  sheet's edges and whose padding gives the same distance back, so the copy stays
+  in the frame. Measured under WeasyPrint: the ground reaches the left, right and
+  top edges, and the running boxes still draw over it.
+
+  pin (#397): on a sheet the block floats to the footnote area, the one place a
+  print engine sets at a sheet's foot above the footer box; one too tall for the
+  space left moves whole to the next sheet. In a panel or a slide, a fixed box, it
+  sits `bottom` px above the box's foot instead. The block carries the ground, and
+  the row it leaves in the flow paints none, or a sliver of it shows where it was.
+  On a sheet it sits under the footnote area's rule, after any note on that sheet.
+
+  open_placed(bleed, pin, ground) / close_placed(bleed, pin) — bleed is
+  {left, right, top} or none, pin {mode, bottom?} or none, ground a hex.
+#}
+{% macro open_placed(bleed, pin, ground) -%}
+{%- if pin %}<div class="pinned" style="{% if pin.mode == 'box' %}position:absolute; left:0; right:0; bottom:{{ pin.bottom }}px;{% else %}float:footnote; font-size:0; line-height:0;{% endif %} background-color:{{ ground }};">{% endif -%}
+{%- if bleed %}<div class="bled" style="margin:-{{ bleed.top }}px -{{ bleed.right }}px 0 -{{ bleed.left }}px; padding:{{ bleed.top }}px {{ bleed.right }}px 0 {{ bleed.left }}px; background-color:{{ ground }};">{% endif -%}
+{%- endmacro %}
+{% macro close_placed(bleed, pin) -%}
+{%- if bleed %}</div>{% endif %}{% if pin %}</div>{% endif -%}
+{%- endmacro %}

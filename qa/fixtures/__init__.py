@@ -45,6 +45,7 @@ from . import (
     letter_brief,
     letter_dense,
     letter_landscape_report,
+    letter_product_brief,
     letter_quant_table,
     minimal,
     minimal_banner,
@@ -55,6 +56,7 @@ from . import (
     pitch_16_9,
     pitch_layouts_16_9,
     placed_layout,
+    product_brief_layout,
     research_note,
     rich_table,
     slate_theme,
@@ -122,6 +124,7 @@ def all_fixtures() -> dict[str, FixtureBuilder]:
         "organised_layout": organised_layout.build,
         "toned_layout": toned_layout.build,
         "brief_layout": brief_layout.build,
+        "product_brief_layout": product_brief_layout.build,
     }
 
 
@@ -155,6 +158,7 @@ def all_paged_fixtures() -> dict[str, PagedFixtureBuilder]:
         "a4_wide_appendix": a4_wide_appendix.build,
         "a4_toned_layout": a4_toned_layout.build,
         "letter_brief": letter_brief.build,
+        "letter_product_brief": letter_product_brief.build,
     }
 
 

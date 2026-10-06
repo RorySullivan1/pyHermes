@@ -248,6 +248,21 @@ class Document:
             self._walk()
             raise
 
+    def _head_rules(self) -> frozenset[str]:
+        """
+        The skeleton's optional rules this document needs: ``pin`` for a pinned
+        section (#397), ``connector`` for a connector arrow (#399). A document
+        that needs neither keeps its head byte for byte.
+        """
+        rules = set()
+        sections = self._flat_sections()
+        if any(section.pin for section in sections):
+            rules.add("pin")
+        blocks = descendants([c for section in sections for c in section.components()])
+        if any(getattr(block, "separator", None) == "arrow" for block in blocks):
+            rules.add("connector")
+        return frozenset(rules)
+
     def _flat_sections(self) -> list[Container]:
         """
         Every section in reading order, a page's own flattened in.
@@ -359,6 +374,7 @@ class Document:
             frame = scheme_of(engine).frame
             sheet = (frame.sheet_width, frame.sheet_height or frame.sheet_width)
             ctx["stamp_type"] = stamp_type(self._metadata.stamp, *sheet)
+        ctx["head_rules"] = self._head_rules()
         html = engine.render(self._medium.skeleton, ctx)
         self._medium.validate(html, self._inline_image_hint())
         return html

@@ -209,6 +209,13 @@ The editorial pieces are shared, so a report can use them too: `PullQuote`,
 `TextBlock(figure=ImageBlock(..., wrap="left"))` for a picture the prose wraps round. Each
 degrades in an email: the drop cap and the float disappear, and the columns become one.
 
+A brief or a fact sheet of a few sheets takes four more settings. `bleed=True` runs a
+section's colour to the sheet's edges, `pin="bottom"` sets a section at the foot of its
+sheet, `Columns(..., separator="+")` or `separator="arrow"` joins up to six blocks with a
+sign or a drawn arrow, and `RunningFooter(skip_first=True)` leaves the folio off the first
+sheet. An email draws the band at its own width, flows the pinned section in place, and
+stacks the row on a phone with the arrow pointing down.
+
 ## The same content, as slides
 
 A deck lays its content out one slide to a sheet: a title band, the slide's sections, and a

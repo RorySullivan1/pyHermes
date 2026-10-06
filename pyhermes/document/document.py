@@ -187,10 +187,14 @@ class PagedDocument(Document):
             sections = [sections[0].opening(), *sections[1:]]
         # A run of sheets turned the other way already opens one, as does the run after it (#341).
         sheets = [self._sheet(section) for section in sections]
-        return [
+        sections = [
             section.opening() if n and sheets[n] != sheets[n - 1] else section
             for n, section in enumerate(sections)
         ]
+        # The body opens a sheet, so a bled first section runs to its top edge (#396).
+        if sections and not sections[0].sheet_top:
+            sections[0] = sections[0].at_sheet_top()
+        return sections
 
     def _sheet(self, section: Container) -> str:
         """The named page ``section`` lays on: a turned page's orientation, else ``""``."""

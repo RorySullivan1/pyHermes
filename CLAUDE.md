@@ -264,6 +264,10 @@ these rather than improvising:
   **#385** (print typography: a house typeface embedded in every PDF, a display title, a section
   in fine print on paper, justified prose on paper, and an exhibit's qualifier, #391–#395) is
   complete; `design-axes.md` states each one's email degradation.
+  **#386** (single-sheet print pieces: a section's band run to the sheet's edge, a section
+  pinned to the sheet's foot, a row of up to six with "+" or a connector arrow between, and
+  running boxes left off the first sheet, #396–#401) is complete; `media.md` and
+  `design-axes.md` have the probes and each one's email degradation.
   **#335** (exhibits that group: `FigureGrid`'s lettered panels in one numbered exhibit, a
   chart's key stated in HTML by `Legend`, and one `source=` line for a whole section, #336–#339)
   is complete.

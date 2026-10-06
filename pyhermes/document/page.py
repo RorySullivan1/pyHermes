@@ -153,7 +153,11 @@ class Page(Container):
             # Column widths are computed for the sheet the sections print on.
             engine = rebind(engine, size=scheme_of(engine).with_page(turned))
         spaced = self._spaced(engine)
-        inner = "\n".join(section.render(spaced) for section in self.sections)
+        sections = list(self.sections)
+        if sections and engine.medium.paged and (self.break_before or self.sheet_top):
+            # The page opens a sheet, so its first section does (#396).
+            sections[0] = sections[0].at_sheet_top()
+        inner = "\n".join(section.render(spaced) for section in sections)
         if not engine.medium.paged:
             return inner
         return engine.render(

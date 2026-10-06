@@ -165,7 +165,7 @@ jobs:
           tests/test_glance.py tests/test_deck_layouts.py tests/test_labels.py
           tests/test_organising.py tests/test_grouped_exhibits.py
           tests/test_landscape_pages.py tests/test_stamp.py tests/test_aside.py tests/test_qr.py
-          tests/test_house_typeface.py tests/test_print_typography.py
+          tests/test_house_typeface.py tests/test_print_typography.py tests/test_print_pieces.py
 
       - name: Render the paged, brochure and deck galleries to PDF, and photograph every sheet
         run: |

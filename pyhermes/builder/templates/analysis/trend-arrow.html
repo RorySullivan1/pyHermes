@@ -9,8 +9,18 @@
   height; the flat bar's 2px is a shape, like a rule.
 
   arrow(direction, ink) — direction is "up", "down" or "flat"; ink a hex.
+
+  connector(direction, ink) — the same shape at the connector's size, between
+  two slots of a row (#399): "right", or "down" where the row stacks. It is
+  `connector` long, the space between two slots, and four fifths of that across its base.
+  word=False drops the VML and the conditional, for a copy already inside one.
 #}
 {% macro arrow(direction, ink) -%}
 {%- set tall = size.component.trend_arrow -%}{%- set half = (tall * 0.6) | round | int -%}
 <!--[if mso]>{% if direction == "flat" %}<v:rect xmlns:v="urn:schemas-microsoft-com:vml" fillcolor="{{ ink }}" stroked="f" style="width:{{ half * 2 }}px;height:2px;"></v:rect>{% else %}<v:shape xmlns:v="urn:schemas-microsoft-com:vml" coordsize="2,2" path="{% if direction == 'up' %}m 0,2 l 1,0 2,2 x e{% else %}m 0,0 l 2,0 1,2 x e{% endif %}" fillcolor="{{ ink }}" stroked="f" style="width:{{ half * 2 }}px;height:{{ tall }}px;"></v:shape>{% endif %}<![endif]--><!--[if !mso]><!--><span class="trend trend-{{ direction }}" style="display:inline-block; vertical-align:middle; font-size:0; line-height:0; {% if direction == 'flat' %}width:{{ half * 2 }}px; height:0; border-top:2px solid {{ ink }};{% else %}width:0; height:0; border-left:{{ half }}px solid transparent; border-right:{{ half }}px solid transparent; border-{% if direction == 'up' %}bottom{% else %}top{% endif %}:{{ tall }}px solid {{ ink }};{% endif %}"></span><!--<![endif]-->&nbsp;
+{%- endmacro %}
+
+{% macro connector(direction, ink, word=True) -%}
+{%- set long = size.component.connector -%}{%- set half = (long * 0.4) | round | int -%}
+{%- if word %}<!--[if mso]><v:shape xmlns:v="urn:schemas-microsoft-com:vml" coordsize="2,2" path="{% if direction == 'right' %}m 0,0 l 2,1 0,2 x e{% else %}m 0,0 l 2,0 1,2 x e{% endif %}" fillcolor="{{ ink }}" stroked="f" style="width:{{ long if direction == 'right' else half * 2 }}px;height:{{ half * 2 if direction == 'right' else long }}px;"></v:shape><![endif]--><!--[if !mso]><!-->{% endif %}<span class="connector connector-{{ direction }}" style="display:inline-block; vertical-align:middle; font-size:0; line-height:0; width:0; height:0; {% if direction == 'right' %}border-top:{{ half }}px solid transparent; border-bottom:{{ half }}px solid transparent; border-left:{{ long }}px solid {{ ink }};{% else %}border-left:{{ half }}px solid transparent; border-right:{{ half }}px solid transparent; border-top:{{ long }}px solid {{ ink }};{% endif %}"></span>{% if word %}<!--<![endif]-->{% endif %}
 {%- endmacro %}

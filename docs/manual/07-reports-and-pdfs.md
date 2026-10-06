@@ -205,6 +205,61 @@ justified type with words hyphenated at the line ends.
 - `qualifier=` works on `ChartBlock`, `DataTable`, `ImageBlock` and `FigureGrid`, and is
   plain text. The list of exhibits leaves it out.
 
+## A one-sheet product brief
+
+Four settings for a brief, a fact sheet or a flyer printed on a few sheets. Each is inert
+or flows in place in an email, so the same sections still make the email.
+
+```python
+from pyhermes.builder import Callout, Columns, FullWidth, TextBlock
+from pyhermes.document import EmptyCover, PagedDocument, RunningFooter
+
+sheet = PagedDocument(
+    facts,
+    cover=EmptyCover(),
+    running_footer=RunningFooter(label="Meridian Fund", skip_first=True),
+)
+sheet.add_section(FullWidth(
+    TextBlock("<p>The whole market, in one holding.</p>"),
+    title="Meridian Fund",
+    background_color="#1B2A3A",
+    bleed=True,
+))
+sheet.add_section(FullWidth(
+    Columns(
+        [Callout(TextBlock("<p>Large caps</p>")),
+         Callout(TextBlock("<p>Mid caps</p>")),
+         Callout(TextBlock("<p>Rebalancing</p>"))],
+        separator="+",
+    ),
+    title="How it is built",
+))
+sheet.add_section(FullWidth(
+    Columns(
+        [Callout(TextBlock("<p>Three scenarios</p>")),
+         Callout(TextBlock("<p>The verdict</p>"))],
+        ratio=(2, 1),
+        separator="arrow",
+    ),
+))
+sheet.add_section(FullWidth(TextBlock("<p>Meridian Asset Management</p>"), pin="bottom"))
+sheet.save("product-brief.html")
+```
+
+**Result:** a navy masthead that runs to the left, right and top edges of the first sheet,
+three equal boxes joined by plus signs, a drawn arrow pointing from the wide box to the
+narrow one, a closing line set at the foot of the last sheet, and a footer on every sheet
+but the first, which still counts as sheet one.
+
+**Notes:**
+- `bleed=True` runs a section's colour into the page margin; it reaches the top edge only
+  when the section starts a sheet. A desktop printer still leaves its own white edge.
+- `pin="bottom"` sets the section above the footer, under the thin rule that heads a
+  sheet's footnotes. One too tall for the space left moves whole to the next sheet.
+- A row takes two to six blocks. `separator=` is `"arrow"` or a short sign of up to three
+  characters; on a phone the row stacks and the arrow points down.
+- `skip_first=True` works on `RunningHeader` too.
+
 ## Other printed forms
 
 The project [README](../../README.md) covers two more:

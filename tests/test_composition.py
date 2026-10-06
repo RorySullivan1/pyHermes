@@ -255,8 +255,8 @@ class TestNestedColumns:
     @pytest.mark.parametrize(
         ("build", "message"),
         [
-            (lambda: Columns([TextBlock("<p>a</p>")]), "2 to 4 components, got 1"),
-            (lambda: Columns([TextBlock("<p>a</p>")] * 5), "2 to 4 components, got 5"),
+            (lambda: Columns([TextBlock("<p>a</p>")]), "2 to 6 components, got 1"),
+            (lambda: Columns([TextBlock("<p>a</p>")] * 7), "2 to 6 components, got 7"),
             (lambda: Columns([None, None]), "at least one"),
             (lambda: Columns([TextBlock("<p>a</p>"), "b"]), "must be a Component"),
             (lambda: Columns([TextBlock("<p>a</p>")] * 2, ratio=(1,)), "2 positive weights"),

@@ -1412,3 +1412,34 @@ the subtitle, which closes up to it. One partial, `common/qualifier.html`. Its r
   because a presenter states the window aloud.
 - **Email:** the same markup; nothing in it needs Outlook's attention.
 
+
+
+## A row with separators (#398, #399)
+
+`Columns` takes two to six blocks, in every medium; a seventh is refused. On a phone a row
+of five or six stacks like any row; `stack=False` is checked against the floor as before,
+the separators' width taken out.
+
+**`separator=` sets a cell between each pair of columns**: a glyph of one to three
+characters (plain text, escaped), or `"arrow"` for a connector. The cells sit outside the
+weights, so equal weights give equal boxes. Each is the `connector` token wide (a box token,
+24px at standard) plus a gutter each side, from the gutter the layout already left.
+
+- **A separated row is one real table row, not `nested-columns.html`'s inline tables.** A
+  separator has to centre on the row's height, and only a table cell centres against its
+  neighbours in every engine, Word's included, so it needs no ghost table. Each cell carries
+  `.stack-column`, which the `@media` block already sets to `display:table` at the
+  breakpoint, so the row stacks with the separators between the boxes (measured at 375px in
+  Chromium). Unstacked, or on paper, the cells keep their percentages. A reversed stack is
+  refused: a reversed phone order would point a connector backwards.
+- **The connector is the trend arrow's shape (#319)**, a zero-size span's borders with a VML
+  twin, in `analysis/trend-arrow.html`'s `connector` macro: `connector` long and four fifths
+  of that across, in `text.heading` so it reads on a ground. It is a token's size, not the
+  slot's height, which is known only to the layout. **A stacked row's arrow points down**:
+  the cell holds the right-pointing arrow and a hidden downward one outside Word's
+  conditional, and the email skeleton writes the two rules that swap them only when a
+  document has a connector (`Document._head_rules`), so no other golden moved.
+- **Outlook desktop's drawing of the VML connector is unverified here**; it joins #288's
+  check with #319's arrow.
+- **The text part reads the slots in order**, and a separator projects to nothing.
+- A second level of nesting is still refused.

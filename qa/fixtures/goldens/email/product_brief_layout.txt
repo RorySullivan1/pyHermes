@@ -1,0 +1,157 @@
+Hermes Research
+===============
+
+Product brief
+
+
+Product brief
+Meridian Broad Market Fund
+--------------------------
+
+The whole US equity market, in one low-cost holding.
+
+
+------------------------------------------------------------------------------
+
+THE FUND
+
+Holds every large and mid-sized US company in its index, weighted by the
+shares the public can buy, rebalanced each quarter.
+
+------------------------------------------------------------------------------
+
+------------------------------------------------------------------------------
+
+TICKER
+
+MBMF on NYSE Arca
+
+------------------------------------------------------------------------------
+
+
+How it is built
+---------------
+
+------------------------------------------------------------------------------
+
+LARGE CAPS
+
+About 80% of the market's value.
+
+------------------------------------------------------------------------------
+
+------------------------------------------------------------------------------
+
+MID CAPS
+
+About 15%, the next tier down.
+
+------------------------------------------------------------------------------
+
+------------------------------------------------------------------------------
+
+QUARTERLY REBALANCE
+
+Weights reset to the index.
+
+------------------------------------------------------------------------------
+
+
+Performance
+-----------
+
+Growth of 10,000 invested at launch
+Total return, USD, net of fees, March 2019 to September 2026
+
+Exhibit 1 · Growth of an investment
+
+[Growth of 10,000 since launch]
+
+Key: Fund, Index
+
+Fictional data
+
+
+Three scenarios, one verdict
+----------------------------
+
+Twelve-month return in each scenario
+
+Scenario     Index    Fund
+----------  ------  ------
+Rates fall  +14.0%  +13.9%
+Rates hold   +7.5%   +7.4%
+Rates rise   -6.2%   -6.3%
+
+Fictional data
+
+------------------------------------------------------------------------------
+
+VERDICT
+
+The fund tracks its index within 0.1% in every scenario, so the choice is the
+market, not the vehicle.
+
+------------------------------------------------------------------------------
+
+
+Portfolio at a glance
+---------------------
+
+Holdings:        3,612
+Ongoing charge:  0.04%
+Inception:       12 March 2019
+Distributions:   Quarterly
+Turnover:        3%
+Benchmark:       Meridian US Total Market
+
+
+Important information
+---------------------
+
+This brief is issued for information only by a fictional manager. It is not an
+offer to buy or sell any security, nor a solicitation of one, and it takes no
+account of any reader's objectives, circumstances or needs.
+
+Past performance is not a reliable indicator of future results. The value of
+an investment and the income from it can fall as well as rise, and investors
+may get back less than they invested, in particular over a short holding
+period.
+
+Returns are shown net of the ongoing charge, in US dollars, with income
+reinvested. Returns to an investor in another currency may rise or fall with
+exchange rates, and are not hedged back to that currency by the fund.
+
+Index returns are shown for comparison only. An index is not managed, bears no
+costs, holds no cash and cannot be invested in directly, so a fund that tracks
+one will trail it by about its costs over time.
+
+The fund may lend securities. Lending carries the risk that a borrower fails
+to return them and that the collateral held against them falls short of their
+value when they must be bought back in the market.
+
+Holdings and weights are as of the date shown and change over time. They are
+not a recommendation to buy or sell any security named, and the fund may no
+longer hold a security by the time this brief is read.
+
+Distributions are not guaranteed, and a distribution may be paid in part from
+capital, which reduces what is left invested and the income it can earn in
+later periods. The tax treatment of a distribution depends on the holder.
+
+The fund's prospectus and key information document describe its risks, costs
+and terms in full, and should be read before investing. Both are available in
+English from the manager on request, free of charge.
+
+Shares are bought and sold at market price, which may differ from the fund's
+net asset value, and brokerage commissions and the spread between the bid and
+the offer reduce the return an investor receives.
+
+Every name, figure and date in this brief is fictional, written to exercise a
+document's layout in print. None of it describes a real fund, a real manager
+or a real market, and none of it should be relied on.
+
+
+[Meridian]
+
+
+© Hermes Research

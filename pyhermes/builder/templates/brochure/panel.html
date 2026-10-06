@@ -13,11 +13,14 @@
    `vertical-align`: WeasyPrint ignores the `valign` attribute, and a height
    on the table rather than the cell. The sentinel is a block there, so it
    opens no line box and lands on the copy's last line. An overfull cell
-   grows downward, so the sentinel still lands past the safe line. #}
+   grows downward, so the sentinel still lands past the safe line. A panel
+   holding a bled section (#396) grows its box into the bleed on each trim
+   edge and pads the same back, so the copy keeps its place and the box clips
+   past the trim rather than at it; the copy's own box then clips nothing. #}
 <div class="panel-ground" style="left:{{ ground.left }}px; top:{{ ground.top }}px; width:{{ ground.width }}px; height:{{ ground.height }}px; background-color:{{ background_color | default(theme.palette.surface) }};{% if background_image %} background-image:url('{{ background_image | escape_html }}'); background-size:cover; background-position:center;{% endif %}"></div>
 <div class="panel{% if background_image %} panel-imaged{% endif %}" data-reader="{{ box.reader }}"{% if section_align %} align="{{ section_align | escape_html }}"{% endif %}
-     style="left:{{ box.left }}px; width:{{ box.width }}px; height:{{ box.height }}px; padding:{{ inset }}px 0;{% if section_align %} text-align:{{ section_align }};{% if section_align == "justify" %} hyphens:auto;{% endif %}{% endif %}">
-  <div class="panel-copy" style="height:{{ content_height }}px;">
+     style="{% if clip.top %}left:{{ box.left - clip.left }}px; top:-{{ clip.top }}px; width:{{ box.width + clip.left + clip.right }}px; height:{{ box.height + clip.top + clip.bottom }}px; padding:{{ inset + clip.top }}px {{ clip.right }}px {{ inset + clip.bottom }}px {{ clip.left }}px;{% else %}left:{{ box.left }}px; width:{{ box.width }}px; height:{{ box.height }}px; padding:{{ inset }}px 0;{% endif %}{% if section_align %} text-align:{{ section_align }};{% if section_align == "justify" %} hyphens:auto;{% endif %}{% endif %}">
+  <div class="panel-copy" style="height:{{ content_height }}px;{% if clip.top %} overflow:visible;{% endif %}">
 {% if valign != "top" %}
     <table role="presentation" class="anchor" width="{{ box.width }}" cellpadding="0" cellspacing="0" border="0"
            style="width:{{ box.width }}px;"><tr><td style="padding:0; height:{{ content_height }}px; vertical-align:{{ valign }};">

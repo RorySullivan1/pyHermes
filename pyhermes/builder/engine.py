@@ -357,6 +357,31 @@ def placement_of(engine: Renderer) -> str:
     return placement if isinstance(placement, str) else ""
 
 
+def bleed_of(engine: Renderer) -> dict[str, int | float]:
+    """
+    How far a bled ground runs past the frame on its left, right and top (#396).
+
+    A medium whose frame sits inside a box binds its own; a sheet's default is
+    its margin, which is where the frame stops and the paper does not.
+    """
+    shared = getattr(engine, "shared", {})
+    bound = shared.get("bleed") if isinstance(shared, Mapping) else None
+    if isinstance(bound, Mapping):
+        return dict(bound)
+    margin = scheme_of(engine).frame.margin
+    return {"left": margin.left, "right": margin.right, "top": margin.top}
+
+
+def pin_of(engine: Renderer) -> dict[str, Any]:
+    """
+    How a pinned section reaches its foot (#397): ``{"mode": "float"}`` floats it to
+    the sheet's, ``{"mode": "box", "bottom": n}`` sets it ``n`` px above a fixed box's.
+    """
+    shared = getattr(engine, "shared", {})
+    bound = shared.get("pin") if isinstance(shared, Mapping) else None
+    return dict(bound) if isinstance(bound, Mapping) else {"mode": "float"}
+
+
 def _surface_theme(engine: Renderer) -> Theme | None:
     """The theme a section's own ground replaced, or ``None`` off such a ground."""
     shared = getattr(engine, "shared", {})

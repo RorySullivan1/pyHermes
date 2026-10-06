@@ -189,6 +189,9 @@ class ComponentScale:
     table_bar_height: int | float = 6
     #: The height of a change's drawn arrow (#319); its base is 1.2 times it.
     trend_arrow: int | float = 7
+    #: The space between two slots of a separated row, a gutter each side of it (#398),
+    #: and the connector arrow's length there (#399); its base is four fifths of that.
+    connector: int | float = 24
     #: A sparkline's box (#321): the height of its tallest bar, each bar's
     #: width, and the gap between two.
     sparkline_height: int | float = 24
@@ -631,6 +634,7 @@ COMPACT_SIZES = SizeScheme().derive(
         "timeline_gap": 10,
         "teaser_thumb": 96,
         "trend_arrow": 6,
+        "connector": 20,
         "sparkline_height": 18,
         "sparkline_bar": 3,
         "card_pad_y": 10,
@@ -743,6 +747,7 @@ SPACIOUS_SIZES = SizeScheme().derive(
         "timeline_gap": 20,
         "teaser_thumb": 144,
         "trend_arrow": 8,
+        "connector": 28,
         "sparkline_height": 28,
         "sparkline_bar": 5,
         "sparkline_gap": 2,
@@ -843,6 +848,7 @@ DENSE_SIZES = COMPACT_SIZES.derive(
         "timeline_gap": 8,
         "teaser_thumb": 88,
         "trend_arrow": 5,
+        "connector": 18,
         "sparkline_height": 16,
         "card_pad_y": 6,
         "card_pad_x": 8,
@@ -927,6 +933,7 @@ PRESENTATION_SIZES = SPACIOUS_SIZES.derive(
         "timeline_gap": 22,
         "teaser_thumb": 180,
         "trend_arrow": 11,
+        "connector": 40,
         "sparkline_height": 40,
         "sparkline_bar": 8,
         "sparkline_gap": 2,
@@ -1027,6 +1034,7 @@ _COMPONENT_BOX_TOKENS: frozenset[str] = frozenset(
         "list_ordinal_width",
         "table_bar_height",
         "trend_arrow",
+        "connector",
         "sparkline_height",
         "sparkline_bar",
         "sparkline_gap",

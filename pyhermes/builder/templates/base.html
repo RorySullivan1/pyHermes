@@ -43,6 +43,11 @@
          alignment that is the only reason to render one — so padding is what
          gives a narrow viewport its room back. See #132. */
       .data-table th, .data-table td { padding:{{ size.component.table_cell_pad_mobile }}px !important; }
+{% if "connector" in head_rules | default([]) %}
+      {# A stacked row's connector points down (#399); see common/separated-columns.html. #}
+      .connector-across { display:none !important; }
+      .connector-stacked { display:inline !important; }
+{% endif %}
     }
     /* Force light rendering in all dark mode contexts */
     :root { color-scheme: light only; }

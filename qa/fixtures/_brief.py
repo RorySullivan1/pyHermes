@@ -61,7 +61,7 @@ _OVERVIEW = (
 )
 
 #: Ten paragraphs of fictional disclosure copy, the sheet a brief closes on.
-_DISCLOSURES = [
+DISCLOSURES = [
     "This brief is issued for information only by a fictional manager. It is not an "
     "offer to buy or sell any security, nor a solicitation of one, and it takes no "
     "account of any reader's objectives, circumstances or needs.",
@@ -189,6 +189,6 @@ def sections() -> list[Container]:
             type_size="fine",
             align="justify",
             keep_together=True,
-            content=TextBlock("".join(f"<p>{line}</p>" for line in _DISCLOSURES)),
+            content=TextBlock("".join(f"<p>{line}</p>" for line in DISCLOSURES)),
         ),
     ]
