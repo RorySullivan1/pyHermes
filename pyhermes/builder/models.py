@@ -872,6 +872,7 @@ class Column:
         width:  A relative weight for this column's share of the width (#271).
         arrow:  Draw each raw figure's direction before it (#319).
         statuses: For ``kind="status"`` (#326), ``{word: tone}``: a dot before the word.
+        rule_after: Draw a vertical rule after this column, head and body (#390).
     """
 
     header: str
@@ -886,9 +887,12 @@ class Column:
     width: int | float | None = None
     arrow: bool = False
     statuses: "Mapping[str, str] | None" = None
+    rule_after: bool = False
 
     def validate(self) -> None:
         _require(self.header, "column.header")
+        if not isinstance(self.rule_after, bool):
+            raise ValidationError(f"'column.rule_after' is True or False, got: {self.rule_after!r}")
         self._check_statuses()
         if self.width is not None and not (
             isinstance(self.width, (int, float))
@@ -1188,6 +1192,16 @@ def trend_of(value: Any, fmt: Callable[[Any], str] | None = None) -> Trend:
 
 #: What a brand tone's name may be: a lowercase word the theme declares (#387).
 TONE_NAME = re.compile(r"[a-z][a-z0-9_]*\Z")
+
+
+#: How a frame is drawn, the one vocabulary for a section, a ``Callout`` and a table (#390).
+FRAMES = ("solid", "dashed")
+
+
+def _validate_frame(value: str, field_name: str) -> None:
+    """Refuse a frame style outside :data:`FRAMES`."""
+    if value not in FRAMES:
+        raise ValidationError(f"{field_name!r} must be one of {list(FRAMES)}, got: {value!r}")
 
 
 def _validate_tone(value: str, field_name: str) -> None:

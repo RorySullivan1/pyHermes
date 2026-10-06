@@ -1316,3 +1316,30 @@ keeps the theme's type. Black gets white, `#B8860B` gold keeps the dark ink.
 - `toned_layout` and `a4_toned_layout` (`qa/fixtures/_toned.py`) name two brand tones on every
   reader beside an untoned box; `tests/test_brand_tones.py` holds the claims, including a slide
   and a brochure panel. Nothing set, every golden is byte-identical.
+
+**A dashed frame, and a rule after a column (#390).** `frame` is one vocabulary, `FRAMES =
+("solid", "dashed")` in `models.py`, read by a section's border (`Container(frame=)`), a
+`Callout` and a `DataTable`. A brochure panel and a slide hold sections, so they take it with no
+code of their own.
+
+- **The email draws the dash too, from Microsoft's own table, not from a client.** The Word 2007
+  rendering reference (Microsoft Learn, aa338201) lists `border-style` and the per-side
+  `border-*-style` properties at FULL support on `td`, and the search summary of that era's
+  validator gives `dashed` as a supported value with unknown values mapped to solid. So nothing
+  degrades it in the email and no lint rule names it. **No real Outlook has drawn it here**; it
+  joins #288's check. If Word draws it solid, the frame is still a frame.
+- **A dashed frame needs `border=True`**, on a section and on a `Callout`, for `border_color`'s
+  reason: a style with no border draws nothing, so it is refused rather than ignored. The
+  default `"solid"` emits exactly what was emitted before, so no golden moved for it.
+- **A table's frame is a wrapping cell's border, never the table's.** Under `border-collapse` a
+  collapsed edge takes the stronger style, and solid outranks dashed, so the header's top rule
+  and the last row's bottom rule won on those two edges and the dash showed only at the sides.
+  The wrapper is a `role="presentation"` table whose cell is padded by `table_cell_pad`, so the
+  rules sit inside the frame. `frame=None` is the default and emits no wrapper.
+- **`Column(rule_after=True)`** sets `border-right: 1px solid rule_dark` on that column's head,
+  units and body cells, so the rule runs the table's height; it is a column property, not a
+  table one, because a brief rules off its label column and a factor table might rule off a
+  group. A header tier's spanning cell is not ruled.
+- **The gallery**: `_toned.py` dashes its *Who it suits* box, its sleeves table and the sector
+  section, and rules off the table's label column, so `toned_layout` moved by those lines alone
+  and `a4_toned_layout` shows each on paper, the table's rule and frame carrying over a sheet.

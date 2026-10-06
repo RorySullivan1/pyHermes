@@ -20,7 +20,7 @@ from .exceptions import ValidationError
 from .filters import escape_html
 from .images import EmailImage
 from .medium import PAGED_MEDIA, walking_medium
-from .models import Badge, _validate_tone, _validate_url
+from .models import Badge, _validate_frame, _validate_tone, _validate_url
 from .sizing import Spacing
 from .textgen import LINE_WIDTH, link_line, wrap
 
@@ -52,6 +52,7 @@ class Callout(CellShare, Component):
                  declares (#387); unset for the highlight tint.
         label:   A small heading above the block, such as "Key takeaway".
         border:  Whether the box is framed.
+        frame:   ``"solid"`` or ``"dashed"``, how the frame is drawn (#390).
         fill:    ``"tint"``, a light tint of the tone, or ``"solid"``, its full colour,
                  which needs a tone (#388).
         spacing: Moves ``callout_pad_y`` and ``callout_pad_x``, the box's padding, and
@@ -75,6 +76,7 @@ class Callout(CellShare, Component):
         *,
         width: float | None = None,
         fill: str = "tint",
+        frame: str = "solid",
     ):
         self.spacing = self._coerce_spacing(spacing)
         self.width = self.validate_share(width)
@@ -92,7 +94,11 @@ class Callout(CellShare, Component):
                 "A solid Callout fills with its tone's colour, so it needs a tone; "
                 "name one, such as tone='ink' declared on the theme."
             )
+        _validate_frame(frame, "callout.frame")
+        if frame != "solid" and not border:
+            raise ValidationError(f"callout.frame={frame!r} needs border=True to draw anything.")
         self.content = content
+        self.frame = frame
         self.fill = fill
         self.tone = tone
         self.label = label
@@ -124,6 +130,7 @@ class Callout(CellShare, Component):
             "label": self.label or "",
             "tone": self.tone or "",
             "border": self.border,
+            "frame": self.frame,
             "solid": self.fill == "solid",
         }
         return engine.render(self.template_path, context)

@@ -104,3 +104,10 @@ class TestBrandTones:
         theme = DEFAULT_THEME.derive(tones={"brand": "#B8860B"})
         assert chart_style(theme).tones == {"brand": "#B8860B"}
         assert chart_style(DEFAULT_THEME).tones == {}
+
+    def test_the_cycle_ends_in_the_brand_tones(self):
+        """A chart plotted from the cycle reaches the tones a key names (#389)."""
+        theme = DEFAULT_THEME.derive(tones={"brand": "#B8860B", "sky": "#0077A8"})
+        style = chart_style(theme)
+        assert style.series[-2:] == ("#B8860B", "#0077A8")
+        assert style["axes.prop_cycle"].by_key()["color"] == list(style.series)

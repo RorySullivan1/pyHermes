@@ -6,7 +6,8 @@ object that takes a tone naming one: a fact box and a framed box beside an
 untoned one, a black ticker chip and a gold one filled solid (#388), badged and
 toned cards, a hero figure, a table whose cells and status dots are in brand
 tones, a bar list and a key. No semantic token is repainted, so a gain is still
-green beside the brand's gold.
+green beside the brand's gold. The verdict box, the sleeves table and the sector
+section are framed dashed, and the table's label column is ruled off (#390).
 """
 
 from __future__ import annotations
@@ -56,6 +57,7 @@ def sections() -> list[Container]:
                 TextBlock("<p>Low-cost core exposure for a long holding period.</p>"),
                 tone="sky",
                 label="Who it suits",
+                frame="dashed",
             ),
             right=Callout(
                 TextBlock("<p>Concentrated in its ten largest names.</p>"),
@@ -88,16 +90,23 @@ def sections() -> list[Container]:
         FullWidth(
             title="Sleeves",
             content=DataTable(
-                ["Holding", Column("Sleeve", kind="status", statuses=SLEEVES), "Weight"],
+                [
+                    Column("Holding", rule_after=True),
+                    Column("Sleeve", kind="status", statuses=SLEEVES),
+                    "Weight",
+                ],
                 [
                     TableRow(["US large cap", "Core", Cell("62%", tone="brand")]),
                     TableRow(["Global small cap", "Satellite", Cell("23%", tone="sky")]),
                     TableRow(["Treasury futures", "Hedge", "15%"]),
                 ],
+                frame="dashed",
             ),
         ),
         FullWidth(
             title="Sector weights",
+            border=True,
+            frame="dashed",
             content=BarList(
                 [
                     BarItem("Technology", 31, tone="brand"),

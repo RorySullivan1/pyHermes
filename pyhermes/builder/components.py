@@ -57,6 +57,7 @@ from .models import (
     Series,
     TableRow,
     _validate_align,
+    _validate_frame,
     _validate_url,
     coerce_column,
     coerce_groups,
@@ -608,6 +609,8 @@ class DataTable(CellShare, Exhibit, Component):
                   column's header or a cell's text (#224).
         groups:   Optional :class:`ColumnGroup` heads spanning the columns,
                   left to right (#223); their spans sum to the column count.
+        frame:    ``"solid"`` or ``"dashed"`` draws a frame in the theme's rule
+                  round the table, inset by a cell's padding (#390); unset for none.
 
     **``caption`` and ``subtitle`` are separate on purpose**, even when a
     caller would write the same words in both. ``subtitle`` is presentation
@@ -654,10 +657,14 @@ class DataTable(CellShare, Exhibit, Component):
         groups: Sequence[ColumnGroup] | None = None,
         *,
         width: float | None = None,
+        frame: str | None = None,
     ):
         self.spacing = self._coerce_spacing(spacing)
         self.width = self.validate_share(width)
         self.validate_exhibit(label, anchor)
+        if frame is not None:
+            _validate_frame(frame, "data_table.frame")
+        self.frame = frame
         if not headers:
             raise ValidationError("DataTable requires at least one header.")
         if not rows:
@@ -879,10 +886,12 @@ class DataTable(CellShare, Exhibit, Component):
                     "align": c.align,
                     "kind": c.kind,
                     "width": width,
+                    "rule_after": c.rule_after,
                 }
                 for c, width in zip(columns, self._widths(), strict=True)
             ],
             "groups": [{"label": g.label, "span": g.span} for g in self.groups],
+            "frame": self.frame or "",
             "units": self._units(),
             "rows": [
                 {

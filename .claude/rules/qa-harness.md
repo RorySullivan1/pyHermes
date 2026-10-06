@@ -1298,3 +1298,5 @@ Its code's image never reaches the email manifest, which `test_qr` asserts.
 an untoned one, toned and badged cards, a hero figure, a table with brand-toned cells and status
 dots, a bar list and a key. `kitchen_sink` is untouched, because it is at its size ceiling and a
 brand tone is a theme setting, not a component. Nothing set, every other golden is byte-identical.
+#390 dashes a box, the table and a section there and rules off the table's label column, which
+is where `TestComponentFieldsAreExercised` finds `Column.rule_after` and `DataTable.frame`.
