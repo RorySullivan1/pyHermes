@@ -6,7 +6,7 @@
   one contract — `delivery`+`gmail`+`outlook`, and `pdf`. Rationale: CLAUDE.md and `media.md`.
 - **Shipped through PR #408.** Epics #157–#220 and #218 (PRs #167–#314); deck bugs #315–#317
   (PR #369); #361 (PR #370); #354 and #372 (PR #371); #318 (PR #373); #346 (PR #374); #324 (PR #376);
-  #329 (PR #378); #335 (PR #380); #340 (PR #382); the paper band seam (PR #408). #219 DOCX and #300
+  #329 (PR #378); #335 (PR #380); #340 (PR #382); #387 (PR #406); the paper band seam (PR #408). #219 DOCX and #300
   PPTX were closed as not planned (2026-10-01, `media.md`). #288 is the owner's Outlook-desktop check.
 - The prose budget is live; the baseline is 44 and may only shrink.
 
@@ -33,7 +33,7 @@
   every block background, so its fill overwrote the next section's half-pixel row at a band edge — `design-axes.md`
 
 ## Threads          (open items; remove when closed)
-- **Epic #384 (brand tones) is under way**: #387 is on the branch, unmerged; #388 (solid fill), #389 (legend +
+- **Epic #384 (brand tones) is under way**: #387 merged (PR #406); #388 (solid fill), #389 (legend +
   `chart_colors`) and #390 (dashed frame, column rule) remain. #388 and #389 build on `Theme.tone`.
 - **A share table holds its share in Word's engine** (owner, via COM, PR #371); a real Outlook client
   is still #288's. The measure is `ch`: in Georgia 75ch sets ~99 characters (`design-axes.md`).
@@ -44,8 +44,6 @@
   the three wide `ThreeColumn` ratios to pay for the stamp and the QR button; the next epic must merge or move.
 - **The suite runs on Windows since #372** (PR #371); no Windows CI job — the owner's run is the check.
 - **`epic-autoclose` works** (closed #273, #354, #361, #346, #324, #329, #335). Still confirm each epic closed after its merge.
-- **A dark split leaves a light seam under its left column on paper**, on `main` since before #324;
-  queued as a suggested task, not yet an issue (repro in sessions/2026-10-05-labels.md).
 - **In this container, PDF byte-determinism tests flake** (no HarfBuzz-Subset), and screenshot
   tests skip unless `PYHERMES_CHROMIUM=/opt/pw-browsers/chromium-1194/chrome-linux/chrome`.
 - **Every issue or PR body is written without angle brackets** — GitHub's sanitizer has
@@ -71,16 +69,9 @@
   Three tests never ran in CI — sessions/2026-09-28-2015-package-review-issues.md
 - [2026-10-01] exporter-epics-review — **#219 and #300 closed as not planned, #218 rescoped to the deck medium**;
   decision in `media.md`, README line reworded — sessions/2026-10-01-1707-exporter-epics-review.md
-- [2026-10-05] labels — **#324 implemented** (#325–#328): badges, status dots, tag rows, the
-  labelled fixtures — sessions/2026-10-05-labels.md
-- [2026-10-05] organising — **#329 implemented** (#330–#334): fact lists, timelines, teaser lists,
-  kickers, the organised fixtures — sessions/2026-10-05-organising.md
-- [2026-10-05] grouped — **#335 implemented** (#336–#339): figure grids, legends, section source
-  lines, the research note's grids — sessions/2026-10-05-grouped-exhibits.md
-- [2026-10-05] memory — State and Threads re-synced with GitHub after PR #380.
-- [2026-10-05] page-level — **#340 implemented** (#341–#345): landscape pages, stamps, asides, QR codes,
-  `a4_wide_appendix` — sessions/2026-10-05-page-level.md
 - [2026-10-05] windows — the 7 reported Windows failures were already fixed by #372; its own drive-path
   test still failed (a `WindowsPath` prints backslashes), fixed — sessions/2026-10-05-1657-windows-suite-recheck.md
 - [2026-10-05] paper-band-seam — 1px seam at a band edge on paper, fixed in `columns.html`;
   paint order, two forms — sessions/2026-10-05-1903-paper-band-seam.md
+- [2026-10-06] memory — the index trimmed to budget: five 2026-10-05 log pointers archived, #387 and the
+  seam thread closed.
