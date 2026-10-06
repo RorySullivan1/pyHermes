@@ -376,3 +376,17 @@ after it, then the shared source and disclosure; a section's line follows its bl
 
 **Non-goals, as decisions**: no nested grid, no table in a grid (a table is its own exhibit),
 more than four panels, and a per-row source in a table, which is a footnote marker's job.
+
+## Two markers side by side (#402)
+
+`[^2][^3]` rendered two superscripts with nothing between them, which a reader takes for
+note 23. `split_markers` now flags a footnote marker that directly follows another
+(`after_note`), and `common/notes.html` opens that marker's `sup` on a comma, so it reads
+"2,3". The comma is inside the superscript and outside the link, so each number still links
+to its own note. It holds wherever the macro renders a marker: prose, a caption, a table
+cell or head, in the email and on paper. Markers with anything between them, even a space,
+take no comma, and every golden was byte-identical. The text part keeps `[2][3]`.
+
+**Citations needed nothing.** A citation carries its style's brackets, so `[@a][@b]` reads
+`[1][2]` or `(Able 2020)(Baker 2021)`, never one number. `tests/test_adjacent_markers.py`
+pins both.

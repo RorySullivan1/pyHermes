@@ -95,6 +95,7 @@ class TestTheMarker:
                 "note_text": "",
                 "cites": [],
                 "citing": split_markers("", [])[0]["citing"],
+                "after_note": False,
             }
         ]
 
