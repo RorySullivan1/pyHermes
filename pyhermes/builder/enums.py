@@ -126,13 +126,14 @@ class TextAlign(StrEnum):
     ``BoxSurface``) and the body's containers (#126), which both read it
     from here.
 
-    ``justify`` is absent deliberately: it does nothing to a single short
-    line, and the rest of the CSS vocabulary is inline-level.
+    ``justify`` (#394) is admitted for a section and a ``TextBlock`` only, and
+    only paper sets it: a short line or a phone column justifies into rivers.
     """
 
     LEFT = "left"
     CENTER = "center"
     RIGHT = "right"
+    JUSTIFY = "justify"
 
 
 class VerticalAlign(StrEnum):

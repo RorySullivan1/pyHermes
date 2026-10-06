@@ -42,7 +42,8 @@ def render_pdf(document: Document, profile: PdfProfile = PRINT) -> bytes:
     Render ``document`` to PDF bytes, written under ``profile``.
 
     The document's own :meth:`~pyhermes.builder.document.Document.render` produces
-    the HTML and its :meth:`~pyhermes.builder.document.Document.assets` the images;
+    the HTML, its :meth:`~pyhermes.builder.document.Document.assets` the images and
+    its :meth:`~pyhermes.builder.document.Document.fonts` a house typeface's files;
     nothing else is read, and nothing is fetched. A reference the manifest
     does not cover raises
     :class:`~pyhermes.pdf.exceptions.UnreachableResourceError` naming the URL.
@@ -57,7 +58,7 @@ def render_pdf(document: Document, profile: PdfProfile = PRINT) -> bytes:
     """
     weasyprint = _backend()
     html = document.render()
-    fetcher = build_fetcher(document.assets())
+    fetcher = build_fetcher(document.assets() + document.fonts())
     kept = document.kept_sections()
     with _own_errors():
         source = weasyprint.HTML(string=html, url_fetcher=fetcher)
@@ -112,7 +113,7 @@ def layout(document: Document, profile: PdfProfile = PRINT) -> Any:
     # The document renders outside the guard: a builder error is the
     # document's, and must not be reported as the backend's.
     html = document.render()
-    fetcher = build_fetcher(document.assets())
+    fetcher = build_fetcher(document.assets() + document.fonts())
     with _own_errors():
         laid_out = weasyprint.HTML(string=html, url_fetcher=fetcher).render(**profile.options())
     _warn_tall_kept(laid_out, document.kept_sections())
@@ -179,7 +180,7 @@ def render_handout(
     """
     weasyprint = _backend()
     html = deck.handout() if page is None else deck.handout(page)
-    fetcher = build_fetcher(deck.assets())
+    fetcher = build_fetcher(deck.assets() + deck.fonts())
     with _own_errors():
         source = weasyprint.HTML(string=html, url_fetcher=fetcher)
         return bytes(source.write_pdf(finisher=_finisher(profile), **profile.options()))

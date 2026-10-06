@@ -14,7 +14,7 @@ from typing import Any
 
 from pyhermes.builder.theming import SERIES_TOKENS as SERIES_TOKENS
 from pyhermes.builder.theming import Theme, chart_colors, resolve_theme
-from pyhermes.builder.typography import FontTheme, resolve_font_theme
+from pyhermes.builder.typography import FontStack, FontTheme, resolve_font_theme
 
 from .charts import _backend
 
@@ -60,6 +60,8 @@ def chart_style(
 
     The font list keeps only the families matplotlib can find, then the
     stack's generic family, so a missing face falls back without a warning.
+    A house typeface's files (#391) are registered with matplotlib first, so
+    a chart is set in the face on a machine that has not installed it.
 
     Raises:
         BackendMissingError: Without the ``[charts]`` extra.
@@ -73,7 +75,8 @@ def chart_style(
         {key: _token(resolved, layer, name) for key, (layer, name) in RC_TOKENS.items()}
     )
     style["axes.prop_cycle"] = matplotlib.cycler(color=list(series))
-    style["font.family"] = [*_installed(stack.families[:-1]), stack.families[-1]]
+    families = _registered(stack)
+    style["font.family"] = [*_installed(families[:-1]), families[-1]]
     style.positive = resolved.semantic.positive
     style.negative = resolved.semantic.negative
     style.series = series
@@ -84,6 +87,24 @@ def chart_style(
 def _token(theme: Theme, layer: str, name: str) -> str:
     value: str = getattr(getattr(theme, layer), name)
     return value
+
+
+def _registered(stack: FontStack) -> tuple[str, ...]:
+    """
+    ``stack``'s families, its house files added to matplotlib's font manager.
+
+    The first family becomes the name matplotlib read from the file, which a
+    file need not share with the name its ``@font-face`` rule gives it.
+    """
+    if not stack.files:
+        return stack.families
+    from matplotlib import font_manager
+
+    names = []
+    for file in stack.files:
+        font_manager.fontManager.addfont(str(file.path))
+        names.append(font_manager.FontProperties(fname=str(file.path)).get_name())
+    return (names[0], *stack.families[1:])
 
 
 def _installed(families: tuple[str, ...]) -> list[str]:

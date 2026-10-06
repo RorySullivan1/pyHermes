@@ -1,0 +1,6 @@
+{# The house typeface's faces on paper (#391): each served from the document's
+   own manifest by the PDF exporter, which fetches nothing. A stack declares
+   no files by default, so this emits nothing and every golden stands. #}
+{% for face in font.faces %}
+    {{ face.css }}
+{% endfor %}

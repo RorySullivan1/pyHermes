@@ -84,9 +84,12 @@ def _validate_language(value: str, name: str) -> None:
         )
 
 
-def _validate_align(value: str, name: str) -> None:
+def _validate_align(value: str, name: str, *, justify: bool = False) -> None:
     """
     Raise unless value is one of the three alignments a band of copy takes.
+
+    ``justify`` admits the fourth (#394), which only a section and a
+    ``TextBlock`` take: a box, a pull quote or a list is a short line.
 
     Shared by the region boxes and the body's containers, because they
     align the same thing — see :class:`~pyhermes.builder.enums.TextAlign` for
@@ -97,10 +100,36 @@ def _validate_align(value: str, name: str) -> None:
     """
     from .enums import TextAlign
 
-    if value and value not in tuple(TextAlign):
-        raise ValidationError(
-            f"'{name}' must be one of {sorted(a.value for a in TextAlign)}, got: {value!r}"
-        )
+    allowed = [a.value for a in TextAlign if justify or a is not TextAlign.JUSTIFY]
+    if value and value not in allowed:
+        raise ValidationError(f"'{name}' must be one of {sorted(allowed)}, got: {value!r}")
+
+
+def justified(align: str, paged: bool) -> str:
+    """``align`` as a medium renders it: ``justify`` is paper's, and unset off it (#394)."""
+    return "" if align == "justify" and not paged else align
+
+
+#: How large a section's title is set (#392): the theme's ``h2``, or the masthead's size.
+TITLE_SIZES = ("section", "display")
+
+
+def check_title_type(size: object, case: object, title: str | None, owner: str) -> tuple[str, str]:
+    """``(title_size, title_case)`` as stored, refusing a value nothing draws (#392)."""
+    if size not in TITLE_SIZES:
+        raise ValidationError(f"{owner}'s title_size is one of {list(TITLE_SIZES)}, got: {size!r}")
+    if case not in (None, "upper"):
+        raise ValidationError(f"{owner}'s title_case is 'upper' or None, got: {case!r}")
+    if (size != "section" or case) and not title:
+        raise ValidationError(f"{owner} sets how its title looks; give the section a title")
+    return str(size), str(case or "")
+
+
+def check_type_size(size: object, owner: str) -> str:
+    """``type_size`` as stored: ``"fine"`` sets the section in fine print on paper (#393)."""
+    if size not in (None, "fine"):
+        raise ValidationError(f"{owner}'s type_size is 'fine' or None, got: {size!r}")
+    return str(size or "")
 
 
 def check_valign(value: object, owner: str) -> str:

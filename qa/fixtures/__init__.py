@@ -33,6 +33,7 @@ from . import (
     a4_toned_layout,
     a4_wide_appendix,
     aligned_layout,
+    brief_layout,
     compact_size,
     composed_layout,
     custom_banner,
@@ -41,6 +42,7 @@ from . import (
     image_matrix,
     kitchen_sink,
     labelled_layout,
+    letter_brief,
     letter_dense,
     letter_landscape_report,
     letter_quant_table,
@@ -119,6 +121,7 @@ def all_fixtures() -> dict[str, FixtureBuilder]:
         "labelled_layout": labelled_layout.build,
         "organised_layout": organised_layout.build,
         "toned_layout": toned_layout.build,
+        "brief_layout": brief_layout.build,
     }
 
 
@@ -151,6 +154,7 @@ def all_paged_fixtures() -> dict[str, PagedFixtureBuilder]:
         "a4_organised_layout": a4_organised_layout.build,
         "a4_wide_appendix": a4_wide_appendix.build,
         "a4_toned_layout": a4_toned_layout.build,
+        "letter_brief": letter_brief.build,
     }
 
 

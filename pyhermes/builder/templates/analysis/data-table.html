@@ -39,8 +39,9 @@
 {% from "analysis/sparkline-bars.html" import sparkline with context %}
 {% from "common/badge.html" import badge, dot with context %}
 {% if subtitle %}
-<p class="subtitle" style="font-family: {{ font.body }}; font-size: {{ size.type.secondary }}px; font-style: italic; color: {{ theme.text.secondary }}; margin: 0 0 {{ size.space.subtitle_gap }}px 0; line-height: {{ size.type.secondary_line | percent }};">{{ subtitle | escape_html }}</p>
+<p class="subtitle" style="font-family: {{ font.body }}; font-size: {{ size.type.secondary }}px; font-style: italic; color: {{ theme.text.secondary }}; margin: 0 0 {% if qualifier %}0{% else %}{{ size.space.subtitle_gap }}px{% endif %} 0; line-height: {{ size.type.secondary_line | percent }};">{{ subtitle | escape_html }}</p>
 {% endif %}
+{% include "common/qualifier.html" %}
 {% if caption and medium.email %}
 {# Outlook's copy of the caption (#403). The Word engine moves a nested
    table's `caption` out of place: when the table sits in any row but the

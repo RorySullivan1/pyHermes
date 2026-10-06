@@ -232,6 +232,19 @@ class TestComponentFieldsAreExercised:
                 f"no gallery MathBlock sets {name}="
             )
 
+    @pytest.mark.parametrize("kind", ["ChartBlock", "DataTable", "ImageBlock", "FigureGrid"])
+    def test_every_exhibit_sets_a_qualifier_somewhere(self, kind):
+        """#395's field, on each exhibit that takes it, read off the whole tree."""
+        from pyhermes.builder.components import descendants
+
+        blocks = [
+            block
+            for section in _gallery_sections()
+            for block in descendants(section.components())
+            if type(block).__name__ == kind
+        ]
+        assert any(block.qualifier for block in blocks), f"no gallery {kind} sets qualifier="
+
     def test_every_prose_component_exercises_its_alignment(self):
         """
         #124's axis. ``align`` is unset by default on all five, and an unset
@@ -271,6 +284,9 @@ class TestComponentFieldsAreExercised:
             "source",
             "as_of",
             "source_notes",
+            "title_size",
+            "title_case",
+            "type_size",
         ],
     )
     def test_every_container_field_is_exercised(self, field_name):
@@ -299,6 +315,9 @@ class TestComponentFieldsAreExercised:
             "source": "",
             "as_of": "",
             "source_notes": [],
+            "title_size": "section",
+            "title_case": "",
+            "type_size": "",
         }
         assert any(
             getattr(section, field_name, defaults[field_name]) != defaults[field_name]

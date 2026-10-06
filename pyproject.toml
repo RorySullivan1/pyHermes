@@ -199,6 +199,9 @@ module = [
     "segno.*",
     "zxingcpp",
     "zxingcpp.*",
+    # Only qa/fixtures/fonts/build_specimen.py reads it, run once by hand (#391).
+    "fontTools",
+    "fontTools.*",
 ]
 ignore_missing_imports = true
 

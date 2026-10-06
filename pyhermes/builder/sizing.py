@@ -1381,3 +1381,34 @@ def measure_px(scheme: SizeScheme, measure: str) -> int:
     """The px a ``standard`` or ``narrow`` measure caps a line at, at ``scheme``'s body size."""
     characters = getattr(scheme.type, f"measure_{measure}")
     return math.ceil(characters * scheme.type.body * CH_EM)
+
+
+def _token(value: float) -> int | float:
+    """``value`` as a scheme stores it: an int when whole, so ``14.0`` never renders."""
+    rounded = round(value, 1)
+    return int(rounded) if rounded == int(rounded) else rounded
+
+
+def fine_print(scheme: SizeScheme) -> SizeScheme:
+    """
+    ``scheme`` with a section's copy set in fine print, on paper (#393).
+
+    Fine print is ``micro``, the size an exhibit's disclosure is set in, at the
+    legal page's leading. Titles keep their size. The measure keeps its px, so
+    a sheet of fine print is not set in a column a third narrower.
+    """
+    fine = scheme.type.micro
+    scale = scheme.type.body / fine
+    return scheme.derive(
+        type={
+            "body": fine,
+            "secondary": fine,
+            "small": fine,
+            "label": min(scheme.type.label, fine),
+            "item_title": scheme.type.small,
+            "body_line": scheme.component.legal_line,
+            "secondary_line": scheme.component.legal_line,
+            "measure_standard": _token(scheme.type.measure_standard * scale),
+            "measure_narrow": _token(scheme.type.measure_narrow * scale),
+        }
+    )

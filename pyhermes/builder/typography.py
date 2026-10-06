@@ -17,10 +17,13 @@ literal creeping back.
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+import hashlib
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field, fields, replace
+from pathlib import Path
 
 from .exceptions import ValidationError
+from .images import ImageAsset
 
 #: The CSS generic families a stack may end in. Not a taste list — these are
 #: the five CSS2 generics every client resolves to *something*, which is what
@@ -34,6 +37,94 @@ GENERIC_FAMILIES: frozenset[str] = frozenset({"serif", "sans-serif", "monospace"
 #: of the declaration or the attribute — the same safety family as
 #: ``_validate_url``'s scheme check, and shape rather than taste.
 _FORBIDDEN_IN_FAMILY = ('"', "'", ";", "{", "}", "<", ">")
+
+
+#: A font file's leading bytes, and the CSS ``format()`` and MIME type each is served as.
+_FONT_SIGNATURES: dict[bytes, tuple[str, str, str]] = {
+    b"\x00\x01\x00\x00": ("truetype", "font/ttf", "ttf"),
+    b"true": ("truetype", "font/ttf", "ttf"),
+    b"OTTO": ("opentype", "font/otf", "otf"),
+    b"wOFF": ("woff", "font/woff", "woff"),
+    b"wOF2": ("woff2", "font/woff2", "woff2"),
+}
+
+_WEIGHTS = ("100", "200", "300", "400", "500", "600", "700", "800", "900")
+
+
+@dataclass(frozen=True)
+class FontFile:
+    """
+    One face of a house typeface: a weight, a style, and the file's bytes (#391).
+
+    Read and sniffed at construction, so a path that is missing or is not a
+    font fails where it was named, never inside the PDF engine. The bytes are
+    served to the print engine under :attr:`content_id`, as an image is.
+    """
+
+    weight: int
+    style: str
+    path: Path
+    data: bytes = field(repr=False)
+
+    @classmethod
+    def read(cls, key: str, path: str | Path, owner: str) -> FontFile:
+        """The face ``key`` (``"700"``, ``"400 italic"``) read from ``path``."""
+        weight, _, style = str(key).partition(" ")
+        if weight not in _WEIGHTS or style not in ("", "italic"):
+            raise ValidationError(
+                f"{owner}'s files are keyed by weight, as '400' or '700 italic', got: {key!r}"
+            )
+        if not isinstance(path, (str, Path)):
+            raise ValidationError(f"{owner}'s {key} face is a file path, got: {path!r}")
+        resolved = Path(path)
+        try:
+            data = resolved.read_bytes()
+        except OSError as exc:
+            raise ValidationError(f"{owner}'s {key} face cannot be read: {exc}") from None
+        if data[:4] not in _FONT_SIGNATURES:
+            raise ValidationError(
+                f"{owner}'s {key} face {str(resolved)!r} is not a TrueType, OpenType "
+                "or WOFF font file."
+            )
+        return cls(int(weight), style or "normal", resolved, data)
+
+    @property
+    def format(self) -> str:
+        """The ``format()`` hint an ``@font-face`` rule gives for this file."""
+        return _FONT_SIGNATURES[self.data[:4]][0]
+
+    @property
+    def content_id(self) -> str:
+        """The manifest name the print engine fetches this file under: a hash of its bytes."""
+        digest = hashlib.sha256(self.data).hexdigest()[:16]
+        return f"font-{digest}.{_FONT_SIGNATURES[self.data[:4]][2]}"
+
+    def asset(self) -> ImageAsset:
+        """This file as a manifest entry, served to the PDF exporter beside the images."""
+        return ImageAsset(
+            content_id=self.content_id,
+            data=self.data,
+            mime_type=_FONT_SIGNATURES[self.data[:4]][1],
+            filename=self.path.name,
+        )
+
+
+@dataclass(frozen=True)
+class FontFace:
+    """One ``@font-face`` rule: the family it names and the file it serves."""
+
+    family: str
+    file: FontFile
+
+    @property
+    def css(self) -> str:
+        """The ``@font-face`` rule, byte-exact, its source a ``cid:`` in the manifest."""
+        file = self.file
+        return (
+            f"@font-face {{ font-family: '{self.family}'; "
+            f"src: url('cid:{file.content_id}') format('{file.format}'); "
+            f"font-weight: {file.weight}; font-style: {file.style}; }}"
+        )
 
 
 @dataclass(frozen=True)
@@ -52,24 +143,44 @@ class FontStack:
     containing a space is quoted on emission with single quotes — never stored
     pre-quoted, so ``families`` is always the plain names.
 
+    **A house typeface (#391).** ``files`` declares the font files of the
+    first family, keyed by weight: ``{"400": path, "700": path}``, with
+    ``"400 italic"`` for an italic. A paged document embeds them; an email
+    ignores them and walks the chain, since ``css`` does not change.
+
     Args:
         families: The chain, in order, ending in a CSS generic family.
+        files: The first family's font files by weight, or none.
 
     Raises:
         ValidationError: For a chain that does not end in a generic, one with
             fewer than two entries, or a family name that is empty or carries a
-            character that would break out of the ``style`` attribute.
+            character that would break out of the ``style`` attribute; and for
+            a file that is missing, is not a font, or is keyed by no weight.
     """
 
     families: tuple[str, ...]
+    files: tuple[FontFile, ...]
 
-    def __init__(self, *families: str) -> None:
+    def __init__(self, *families: str, files: Mapping[str, str | Path] | None = None) -> None:
         # Varargs rather than a tuple argument: ``FontStack("Georgia",
         # "Times New Roman", "serif")`` reads as the chain it is, and a caller
         # cannot accidentally pass a bare string and get it iterated per
         # character — the failure mode a tuple field invites.
         object.__setattr__(self, "families", tuple(families))
         self.validate()
+        if files is not None and not isinstance(files, Mapping):
+            raise ValidationError(
+                f"'font stack' files map a weight to a path, as {{'400': path}}, got: {files!r}"
+            )
+        owner = f"font stack {self.families[0]!r}"
+        faces = tuple(FontFile.read(key, path, owner) for key, path in (files or {}).items())
+        object.__setattr__(self, "files", faces)
+
+    @property
+    def faces(self) -> tuple[FontFace, ...]:
+        """The ``@font-face`` rules this stack declares: its first family, once per file."""
+        return tuple(FontFace(self.families[0], file) for file in self.files)
 
     def validate(self) -> None:
         """Raise :class:`ValidationError` if this chain is not renderable."""
@@ -165,6 +276,22 @@ class FontTheme:
 
     def __post_init__(self) -> None:
         _validate_stack_fields(self, "font")
+
+    @property
+    def faces(self) -> tuple[FontFace, ...]:
+        """Every ``@font-face`` the roles declare, each family and face once (#391)."""
+        seen: dict[tuple[str, int, str], FontFace] = {}
+        for spec in fields(self):
+            for face in getattr(self, spec.name).faces:
+                seen.setdefault((face.family, face.file.weight, face.file.style), face)
+        return tuple(seen.values())
+
+    def assets(self) -> list[ImageAsset]:
+        """The font files a printed document serves its print engine, one entry per file."""
+        unique: dict[str, ImageAsset] = {}
+        for face in self.faces:
+            unique.setdefault(face.file.content_id, face.file.asset())
+        return list(unique.values())
 
     def derive(self, **roles: FontStack | Iterable[str]) -> FontTheme:
         """
@@ -265,6 +392,8 @@ __all__ = [
     "MODERN_FONTS",
     "FONT_THEMES",
     "GENERIC_FAMILIES",
+    "FontFace",
+    "FontFile",
     "FontStack",
     "FontTheme",
     "resolve_font_theme",

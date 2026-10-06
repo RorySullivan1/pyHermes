@@ -37,9 +37,12 @@ from .models import (
     _validate_color,
     _validate_frame,
     check_kicker,
+    check_title_type,
+    check_type_size,
     check_valign,
     coerce_badge,
     coerce_notes,
+    justified,
 )
 from .sizing import (
     PHONE_FLOOR,
@@ -50,6 +53,7 @@ from .sizing import (
     coerce_spacing,
     coerce_stack,
     column_layout,
+    fine_print,
     shares,
 )
 from .textgen import join_blocks, join_sections, underline, wrap
@@ -140,6 +144,9 @@ class Container:
         source: str | None = None,
         as_of: str | None = None,
         source_notes: Sequence[Footnote | str] | None = None,
+        title_size: str = "section",
+        title_case: str | None = None,
+        type_size: str | None = None,
     ):
         for value, name in (
             (background_color, "background_color"),
@@ -153,7 +160,7 @@ class Container:
         _validate_frame(frame, "container.frame")
         if frame != "solid" and not border:
             raise ValidationError(f"container.frame={frame!r} needs border=True to draw anything.")
-        _validate_align(align or "", "container.align")
+        _validate_align(align or "", "container.align", justify=True)
         validate_anchor(anchor or "", "container.anchor")
         self.title = title
         self.background_color = background_color
@@ -180,6 +187,10 @@ class Container:
         self.source = source or ""
         self.as_of = as_of or ""
         self.source_notes = coerce_notes(source_notes, [self.source], f"{self._owner()}'s source")
+        self.title_size, self.title_case = check_title_type(
+            title_size, title_case, title, self._owner()
+        )
+        self.type_size = check_type_size(type_size, self._owner())
 
     def _check_source(self, source: str | None, as_of: str | None) -> None:
         """Refuse a source line that is not plain text, and a date with no source to date."""
@@ -231,9 +242,12 @@ class Container:
     def _spaced(self, engine: Renderer) -> Renderer:
         """``engine`` as this section and everything inside it render against."""
         engine = respaced(engine, self.spacing, self._owner())
-        if self.align:
+        if self.align and self.align != "justify":
             # What places a block sized to a share of its cell (#357).
             engine = rebind(engine, placement=str(self.align))
+        if self.type_size and engine.medium.paged:
+            # Fine print is paper's (#393): on a phone, type below 12px is not read.
+            engine = rebind(engine, size=fine_print(scheme_of(engine)))
         return grounded(engine, engine.theme.on_ground(self.background_color, self.text_color))
 
     def opening(self) -> Container:
@@ -281,7 +295,9 @@ class Container:
         # Always injected, empty when unset: the templates gate on it with
         # ``{% if %}``, and under StrictUndefined an *undefined* name raises
         # rather than testing falsey — ``section_title``'s reasoning exactly.
-        ctx["section_align"] = self.align or ""
+        ctx["section_align"] = self.justified(engine)
+        ctx["section_display"] = self.title_size == "display"
+        ctx["section_upper"] = self.title_case == "upper"
         ctx["section_anchor"] = self.resolved_anchor()
         ctx["section_border"] = (
             (self.border_color or engine.theme.palette.rule) if self.border else ""
@@ -294,6 +310,10 @@ class Container:
         )
         ctx["section_as_of"] = self.as_of
         return ctx
+
+    def justified(self, engine: Renderer) -> str:
+        """This section's alignment as rendered: ``justify`` is paper's, unset elsewhere (#394)."""
+        return justified(self.align or "", engine.medium.paged)
 
     def _break_style(self, engine: Renderer) -> str:
         """The section row's break declarations on paper, both spellings; empty elsewhere (#364)."""
@@ -536,6 +556,9 @@ class FullWidth(Container):
                           it (#338): plain text, ``[^n]`` and ``[@key]`` allowed, as on an
                           exhibit's source. ``source_notes`` are the notes it calls. Every
                           section takes one.
+        title_size:       ``"display"`` sets the title at the masthead's size (#392), and
+        title_case:       ``"upper"`` in capitals; it is still the section's ``h2``.
+        type_size:        ``"fine"`` sets the section's copy in fine print, on paper only (#393).
     """
 
     template_path = "common/containers/full-width.html"
@@ -570,6 +593,9 @@ class FullWidth(Container):
         source: str | None = None,
         as_of: str | None = None,
         source_notes: Sequence[Footnote | str] | None = None,
+        title_size: str = "section",
+        title_case: str | None = None,
+        type_size: str | None = None,
     ):
         super().__init__(
             title,
@@ -589,6 +615,9 @@ class FullWidth(Container):
             source=source,
             as_of=as_of,
             source_notes=source_notes,
+            title_size=title_size,
+            title_case=title_case,
+            type_size=type_size,
         )
         self.content = self._slot("content", content)
 
@@ -652,6 +681,9 @@ class FlowedColumns(FullWidth):
         source: str | None = None,
         as_of: str | None = None,
         source_notes: Sequence[Footnote | str] | None = None,
+        title_size: str = "section",
+        title_case: str | None = None,
+        type_size: str | None = None,
     ):
         super().__init__(
             content,
@@ -672,6 +704,9 @@ class FlowedColumns(FullWidth):
             source=source,
             as_of=as_of,
             source_notes=source_notes,
+            title_size=title_size,
+            title_case=title_case,
+            type_size=type_size,
         )
         if isinstance(count, bool) or count not in self.COUNTS:
             raise ValidationError(
@@ -749,6 +784,9 @@ class TwoColumn(_SplitContainer):
         source: str | None = None,
         as_of: str | None = None,
         source_notes: Sequence[Footnote | str] | None = None,
+        title_size: str = "section",
+        title_case: str | None = None,
+        type_size: str | None = None,
     ):
         super().__init__(
             title,
@@ -768,6 +806,9 @@ class TwoColumn(_SplitContainer):
             source=source,
             as_of=as_of,
             source_notes=source_notes,
+            title_size=title_size,
+            title_case=title_case,
+            type_size=type_size,
         )
         self.ratio = self._check_ratio(ratio)
         self.stack = self._check_stack(stack)
@@ -847,6 +888,9 @@ class ThreeColumn(_SplitContainer):
         source: str | None = None,
         as_of: str | None = None,
         source_notes: Sequence[Footnote | str] | None = None,
+        title_size: str = "section",
+        title_case: str | None = None,
+        type_size: str | None = None,
     ):
         super().__init__(
             title,
@@ -866,6 +910,9 @@ class ThreeColumn(_SplitContainer):
             source=source,
             as_of=as_of,
             source_notes=source_notes,
+            title_size=title_size,
+            title_case=title_case,
+            type_size=type_size,
         )
         self.ratio = self._check_ratio(ratio)
         self.stack = self._check_stack(stack)
@@ -935,6 +982,9 @@ class FourColumn(_SplitContainer):
         source: str | None = None,
         as_of: str | None = None,
         source_notes: Sequence[Footnote | str] | None = None,
+        title_size: str = "section",
+        title_case: str | None = None,
+        type_size: str | None = None,
     ):
         super().__init__(
             title,
@@ -954,6 +1004,9 @@ class FourColumn(_SplitContainer):
             source=source,
             as_of=as_of,
             source_notes=source_notes,
+            title_size=title_size,
+            title_case=title_case,
+            type_size=type_size,
         )
         self.ratio = self._check_ratio(ratio)
         self.stack = self._check_stack(stack)

@@ -1300,3 +1300,21 @@ dots, a bar list and a key. `kitchen_sink` is untouched, because it is at its si
 brand tone is a theme setting, not a component. Nothing set, every other golden is byte-identical.
 #390 dashes a box, the table and a section there and rules off the table's label column, which
 is where `TestComponentFieldsAreExercised` finds `Column.rule_after` and `DataTable.frame`.
+
+## Print typography (#385)
+
+`brief_layout` (email) and `letter_brief` (paged, US Letter, `SHEETS = 3`) build one set of
+sections (`qa/fixtures/_brief.py`): a display masthead in capitals on a dark band, a justified
+overview, a chart, a table, an image and a grid each with a qualifier, a reading-size note and a
+justified fine-print section on the last sheet, all under a font theme whose heading and label
+are the specimen house face in `qa/fixtures/fonts/`. So the email golden pins each setting's
+degradation and the paged golden the `@font-face` rules and their `cid:` names. Each new section
+field and the qualifier are found there by `TestComponentFieldsAreExercised`.
+`tests/test_house_typeface.py` and `tests/test_print_typography.py` hold the claims and join the
+`pdf` job's line. The manual's example copies the specimen face into its scratch directory as
+`house-sans-*.ttf` (`tests/test_manual.py`'s `FONTS`).
+
+**The PR carried `a4_toned_layout`'s paged golden.** #412 changed that fixture (#390's dashed
+frames and the label column's rule) and regenerated the email golden only, so `main` failed
+`test_paged`; the diff is exactly #390's, checked line by line.
+

@@ -261,6 +261,9 @@ these rather than improvising:
   **#340** (page-level presentation for print: a landscape `Page` in a portrait document, a
   `stamp` on every sheet, an `Aside` the prose wraps round, and `QrCode` behind the sixth
   extra, `[qr]`, #341–#345) is complete.
+  **#385** (print typography: a house typeface embedded in every PDF, a display title, a section
+  in fine print on paper, justified prose on paper, and an exhibit's qualifier, #391–#395) is
+  complete; `design-axes.md` states each one's email degradation.
   **#335** (exhibits that group: `FigureGrid`'s lettered panels in one numbered exhibit, a
   chart's key stated in HTML by `Legend`, and one `source=` line for a whole section, #336–#339)
   is complete.

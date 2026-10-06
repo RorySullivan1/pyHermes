@@ -13,7 +13,7 @@
    other half. #}
 {% from "deck/bands.html" import title_band, footer_band, source_band with context %}
 <div class="sheet slide{% if background_image %} slide-imaged{% endif %}" data-slide="{{ number }}"{% if section_align %} align="{{ section_align | escape_html }}"{% endif %}
-     style="background-color:{{ background_color | default(theme.palette.surface) }};{% if section_align %} text-align:{{ section_align }};{% endif %}{% if background_image %} background-image:url('{{ background_image | escape_html }}'); background-size:cover; background-position:center;{% endif %}">
+     style="background-color:{{ background_color | default(theme.palette.surface) }};{% if section_align %} text-align:{{ section_align }};{% if section_align == "justify" %} hyphens:auto;{% endif %}{% endif %}{% if background_image %} background-image:url('{{ background_image | escape_html }}'); background-size:cover; background-position:center;{% endif %}">
 {% if picture %}
   <img class="slide-picture" src="{{ picture.src | escape_html }}" alt="{{ picture.alt | escape_html }}" width="{{ picture.width }}" height="{{ box.height }}"
        style="position:absolute; top:0; left:{{ picture.left }}px; width:{{ picture.width }}px; height:{{ box.height }}px; object-fit:cover; display:block; border:0;">

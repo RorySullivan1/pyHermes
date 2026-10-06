@@ -143,6 +143,68 @@ draft.save("draft.html")
 - A turned page always starts a fresh sheet and ends one.
 - A QR code takes an `http`, `https` or `mailto` address, and nothing a phone cannot open.
 
+## Typography for print
+
+Five settings that make a printed brief look set rather than merely printed. Each has a
+stated stand-in in an email, so one set of sections serves both.
+
+**Your own typeface.** Give the first family in a font stack its files, keyed by weight.
+A printed report, brochure or deck embeds them, so the PDF is set in your face on any
+machine; a chart drawn under `chart_style` uses it too. An email ignores the files and
+uses the rest of the stack, since most mail clients will not load a font.
+
+```python
+from pyhermes.builder import DEFAULT_FONTS, FontStack
+
+house = FontStack(
+    "House Sans", "Arial", "sans-serif",
+    files={"400": "house-sans-regular.ttf", "700": "house-sans-bold.ttf"},
+)
+brief = PagedDocument({**facts, "font_theme": DEFAULT_FONTS.derive(heading=house, label=house)})
+```
+
+**A display title, fine print and justified prose** are settings on a section:
+
+```python
+from pyhermes.builder import ChartBlock, EmailImage
+
+brief.add_section(FullWidth(
+    TextBlock("<p>Low-cost exposure to the whole market.</p>"),
+    title="Meridian Fund",
+    title_size="display",
+    title_case="upper",
+))
+brief.add_section(FullWidth(
+    ChartBlock(
+        EmailImage.attached("chart.png", alt="Growth of 10,000", width=616),
+        subtitle="Growth of 10,000 invested at launch",
+        qualifier="Total return, USD, net of fees, 2019 to 2026",
+    ),
+    title="Performance",
+))
+brief.add_section(FullWidth(
+    TextBlock("<p>Past performance is not a reliable indicator of future results.</p>",
+              align="justify"),
+    title="Important information",
+    type_size="fine",
+    align="justify",
+))
+brief.save("brief.html")
+```
+
+**Result:** a masthead in capitals at the size of a cover title, a chart with a bold
+italic line naming its measure under the subtitle, and a disclosures section in small
+justified type with words hyphenated at the line ends.
+
+**Notes:**
+- A font file must be TrueType, OpenType or WOFF, and must exist when the stack is built.
+  The library does not check your licence to embed it.
+- In an email a display title shrinks to the masthead's phone size on a phone, fine print
+  stays at reading size, and justified prose is set ragged-right, because a narrow column
+  justified without hyphenation fills with gaps.
+- `qualifier=` works on `ChartBlock`, `DataTable`, `ImageBlock` and `FigureGrid`, and is
+  plain text. The list of exhibits leaves it out.
+
 ## Other printed forms
 
 The project [README](../../README.md) covers two more:

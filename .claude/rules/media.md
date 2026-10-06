@@ -284,6 +284,11 @@ Consequences worth knowing:
 
 - **A document with hosted images cannot be printed.** That is the policy working. A printable
   document carries its own images, which is why the paged fixtures attach their cover art.
+- **A house typeface rides the same manifest (#391).** `Document.fonts()` lists the font
+  files of a `FontStack(files=)` on paper, the exporter serves them from `cid:` beside the
+  images, and a font is never fetched. It is a second list rather than part of `assets()`,
+  which a delivery layer attaches: a font must never ride a message. `design-axes.md` has
+  the rest.
 - **The exporter presents its own exception tree.** `fail_on_errors=True` makes WeasyPrint wrap
   the cause in a `FatalURLFetchingError`, so a caller catching `PdfError` — the documented
   contract — would have missed it. It unwraps and re-raises, cause chained. Anything else

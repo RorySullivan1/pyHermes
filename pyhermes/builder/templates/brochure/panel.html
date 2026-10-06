@@ -16,7 +16,7 @@
    grows downward, so the sentinel still lands past the safe line. #}
 <div class="panel-ground" style="left:{{ ground.left }}px; top:{{ ground.top }}px; width:{{ ground.width }}px; height:{{ ground.height }}px; background-color:{{ background_color | default(theme.palette.surface) }};{% if background_image %} background-image:url('{{ background_image | escape_html }}'); background-size:cover; background-position:center;{% endif %}"></div>
 <div class="panel{% if background_image %} panel-imaged{% endif %}" data-reader="{{ box.reader }}"{% if section_align %} align="{{ section_align | escape_html }}"{% endif %}
-     style="left:{{ box.left }}px; width:{{ box.width }}px; height:{{ box.height }}px; padding:{{ inset }}px 0;{% if section_align %} text-align:{{ section_align }};{% endif %}">
+     style="left:{{ box.left }}px; width:{{ box.width }}px; height:{{ box.height }}px; padding:{{ inset }}px 0;{% if section_align %} text-align:{{ section_align }};{% if section_align == "justify" %} hyphens:auto;{% endif %}{% endif %}">
   <div class="panel-copy" style="height:{{ content_height }}px;">
 {% if valign != "top" %}
     <table role="presentation" class="anchor" width="{{ box.width }}" cellpadding="0" cellspacing="0" border="0"

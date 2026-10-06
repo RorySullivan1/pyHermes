@@ -20,6 +20,7 @@
   <meta name="keywords" content="{{ [department, issue_label] | select | join(', ') | escape_html }}">
 {% endif %}
   <style type="text/css">
+{% include "common/font-faces.html" %}
     {# The page itself. `size` takes the sheet; a continuous page declares a
        width only and runs as long as its content. The margin is the page
        format's, never a density token (#175): the frame the tables fill is

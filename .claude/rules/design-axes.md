@@ -452,7 +452,8 @@ inheritance story and its own client-testing burden. Every reason was about the 
 owner's decision (2026-10-01, route C) keeps them there: the field exists on every split, paper
 honours it, and an email refuses it until an Outlook check lifts that (*Placement within a
 block's space* below); and no `justify`, which does nothing to a single short line and whose
-absence `TextAlign` records.
+absence `TextAlign` records. **Superseded (#394)**: a section and a `TextBlock` take
+`justify`, and only paper sets it (*Print typography* below).
 
 ### Typography — the face is one selected vocabulary
 
@@ -524,7 +525,8 @@ not a wholesale reface, because a newsletter is read in a serif and a data table
 mono.
 
 **Non-goals, as decisions**: no per-component or per-call-site `font_family=` (the theme is the
-whole surface, for the reason a `title_color=` would dissolve the palette); **no webfonts** —
+whole surface, for the reason a `title_color=` would dissolve the palette); **no webfonts in an
+email** (#391 gives *paper* an embedded face; the email still walks the stack) —
 a `<link>` to a font CDN is exactly what the linter's `no-external-css` rule denies, and an
 `@font-face` block fetches a font file the major clients strip or ignore, which is why the
 terminal-generic rule is the guarantee instead; no
@@ -1343,3 +1345,70 @@ code of their own.
 - **The gallery**: `_toned.py` dashes its *Who it suits* box, its sleeves table and the sector
   section, and rules off the table's label column, so `toned_layout` moved by those lines alone
   and `a4_toned_layout` shows each on paper, the table's rule and frame carrying over a sheet.
+
+
+## Print typography (#385)
+
+Five settings a printed brief needs, each shared machinery with a stated email degradation.
+Nothing set, every golden is byte-identical; `letter_brief` and `brief_layout` set them all.
+
+**A house typeface (#391).** `FontStack("House Sans", ..., files={"400": path, "700": path})`
+declares the first family's files, read and sniffed at construction (TrueType, OpenType, WOFF,
+WOFF2; a key is a weight, `"700 italic"` for an italic). `FontStack.css` does not change, so the
+email's markup is byte-identical with and without files, and `Email.fonts()` is empty.
+
+- **The faces are the paged skeletons', in one partial.** `common/font-faces.html` is included
+  at the top of the document, brochure and deck skeletons, so a report, a brochure, a deck and
+  its handout all embed the face; `FontFace.css` writes the whole rule, so no template holds a
+  `font-family` literal (standing rule 6's test reads templates).
+- **The files ride a second manifest, `Document.fonts()`**, never `assets()`: a delivery layer
+  attaches `assets()`, and a font must never ride a message. The PDF exporter serves both from
+  `cid:` (`font-<sha256[:16]>.<ext>`), so it still fetches nothing (`media.md`).
+- **`pdf_attachment` of an email embeds nothing**, since the email's HTML is the stack alone;
+  of a paged document it does.
+- **`chart_style` registers the files with matplotlib's font manager** and names the family
+  matplotlib read from the file, which need not be the name the `@font-face` rule gives it.
+- The gallery's face is `qa/fixtures/fonts/`: DejaVu Sans subset, narrowed to 82% and renamed
+  *Specimen Condensed*, as its licence requires of a modified copy. `build_specimen.py` makes
+  it, byte-identically on a rerun; the `.ttf` files are committed so no test needs fontTools.
+
+**A display title (#392).** `title_size="display"` on any section sets the `h2` at
+`size.type.title`, the step the banner, the cover and the deck's bands use, and
+`title_case="upper"` adds `text-transform`, so the text part keeps the caller's case. No new
+token: the `presentation` density sizes it on a slide and a brochure panel's density in a
+panel. **Email:** the `h2` carries `mobile-title`, so a phone drops it to `title_mobile`
+(#133); measured at 375px, it wraps with no overflow. Either setting on an untitled section
+is refused.
+
+**Fine print (#393).** `type_size="fine"` rebinds the section's scheme on paper through
+`fine_print()`: body, secondary and small type at `micro` (the size an exhibit's disclosure
+uses), the leading at `legal_line`, titles unchanged, and the measure scaled so its px holds.
+**Email:** ignored, since type below 12px is not read on a phone; the render is byte-identical
+to an unset section. **`BackMatter` and the deck's closing slide stay apart**: both set a legal
+sheet at `small` with `legal_line`, a reading size for a whole page of copy, and moving them to
+`micro` would move every paged and deck golden for a change no caller asked for. A caller who
+wants their disclosures in fine print sets them in a `type_size="fine"` section instead.
+
+**Justified prose (#394), a reopened decision.** `TextAlign.JUSTIFY` exists, and only
+`Container.align` and `TextBlock.align` take it (`JUSTIFIES` on the class; `BoxSurface`,
+`PullQuote` and the other prose blocks refuse it, a short line justified being a gap). Paper
+sets `text-align: justify; hyphens: auto` beside the `align` attribute, hyphenated under the
+document's `language`; WeasyPrint breaks with U+2010. **Email: rendered as unset**, so the
+markup is byte-identical to no `align`. Ruling taken under the owner's goal to complete the
+epic, and the narrow one: a phone column justified without hyphenation fills with rivers, and
+Gmail and the Word engine hyphenate nothing. Admitting the email later is additive. A justified
+section binds no `placement`, so a share-width block inside sits left. Disclosure copy stays
+justified in both media by its own partial (#153).
+
+**A qualifier (#395).** `qualifier=` on `ChartBlock`, `DataTable`, `ImageBlock` and
+`FigureGrid`: plain text, escaped, in `font.label` at `size.type.secondary`, bold italic, under
+the subtitle, which closes up to it. One partial, `common/qualifier.html`. Its readers:
+
+- **The text part** prints it on the line under the subtitle, through `_with_subtitle`.
+- **The list of exhibits** takes the caption only, so it never sees it.
+- **A grid panel** refuses one (`_GRID_OWNED`): the grid is the exhibit and carries one line.
+- **A slide** keeps its source line beside it; **the speaker notes** add `Exhibit 3:
+  qualifier` to the slide's block, and list a slide with a qualified exhibit and no notes,
+  because a presenter states the window aloud.
+- **Email:** the same markup; nothing in it needs Outlook's attention.
+

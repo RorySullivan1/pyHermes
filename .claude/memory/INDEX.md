@@ -4,9 +4,9 @@
 - pyHermes builds **documents** and renders each onto a **medium**: `pyhermes/builder` is the
   shared kit, `pyhermes/email`, `document`, `brochure` and `deck` are the media, and exporters sit on
   one contract — `delivery`+`gmail`+`outlook`, and `pdf`. Rationale: CLAUDE.md and `media.md`.
-- **Shipped through PR #411.** Epics #157–#220 and #218 (PRs #167–#314); deck bugs #315–#317
+- **Shipped through PR #412.** Epics #157–#220 and #218 (PRs #167–#314); deck bugs #315–#317
   (PR #369); #361 (PR #370); #354 and #372 (PR #371); #318 (PR #373); #346 (PR #374); #324 (PR #376);
-  #329 (PR #378); #335 (PR #380); #340 (PR #382); #387 (PR #406); the paper band seam (PR #408). #219 DOCX and #300
+  #329 (PR #378); #335 (PR #380); #340 (PR #382); #384 (PRs #406, #411, #412); the paper band seam (PR #408). #219 DOCX and #300
   PPTX were closed as not planned (2026-10-01, `media.md`). #288 is the owner's Outlook-desktop check.
 - The prose budget is live; the baseline is 44 and may only shrink.
 
@@ -31,10 +31,12 @@
   reads, refused undeclared by a walk in `Document._add`; `section.background_color` stays a hex** — `design-axes.md` (#387)
 - [2026-10-05] **On paper a split's column paints no fill; the band cell does** — an inline-table paints after
   every block background, so its fill overwrote the next section's half-pixel row at a band edge — `design-axes.md`
+- [2026-10-06] **A house face rides `Document.fonts()`, never `assets()`; justify and fine print are paper's,
+  unset in an email; BackMatter stays at `small`; a qualifier reaches the notes** — `design-axes.md` (#385)
 
 ## Threads          (open items; remove when closed)
-- **Epic #384 (brand tones)**: #387 (PR #406) and #388 (PR #411) merged; #389 and #390 (dashed frame,
-  `Column(rule_after=)`) are in PR #412. Outlook's dashed cell border is documented, not seen: #288's.
+- **Epic #385 (print typography, #391–#395) is in one PR**, with `a4_toned_layout`'s paged golden that
+  #412 left stale. #394's ruling (paper only) was taken under the goal; the owner may widen it.
 - **A share table holds its share in Word's engine** (owner, via COM, PR #371); a real Outlook client
   is still #288's. The measure is `ch`: in Georgia 75ch sets ~99 characters (`design-axes.md`).
 - **Outlook desktop's handling of `dir=rtl` on a reversed split is unverified here**, nor #319's VML
@@ -75,3 +77,4 @@
   paint order, two forms — sessions/2026-10-05-1903-paper-band-seam.md
 - [2026-10-06] memory — the index trimmed to budget: five 2026-10-05 log pointers archived, #387 and the
   seam thread closed.
+- [2026-10-06] print-typography — epic #385 built in one PR — sessions/2026-10-06-print-typography.md

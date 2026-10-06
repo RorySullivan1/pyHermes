@@ -14,6 +14,7 @@
   <meta name="keywords" content="{{ [department, issue_label] | select | join(', ') | escape_html }}">
 {% endif %}
   <style type="text/css">
+{% include "common/font-faces.html" %}
     {# One CSS page per sheet, at the slide's size with no margin: every sheet
        insets its own bands and copy by the page margin, so a page margin would
        inset them twice, and the title band's ground could not reach the edge. #}

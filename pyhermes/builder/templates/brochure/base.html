@@ -14,6 +14,7 @@
   <meta name="keywords" content="{{ [department, issue_label] | select | join(', ') | escape_html }}">
 {% endif %}
   <style type="text/css">
+{% include "common/font-faces.html" %}
     {# One CSS page per side of the sheet, at the flat sheet's size with no
        margin: every panel insets its own copy, so a page margin would inset
        the outer panels twice.
