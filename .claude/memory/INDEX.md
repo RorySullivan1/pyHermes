@@ -4,52 +4,33 @@
 - pyHermes builds **documents** and renders each onto a **medium**: `pyhermes/builder` is the
   shared kit, `pyhermes/email`, `document`, `brochure` and `deck` are the media, and exporters sit on
   one contract — `delivery`+`gmail`+`outlook`, and `pdf`. Rationale: CLAUDE.md and `media.md`.
-- **Shipped through PR #382.** Epics #157–#220 and #218 (PRs #167–#314); deck bugs #315–#317
+- **Shipped through PR #408.** Epics #157–#220 and #218 (PRs #167–#314); deck bugs #315–#317
   (PR #369); #361 (PR #370); #354 and #372 (PR #371); #318 (PR #373); #346 (PR #374); #324 (PR #376);
-  #329 (PR #378); #335 (PR #380); #340 (PR #382). #219 DOCX closed not planned, with #300 PPTX.
-- **#340 shipped** in PR #382 (#341–#345); the epic was closed by hand when its autoclose runs sat queued.
-  Its merge turned `main`'s `pdf` job red (a stamped deck's handout lacked `stamp_type`), fixed after.
-  #288 is the owner's Outlook-desktop check, run on Windows.
+  #329 (PR #378); #335 (PR #380); #340 (PR #382); the paper band seam (PR #408). #219 DOCX and #300
+  PPTX were closed as not planned (2026-10-01, `media.md`). #288 is the owner's Outlook-desktop check.
 - The prose budget is live; the baseline is 44 and may only shrink.
-- **Paper band seam fixed, PR #408 open** (branch `claude/vibrant-almeida-8d2f96`): on paper a split's column paints
-  no fill (8 goldens moved by that one declaration). sessions/2026-10-05-1903-paper-band-seam.md
 
 ## Decisions        (append-only; supersede, never delete)
 - Older entries, and epic #157's, are in sessions/ARCHIVE-2026.md.
-- [2026-10-01] **Owner's calls for the filed epics**: trend arrows are drawn shapes, never glyphs; the notes
-  handout fits #299; `[qr]` is the sixth extra; kicker and badge both sit on `Container` — #318–#346
-- [2026-10-01] **Position routes**: split `valign` is paper-only and an email refuses it (C); the prose
-  measure is a medium default written only where it bites (D); visibility is `Only`/`OnlySections` (B) — #354, #361
-- [2026-10-01] **Appendices reopen numbering by one letter level only; a citation is `[@key]` in the
-  `[^n]` fields, resolved by the walk; a term link is a plain `#term-` anchor** — `apparatus.md` (#220)
-- [2026-10-02] **Placement is decided in Python per medium**: reverse stacking is the `dir=rtl`
-  hybrid technique, unstacked is a fluid percentage row gated at the 375px floor, visibility rides
-  a medium context var beside the config one — `design-axes.md`, `media.md`, `deck.md` (#361)
-- [2026-10-03] **Placement within a block's space is paper-first**: `valign` anchors a fixed box by a
-  CSS-aligned cell, a split's `valign` is refused in an email (route C), a share is the section's
-  align, and the measure is in `ch` and the medium's (route D) — `design-axes.md`, `deck.md` (#354)
-- [2026-10-04] **A glance object is drawn from cells and tokens, never an image; an arrow is a
-  CSS shape with a VML twin, its direction the number's (`Card.arrow` is `init=False`)** — `glance.md` (#318)
-- [2026-10-04] **A deck's layouts are per slide and off by default: the box narrows per slide, a
-  photograph's tone is named, and the handout scales the deck's own sheets rather than rastering
-  them, so `[pdf]` alone prints it** — `deck.md` (#346)
-
+- [2026-09-28] **A test gated on an extra must run in some CI job, and a job list by hand is how three
+  never did.** One all-extras job that fails on a skip its extra should lift — #239, sessions/2026-09-28-2015-package-review-issues.md
+- [2026-10-01] **pyHermes grows by media, not by portability.** A DOCX/PPTX walk is a second render path
+  over 46 classes, and a chart is PNG bytes by the time it is in the tree; #219 and #300 closed — `media.md`
 - [2026-10-05] **A badge takes a tone, never a colour, and is square in Outlook by decision: no VML,
   nbsp padding in an mso conditional; a status dot is the same span unlabelled** — `design-axes.md` (#324)
 - [2026-10-05] **A timeline spans no cell: a capsule marker the title's height, the rule a half-cell's
   border; a kicker is the `h2`'s sibling, never inside it; four kitchen_sink sections became two Stacks
   to pay for #329's bytes** — `design-axes.md`, `builder-architecture.md` (#329)
-
 - [2026-10-05] **A grid is one exhibit: `leaves()` stops at any `Exhibit`, panels anchor `<grid>-<letter>`;
   a legend names theme colours (a hex is checked in `add_section`), never reads the plot; a section's
   source is `source_notes`, read by the walk after its blocks** — `apparatus.md`, `data-layer.md` (#335)
-
 - [2026-10-05] **A turned page is a body table of its own (a named page is inert on a `tr`); a stamp is a
   fact set OVER the copy, translucent (under, grounds hid it), and no constructor `stamp=`; an aside is a
   value object rendered through `Callout`; a gallery QR is a module-matrix constant** — `media.md`, `brochure.md` (#340)
-
 - [2026-10-05] **A brand tone is a name on the theme (`Theme.tones`), resolved by one `Theme.tone` every template
   reads, refused undeclared by a walk in `Document._add`; `section.background_color` stays a hex** — `design-axes.md` (#387)
+- [2026-10-05] **On paper a split's column paints no fill; the band cell does** — an inline-table paints after
+  every block background, so its fill overwrote the next section's half-pixel row at a band edge — `design-axes.md`
 
 ## Threads          (open items; remove when closed)
 - **Epic #384 (brand tones) is under way**: #387 is on the branch, unmerged; #388 (solid fill), #389 (legend +
@@ -83,11 +64,13 @@
 - **The baseline may only shrink.** #138 and #139 empty it; nothing may be added.
 - **Everything in `.claude/` is a factory asset** except `agents/python-developer.md` and
   `agents/finance-quantitative-developer.md`. No project name may enter the others.
-- [2026-10-05] **On paper a split's column paints no fill; the band cell does** — an inline-table paints after
-  every block background, so its fill overwrote the next section's half-pixel row at a band edge — `design-axes.md`
 
 ## Log              (append-only pointers)
 - Older entries, and epic #157's, are in sessions/ARCHIVE-2026.md.
+- [2026-09-28] package-review-issues — **the package review filed**: epics #237, #238, task #239, bugs #240–#242.
+  Three tests never ran in CI — sessions/2026-09-28-2015-package-review-issues.md
+- [2026-10-01] exporter-epics-review — **#219 and #300 closed as not planned, #218 rescoped to the deck medium**;
+  decision in `media.md`, README line reworded — sessions/2026-10-01-1707-exporter-epics-review.md
 - [2026-10-05] labels — **#324 implemented** (#325–#328): badges, status dots, tag rows, the
   labelled fixtures — sessions/2026-10-05-labels.md
 - [2026-10-05] organising — **#329 implemented** (#330–#334): fact lists, timelines, teaser lists,

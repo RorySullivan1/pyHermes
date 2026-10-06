@@ -425,3 +425,22 @@ Decisions and Log entries folded out of `INDEX.md` on 2026-08-29 (#143), verbati
   two log pointers folded into the archive.
 - [2026-10-05] memory — State and Threads re-synced with GitHub after PR #376.
 - [2026-10-05] memory — State and Threads re-synced with GitHub after PR #378.
+
+## Folded in from INDEX.md on 2026-10-05 (decisions of 2026-10-01 to 2026-10-04)
+- [2026-10-01] **Owner's calls for the filed epics**: trend arrows are drawn shapes, never glyphs; the notes
+  handout fits #299; `[qr]` is the sixth extra; kicker and badge both sit on `Container` — #318–#346
+- [2026-10-01] **Position routes**: split `valign` is paper-only and an email refuses it (C); the prose
+  measure is a medium default written only where it bites (D); visibility is `Only`/`OnlySections` (B) — #354, #361
+- [2026-10-01] **Appendices reopen numbering by one letter level only; a citation is `[@key]` in the
+  `[^n]` fields, resolved by the walk; a term link is a plain `#term-` anchor** — `apparatus.md` (#220)
+- [2026-10-02] **Placement is decided in Python per medium**: reverse stacking is the `dir=rtl`
+  hybrid technique, unstacked is a fluid percentage row gated at the 375px floor, visibility rides
+  a medium context var beside the config one — `design-axes.md`, `media.md`, `deck.md` (#361)
+- [2026-10-03] **Placement within a block's space is paper-first**: `valign` anchors a fixed box by a
+  CSS-aligned cell, a split's `valign` is refused in an email (route C), a share is the section's
+  align, and the measure is in `ch` and the medium's (route D) — `design-axes.md`, `deck.md` (#354)
+- [2026-10-04] **A glance object is drawn from cells and tokens, never an image; an arrow is a
+  CSS shape with a VML twin, its direction the number's (`Card.arrow` is `init=False`)** — `glance.md` (#318)
+- [2026-10-04] **A deck's layouts are per slide and off by default: the box narrows per slide, a
+  photograph's tone is named, and the handout scales the deck's own sheets rather than rastering
+  them, so `[pdf]` alone prints it** — `deck.md` (#346)

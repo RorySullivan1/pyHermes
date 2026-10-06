@@ -1,0 +1,69 @@
+# 2026-10-01 17:07 · exporter-epics-review
+
+**Goal:** Review epics #218 (deck + PPTX) and #219 (DOCX): build or scrap
+
+Planning only; no source changed. The owner doubted that a DOCX and a PPTX exporter could land
+without doubling the project, and named the chart as the example: an image here, a native object
+there. Both epics were built out earlier today against `main` @ `cf2cd5b` (#296–#301 under #218,
+#302–#307 under #219, #308–#312 under #220), so the review read every sub-issue.
+
+## What happened
+- **Recommended: scrap both exporters as specified; keep the deck medium without #300.** The owner
+  decides; nothing was closed or edited on GitHub.
+- **Measured why "the same contract as the PDF exporter" is false.** The PDF rides the one HTML render
+  path (652 lines, no per-component code). A DOCX or PPTX walk cannot start from the HTML, so each is a
+  second render path: a projection per public class, the three axes re-bound as Word styles or a slide
+  master, the apparatus re-implemented (footnotes through raw OOXML; python-docx has no footnote API),
+  a fourth golden artefact with a read-back harness, an extra, a CI job, a rules file.
+
+  | On `main` | Size |
+  |---|---|
+  | HTML templates, shared by three media | 41 files, 1,776 lines |
+  | PDF exporter | 652 lines |
+  | The one non-HTML projection, plain text | 26 `text()` methods; 1,130 lines of converter + tests |
+  | Public classes a DOCX/PPTX walk must project | 46 (components 16, surfaces 3, containers 6, regions 7+11, page, panel) |
+  | `Column` fields a Word/PPT table must honour | 10, plus groups, units, heat scales, bars, decimal alignment |
+
+- **The sub-issues make it a permanent tax**: a pending set that must shrink to empty and a
+  completeness test like `test_text_projection.py`, so every future component (the five #220 adds)
+  would need three projections, not one.
+- **The fidelity ceiling is low, and the chart is the general case.** A chart enters the tree as PNG
+  bytes from a drawn Figure (`chart_from_figure`); the data is gone before any exporter sees it. A
+  native chart needs a chart model (type, series, categories, axes, formats) that pyHermes deliberately
+  lacks ("pyHermes does not draw charts"), consumed by matplotlib, python-pptx and raw DrawingML for
+  Word: a second product. Both epics concede "No native chart". Equations stay pictures, a
+  `FontStack` collapses to one face, footnotes may fall back to endnotes, heat and bars become
+  shading. What is editable is titles, prose and tables; a pitchbook is mostly charts.
+- **The deck medium is a different animal.** #296–#299 and #301 are in-architecture: `Panel` →
+  `Slide`, `overflowing_panels` → `overflowing_slides`; the brochure cost ~1,064 lines and 94 tests
+  for a whole medium. Worth keeping only if a PDF deck is wanted on its own.
+
+## Gotchas & dead ends
+- The branch `claude/gifted-ritchie-7dkp5g` was 316 files behind `main` and carried four memory
+  commits whose INDEX edits `main` had since archived. Rebuilt it on `main` and ported the one file
+  `main` lacked (`sessions/2026-09-28-2015-package-review-issues.md`) rather than rebasing into an
+  INDEX conflict.
+- `issue_read get_sub_issues` on a six-child epic exceeds the tool's output cap; read the saved JSON
+  with python instead.
+
+## The owner's call, same session: scrap, and refocus the epics on media
+- **#219 closed as not planned** with one reasoning comment carrying the table above; #302–#307
+  closed as not planned (no comment each; the epic's comment is the record).
+- **#300 closed as not planned, with a one-line comment, and removed from #218's sub-issues** so
+  `epic-autoclose` will not read it as a completed child. #218 retitled "a slide deck medium, one
+  slide to a sheet, with dividers and speaker notes"; body rewritten without the PPTX outcome,
+  acceptance, risk and non-goal, and with a "Rescoped on 2026-10-01" paragraph. #296, #299 and
+  #301 lost their PPTX lines. Bodies were re-sent without any angle bracket: the `sub` footer became
+  plain text and `deck/NAME.notes.txt` replaced the bracketed placeholder.
+- **The decision lives in `media.md`** ("There is no DOCX or PPTX exporter, by decision"), after the
+  digital-PDF paragraph; the README's scope line links #219 instead of promising "a new epic on the
+  same contract". #220 was untouched: it is apparatus, already medium-shaped.
+
+## State at end
+- Open epics: #218 (deck medium, #296–#299, #301) and #220 (long-form apparatus, #308–#312). The
+  rule they follow: pyHermes grows by media, not by portability.
+
+## Open threads
+- The one door: a `[docx]` adapter from one `DataTable` to one Word table, filed as a task only when
+  someone asks. A chart *model* in the tree is what would reopen the exporter question, and it is a
+  second product.
