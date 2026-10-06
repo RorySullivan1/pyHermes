@@ -444,3 +444,14 @@ Decisions and Log entries folded out of `INDEX.md` on 2026-08-29 (#143), verbati
 - [2026-10-04] **A deck's layouts are per slide and off by default: the box narrows per slide, a
   photograph's tone is named, and the handout scales the deck's own sheets rather than rastering
   them, so `[pdf]` alone prints it** — `deck.md` (#346)
+
+## Folded in from INDEX.md on 2026-10-06 (the #324, #329, #335 and #340 log pointers)
+- [2026-10-05] labels — **#324 implemented** (#325–#328): badges, status dots, tag rows, the
+  labelled fixtures — sessions/2026-10-05-labels.md
+- [2026-10-05] organising — **#329 implemented** (#330–#334): fact lists, timelines, teaser lists,
+  kickers, the organised fixtures — sessions/2026-10-05-organising.md
+- [2026-10-05] grouped — **#335 implemented** (#336–#339): figure grids, legends, section source
+  lines, the research note's grids — sessions/2026-10-05-grouped-exhibits.md
+- [2026-10-05] memory — State and Threads re-synced with GitHub after PR #380.
+- [2026-10-05] page-level — **#340 implemented** (#341–#345): landscape pages, stamps, asides, QR codes,
+  `a4_wide_appendix` — sessions/2026-10-05-page-level.md
