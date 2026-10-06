@@ -4,21 +4,24 @@
   A table cell carries the padding, because the Word engine drops a div's.
   The fill is the theme's highlight tint, or a light tint of the tone's
   semantic colour; the frame is the rule, or the tone's colour. A caller
-  names a tone, never a colour.
+  names a tone, never a colour. A solid box (#388) fills with the tone's
+  full colour, and is rendered on the theme the ground picks, so its label
+  takes the heading type that reads there rather than the tone it sits on.
 
   Context:
     content — The held block, rendered
     label   — A small heading above it, plain text; empty for none
-    tone    — "positive", "negative", "neutral", or empty for the highlight tint
+    tone    — A tone the theme resolves, or empty for the highlight tint
     border  — Whether the box is framed
+    solid   — Whether the fill is the tone's full colour
 #}
 {% set edge = theme.tone[tone] if tone else theme.palette.rule %}
-{% set fill = (0.08 | heat_color(theme.palette.surface, theme.tone[tone])) if tone else theme.palette.highlight_tint %}
+{% if solid %}{% set fill = edge %}{% else %}{% set fill = (0.08 | heat_color(theme.palette.surface, theme.tone[tone])) if tone else theme.palette.highlight_tint %}{% endif %}
 <table class="callout" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
   <tr>
     <td bgcolor="{{ fill }}" style="padding:{{ size.component.callout_pad_y }}px {{ size.component.callout_pad_x }}px; background-color:{{ fill }};{% if border %} border:1px solid {{ edge }};{% endif %}">
 {% if label %}
-      <div style="font-family: {{ font.label }}; font-size: {{ size.type.label }}px; font-weight: bold; letter-spacing: 0.5px; text-transform: uppercase; color: {{ edge if tone else theme.text.secondary }}; margin: 0 0 {{ size.space.caption_gap }}px 0; line-height: {{ size.type.secondary_line | percent }};">{{ label | escape_html }}</div>
+      <div style="font-family: {{ font.label }}; font-size: {{ size.type.label }}px; font-weight: bold; letter-spacing: 0.5px; text-transform: uppercase; color: {{ theme.text.heading if solid else edge if tone else theme.text.secondary }}; margin: 0 0 {{ size.space.caption_gap }}px 0; line-height: {{ size.type.secondary_line | percent }};">{{ label | escape_html }}</div>
 {% endif %}
       {{ content }}
     </td>

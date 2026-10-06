@@ -1293,6 +1293,26 @@ theme, so rule 4 holds.
 - **Left open: a section's `background_color` still takes a hex**, as `Cover` and a slide's
   ground do. Accepting a tone name there is a wider change to the closed colour-exception list,
   so it is not in #387.
+
+**A solid box (#388).** `Callout(fill="solid")` paints its tone's full colour, a chip such as a
+black ticker. Its type is chosen, never set: the box renders on `Theme.on_ground(tone colour)`,
+the rule a section's ground uses (#266), so a dark tone takes the `on_dark` ladder and a light one
+keeps the theme's type. Black gets white, `#B8860B` gold keeps the dark ink.
+
+- **The label reads `text.heading` on a solid box**, not the tone, which would be invisible on its
+  own fill.
+- **It is `grounded`, so the rest of #266 follows with no code of its own.** A `TextBlock` inside
+  drops `body-text` (dark mode would repaint it). A table or card inside is set on
+  `common/surface.html`. On a dark section the box first returns to the theme's type
+  (`own_surface`), then takes its own ground, so a navy band changes nothing inside a chip.
+- **A solid box needs a tone.** Without one there is no colour to fill with, and the highlight
+  tint is a tint by definition. The constructor refuses it.
+- **It does not share `Badge`'s partial.** A badge is an inline span sized to its label, and a
+  `Callout` is a cell holding a block. The Word engine pads a cell and does not pad a span. The
+  two share `Theme.tone`, not markup.
+- **Outlook needs no VML**: the fill is the cell's `bgcolor`, already emitted for the tint.
+- **The gallery**: `_toned.py` gains an `ink` tone and two solid chips, ink and gold, so
+  `toned_layout` and `a4_toned_layout` moved by insertion alone. No other golden moved.
 - `toned_layout` and `a4_toned_layout` (`qa/fixtures/_toned.py`) name two brand tones on every
   reader beside an untoned box; `tests/test_brand_tones.py` holds the claims, including a slide
   and a brochure panel. Nothing set, every golden is byte-identical.

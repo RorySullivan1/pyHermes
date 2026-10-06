@@ -393,6 +393,9 @@ class TestTheRebindCostsNothingUnused:
                 for ground in ("background_color", "text_color"):
                     if hasattr(node, ground):
                         setattr(node, ground, None)
+                # So does a solid Callout's own ground (#388).
+                if getattr(node, "fill", None) == "solid":
+                    node.fill = "tint"
         return document
 
     @pytest.mark.parametrize(
