@@ -549,3 +549,56 @@ by the owner's decision (2026-10-01).
   holds the constant to segno's encoding of its URL. `zxing-cpp`, a self-contained wheel, joins
   `[qa]` as the decoder, and `tests/test_qr.py` decodes the code from a rasterised paged page
   and the brochure's back panel.
+
+## Single-sheet print pieces (#386)
+
+A three-sheet product brief needed four things paper lacked. Each shares a mechanism one
+medium already had, and with none set every golden is byte-identical.
+`letter_product_brief` and `product_brief_layout` carry them all (`qa-harness.md`).
+
+**A band to the sheet's edge (#396).** `bleed=True` on every section. **Probed under
+WeasyPrint 70 first**: a block inside the section's cell with negative margins equal to the
+page margins, and the same distances back as padding, paints into the margin on the left,
+right and top, and the running boxes still draw over it. So `common/placed.html` wraps the
+section's tables in that block on paper; elsewhere nothing is written.
+
+- **How far is the medium's**, read by `bleed_of(engine)`: a sheet's margin by default, a
+  binding where the frame sits in a box. **The top edge only where the section opens its
+  sheet**, set by the medium that knows it (`Container.sheet_top`, through `at_sheet_top()`):
+  the body's first section, a `break_before`, a `Page`'s first, a panel's first. Mid-sheet,
+  the ground above is the section before's, and a negative top margin would cover it.
+- **A brochure panel** clips at its box, so a panel holding a bled section grows its box
+  into the bleed on each trim edge and pads it back, `Panel.ground`'s geometry; its copy box
+  then clips nothing. The band runs past the trim on an outer panel and to the fold inside.
+  An unbled panel's markup is unchanged.
+- **A slide's** body frame already spans the sheet in a full layout, and a laid-out
+  region's box clips at its edge, so the slide binds no distance (`SLIDE_BLEED`).
+- **Email:** inert. A section there is already the frame's width, and the margin is the
+  wrapper's, not the section's.
+- Bottom bleed and crop marks for a paged document are non-goals: a press-ready piece is a
+  brochure, and a desktop printer clips the edge anyway.
+
+**A section at the sheet's foot (#397).** `pin="bottom"`, #355's word, the only one
+accepted. **Probed**: `position: absolute; bottom: 0` set the block at the foot and, given
+too little room, laid it over the copy; `float: footnote` set it in the footnote area, the
+one place a print engine reserves at a sheet's foot above the footer box, and when it did
+not fit moved it whole to the next sheet. So a pinned section floats to that area, with its
+call and marker blanked by two rules the skeleton writes only when a section is pinned
+(`Document._head_rules`, so an unpinned document's head is unchanged).
+
+- **It sits under the footnote area's rule**, after any note called on that sheet: the area
+  is the notes' as well, and drawing the rule only where a note sits has no CSS. Recorded as
+  the mechanism's visible cost.
+- **The block carries the section's ground; the row it leaves paints none**, or a sliver
+  of the ground showed where it had been. Its line box is zeroed, or the area set it taller.
+- **A panel and a slide are fixed boxes**, so there it is `position: absolute` on the box's
+  foot (`pin_of(engine)`): the panel's inset above its bottom, the body's foot on a slide.
+- **Email:** it flows where it sits, byte-identical to an unpinned section.
+
+**A quiet first sheet (#400).** `skip_first=True` on `RunningHeader` and `RunningFooter`
+blanks the box under `@page :first`, which outranks the bare rule, so the count still runs
+and the second sheet reads 2 (read back from the PDF). It matches a deck's title slide.
+**It is opt-in, not the default under an `EmptyCover`**, which the issue left open: a
+default would move every paged golden whose first body sheet carries a folio today, for a
+change no existing caller asked for. With a `Cover` the first sheet is the cover, which
+already blanks both boxes.

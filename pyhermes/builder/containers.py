@@ -25,7 +25,16 @@ from pyhermes.config import get_config
 from .apparatus import UNRESOLVED, Citing, slugify, split_markers, text_markers, validate_anchor
 from .components import Component, descendants
 from .composition import refuse_numbered
-from .engine import Renderer, grounded, on_ground, rebind, respaced, scheme_of
+from .engine import (
+    Renderer,
+    bleed_of,
+    grounded,
+    on_ground,
+    pin_of,
+    rebind,
+    respaced,
+    scheme_of,
+)
 from .enums import TextAlign, ThreeColumnRatio, TwoColumnRatio, VerticalAlign
 from .exceptions import ValidationError
 from .images import EmailImage, ImageAsset
@@ -124,6 +133,12 @@ class Container:
     #: How a citation in ``source`` is spelled, handed down by the document's walk (#338).
     citing: Citing = UNRESOLVED
 
+    #: Whether this section opens its sheet or panel, set where the medium knows it (#396).
+    sheet_top: bool = False
+
+    #: Where a section may be pinned within its sheet (#397): #355's word for its foot.
+    PINS: ClassVar[tuple[str, ...]] = ("bottom",)
+
     def __init__(
         self,
         title: str | None = None,
@@ -147,6 +162,8 @@ class Container:
         title_size: str = "section",
         title_case: str | None = None,
         type_size: str | None = None,
+        bleed: bool = False,
+        pin: str | None = None,
     ):
         for value, name in (
             (background_color, "background_color"),
@@ -191,6 +208,14 @@ class Container:
             title_size, title_case, title, self._owner()
         )
         self.type_size = check_type_size(type_size, self._owner())
+        if not isinstance(bleed, bool):
+            raise ValidationError(f"{self._owner()}'s bleed is True or False, got: {bleed!r}")
+        if pin is not None and pin not in self.PINS:
+            raise ValidationError(
+                f"{self._owner()}'s pin must be one of {list(self.PINS)} or None, got: {pin!r}"
+            )
+        self.bleed = bleed
+        self.pin = pin
 
     def _check_source(self, source: str | None, as_of: str | None) -> None:
         """Refuse a source line that is not plain text, and a date with no source to date."""
@@ -252,8 +277,14 @@ class Container:
 
     def opening(self) -> Container:
         """This section without its leading break, for a body that already opens a sheet."""
-        opened = copy.copy(self)
+        opened = self.at_sheet_top()
         opened.break_before = False
+        return opened
+
+    def at_sheet_top(self) -> Container:
+        """This section marked as opening its sheet, so a bled ground runs to the top edge."""
+        opened = copy.copy(self)
+        opened.sheet_top = True
         return opened
 
     def heading(self) -> str:
@@ -309,7 +340,22 @@ class Container:
             split_markers(self.source, self.source_notes, self.citing) if self.source else []
         )
         ctx["section_as_of"] = self.as_of
+        ctx["section_bleed"] = self._bleed_edges(engine)
+        ctx["section_pin"] = pin_of(engine) if self.pin and engine.medium.paged else None
         return ctx
+
+    def _bleed_edges(self, engine: Renderer) -> dict[str, int | float] | None:
+        """
+        How far this section's ground runs past its frame on each edge (#396); ``None`` off paper.
+
+        The top edge only where the section opens its sheet: anywhere else
+        the ground above belongs to the section before it.
+        """
+        if not self.bleed or not engine.medium.paged:
+            return None
+        edges = bleed_of(engine)
+        opens = self.sheet_top or self.break_before
+        return {**edges, "top": edges["top"] if opens else 0}
 
     def justified(self, engine: Renderer) -> str:
         """This section's alignment as rendered: ``justify`` is paper's, unset elsewhere (#394)."""
@@ -559,6 +605,8 @@ class FullWidth(Container):
         title_size:       ``"display"`` sets the title at the masthead's size (#392), and
         title_case:       ``"upper"`` in capitals; it is still the section's ``h2``.
         type_size:        ``"fine"`` sets the section's copy in fine print, on paper only (#393).
+        bleed:            Run the section's ground to the sheet's edges on paper (#396).
+        pin:              ``"bottom"`` sets the section at its sheet's foot on paper (#397).
     """
 
     template_path = "common/containers/full-width.html"
@@ -596,6 +644,8 @@ class FullWidth(Container):
         title_size: str = "section",
         title_case: str | None = None,
         type_size: str | None = None,
+        bleed: bool = False,
+        pin: str | None = None,
     ):
         super().__init__(
             title,
@@ -618,6 +668,8 @@ class FullWidth(Container):
             title_size=title_size,
             title_case=title_case,
             type_size=type_size,
+            bleed=bleed,
+            pin=pin,
         )
         self.content = self._slot("content", content)
 
@@ -684,6 +736,8 @@ class FlowedColumns(FullWidth):
         title_size: str = "section",
         title_case: str | None = None,
         type_size: str | None = None,
+        bleed: bool = False,
+        pin: str | None = None,
     ):
         super().__init__(
             content,
@@ -707,6 +761,8 @@ class FlowedColumns(FullWidth):
             title_size=title_size,
             title_case=title_case,
             type_size=type_size,
+            bleed=bleed,
+            pin=pin,
         )
         if isinstance(count, bool) or count not in self.COUNTS:
             raise ValidationError(
@@ -787,6 +843,8 @@ class TwoColumn(_SplitContainer):
         title_size: str = "section",
         title_case: str | None = None,
         type_size: str | None = None,
+        bleed: bool = False,
+        pin: str | None = None,
     ):
         super().__init__(
             title,
@@ -809,6 +867,8 @@ class TwoColumn(_SplitContainer):
             title_size=title_size,
             title_case=title_case,
             type_size=type_size,
+            bleed=bleed,
+            pin=pin,
         )
         self.ratio = self._check_ratio(ratio)
         self.stack = self._check_stack(stack)
@@ -891,6 +951,8 @@ class ThreeColumn(_SplitContainer):
         title_size: str = "section",
         title_case: str | None = None,
         type_size: str | None = None,
+        bleed: bool = False,
+        pin: str | None = None,
     ):
         super().__init__(
             title,
@@ -913,6 +975,8 @@ class ThreeColumn(_SplitContainer):
             title_size=title_size,
             title_case=title_case,
             type_size=type_size,
+            bleed=bleed,
+            pin=pin,
         )
         self.ratio = self._check_ratio(ratio)
         self.stack = self._check_stack(stack)
@@ -985,6 +1049,8 @@ class FourColumn(_SplitContainer):
         title_size: str = "section",
         title_case: str | None = None,
         type_size: str | None = None,
+        bleed: bool = False,
+        pin: str | None = None,
     ):
         super().__init__(
             title,
@@ -1007,6 +1073,8 @@ class FourColumn(_SplitContainer):
             title_size=title_size,
             title_case=title_case,
             type_size=type_size,
+            bleed=bleed,
+            pin=pin,
         )
         self.ratio = self._check_ratio(ratio)
         self.stack = self._check_stack(stack)

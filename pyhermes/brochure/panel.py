@@ -205,8 +205,13 @@ class Panel(Container):
             # inside still tints against it.
             palette = replace(engine.theme.palette, surface=self.background_color)
             shared["theme"] = replace(engine.theme, palette=palette)
+        clip = self._clip(box, fold)
+        # A bled section runs to the trim and past it (#396); a pinned one sits on the copy's foot.
+        shared["bleed"] = {"left": clip["left"], "right": clip["right"], "top": inset + clip["top"]}
+        shared["pin"] = {"mode": "box", "bottom": inset + clip["bottom"]}
         panel_engine = rebind(engine, **shared)
-        inner = "\n".join(section.render(panel_engine) for section in self.sections)
+        sections = [s.at_sheet_top() if n == 0 else s for n, s in enumerate(self.sections)]
+        inner = "\n".join(section.render(panel_engine) for section in sections)
         return engine.render(
             self.template_path,
             {
@@ -218,8 +223,26 @@ class Panel(Container):
                 "ground": box.ground(fold.bleed, fold.panels),
                 "background_image": self.background_image.src if self.background_image else "",
                 "valign": self.valign,
+                "clip": clip,
             },
         )
+
+    def _clip(self, box: PanelBox, fold: FoldFormat) -> dict[str, int | float]:
+        """
+        How far this panel's box runs past its place on each edge: into the bleed on
+        every trim edge when a section bleeds (#396), so the box clips there and not
+        at the trim; nothing otherwise, and the box is the panel's place.
+        """
+        if not any(section.bleed for section in self.sections):
+            return {"left": 0, "right": 0, "top": 0, "bottom": 0}
+        ground = box.ground(fold.bleed, fold.panels)
+        left = _px(box.left - ground["left"])
+        return {
+            "left": left,
+            "right": _px(ground["width"] - box.width - left),
+            "top": fold.bleed,
+            "bottom": fold.bleed,
+        }
 
 
 def _panel_scheme(scheme: SizeScheme, box: PanelBox, inset: int | float) -> SizeScheme:

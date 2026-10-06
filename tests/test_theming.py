@@ -59,6 +59,7 @@ COLOURLESS = {
     "trend-arrow.html": "a macro drawing the ink its caller resolved from the theme (#319)",
     "tag-row.html": "inline boxes around common/badge.html, which takes the colours (#327)",
     "font-faces.html": "@font-face rules on paper, which name files, never a colour (#391)",
+    "placed.html": "a macro painting the ground its caller resolved from the theme (#396)",
 }
 
 

@@ -25,3 +25,8 @@
        the first PDF showed. Only `content: none` removes it. The region that
        put the box somewhere is what knows which one to blank. #}
     @page cover { @{{ running_box }} { content: none; } }
+{% if skip_first %}
+    {# The opening sheet carries no box (#400). `:first` outranks the bare rule
+       and the count still runs, so sheet two reads 2. #}
+    @page :first { @{{ running_box }} { content: none; } }
+{% endif %}

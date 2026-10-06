@@ -455,3 +455,10 @@ Decisions and Log entries folded out of `INDEX.md` on 2026-08-29 (#143), verbati
 - [2026-10-05] memory — State and Threads re-synced with GitHub after PR #380.
 - [2026-10-05] page-level — **#340 implemented** (#341–#345): landscape pages, stamps, asides, QR codes,
   `a4_wide_appendix` — sessions/2026-10-05-page-level.md
+
+## Archived from INDEX.md's log, 2026-10-06
+
+- [2026-09-28] package-review-issues — **the package review filed**: epics #237, #238, task #239, bugs #240–#242.
+  Three tests never ran in CI — sessions/2026-09-28-2015-package-review-issues.md
+- [2026-10-01] exporter-epics-review — **#219 and #300 closed as not planned, #218 rescoped to the deck medium**;
+  decision in `media.md`, README line reworded — sessions/2026-10-01-1707-exporter-epics-review.md

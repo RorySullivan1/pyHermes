@@ -40,6 +40,8 @@
                        It is a table of its own under the columns, at the band's inset,
                        and carries the `fine-print` hook so paper keeps it with them
     section_as_of    — Its date, or empty
+    section_bleed    — On paper, how far the ground runs past the frame, {left, right, top} (#396)
+    section_pin      — On paper, how the section reaches its sheet's foot (#397); see placed.html
     stack            — natural; reverse, where dir=rtl lays the phone order out right to
                        left on a desktop (#362); or fixed, one fluid row that never stacks (#363)
     gutter_share     — The gutter as a percentage of the band, for a fixed row
@@ -82,11 +84,15 @@
 {% from "common/badge.html" import badge with context %}
 {% from "common/kicker.html" import kicker with context %}
 {% from "common/source-line.html" import source_line with context %}
+{% from "common/placed.html" import open_placed, close_placed %}
 {% set edge_pad = size.frame.pad_x - (1 if highlight else 0) - (1 if section_border else 0) %}
 {# The band also has to *fit*: 2x pad_x plus the computed content width is
    the whole frame, so without the pixel back the last column wraps. #}
 <tr{% if section_kept %} id="{{ section_kept }}"{% endif %}{% if section_break %} style="{{ section_break }}"{% endif %}>
-  <td style="{% if highlight %}padding:1px 1px 1px 1px; background-color:{{ theme.palette.surface }}; border-top:1px {{ section_frame }} {{ section_border or theme.palette.rule }}; border-bottom:1px {{ section_frame }} {{ section_border or theme.palette.rule }};{% if section_border %} border-left:1px {{ section_frame }} {{ section_border }}; border-right:1px {{ section_frame }} {{ section_border }};{% endif %}{% else %}padding:0; background-color:{{ background_color | default(theme.palette.surface) }};{% if section_border %} border:1px {{ section_frame }} {{ section_border }};{% endif %}{% endif %}">
+  <td style="{% if highlight %}padding:1px 1px 1px 1px; background-color:{{ theme.palette.surface }}; border-top:1px {{ section_frame }} {{ section_border or theme.palette.rule }}; border-bottom:1px {{ section_frame }} {{ section_border or theme.palette.rule }};{% if section_border %} border-left:1px {{ section_frame }} {{ section_border }}; border-right:1px {{ section_frame }} {{ section_border }};{% endif %}{% else %}padding:0;{% if not section_pin %} background-color:{{ background_color | default(theme.palette.surface) }};{% endif %}{% if section_border %} border:1px {{ section_frame }} {{ section_border }};{% endif %}{% endif %}">
+{% if section_bleed or section_pin %}
+    {{ open_placed(section_bleed, section_pin, background_color | default(theme.palette.highlight_tint if highlight else theme.palette.surface)) }}
+{% endif %}
 {% if section_title %}
     <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:{{ background_color | default(theme.palette.highlight_tint if highlight else theme.palette.surface) }};">
       <tr>
@@ -165,6 +171,9 @@
         </td>
       </tr>
     </table>
+{% endif %}
+{% if section_bleed or section_pin %}
+    {{ close_placed(section_bleed, section_pin) }}
 {% endif %}
   </td>
 </tr>

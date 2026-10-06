@@ -258,8 +258,9 @@ email = (
 **Result:** the wide column holds a paragraph, then a small split sized to fit that column.
 On a phone every column stacks, in order.
 
-**Notes:** `Columns` takes two to four blocks (`None` leaves one empty) and optional weights.
-It nests one level only: a `Columns` inside another `Columns` is refused.
+**Notes:** `Columns` takes two to six blocks (`None` leaves one empty) and optional weights.
+It nests one level only: a `Columns` inside another `Columns` is refused. `separator="+"`
+puts a sign between each pair of blocks, and `separator="arrow"` a drawn arrow.
 
 ## How to add a numbered list of ideas
 

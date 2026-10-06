@@ -126,6 +126,12 @@
     }
     .footnote::footnote-call { content: none; }
     .footnote::footnote-marker { content: attr(data-note) ". "; }
+{% if "pin" in head_rules | default([]) %}
+    {# A pinned section (#397) rides the footnote area, the sheet's foot above
+       the footer box, with no call and no marker; see common/placed.html. #}
+    .pinned::footnote-call { content: none; }
+    .pinned::footnote-marker { content: none; }
+{% endif %}
 
 {% include "document/editorial.html" %}
 

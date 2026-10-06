@@ -99,7 +99,7 @@ class Stack(Component):
 
 class Columns(Component):
     """
-    A split inside a cell: two to four blocks side by side, sized to that cell.
+    A split inside a cell: two to six blocks side by side, sized to that cell.
 
     Where ``TwoColumn`` splits the whole frame, this splits whatever cell it sits
     in: a column of another split, or a place in a ``Stack``. It has no title or
@@ -112,20 +112,29 @@ class Columns(Component):
     is known only at render; unstacked, the floor is checked against the
     narrowest cell a stacking section gives it on a phone.
 
+    A ``separator`` sets a narrow cell between each pair of columns (#398), outside
+    the weights, so equal weights still give equal columns: a short glyph such as
+    ``"+"``, or ``"arrow"`` for the trend arrow's shape (#399). The row is then one
+    table row, centring the separator in every engine; `design-axes.md` has why.
+
     Args:
-        components: Two to four blocks, left to right; ``None`` leaves a column empty.
+        components: Two to six blocks, left to right; ``None`` leaves a column empty.
         ratio:      One positive weight per column; equal when unset.
         spacing:    Moves ``gutter`` and ``block_gap``, the gap when stacked.
         stack:      ``"natural"``, ``"reverse"`` to put the last column first on a
                     phone, or ``False`` to keep the columns side by side there.
         valign:     Where each column sits in the row's height, on paper (#356).
+        separator:  ``"arrow"``, or a glyph of one to three characters, between columns.
     """
 
     template_path = "common/nested-columns.html"
 
     SPACING_TOKENS = ("gutter", "block_gap")
 
-    COUNTS = range(2, 5)
+    COUNTS = range(2, 7)
+
+    #: The longest glyph a separator may be: a "+", an "=", a "vs".
+    SEPARATOR_MAX = 3
 
     def __init__(
         self,
@@ -134,12 +143,14 @@ class Columns(Component):
         spacing: Spacing | Mapping[str, int | float] | None = None,
         stack: str | bool = "natural",
         valign: str = "top",
+        separator: str | None = None,
     ):
         self.spacing = self._coerce_spacing(spacing)
         self.valign = check_valign(valign, "Columns")
         slots = list(components)
         if len(slots) not in self.COUNTS:
-            raise ValidationError(f"Columns takes 2 to 4 components, got {len(slots)}.")
+            raise ValidationError(f"Columns takes 2 to 6 components, got {len(slots)}.")
+        self.separator = self._check_separator(separator, stack)
         _checked("Columns", [slot for slot in slots if slot is not None])
         if any(isinstance(inner, Columns) for inner in descendants(self._filled(slots))):
             raise ValidationError(
@@ -158,7 +169,26 @@ class Columns(Component):
             # split's column, inside the band's inset and the column's phone padding.
             frame, space = STANDARD_SIZES.frame, STANDARD_SIZES.space
             phone = PHONE_FLOOR - 2 * frame.pad_x - 2 * space.mobile_pad_x
-            check_unstacked(weights, phone - space.gutter * (len(slots) - 1), "Columns")
+            between = space.gutter + (STANDARD_SIZES.component.connector if separator else 0)
+            check_unstacked(weights, phone - between * (len(slots) - 1), "Columns")
+
+    @classmethod
+    def _check_separator(cls, separator: object, stack: object) -> str | None:
+        """``separator`` if it is ``"arrow"`` or a short glyph; refused with a reversed stack."""
+        if separator is None:
+            return None
+        glyph = separator.strip() if isinstance(separator, str) else ""
+        if separator != "arrow" and not 0 < len(glyph) <= cls.SEPARATOR_MAX:
+            raise ValidationError(
+                f'Columns\' separator is "arrow" or a glyph of 1 to {cls.SEPARATOR_MAX} '
+                f"characters, got: {separator!r}"
+            )
+        if stack == "reverse":
+            raise ValidationError(
+                "Columns with a separator cannot stack reversed: the separator joins its "
+                "columns in reading order, so a reversed phone order would point it backwards."
+            )
+        return glyph
 
     @staticmethod
     def _filled(slots: Sequence[Component | None]) -> list[Component]:
@@ -178,6 +208,8 @@ class Columns(Component):
 
     def render(self, engine: Renderer) -> str:
         engine = respaced(engine, self.spacing, type(self).__name__)
+        if self.separator:
+            return self._render_separated(engine)
         within = cell_width_of(engine)
         geometry = column_layout(self.ratio, scheme_of(engine), within=within)
         gutter_px = scheme_of(engine).space.gutter
@@ -201,6 +233,31 @@ class Columns(Component):
                 "gutter_share": gutter,
                 "valign": self.valign,
             },
+        )
+
+    def _render_separated(self, engine: Renderer) -> str:
+        """The columns and their separators as one row, each cell a share of the cell (#398)."""
+        scheme = scheme_of(engine)
+        within = cell_width_of(engine)
+        between = scheme.space.gutter + scheme.component.connector
+        count = len(self.slots)
+        geometry = column_layout(self.ratio, scheme, within=int(within - (count - 1) * between))
+        # A separator cell spends its own width and the gutter the layout left: a gutter each side.
+        *percent, gap = shares([c.width for c in geometry], scheme.space.gutter + between, within)
+        cells: list[dict[str, Any]] = []
+        for index, (slot, column, share) in enumerate(
+            zip(self.slots, geometry, percent, strict=True)
+        ):
+            if index:
+                cells.append({"share": gap, "separator": True})
+            inner = rebind(engine, cell_width=column.width)
+            cells.append(
+                {"share": share, "separator": False, "content": slot.render(inner) if slot else ""}
+            )
+        stack = "fixed" if self.stack is False or engine.medium.paged else "natural"
+        return engine.render(
+            "common/separated-columns.html",
+            {"cells": cells, "stack": stack, "valign": self.valign, "separator": self.separator},
         )
 
 

@@ -287,6 +287,8 @@ class TestComponentFieldsAreExercised:
             "title_size",
             "title_case",
             "type_size",
+            "bleed",
+            "pin",
         ],
     )
     def test_every_container_field_is_exercised(self, field_name):
@@ -318,6 +320,8 @@ class TestComponentFieldsAreExercised:
             "title_size": "section",
             "title_case": "",
             "type_size": "",
+            "bleed": False,
+            "pin": None,
         }
         assert any(
             getattr(section, field_name, defaults[field_name]) != defaults[field_name]

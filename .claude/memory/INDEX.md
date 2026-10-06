@@ -4,9 +4,9 @@
 - pyHermes builds **documents** and renders each onto a **medium**: `pyhermes/builder` is the
   shared kit, `pyhermes/email`, `document`, `brochure` and `deck` are the media, and exporters sit on
   one contract — `delivery`+`gmail`+`outlook`, and `pdf`. Rationale: CLAUDE.md and `media.md`.
-- **Shipped through PR #412.** Epics #157–#220 and #218 (PRs #167–#314); deck bugs #315–#317
+- **Shipped through PR #413**; epic #386 is in the PR after it. Epics #157–#220 and #218 (PRs #167–#314); deck bugs #315–#317
   (PR #369); #361 (PR #370); #354 and #372 (PR #371); #318 (PR #373); #346 (PR #374); #324 (PR #376);
-  #329 (PR #378); #335 (PR #380); #340 (PR #382); #384 (PRs #406, #411, #412); the paper band seam (PR #408). #219 DOCX and #300
+  #329 (PR #378); #335 (PR #380); #340 (PR #382); #384 (PRs #406, #411, #412); #385 (PR #413); the paper band seam (PR #408). #219 DOCX and #300
   PPTX were closed as not planned (2026-10-01, `media.md`). #288 is the owner's Outlook-desktop check.
 - The prose budget is live; the baseline is 44 and may only shrink.
 
@@ -33,14 +33,17 @@
   every block background, so its fill overwrote the next section's half-pixel row at a band edge — `design-axes.md`
 - [2026-10-06] **A house face rides `Document.fonts()`, never `assets()`; justify and fine print are paper's,
   unset in an email; BackMatter stays at `small`; a qualifier reaches the notes** — `design-axes.md` (#385)
+- [2026-10-06] **Bleed is a negative-margin block, top edge only where the medium says the section opens a sheet;
+  a pin floats to the footnote area (absolute overlapped); a separated row is one real table row** — `media.md`,
+  `design-axes.md` (#386)
 
 ## Threads          (open items; remove when closed)
-- **Epic #385 (print typography, #391–#395) is in one PR**, with `a4_toned_layout`'s paged golden that
-  #412 left stale. #394's ruling (paper only) was taken under the goal; the owner may widen it.
+- **#394's ruling (justify on paper only) was taken under a goal**; the owner may widen it.
+- **#400's ruling: `skip_first` is opt-in, not the default under an `EmptyCover`** (goal-taken; `media.md`).
 - **A share table holds its share in Word's engine** (owner, via COM, PR #371); a real Outlook client
   is still #288's. The measure is `ch`: in Georgia 75ch sets ~99 characters (`design-axes.md`).
 - **Outlook desktop's handling of `dir=rtl` on a reversed split is unverified here**, nor #319's VML
-  arrow, nor #325's square badge and dot, nor #331's empty rule cells (`font-size:0`), nor #337's legend
+  arrow (or #399's connector), nor #325's square badge and dot, nor #331's empty rule cells (`font-size:0`), nor #337's legend
   swatch; all join #288's check.
 - **`kitchen_sink` is at its 90 KB ceiling**: `modern_fonts` has 962 bytes left after #340, which untitled
   the three wide `ThreeColumn` ratios to pay for the stamp and the QR button; the next epic must merge or move.
@@ -67,10 +70,6 @@
 
 ## Log              (append-only pointers)
 - Older entries, and epic #157's, are in sessions/ARCHIVE-2026.md.
-- [2026-09-28] package-review-issues — **the package review filed**: epics #237, #238, task #239, bugs #240–#242.
-  Three tests never ran in CI — sessions/2026-09-28-2015-package-review-issues.md
-- [2026-10-01] exporter-epics-review — **#219 and #300 closed as not planned, #218 rescoped to the deck medium**;
-  decision in `media.md`, README line reworded — sessions/2026-10-01-1707-exporter-epics-review.md
 - [2026-10-05] windows — the 7 reported Windows failures were already fixed by #372; its own drive-path
   test still failed (a `WindowsPath` prints backslashes), fixed — sessions/2026-10-05-1657-windows-suite-recheck.md
 - [2026-10-05] paper-band-seam — 1px seam at a band edge on paper, fixed in `columns.html`;
@@ -78,3 +77,4 @@
 - [2026-10-06] memory — the index trimmed to budget: five 2026-10-05 log pointers archived, #387 and the
   seam thread closed.
 - [2026-10-06] print-typography — epic #385 built in one PR — sessions/2026-10-06-print-typography.md
+- [2026-10-06] single-sheet-print — epic #386 built in one PR — sessions/2026-10-06-single-sheet-print.md
