@@ -8,6 +8,8 @@
   sheet foot (`float: footnote`, a WeasyPrint feature); an email collects its
   notes as endnotes instead, so the span is not emitted there. The number is
   the document's, never a CSS counter, so the text part prints the same one.
+  A marker straight after another opens on a comma inside its superscript, so
+  notes 2 and 3 read "2,3" and not "23" (#402); the comma is not part of the link.
   A citation prints in the bibliography's style, each key linked to its entry;
   its label comes from a Reference, so it is escaped in every field.
 
@@ -21,7 +23,7 @@
 {% macro marked(parts, raw=false, ids=true) -%}
 {%- for part in parts -%}
 {%- if part.note -%}
-<sup class="note-ref" style="line-height: 0;"><a href="#note-{{ part.note }}"{% if ids %} id="note-ref-{{ part.note }}"{% endif %} style="color: {{ theme.palette.accent }}; text-decoration: none;">{{ part.note }}</a></sup>
+<sup class="note-ref" style="line-height: 0;">{% if part.after_note %},{% endif %}<a href="#note-{{ part.note }}"{% if ids %} id="note-ref-{{ part.note }}"{% endif %} style="color: {{ theme.palette.accent }}; text-decoration: none;">{{ part.note }}</a></sup>
 {%- if medium.paged -%}
 <span class="footnote" id="note-{{ part.note }}" data-note="{{ part.note }}">{{ part.note_text | escape_html }}</span>
 {%- endif -%}

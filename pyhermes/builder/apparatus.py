@@ -13,6 +13,7 @@ import re
 import unicodedata
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
+from itertools import pairwise
 from typing import Any, Protocol
 
 from .exceptions import ValidationError
@@ -171,10 +172,11 @@ def split_markers(
     """
     ``copy`` cut at its markers, in the shape ``common/notes.html`` renders.
 
-    Each part carries all five keys, as ``StrictUndefined`` requires: a run of
+    Each part carries all six keys, as ``StrictUndefined`` requires: a run of
     copy has ``note`` 0 and no ``cites``; a footnote marker has ``note`` set to
     the document's number (or the local one when rendered alone); a citation
-    has its ``cites`` and the style's punctuation. Copy with no marker is one
+    has its ``cites`` and the style's punctuation; ``after_note`` marks a
+    footnote marker that directly follows another. Copy with no marker is one
     run, which is what keeps it byte-identical.
     """
     parts: list[dict[str, Any]] = []
@@ -189,12 +191,23 @@ def split_markers(
             parts.append({**_run(""), "cites": citing.cites(match.group(2)), "citing": citing})
         cursor = match.end()
     parts.append(_run(copy[cursor:]))
-    return [part for part in parts if part["note"] or part["cites"] or part["text"]] or [_run("")]
+    kept = [part for part in parts if part["note"] or part["cites"] or part["text"]] or [_run("")]
+    # Two markers side by side would read as one number, "23" for 2 and 3 (#402).
+    for before, part in pairwise(kept):
+        part["after_note"] = bool(part["note"] and before["note"])
+    return kept
 
 
 def _run(text: str) -> dict[str, Any]:
     """A run of copy between markers."""
-    return {"text": text, "note": 0, "note_text": "", "cites": [], "citing": UNRESOLVED}
+    return {
+        "text": text,
+        "note": 0,
+        "note_text": "",
+        "cites": [],
+        "citing": UNRESOLVED,
+        "after_note": False,
+    }
 
 
 def text_markers(copy: str, notes: Sequence[Note], citing: Citing = UNRESOLVED) -> str:
