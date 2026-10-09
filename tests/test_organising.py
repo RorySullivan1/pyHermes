@@ -310,7 +310,7 @@ class TestAKicker:
         html = email(
             FullWidth(TextBlock("<p>x</p>"), title="T", kicker="Week 40", align="center")
         ).render()
-        cell = re.search(r'<td align="center"[^>]*>\s*<p class="kicker"', html)
+        cell = re.search(r'<td[^>]* align="center"[^>]*>\s*<p class="kicker"', html)
         assert cell, "the kicker is not in the centred title cell"
 
     def test_on_a_dark_ground_it_takes_the_rebound_type(self):

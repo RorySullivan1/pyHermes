@@ -233,6 +233,59 @@ class TestEverySectionSharesOneLeftMargin:
         assert measured == {24, 32, 40}
 
 
+#: Per titled section on a phone: its heading's left edge and its content's.
+_PHONE_TITLE_PROBE = """() => [...document.querySelectorAll('table.section-title')].map(t => {
+  const heading = t.querySelector('h2');
+  const section = t.parentElement.closest('td');
+  const edge = c => c.getBoundingClientRect().left + parseFloat(getComputedStyle(c).paddingLeft);
+  const cells = [...section.querySelectorAll('td.mobile-pad')].map(edge);
+  return [heading.textContent.trim().slice(0, 28),
+          Math.round(heading.getBoundingClientRect().left),
+          cells.length ? Math.round(Math.min(...cells)) : null];
+})"""
+
+
+@pytest.fixture(scope="module")
+def phone_titles():
+    """Every fixture's titled sections, measured at the phone viewport in one session."""
+    if not available():
+        pytest.skip('no browser; screenshots are the optional "[qa]" extra')
+    width, height = VIEWPORTS["mobile"]
+    measured = {}
+    with _load_playwright()() as playwright:
+        browser = _launch(playwright)
+        page = browser.new_page(viewport={"width": width, "height": height})
+        page.route("**/*", lambda route: route.abort())
+        for name in FIXTURE_NAMES:
+            page.set_content(all_fixtures()[name]().render())
+            measured[name] = page.evaluate(_PHONE_TITLE_PROBE)
+        browser.close()
+    return measured
+
+
+@requires_browser
+class TestATitleKeepsToItsContentOnAPhone:
+    """
+    A section's heading never starts inside its own content's left margin at 375px.
+
+    The `@media` block moved a full-width section's content in to `mobile_pad_x`
+    and left its title at `frame.pad_x`, so every titled section on a phone had a
+    heading indented past the text under it, 14px at `standard`. The 1000px
+    check above could not see it. A split's stacked columns keep the band's
+    inset, so their content sits deeper than the title; that indent is older
+    and separate, and this does not hold it.
+    """
+
+    @pytest.mark.parametrize("name", FIXTURE_NAMES)
+    def test_no_heading_starts_right_of_its_content(self, name, phone_titles):
+        offenders = [
+            f"{title!r} heading at {heading}px, content at {content}px"
+            for title, heading, content in phone_titles[name]
+            if content is not None and heading > content
+        ]
+        assert not offenders, f"{name} at 375px: " + "; ".join(offenders)
+
+
 #: The four boxes the masthead's alignment claim is about.
 #:
 #: Measured as *edges* rather than inferred from ``align="right"`` being

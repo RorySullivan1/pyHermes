@@ -921,7 +921,8 @@ was only as wide as its figures. The `@media` rule now says `display:table`, the
 column, and none are. Every email golden moved by that one line, and
 `TestAStackedColumnFillsItsWidth` in `test_screenshots.py` fails against the old rule. On a
 phone a split's column still keeps the section's inset inside its own mobile padding; that
-indent is older and separate.
+indent is older and separate, and it is why a split's title keeps `frame.pad_x` on a phone
+while a full-width title moves in to `mobile_pad_x` (`design-axes.md`).
 
 **`Only` (#365) is the third composite**: one block, shown in chosen media. Its `children()`
 are its block or nothing according to the medium the walk is for, so the document's leaf walk,

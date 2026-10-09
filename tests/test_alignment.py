@@ -388,8 +388,9 @@ class TestContainerAlign:
             for element in _aligned_elements(html)
             if element.attribute == align and element.declared == align
         ]
-        assert any(e.css_class == "" for e in aligned), "the title cell did not take the alignment"
-        assert any("mobile-pad" in e.css_class for e in aligned), "the content cell did not"
+        classes = [e.css_class.split() for e in aligned]
+        assert ["mobile-pad-x"] in classes, "the title cell did not take the alignment"
+        assert ["mobile-pad"] in classes, "the content cell did not"
 
     @pytest.mark.parametrize("align", ["left", "center", "right"])
     def test_a_split_aligns_its_title_and_every_column(self, align):
