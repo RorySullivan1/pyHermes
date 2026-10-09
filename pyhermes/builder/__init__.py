@@ -45,6 +45,7 @@ from .containers import (
     OnlySections,
     ThreeColumn,
     TwoColumn,
+    content_width,
 )
 from .email import Email, EmailBuilder
 from .engine import TemplateEngine
@@ -273,6 +274,7 @@ __all__ = [
     "Container",
     "FlowedColumns",
     "FourColumn",
+    "content_width",
     "FullWidth",
     "OnlySections",
     "TwoColumn",

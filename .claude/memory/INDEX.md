@@ -37,6 +37,10 @@
   a pin floats to the footnote area (absolute overlapped); a separated row is one real table row** — `media.md`,
   `design-axes.md` (#386)
 
+- [2026-10-09] **A size is read from the system, never typed (owner's principle, standing rule 13):
+  `content_width()` for a picture's cell, `SizeTheme` for a density, a named constant for an asset's
+  own size; the gallery is exempt** — `working-in-the-code.md`, `design-axes.md`
+
 ## Threads          (open items; remove when closed)
 - **#394's ruling (justify on paper only) was taken under a goal**; the owner may widen it.
 - **#400's ruling: `skip_first` is opt-in, not the default under an `EmptyCover`** (goal-taken; `media.md`).

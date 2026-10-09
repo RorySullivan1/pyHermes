@@ -137,12 +137,13 @@ the table reads "Exhibit A.1". A table in the body still counts 1, 2, 3.
 region, numbered as one exhibit with lettered panels.
 
 ```python
-from pyhermes.builder import ChartBlock, FigureGrid, Legend
+from pyhermes.builder import ChartBlock, FigureGrid, Legend, content_width
 from pyhermes.builder.images import EmailImage
 
 
 def panel(alt, title, legend=None):
-    image = EmailImage.attached("chart.png", alt=alt, width=300)
+    # The grid draws each panel at its own cell, so the body's width is only a ceiling.
+    image = EmailImage.attached("chart.png", alt=alt, width=content_width())
     return ChartBlock(image, subtitle=title, legend=legend)
 
 

@@ -49,8 +49,9 @@ from pyhermes.builder import (
     FullWidth,
     TextBlock,
     TwoColumn,
+    content_width,
 )
-from pyhermes.builder.enums import CardOrientation, TwoColumnRatio
+from pyhermes.builder.enums import CardOrientation, SizeTheme, TwoColumnRatio
 from pyhermes.builder.images import EmailImage
 from pyhermes.builder.models import KpiItem, TableRow
 
@@ -65,6 +66,17 @@ Pixel = tuple[int, int, int]
 _SLATE = (42, 61, 84)
 _ACCENT = (74, 124, 89)  # gain green
 _TINT = (242, 241, 238)  # == the footer's #F2F1EE, so the mark sits seamlessly
+
+#: The density the brief renders at; the chart is sized from it, never typed.
+DENSITY = SizeTheme.STANDARD
+
+#: The chart fills the body, so its width is read off the density.
+_CHART_WIDTH = content_width(DENSITY)
+_CHART_HEIGHT = 200
+
+#: The sign-off mark's own size, in px: drawn at it and shown at it.
+_MARK_WIDTH = 120
+_MARK_HEIGHT = 40
 
 
 def _encode_png(width: int, height: int, pixel: Callable[[int, int], Pixel]) -> bytes:
@@ -99,7 +111,7 @@ def _encode_png(width: int, height: int, pixel: Callable[[int, int], Pixel]) -> 
     )
 
 
-def _bar_chart_png(width: int = 560, height: int = 200) -> bytes:
+def _bar_chart_png(width: int = _CHART_WIDTH, height: int = _CHART_HEIGHT) -> bytes:
     """Five vertical bars on a light ground, the last one accented, over a baseline."""
     ground = (245, 247, 250)
     axis = (203, 209, 217)
@@ -125,7 +137,7 @@ def _bar_chart_png(width: int = 560, height: int = 200) -> bytes:
     return _encode_png(width, height, pixel)
 
 
-def _mark_png(width: int = 120, height: int = 40) -> bytes:
+def _mark_png(width: int = _MARK_WIDTH, height: int = _MARK_HEIGHT) -> bytes:
     """
     A minimal sign-off brand mark: an accent square beside a slate wordmark bar.
 
@@ -158,6 +170,7 @@ def build(template_dir: Path | None = None) -> Email:
                 "firm_name": "Hermes Research",
                 "campaign_name": "research-brief",
                 "date_range": "Week ending 24 August 2026",
+                "size_theme": DENSITY,
             }
         )
         # Fully structured footer: a tinted, full-box-bordered band with an inline
@@ -167,7 +180,7 @@ def build(template_dir: Path | None = None) -> Email:
             Footer(
                 background_color="#F2F1EE",
                 border=True,
-                image=EmailImage.inline(_mark_png(), alt="Hermes Research", width=120),
+                image=EmailImage.inline(_mark_png(), alt="Hermes Research", width=_MARK_WIDTH),
                 disclaimer="For illustrative purposes only. Not investment advice.",
             )
         )
@@ -228,7 +241,7 @@ def build(template_dir: Path | None = None) -> Email:
                     EmailImage.inline(
                         _bar_chart_png(),
                         alt="Cumulative cross-asset performance, indexed to 100",
-                        width=616,
+                        width=_CHART_WIDTH,
                     ),
                     source="Hermes Research",
                     subtitle="Indexed to 100 at year start",

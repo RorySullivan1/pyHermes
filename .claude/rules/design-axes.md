@@ -243,6 +243,17 @@ or in an inbox is a mistake rather than a choice. It derives from `spacious` and
 the deck fixture's PDF: 15pt body and a 30pt title on PowerPoint's 960pt-wide sheet, against
 spacious's 11.25 and 24. `deck.md` has the measurements.
 
+**A caller reads a width; it never types one (standing rule 13).** `content_width()` in
+`containers.py` answers the one question an image asks at construction, before the density
+is bound: how wide is the cell it goes in. `content_width("compact")` is a full-width
+section's body, `content_width("standard", "50-50")` a list of each column's
+(`[280, 280]`), and `page=` lays the density over a printed sheet as the paged medium does
+(`content_width("dense", page=LETTER_PORTRAIT)` is 648). A ratio is anything a split takes,
+refused by the split class it names. A `FigureGrid` caps each panel at its own cell, so a
+panel takes the body's width as a ceiling. The helper and `_render_split` share
+`sizing.column_content_widths`, which is why it cannot report a width the render does not
+use.
+
 **Column geometry is arithmetic the builder owns.** A ratio's own *name* is its weights —
 `"25-25-50"` is `[25, 25, 50]` — and `column_layout()` splits the active scheme's content
 width by them. No lookup table: a table would be a second place for the split to be written

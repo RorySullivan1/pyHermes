@@ -55,8 +55,9 @@ from pyhermes.builder import (
     Spacing,
     TextBlock,
     TwoColumn,
+    content_width,
 )
-from pyhermes.builder.enums import CardOrientation, TwoColumnRatio
+from pyhermes.builder.enums import CardOrientation, SizeTheme, TwoColumnRatio
 from pyhermes.builder.formats import number
 from pyhermes.builder.models import Cell, Column, ColumnGroup, KpiItem, TableRow
 from pyhermes.builder.sizing import LETTER_PORTRAIT
@@ -80,6 +81,13 @@ from pyhermes.document import (
 SHEETS = 2
 
 AS_OF = "30 September 2026"
+
+#: The sheet and the density, named once: the medium, the facts and the charts read them.
+PAGE = LETTER_PORTRAIT
+DENSITY = SizeTheme.DENSE
+
+#: A chart fills the body of the sheet, so its width is read off the page and the density.
+_CHART_WIDTH = content_width(DENSITY, page=PAGE)
 FUND = "Hermes Core US Equity ETF"
 TICKER = "HCUS"
 
@@ -273,7 +281,7 @@ def _facts() -> dict[str, Any]:
             "are not a record of any real portfolio."
         ),
         "theme": "classic",
-        "size_theme": "dense",
+        "size_theme": DENSITY,
         "font_theme": "classic",
     }
 
@@ -421,7 +429,7 @@ def _sheet_one() -> list[Container]:
                     "Growth of a $10,000 investment from 2016 to 2026, fund and "
                     "benchmark, rising from $10,000 to approximately $35,900"
                 ),
-                width=690,
+                width=_CHART_WIDTH,
             ),
         ),
         FullWidth(
@@ -525,7 +533,7 @@ def _sheet_two() -> list[Container]:
                     "Financials 13.1%, Health Care 11.2%, and eight "
                     "further sectors totalling 100%"
                 ),
-                width=690,
+                width=_CHART_WIDTH,
             ),
         ),
         FullWidth(
@@ -549,7 +557,7 @@ def build(template_dir: Path | None = None) -> PagedDocument:
     document = PagedDocument(
         _facts(),
         template_dir=template_dir,
-        medium=paged_medium(LETTER_PORTRAIT),
+        medium=paged_medium(PAGE),
         # A factsheet opens on its data. No cover sheet, no contents sheet --
         # both would spend one of the two sheets the format allows.
         cover=EmptyCover(),

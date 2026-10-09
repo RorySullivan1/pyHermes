@@ -418,7 +418,9 @@ adds one section to the end.
 from pyhermes.builder import Banner, MinimalBanner
 from pyhermes.builder.images import EmailImage
 
-logo = EmailImage.attached("logo.png", alt="Acme Research", width=120)
+LOGO_WIDTH = 120  # the logo's own display width, in px
+
+logo = EmailImage.attached("logo.png", alt="Acme Research", width=LOGO_WIDTH)
 
 email = (
     EmailBuilder()

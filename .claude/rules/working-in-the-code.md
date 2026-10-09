@@ -288,6 +288,23 @@ Usage::
    declaration fails both. Rule 5 is untouched: the override is a derive of the bound scheme,
    so every template still reads `size.*`.
 
+13. **A size is read from the system, never typed** (the owner's principle, 2026-10-09).
+   Rules 5 and 12 keep pixels out of templates; this keeps them out of the code a user
+   copies. A caller sizing a picture asks `content_width(size_theme, ratio, page=)`: the
+   body's width, or one width per column of a split, through `column_content_widths`, the
+   same function a split renders its columns with, so the answer cannot drift from the
+   layout. A density is a `SizeTheme` member, a page a `PageFormat` constant, and an
+   asset's own size (a logo, a float, a sparkline) a named constant beside the data. The
+   sweep that introduced it found the cost of the habit: the factsheet's charts said 690 on
+   a Letter page whose body at `dense` is 648, and the manual taught 616 and "about 280",
+   right at one density only. The teeth are `tests/test_content_width.py`: probes rendered
+   in every split agree with the helper (and 36 of 40 fail with the helper alone broken),
+   and `TestNoWidthIsTypedWhereUsersLearn` fails on `width=616` or `logo_width=120` in an
+   example, a manual page or the README, naming the line. A weight (`width=3`) and a share
+   (`width=0.6`) are not pixels and pass. **The gallery is exempt**: a fixture pins a size
+   as test data, such as `kitchen_sink`'s 320px chart, wider than its cell at `spacious`
+   on purpose (#133).
+
 ## Epic #134 — what the prose clean-up found
 
 Two findings outlive the epic, and both are about mechanisms rather than taste.

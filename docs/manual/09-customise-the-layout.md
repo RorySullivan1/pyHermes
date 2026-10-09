@@ -430,8 +430,10 @@ commentary beside it, or a paragraph runs too wide on a landscape sheet.
 from pyhermes.builder import Callout, ChartBlock, TwoColumn
 from pyhermes.builder.images import EmailImage
 
+FLOAT_WIDTH = 160  # the floated chart's own width beside the prose, in px
+
 chart = ChartBlock(
-    EmailImage.hosted("https://example.com/premium.png", alt="Term premium", width=160),
+    EmailImage.hosted("https://example.com/premium.png", alt="Term premium", width=FLOAT_WIDTH),
     wrap="right",
 )
 report = PagedDocument({"firm_name": "Acme Research", "campaign_name": "Morning Note"})

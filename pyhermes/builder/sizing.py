@@ -1287,6 +1287,16 @@ def column_layout(
     ]
 
 
+def column_content_widths(
+    weights: Sequence[int | float], scheme: SizeScheme, within: int | None = None
+) -> list[int]:
+    """Each column's width less its padding: what a block inside it is rendered into."""
+    return [
+        int(col.width - col.pad_left - col.pad_right)
+        for col in column_layout(weights, scheme, within)
+    ]
+
+
 def _gutter_pad(width: int, scheme: SizeScheme) -> int | float:
     """The horizontal padding a column of this width earns beside a gutter."""
     return (

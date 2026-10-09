@@ -47,12 +47,12 @@ from pyhermes.builder import (
     Footer,
     FullWidth,
     TextBlock,
+    content_width,
 )
 from pyhermes.builder.enums import RowKind, SizeTheme
 from pyhermes.builder.exhibits import Legend, LegendEntry
 from pyhermes.builder.formats import number
 from pyhermes.builder.models import Column, TableRow
-from pyhermes.builder.sizing import resolve_size_scheme
 from pyhermes.builder.theming import resolve_theme
 from pyhermes.data.exceptions import BackendMissingError
 
@@ -66,7 +66,7 @@ THEME = "classic"
 DENSITY = SizeTheme.STANDARD
 
 #: A chart fills the body, so its display width is read off the density, never typed.
-_CHART_WIDTH = resolve_size_scheme(DENSITY).frame.inner
+_CHART_WIDTH = content_width(DENSITY)
 
 #: The charts' drawing sizes. A phone shows the picture at about 55% of
 #: ``_CHART_WIDTH``, so 12 pt on a 5.2 in figure lands near 11px there.

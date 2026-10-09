@@ -38,10 +38,14 @@ you send. It exists for quick local previews.
 1. Save the picture as a PNG, JPEG or GIF. WebP and SVG are refused because Outlook
    cannot show them.
 2. Describe it in `alt`. The reader sees this text when pictures are blocked.
-3. Give its display width in pixels.
+3. Give its display width with `content_width()`, never a number you type.
 
 ```python
-chart = EmailImage.attached("chart.png", alt="Spreads widened 12 bps in September", width=616)
+from pyhermes.builder import content_width
+
+chart = EmailImage.attached(
+    "chart.png", alt="Spreads widened 12 bps in September", width=content_width()
+)
 email = (
     EmailBuilder()
     .metadata(facts)
@@ -53,9 +57,13 @@ email = (
 **Result:** the picture centred across the section, with its caption beneath.
 
 **Notes:**
-- A full-width section is **616 pixels** wide inside its margins. Each half of a 50-50
-  split is about 280. Save the picture at twice that width so it looks sharp on a
-  high-resolution screen, and give the display width in `width=`.
+- `content_width()` is the width a picture fills, read from the layout rather than typed:
+  `content_width()` is a full-width section at the standard density (616 pixels),
+  `content_width("compact")` the same at another density, and
+  `content_width("standard", "50-50")` a list with each column's width (`[280, 280]`).
+  `page=` gives a printed page's: `content_width("dense", page=LETTER_PORTRAIT)`. It uses
+  the same arithmetic as the layout, so the picture fills its space exactly. Save the
+  picture at twice that width so it looks sharp on a high-resolution screen.
 - A picture more than four and a half times wider than its `width=`, such as a phone photo
   shown as a thumbnail, raises a `SizeWarning` that says what width to export it at. It
   still builds, but it adds weight to every message. `Config.oversize_image_ratio` changes
@@ -72,7 +80,9 @@ email = (
 
 ```python
 chart = ChartBlock(
-    EmailImage.attached("chart.png", alt="Spreads widened 12 bps in September", width=616),
+    EmailImage.attached(
+        "chart.png", alt="Spreads widened 12 bps in September", width=content_width()
+    ),
     source="Acme Research, Bloomberg",
     caption="Investment-grade spreads",
     label="Chart",
@@ -95,13 +105,14 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
+from pyhermes.builder import content_width
 from pyhermes.data import chart_from_figure
 
 fig, ax = plt.subplots(figsize=(6, 3))
 ax.plot([1, 2, 3, 4], [110, 118, 115, 122])
 ax.set_title("IG spreads, bps")
 
-chart = chart_from_figure(fig, alt="IG spreads rose to 122 bps", width=616,
+chart = chart_from_figure(fig, alt="IG spreads rose to 122 bps", width=content_width(),
                           source="Acme Research")
 email = EmailBuilder().metadata(facts).section(FullWidth(chart, title="Spreads")).build()
 plt.close(fig)
@@ -131,7 +142,7 @@ with plt.rc_context(style):
     changes = [0.4, -0.2, 0.3]
     ax.bar([5, 6, 7], changes, color=[style.positive if c > 0 else style.negative for c in changes])
 
-chart = chart_from_figure(fig, alt="IG spreads rose to 122 bps", width=616)
+chart = chart_from_figure(fig, alt="IG spreads rose to 122 bps", width=content_width())
 plt.close(fig)
 ```
 
@@ -149,14 +160,17 @@ has it.
 ## How to add a logo to the masthead
 
 ```python
-from pyhermes.builder import Banner
+from pyhermes.builder import Banner, content_width
 
-logo = EmailImage.attached("logo.png", alt="Acme Research", width=120)
+LOGO_WIDTH = 120  # the logo's own display width, in px
+
+logo = EmailImage.attached("logo.png", alt="Acme Research", width=LOGO_WIDTH)
+chart = EmailImage.attached("chart.png", alt="Chart", width=content_width())
 email = (
     EmailBuilder()
     .metadata(facts)
     .banner(Banner(logo_url=logo))
-    .section(FullWidth(ImageBlock(EmailImage.attached("chart.png", alt="Chart", width=616))))
+    .section(FullWidth(ImageBlock(chart)))
     .build()
 )
 ```
@@ -164,18 +178,20 @@ email = (
 ## How to put a photograph behind the masthead
 
 ```python
-from pyhermes.builder import BannerPalette
+from pyhermes.builder import STANDARD_SIZES, BannerPalette
 
 banner = Banner(
     title="Q3 Outlook",
-    background_image_url=EmailImage.attached("masthead.png", alt="", decorative=True, width=680),
+    background_image_url=EmailImage.attached(
+        "masthead.png", alt="", decorative=True, width=STANDARD_SIZES.frame.width
+    ),
     palette=BannerPalette(title="#FFFFFF", subtitle="#E0E6EB"),
 )
 email = EmailBuilder().metadata(facts).banner(banner).section(FullWidth(ImageBlock(
-    EmailImage.attached("chart.png", alt="Chart", width=616)))).build()
+    EmailImage.attached("chart.png", alt="Chart", width=content_width())))).build()
 ```
 
-**Notes:** the masthead is 680 pixels wide. The `palette` lets you pick text colours that
+**Notes:** the masthead spans the whole frame, `STANDARD_SIZES.frame.width` (680 pixels). The `palette` lets you pick text colours that
 read well over your photograph. Any colour you leave out keeps the theme's.
 
 ## How to reuse a picture
