@@ -48,10 +48,12 @@ from pyhermes.builder import (
     FullWidth,
     TextBlock,
 )
-from pyhermes.builder.enums import RowKind
+from pyhermes.builder.enums import RowKind, SizeTheme
 from pyhermes.builder.exhibits import Legend, LegendEntry
 from pyhermes.builder.formats import number
 from pyhermes.builder.models import Column, TableRow
+from pyhermes.builder.sizing import resolve_size_scheme
+from pyhermes.builder.theming import resolve_theme
 from pyhermes.data.exceptions import BackendMissingError
 
 # --------------------------------------------------------------------------
@@ -61,9 +63,31 @@ from pyhermes.data.exceptions import BackendMissingError
 AS_OF = "8 October 2026"
 PORTFOLIO = "Hermes Global Equity"
 THEME = "classic"
+DENSITY = SizeTheme.STANDARD
 
-#: The body's display width in px; the charts are drawn at twice it.
-_CHART_WIDTH = 616
+#: A chart fills the body, so its display width is read off the density, never typed.
+_CHART_WIDTH = resolve_size_scheme(DENSITY).frame.inner
+
+#: The charts' drawing sizes. A phone shows the picture at about 55% of
+#: ``_CHART_WIDTH``, so 12 pt on a 5.2 in figure lands near 11px there.
+_FIGURE_WIDTH_IN = 5.2
+_LINE_HEIGHT_IN = 2.6
+_BAR_HEIGHT_IN = 3.3
+_LABEL_PT = 12
+_LAYOUT_PAD = 0.4
+_PORTFOLIO_LINE_PT = 2.2
+_BENCHMARK_LINE_PT = 1.6
+_GRID_LINE_PT = 0.6
+_ZERO_LINE_PT = 0.9
+_BAR_THICKNESS = 0.66
+_LEAD_FILL_ALPHA = 0.12
+_GRID_ALPHA = 0.5
+
+#: Room for the value labels: sessions past the last point, and bps past each bar's end.
+_END_LABEL_ROOM = 3
+_END_LABEL_OFFSET_PT = 5
+_BAR_LABEL_GAP = 0.8
+_BAR_LABEL_ROOM = (7.2, 11.4)
 
 #: Cumulative total return, in percent, over the last twenty sessions.
 _SESSIONS = list(range(1, 21))
@@ -220,11 +244,15 @@ def _performance_chart() -> ChartBlock:
     plt = _pyplot()
     style = chart_style(THEME)
     with plt.rc_context(style):
-        figure, axes = plt.subplots(figsize=(5.2, 2.6))
-        axes.plot(_SESSIONS, _PORTFOLIO_PATH, color=style.series[0], linewidth=2.2)
-        axes.plot(_SESSIONS, _BENCHMARK_PATH, color=style.series[1], linewidth=1.6)
+        figure, axes = plt.subplots(figsize=(_FIGURE_WIDTH_IN, _LINE_HEIGHT_IN))
+        axes.plot(_SESSIONS, _PORTFOLIO_PATH, color=style.series[0], linewidth=_PORTFOLIO_LINE_PT)
+        axes.plot(_SESSIONS, _BENCHMARK_PATH, color=style.series[1], linewidth=_BENCHMARK_LINE_PT)
         axes.fill_between(
-            _SESSIONS, _PORTFOLIO_PATH, _BENCHMARK_PATH, color=style.positive, alpha=0.12
+            _SESSIONS,
+            _PORTFOLIO_PATH,
+            _BENCHMARK_PATH,
+            color=style.positive,
+            alpha=_LEAD_FILL_ALPHA,
         )
         # The end values, labelled at the line ends, so the reader needs no axis.
         for path, colour in (
@@ -234,36 +262,37 @@ def _performance_chart() -> ChartBlock:
             axes.annotate(
                 f"{path[-1]:+.2f}%",
                 (_SESSIONS[-1], path[-1]),
-                xytext=(5, 0),
+                xytext=(_END_LABEL_OFFSET_PT, 0),
                 textcoords="offset points",
                 va="center",
-                fontsize=12,
+                fontsize=_LABEL_PT,
                 fontweight="bold",
                 color=colour,
             )
-        axes.set_xlim(1, 23)
-        axes.set_xticks([1, 10, 20])
-        axes.set_xticklabels(["-20d", "-10d", "Today"])
+        sessions = len(_SESSIONS)
+        axes.set_xlim(_SESSIONS[0], _SESSIONS[-1] + _END_LABEL_ROOM)
+        axes.set_xticks([_SESSIONS[0], sessions // 2, _SESSIONS[-1]])
+        axes.set_xticklabels([f"-{sessions}d", f"-{sessions // 2}d", "Today"])
         axes.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, _: f"{v:.0f}%"))
-        axes.set_yticks([0, 1, 2, 3])
-        axes.tick_params(axis="both", labelsize=12, length=0)
-        axes.grid(axis="y", linewidth=0.6, alpha=0.5)
+        axes.set_yticks(range(int(max(_PORTFOLIO_PATH)) + 1))
+        axes.tick_params(axis="both", labelsize=_LABEL_PT, length=0)
+        axes.grid(axis="y", linewidth=_GRID_LINE_PT, alpha=_GRID_ALPHA)
         axes.set_axisbelow(True)
         for edge in ("top", "right", "left"):
             axes.spines[edge].set_visible(False)
-        figure.tight_layout(pad=0.4)
+        figure.tight_layout(pad=_LAYOUT_PAD)
     image = image_from_figure(
         figure,
         alt=(
-            "Cumulative return over the last twenty sessions: the portfolio up 3.46%, "
-            "the benchmark up 2.60%"
+            f"Cumulative return over the last {len(_SESSIONS)} sessions: the portfolio "
+            f"{_PORTFOLIO_PATH[-1]:+.2f}%, the benchmark {_BENCHMARK_PATH[-1]:+.2f}%"
         ),
         width=_CHART_WIDTH,
     )
     plt.close(figure)
     return ChartBlock(
         image,
-        subtitle="Cumulative total return, last 20 sessions",
+        subtitle=f"Cumulative total return, last {len(_SESSIONS)} sessions",
         source="Hermes Research; illustrative sample data",
         legend=Legend(
             [LegendEntry(PORTFOLIO, series=0), LegendEntry("Benchmark (MSCI ACWI)", series=1)]
@@ -281,34 +310,32 @@ def _sector_chart() -> ChartBlock:
     names = [name for name, _ in reversed(_SECTORS)]
     values = [bps for _, bps in reversed(_SECTORS)]
     with plt.rc_context(style):
-        figure, axes = plt.subplots(figsize=(5.2, 3.3))
+        figure, axes = plt.subplots(figsize=(_FIGURE_WIDTH_IN, _BAR_HEIGHT_IN))
         positions = list(range(len(names)))
         colours = [style.positive if v >= 0 else style.negative for v in values]
-        axes.barh(positions, values, color=colours, height=0.66)
+        axes.barh(positions, values, color=colours, height=_BAR_THICKNESS)
         for position, value in zip(positions, values, strict=True):
             axes.text(
-                value + (0.8 if value >= 0 else -0.8),
+                value + (_BAR_LABEL_GAP if value >= 0 else -_BAR_LABEL_GAP),
                 position,
                 f"{value:+.1f}",
                 va="center",
                 ha="left" if value >= 0 else "right",
-                fontsize=12,
+                fontsize=_LABEL_PT,
             )
-        axes.axvline(0, linewidth=0.9, color=style["axes.edgecolor"])
+        axes.axvline(0, linewidth=_ZERO_LINE_PT, color=style["axes.edgecolor"])
         axes.set_yticks(positions)
-        axes.set_yticklabels(names, fontsize=12)
-        axes.set_xlim(-12, 54)
+        axes.set_yticklabels(names, fontsize=_LABEL_PT)
+        axes.set_xlim(min(values) - _BAR_LABEL_ROOM[0], max(values) + _BAR_LABEL_ROOM[1])
         axes.set_xticks([])
         axes.tick_params(axis="y", length=0)
         for edge in ("top", "right", "bottom", "left"):
             axes.spines[edge].set_visible(False)
-        figure.tight_layout(pad=0.4)
+        figure.tight_layout(pad=_LAYOUT_PAD)
     block = chart_from_figure(
         figure,
-        alt=(
-            "Contribution by sector in basis points: Information Technology +42.6, "
-            "Financials +11.2, Industrials +6.4; Health Care -4.8 and Energy -3.1 detracted"
-        ),
+        alt="Contribution by sector in basis points: "
+        + ", ".join(f"{name} {bps:+.1f}" for name, bps in _SECTORS),
         width=_CHART_WIDTH,
         subtitle="Contribution to return by sector, bps",
         source="Hermes Research; illustrative sample data",
@@ -337,11 +364,12 @@ def build(template_dir: Path | None = None) -> Email:
                 "department": "Global Equity",
                 "date_range": f"Close of {AS_OF}",
                 "theme": THEME,
+                "size_theme": DENSITY,
             }
         )
         .footer(
             Footer(
-                background_color="#F2F1EE",
+                background_color=resolve_theme(THEME).palette.wrapper_bg,
                 border=True,
                 disclaimer=(
                     "Illustrative sample only: the portfolio is fictional and every "
