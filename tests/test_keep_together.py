@@ -9,6 +9,7 @@ the print engine knows.
 from __future__ import annotations
 
 import importlib.util
+import re
 import warnings
 
 import pytest
@@ -19,6 +20,7 @@ from pyhermes.builder import (
     FlowedColumns,
     FourColumn,
     FullWidth,
+    OnlySections,
     PrintQualityWarning,
     TextBlock,
     ThreeColumn,
@@ -138,6 +140,23 @@ class TestTheBodysFirstSection:
         assert first.break_before is True
 
 
+def hidden_then_shown(shown: TextBlock) -> PagedDocument:
+    """A kept section only an email shows, then a kept one paper shows (#431)."""
+    hidden = FullWidth(body("H"), title="Hidden", keep_together=True)
+    return paper(
+        OnlySections([hidden], media=["email"]),
+        FullWidth(shown, title="Shown", keep_together=True),
+    )
+
+
+class TestTheKeptSectionsAreTheRendersOwn:
+    def test_a_section_hidden_on_paper_is_not_counted(self):
+        document = hidden_then_shown(body("S"))
+        rendered = set(re.findall(r'id="(kept-section-\d+)"', document.render()))
+        assert document.kept_sections() == {"kept-section-1": "Shown"}
+        assert set(document.kept_sections()) == rendered
+
+
 def sheets_of(document) -> list[str]:
     import pypdfium2
 
@@ -176,6 +195,10 @@ class TestOnPaper:
         tall = paper(lead_in(1), FullWidth(body("T", 40), title="Too tall", keep_together=True))
         with pytest.warns(PrintQualityWarning, match="Too tall is kept together but runs over"):
             render_pdf(tall)
+
+    def test_the_warning_names_the_section_paper_shows(self):
+        with pytest.warns(PrintQualityWarning, match="^Shown is kept together"):
+            render_pdf(hidden_then_shown(body("S", 40)))
 
     def test_one_that_fits_does_not(self):
         kept = paper(lead_in(STRADDLING), FullWidth(body("K", 4), title="Kept", keep_together=True))

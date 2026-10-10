@@ -13,7 +13,6 @@ Usage:
 
 from __future__ import annotations
 
-import textwrap
 import warnings
 from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any, ClassVar
@@ -70,9 +69,9 @@ from .models import (
 from .prose import PROSE_TOKENS, refuse_top_headings
 from .sizing import Spacing, coerce_measure, coerce_spacing, measure_px
 from .textgen import (
-    LINE_WIDTH,
     decimal_pads,
     format_link,
+    hang,
     html_to_text,
     join_blocks,
     link_line,
@@ -1949,11 +1948,7 @@ class Endnotes(Component):
     def text(self) -> str:
         """``[7] Returns are gross of fees.``, one per note, wrapped under its number."""
         lines = [
-            textwrap.fill(
-                f"[{note.number}] {note.text}",
-                LINE_WIDTH,
-                subsequent_indent=" " * (len(str(note.number)) + 3),
-            )
+            hang(f"[{note.number}] {note.text}", " " * (len(str(note.number)) + 3))
             for note in self.notes
         ]
         return join_blocks(underline(self.heading), "\n".join(lines))

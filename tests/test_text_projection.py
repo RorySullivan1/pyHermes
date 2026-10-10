@@ -194,6 +194,18 @@ class TestPerComponentProjections:
         assert wide in table.text()
         assert max(len(line) for line in table.text().splitlines()) > 78
 
+    def test_a_url_is_never_split_across_lines(self):
+        # #433: textwrap's defaults broke this one at a hyphen.
+        url = "https://research.example.com/reports/2026/q3/factor-returns-and-the-small-cap.html"
+        block = TextBlock(f"<p>The quarter's detail is in the full note: see {url} for it.</p>")
+        assert url in block.text().splitlines()
+
+    def test_a_wrapped_bullet_keeps_its_hanging_indent(self):
+        from pyhermes.builder.textgen import wrap
+
+        first, second = wrap("- " + "word " * 18).splitlines()
+        assert first.startswith("- ") and second.startswith("  word")
+
     def test_a_table_carries_its_attribution(self):
         table = DataTable(["A"], [TableRow(["x"])], source="Bloomberg", as_of="24 Aug")
         assert table.text().endswith("Bloomberg\n24 Aug")

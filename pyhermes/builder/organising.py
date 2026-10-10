@@ -10,7 +10,6 @@ why a timeline's body is plain text.
 from __future__ import annotations
 
 import math
-import textwrap
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any
@@ -22,7 +21,7 @@ from .exceptions import ValidationError
 from .images import EmailImage
 from .models import Badge, Cell, _require, _validate_url, is_figure
 from .sizing import Spacing
-from .textgen import LINE_WIDTH, join_blocks, link_line, wrap
+from .textgen import hang, join_blocks, link_line, wrap
 
 #: The column counts a fact list and a teaser list take.
 COLUMN_COUNTS = (1, 2, 3)
@@ -261,7 +260,7 @@ class Timeline(Component):
                 line += f" — {event.body}"
             if event.state:
                 line += f" ({event.state})"
-            lines.append(textwrap.fill(line, LINE_WIDTH, subsequent_indent=indent))
+            lines.append(hang(line, indent))
         return self._with_subtitle("\n".join(lines))
 
     def context(self) -> dict[str, Any]:

@@ -516,6 +516,7 @@ class Document:
                 if isinstance(component, Contents):
                     component.entries = self._listing(component.of, component.label, section)
 
+    @_under_own_config
     def kept_sections(self) -> dict[str, str]:
         """Each section kept together on paper, by its row's ``id`` there, to its name (#364)."""
         self._walk()

@@ -659,7 +659,9 @@ class Footer(BoxSurface, Region):
     It does not control fonts or geometry. The copyright year, firm name and
     the two outbound URLs are facts about the email and arrive via
     :meth:`context`. The disclaimer is optional — an empty one omits the
-    fine-print line; the copyright + links line always renders.
+    fine-print line; the copyright + links line always renders. The default
+    copyright is ``© {year} {firm}`` built from its non-empty parts, so an
+    unset ``current_year`` leaves ``© {firm}``, never a doubled space (#435).
 
     Its box presentation is :class:`BoxSurface` — ``align``,
     ``background_color`` and ``text_color``, the same three the header strip
@@ -763,9 +765,8 @@ class Footer(BoxSurface, Region):
         row = self.link_row or LinkRow()
         if row.copyright:
             return escape_html_ascii(row.copyright)
-        year = escape_html_ascii(str(facts.get("current_year", "")))
-        firm = escape_html_ascii(str(facts.get("firm_name", "")))
-        return f"&copy; {year} {firm}"
+        parts = (str(facts.get(key, "")).strip() for key in ("current_year", "firm_name"))
+        return " ".join(["&copy;", *(escape_html_ascii(part) for part in parts if part)])
 
     def resolved_links(self, facts: dict[str, Any]) -> list[FooterLink]:
         """

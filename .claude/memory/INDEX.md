@@ -10,7 +10,7 @@
   PPTX were closed as not planned (2026-10-01, `media.md`). #288 is the owner's Outlook-desktop check.
 - The prose budget is live; the baseline is 44 and may only shrink.
 - **Open from the 2026-10-10 review**: epics #418 (delivery contract, #420–#425) and #419 (render path once, #426–#428),
-  seven standalone bugs #429–#435. Nothing implemented yet. sessions/2026-10-10-1725-codebase-review-issues.md
+  open; the seven standalone bugs #429–#435 are fixed in one PR (2026-10-10). sessions/2026-10-10-1725-codebase-review-issues.md
 
 ## Decisions        (append-only; supersede, never delete)
 - Older entries, and epic #157's, are in sessions/ARCHIVE-2026.md.
@@ -71,3 +71,5 @@
 - [2026-10-06] adjacent-markers — #402: a footnote marker after another opens on a comma, `apparatus.md`.
 - [2026-10-10] codebase-review-issues — **19 review findings filed as 18 issues**: #418, #419 and children,
   bugs #429–#435; every finding re-probed on `ac0a8a4` — sessions/2026-10-10-1725-codebase-review-issues.md
+- [2026-10-10] standalone-bugs — #429–#435 fixed in one PR: a scheme never follows / ? #, one cid one payload,
+  `kept_sections` scoped, one `metadata()`, `hang()` never splits a word, unique frame columns, the copyright from its parts.
