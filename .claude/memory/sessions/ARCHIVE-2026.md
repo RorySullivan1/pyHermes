@@ -462,3 +462,20 @@ Decisions and Log entries folded out of `INDEX.md` on 2026-08-29 (#143), verbati
   Three tests never ran in CI — sessions/2026-09-28-2015-package-review-issues.md
 - [2026-10-01] exporter-epics-review — **#219 and #300 closed as not planned, #218 rescoped to the deck medium**;
   decision in `media.md`, README line reworded — sessions/2026-10-01-1707-exporter-epics-review.md
+
+## Folded in from INDEX.md on 2026-10-10 (decisions of 2026-10-05)
+- [2026-10-05] **A badge takes a tone, never a colour, and is square in Outlook by decision: no VML,
+  nbsp padding in an mso conditional; a status dot is the same span unlabelled** — `design-axes.md` (#324)
+- [2026-10-05] **A timeline spans no cell: a capsule marker the title's height, the rule a half-cell's
+  border; a kicker is the `h2`'s sibling, never inside it; four kitchen_sink sections became two Stacks
+  to pay for #329's bytes** — `design-axes.md`, `builder-architecture.md` (#329)
+- [2026-10-05] **A grid is one exhibit: `leaves()` stops at any `Exhibit`, panels anchor `<grid>-<letter>`;
+  a legend names theme colours (a hex is checked in `add_section`), never reads the plot; a section's
+  source is `source_notes`, read by the walk after its blocks** — `apparatus.md`, `data-layer.md` (#335)
+- [2026-10-05] **A turned page is a body table of its own (a named page is inert on a `tr`); a stamp is a
+  fact set OVER the copy, translucent (under, grounds hid it), and no constructor `stamp=`; an aside is a
+  value object rendered through `Callout`; a gallery QR is a module-matrix constant** — `media.md`, `brochure.md` (#340)
+- [2026-10-05] **A brand tone is a name on the theme (`Theme.tones`), resolved by one `Theme.tone` every template
+  reads, refused undeclared by a walk in `Document._add`; `section.background_color` stays a hex** — `design-axes.md` (#387)
+- [2026-10-05] **On paper a split's column paints no fill; the band cell does** — an inline-table paints after
+  every block background, so its fill overwrote the next section's half-pixel row at a band edge — `design-axes.md`

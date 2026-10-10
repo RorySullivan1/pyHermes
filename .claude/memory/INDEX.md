@@ -9,6 +9,8 @@
   #329 (PR #378); #335 (PR #380); #340 (PR #382); #384 (PRs #406, #411, #412); #385 (PR #413); the paper band seam (PR #408). #219 DOCX and #300
   PPTX were closed as not planned (2026-10-01, `media.md`). #288 is the owner's Outlook-desktop check.
 - The prose budget is live; the baseline is 44 and may only shrink.
+- **Open from the 2026-10-10 review**: epics #418 (delivery contract, #420–#425) and #419 (render path once, #426–#428),
+  seven standalone bugs #429–#435. Nothing implemented yet. sessions/2026-10-10-1725-codebase-review-issues.md
 
 ## Decisions        (append-only; supersede, never delete)
 - Older entries, and epic #157's, are in sessions/ARCHIVE-2026.md.
@@ -16,27 +18,11 @@
   never did.** One all-extras job that fails on a skip its extra should lift — #239, sessions/2026-09-28-2015-package-review-issues.md
 - [2026-10-01] **pyHermes grows by media, not by portability.** A DOCX/PPTX walk is a second render path
   over 46 classes, and a chart is PNG bytes by the time it is in the tree; #219 and #300 closed — `media.md`
-- [2026-10-05] **A badge takes a tone, never a colour, and is square in Outlook by decision: no VML,
-  nbsp padding in an mso conditional; a status dot is the same span unlabelled** — `design-axes.md` (#324)
-- [2026-10-05] **A timeline spans no cell: a capsule marker the title's height, the rule a half-cell's
-  border; a kicker is the `h2`'s sibling, never inside it; four kitchen_sink sections became two Stacks
-  to pay for #329's bytes** — `design-axes.md`, `builder-architecture.md` (#329)
-- [2026-10-05] **A grid is one exhibit: `leaves()` stops at any `Exhibit`, panels anchor `<grid>-<letter>`;
-  a legend names theme colours (a hex is checked in `add_section`), never reads the plot; a section's
-  source is `source_notes`, read by the walk after its blocks** — `apparatus.md`, `data-layer.md` (#335)
-- [2026-10-05] **A turned page is a body table of its own (a named page is inert on a `tr`); a stamp is a
-  fact set OVER the copy, translucent (under, grounds hid it), and no constructor `stamp=`; an aside is a
-  value object rendered through `Callout`; a gallery QR is a module-matrix constant** — `media.md`, `brochure.md` (#340)
-- [2026-10-05] **A brand tone is a name on the theme (`Theme.tones`), resolved by one `Theme.tone` every template
-  reads, refused undeclared by a walk in `Document._add`; `section.background_color` stays a hex** — `design-axes.md` (#387)
-- [2026-10-05] **On paper a split's column paints no fill; the band cell does** — an inline-table paints after
-  every block background, so its fill overwrote the next section's half-pixel row at a band edge — `design-axes.md`
 - [2026-10-06] **A house face rides `Document.fonts()`, never `assets()`; justify and fine print are paper's,
   unset in an email; BackMatter stays at `small`; a qualifier reaches the notes** — `design-axes.md` (#385)
 - [2026-10-06] **Bleed is a negative-margin block, top edge only where the medium says the section opens a sheet;
   a pin floats to the footnote area (absolute overlapped); a separated row is one real table row** — `media.md`,
   `design-axes.md` (#386)
-
 - [2026-10-09] **A size is read from the system, never typed (owner's principle, standing rule 13):
   `content_width()` for a picture's cell, `SizeTheme` for a density, a named constant for an asset's
   own size; the gallery is exempt** — `working-in-the-code.md`, `design-axes.md`
@@ -83,3 +69,5 @@
 - [2026-10-06] print-typography — epic #385 built in one PR — sessions/2026-10-06-print-typography.md
 - [2026-10-06] single-sheet-print — epic #386 built in one PR — sessions/2026-10-06-single-sheet-print.md
 - [2026-10-06] adjacent-markers — #402: a footnote marker after another opens on a comma, `apparatus.md`.
+- [2026-10-10] codebase-review-issues — **19 review findings filed as 18 issues**: #418, #419 and children,
+  bugs #429–#435; every finding re-probed on `ac0a8a4` — sessions/2026-10-10-1725-codebase-review-issues.md
