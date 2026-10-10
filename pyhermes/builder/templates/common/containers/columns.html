@@ -113,7 +113,7 @@
     <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:{{ background_color | default(theme.palette.highlight_tint if highlight else theme.palette.surface) }};">
       <tr>
 {% set rtl = stack == "reverse" %}
-        <td{% if rtl %} dir="rtl"{% endif %} style="padding:0 {{ edge_pad }}px; font-size:0; line-height:0;">
+        <td{% if not medium.paged %} class="{{ 'mobile-pad-x' if stack == 'fixed' else 'mobile-flush' }}"{% endif %}{% if rtl %} dir="rtl"{% endif %} style="padding:0 {{ edge_pad }}px; font-size:0; line-height:0;">
 {% if stack == "fixed" %}
     <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="width:100%; table-layout:fixed;">
       <tr>
@@ -166,7 +166,7 @@
 {% if section_source %}
     <table class="fine-print" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:{{ background_color | default(theme.palette.highlight_tint if highlight else theme.palette.surface) }};">
       <tr>
-        <td{% if section_align %} align="{{ section_align | escape_html }}"{% endif %} style="padding:0 {{ edge_pad }}px {{ size.space.column_bottom }}px {{ edge_pad }}px;{% if section_align %} text-align:{{ section_align }};{% if section_align == "justify" %} hyphens:auto;{% endif %}{% endif %}">
+        <td{% if not medium.paged %} class="mobile-pad-x"{% endif %}{% if section_align %} align="{{ section_align | escape_html }}"{% endif %} style="padding:0 {{ edge_pad }}px {{ size.space.column_bottom }}px {{ edge_pad }}px;{% if section_align %} text-align:{{ section_align }};{% if section_align == "justify" %} hyphens:auto;{% endif %}{% endif %}">
           {{ source_line(section_source, section_as_of) }}
         </td>
       </tr>
