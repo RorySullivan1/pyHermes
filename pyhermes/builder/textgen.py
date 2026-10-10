@@ -233,6 +233,25 @@ def html_to_text(html: str, link_format: Callable[[str, str], str] = format_link
 LINE_WIDTH = 78
 
 
+def hang(line: str, indent: str = "") -> str:
+    """
+    One line wrapped to :data:`LINE_WIDTH` on spaces only, continuations hung by ``indent``.
+
+    A word is never broken, at a hyphen or mid-word, so a URL longer than the
+    line stands alone on one and stays clickable (#433).
+    """
+    return "\n".join(
+        textwrap.wrap(
+            line,
+            LINE_WIDTH,
+            subsequent_indent=indent,
+            break_long_words=False,
+            break_on_hyphens=False,
+        )
+        or [line]
+    )
+
+
 def wrap(text: str) -> str:
     """
     Wrap prose to :data:`LINE_WIDTH`, line by line.
@@ -249,9 +268,9 @@ def wrap(text: str) -> str:
         if not line:
             out.append("")
         elif line.startswith("- "):
-            out.extend(textwrap.wrap(line, LINE_WIDTH, subsequent_indent="  ") or [line])
+            out.append(hang(line, "  "))
         else:
-            out.extend(textwrap.wrap(line, LINE_WIDTH) or [line])
+            out.append(hang(line))
     return "\n".join(out)
 
 
