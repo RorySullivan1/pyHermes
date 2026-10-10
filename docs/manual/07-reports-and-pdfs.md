@@ -166,7 +166,7 @@ brief = PagedDocument({**facts, "font_theme": DEFAULT_FONTS.derive(heading=house
 **A display title, fine print and justified prose** are settings on a section:
 
 ```python
-from pyhermes.builder import ChartBlock, EmailImage
+from pyhermes.builder import ChartBlock, EmailImage, content_width
 
 brief.add_section(FullWidth(
     TextBlock("<p>Low-cost exposure to the whole market.</p>"),
@@ -176,7 +176,11 @@ brief.add_section(FullWidth(
 ))
 brief.add_section(FullWidth(
     ChartBlock(
-        EmailImage.attached("chart.png", alt="Growth of 10,000", width=616),
+        EmailImage.attached(
+            "chart.png",
+            alt="Growth of 10,000",
+            width=content_width(brief.metadata.size_theme, page=brief.medium.page_format),
+        ),
         subtitle="Growth of 10,000 invested at launch",
         qualifier="Total return, USD, net of fees, 2019 to 2026",
     ),

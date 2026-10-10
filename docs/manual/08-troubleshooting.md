@@ -67,7 +67,8 @@ from pathlib import Path
 from pyhermes.builder.images import EmailImage
 
 HERE = Path(__file__).parent        # the folder your script is in
-logo = EmailImage.attached(HERE / "logo.png", alt="Acme Research", width=120)
+LOGO_WIDTH = 120                    # the logo's own display width, in px
+logo = EmailImage.attached(HERE / "logo.png", alt="Acme Research", width=LOGO_WIDTH)
 ```
 
 ### I get "WebP images are not supported" or "SVG"

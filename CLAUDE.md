@@ -170,6 +170,11 @@ that enforces each, is in `working-in-the-code.md`.
 12. **A spacing override names a token its object reads; a pixel in a template is still a
     bug.** Each class declares `SPACING_TOKENS`, and a sentinel test in `test_spacing.py`
     checks the declaration against the template both ways.
+13. **A size is read from the system, never typed.** A picture's width comes from
+    `content_width()` (a section's body, or each column of a split, for a density and a
+    page), a density from `SizeTheme`, and an asset's own size from a named constant.
+    `test_content_width.py` holds the helper to the render, and fails on a px width typed
+    in an example, the manual or the README.
 
 ## Prose discipline
 

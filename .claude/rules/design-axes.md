@@ -243,6 +243,17 @@ or in an inbox is a mistake rather than a choice. It derives from `spacious` and
 the deck fixture's PDF: 15pt body and a 30pt title on PowerPoint's 960pt-wide sheet, against
 spacious's 11.25 and 24. `deck.md` has the measurements.
 
+**A caller reads a width; it never types one (standing rule 13).** `content_width()` in
+`containers.py` answers the one question an image asks at construction, before the density
+is bound: how wide is the cell it goes in. `content_width("compact")` is a full-width
+section's body, `content_width("standard", "50-50")` a list of each column's
+(`[280, 280]`), and `page=` lays the density over a printed sheet as the paged medium does
+(`content_width("dense", page=LETTER_PORTRAIT)` is 648). A ratio is anything a split takes,
+refused by the split class it names. A `FigureGrid` caps each panel at its own cell, so a
+panel takes the body's width as a ceiling. The helper and `_render_split` share
+`sizing.column_content_widths`, which is why it cannot report a width the render does not
+use.
+
 **Column geometry is arithmetic the builder owns.** A ratio's own *name* is its weights —
 `"25-25-50"` is `[25, 25, 50]` — and `column_layout()` splits the active scheme's content
 width by them. No lookup table: a table would be a second place for the split to be written
@@ -272,6 +283,20 @@ between two of them would otherwise render as a space that no longer fits; and a
 band gives its 1px hairline back to every horizontal inset (`edge_pad`), or the last column
 wraps. A browser test asserts the invariant per fixture — the goldens cannot, because this
 was correct markup laid out wrongly.
+
+**On a phone the margin is `mobile_pad_x`, and a full-width title moves with its content.**
+`.mobile-pad` moves a content cell in to `mobile_pad_x`, and for as long as the rule existed
+the title cell kept `frame.pad_x`, so every titled section on a phone had its heading 14px
+inside the text under it at `standard`. The 1000px test could not see it. The title cell in
+`full-width.html` now carries `mobile-pad-x`, a sides-only rule, so its own top and bottom
+spacing stays; paper, a slide and a brochure have no `@media` block, so the class is written
+for the email only and no paged golden moved. Measured across the gallery at 375px: 114 of 149
+titled sections lined up after, none before. **A split's title is left at `frame.pad_x` on
+purpose**: its stacked columns keep the band's inset inside their own mobile padding (`50px`
+at `standard`), so moving the title in would put it 32px outside its copy. That older indent
+is the next fix, and it is a different one. `TestATitleKeepsToItsContentOnAPhone` holds that
+no heading starts right of its own content at 375px; it fails on 23 email fixtures with the
+class removed.
 
 **The eight per-ratio templates are one template.** They were byte-identical apart from a
 Jinja comment and the numbers, so they were never carrying a per-ratio *decision* — they were

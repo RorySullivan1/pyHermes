@@ -37,6 +37,10 @@
   a pin floats to the footnote area (absolute overlapped); a separated row is one real table row** — `media.md`,
   `design-axes.md` (#386)
 
+- [2026-10-09] **A size is read from the system, never typed (owner's principle, standing rule 13):
+  `content_width()` for a picture's cell, `SizeTheme` for a density, a named constant for an asset's
+  own size; the gallery is exempt** — `working-in-the-code.md`, `design-axes.md`
+
 ## Threads          (open items; remove when closed)
 - **#394's ruling (justify on paper only) was taken under a goal**; the owner may widen it.
 - **#400's ruling: `skip_first` is opt-in, not the default under an `EmptyCover`** (goal-taken; `media.md`).
@@ -45,8 +49,10 @@
 - **Outlook desktop's handling of `dir=rtl` on a reversed split is unverified here**, nor #319's VML
   arrow (or #399's connector), nor #325's square badge and dot, nor #331's empty rule cells (`font-size:0`), nor #337's legend
   swatch; all join #288's check.
-- **`kitchen_sink` is at its 90 KB ceiling**: `modern_fonts` has 962 bytes left after #340, which untitled
-  the three wide `ThreeColumn` ratios to pay for the stamp and the QR button; the next epic must merge or move.
+- **`kitchen_sink` is at its 90 KB ceiling**: `modern_fonts` has 371 bytes left after the phone-title fix
+  (+316), and #340 before it untitled the three wide `ThreeColumn` ratios; the next epic must merge or move.
+- **On a phone a split's content sits at pad_x + mobile_pad_x (50px), deeper than its title**; full-width
+  titles were fixed to match their content (`design-axes.md`), splits were left for a separate change.
 - **The suite runs on Windows since #372** (PR #371); no Windows CI job — the owner's run is the check.
 - **`epic-autoclose` works** (closed #273, #354, #361, #346, #324, #329, #335). Still confirm each epic closed after its merge.
 - **In this container, PDF byte-determinism tests flake** (no HarfBuzz-Subset), and screenshot

@@ -19,6 +19,13 @@ ten holdings set as two fives so the row is five rows tall instead of ten,
 and two matplotlib charts through `pyhermes.data.chart_from_figure`. The fund is
 fictional and the figures are invented sample data.
 
+`daily-investment-note` is the email built for a phone. Every section is
+full-width, so nothing collapses at 375px. Its contribution table holds to four
+columns, with raw figures that the columns format and colour. Its two charts are
+drawn with type large enough to survive being scaled down to a phone's width:
+a cumulative-return line with its key written in HTML, and a sector contribution
+bar coloured by sign. The portfolio is fictional.
+
 ## Layout
 
 ```

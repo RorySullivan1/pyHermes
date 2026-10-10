@@ -492,10 +492,12 @@ metadata; pass a `Banner` and it renders instead:
 from pyhermes.builder import Banner, BannerPalette, MinimalBanner, Rgba
 from pyhermes.builder.images import EmailImage
 
+LOGO_WIDTH = 118                             # the mark's own display width, in px
+
 Banner(
     title="Q3 Outlook",                      # unset → firm_name
     subtitle="What the curve is pricing",    # unset → campaign_name
-    logo_url=EmailImage.attached("marks/hermes.png", alt="Hermes Research", width=118),
+    logo_url=EmailImage.attached("marks/hermes.png", alt="Hermes Research", width=LOGO_WIDTH),
     background_image_url="https://cdn.example.com/masthead.jpg",
 )
 
@@ -863,11 +865,12 @@ An explicit `color=` still wins over a tone.
 (`[data]` and `[charts]` above):
 
 ```python
+from pyhermes.builder import content_width
 from pyhermes.data import chart_from_figure, table_from_frame
 
 table = table_from_frame(df, formats={"1M": ret}, tones={"1M": "auto"},
                          total_row=True, source="Hermes Research")
-chart = chart_from_figure(fig, alt="Cumulative returns", width=320,
+chart = chart_from_figure(fig, alt="Cumulative returns", width=content_width(),
                           source="Hermes Research")
 ```
 
@@ -950,11 +953,14 @@ escaping untrusted text in those is the caller's job — use
 An image carries two independent facts: where the bytes live, and how they reach the reader.
 
 ```python
+from pyhermes.builder import content_width
 from pyhermes.builder.images import EmailImage
 
-EmailImage.hosted("https://cdn.example.com/chart.png", alt="Factor returns")   # REMOTE
-EmailImage.attached("charts/factor.png", alt="Factor returns", width=616)      # CID
-EmailImage.inline(png_bytes, alt="Sparkline", width=120)                       # DATA_URI
+SPARK_WIDTH = 120  # the sparkline's own display width, in px
+
+EmailImage.hosted("https://cdn.example.com/chart.png", alt="Factor returns")              # REMOTE
+EmailImage.attached("charts/factor.png", alt="Factor returns", width=content_width())     # CID
+EmailImage.inline(png_bytes, alt="Sparkline", width=SPARK_WIDTH)                          # DATA_URI
 ```
 
 | Strategy | Size cost | Gmail | Outlook desktop |

@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import copy
 from collections.abc import Mapping, Sequence
-from typing import ClassVar
+from typing import ClassVar, overload
 
 from pyhermes.config import get_config
 
@@ -35,7 +35,7 @@ from .engine import (
     respaced,
     scheme_of,
 )
-from .enums import TextAlign, ThreeColumnRatio, TwoColumnRatio, VerticalAlign
+from .enums import SizeTheme, TextAlign, ThreeColumnRatio, TwoColumnRatio, VerticalAlign
 from .exceptions import ValidationError
 from .images import EmailImage, ImageAsset
 from .medium import check_media, walking_medium
@@ -56,13 +56,16 @@ from .models import (
 from .sizing import (
     PHONE_FLOOR,
     STANDARD_SIZES,
+    PageFormat,
     SizeScheme,
     Spacing,
     check_unstacked,
     coerce_spacing,
     coerce_stack,
+    column_content_widths,
     column_layout,
     fine_print,
+    resolve_size_scheme,
     shares,
 )
 from .textgen import join_blocks, join_sections, underline, wrap
@@ -549,13 +552,11 @@ class _SplitContainer(Container):
         """Each slot rendered into its column's content width, then the split around them."""
         engine = self._spaced(engine)
         scheme = scheme_of(engine)
-        geometry = column_layout(self._weights(self.ratio), scheme)
+        widths = column_content_widths(self._weights(self.ratio), scheme)
         # An omitted column is an empty cell, not a missing one: the geometry holds either way.
         contents = [
-            slot.render(_in_cell(engine, int(col.width - col.pad_left - col.pad_right)))
-            if slot
-            else ""
-            for slot, col in zip(slots, geometry, strict=True)
+            slot.render(_in_cell(engine, width)) if slot else ""
+            for slot, width in zip(slots, widths, strict=True)
         ]
         return engine.render(self.template_path, self._column_context(engine, contents, scheme))
 
@@ -1280,6 +1281,59 @@ class OnlySections(Container):
             return ""
         spaced = self._spaced(engine)
         return "\n".join(section.render(spaced) for section in self._held)
+
+
+@overload
+def content_width(
+    size_theme: SizeTheme | str | SizeScheme = ...,
+    ratio: None = None,
+    *,
+    page: PageFormat | None = None,
+) -> int: ...
+@overload
+def content_width(
+    size_theme: SizeTheme | str | SizeScheme,
+    ratio: str | Sequence[int | float],
+    *,
+    page: PageFormat | None = None,
+) -> list[int]: ...
+def content_width(
+    size_theme: SizeTheme | str | SizeScheme = SizeTheme.STANDARD,
+    ratio: str | Sequence[int | float] | None = None,
+    *,
+    page: PageFormat | None = None,
+) -> int | list[int]:
+    """
+    The px a block is rendered into: the body's width, or each column's in a split.
+
+    ``ratio`` is anything a split takes (a preset, its enum member, or weights),
+    and returns one width per column; without it, the full-width body's. ``page``
+    lays the density over a printed page, as the paged medium does. The same
+    arithmetic the render uses, so an image sized by it fills its cell exactly.
+    """
+    scheme = resolve_size_scheme(size_theme)
+    if page is not None:
+        scheme = scheme.with_page(page)
+    if ratio is None:
+        return int(scheme.frame.inner)
+    checked = _split_for(ratio)._check_ratio(ratio)
+    return column_content_widths(_SplitContainer._weights(checked), scheme)
+
+
+def _split_for(ratio: object) -> type[_SplitContainer]:
+    """The split class that takes ``ratio``: by preset name, or by its count of weights."""
+    splits = (TwoColumn, ThreeColumn, FourColumn)
+    if isinstance(ratio, str):
+        for split in splits:
+            if ratio in split._presets:
+                return split
+        presets = [str(preset) for split in splits for preset in split._presets]
+        raise ValidationError(f"Unsupported ratio '{ratio}'. Use one of {presets}, or weights.")
+    count = len(ratio) if isinstance(ratio, Sequence) else 0
+    for split in splits:
+        if split.COUNT == count:
+            return split
+    raise ValidationError(f"a split takes 2 to 4 weights, got: {ratio!r}")
 
 
 def section_spacing_tokens() -> tuple[str, ...]:
