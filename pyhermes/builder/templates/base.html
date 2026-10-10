@@ -32,9 +32,10 @@
          111 column cells were narrower than their column with `block`, none with `table`. #}
       .stack-column { display:table !important; width:100% !important; }
       .mobile-pad { padding:{{ size.space.mobile_pad_y }}px {{ size.space.mobile_pad_x }}px !important; }
-      {# A full-width title's sides follow its content's in to mobile_pad_x; its top and bottom stay its own.
-         A split's title is left alone: its stacked columns keep the band's inset, an older and separate indent. #}
-      .mobile-pad-x { padding-left:{{ size.space.mobile_pad_x }}px !important; padding-right:{{ size.space.mobile_pad_x }}px !important; }
+      {# Every section's sides move in to mobile_pad_x: its title, and a split's band and source line.
+         A stacked column brings its own mobile_pad_x, so its band goes flush instead. #}
+      .section-title td, .mobile-pad-x { padding-left:{{ size.space.mobile_pad_x }}px !important; padding-right:{{ size.space.mobile_pad_x }}px !important; }
+      .mobile-flush { padding-left:0 !important; padding-right:0 !important; }
       .mobile-title { font-size:{{ size.type.title_mobile }}px !important; }
       /* box-sizing is what keeps the padding *inside* the 100% width. Without it
          the content-box default adds it on top and the cell overflows the

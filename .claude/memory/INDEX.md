@@ -49,10 +49,8 @@
 - **Outlook desktop's handling of `dir=rtl` on a reversed split is unverified here**, nor #319's VML
   arrow (or #399's connector), nor #325's square badge and dot, nor #331's empty rule cells (`font-size:0`), nor #337's legend
   swatch; all join #288's check.
-- **`kitchen_sink` is at its 90 KB ceiling**: `modern_fonts` has 371 bytes left after the phone-title fix
-  (+316), and #340 before it untitled the three wide `ThreeColumn` ratios; the next epic must merge or move.
-- **On a phone a split's content sits at pad_x + mobile_pad_x (50px), deeper than its title**; full-width
-  titles were fixed to match their content (`design-axes.md`), splits were left for a separate change.
+- **`kitchen_sink` is at its 90 KB ceiling**: `modern_fonts` has 357 bytes left after the phone-margin fixes
+  (+330), and #340 before it untitled the three wide `ThreeColumn` ratios; the next epic must merge or move.
 - **The suite runs on Windows since #372** (PR #371); no Windows CI job — the owner's run is the check.
 - **`epic-autoclose` works** (closed #273, #354, #361, #346, #324, #329, #335). Still confirm each epic closed after its merge.
 - **In this container, PDF byte-determinism tests flake** (no HarfBuzz-Subset), and screenshot

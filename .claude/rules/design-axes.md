@@ -284,19 +284,27 @@ band gives its 1px hairline back to every horizontal inset (`edge_pad`), or the 
 wraps. A browser test asserts the invariant per fixture — the goldens cannot, because this
 was correct markup laid out wrongly.
 
-**On a phone the margin is `mobile_pad_x`, and a full-width title moves with its content.**
-`.mobile-pad` moves a content cell in to `mobile_pad_x`, and for as long as the rule existed
-the title cell kept `frame.pad_x`, so every titled section on a phone had its heading 14px
-inside the text under it at `standard`. The 1000px test could not see it. The title cell in
-`full-width.html` now carries `mobile-pad-x`, a sides-only rule, so its own top and bottom
-spacing stays; paper, a slide and a brochure have no `@media` block, so the class is written
-for the email only and no paged golden moved. Measured across the gallery at 375px: 114 of 149
-titled sections lined up after, none before. **A split's title is left at `frame.pad_x` on
-purpose**: its stacked columns keep the band's inset inside their own mobile padding (`50px`
-at `standard`), so moving the title in would put it 32px outside its copy. That older indent
-is the next fix, and it is a different one. `TestATitleKeepsToItsContentOnAPhone` holds that
-no heading starts right of its own content at 375px; it fails on 23 email fixtures with the
-class removed.
+**On a phone the margin is `mobile_pad_x`, for every section.** `.mobile-pad` moved a content
+cell in to `mobile_pad_x`, and two things were left behind. Every title kept `frame.pad_x`, so
+a full-width heading sat 14px inside its text at `standard`. And a split's band kept its
+`frame.pad_x` inset around columns that bring their own `mobile_pad_x`, so a stacked split's
+copy sat at 50px, 18px deeper than its heading. The 1000px test could see neither. Three phone
+rules, sides only so each cell keeps its own top and bottom spacing:
+
+- **`.section-title td`** moves every title in, by selector, so no title carries a class: a
+  title cell holds no other `td` (a kicker and a badge are spans).
+- **`mobile-flush`** zeroes a stacked split's band inset, so the column's own padding is the
+  margin. **`mobile-pad-x`** moves an unstacked split's band in instead, since its columns
+  carry no phone padding, and moves a split's source line with it.
+- The classes are written for the email only; paper, a slide and a brochure have no `@media`
+  block, and no paged golden moved. The stacked columns' gutter margin does not overflow at
+  375px with the band flush, measured across the gallery.
+
+Measured at 375px: all 149 titled sections in the email gallery start where their content does,
+against 115 after PR #416 fixed the full-width half and 1 before it; a probe of stacked,
+unstacked, reversed and framed splits with a source line puts heading, copy and source on one
+edge. `TestATitleKeepsToItsContentOnAPhone` holds equality at 375px and fails
+on 17 email fixtures against the templates with only the full-width half.
 
 **The eight per-ratio templates are one template.** They were byte-identical apart from a
 Jinja comment and the numbers, so they were never carrying a per-ratio *decision* — they were

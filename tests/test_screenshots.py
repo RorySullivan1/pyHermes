@@ -266,22 +266,20 @@ def phone_titles():
 @requires_browser
 class TestATitleKeepsToItsContentOnAPhone:
     """
-    A section's heading never starts inside its own content's left margin at 375px.
+    At 375px every section's heading starts where its own content does.
 
-    The `@media` block moved a full-width section's content in to `mobile_pad_x`
-    and left its title at `frame.pad_x`, so every titled section on a phone had a
-    heading indented past the text under it, 14px at `standard`. The 1000px
-    check above could not see it. A split's stacked columns keep the band's
-    inset, so their content sits deeper than the title; that indent is older
-    and separate, and this does not hold it.
+    The `@media` block moved content in to `mobile_pad_x` and left titles at
+    `frame.pad_x`: a full-width heading sat 14px inside its text, and a split's
+    stacked columns sat 18px deeper than their heading, inside the band's inset
+    as well as their own padding. The 1000px check above could not see either.
     """
 
     @pytest.mark.parametrize("name", FIXTURE_NAMES)
-    def test_no_heading_starts_right_of_its_content(self, name, phone_titles):
+    def test_every_heading_starts_where_its_content_does(self, name, phone_titles):
         offenders = [
             f"{title!r} heading at {heading}px, content at {content}px"
             for title, heading, content in phone_titles[name]
-            if content is not None and heading > content
+            if content is not None and heading != content
         ]
         assert not offenders, f"{name} at 375px: " + "; ".join(offenders)
 
