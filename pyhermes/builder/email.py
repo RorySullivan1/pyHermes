@@ -24,7 +24,7 @@ from pyhermes.email import EMAIL_MEDIUM
 from .containers import Container
 from .document import Document, RegionFacts
 from .engine import TemplateOverlay
-from .exceptions import ValidationError
+from .exceptions import EmailBuilderError, ValidationError
 from .images import ImageAsset
 from .medium import Medium
 from .models import EmailMetadata
@@ -210,7 +210,17 @@ class EmailBuilder:
         self._email: Email | None = None
 
     def metadata(self, data: dict[str, Any] | EmailMetadata) -> EmailBuilder:
-        """Set email metadata and initialise the Email instance."""
+        """
+        Set email metadata and initialise the Email instance.
+
+        Once only: a second call would start a fresh email and drop every
+        region and section already added, so it raises instead (#432).
+        """
+        if self._email is not None:
+            raise EmailBuilderError(
+                ".metadata() was already called; a second call would discard the sections "
+                "added since. Pass the corrected facts to the first call."
+            )
         self._email = Email(
             metadata=data,
             template_dir=self._template_dir,

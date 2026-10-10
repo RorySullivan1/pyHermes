@@ -509,7 +509,9 @@ dpi. Both are `UserWarning`s exported from `pyhermes.builder`, and the package p
 
 The one deliberate exception is `EmailBuilder`'s `RuntimeError` for calling `section()` or
 `build()` before `metadata()` — a programming error in the call sequence, not rejected
-data.
+data. A **second** `metadata()` raises `EmailBuilderError` (#432): it used to start a fresh
+email and drop every section already added, silently, and catching the base class is how a
+host already reports a builder mistake.
 
 ### Hard constraints baked into the engine
 
