@@ -550,11 +550,17 @@ def dedupe_assets(assets: list[ImageAsset]) -> list[ImageAsset]:
 
     The same image used in two sections should be attached once. Order is
     preserved so a rendered email and its manifest stay diffable.
+
+    Raises:
+        ValidationError: One Content-ID carries two different payloads, which
+            would ship the first and show it at both references (#430).
     """
-    seen: set[str] = set()
-    unique: list[ImageAsset] = []
+    seen: dict[str, ImageAsset] = {}
     for asset in assets:
-        if asset.content_id not in seen:
-            seen.add(asset.content_id)
-            unique.append(asset)
-    return unique
+        first = seen.setdefault(asset.content_id, asset)
+        if first.data != asset.data:
+            raise ValidationError(
+                f"Content-ID {asset.content_id!r} names two different images "
+                f"({first.filename!r} and {asset.filename!r}); give each its own content_id."
+            )
+    return list(seen.values())
