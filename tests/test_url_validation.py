@@ -79,6 +79,28 @@ class TestValidateUrlHelper:
         # a query string must not trip the check.
         _validate_url("https://x.test/a?next=javascript:alert(1)", "field")
 
+    @pytest.mark.parametrize(
+        "url", ["/view?at=10:30", "reports/2024:Q3.png", "#frag:1", "?t=12:00"]
+    )
+    def test_a_colon_after_a_path_query_or_fragment_mark_is_relative(self, url):
+        # #429: the prefix before the colon holds a / ? or #, so it is no scheme.
+        _validate_url(url, "field")
+
+    @pytest.mark.parametrize(
+        "url", ["javascript:alert(1)", "data:text/html,x", "  JAVASCRIPT:x  ", "vbscript:x"]
+    )
+    def test_a_scheme_is_still_refused_beside_the_relative_forms(self, url):
+        with pytest.raises(ValidationError, match="unsupported URL scheme"):
+            _validate_url(url, "field")
+
+    def test_relative_urls_with_colons_reach_every_field_kind(self, valid_metadata):
+        from pyhermes.builder import EmailImage, ImageBlock
+
+        valid_metadata["view_in_browser_url"] = "/view?at=10:30"
+        EmailMetadata(**valid_metadata).validate()
+        EmailImage.hosted("reports/2024:Q3.png", alt="Q3")
+        ImageBlock(EmailImage.hosted("/a.png", alt="a"), link_url="#frag:1")
+
     def test_error_names_the_field_and_lists_allowed_schemes(self):
         with pytest.raises(ValidationError) as exc:
             _validate_url("javascript:alert(1)", "metadata.unsubscribe_url")

@@ -71,6 +71,9 @@ def table_from_frame(
         raise ValidationError(f"table_from_frame takes a DataFrame, got {type(frame).__name__}")
     if isinstance(frame.columns, pd.MultiIndex) or isinstance(frame.index, pd.MultiIndex):
         raise ValidationError("table_from_frame takes flat columns and a flat index; flatten first")
+    if frame.columns.has_duplicates:
+        repeated = list(dict.fromkeys(frame.columns[frame.columns.duplicated()]))
+        raise ValidationError(f"table_from_frame takes unique column names; repeated: {repeated!r}")
     formats, tones, subheads = dict(formats or {}), dict(tones or {}), dict(subheads or {})
     _check_keys(frame, formats, "formats")
     _check_keys(frame, tones, "tones")

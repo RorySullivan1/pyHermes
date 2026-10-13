@@ -469,6 +469,33 @@ class TestDedupeAssets:
     def test_empty(self):
         assert dedupe_assets([]) == []
 
+    def test_one_id_with_the_same_bytes_is_attached_once(self, png_bytes):
+        a = EmailImage.attached(png_bytes, alt="a", content_id="chart").asset
+        b = EmailImage.attached(png_bytes, alt="b", content_id="chart", filename="b.png").asset
+        assert dedupe_assets([a, b]) == [a]
+
+    def test_one_id_with_two_payloads_is_refused(self, png_bytes, other_png_bytes):
+        # #430: the second chart used to vanish, and both references showed the first.
+        a = EmailImage.attached(png_bytes, alt="a", content_id="chart", filename="a.png").asset
+        b = EmailImage.attached(other_png_bytes, alt="b", content_id="chart", filename="b.png")
+        with pytest.raises(ValidationError, match=r"'chart'.*'a\.png'.*'b\.png'"):
+            dedupe_assets([a, b.asset])
+
+    def test_the_email_manifest_refuses_the_conflict(
+        self, valid_metadata, png_bytes, other_png_bytes
+    ):
+        email = (
+            EmailBuilder()
+            .metadata(valid_metadata)
+            .section(FullWidth(ImageBlock(EmailImage.attached(png_bytes, alt="r", content_id="c"))))
+            .section(
+                FullWidth(ImageBlock(EmailImage.attached(other_png_bytes, alt="b", content_id="c")))
+            )
+            .build()
+        )
+        with pytest.raises(ValidationError, match="Content-ID 'c'"):
+            email.assets()
+
 
 class TestContentIdErrorMessage:
     """The rejection must describe what really happens to a Content-ID (#73)."""

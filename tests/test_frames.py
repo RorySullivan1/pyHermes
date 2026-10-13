@@ -193,6 +193,12 @@ class TestWhatItRefuses:
         with pytest.raises(ValidationError, match="flat"):
             table_from_frame(frame)
 
+    def test_duplicate_column_names_raise_by_name(self):
+        # #434: both "a" columns used to fall back to text, silently.
+        frame = pd.DataFrame([[1.0, "x", 2.0]], columns=["a", "b", "a"])
+        with pytest.raises(ValidationError, match=r"unique column names; repeated: \['a'\]"):
+            table_from_frame(frame)
+
     def test_a_non_frame_raises(self):
         with pytest.raises(ValidationError, match="DataFrame"):
             table_from_frame({"1M": [0.1]})

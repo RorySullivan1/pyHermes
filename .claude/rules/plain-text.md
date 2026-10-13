@@ -71,6 +71,12 @@ off the same rule so the two projections cannot disagree about which column is t
 table wider than 78 columns overflows the line-width policy rather than corrupting the
 alignment that is the only reason to render it.
 
+**Prose breaks on spaces only (#433), and so does every hung line.** `textwrap`'s defaults
+break at a hyphen and mid-word, which split a long URL across two lines, where a text-mode
+reader can neither click nor copy it. `hang()` wraps one line with both switched off, and
+`wrap`, the endnotes, the timeline and the bibliography all call it, so an over-long token
+stands alone on its line, whole. A line longer than 78 is the cost, as it is for a table.
+
 **The three design axes do not reach the text part**, and a test asserts it: colour, density and
 typeface are HTML concerns by construction, so one email projects identically under every
 preset. That is what makes "one house format" a property rather than a coincidence — and it is

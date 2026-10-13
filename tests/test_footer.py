@@ -57,6 +57,20 @@ class TestFooterStructure:
         assert "Unsubscribe" in html and "View in browser" in html
 
 
+class TestTheDefaultCopyrightIsBuiltFromItsParts:
+    """#435: an unset ``current_year`` printed ``&copy;  F``, two spaces and no year."""
+
+    def test_without_a_year_the_row_has_no_double_space(self):
+        builder = EmailBuilder().metadata(
+            {"email_subject": "S", "firm_name": "F", "campaign_name": "c"}
+        )
+        html = builder.section(FullWidth(content=TextBlock("<p>Body.</p>"))).render()
+        assert "&copy; F" in html and "&copy;  " not in html
+
+    def test_with_a_year_the_row_is_unchanged(self):
+        assert "&copy; 2026 F" in _render()
+
+
 class TestAnUnsetDefaultLinkIsLeftOut:
     """#258: a default link whose URL fact is unset rendered as ``href=""``."""
 

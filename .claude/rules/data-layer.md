@@ -76,7 +76,8 @@ it both ways. `math.md` carries its decisions.
 - **A missing backend is a `DataError`; a frame of the wrong shape is a `ValidationError`.**
   `pyhermes.data.BackendMissingError` names the install (`pip install "pyhermes[data]"`), as
   `pyhermes.pdf`'s does. A mapping that names a column the frame lacks, `"auto"` on a text column,
-  a MultiIndex or an empty frame are data problems, so they raise the builder's own error,
+  a MultiIndex, a repeated column name (#434: `frame[name]` returns a frame, so the column
+  silently lost its numeric kind) or an empty frame are data problems, so they raise the builder's own error,
   naming the offending key.
 - **mypy lists both spellings of each backend** (`pandas` and `pandas.*`). This is the #157
   lesson: `foo.*` matches submodules only. A test reads `pyproject.toml` and asserts both are

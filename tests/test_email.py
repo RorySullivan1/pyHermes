@@ -145,6 +145,16 @@ class TestEmailBuilder:
         with pytest.raises(RuntimeError, match="metadata"):
             EmailBuilder().build()
 
+    def test_a_second_metadata_call_raises_rather_than_dropping_sections(
+        self, valid_metadata, text_block
+    ):
+        # #432: it used to start a fresh email, and build() returned no sections.
+        builder = EmailBuilder().metadata(valid_metadata).section(FullWidth(content=text_block))
+        corrected = {**valid_metadata, "email_subject": "corrected"}
+        with pytest.raises(EmailBuilderError, match=r"\.metadata\(\) was already called"):
+            builder.metadata(corrected)
+        assert "Narrative prose." in builder.render()
+
     def test_build_returns_the_underlying_email(self, valid_metadata):
         assert isinstance(EmailBuilder().metadata(valid_metadata).build(), Email)
 

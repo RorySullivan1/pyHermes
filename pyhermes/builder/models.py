@@ -162,12 +162,13 @@ def _validate_url(value: str, name: str) -> None:
     checks.  Empty is allowed — every URL field in the builder is optional.
 
     Scheme-only: whether the URL resolves, and what its host or path are,
-    is not this function's business.
+    is not this function's business. A colon after a ``/``, ``?`` or ``#``
+    belongs to a relative URL's path, query or fragment, never a scheme (#429).
     """
     if not value:
         return
     scheme, separator, _ = value.partition(":")
-    if not separator:
+    if not separator or any(mark in scheme for mark in "/?#"):
         return  # relative URL — no scheme to object to
     if scheme.lower().strip() not in _ALLOWED_URL_SCHEMES:
         allowed = ", ".join(sorted(_ALLOWED_URL_SCHEMES))

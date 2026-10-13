@@ -10,7 +10,6 @@ and label is the document's walk's, so the markup and the text part agree.
 from __future__ import annotations
 
 import re
-import textwrap
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
@@ -22,7 +21,7 @@ from .components import Component
 from .exceptions import ValidationError
 from .models import _validate_url
 from .sizing import Spacing
-from .textgen import LINE_WIDTH, join_blocks, underline, wrap
+from .textgen import hang, join_blocks, underline, wrap
 
 #: The two citation styles a bibliography sets, each a curated house form.
 STYLES = ("author-year", "numeric")
@@ -236,15 +235,7 @@ class Bibliography(Component):
             parts = ("authors", "year", "title", "venue", "link")
             body = " ".join(entry[part] for part in parts if entry[part])
             lead = f"{entry['label'].ljust(width)} " if width else ""
-            lines.append(
-                textwrap.fill(
-                    lead + body,
-                    LINE_WIDTH,
-                    subsequent_indent=" " * (len(lead) or 4),
-                    break_long_words=False,
-                    break_on_hyphens=False,
-                )
-            )
+            lines.append(hang(lead + body, " " * (len(lead) or 4)))
         return self._with_subtitle(underline(self.title or ""), "\n".join(lines))
 
     def context(self) -> dict[str, Any]:
