@@ -27,7 +27,7 @@ from typing import Any, Protocol
 
 from pyhermes.delivery.exceptions import TransportError
 from pyhermes.delivery.message import to_wire_bytes
-from pyhermes.delivery.retry import retry_with_backoff
+from pyhermes.delivery.retry import is_permanent_failure, retry_with_backoff
 
 __all__ = ["GmailTransport", "GoogleApiTransport", "send_message"]
 
@@ -162,8 +162,11 @@ def _is_network_error(exc: BaseException) -> bool:
     same name, so an isinstance check against only the builtins misses
     them — the bug this function exists to fix. It also covers the named
     non-``OSError`` exceptions above, matched structurally so this stays
-    free of a network-library import.
+    free of a network-library import. A certificate or bad-URL failure is
+    not one, though it may be an ``OSError``: see ``PERMANENT_ERROR_NAMES``.
     """
+    if is_permanent_failure(exc):
+        return False
     if isinstance(exc, (TimeoutError, ConnectionError, OSError)):
         return True
     exc_type = type(exc)

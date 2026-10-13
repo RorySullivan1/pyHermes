@@ -8,9 +8,9 @@
   (PR #369); #361 (PR #370); #354 and #372 (PR #371); #318 (PR #373); #346 (PR #374); #324 (PR #376);
   #329 (PR #378); #335 (PR #380); #340 (PR #382); #384 (PRs #406, #411, #412); #385 (PR #413); the paper band seam (PR #408). #219 DOCX and #300
   PPTX were closed as not planned (2026-10-01, `media.md`). #288 is the owner's Outlook-desktop check.
-- The prose budget is live; the baseline is 44 and may only shrink.
-- **Open from the 2026-10-10 review**: epics #418 (delivery contract, #420–#425) and #419 (render path once, #426–#428),
-  open; the seven standalone bugs #429–#435 are fixed in one PR (2026-10-10). sessions/2026-10-10-1725-codebase-review-issues.md
+- The prose budget is live; the baseline is 43 and may only shrink.
+- **Open from the 2026-10-10 review**: epic #419 (render path once, #426–#428). #418 (delivery contract,
+  #420–#425) is built in one PR (2026-10-13); bugs #429–#435 merged in PR #437. sessions/2026-10-10-1725-codebase-review-issues.md
 
 ## Decisions        (append-only; supersede, never delete)
 - Older entries, and epic #157's, are in sessions/ARCHIVE-2026.md.
@@ -26,6 +26,9 @@
 - [2026-10-09] **A size is read from the system, never typed (owner's principle, standing rule 13):
   `content_width()` for a picture's cell, `SizeTheme` for a density, a named constant for an asset's
   own size; the gallery is exempt** — `working-in-the-code.md`, `design-axes.md`
+
+- [2026-10-13] **Every message is measured on the wire, inline images included; a negative or NaN `Retry-After`
+  is ignored, not clamped; a TLS or bad-URL failure is permanent by name (`PERMANENT_ERROR_NAMES`)** — `delivery.md` (#418)
 
 ## Threads          (open items; remove when closed)
 - **#394's ruling (justify on paper only) was taken under a goal**; the owner may widen it.
@@ -73,3 +76,4 @@
   bugs #429–#435; every finding re-probed on `ac0a8a4` — sessions/2026-10-10-1725-codebase-review-issues.md
 - [2026-10-10] standalone-bugs — #429–#435 fixed in one PR: a scheme never follows / ? #, one cid one payload,
   `kept_sections` scoped, one `metadata()`, `hang()` never splits a word, unique frame columns, the copyright from its parts.
+- [2026-10-13] delivery-contract — epic #418 built in one PR — sessions/2026-10-13-delivery-contract.md

@@ -5,6 +5,7 @@ Classic Outlook's drafts through COM (#279), driven against a recording fake of 
 from __future__ import annotations
 
 import ast
+from email.message import EmailMessage
 from pathlib import Path
 
 import pytest
@@ -36,6 +37,7 @@ class _Accessor:
 
 class _Attachment:
     def __init__(self, path: str) -> None:
+        self.path = path
         self.name = Path(path).name
         self.data = Path(path).read_bytes()
         self.PropertyAccessor = _Accessor()
@@ -128,6 +130,36 @@ class TestADraft:
         message, _ = _message()
         mail = create_draft(message, display=False, outlook=_Outlook())
         assert mail.calls == ["Save"]
+
+
+class TestTheRecipients:
+    """#423: a header is parsed as an address list, never split on every comma."""
+
+    def _draft(self, to: str):
+        email = Email(FACTS)
+        email.add_section(FullWidth(TextBlock("<p>Body.</p>")))
+        message = build_message(email, sender="desk@example.com", to=to)
+        return create_draft(message, outlook=_Outlook())
+
+    def test_a_quoted_name_keeps_its_comma(self):
+        mail = self._draft('"Sullivan, Rory" <rory@example.com>, ops@example.com')
+        assert mail.To == '"Sullivan, Rory" <rory@example.com>; ops@example.com'
+
+    def test_a_plain_comma_list_is_unchanged(self):
+        assert self._draft("a@example.com, b@example.com").To == "a@example.com; b@example.com"
+
+
+class TestAPartIsWrittenInsideItsFolder:
+    def test_a_path_in_a_parts_name_is_reduced_to_its_last_segment(self):
+        # build_message refuses such a name (#422); create_draft reads any message.
+        message = EmailMessage()
+        message["Subject"] = "S"
+        message["To"] = "a@example.com"
+        message.set_content("<p>Body.</p>", subtype="html")
+        message.add_attachment(b"x", maintype="application", subtype="pdf", filename="../../up.pdf")
+        (attachment,) = create_draft(message, outlook=_Outlook()).Attachments
+        assert attachment.name == "up.pdf"
+        assert ".." not in Path(attachment.path).parts
 
 
 class TestFailures:

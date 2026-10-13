@@ -41,6 +41,5 @@
   "pyhermes/gmail/sender.py::function:send_message": "32 lines against a budget of 18 — a contract for a wide signature — every line is Args/Returns/Raises",
   "pyhermes/gmail/sender.py::module:sender.py": "17 lines against a budget of 16 — purpose plus the one non-obvious decision; a line or two over, not a narrative",
   "pyhermes/outlook/sender.py::comment_run:GraphApiTransport._endpoint#aa4ed77d": "9 lines against a budget of 4 — a trap or a spec citation, at the length the notice needs",
-  "pyhermes/outlook/sender.py::comment_run:send_message#711cf2e1": "5 lines against a budget of 4 — a trap or a spec citation, at the length the notice needs",
   "pyhermes/outlook/sender.py::function:send_message": "32 lines against a budget of 18 — a contract for a wide signature — every line is Args/Returns/Raises"
 }

@@ -147,8 +147,8 @@ an attachment. The cover email's own `cid:` images still render in place.
 - **`pdf_attachment` renders under the `SCREEN` profile.** It caps every image at 150 dpi where
   it is shown and re-encodes JPEGs at quality 85. `render_pdf` and `save_pdf` default to
   `PRINT`, which leaves images as they arrived. Pass `profile=` to either to choose.
-- **A message with an attachment has a size budget.** Above 20 MB on the wire,
-  `build_message` raises and names each file with its size. That is Microsoft 365's default
+- **Every message has a size budget**, files and inline images alike. Above 20 MB on the wire,
+  `build_message` raises and names each file and inline image with its size. That is Microsoft 365's default
   limit, below Gmail's 25 MB, and base64 makes a 16 MB PDF a 22 MB message. A PDF rendered
   under `PRINT` is named with the fix. Above 15 MB it warns. Both numbers are in
   `Config`.

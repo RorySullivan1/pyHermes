@@ -130,12 +130,46 @@ Recorded as decisions, so they are not re-litigated as oversights:
 |---|---|
 | `Date` / `Message-ID` in assembly | Transport's job; omitting them keeps assembly pure and its output comparable |
 | `Bcc` header | It travels with the message and leaks the blind-copy list — an envelope concern for adapters |
-| Size re-check in assembly | `render()` already applied the 102 KB limit, and CID bytes cost *message* size, not HTML size |
+| Size re-check in assembly | `render()` already applied the 102 KB limit, and CID bytes cost *message* size, not HTML size; the wire budget (#424) is that cost |
 | OAuth flows in adapters | Deliberately the caller's; see rule 1 above |
 | Campaign management | No scheduling, recipient lists, batching or send-time analytics — this layer delivers one message to addressees the caller supplies |
 | Open tracking / link rewriting | A product decision far beyond transport |
 | **Any compliance policy** | pyHermes does not decide what an email must *say*. Disclaimer language, unsubscribe links and every other compliance question are the caller's judgement: the library cannot know whether an email is a commercial newsletter, an internal note or a receipt, and each answers differently — a library that guessed would be wrong for two of the three. What it guarantees instead is narrower and checkable: a region *variant* will not silently drop content the caller supplied (`REQUIRED_SLOTS`), and what renders is shape- and safety-valid (hex colours, URL schemes). `LinkRow(links=[])` and an empty `disclaimer` are both valid |
 | `Retry-After` as an HTTP-date | Legal but rare; degrades to the computed backoff instead of crashing |
+
+## Every send failure is a `DeliveryError` (#418)
+
+The contract is one rule for a host: catch `DeliveryError` and every envelope or transport
+failure is inside it. A review on 2026-10-10 found six places that broke it or skipped a check
+the contract documents, each reproduced by a probe; epic #418 closed them.
+
+- **Only a bad call is a bare `ValueError`.** Both adapters check `max_attempts` before the
+  first attempt and wrap everything after it in `TransportError`. The Outlook adapter used to
+  let every `ValueError` through to spare the retry helper's own check, and a transport's
+  `ValueError` took the same exit: requests' `MissingSchema` and `InvalidURL` are both one
+  (#420).
+- **A negative or NaN `Retry-After` is ignored, and the computed ladder applies** (#421). It
+  reached `time.sleep`, which raises on a negative length, after one attempt. Ignoring it was
+  chosen over clamping it to zero: a hint that cannot be read is no hint, and a zero wait on
+  a throttle is the guess the hint exists to prevent. A hint of exactly zero is honoured.
+- **A failure waiting cannot heal is reported on the first attempt** (#425). Both adapters
+  treat an `OSError` as a network blip, since requests' `ConnectionError` and `Timeout` are
+  `OSError` subclasses that are not the builtins, and requests' `SSLError` is one too, so a
+  wrong CA bundle cost the whole ladder. `PERMANENT_ERROR_NAMES` in `retry.py` is checked
+  first, anywhere in the exception's MRO: `SSLError`, the stdlib's
+  `SSLCertVerificationError`, `InvalidURL`, `MissingSchema` and `InvalidSchema`. **Matched by
+  name** because the adapters never import requests, the duck-typing `_status_of` already
+  uses. The set is shared in `retry.py`: what heals by waiting is a fact about TLS and URLs,
+  not about a provider. A status still wins: an exception carrying one is judged by it.
+- **One filename rule for every part** (#422). `filename_problem()` in `images.py` refuses an
+  empty name, a path separator and any control character, and `Attachment`, `EmailImage` (a
+  CID one) and `ImageAsset` each raise its reason as their own error. An attached image's name
+  was never checked, so a CR or LF failed in `email.policy` as a bare `ValueError`, and a
+  `../` reached the draft writer. `create_draft` also writes each part under its last path
+  segment, since it reads any message, not only one `build_message` made.
+- **A draft's recipients are parsed, not split** (#423): `getaddresses` keeps the comma in a
+  quoted display name, and each address goes to Outlook as `"name" <address>` or bare.
+- **The wire budget measures every message** (#424); `config.md` has it.
 
 ## Architecture — `pyhermes/gmail`
 

@@ -90,11 +90,11 @@ class Config:
 
     print_dpi: int = 300
 
-    #: The ceiling on a whole message once it carries an attachment, counted as
+    #: The ceiling on a whole message, files and inline images alike, counted as
     #: encoded wire bytes. Microsoft 365's default, the lower of the two big
     #: providers' (Gmail refuses above 25 MB); `config.md` has why.
     attachment_limit_kb: int = 20480
-    #: Where a message with an attachment starts raising a ``SizeWarning``.
+    #: Where a message starts raising a ``SizeWarning``.
     attachment_warn_kb: int = 15360
 
     #: Let an email take a density no client has rendered: a custom

@@ -195,8 +195,8 @@ your mail program to check it. No network and no credentials are involved.
 |---|---|
 | The email itself above **90 KB** | A `SizeWarning` is shown. You can still send it |
 | The email itself above **102 KB** | The build stops with `SizeError`, because Gmail would cut the email off |
-| The whole message with attachments above **15 MB** | A warning |
-| The whole message with attachments above **20 MB** | The build stops, naming each file and its size |
+| The whole message, attachments and attached images, above **15 MB** | A warning |
+| The whole message, attachments and attached images, above **20 MB** | The build stops, naming each file and image and its size |
 
 Attached images count towards the 20 MB, not the 102 KB. To shrink an email that is too
 big, see [Troubleshooting](08-troubleshooting.md#i-get-sizeerror-about-the-102-kb-gmail-clipping-limit).

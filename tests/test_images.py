@@ -23,7 +23,12 @@ from pyhermes.builder import (
 )
 from pyhermes.builder.enums import EmbedStrategy
 from pyhermes.builder.exceptions import SizeError, ValidationError
-from pyhermes.builder.images import INLINE_LIMIT_KB, dedupe_assets, sniff_image_type
+from pyhermes.builder.images import (
+    INLINE_LIMIT_KB,
+    ImageAsset,
+    dedupe_assets,
+    sniff_image_type,
+)
 from pyhermes.builder.models import EmailMetadata
 
 
@@ -136,6 +141,32 @@ class TestAttached:
     def test_default_filename_falls_back_to_the_content_id(self, png_bytes):
         image = EmailImage.attached(png_bytes, alt="Chart")
         assert image.filename == f"{image.content_id}.png"
+
+    def test_a_plain_filename_is_kept(self, png_bytes):
+        assert EmailImage.attached(png_bytes, alt="Chart", filename="chart.png").filename == (
+            "chart.png"
+        )
+
+    # #422: Attachment's rule, which the image never had.
+    @pytest.mark.parametrize(
+        ("bad", "reason"),
+        [
+            ("../../evil\r\nX-Injected: yes.png", "path separator"),
+            ("evil\r\nX-Injected: yes.png", "line break"),
+            ("tab\there.png", "control character"),
+            ("../../up.png", "path separator"),
+            ("charts\\up.png", "path separator"),
+            ("   ", "must name a file"),
+            ("..", "must name a file"),
+        ],
+    )
+    def test_a_filename_that_is_not_one_file_is_refused(self, png_bytes, bad, reason):
+        with pytest.raises(ValidationError, match=reason):
+            EmailImage.attached(png_bytes, alt="Chart", filename=bad)
+
+    def test_the_manifest_entry_is_held_to_the_same_rule(self, png_bytes):
+        with pytest.raises(ValidationError, match="asset.filename"):
+            ImageAsset(content_id="x", data=png_bytes, mime_type="image/png", filename="a/b.png")
 
 
 class TestInline:
