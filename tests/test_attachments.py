@@ -82,6 +82,7 @@ class TestAnAttachmentIsValidatedAtConstruction:
             ({"filename": "reports/review.pdf"}, "path separator"),
             ({"filename": "reports\\review.pdf"}, "path separator"),
             ({"filename": "review.pdf\r\nBcc: x@evil.test"}, "line break"),
+            ({"filename": "review\x00.pdf"}, "control character"),
             ({"mime_type": "pdf"}, "mime_type"),
             ({"mime_type": "application/"}, "mime_type"),
             ({"mime_type": "application/pdf; name=x"}, "mime_type"),
@@ -241,13 +242,24 @@ class TestTheSizeBudget:
             warnings.simplefilter("error", SizeWarning)
             build_message(cid_email, **ENVELOPE, attachments=[_file(1)])
 
-    def test_with_no_attachment_no_check_runs_at_all(self, cid_email):
-        # A cover email alone is over this budget, and is still not measured:
-        # the budget is about files, and the 102 KB check owns the HTML.
+    def test_with_no_attachment_the_inline_images_are_still_measured(self, cid_email):
+        # #424: CID bytes are outside the 102 KB check by design, so this budget
+        # is the only one that sees them, and it used to run only with a file.
         with config_override(attachment_limit_kb=1, attachment_warn_kb=1):
-            with warnings.catch_warnings():
-                warnings.simplefilter("error", SizeWarning)
+            with pytest.raises(MessageError, match=r"1 KB attachment limit") as raised:
                 build_message(cid_email, **ENVELOPE)
+        for asset in cid_email.assets():
+            assert f"{asset.filename} (inline) is" in str(raised.value)
+
+    def test_with_no_attachment_between_the_thresholds_it_warns(self, cid_email):
+        with config_override(attachment_limit_kb=96, attachment_warn_kb=1):
+            with pytest.warns(SizeWarning, match="target < 1 KB"):
+                build_message(cid_email, **ENVELOPE)
+
+    def test_with_no_attachment_under_the_warning_it_is_silent(self, cid_email):
+        with config_override(**SMALL_BUDGET), warnings.catch_warnings():
+            warnings.simplefilter("error", SizeWarning)
+            build_message(cid_email, **ENVELOPE)
 
 
 class TestAPdfAttachment:

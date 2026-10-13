@@ -22,7 +22,7 @@ from urllib.parse import quote
 from pyhermes.config import Config, get_config
 from pyhermes.delivery.exceptions import TransportError
 from pyhermes.delivery.message import to_wire_bytes
-from pyhermes.delivery.retry import retry_with_backoff
+from pyhermes.delivery.retry import is_permanent_failure, retry_with_backoff
 
 __all__ = [
     "TRANSIENT_STATUSES",
@@ -220,7 +220,14 @@ _NETWORK_ERROR_NAMES = frozenset({"ConnectionError", "Timeout", "TimeoutError"})
 
 
 def _is_network_failure(exc: BaseException) -> bool:
-    """Best-effort recognition of a network-level failure, no status attached."""
+    """
+    Best-effort recognition of a network-level failure, no status attached.
+
+    A certificate or bad-URL failure is not one, though it may be an
+    ``OSError``: see ``PERMANENT_ERROR_NAMES``.
+    """
+    if is_permanent_failure(exc):
+        return False
     return isinstance(exc, OSError) or type(exc).__name__ in _NETWORK_ERROR_NAMES
 
 
@@ -309,6 +316,13 @@ def send_message(
         The bytes sent are exactly what :func:`pyhermes.delivery.save_eml` would
         write, so a dry run is a faithful preview of the real send.
     """
+    # Checked before any attempt, as the Gmail adapter does: inside the
+    # `except Exception` below a bad call would read as a refused send, and
+    # exempting ValueError there let a transport's own escape TransportError
+    # (requests' MissingSchema is one).
+    if max_attempts is not None and max_attempts < 1:
+        raise ValueError(f"max_attempts must be at least 1, got {max_attempts}")
+
     # Standard base64, deliberately not URL-safe: Graph rejects the URL-safe
     # alphabet that Gmail's `raw` field requires.
     encoded = base64.b64encode(to_wire_bytes(message)).decode("ascii")
@@ -321,13 +335,6 @@ def send_message(
             delay_hint=retry_after_seconds,
             sleep=sleep,
         )
-    except ValueError:
-        # retry_with_backoff's own contract: it raises ValueError only for
-        # max_attempts < 1, validated before it ever calls the transport.
-        # That is a bug in this call, not a message Graph rejected -- let it
-        # surface as the ValueError it is instead of being reported as a
-        # failed send that was, in fact, never attempted.
-        raise
     except Exception as exc:
         status = _status_of(exc)
         detail = f" (HTTP {status})" if status is not None else ""

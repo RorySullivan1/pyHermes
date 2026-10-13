@@ -20,9 +20,23 @@ from typing import TypeVar
 
 from pyhermes.config import get_config
 
-__all__ = ["retry_with_backoff"]
+__all__ = ["PERMANENT_ERROR_NAMES", "is_permanent_failure", "retry_with_backoff"]
 
 T = TypeVar("T")
+
+#: Failures that waiting cannot heal, matched by class name anywhere in the
+#: exception's MRO: a certificate or TLS failure, and a URL that cannot be
+#: requested. Matched by name because the adapters never import ``requests``,
+#: whose ``SSLError`` is an ``OSError`` and would otherwise read as a network
+#: blip. ``SSLCertVerificationError`` is the stdlib's (an ``ssl.SSLError``).
+PERMANENT_ERROR_NAMES = frozenset(
+    {"SSLError", "SSLCertVerificationError", "InvalidURL", "MissingSchema", "InvalidSchema"}
+)
+
+
+def is_permanent_failure(exc: BaseException) -> bool:
+    """Whether ``exc`` is a failure no retry can heal; adapters check it before ``OSError``."""
+    return any(cls.__name__ in PERMANENT_ERROR_NAMES for cls in type(exc).__mro__)
 
 
 def retry_with_backoff(
@@ -52,7 +66,8 @@ def retry_with_backoff(
         max_delay:      Ceiling on a *computed* wait.
         delay_hint:     Optional reader extracting a server-specified wait (a
             ``Retry-After``). A hint wins over the computed backoff and is
-            clamped by ``max_hint_delay``, not ``max_delay``.
+            clamped by ``max_hint_delay``, not ``max_delay``. A negative or NaN
+            hint is ignored and the computed delay applies.
         max_hint_delay: Ceiling on a *hinted* wait, far above ``max_delay`` so a
             legitimate hint is honoured in full but never unbounded.
         sleep:          Injected so tests run the real sequence without the
@@ -96,7 +111,9 @@ def retry_with_backoff(
             if attempt == max_attempts or not is_transient(exc):
                 raise
             hinted = delay_hint(exc) if delay_hint is not None else None
-            if hinted is not None:
+            # `>= 0` also rejects NaN; min() would hand either to sleep(), which
+            # raises a bare ValueError on a proxy-rewritten Retry-After: -1.
+            if hinted is not None and hinted >= 0:
                 sleep(min(hinted, max_hint_delay))
             else:
                 sleep(min(delay, max_delay))

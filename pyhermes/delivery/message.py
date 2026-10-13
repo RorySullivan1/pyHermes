@@ -26,7 +26,7 @@ from pathlib import Path
 from typing import Protocol, cast
 
 from pyhermes.builder.exceptions import SizeWarning, warn_caller
-from pyhermes.builder.images import ImageAsset
+from pyhermes.builder.images import ImageAsset, filename_problem
 from pyhermes.config import Config, config_override, get_config
 
 from .exceptions import MessageError
@@ -86,11 +86,9 @@ class Attachment:
         if not self.data:
             raise MessageError(f"attachment data is empty for {self.filename!r}")
         name = self.filename
-        if not name.strip() or name.strip() in {".", ".."}:
-            raise MessageError(f"attachment filename must name a file, got {name!r}")
-        if "/" in name or "\\" in name:
-            raise MessageError(f"attachment filename must not contain a path separator: {name!r}")
-        _reject_control_chars(name, "attachment filename")
+        problem = filename_problem(name)
+        if problem:
+            raise MessageError(f"attachment filename {problem}")
         if not _MIME_TYPE.fullmatch(self.mime_type):
             raise MessageError(
                 f"attachment mime_type must be 'type/subtype', got {self.mime_type!r} for {name!r}"
@@ -320,7 +318,8 @@ def build_message(
     Raises:
         MessageError: On a missing subject, sender or recipient; a control
             character in an envelope field; an asset with an unusable MIME
-            type; ``cid:`` references disagreeing with the manifest.
+            type; ``cid:`` references disagreeing with the manifest; a
+            message over ``Config.attachment_limit_kb`` on the wire.
         EmailBuilderError: Propagated unchanged.
 
     ``Bcc`` is deliberately not accepted; see the module docstring.
@@ -433,8 +432,7 @@ def build_message(
             )
 
     _attach(message, attachments)
-    if attachments:
-        _check_attachment_budget(message, attachments)
+    _check_wire_budget(message, assets, attachments)
     return message
 
 
@@ -457,27 +455,31 @@ def _attach(message: EmailMessage, attachments: Sequence[Attachment]) -> None:
         )
 
 
-def _check_attachment_budget(message: EmailMessage, attachments: Sequence[Attachment]) -> None:
+def _check_wire_budget(
+    message: EmailMessage, assets: Sequence[ImageAsset], attachments: Sequence[Attachment]
+) -> None:
     """
     Refuse a message a mail server would refuse, and warn short of it.
 
-    Measured over the encoded wire bytes, since that is what a server counts:
-    base64 makes a 16 MB file a 22 MB message. Both thresholds come from the
-    active :class:`~pyhermes.config.Config`. The 102 KB check is a separate fact
+    Measured over the encoded wire bytes of every message, since that is what
+    a server counts: base64 makes a 16 MB file a 22 MB message, and inline
+    images weigh as much as files. Both thresholds come from the active
+    :class:`~pyhermes.config.Config`. The 102 KB check is a separate fact
     about the HTML part and Gmail's clipping, and this one leaves it alone.
     """
     config = get_config()
     size_kb = len(to_wire_bytes(message)) / 1024
     if size_kb > config.attachment_limit_kb:
-        files = "; ".join(
+        parts = [
             f"{a.filename} is {len(a.data) / 1024:,.1f} KB"
             + (f" ({a.size_hint})" if a.size_hint else "")
             for a in attachments
-        )
+        ] + [f"{a.filename} (inline) is {a.size_kb:,.1f} KB" for a in assets]
+        weighed = "; ".join(parts) or "no attachment or inline image"
         raise MessageError(
             f"the message is {size_kb:,.1f} KB on the wire, over the "
             f"{config.attachment_limit_kb:,} KB attachment limit that mail servers "
-            f"enforce: {files}."
+            f"enforce: {weighed}."
         )
     if size_kb > config.attachment_warn_kb:
         warn_caller(

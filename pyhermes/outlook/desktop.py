@@ -18,6 +18,7 @@ import sys
 import tempfile
 from dataclasses import dataclass
 from email.message import EmailMessage, Message
+from email.utils import getaddresses, quote
 from pathlib import Path
 from typing import Any
 
@@ -101,7 +102,7 @@ def create_draft(message: EmailMessage, *, display: bool = True, outlook: Any = 
         mail.CC = _recipients(message, "Cc")
         with tempfile.TemporaryDirectory(prefix="pyhermes-draft-") as folder:
             for index, part in enumerate([*inline, *files]):
-                path = Path(folder, str(index), part.filename)
+                path = Path(folder, str(index), _base_name(part.filename))
                 path.parent.mkdir()
                 path.write_bytes(part.data)
                 attachment = mail.Attachments.Add(str(path), OL_BY_VALUE)
@@ -119,13 +120,17 @@ def create_draft(message: EmailMessage, *, display: bool = True, outlook: Any = 
 
 
 def _recipients(message: Message, header: str) -> str:
-    """A header's addresses in Outlook's separator."""
+    """A header's addresses in Outlook's separator, a quoted name's comma kept in the name."""
+    pairs = getaddresses([str(value) for value in message.get_all(header, [])])
     return "; ".join(
-        address.strip()
-        for value in message.get_all(header, [])
-        for address in str(value).split(",")
-        if address.strip()
+        f'"{quote(name)}" <{address}>' if name else address for name, address in pairs if address
     )
+
+
+def _base_name(filename: str) -> str:
+    """The last path segment of a part's name, so no part is written outside its folder."""
+    name = filename.replace("\\", "/").rsplit("/", 1)[-1].strip()
+    return name if name not in {"", ".", ".."} else "attachment"
 
 
 def _parts(message: EmailMessage) -> tuple[list[_Part], list[_Part]]:

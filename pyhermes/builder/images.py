@@ -162,6 +162,28 @@ def _validate_content_id(value: str) -> None:
         )
 
 
+# A C0 control or DEL: CR and LF break the MIME header that carries the name.
+_FILENAME_CONTROL = re.compile(r"[\x00-\x1f\x7f]")
+
+
+def filename_problem(name: str) -> str | None:
+    """
+    Why ``name`` cannot be a MIME part's file name, or ``None`` if it can.
+
+    One rule for every part a message carries: :class:`ImageAsset`,
+    :class:`EmailImage` and the delivery layer's ``Attachment`` each raise
+    the reason as their own error.
+    """
+    stripped = name.strip()
+    if not stripped or stripped in {".", ".."}:
+        return f"must name a file, got {name!r}"
+    if "/" in name or "\\" in name:
+        return f"must not contain a path separator: {name!r}"
+    if _FILENAME_CONTROL.search(name):
+        return f"must not contain a line break or other control character: {name!r}"
+    return None
+
+
 # ──────────────────────────────────────────────────────────────────────
 # The manifest entry
 # ──────────────────────────────────────────────────────────────────────
@@ -190,6 +212,11 @@ class ImageAsset:
     data: bytes
     mime_type: str
     filename: str
+
+    def __post_init__(self) -> None:
+        problem = filename_problem(self.filename)
+        if problem:
+            raise ValidationError(f"'asset.filename' {problem}")
 
     @property
     def size_kb(self) -> float:
@@ -312,7 +339,8 @@ class EmailImage:
 
         Raises:
             ValidationError: On unreadable files, unsupported formats, an
-                unsafe ``content_id``, or an alt/``decorative`` mismatch.
+                unsafe ``content_id`` or ``filename``, or an alt/``decorative``
+                mismatch.
         """
         data, original_name = _read_source(source)
         mime_type, extension = sniff_image_type(data)
@@ -410,8 +438,12 @@ class EmailImage:
         elif not self.data:
             raise ValidationError(f"a {self.strategy.upper()} image requires 'data'.")
 
-        if self.strategy == EmbedStrategy.CID and not self.content_id:
-            raise ValidationError("a CID image requires a 'content_id'.")
+        if self.strategy == EmbedStrategy.CID:
+            if not self.content_id:
+                raise ValidationError("a CID image requires a 'content_id'.")
+            problem = filename_problem(self.filename)
+            if problem:
+                raise ValidationError(f"'image.filename' {problem}")
         self._check_weight()
 
     def _check_weight(self) -> None:

@@ -107,9 +107,10 @@ The rules themselves. `builder-architecture.md` carries why each exists.
   moment caller markup opens, and the copy escapes the styling it should inherit (#130).
 - **URL schemes are validated** at construction: `http`, `https`, `mailto`, `cid` and
   relative only. `javascript:`, `data:`, `vbscript:`, `file:` raise `ValidationError`.
-- **A message carrying an attachment has a budget: 20 MB on the wire.** `build_message` raises
-  above `Config.attachment_limit_kb` and warns above `attachment_warn_kb`. It is separate from
-  the 102 KB check, which is about the HTML part and Gmail's clipping.
+- **Every message has a budget: 20 MB on the wire**, files and inline images alike (#424).
+  `build_message` raises above `Config.attachment_limit_kb` and warns above
+  `attachment_warn_kb`. It is separate from the 102 KB check, which is about the HTML part and
+  Gmail's clipping.
 - **The PDF exporter makes no network requests.** It serves `cid:` from the document's own
   manifest and refuses every other URL by name, so a hosted image is not slow — it is a
   `PdfError`. A printable document carries its own images.

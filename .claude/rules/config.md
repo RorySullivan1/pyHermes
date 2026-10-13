@@ -142,8 +142,8 @@ about one's own audience, which is what puts it here rather than in a constant.
 `from_env` refuses anything else by name, since a misspelt switch that silently reads as off is
 the failure `from_env` exists to prevent.
 
-**`attachment_limit_kb` and `attachment_warn_kb` (#198) are the whole message's budget once it
-carries a file**, 20 480 and 15 360 KB by default. Gmail refuses a message over 25 MB, and
+**`attachment_limit_kb` and `attachment_warn_kb` (#198) are the whole message's budget**,
+20 480 and 15 360 KB by default. Gmail refuses a message over 25 MB, and
 Microsoft 365 defaults to about 20 MB. The default is the lower of the two, because a sender
 rarely knows which server each recipient sits behind, and a refusal lands after the send.
 Both count the encoded wire bytes, so the check runs over `to_wire_bytes()` of the finished
@@ -152,8 +152,12 @@ message, not over the file: base64 makes a 16 MB PDF a 22 MB message.
 - **It is a second threshold, not a wider `size_limit_kb`.** 102 KB is about the HTML part and
   Gmail's clipping. This is about the whole message and a server's refusal. Two facts get two
   names, and the 102 KB check is untouched.
-- **It runs only when there is an attachment.** A message without one has only the HTML to
-  budget, and the 102 KB check already owns that.
+- **It runs on every message (#424).** It ran only with a file attached, on the reasoning that
+  a message without one has only the HTML to budget. That missed the inline images: they are
+  excluded from the 102 KB check by design, so a message heavy with `EmailImage.attached()`
+  pictures passed both checks and was refused by the server instead. The refusal now names
+  each inline image as well as each file. The names stay `attachment_*`, because a CID image
+  is a MIME attachment too, and renaming a `Config` field was out of #418's scope.
 - **It hints and never acts.** Over the limit, `MessageError` names the total, the limit, each
   file with its size, and each file's `size_hint`. `pdf_attachment` fills that hint when the
   PDF was rendered at full resolution, naming the `SCREEN` profile. The message never
