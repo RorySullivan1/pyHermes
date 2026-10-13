@@ -4,13 +4,13 @@
 - pyHermes builds **documents** and renders each onto a **medium**: `pyhermes/builder` is the
   shared kit, `pyhermes/email`, `document`, `brochure` and `deck` are the media, and exporters sit on
   one contract — `delivery`+`gmail`+`outlook`, and `pdf`. Rationale: CLAUDE.md and `media.md`.
-- **Shipped through PR #414** (epic #386); #402 is in the PR after it. Epics #157–#220 and #218 (PRs #167–#314); deck bugs #315–#317
+- **Shipped through PR #438** (epic #418); #386 in PR #414, #402 after it. Epics #157–#220 and #218 (PRs #167–#314); deck bugs #315–#317
   (PR #369); #361 (PR #370); #354 and #372 (PR #371); #318 (PR #373); #346 (PR #374); #324 (PR #376);
   #329 (PR #378); #335 (PR #380); #340 (PR #382); #384 (PRs #406, #411, #412); #385 (PR #413); the paper band seam (PR #408). #219 DOCX and #300
   PPTX were closed as not planned (2026-10-01, `media.md`). #288 is the owner's Outlook-desktop check.
 - The prose budget is live; the baseline is 43 and may only shrink.
 - **Open from the 2026-10-10 review**: epic #419 (render path once, #426–#428). #418 (delivery contract,
-  #420–#425) is built in one PR (2026-10-13); bugs #429–#435 merged in PR #437. sessions/2026-10-10-1725-codebase-review-issues.md
+  #420–#425) merged in PR #438 and closed (2026-10-13); bugs #429–#435 merged in PR #437. sessions/2026-10-10-1725-codebase-review-issues.md
 
 ## Decisions        (append-only; supersede, never delete)
 - Older entries, and epic #157's, are in sessions/ARCHIVE-2026.md.
@@ -76,4 +76,4 @@
   bugs #429–#435; every finding re-probed on `ac0a8a4` — sessions/2026-10-10-1725-codebase-review-issues.md
 - [2026-10-10] standalone-bugs — #429–#435 fixed in one PR: a scheme never follows / ? #, one cid one payload,
   `kept_sections` scoped, one `metadata()`, `hang()` never splits a word, unique frame columns, the copyright from its parts.
-- [2026-10-13] delivery-contract — epic #418 built in one PR — sessions/2026-10-13-delivery-contract.md
+- [2026-10-13] delivery-contract — epic #418 merged in PR #438, all six children closed — sessions/2026-10-13-delivery-contract.md
