@@ -268,7 +268,8 @@ that already existed.
   figure.
 - **Tone resolves cell, then column.** A cell's own `tone` wins, then the column's (`auto`
   reads the sign through `tone_of` with the column's format, so a `0.0%` stays neutral), then
-  none. A cell's `color` and `background` survive formatting.
+  none. A sparkline's bars resolve the same way (#457): a cell's own tone, then the
+  column's, with `auto` read off the series' first and last figure. A cell's `color` and `background` survive formatting.
 - **A table formats its own copy (#452).** `DataTable.__init__` copies each row and cell
   (`dataclasses.replace`) before it pads a subhead or writes a figure, so the caller's rows are
   never changed. One row list in a `pct` table and a `bps` table shows each its own format, and a

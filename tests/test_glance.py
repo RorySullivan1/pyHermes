@@ -27,7 +27,7 @@ from pyhermes.builder import (
 from pyhermes.builder.engine import TemplateEngine
 from pyhermes.builder.exceptions import ValidationError
 from pyhermes.builder.formats import bps, number, pct
-from pyhermes.builder.models import Card, KpiItem, Series, TableRow
+from pyhermes.builder.models import Card, Cell, KpiItem, Series, TableRow
 from pyhermes.builder.sizing import STANDARD_SIZES, Spacing
 from pyhermes.builder.theming import DEFAULT_THEME
 from pyhermes.config import config_override
@@ -317,6 +317,29 @@ class TestASparklineColumn:
     def test_a_bar_or_an_arrow_is_refused_on_one(self):
         with pytest.raises(ValidationError, match="only figures"):
             _spark_table([[1, 2]], bar=True)
+
+    @staticmethod
+    def _tones(table: DataTable) -> list[str]:
+        return [row["cells"][1]["spark"]["tone"] for row in table.context()["rows"]]
+
+    def test_a_cells_own_tone_wins_over_the_auto_tone(self):
+        # #457: the cell's tone was read and then replaced by the column's auto one.
+        toned = Cell(value=(1, 2, 3), tone="negative")
+        table = _spark_table([toned, (1, 2, 3), (3, 2, 1)], tone="auto")
+        assert self._tones(table) == ["negative", "positive", "negative"]
+
+    def test_a_cells_own_tone_wins_over_a_stated_column_tone(self):
+        table = _spark_table([Cell(value=(1, 2), tone="neutral"), (1, 2)], tone="positive")
+        assert self._tones(table) == ["neutral", "positive"]
+
+    def test_the_toned_cell_draws_in_the_cells_colour(self):
+        def last_bar(cell) -> str:
+            html = _render(_spark_table([cell], tone="auto"))
+            return re.findall(r"background-color: (#\w+); font-size: 0", html)[-1]
+
+        negative, positive = DEFAULT_THEME.semantic.negative, DEFAULT_THEME.semantic.positive
+        assert last_bar(Cell(value=(1, 2, 3), tone="negative")) == negative
+        assert last_bar((1, 2, 3)) == positive
 
 
 # ----------------------------------------------------------------------

@@ -850,8 +850,8 @@ class DataTable(CellShare, Exhibit, Component):
             arrow = str(trend_of(cell.value, column.format))
         spark = None
         if isinstance(cell.value, Series):
-            tone = cell.tone or (column.tone if column.tone != "auto" else "")
-            if column.tone == "auto":
+            tone = cell.tone or column.tone
+            if tone == "auto":
                 tone = str(tone_of(cell.value.values[-1] - cell.value.values[0]))
             spark = cell.value.drawn(tone)
         return {
