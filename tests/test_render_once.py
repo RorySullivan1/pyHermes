@@ -4,13 +4,17 @@ Epic #419: the render path does each expensive step once.
 A check pass lays a document out once and warns once per kept section that
 split (#426); a render builds the size-failure hint only when the size check
 fails (#427); a message is serialised once per send (#428). Each test counts
-the work itself, by patching the call that does it.
+the work itself, by patching the call that does it. The memo of #428 lives
+on the message, so a dropped message takes its bytes with it (#443).
 """
 
 from __future__ import annotations
 
+import copy
+import gc
 import inspect
 import warnings
+import weakref
 from email.message import EmailMessage
 from unittest import mock
 
@@ -21,7 +25,9 @@ from pyhermes.builder.document import Document
 from pyhermes.builder.exceptions import SizeError
 from pyhermes.builder.images import EmailImage
 from pyhermes.builder.medium import LazyHint
-from pyhermes.delivery import build_message, save_eml
+from pyhermes.config import config_override
+from pyhermes.delivery import Attachment, MessageError, build_message, save_eml
+from pyhermes.delivery import message as message_module
 from pyhermes.delivery.message import to_wire_bytes
 from pyhermes.document import EmptyBackMatter, EmptyCover, PagedDocument
 from pyhermes.gmail import send_message as gmail_send
@@ -198,3 +204,55 @@ class TestAMessageIsSerialisedOnce:
         message.add_attachment(b"late", maintype="text", subtype="plain", filename="late.txt")
         after = to_wire_bytes(message)
         assert after != before and b"late.txt" in after
+
+
+class TestTheBytesLiveAndDieWithTheMessage:
+    """#443: nothing outside a message keeps it, or its bytes, alive."""
+
+    @pytest.fixture
+    def email(self):
+        return all_fixtures()["minimal"]()
+
+    def test_a_built_message_once_dropped_is_freed(self, email):
+        attachment = Attachment(b"\0" * 2_000_000, "large.bin", "application/octet-stream")
+        message = build_message(email, **ENVELOPE, attachments=[attachment])
+        to_wire_bytes(message)
+        ref = weakref.ref(message)
+        del message
+        gc.collect()
+        assert ref() is None
+
+    def test_a_dropped_message_is_freed_without_the_collector(self, email):
+        message = build_message(email, **ENVELOPE)
+        ref = weakref.ref(message)
+        gc.disable()
+        try:
+            del message
+            assert ref() is None
+        finally:
+            gc.enable()
+
+    def test_a_refused_build_leaves_nothing_behind(self, email):
+        refs: list[weakref.ref[EmailMessage]] = []
+        measure = message_module.to_wire_bytes
+
+        def recording(message):
+            refs.append(weakref.ref(message))
+            return measure(message)
+
+        with (
+            mock.patch.object(message_module, "to_wire_bytes", recording),
+            config_override(attachment_limit_kb=1, attachment_warn_kb=1),
+            pytest.raises(MessageError),
+        ):
+            build_message(email, **ENVELOPE)
+        gc.collect()
+        assert len(refs) == 1 and refs[0]() is None
+
+    def test_a_copied_message_is_sent_with_its_own_changes(self, email):
+        message = build_message(email, **ENVELOPE)
+        sent = to_wire_bytes(message)
+        changed = copy.deepcopy(message)
+        changed.replace_header("Subject", "A copied subject")
+        assert b"A copied subject" in to_wire_bytes(changed)
+        assert to_wire_bytes(message) == sent

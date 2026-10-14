@@ -18,7 +18,6 @@ from __future__ import annotations
 
 import re
 import warnings
-import weakref
 from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from email.message import EmailMessage
@@ -526,10 +525,10 @@ def to_wire_bytes(message: EmailMessage) -> bytes:
     byte-identical to what an adapter transmits. That correspondence is what
     makes the dry run worth trusting.
 
-    The bytes are made once per message (#428): ``build_message`` measures
-    them for the budget, and an adapter or :func:`save_eml` reads the same
-    bytes back. A change to the message after that, to a header, a payload
-    or a part, makes them again.
+    The bytes are made once per message (#428) and kept on it (#443):
+    ``build_message`` measures them for the budget, and an adapter or
+    :func:`save_eml` reads the same bytes back. A change to the message after
+    that, to a header, a payload or a part, makes them again.
 
     Args:
         message: An assembled message from :func:`build_message`.
@@ -537,21 +536,19 @@ def to_wire_bytes(message: EmailMessage) -> bytes:
     Returns:
         The serialised message, CRLF throughout.
     """
-    made = _WIRE_BYTES.get(message)
+    made = getattr(message, _WIRE_BYTES, None)
     if made is not None and made[0] == _shape(message):
-        return made[1]
+        return cast(bytes, made[1])
     data = message.as_bytes(policy=message.policy.clone(linesep="\r\n"))
     # The shape is read after serialising: the generator stamps each
     # multipart's boundary onto its Content-Type the first time it runs.
-    _WIRE_BYTES[message] = (_shape(message), data)
+    setattr(message, _WIRE_BYTES, (_shape(message), data))
     return data
 
 
-#: Each message's wire bytes with the shape they were made from, held only
-#: as long as the message lives.
-_WIRE_BYTES: weakref.WeakKeyDictionary[EmailMessage, tuple[tuple[object, ...], bytes]] = (
-    weakref.WeakKeyDictionary()
-)
+#: The attribute a message carries its own wire bytes in, with the shape they
+#: were made from, so they live and die with it (#443).
+_WIRE_BYTES = "_pyhermes_wire_bytes"
 
 
 def _shape(message: EmailMessage) -> tuple[object, ...]:
@@ -560,11 +557,13 @@ def _shape(message: EmailMessage) -> tuple[object, ...]:
 
     Each part with its raw headers, its payload object, preamble and
     epilogue, and the message's policy. A message whose shape is unchanged
-    serialises to the same bytes.
+    serialises to the same bytes. The root stands as ``None``: the shape is
+    stored on the message, and holding the message itself would make a cycle
+    only the garbage collector frees.
     """
     parts = tuple(
         (
-            part,
+            None if part is message else part,
             tuple(part.raw_items()),
             None if part.is_multipart() else part.get_payload(),
             part.preamble,
