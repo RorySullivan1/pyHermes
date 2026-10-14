@@ -358,6 +358,14 @@ Four decisions:
   nearly always a data mistake. `EmailBuilderError` raised while *importing* a target module
   propagates as itself rather than being flattened into "failed to import": the builder names
   the field, and that is the useful message.
+- **One layout per run (#446).** A paged target is laid out once, before the lint, and the
+  one `Layout` goes to `layout_findings`, to `save_layout` for the PDF and to `capture_pages`
+  for the sheets. So #426's warn-once promise holds in the tool authors run. Counted by
+  patching `weasyprint.HTML.render`: before this, `a4_portrait --lint --screenshot` laid out
+  twice and `pitch_16_9 --lint` twice; `TestAPreviewRunLaysOutOnce` holds both to one. The PDF
+  is written by the exporter's `save_layout`, with no mkdir or write of preview's own. A layout
+  that fails is reported as `pdf skipped` as before; the lint and the screenshots then ask for
+  their own, which fails the same way and reports in their terms.
 
 **No console script**, deliberately. #57 put `qa/` outside the wheel because the gallery is
 test data; an installed `preview` entry point would contradict that, so the module form is the

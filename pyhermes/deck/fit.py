@@ -9,11 +9,16 @@ as :func:`~pyhermes.brochure.overflowing_panels` does for a panel. It needs the
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from .document import Deck
 from .slide import DividerSlide, Slide, SlideBox
 
+if TYPE_CHECKING:  # pragma: no cover - the exporter is imported only on use
+    from pyhermes.pdf import Layout
 
-def overflowing_slides(deck: Deck) -> list[str]:
+
+def overflowing_slides(deck: Deck, laid_out: Layout | None = None) -> list[str]:
     """
     Every slide whose copy does not fit, named ``slide N: Title``.
 
@@ -24,15 +29,17 @@ def overflowing_slides(deck: Deck) -> list[str]:
     A divider's agenda is measured when the deck shows one (#350).
     The disclosures slide is measured too. A sentinel lands past its line when
     copy overflows on the sheet, and nowhere when the engine placed it on no
-    sheet at all. Empty when everything fits.
+    sheet at all. Empty when everything fits. ``laid_out``, a
+    :func:`~pyhermes.pdf.layout` of this deck, is read rather than laying it out again.
 
     Raises:
+        ValueError: If ``laid_out`` is a layout of another document.
         pyhermes.pdf.BackendMissingError: If WeasyPrint is not installed.
         pyhermes.pdf.PdfError: If the exporter refuses the deck, as it refuses a hosted image.
     """
     from pyhermes.pdf import anchor_tops
 
-    landed = anchor_tops(deck)
+    landed = anchor_tops(_own(deck, laid_out))
     named: list[tuple[int, str, Slide | None, SlideBox]] = [
         (deck.number(slide), slide.title or "", slide, deck.slide_box(slide))
         for slide in deck.slides
@@ -74,3 +81,12 @@ def _listed(reasons: list[str]) -> str:
     if len(reasons) == 1:
         return reasons[0]
     return ", ".join(reasons[:-1]) + ", and " + reasons[-1]
+
+
+def _own(deck: Deck, laid_out: Layout | None) -> Deck | Layout:
+    """The layout to measure: ``laid_out`` when it is this deck's, else the deck itself."""
+    if laid_out is None:
+        return deck
+    if laid_out.document is not deck:
+        raise ValueError("laid_out is a layout of another document, not this deck")
+    return laid_out

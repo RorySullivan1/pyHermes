@@ -28,11 +28,14 @@ import tempfile
 from collections.abc import Mapping
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pyhermes.builder.document import Document
 
 from .fixtures import all_fixtures
+
+if TYPE_CHECKING:  # pragma: no cover - the exporter is imported only on use
+    from pyhermes.pdf import Layout
 
 # Playwright handles are typed ``Any``: it is an optional extra, so it is not
 # installed in the environment mypy runs in (the `check` CI job takes `[dev]`
@@ -345,7 +348,7 @@ def pages_available() -> bool:
 
 
 def capture_pages(
-    documents: Mapping[str, Document],
+    documents: Mapping[str, Document | Layout],
     out_dir: Path | None = None,
     scale: float = PDF_PX_SCALE,
 ) -> tuple[list[Shot], dict[str, object]]:
@@ -361,18 +364,20 @@ def capture_pages(
     ``pypdfium2`` is a self-contained wheel deliberately — Poppler would add
     a *system* binary to an extra meant to be ``pip install`` and nothing
     else. The default ``scale`` reconciles units rather than choosing a
-    resolution; see :data:`PDF_PX_SCALE`.
+    resolution; see :data:`PDF_PX_SCALE`. A :class:`~pyhermes.pdf.Layout` is
+    written as it was laid out, so a caller holding one lays out once (#446).
     """
     import pypdfium2
 
-    from pyhermes.pdf import render_pdf
+    from pyhermes.pdf import Layout, render_layout, render_pdf
 
     out_dir = out_dir or DEFAULT_OUT_DIR
     out_dir.mkdir(parents=True, exist_ok=True)
 
     shots: list[Shot] = []
     for name, document in documents.items():
-        pdf = pypdfium2.PdfDocument(render_pdf(document))
+        data = render_layout(document) if isinstance(document, Layout) else render_pdf(document)
+        pdf = pypdfium2.PdfDocument(data)
         for index, page in enumerate(pdf, start=1):
             image = page.render(scale=scale).to_pil()
             path = out_dir / f"{name}-page-{index}.png"

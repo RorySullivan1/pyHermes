@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from contextlib import contextmanager
+from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -56,23 +57,52 @@ def render_pdf(document: Document, profile: PdfProfile = PRINT) -> bytes:
             exporter will not fetch.
         BackendError: On any other failure inside WeasyPrint.
     """
-    return render_layout(layout(document, profile), profile)
+    return render_layout(layout(document, profile))
 
 
-def render_layout(laid_out: Any, profile: PdfProfile = PRINT) -> bytes:
+@dataclass(frozen=True)
+class Layout:
     """
-    Write a document :func:`layout` already laid out under ``profile`` as PDF bytes.
+    A document laid out by the print engine under one profile, before any PDF is written.
 
-    For a caller that also asks the layout a question, such as
-    :func:`page_count`, so the engine lays the document out once. Pass the
-    profile the layout was made under; :func:`render_pdf` is this after
-    :func:`layout`, so the bytes are the same.
+    What :func:`layout` returns, so a caller that asks the layout a question
+    (:func:`page_count`, :func:`anchor_tops`, a fit check) and then writes it
+    lays the document out once. It carries the profile it was laid out under,
+    so :func:`render_layout` writes the bytes :func:`render_pdf` would with no
+    second argument to drift (#445), and the document, so a consumer handed
+    one can refuse a layout of something else.
+    """
+
+    #: The document that was laid out.
+    document: Document
+
+    #: The profile it was laid out under, and so the one it is written under.
+    profile: PdfProfile
+
+    #: WeasyPrint's own rendered document. Typed ``Any`` for :func:`_backend`'s reason.
+    rendered: Any
+
+    @property
+    def pages(self) -> list[Any]:
+        """The engine's sheets, each carrying ``anchors``: where every ``id`` landed."""
+        return list(self.rendered.pages)
+
+
+def render_layout(laid_out: Layout) -> bytes:
+    """
+    Write a :class:`Layout` as PDF bytes, under the profile it was laid out with.
+
+    :func:`render_pdf` is this after :func:`layout`, so the bytes are the same.
 
     Raises:
+        TypeError: If ``laid_out`` is not a :class:`Layout`.
         BackendError: On a failure inside WeasyPrint.
     """
+    if not isinstance(laid_out, Layout):
+        raise TypeError(f"render_layout takes a Layout, got {type(laid_out).__name__}")
+    profile = laid_out.profile
     with _own_errors():
-        return bytes(laid_out.write_pdf(finisher=_finisher(profile), **profile.options()))
+        return bytes(laid_out.rendered.write_pdf(finisher=_finisher(profile), **profile.options()))
 
 
 def _finisher(profile: PdfProfile) -> Any:
@@ -91,7 +121,7 @@ def _finisher(profile: PdfProfile) -> Any:
     return retag_layout_tables
 
 
-def page_count(document: Document | Any) -> int:
+def page_count(document: Document | Layout) -> int:
     """
     How many sheets ``document`` lays out to.
 
@@ -99,26 +129,31 @@ def page_count(document: Document | Any) -> int:
     makes a claim about a page break checkable. Shares
     :func:`render_pdf`'s resource policy exactly. A result of :func:`layout`
     is read as it is, with no second layout and no second warning.
+
+    Raises:
+        TypeError: If ``document`` is neither a document nor a :class:`Layout`.
     """
     return len(_laid_out(document).pages)
 
 
-def _laid_out(source: Document | Any) -> Any:
-    """``source`` laid out, or as it is when it already is a layout."""
-    return layout(source) if isinstance(source, Document) else source
+def _laid_out(source: Document | Layout) -> Layout:
+    """``source`` laid out, or as it is when it already is a :class:`Layout`; nothing else."""
+    if isinstance(source, Layout):
+        return source
+    if isinstance(source, Document):
+        return layout(source)
+    raise TypeError(f"expected a Document or a Layout, got {type(source).__name__}")
 
 
-def layout(document: Document, profile: PdfProfile = PRINT) -> Any:
+def layout(document: Document, profile: PdfProfile = PRINT) -> Layout:
     """
-    ``document`` laid out by the print engine, before any PDF is written.
+    ``document`` laid out by the print engine under ``profile``, as a :class:`Layout`.
 
-    WeasyPrint's own rendered document: its ``pages`` each carry ``anchors``,
-    the position of every element with an ``id``, which is how a check asks
-    where something landed. Typed ``Any`` for :func:`_backend`'s reason.
-    Shares :func:`render_pdf`'s resource policy exactly, and carries
-    ``profile`` so :func:`render_layout` writes what :func:`render_pdf` would.
-    The one place a document meets the print engine, and so the one place a
-    kept section that split anyway is warned about.
+    Its ``pages`` each carry ``anchors``, the position of every element with
+    an ``id``, which is how a check asks where something landed. Shares
+    :func:`render_pdf`'s resource policy exactly. The one place a document
+    meets the print engine, and so the one place a kept section that split
+    anyway is warned about.
     """
     weasyprint = _backend()
     # The document renders outside the guard: a builder error is the
@@ -126,12 +161,13 @@ def layout(document: Document, profile: PdfProfile = PRINT) -> Any:
     html = document.render()
     fetcher = build_fetcher(document.assets() + document.fonts())
     with _own_errors():
-        laid_out = weasyprint.HTML(string=html, url_fetcher=fetcher).render(**profile.options())
+        rendered = weasyprint.HTML(string=html, url_fetcher=fetcher).render(**profile.options())
+    laid_out = Layout(document, profile, rendered)
     _warn_tall_kept(laid_out, document.kept_sections())
     return laid_out
 
 
-def _warn_tall_kept(laid_out: Any, kept: dict[str, str]) -> None:
+def _warn_tall_kept(laid_out: Layout, kept: dict[str, str]) -> None:
     """
     Warn for each kept section the engine had to split anyway (#364).
 
@@ -152,7 +188,7 @@ def _warn_tall_kept(laid_out: Any, kept: dict[str, str]) -> None:
             )
 
 
-def anchor_tops(document: Document | Any) -> dict[str, float]:
+def anchor_tops(document: Document | Layout) -> dict[str, float]:
     """
     Where each ``id`` in ``document`` landed: the top of its box, in px from its sheet's top.
 
@@ -160,6 +196,9 @@ def anchor_tops(document: Document | Any) -> dict[str, float]:
     sheet, such as copy that ran off one, has no entry, which is how a fit
     check tells "past the line" from "off the sheet". A result of
     :func:`layout` is read as it is, as :func:`page_count` reads one.
+
+    Raises:
+        TypeError: If ``document`` is neither a document nor a :class:`Layout`.
     """
     landed: dict[str, float] = {}
     for page in _laid_out(document).pages:
@@ -170,9 +209,15 @@ def anchor_tops(document: Document | Any) -> dict[str, float]:
 
 def save_pdf(document: Document, output_path: str | Path, profile: PdfProfile = PRINT) -> Path:
     """Render under ``profile`` and write to disk, returning the resolved path."""
+    return save_layout(layout(document, profile), output_path)
+
+
+def save_layout(laid_out: Layout, output_path: str | Path) -> Path:
+    """Write a :class:`Layout` to disk under its own profile, returning the resolved path."""
+    data = render_layout(laid_out)
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_bytes(render_pdf(document, profile))
+    output_path.write_bytes(data)
     return output_path
 
 

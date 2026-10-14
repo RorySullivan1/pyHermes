@@ -20,11 +20,15 @@ import re
 from dataclasses import dataclass, field
 from enum import StrEnum
 from html.parser import HTMLParser
+from typing import TYPE_CHECKING
 
 from pyhermes.builder import Email
 from pyhermes.builder.document import Document
 from pyhermes.builder.exceptions import SizeError
 from pyhermes.config import get_config
+
+if TYPE_CHECKING:  # pragma: no cover - the exporter is imported only on use
+    from pyhermes.pdf import Layout
 
 __all__ = [
     "DEFERRED_RULES",
@@ -1014,9 +1018,12 @@ def lint_document(document: Document) -> list[Finding]:
     )
 
 
-def layout_findings(document: Document) -> list[Finding]:
+def layout_findings(document: Document, laid_out: Layout | None = None) -> list[Finding]:
     """
     The findings only the print engine can answer: today, a slide whose copy overflows (#297).
+
+    ``laid_out``, a :func:`~pyhermes.pdf.layout` of ``document`` the caller
+    already holds, is read rather than laying the deck out again (#446).
 
     Each overflowing slide is an error. Without the ``[pdf]`` extra it is one
     warning saying the deck was not measured, so a check never passes a
@@ -1030,7 +1037,7 @@ def layout_findings(document: Document) -> list[Finding]:
     if "slide-overflow" not in rules_for(document.medium.name) or not isinstance(document, Deck):
         return []
     try:
-        overflowing = overflowing_slides(document)
+        overflowing = overflowing_slides(document, laid_out)
     except BackendMissingError:
         return [
             Finding(

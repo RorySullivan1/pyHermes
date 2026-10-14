@@ -5,13 +5,15 @@ A check pass lays a document out once and warns once per kept section that
 split (#426); a render builds the size-failure hint only when the size check
 fails (#427); a message is serialised once per send (#428). Each test counts
 the work itself, by patching the call that does it. The memo of #428 lives
-on the message, so a dropped message takes its bytes with it (#443).
+on the message, so a dropped message takes its bytes with it (#443); a layout
+carries its profile (#445); and one preview run lays out once (#446).
 """
 
 from __future__ import annotations
 
 import copy
 import gc
+import importlib.util
 import inspect
 import warnings
 import weakref
@@ -38,6 +40,41 @@ from qa.fixtures import all_fixtures, all_paged_fixtures
 requires_pdf = pytest.mark.skipif(
     not available(), reason='no WeasyPrint; the PDF exporter is the optional "[pdf]" extra'
 )
+requires_raster = pytest.mark.skipif(
+    importlib.util.find_spec("pypdfium2") is None,
+    reason='no pypdfium2; rastering a PDF is the optional "[qa]" extra',
+)
+
+
+@pytest.fixture
+def engine_calls():
+    """Every time the print engine lays a document out, counted."""
+    import weasyprint
+
+    calls: list[int] = []
+    original = weasyprint.HTML.render
+
+    def counting(self, *args, **kwargs):
+        calls.append(1)
+        return original(self, *args, **kwargs)
+
+    with mock.patch.object(weasyprint.HTML, "render", counting):
+        yield calls
+
+
+@pytest.fixture
+def pinned_clock():
+    """
+    fontTools' clock, held still, so two renders compare byte for byte.
+
+    Without HarfBuzz-Subset WeasyPrint subsets fonts through fontTools, which
+    stamps the time into each font's ``head`` table (``digital-pdf.md``).
+    """
+    from fontTools.ttLib.tables import _h_e_a_d
+
+    with mock.patch.object(_h_e_a_d, "timestampNow", lambda: 0):
+        yield
+
 
 ENVELOPE = {"sender": "research@example.com", "to": "reader@example.com"}
 LOREM = "The long end did the work this quarter, and the term premium explains the move. " * 3
@@ -57,20 +94,6 @@ def _tall_kept() -> PagedDocument:
 @requires_pdf
 class TestADocumentIsLaidOutOnce:
     """#426: ``layout()`` is the one place a document meets the engine."""
-
-    @pytest.fixture
-    def engine_calls(self):
-        import weasyprint
-
-        calls: list[int] = []
-        original = weasyprint.HTML.render
-
-        def counting(self, *args, **kwargs):
-            calls.append(1)
-            return original(self, *args, **kwargs)
-
-        with mock.patch.object(weasyprint.HTML, "render", counting):
-            yield calls
 
     def test_render_pdf_lays_out_once_and_warns_once(self, engine_calls):
         from pyhermes.pdf import render_pdf
@@ -104,6 +127,85 @@ class TestADocumentIsLaidOutOnce:
         from pyhermes.pdf import exporter
 
         assert "DEFAULT_OPTIONS" not in inspect.getsource(exporter)
+
+
+@requires_pdf
+class TestALayoutIsWrittenUnderItsOwnProfile:
+    """#445: a layout carries the profile it was laid out under, and nothing else is one."""
+
+    def test_a_tagged_layout_is_written_tagged_with_no_profile_repeated(self, pinned_clock):
+        from pyhermes.pdf import PRINT, TAGGED, layout, render_layout, render_pdf
+
+        document = all_paged_fixtures()["a4_portrait"]()
+        laid_out = layout(document, TAGGED)
+        assert laid_out.profile is TAGGED and laid_out.document is document
+        written = render_layout(laid_out)
+        assert written == render_pdf(document, TAGGED)
+        assert written != render_pdf(document, PRINT)
+
+    def test_save_pdf_writes_through_the_layout(self, tmp_path, pinned_clock):
+        from pyhermes.pdf import SCREEN, layout, render_layout, save_layout, save_pdf
+
+        document = all_paged_fixtures()["a4_portrait"]()
+        saved = save_pdf(document, tmp_path / "deep" / "a.pdf", SCREEN)
+        assert saved.read_bytes() == render_layout(layout(document, SCREEN))
+        assert save_layout(layout(document, SCREEN), tmp_path / "b.pdf").read_bytes() == (
+            saved.read_bytes()
+        )
+
+    def test_render_layout_takes_no_profile_to_drift(self):
+        from pyhermes.pdf import render_layout
+
+        assert list(inspect.signature(render_layout).parameters) == ["laid_out"]
+
+    @pytest.mark.parametrize("name", ["page_count", "anchor_tops", "render_layout"])
+    def test_anything_else_is_refused_by_name(self, name):
+        import pyhermes.pdf
+
+        with pytest.raises(TypeError, match="got str"):
+            getattr(pyhermes.pdf, name)("not a document")
+
+    def test_a_fit_check_refuses_a_layout_of_another_document(self):
+        from pyhermes.brochure import overflowing_panels
+        from pyhermes.deck import overflowing_slides
+        from pyhermes.pdf import layout
+        from qa.fixtures import all_brochure_fixtures, all_deck_fixtures
+
+        deck = all_deck_fixtures()["pitch_16_9"]()
+        brochure = all_brochure_fixtures()["tri_fold_letter"]()
+        other = layout(all_paged_fixtures()["a4_portrait"]())
+        with pytest.raises(ValueError, match="another document"):
+            overflowing_slides(deck, other)
+        with pytest.raises(ValueError, match="another document"):
+            overflowing_panels(brochure, other)
+        assert overflowing_panels(brochure, layout(brochure)) == overflowing_panels(brochure)
+
+
+@requires_pdf
+class TestAPreviewRunLaysOutOnce:
+    """#446: one ``python -m qa.preview`` run meets the print engine once, whatever the flags."""
+
+    @requires_raster
+    def test_a_paged_document_linted_and_photographed(self, engine_calls, tmp_path):
+        from qa.preview import main
+
+        main(["a4_portrait", "--lint", "--screenshot", "--out", str(tmp_path)])
+        assert len(engine_calls) == 1
+        assert (tmp_path / "a4_portrait.pdf").read_bytes().startswith(b"%PDF")
+        assert (tmp_path / "screenshots" / "a4_portrait-page-1.png").exists()
+
+    def test_a_deck_linted(self, engine_calls, tmp_path):
+        from qa.preview import main
+
+        main(["pitch_16_9", "--lint", "--out", str(tmp_path)])
+        assert len(engine_calls) == 1
+
+    def test_preview_writes_its_pdf_through_the_exporter(self):
+        from qa import preview
+
+        source = inspect.getsource(preview)
+        assert "save_layout(" in source
+        assert "write_bytes" not in source and "render_layout" not in source
 
 
 class TestTheHintIsBuiltOnlyOnFailure:
