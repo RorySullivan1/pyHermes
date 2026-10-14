@@ -821,7 +821,7 @@ class DataTable(CellShare, Exhibit, Component):
             if not column.bar:
                 ends.append(0)
             else:
-                ends.append(column.scale.high if column.scale else max(figures, default=0))
+                ends.append(float(column.scale.high if column.scale else max(figures, default=0)))
         return ends
 
     @staticmethod
@@ -843,7 +843,7 @@ class DataTable(CellShare, Exhibit, Component):
             position, toward = column.scale.position(cell.value)
             heat = {"position": position, "toward": str(toward)}
         if row.kind == RowKind.DATA and column.bar:
-            fraction = min(1, max(0, cell.value / end)) if end > 0 else 0
+            fraction = min(1, max(0, float(cell.value) / end)) if end > 0 else 0
             bar = round(fraction * 100)
         arrow = ""
         if column.arrow and row.kind != RowKind.SUBHEAD and cell.value is not None:

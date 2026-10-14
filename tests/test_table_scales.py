@@ -8,6 +8,7 @@ take their colour from the live theme, and neither changes the text part.
 from __future__ import annotations
 
 import re
+from decimal import Decimal
 
 import pytest
 
@@ -190,3 +191,38 @@ class TestTextOnATintStaysLegible:
         rows = [TableRow(["High", Cell(value=0.10, color="#112233")])]
         body = _table(rows=rows).render(TemplateEngine())
         assert "color: #112233" in body
+
+
+class TestADecimalFigureIsShadedAndBarredLikeAFloat:
+    """#455: the position arithmetic is float; the printed text is the Decimal's own."""
+
+    FIGURES = ["0.10", "0.0125", "0.05", "-0.02", "0.0"]
+
+    def _rows(self, convert):
+        return [TableRow([f"r{i}", convert(f)]) for i, f in enumerate(self.FIGURES)]
+
+    @pytest.mark.parametrize(
+        "scale", [SCALE, HeatScale(-0.05, 0.10, mid=0.0)], ids=["plain", "mid"]
+    )
+    def test_a_heat_scale_shades_decimals_as_it_shades_floats(self, scale):
+        as_float = _email(_table(scale, rows=self._rows(float)))
+        as_decimal = _email(_table(scale, rows=self._rows(Decimal)))
+        assert _backgrounds(as_decimal) == _backgrounds(as_float)
+        assert len(set(_backgrounds(as_decimal))) > 2
+
+    @pytest.mark.parametrize("scale", [None, SCALE], ids=["largest", "scale-top"])
+    def test_a_bar_draws_decimals_as_it_draws_floats(self, scale):
+        as_float = _email(_table(scale, bar=True, rows=self._rows(float)))
+        as_decimal = _email(_table(scale, bar=True, rows=self._rows(Decimal)))
+        assert as_decimal == as_float
+
+    def test_the_issue_case_renders_and_prints_the_decimal_exactly(self):
+        table = DataTable(
+            ["F", Column("Ret", format=pct, scale=HeatScale(-0.05, 0.05), bar=True)],
+            [TableRow(["a", Decimal("0.0125")])],
+        )
+        assert "1.25%" in _email(table)
+
+    def test_a_mixed_column_of_floats_and_decimals_renders(self):
+        rows = [TableRow(["a", Decimal("0.0125")]), TableRow(["b", 0.03]), TableRow(["c", 2])]
+        assert _email(_table(bar=True, rows=rows))

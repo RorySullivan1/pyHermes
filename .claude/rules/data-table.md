@@ -330,6 +330,10 @@ the range, and `Column(bar=True)` draws each figure as a bar under it. Both read
   a position pins one byte-exact colour: halfway from white to classic positive is `#A5BEAC`.
   `slate_theme` carries a scaled column, and its golden moved three background lines, one per
   cell, to slate's own tokens.
+- **A `Decimal` figure is shaded and barred as a float (#455).** `HeatScale.position` and the
+  bar convert the figure to `float` for the position arithmetic only; `Cell.text` is already
+  written from the `Decimal`, so the printed digits never see a float. Left alone, it was a
+  `TypeError` at render, since `Decimal` and `float` do not subtract.
 - **Text on a tint takes the more legible of two theme tokens.** The first raster of #228's
   fixture showed `-9.0%` in negative red on a negative-red tint, which is illegible. A scaled
   cell's text is now `text.primary` or `text.on_accent`, whichever has the higher WCAG

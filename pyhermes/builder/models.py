@@ -1028,6 +1028,7 @@ class HeatScale:
 
     def position(self, value: Any) -> tuple[float, Tone]:
         """Where ``value`` sits, in ``[0, 1]``, and the token it runs toward."""
+        value = float(value)  # a Decimal figure meets float bounds here, never in the text (#455)
         if self.mid is not None and value < self.mid:
             return _clamp((self.mid - value) / (self.mid - self.low)), Tone.NEGATIVE
         start = self.low if self.mid is None else self.mid
