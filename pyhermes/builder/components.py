@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import warnings
 from collections.abc import Mapping, Sequence
+from dataclasses import replace
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from pyhermes.config import get_config
@@ -690,8 +691,11 @@ class DataTable(CellShare, Exhibit, Component):
         if not rows:
             raise ValidationError("DataTable requires at least one row.")
         columns = [coerce_column(h, f"data_table.headers[{i}]") for i, h in enumerate(headers)]
-        for i, row in enumerate(rows):
+        for row in rows:
             row.validate()
+        # The table pads and formats its own copy, so the caller's rows are not its to change.
+        rows = [replace(row, cells=[replace(cell) for cell in row.cells]) for row in rows]
+        for i, row in enumerate(rows):
             # A subhead labels the rows beneath it, so one cell is the honest
             # way to write one — it is padded to the table's width here rather
             # than making the caller spell out the empties. Anything between

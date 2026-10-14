@@ -269,6 +269,10 @@ that already existed.
 - **Tone resolves cell, then column.** A cell's own `tone` wins, then the column's (`auto`
   reads the sign through `tone_of` with the column's format, so a `0.0%` stays neutral), then
   none. A cell's `color` and `background` survive formatting.
+- **A table formats its own copy (#452).** `DataTable.__init__` copies each row and cell
+  (`dataclasses.replace`) before it pads a subhead or writes a figure, so the caller's rows are
+  never changed. One row list in a `pct` table and a `bps` table shows each its own format, and a
+  one-cell subhead serves tables of any width.
 - **A format makes a column numeric** unless `kind` says otherwise, and `resolved()` keeps the
   format and tone (`dataclasses.replace`), so nothing downstream loses them.
 - **The field-completeness test had a hole.** It compared each field with its default, and
