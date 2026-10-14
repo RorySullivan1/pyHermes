@@ -25,6 +25,13 @@ SERVED_SCHEME = "cid:"
 INLINE_SCHEME = "data:"
 
 
+#: The ``base_url`` every document is built with. Its scheme is unknown to
+#: ``urljoin``, so a relative reference is handed to the fetcher unchanged and
+#: refused by its own name. With no base, WeasyPrint drops a relative ``src``
+#: or ``url()`` before the fetcher sees it and ``fail_on_errors`` never fires (#463).
+RELATIVE_BASE_URL = "pyhermes-relative:"
+
+
 def build_fetcher(assets: list[ImageAsset]) -> Any:
     """
     A WeasyPrint URL fetcher bound to ``assets``.

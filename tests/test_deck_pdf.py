@@ -12,7 +12,8 @@ import textwrap
 
 import pytest
 
-from pyhermes.builder import DataTable, FullWidth, TextBlock
+from pyhermes.builder import DataTable, FullWidth, ImageBlock, TextBlock
+from pyhermes.builder.images import EmailImage
 from pyhermes.builder.models import TableRow
 from pyhermes.deck import (
     SLIDE_4_3,
@@ -22,7 +23,8 @@ from pyhermes.deck import (
     EmptyTitleSlide,
     overflowing_slides,
 )
-from pyhermes.pdf import available, page_count, render_pdf
+from pyhermes.pdf import UnreachableResourceError, available, page_count, render_pdf
+from pyhermes.pdf.exporter import render_handout
 from qa.fixtures import pitch_16_9
 
 pytestmark = pytest.mark.skipif(
@@ -248,3 +250,19 @@ class TestTheCheckExitsOnOverflow:
             encoding="utf-8",
         )
         assert main([f"{draft}:build", "--out", str(tmp_path / "out")]) == EXIT_OK
+
+
+class TestARelativeImageIsRefused:
+    """A relative ``src`` is refused by name, in a slide and in the handout (#463)."""
+
+    def _deck(self) -> Deck:
+        picture = ImageBlock(EmailImage.hosted("charts/q3.png", alt="Q3", width=40))
+        return _bare().add_slide([FullWidth(content=picture)], "Chart")
+
+    def test_the_deck(self):
+        with pytest.raises(UnreachableResourceError, match=r"charts/q3\.png"):
+            render_pdf(self._deck())
+
+    def test_the_handout(self):
+        with pytest.raises(UnreachableResourceError, match=r"charts/q3\.png"):
+            render_handout(self._deck())
