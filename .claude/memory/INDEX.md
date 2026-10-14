@@ -9,8 +9,8 @@
   #329 (PR #378); #335 (PR #380); #340 (PR #382); #384 (PRs #406, #411, #412); #385 (PR #413); the paper band seam (PR #408). #219 DOCX and #300
   PPTX were closed as not planned (2026-10-01, `media.md`). #288 is the owner's Outlook-desktop check.
 - The prose budget is live; the baseline is 43 and may only shrink.
-- **Open from the 2026-10-10 review**: epic #419 (render path once, #426–#428). #418 (delivery contract,
-  #420–#425) merged in PR #438 and closed (2026-10-13); bugs #429–#435 merged in PR #437. sessions/2026-10-10-1725-codebase-review-issues.md
+- **From the 2026-10-10 review**: #419 (render path once, #426–#428) is built in one PR (2026-10-14). #418
+  (#420–#425) merged in PR #438 and closed (2026-10-13); bugs #429–#435 merged in PR #437. sessions/2026-10-10-1725-codebase-review-issues.md
 
 ## Decisions        (append-only; supersede, never delete)
 - Older entries, and epic #157's, are in sessions/ARCHIVE-2026.md.
@@ -29,6 +29,9 @@
 
 - [2026-10-13] **Every message is measured on the wire, inline images included; a negative or NaN `Retry-After`
   is ignored, not clamped; a TLS or bad-URL failure is permanent by name (`PERMANENT_ERROR_NAMES`)** — `delivery.md` (#418)
+
+- [2026-10-14] **`layout()` is the one place a document meets the print engine; a constraint's hint is a
+  `LazyHint`; `to_wire_bytes` keeps one message's bytes until its shape changes** — `media.md`, `delivery.md` (#419)
 
 ## Threads          (open items; remove when closed)
 - **#394's ruling (justify on paper only) was taken under a goal**; the owner may widen it.
@@ -63,10 +66,6 @@
 
 ## Log              (append-only pointers)
 - Older entries, and epic #157's, are in sessions/ARCHIVE-2026.md.
-- [2026-10-05] windows — the 7 reported Windows failures were already fixed by #372; its own drive-path
-  test still failed (a `WindowsPath` prints backslashes), fixed — sessions/2026-10-05-1657-windows-suite-recheck.md
-- [2026-10-05] paper-band-seam — 1px seam at a band edge on paper, fixed in `columns.html`;
-  paint order, two forms — sessions/2026-10-05-1903-paper-band-seam.md
 - [2026-10-06] memory — the index trimmed to budget: five 2026-10-05 log pointers archived, #387 and the
   seam thread closed.
 - [2026-10-06] print-typography — epic #385 built in one PR — sessions/2026-10-06-print-typography.md
@@ -77,3 +76,4 @@
 - [2026-10-10] standalone-bugs — #429–#435 fixed in one PR: a scheme never follows / ? #, one cid one payload,
   `kept_sections` scoped, one `metadata()`, `hang()` never splits a word, unique frame columns, the copyright from its parts.
 - [2026-10-13] delivery-contract — epic #418 merged in PR #438, all six children closed — sessions/2026-10-13-delivery-contract.md
+- [2026-10-14] render-once — epic #419 built in one PR — sessions/2026-10-14-render-once.md

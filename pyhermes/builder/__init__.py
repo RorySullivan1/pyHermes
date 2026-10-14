@@ -86,7 +86,7 @@ from .images import (
 )
 
 # Medium
-from .medium import DEFAULT_MEDIUM, Constraint, Medium
+from .medium import DEFAULT_MEDIUM, Constraint, LazyHint, Medium
 
 # Models
 from .models import (
@@ -168,6 +168,7 @@ __all__ = [
     # Medium
     "Medium",
     "Constraint",
+    "LazyHint",
     "DEFAULT_MEDIUM",
     # Theming
     "Theme",

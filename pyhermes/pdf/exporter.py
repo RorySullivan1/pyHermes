@@ -56,20 +56,23 @@ def render_pdf(document: Document, profile: PdfProfile = PRINT) -> bytes:
             exporter will not fetch.
         BackendError: On any other failure inside WeasyPrint.
     """
-    weasyprint = _backend()
-    html = document.render()
-    fetcher = build_fetcher(document.assets() + document.fonts())
-    kept = document.kept_sections()
+    return render_layout(layout(document, profile), profile)
+
+
+def render_layout(laid_out: Any, profile: PdfProfile = PRINT) -> bytes:
+    """
+    Write a document :func:`layout` already laid out under ``profile`` as PDF bytes.
+
+    For a caller that also asks the layout a question, such as
+    :func:`page_count`, so the engine lays the document out once. Pass the
+    profile the layout was made under; :func:`render_pdf` is this after
+    :func:`layout`, so the bytes are the same.
+
+    Raises:
+        BackendError: On a failure inside WeasyPrint.
+    """
     with _own_errors():
-        source = weasyprint.HTML(string=html, url_fetcher=fetcher)
-        if not kept:
-            return bytes(source.write_pdf(finisher=_finisher(profile), **profile.options()))
-        # HTML.write_pdf's own two steps, so the layout can be read in between.
-        options = {**weasyprint.DEFAULT_OPTIONS, **profile.options()}
-        laid_out = source.render(**options)
-        _warn_tall_kept(laid_out, kept)
-        known = {key: options[key] for key in weasyprint.DEFAULT_OPTIONS}
-        return bytes(laid_out.write_pdf(finisher=_finisher(profile), **known))
+        return bytes(laid_out.write_pdf(finisher=_finisher(profile), **profile.options()))
 
 
 def _finisher(profile: PdfProfile) -> Any:
@@ -88,15 +91,21 @@ def _finisher(profile: PdfProfile) -> Any:
     return retag_layout_tables
 
 
-def page_count(document: Document) -> int:
+def page_count(document: Document | Any) -> int:
     """
     How many sheets ``document`` lays out to.
 
     Laid out rather than guessed: it is the only way to know, and it is what
     makes a claim about a page break checkable. Shares
-    :func:`render_pdf`'s resource policy exactly.
+    :func:`render_pdf`'s resource policy exactly. A result of :func:`layout`
+    is read as it is, with no second layout and no second warning.
     """
-    return len(layout(document).pages)
+    return len(_laid_out(document).pages)
+
+
+def _laid_out(source: Document | Any) -> Any:
+    """``source`` laid out, or as it is when it already is a layout."""
+    return layout(source) if isinstance(source, Document) else source
 
 
 def layout(document: Document, profile: PdfProfile = PRINT) -> Any:
@@ -107,7 +116,9 @@ def layout(document: Document, profile: PdfProfile = PRINT) -> Any:
     the position of every element with an ``id``, which is how a check asks
     where something landed. Typed ``Any`` for :func:`_backend`'s reason.
     Shares :func:`render_pdf`'s resource policy exactly, and carries
-    ``profile`` so its own ``write_pdf()`` writes what :func:`render_pdf` would.
+    ``profile`` so :func:`render_layout` writes what :func:`render_pdf` would.
+    The one place a document meets the print engine, and so the one place a
+    kept section that split anyway is warned about.
     """
     weasyprint = _backend()
     # The document renders outside the guard: a builder error is the
@@ -141,16 +152,17 @@ def _warn_tall_kept(laid_out: Any, kept: dict[str, str]) -> None:
             )
 
 
-def anchor_tops(document: Document) -> dict[str, float]:
+def anchor_tops(document: Document | Any) -> dict[str, float]:
     """
     Where each ``id`` in ``document`` landed: the top of its box, in px from its sheet's top.
 
     The first sheet an id lands on wins. An element the engine placed on no
     sheet, such as copy that ran off one, has no entry, which is how a fit
-    check tells "past the line" from "off the sheet".
+    check tells "past the line" from "off the sheet". A result of
+    :func:`layout` is read as it is, as :func:`page_count` reads one.
     """
     landed: dict[str, float] = {}
-    for page in layout(document).pages:
+    for page in _laid_out(document).pages:
         for anchor, position in page.anchors.items():
             landed.setdefault(anchor, position[1])
     return landed

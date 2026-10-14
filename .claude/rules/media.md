@@ -439,9 +439,16 @@ engine moves it and splits it anyway, stranding the space it left (this file's
 section a row `id`, `kept-section-N`; `layout()` and `render_pdf()` read which sheets carry it
 and raise a `PrintQualityWarning` naming the section when there is more than one. Probed under
 WeasyPrint 70 first: a kept row moves whole, and a split row's `id` appears in both sheets'
-anchors. `render_pdf` takes the two-step path (`render`, then `write_pdf`, which is what
-`HTML.write_pdf` does inside) only for a document with a kept section, so every other PDF
-keeps its code path.
+anchors.
+
+**`layout()` is the one place a document meets the print engine (#426)**, and so the one place
+that warning is raised. `render_pdf` is `layout()` then `render_layout()`, which is
+`HTML.write_pdf`'s own two steps: WeasyPrint 70's `HTML.render()` and `Document.write_pdf()`
+each merge `DEFAULT_OPTIONS` themselves (read in the installed source), so the hand-merged
+options and the kept-only branch went, and no PDF byte moved. `page_count` and `anchor_tops`
+take a document or a layout already held, read with no second layout and no second warning;
+`preview` lays a paged document out once for its file and its count. A layout is never cached
+on the `Document`, which can change between two calls.
 
 ## Shown in chosen media only (#365) — route B
 

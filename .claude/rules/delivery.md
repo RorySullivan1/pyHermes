@@ -171,6 +171,17 @@ the contract documents, each reproduced by a probe; epic #418 closed them.
   quoted display name, and each address goes to Outlook as `"name" <address>` or bare.
 - **The wire budget measures every message** (#424); `config.md` has it.
 
+## A message is serialised once (#428)
+
+`to_wire_bytes()` keeps each message's bytes, weakly keyed, with the shape they were made from:
+every part, its raw headers, its payload object, preamble and epilogue, and the policy, read
+after serialising because the generator stamps each boundary onto its `Content-Type`.
+`build_message` makes them for the budget, and an adapter and `save_eml` read the same bytes
+back, so a 15 MB attachment is base64-encoded once a send, not twice. A message changed after
+that, a header replaced or a part added, no longer matches its shape and is serialised again.
+Comparing the shape costs a walk of the parts and no encoding: an unchanged payload is the
+same object. `tests/test_render_once.py` counts `as_bytes` calls.
+
 ## Architecture — `pyhermes/gmail`
 
 Delivery assembles bytes; an adapter transmits them. `pyhermes/gmail` owns Gmail's **wire

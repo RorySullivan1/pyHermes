@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import re
 import warnings
+import weakref
 from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from email.message import EmailMessage
@@ -525,10 +526,50 @@ def to_wire_bytes(message: EmailMessage) -> bytes:
     byte-identical to what an adapter transmits. That correspondence is what
     makes the dry run worth trusting.
 
+    The bytes are made once per message (#428): ``build_message`` measures
+    them for the budget, and an adapter or :func:`save_eml` reads the same
+    bytes back. A change to the message after that, to a header, a payload
+    or a part, makes them again.
+
     Args:
         message: An assembled message from :func:`build_message`.
 
     Returns:
         The serialised message, CRLF throughout.
     """
-    return message.as_bytes(policy=message.policy.clone(linesep="\r\n"))
+    made = _WIRE_BYTES.get(message)
+    if made is not None and made[0] == _shape(message):
+        return made[1]
+    data = message.as_bytes(policy=message.policy.clone(linesep="\r\n"))
+    # The shape is read after serialising: the generator stamps each
+    # multipart's boundary onto its Content-Type the first time it runs.
+    _WIRE_BYTES[message] = (_shape(message), data)
+    return data
+
+
+#: Each message's wire bytes with the shape they were made from, held only
+#: as long as the message lives.
+_WIRE_BYTES: weakref.WeakKeyDictionary[EmailMessage, tuple[tuple[object, ...], bytes]] = (
+    weakref.WeakKeyDictionary()
+)
+
+
+def _shape(message: EmailMessage) -> tuple[object, ...]:
+    """
+    Everything a serialisation reads, compared by identity or value without encoding it.
+
+    Each part with its raw headers, its payload object, preamble and
+    epilogue, and the message's policy. A message whose shape is unchanged
+    serialises to the same bytes.
+    """
+    parts = tuple(
+        (
+            part,
+            tuple(part.raw_items()),
+            None if part.is_multipart() else part.get_payload(),
+            part.preamble,
+            part.epilogue,
+        )
+        for part in message.walk()
+    )
+    return (message.policy, message.get_unixfrom(), parts)
