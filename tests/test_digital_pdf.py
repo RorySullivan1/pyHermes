@@ -26,6 +26,7 @@ from pyhermes.pdf import (
     PdfProfile,
     available,
     layout,
+    render_layout,
     render_pdf,
     save_pdf,
 )
@@ -260,7 +261,7 @@ class TestAProfileIsDeterministic:
         assert save_pdf(a4_portrait, tmp_path / "a.pdf").read_bytes() == a4_portrait_pdf
 
     def test_layout_carries_the_profile_to_its_own_write(self, a4_portrait):
-        assert layout(a4_portrait, SCREEN).write_pdf() == render_pdf(a4_portrait, SCREEN)
+        assert render_layout(layout(a4_portrait, SCREEN)) == render_pdf(a4_portrait, SCREEN)
 
 
 class TestTheProfileTouchesOnlyTheImages:

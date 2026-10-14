@@ -446,9 +446,27 @@ that warning is raised. `render_pdf` is `layout()` then `render_layout()`, which
 `HTML.write_pdf`'s own two steps: WeasyPrint 70's `HTML.render()` and `Document.write_pdf()`
 each merge `DEFAULT_OPTIONS` themselves (read in the installed source), so the hand-merged
 options and the kept-only branch went, and no PDF byte moved. `page_count` and `anchor_tops`
-take a document or a layout already held, read with no second layout and no second warning;
-`preview` lays a paged document out once for its file and its count. A layout is never cached
-on the `Document`, which can change between two calls.
+take a document or a layout already held, read with no second layout and no second warning.
+A layout is never cached on the `Document`, which can change between two calls.
+
+**A layout is a `Layout`, and it carries its profile (#445).** `layout(document, profile)`
+returns `Layout(document, profile, rendered)`: WeasyPrint's rendered document, the profile it
+was laid out under and the document itself. `render_layout(laid_out)` and `save_layout(laid_out,
+path)` write it under that profile and take no second one, so a `TAGGED` layout is written
+tagged, byte for byte `render_pdf(document, TAGGED)`. When #426 took the profile as a separate
+argument, a `TAGGED` layout written without repeating it got `PRINT`'s options and no retagging
+finisher. The result was neither PDF (37,275 bytes against the tagged 45,145), and nothing
+said so. `save_pdf` is `save_layout` after `layout`, one write path.
+
+- **Anything else is refused by name.** `page_count`, `anchor_tops` and `render_layout` were
+  typed `Document | Any` and failed on a string with `AttributeError: ... pages`, outside
+  `PdfError`. Each takes exactly a `Document` or a `Layout` now, and raises `TypeError` naming
+  what it got, a programming error rather than a refused document.
+- **A consumer handed a layout checks it is its own.** `overflowing_slides(deck, laid_out)`,
+  `overflowing_panels(brochure, laid_out)` and `layout_findings(document, laid_out)` read a held
+  layout instead of laying out again (#446). The two fit checks raise `ValueError` for a layout
+  whose `document` is not the one they were asked about, which is what the `document` field is
+  for. `capture_pages` takes a `Layout` in place of a document and writes it as laid out.
 
 ## Shown in chosen media only (#365) — route B
 

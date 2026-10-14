@@ -20,6 +20,7 @@ from .exceptions import (
     UnreachableResourceError,
 )
 from .exporter import (
+    Layout,
     anchor_tops,
     available,
     layout,
@@ -28,6 +29,7 @@ from .exporter import (
     render_layout,
     render_pdf,
     save_handout,
+    save_layout,
     save_pdf,
 )
 from .profile import PDF_VARIANTS, PRINT, SCREEN, TAGGED, PdfProfile
@@ -38,6 +40,7 @@ __all__ = [
     "anchor_tops",
     "available",
     "layout",
+    "Layout",
     "PdfError",
     "PDF_VARIANTS",
     "PdfProfile",
@@ -53,5 +56,6 @@ __all__ = [
     "render_layout",
     "render_pdf",
     "save_handout",
+    "save_layout",
     "save_pdf",
 ]

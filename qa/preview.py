@@ -188,11 +188,23 @@ def main(argv: list[str] | None = None) -> int:
 
     exit_code = EXIT_OK
 
+    # One layout per run, handed to the lint, the PDF and the screenshots, so a
+    # paged document meets the print engine once and warns once (#426, #446).
+    laid_out = None
+    layout_error: PdfError | None = None
+    if email.medium.paged:
+        try:
+            from pyhermes.pdf import layout
+
+            laid_out = layout(email)
+        except PdfError as exc:
+            layout_error = exc
+
     if args.lint:
         # Judged by its own medium's rules since #165: an email answers to
         # the ten about mail clients, a paged document to the six about a page.
         findings = lint_html(html, email.medium.name, email.rendered_sections())
-        findings += layout_findings(email)
+        findings += layout_findings(email, laid_out)
         print(format_findings(findings))
         if any(finding.severity is Severity.ERROR for finding in findings):
             exit_code = EXIT_LINT_ERRORS
@@ -203,22 +215,22 @@ def main(argv: list[str] | None = None) -> int:
         # where it writes the HTML -- and says why it could not, rather than
         # failing, because the backend is an optional extra like the browser.
         try:
-            from pyhermes.pdf import layout, page_count, render_layout
+            if laid_out is None:
+                raise layout_error or PdfError("the document was not laid out")
+            from pyhermes.pdf import page_count, save_layout
 
-            # One layout for the file and its count, so a warning is said once (#426).
-            laid_out = layout(email)
-            pdf_destination = args.out / f"{name}.pdf"
-            pdf_destination.parent.mkdir(parents=True, exist_ok=True)
-            pdf_destination.write_bytes(render_layout(laid_out))
+            pdf_destination = save_layout(laid_out, args.out / f"{name}.pdf")
             size_kb = pdf_destination.stat().st_size / 1024
             print(f"{pdf_destination}  ({size_kb:.1f} KB, {page_count(laid_out)} page(s))")
         except PdfError as exc:
+            pdf_destination = None
             print(f"pdf skipped: {exc}", file=sys.stderr)
 
     if args.screenshot:
         try:
             if email.medium.paged:
-                shots, environment = capture_pages({name: email}, args.out / "screenshots")
+                held = {name: laid_out or email}
+                shots, environment = capture_pages(held, args.out / "screenshots")
                 print(f"pdfium {environment['renderer']}")
             else:
                 shots, environment = capture_emails({name: email}, args.out / "screenshots")
