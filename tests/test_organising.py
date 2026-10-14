@@ -110,6 +110,32 @@ class TestAFactList:
         assert sum(flowed, []) == [str(n) for n in range(7)]
         assert len(flowed) == columns and flowed[0] == [str(n) for n in range(len(flowed[0]))]
 
+    def test_four_facts_in_three_columns_flow_two_one_one(self):
+        # #449: ceil(4 / 3) = 2 filled two columns and left the third of the row empty.
+        listed = FactList({"A": "1", "B": "2", "C": "3", "D": "4"}, columns=3)
+        assert [[fact.label for fact in column] for column in listed.flowed()] == [
+            ["A", "B"],
+            ["C"],
+            ["D"],
+        ]
+
+    @pytest.mark.parametrize(
+        ("count", "columns"),
+        [(count, columns) for count in range(1, 10) for columns in (1, 2, 3) if columns <= count],
+    )
+    def test_every_allowed_column_count_renders_that_many_columns(self, count, columns):
+        labels = [f"fact{n}" for n in range(count)]
+        listed = FactList({label: "v" for label in labels}, columns=columns)
+        flowed = [[fact.label for fact in column] for column in listed.flowed()]
+        sizes = [len(column) for column in flowed]
+        assert len(flowed) == columns and min(sizes) >= 1
+        assert sum(flowed, []) == labels
+        assert sizes == sorted(sizes, reverse=True) and max(sizes) - min(sizes) <= 1
+        html = listed.render(TemplateEngine().bound())
+        assert len(re.findall(r'<td class="stack-column" width="[\d.]+%"', html)) == columns
+        assert all(f">{label}</td>" in html for label in labels)
+        assert listed.text().count("fact") == count
+
     @pytest.mark.parametrize(
         ("facts", "kwargs", "message"),
         [

@@ -1252,7 +1252,8 @@ projects to text that keeps its shape. They live in `pyhermes/builder/organising
   `font.numeric`, bold, set right, when it is a figure (written by `value_format`) or a `Cell`,
   whose `tone` it keeps. A `Cell` carrying a colour, a background or a badge is refused: a fact
   takes a tone. A hairline under each fact. With two or three columns the facts flow down, then
-  across, the earlier columns the longer; each column is a `stack-column` cell and the gutter an
+  across, the remainder going to the earlier columns (four facts in three are 2, 1, 1), so
+  a list renders the columns asked for (#449); each column is a `stack-column` cell and the gutter an
   empty one `gutter` wide, so it stacks to nothing and the `@media` block did not move. It
   reads `gutter`, so it declares it, and `pad_x` only through the frame fallback outside a cell
   (`test_spacing.FALLBACK_READS`, `Columns`' reason). No anchors: that is `Glossary`'s job.
