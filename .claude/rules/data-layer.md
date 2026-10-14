@@ -38,6 +38,15 @@ The tone's own argument lives in `data-table.md`, beside the colour exception it
   `round()` gives `0.12` (banker's rounding) and rounds `2.675` to `2.67` (the binary float is
   `2.67499…`). Going through `repr` makes `0.0142` the decimal `0.0142` rather than the
   float's exact expansion. Swapping in `ROUND_HALF_EVEN` fails six named cases.
+- **Arithmetic runs in a context of its own (#448).** `quantize` and `abs` read the thread's
+  ambient `decimal` context, so a host at `prec=4, ROUND_DOWN` printed `12.34%` for
+  `pct(0.123456)`, and any figure wider than 28 digits (`number(1e26, 2)`, `compact(1e40)`)
+  raised `InvalidOperation`. `_context(value, dp)` builds a `Context` per figure: half up,
+  `prec` the figure's digits plus `dp` plus a margin, the widest exponent range, every trap and
+  flag named so a mutated `DefaultContext` cannot leak in. Digits are then read off the
+  `Decimal` tuple and grouped by hand, because `format()` and `int()` have a context and a
+  4,300-digit limit of their own. The same refusal as `locale`: output is a function of the
+  arguments only.
 - **ASCII output, minus sign included.** This is #148's charset reason: a non-ASCII character
   in a plain-text field is a mojibake risk. A typographic minus would be a paged-only option,
   and nothing needs it yet.

@@ -5,7 +5,8 @@ Stdlib only, importing nothing from the builder, and an AST test holds that.
 Rounding is ``Decimal`` half up, so ``0.125`` is ``0.13`` where ``round()``
 gives ``0.12``. Output is ASCII, minus sign included (#148). ``None`` and NaN
 render as ``missing``, and zero, including a value that rounds to zero, is
-never signed. `.claude/rules/data-layer.md` carries the reasoning::
+never signed. Arithmetic runs in a context of its own, never the host's (#448).
+`.claude/rules/data-layer.md` carries the reasoning::
 
     pct(0.0142, sign=True)   # '+1.42%'
     money(-1200)             # '-$1,200'
@@ -15,7 +16,16 @@ never signed. `.claude/rules/data-layer.md` carries the reasoning::
 from __future__ import annotations
 
 import numbers
-from decimal import ROUND_HALF_UP, Decimal
+from decimal import (
+    MAX_EMAX,
+    MIN_EMIN,
+    ROUND_HALF_UP,
+    Context,
+    Decimal,
+    DivisionByZero,
+    InvalidOperation,
+    Overflow,
+)
 from typing import Any
 
 #: What a missing figure renders as. ASCII, for the reason the minus sign is.
@@ -60,7 +70,7 @@ def pct(
     d = _decimal(value)
     if d is None:
         return missing
-    prefix, body = _fixed(d * 100, dp, sign, thousands, decimal)
+    prefix, body = _fixed(d, dp, sign, thousands, decimal, shift=2)
     return f"{prefix}{body}%"
 
 
@@ -76,7 +86,7 @@ def bps(
     d = _decimal(value)
     if d is None:
         return missing
-    prefix, body = _fixed(d * 10_000, dp, sign, ",", decimal)
+    prefix, body = _fixed(d, dp, sign, ",", decimal, shift=4)
     return f"{prefix}{body} bps"
 
 
@@ -135,14 +145,17 @@ def compact(
     d = _decimal(value)
     if d is None:
         return missing
-    index = max(i for i, (scale, _) in enumerate(_COMPACT_SCALES) if i == 0 or abs(d) >= scale)
+    ctx = _context(d, dp)
+    index = max(
+        i for i, (scale, _) in enumerate(_COMPACT_SCALES) if i == 0 or d.copy_abs() >= scale
+    )
     while True:
         scale, suffix = _COMPACT_SCALES[index]
-        rounded = _round(d / scale, dp)
-        if abs(rounded) < 1000 or index == len(_COMPACT_SCALES) - 1:
+        rounded = _round(ctx.scaleb(d, -scale.adjusted()), dp, ctx)
+        if rounded.copy_abs() < 1000 or index == len(_COMPACT_SCALES) - 1:
             break
         index += 1
-    prefix, body = _fixed(rounded, dp, sign, thousands, decimal)
+    prefix, body = _split(rounded, dp, sign, thousands, decimal)
     if decimal in body:
         body = body.rstrip("0").rstrip(decimal)
     return f"{prefix}{body}{suffix}"
@@ -182,21 +195,52 @@ def _decimal(value: Any) -> Decimal | None:
     return result
 
 
-def _round(value: Decimal, dp: int) -> Decimal:
+def _context(value: Decimal, dp: int) -> Context:
+    """
+    A context of its own, wide enough that no step of formatting this figure rounds.
+
+    The ambient one is the host's, and a host that sets its precision or rounding would
+    otherwise move every figure printed. Every flag and trap is named so a mutated
+    ``DefaultContext`` cannot leak in either.
+    """
     if isinstance(dp, bool) or not isinstance(dp, int) or dp < 0:
         raise ValueError(f"dp must be a non-negative int, got {dp!r}")
-    return value.quantize(Decimal(1).scaleb(-dp), rounding=ROUND_HALF_UP)
+    digits = max(len(value.as_tuple().digits), value.adjusted() + 1, 1)
+    return Context(
+        prec=digits + dp + 10,
+        rounding=ROUND_HALF_UP,
+        Emin=MIN_EMIN,
+        Emax=MAX_EMAX,
+        capitals=1,
+        clamp=0,
+        flags=[],
+        traps=[InvalidOperation, DivisionByZero, Overflow],
+    )
 
 
-def _fixed(value: Decimal, dp: int, sign: bool, thousands: str, decimal: str) -> tuple[str, str]:
-    """Round, then split into the sign and the grouped digits."""
-    rounded = _round(value, dp)
+def _round(value: Decimal, dp: int, ctx: Context) -> Decimal:
+    return value.quantize(Decimal((0, (1,), -dp)), rounding=ROUND_HALF_UP, context=ctx)
+
+
+def _fixed(
+    value: Decimal, dp: int, sign: bool, thousands: str, decimal: str, *, shift: int = 0
+) -> tuple[str, str]:
+    """Scale by ``10**shift``, round, then split into the sign and the grouped digits."""
+    ctx = _context(value, dp)
+    return _split(_round(ctx.scaleb(value, shift), dp, ctx), dp, sign, thousands, decimal)
+
+
+def _split(rounded: Decimal, dp: int, sign: bool, thousands: str, decimal: str) -> tuple[str, str]:
+    """The sign and the grouped digits of a figure already rounded to ``dp``."""
     if rounded == 0:
         prefix = ""
     elif rounded < 0:
         prefix = "-"
     else:
         prefix = "+" if sign else ""
-    whole, _, fraction = f"{abs(rounded):,.{dp}f}".partition(".")
-    body = whole.replace(",", thousands)
+    # Digits are read off the tuple, not formatted, so no context and no int() size limit applies.
+    text = "".join(map(str, rounded.as_tuple().digits)).rjust(dp + 1, "0")
+    whole, fraction = (text[:-dp], text[-dp:]) if dp else (text, "")
+    groups = [whole[max(i - 3, 0) : i] for i in range(len(whole), 0, -3)]
+    body = thousands.join(reversed(groups))
     return prefix, f"{body}{decimal}{fraction}" if fraction else body
