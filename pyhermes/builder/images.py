@@ -294,11 +294,8 @@ class EmailImage:
             ValidationError: On an empty/unsafe URL, or on alt text that is
                 empty without ``decorative`` or supplied with it.
         """
-        from .models import _validate_url  # local: models imports nothing from here
-
         if not url:
             raise ValidationError("EmailImage.hosted() requires a url.")
-        _validate_url(url, "image.url")
         return cls(
             strategy=EmbedStrategy.REMOTE,
             alt=alt,
@@ -348,7 +345,6 @@ class EmailImage:
         # Content-addressed by default: identical bytes collapse to one
         # attachment, and the same input always yields the same output.
         resolved_id = content_id or hashlib.sha256(data).hexdigest()[:16]
-        _validate_content_id(resolved_id)
 
         return cls(
             strategy=EmbedStrategy.CID,
@@ -435,12 +431,23 @@ class EmailImage:
         if self.strategy == EmbedStrategy.REMOTE:
             if not self.url:
                 raise ValidationError("a REMOTE image requires a 'url'.")
+            from .models import _validate_url  # local: models imports nothing from here
+
+            _validate_url(self.url, "image.url")
         elif not self.data:
             raise ValidationError(f"a {self.strategy.upper()} image requires 'data'.")
+        else:
+            sniffed, _ = sniff_image_type(self.data)
+            if self.mime_type != sniffed:
+                raise ValidationError(
+                    f"'image.mime_type' must match the bytes, which are {sniffed}, "
+                    f"got: {self.mime_type!r}."
+                )
 
         if self.strategy == EmbedStrategy.CID:
             if not self.content_id:
                 raise ValidationError("a CID image requires a 'content_id'.")
+            _validate_content_id(self.content_id)
             problem = filename_problem(self.filename)
             if problem:
                 raise ValidationError(f"'image.filename' {problem}")

@@ -583,7 +583,9 @@ host already reports a builder mistake.
   `https`, `mailto`, `cid` and relative URLs, and rejects everything else (`javascript:`,
   `data:`, `vbscript:`, `file:`) with `ValidationError` at construction. Applies to the five
   `EmailMetadata` URL fields, `ChartBlock.image_url`, `ImageBlock.link_url`, and every
-  `EmailImage.hosted()` URL. Scheme only — whether a URL resolves, and its host/path, are
+  `EmailImage` URL. The checks sit in `EmailImage.__post_init__` (#447), not the factories, so
+  `EmailImage(EmbedStrategy.REMOTE, url=…)` is held to the scheme, the Content-ID pattern and
+  the sniffed format too. Scheme only — whether a URL resolves, and its host/path, are
   not checked. A builder-generated `data:` URI from `EmailImage.inline()` bypasses this by
   construction — it is validated by magic-byte sniffing instead, never by scheme.
 - **Hex-color enforcement** — colors use `#RRGGBB` everywhere. Validated by

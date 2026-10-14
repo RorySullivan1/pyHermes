@@ -545,3 +545,65 @@ class TestContentIdErrorMessage:
     def test_an_at_sign_is_rejected_like_any_other_illegal_character(self, png_bytes):
         with pytest.raises(ValidationError):
             EmailImage.attached(png_bytes, alt="Chart", content_id="id@example.com")
+
+
+class TestDirectConstructionIsValidated:
+    """The constructor applies the factories' checks to every strategy (#447)."""
+
+    @pytest.mark.parametrize(
+        "url",
+        ["javascript:alert(1)", "data:text/html,x", "vbscript:x", "file:///etc/passwd"],
+    )
+    def test_a_remote_url_scheme_is_checked(self, url):
+        with pytest.raises(ValidationError, match="image.url"):
+            EmailImage(EmbedStrategy.REMOTE, alt="x", url=url)
+
+    @pytest.mark.parametrize(
+        "url", ["https://a.test/c.png", "mailto:a@b.test", "cid:x", "c/q3.png"]
+    )
+    def test_an_allowed_scheme_constructs(self, url):
+        assert EmailImage(EmbedStrategy.REMOTE, alt="x", url=url).src == url
+
+    @pytest.mark.parametrize("content_id", ["a b@c", "a@b", "x" * 129, "a<b"])
+    def test_a_content_id_is_checked(self, png_bytes, content_id):
+        with pytest.raises(ValidationError, match="content_id"):
+            EmailImage(
+                EmbedStrategy.CID,
+                alt="x",
+                data=png_bytes,
+                mime_type="image/png",
+                content_id=content_id,
+                filename="a.png",
+            )
+
+    @pytest.mark.parametrize("strategy", [EmbedStrategy.CID, EmbedStrategy.DATA_URI])
+    def test_bytes_that_are_not_an_image_are_refused(self, strategy):
+        with pytest.raises(ValidationError, match="Unrecognised image format"):
+            EmailImage(
+                strategy,
+                alt="x",
+                data=b"not an image",
+                mime_type="image/png",
+                content_id="a",
+                filename="a.png",
+            )
+
+    def test_a_mime_type_that_contradicts_the_bytes_is_refused(self, png_bytes):
+        with pytest.raises(ValidationError, match="mime_type"):
+            EmailImage(EmbedStrategy.DATA_URI, alt="x", data=png_bytes, mime_type="image/jpeg")
+
+    def test_a_valid_direct_cid_image_constructs(self, png_bytes):
+        image = EmailImage(
+            EmbedStrategy.CID,
+            alt="x",
+            data=png_bytes,
+            mime_type="image/png",
+            content_id="chart-1",
+            filename="chart.png",
+        )
+        assert image.src == "cid:chart-1"
+
+    def test_the_factory_reports_a_bad_url_once(self):
+        with pytest.raises(ValidationError) as caught:
+            EmailImage.hosted("javascript:alert(1)", alt="x")
+        assert "image.url" in str(caught.value)
