@@ -14,7 +14,7 @@ sits above.
 
 from __future__ import annotations
 
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass, field
@@ -27,6 +27,25 @@ if TYPE_CHECKING:  # pragma: no cover - regions imports nothing from here
     from .regions import Region
 
 
+class LazyHint:
+    """
+    Context for a constraint's failure message, built the first time it is read.
+
+    A constraint formats it with ``str()`` or an f-string only when it raises,
+    so a document that passes, or a medium with no constraint, never pays for
+    building it (#427).
+    """
+
+    def __init__(self, build: Callable[[], str]) -> None:
+        self._build = build
+        self._text: str | None = None
+
+    def __str__(self) -> str:
+        if self._text is None:
+            self._text = self._build()
+        return self._text
+
+
 @runtime_checkable
 class Constraint(Protocol):
     """
@@ -35,10 +54,10 @@ class Constraint(Protocol):
     ``hint`` is caller-supplied context appended to the failure message —
     the email medium uses it to name inlined images in a size failure. It is
     optional so a constraint that has no use for one still satisfies this
-    protocol.
+    protocol, and may be a :class:`LazyHint`, read with ``str()`` on failure.
     """
 
-    def __call__(self, html: str, hint: str = "") -> None: ...
+    def __call__(self, html: str, hint: str | LazyHint = "") -> None: ...
 
 
 @dataclass(frozen=True)
@@ -100,7 +119,7 @@ class Medium:
         """Every slot this medium's regions fill, in skeleton order."""
         return tuple(slot for region in self.region_types for slot in region.SLOTS)
 
-    def validate(self, html: str, hint: str = "") -> None:
+    def validate(self, html: str, hint: str | LazyHint = "") -> None:
         """Run every constraint over the composed document."""
         for constraint in self.constraints:
             constraint(html, hint)

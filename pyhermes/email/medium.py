@@ -9,7 +9,7 @@ and the one check that is email-specific rather than universal.
 from __future__ import annotations
 
 from pyhermes.builder.exceptions import SizeError, SizeWarning, warn_caller
-from pyhermes.builder.medium import Medium
+from pyhermes.builder.medium import LazyHint, Medium
 from pyhermes.builder.regions import Banner, Footer, Header
 from pyhermes.config import Config, get_config
 
@@ -23,7 +23,7 @@ _SIZE_LIMIT_KB = Config().size_limit_kb  # Gmail clips emails above this.
 _SIZE_WARN_KB = Config().size_warn_kb
 
 
-def validate_gmail_size(html: str, hint: str = "") -> None:
+def validate_gmail_size(html: str, hint: str | LazyHint = "") -> None:
     """
     Check the rendered size against the Gmail clipping limit.
 

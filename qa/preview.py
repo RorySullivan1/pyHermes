@@ -203,11 +203,15 @@ def main(argv: list[str] | None = None) -> int:
         # where it writes the HTML -- and says why it could not, rather than
         # failing, because the backend is an optional extra like the browser.
         try:
-            from pyhermes.pdf import page_count, save_pdf
+            from pyhermes.pdf import layout, page_count, render_layout
 
-            pdf_destination = save_pdf(email, args.out / f"{name}.pdf")
+            # One layout for the file and its count, so a warning is said once (#426).
+            laid_out = layout(email)
+            pdf_destination = args.out / f"{name}.pdf"
+            pdf_destination.parent.mkdir(parents=True, exist_ok=True)
+            pdf_destination.write_bytes(render_layout(laid_out))
             size_kb = pdf_destination.stat().st_size / 1024
-            print(f"{pdf_destination}  ({size_kb:.1f} KB, {page_count(email)} page(s))")
+            print(f"{pdf_destination}  ({size_kb:.1f} KB, {page_count(laid_out)} page(s))")
         except PdfError as exc:
             print(f"pdf skipped: {exc}", file=sys.stderr)
 

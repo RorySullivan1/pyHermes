@@ -479,3 +479,9 @@ Decisions and Log entries folded out of `INDEX.md` on 2026-08-29 (#143), verbati
   reads, refused undeclared by a walk in `Document._add`; `section.background_color` stays a hex** — `design-axes.md` (#387)
 - [2026-10-05] **On paper a split's column paints no fill; the band cell does** — an inline-table paints after
   every block background, so its fill overwrote the next section's half-pixel row at a band edge — `design-axes.md`
+
+## Log pointers archived 2026-10-14
+- [2026-10-05] windows — the 7 reported Windows failures were already fixed by #372; its own drive-path
+  test still failed (a `WindowsPath` prints backslashes), fixed — sessions/2026-10-05-1657-windows-suite-recheck.md
+- [2026-10-05] paper-band-seam — 1px seam at a band edge on paper, fixed in `columns.html`;
+  paint order, two forms — sessions/2026-10-05-1903-paper-band-seam.md

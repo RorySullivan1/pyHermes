@@ -503,6 +503,10 @@ inside a template render: the `validate_hex_color` / `default_color` filters rai
 out of the render as-is rather than being re-wrapped as `TemplateError`: it is a data
 failure, not a template one.
 
+**A constraint's hint is lazy (#427).** `Medium.validate` passes a `LazyHint`, whose text is
+built the first time a constraint formats it, so a render that passes, and every medium with no
+constraint, never walks the images to name the inlined ones. The `SizeError` text is unchanged.
+
 A soft limit is a **warning, not an exception** (#246): `SizeWarning` above the email's 90 KB
 threshold and the message's attachment one, `PrintQualityWarning` below a brochure's print
 dpi. Both are `UserWarning`s exported from `pyhermes.builder`, and the package prints nothing.
