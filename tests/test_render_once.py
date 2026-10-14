@@ -4,13 +4,17 @@ Epic #419: the render path does each expensive step once.
 A check pass lays a document out once and warns once per kept section that
 split (#426); a render builds the size-failure hint only when the size check
 fails (#427); a message is serialised once per send (#428). Each test counts
-the work itself, by patching the call that does it.
+the work itself, by patching the call that does it. The memo of #428 lives
+on the message, so a dropped message takes its bytes with it (#443).
 """
 
 from __future__ import annotations
 
+import copy
+import gc
 import inspect
 import warnings
+import weakref
 from email.message import EmailMessage
 from unittest import mock
 
@@ -20,8 +24,10 @@ from pyhermes.builder import Banner, FullWidth, PrintQualityWarning, TextBlock
 from pyhermes.builder.document import Document
 from pyhermes.builder.exceptions import SizeError
 from pyhermes.builder.images import EmailImage
-from pyhermes.builder.medium import LazyHint
-from pyhermes.delivery import build_message, save_eml
+from pyhermes.builder.medium import Constraint, Medium
+from pyhermes.config import config_override
+from pyhermes.delivery import Attachment, MessageError, build_message, save_eml
+from pyhermes.delivery import message as message_module
 from pyhermes.delivery.message import to_wire_bytes
 from pyhermes.document import EmptyBackMatter, EmptyCover, PagedDocument
 from pyhermes.gmail import send_message as gmail_send
@@ -136,10 +142,50 @@ class TestTheHintIsBuiltOnlyOnFailure:
         assert hint.startswith(" 1 inlined image(s) contribute roughly")
         assert str(raised.value).endswith(f"Gmail clipping limit.{hint}")
 
-    def test_the_hint_is_built_once_however_often_it_is_read(self):
-        built: list[int] = []
-        hint = LazyHint(lambda: built.append(1) or " text")
-        assert (str(hint), f"{hint}", built) == (" text", " text", [1])
+
+class _HostSizeError(SizeError):
+    pass
+
+
+def _host_constraint(html: str, hint: str = "") -> None:
+    # Written to the contract before #427: it treats its hint as a str.
+    if hint:
+        raise AssertionError("a document passes no hint")
+    if len(html) > 1024:
+        raise _HostSizeError("too big" + hint.strip() + f"{hint:>0}")
+
+
+class TestAConstraintReceivesAString:
+    """#444: the protocol is ``hint: str`` again, and the hint is the document's to add."""
+
+    def test_a_host_constraint_typed_for_a_string_runs(self, valid_metadata, png_bytes):
+        from pyhermes.builder import Email
+
+        medium = Medium(name="host", skeleton="base.html", constraints=(_host_constraint,))
+        email = Email(valid_metadata, medium=medium)
+        email.set_banner(Banner(logo_url=EmailImage.inline(png_bytes, alt="Logo", width=100)))
+        with pytest.raises(_HostSizeError) as raised:
+            email.render()
+        assert str(raised.value) == "too big" + email._inline_image_hint()
+
+    def test_a_host_constraint_typed_for_a_string_type_checks(self, tmp_path):
+        from mypy import api
+
+        probe = tmp_path / "probe.py"
+        probe.write_text(
+            "from pyhermes.builder import Constraint, Medium\n"
+            "def check(html: str, hint: str = '') -> None:\n"
+            "    if len(html) > 10:\n"
+            "        raise ValueError('too big' + hint.strip())\n"
+            "constraint: Constraint = check\n"
+            "Medium(name='host', skeleton='base.html', constraints=(check,))\n",
+            encoding="utf-8",
+        )
+        out, err, status = api.run([str(probe), "--strict", "--no-incremental"])
+        assert status == 0, out + err
+
+    def test_the_constraint_protocol_names_a_string(self):
+        assert inspect.signature(Constraint.__call__).parameters["hint"].annotation == "str"
 
 
 class _Gmail:
@@ -198,3 +244,55 @@ class TestAMessageIsSerialisedOnce:
         message.add_attachment(b"late", maintype="text", subtype="plain", filename="late.txt")
         after = to_wire_bytes(message)
         assert after != before and b"late.txt" in after
+
+
+class TestTheBytesLiveAndDieWithTheMessage:
+    """#443: nothing outside a message keeps it, or its bytes, alive."""
+
+    @pytest.fixture
+    def email(self):
+        return all_fixtures()["minimal"]()
+
+    def test_a_built_message_once_dropped_is_freed(self, email):
+        attachment = Attachment(b"\0" * 2_000_000, "large.bin", "application/octet-stream")
+        message = build_message(email, **ENVELOPE, attachments=[attachment])
+        to_wire_bytes(message)
+        ref = weakref.ref(message)
+        del message
+        gc.collect()
+        assert ref() is None
+
+    def test_a_dropped_message_is_freed_without_the_collector(self, email):
+        message = build_message(email, **ENVELOPE)
+        ref = weakref.ref(message)
+        gc.disable()
+        try:
+            del message
+            assert ref() is None
+        finally:
+            gc.enable()
+
+    def test_a_refused_build_leaves_nothing_behind(self, email):
+        refs: list[weakref.ref[EmailMessage]] = []
+        measure = message_module.to_wire_bytes
+
+        def recording(message):
+            refs.append(weakref.ref(message))
+            return measure(message)
+
+        with (
+            mock.patch.object(message_module, "to_wire_bytes", recording),
+            config_override(attachment_limit_kb=1, attachment_warn_kb=1),
+            pytest.raises(MessageError),
+        ):
+            build_message(email, **ENVELOPE)
+        gc.collect()
+        assert len(refs) == 1 and refs[0]() is None
+
+    def test_a_copied_message_is_sent_with_its_own_changes(self, email):
+        message = build_message(email, **ENVELOPE)
+        sent = to_wire_bytes(message)
+        changed = copy.deepcopy(message)
+        changed.replace_header("Subject", "A copied subject")
+        assert b"A copied subject" in to_wire_bytes(changed)
+        assert to_wire_bytes(message) == sent

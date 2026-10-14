@@ -32,6 +32,9 @@
 
 - [2026-10-14] **`layout()` is the one place a document meets the print engine; a constraint's hint is a
   `LazyHint`; `to_wire_bytes` keeps one message's bytes until its shape changes** — `media.md`, `delivery.md` (#419)
+- [2026-10-14] **Superseded in part: the wire bytes ride on the message, not a module store (#443); a constraint
+  gets `hint: str` again and `Document.render` adds the hint to a `SizeError`; `LazyHint` is gone (#444)** — `delivery.md`,
+  `builder-architecture.md`
 
 ## Threads          (open items; remove when closed)
 - **#394's ruling (justify on paper only) was taken under a goal**; the owner may widen it.

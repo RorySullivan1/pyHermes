@@ -173,14 +173,23 @@ the contract documents, each reproduced by a probe; epic #418 closed them.
 
 ## A message is serialised once (#428)
 
-`to_wire_bytes()` keeps each message's bytes, weakly keyed, with the shape they were made from:
-every part, its raw headers, its payload object, preamble and epilogue, and the policy, read
-after serialising because the generator stamps each boundary onto its `Content-Type`.
-`build_message` makes them for the budget, and an adapter and `save_eml` read the same bytes
-back, so a 15 MB attachment is base64-encoded once a send, not twice. A message changed after
-that, a header replaced or a part added, no longer matches its shape and is serialised again.
-Comparing the shape costs a walk of the parts and no encoding: an unchanged payload is the
-same object. `tests/test_render_once.py` counts `as_bytes` calls.
+`to_wire_bytes()` keeps each message's bytes on the message itself, in a private attribute,
+with the shape they were made from: every part, its raw headers, its payload object, preamble
+and epilogue, and the policy, read after serialising because the generator stamps each
+boundary onto its `Content-Type`. `build_message` makes them for the budget, and an adapter
+and `save_eml` read the same bytes back, so a 15 MB attachment is base64-encoded once a send,
+not twice. A message changed after that, a header replaced or a part added, no longer matches
+its shape and is serialised again. Comparing the shape costs a walk of the parts and no
+encoding: an unchanged payload is the same object. `tests/test_render_once.py` counts `as_bytes` calls.
+
+**The bytes live and die with the message (#443).** #428 first kept them in a module-wide
+`WeakKeyDictionary`, and its value held the message through the shape, since `walk()` yields
+the root first. So no entry was ever removed: a long-running sender kept every message, its
+payload and a second copy of its bytes, about 20 MB for one at the budget, and a build the
+budget refused was kept too. Now nothing outside a message refers to it. The shape stands the
+root as `None`, because a message holding itself is a cycle only the garbage collector frees,
+and a 20 MB message should go when its last reference does. A copy carries the attribute and
+its own shape, so a deep copy changed after it was made is serialised again.
 
 ## Architecture — `pyhermes/gmail`
 
