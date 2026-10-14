@@ -16,3 +16,7 @@ memory-only PR #439. One PR, one `Closes #N` per sub-issue.
 Verified: `tests/test_render_once.py` (13 tests, 8 fail on the old source). Every printed
 fixture's PDF, `PRINT` and `SCREEN`, was byte-identical old against new with fontTools'
 `timestampNow` pinned, which also removes this container's determinism flake for a probe.
+
+**Merged** as PR #440 (`0712c06`) with all ten CI jobs green, on the owner's instruction to merge once
+CI was green; `epic-autoclose` closed #419 and #426–#428 closed from their keywords. The memory PR
+#439 for #418 merged before it (`26a0e4b`).
