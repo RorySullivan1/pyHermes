@@ -9,8 +9,8 @@
   #329 (PR #378); #335 (PR #380); #340 (PR #382); #384 (PRs #406, #411, #412); #385 (PR #413); the paper band seam (PR #408). #219 DOCX and #300
   PPTX were closed as not planned (2026-10-01, `media.md`). #288 is the owner's Outlook-desktop check.
 - The prose budget is live; the baseline is 43 and may only shrink.
-- **The 2026-10-10 review is closed out**: #419 (#426–#428) merged in PR #440 (2026-10-14), #418 (#420–#425)
-  in PR #438 (2026-10-13), bugs #429–#435 in PR #437; both epics closed. sessions/2026-10-10-1725-codebase-review-issues.md
+- **Open from the 2026-10-14 review**: epic #442 (#419's follow-ups, #443–#446; #443 is a leak) and 22 standalone
+  bugs #447–#468. The 2026-10-10 review is closed out (#418, #419, #429–#435). sessions/2026-10-14-codebase-review-issues.md sessions/2026-10-10-1725-codebase-review-issues.md
 
 ## Decisions        (append-only; supersede, never delete)
 - Older entries, and epic #157's, are in sessions/ARCHIVE-2026.md.
@@ -77,3 +77,4 @@
   `kept_sections` scoped, one `metadata()`, `hang()` never splits a word, unique frame columns, the copyright from its parts.
 - [2026-10-13] delivery-contract — epic #418 merged in PR #438, all six children closed — sessions/2026-10-13-delivery-contract.md
 - [2026-10-14] render-once — epic #419 merged in PR #440, all three children closed — sessions/2026-10-14-render-once.md
+- [2026-10-14] codebase-review-issues — 27 issues: epic #442 (4) and bugs #447–#468, every one re-probed — sessions/2026-10-14-codebase-review-issues.md
