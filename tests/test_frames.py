@@ -13,6 +13,7 @@ pd = pytest.importorskip("pandas", reason='the DataFrame adapter needs "pyhermes
 from pyhermes.builder import TemplateEngine, Tone, ValidationError  # noqa: E402
 from pyhermes.builder.enums import ColumnKind, RowKind  # noqa: E402
 from pyhermes.builder.formats import money, pct  # noqa: E402
+from pyhermes.builder.theming import DEFAULT_THEME  # noqa: E402
 from pyhermes.data import table_from_frame  # noqa: E402
 
 _RET = {"1M": lambda v: pct(v, 1, sign=True)}
@@ -153,6 +154,78 @@ class TestTones:
     def test_the_adapter_never_colours_by_hex(self):
         table = table_from_frame(_factors(), tones={"1M": "auto"})
         assert not any(cell.color for row in table.rows for cell in row.cells)
+
+
+class TestANonNumericColumnTakesItsFormatAndTone:
+    """A key the adapter accepts is applied, not dropped (#464)."""
+
+    @staticmethod
+    def _frame():
+        return pd.DataFrame(
+            {
+                "Date": pd.to_datetime(["2026-09-30", None, "2026-10-14"]),
+                "Sector": ["Tech", None, "Energy"],
+                "1M": [0.018, -0.004, 0.009],
+            },
+            index=pd.Index(["A", "B", "C"], name="Fund"),
+        )
+
+    def test_a_datetime_column_is_written_by_its_formatter(self):
+        table = table_from_frame(
+            self._frame(), formats={"Date": lambda d: d.strftime("%d %b %Y"), "1M": pct}
+        )
+        assert [row.cells[1].text for row in table.rows] == ["30 Sep 2026", "--", "14 Oct 2026"]
+        assert [c.kind for c in table.resolved_columns()][1] is ColumnKind.TEXT
+
+    def test_without_one_the_datetime_is_written_as_before(self):
+        table = table_from_frame(self._frame())
+        assert table.rows[0].cells[1].text == "2026-09-30 00:00:00"
+
+    def test_a_text_column_takes_the_tone(self):
+        table = table_from_frame(self._frame(), tones={"Sector": "positive"})
+        assert [row.cells[2].tone for row in table.rows] == [Tone.POSITIVE, "", Tone.POSITIVE]
+        assert "Tech" in table.text() and "None" not in table.text()
+
+    def test_a_text_column_takes_a_formatter_and_a_tone_together(self):
+        table = table_from_frame(
+            self._frame(), formats={"Sector": str.upper}, tones={"Sector": Tone.NEGATIVE}
+        )
+        cells = [row.cells[2] for row in table.rows]
+        assert [(c.text, c.tone) for c in cells] == [
+            ("TECH", Tone.NEGATIVE),
+            ("--", ""),
+            ("ENERGY", Tone.NEGATIVE),
+        ]
+
+    def test_the_column_carries_what_it_was_given(self):
+        table = table_from_frame(
+            self._frame(), formats={"Sector": str.upper}, tones={"Sector": "neutral"}
+        )
+        column = table.columns[2]
+        assert (column.format, column.tone) == (str.upper, "neutral")
+
+    def test_a_formatter_is_never_handed_a_missing_value(self):
+        def strict(value):
+            assert not pd.isna(value), "a missing value reached the formatter"
+            return str(value)
+
+        table_from_frame(self._frame(), formats={"Date": strict, "Sector": strict})
+
+    def test_a_tone_reaches_the_render(self):
+        html = table_from_frame(self._frame(), tones={"Sector": "negative"}).render(
+            TemplateEngine()
+        )
+        assert html.count(DEFAULT_THEME.semantic.negative) >= 2
+
+    def test_the_index_and_the_numeric_columns_are_unchanged(self):
+        plain = table_from_frame(self._frame(), formats={"1M": pct}, tones={"1M": "auto"})
+        both = table_from_frame(
+            self._frame(),
+            formats={"1M": pct, "Sector": str.upper},
+            tones={"1M": "auto", "Sector": "positive"},
+        )
+        for before, after in zip(plain.rows, both.rows, strict=True):
+            assert (before.cells[0], before.cells[3]) == (after.cells[0], after.cells[3])
 
 
 class TestNumpyScalars:

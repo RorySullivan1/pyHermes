@@ -99,6 +99,12 @@ it both ways. `math.md` carries its decisions.
 - **A default `RangeIndex` is row numbering, not data**, so it is left out. Any other index
   becomes the row-header column. An unnamed one needs `index_label=`, because a column with
   no heading fails `Column`'s own validation.
+- **`formats=` and `tones=` reach a text or datetime column too (#464).** `_check_keys` accepts
+  any column, so the adapter applies what it accepts. A numeric column hands its raw figure to the
+  builder; a text column's cell is written by the formatter in the adapter, since the builder
+  formats figures only, and takes the tone. A missing value skips both (`MISSING`, untoned), so a
+  formatter is never handed a NaN, a `None` or a `NaT`. Only `"auto"` is refused, by name, since a
+  string has no sign.
 - **An unformatted numeric column** is whole for an integer dtype and two places for a
   float. Two places is a guess, and `formats=` is how a caller corrects it.
 - **The row kinds #119 shipped are reachable.** `total_row=` marks the last row, and
