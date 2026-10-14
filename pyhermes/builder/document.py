@@ -34,10 +34,10 @@ from .components import Component, Contents, Endnotes, Exhibit, descendants, lea
 from .containers import Appendices, Container, FullWidth, OnlySections
 from .engine import Renderer, TemplateEngine, TemplateOverlay, overlay_dirs, scheme_of
 from .enums import EmbedStrategy, SizeTheme
-from .exceptions import ValidationError
+from .exceptions import SizeError, ValidationError
 from .exhibits import legends
 from .images import EmailImage, ImageAsset, dedupe_assets
-from .medium import DEFAULT_MEDIUM, LazyHint, Medium, walking_in
+from .medium import DEFAULT_MEDIUM, Medium, walking_in
 from .models import DocumentMetadata, Footnote
 from .research import Bibliography
 from .sizing import (
@@ -376,7 +376,13 @@ class Document:
             ctx["stamp_type"] = stamp_type(self._metadata.stamp, *sheet)
         ctx["head_rules"] = self._head_rules()
         html = engine.render(self._medium.skeleton, ctx)
-        self._medium.validate(html, LazyHint(self._inline_image_hint))
+        try:
+            self._medium.validate(html)
+        except SizeError as exc:
+            # Built only on failure, so a passing render walks no images (#427). The
+            # exception is amended rather than replaced, so a host's subclass survives.
+            exc.args = (f"{exc}{self._inline_image_hint()}", *exc.args[1:])
+            raise
         return html
 
     @_under_own_config

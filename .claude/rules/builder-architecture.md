@@ -503,9 +503,25 @@ inside a template render: the `validate_hex_color` / `default_color` filters rai
 out of the render as-is rather than being re-wrapped as `TemplateError`: it is a data
 failure, not a template one.
 
-**A constraint's hint is lazy (#427).** `Medium.validate` passes a `LazyHint`, whose text is
-built the first time a constraint formats it, so a render that passes, and every medium with no
-constraint, never walks the images to name the inlined ones. The `SizeError` text is unchanged.
+**A constraint's hint is built only on failure (#427), and by the document (#444).** A
+render that passes, and every medium with no constraint, never walks the images to name the
+inlined ones. `Document.render` passes no hint; when a constraint raises `SizeError`, it adds
+`_inline_image_hint()` to the end of that exception's message and re-raises it. The text is
+what the Gmail check wrote when it received the hint itself, and the exception is amended
+rather than replaced, so a host's own `SizeError` subclass keeps its class.
+
+- **#427 first shipped a `LazyHint` and widened the protocol to `hint: str | LazyHint`.** A
+  host constraint written to the `str` contract then broke: `'too big' + hint` and a format
+  spec raised `TypeError`, `hint.strip()` `AttributeError`, and `if hint:` was always true. A
+  constraint annotated `hint: str` no longer satisfied the protocol under mypy, and a kept hint
+  held a bound method of the document, its images included. `LazyHint` left the public API
+  before any release shipped it.
+- **The hint is added to a `SizeError` only**, since naming inlined base64 explains a size
+  failure and nothing else. `Constraint` keeps an optional `hint: str` for a caller of
+  `Medium.validate` or `validate_gmail_size` with context of their own.
+- **The tests**: `TestAConstraintReceivesAString` in `tests/test_render_once.py` runs a host
+  constraint that concatenates, strips and formats its hint, and runs mypy `--strict` over one
+  typed `hint: str`; `TestTheHintIsBuiltOnlyOnFailure` still counts zero image walks.
 
 A soft limit is a **warning, not an exception** (#246): `SizeWarning` above the email's 90 KB
 threshold and the message's attachment one, `PrintQualityWarning` below a brochure's print

@@ -24,7 +24,7 @@ from pyhermes.builder import Banner, FullWidth, PrintQualityWarning, TextBlock
 from pyhermes.builder.document import Document
 from pyhermes.builder.exceptions import SizeError
 from pyhermes.builder.images import EmailImage
-from pyhermes.builder.medium import LazyHint
+from pyhermes.builder.medium import Constraint, Medium
 from pyhermes.config import config_override
 from pyhermes.delivery import Attachment, MessageError, build_message, save_eml
 from pyhermes.delivery import message as message_module
@@ -142,10 +142,50 @@ class TestTheHintIsBuiltOnlyOnFailure:
         assert hint.startswith(" 1 inlined image(s) contribute roughly")
         assert str(raised.value).endswith(f"Gmail clipping limit.{hint}")
 
-    def test_the_hint_is_built_once_however_often_it_is_read(self):
-        built: list[int] = []
-        hint = LazyHint(lambda: built.append(1) or " text")
-        assert (str(hint), f"{hint}", built) == (" text", " text", [1])
+
+class _HostSizeError(SizeError):
+    pass
+
+
+def _host_constraint(html: str, hint: str = "") -> None:
+    # Written to the contract before #427: it treats its hint as a str.
+    if hint:
+        raise AssertionError("a document passes no hint")
+    if len(html) > 1024:
+        raise _HostSizeError("too big" + hint.strip() + f"{hint:>0}")
+
+
+class TestAConstraintReceivesAString:
+    """#444: the protocol is ``hint: str`` again, and the hint is the document's to add."""
+
+    def test_a_host_constraint_typed_for_a_string_runs(self, valid_metadata, png_bytes):
+        from pyhermes.builder import Email
+
+        medium = Medium(name="host", skeleton="base.html", constraints=(_host_constraint,))
+        email = Email(valid_metadata, medium=medium)
+        email.set_banner(Banner(logo_url=EmailImage.inline(png_bytes, alt="Logo", width=100)))
+        with pytest.raises(_HostSizeError) as raised:
+            email.render()
+        assert str(raised.value) == "too big" + email._inline_image_hint()
+
+    def test_a_host_constraint_typed_for_a_string_type_checks(self, tmp_path):
+        from mypy import api
+
+        probe = tmp_path / "probe.py"
+        probe.write_text(
+            "from pyhermes.builder import Constraint, Medium\n"
+            "def check(html: str, hint: str = '') -> None:\n"
+            "    if len(html) > 10:\n"
+            "        raise ValueError('too big' + hint.strip())\n"
+            "constraint: Constraint = check\n"
+            "Medium(name='host', skeleton='base.html', constraints=(check,))\n",
+            encoding="utf-8",
+        )
+        out, err, status = api.run([str(probe), "--strict", "--no-incremental"])
+        assert status == 0, out + err
+
+    def test_the_constraint_protocol_names_a_string(self):
+        assert inspect.signature(Constraint.__call__).parameters["hint"].annotation == "str"
 
 
 class _Gmail:
