@@ -37,6 +37,7 @@ from .engine import (
 )
 from .enums import SizeTheme, TextAlign, ThreeColumnRatio, TwoColumnRatio, VerticalAlign
 from .exceptions import ValidationError
+from .finite import is_finite
 from .images import EmailImage, ImageAsset
 from .medium import check_media, walking_medium
 from .models import (
@@ -431,8 +432,8 @@ def _in_cell(engine: Renderer, width: int) -> Renderer:
 
 
 def _is_weight(value: object) -> bool:
-    """A positive int or float, and not a bool, which is an int to Python."""
-    return isinstance(value, (int, float)) and not isinstance(value, bool) and value > 0
+    """A positive, finite int or float; a bool is an int to Python and is refused."""
+    return isinstance(value, (int, float)) and is_finite(value) and value > 0
 
 
 class _SplitContainer(Container):

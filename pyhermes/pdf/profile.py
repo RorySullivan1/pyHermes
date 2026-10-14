@@ -13,6 +13,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from pyhermes.builder.finite import is_finite
+
 from .exceptions import ProfileError
 
 __all__ = ["PRINT", "SCREEN", "TAGGED", "PDF_VARIANTS", "PdfProfile"]
@@ -75,8 +77,10 @@ class PdfProfile:
     def __post_init__(self) -> None:
         if not self.name.strip():
             raise ProfileError("a PdfProfile needs a name, for the messages that cite it")
-        if self.dpi is not None and self.dpi <= 0:
-            raise ProfileError(f"dpi must be positive, or None to keep every image, got {self.dpi}")
+        if self.dpi is not None and not (is_finite(self.dpi) and self.dpi > 0):
+            raise ProfileError(
+                f"dpi must be positive and finite, or None to keep every image, got {self.dpi}"
+            )
         quality = self.jpeg_quality
         if quality is not None and not 0 <= quality <= MAX_JPEG_QUALITY:
             raise ProfileError(f"jpeg_quality must be 0 to {MAX_JPEG_QUALITY}, got {quality}")

@@ -16,6 +16,7 @@ from pyhermes.builder.containers import Container
 from pyhermes.builder.engine import Renderer, rebind, scheme_of
 from pyhermes.builder.enums import EmbedStrategy, TextAlign, VerticalAlign
 from pyhermes.builder.exceptions import ValidationError
+from pyhermes.builder.finite import is_finite
 from pyhermes.builder.images import EmailImage, ImageAsset
 from pyhermes.builder.models import check_valign
 from pyhermes.builder.sizing import PageMargin, SizeScheme
@@ -126,10 +127,10 @@ class Panel(Container):
                     f"{self._name()} holds a section with keep_together or break_before: "
                     "a panel is one face of a folded sheet, so nothing in it breaks (#364)"
                 )
-        if inset is not None and (
-            isinstance(inset, bool) or not isinstance(inset, (int, float)) or inset < 0
-        ):
-            raise ValidationError(f"{self._name()}'s inset must be a number of px, got: {inset!r}")
+        if inset is not None and (not is_finite(inset) or inset < 0):
+            raise ValidationError(
+                f"{self._name()}'s inset must be a finite number of px, not below 0, got: {inset!r}"
+            )
         if background_image is not None and not isinstance(background_image, EmailImage):
             raise ValidationError(
                 f"{self._name()}'s background_image must be an EmailImage, "

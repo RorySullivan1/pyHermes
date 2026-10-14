@@ -57,6 +57,12 @@ Rules the module holds to, each for a specific reason:
   (`size_warn_kb <= size_limit_kb`, `inline_image_limit_kb <= size_limit_kb`, a backoff
   factor of at least 1). These raise plain `ValueError`, **not** `EmailBuilderError` or
   `DeliveryError`: a bad limit is a programming error in setup, not rejected email data.
+- **NaN and infinity are refused in every numeric field (#450).** `-1 < nan` is false and
+  `nan <= 0` is false, so a "positive" check passes NaN, and infinity is positive. The first loop
+  in `__post_init__` finds a numeric field by its annotation (`int`, `float`, `float | None`),
+  so a new tunable is covered without a line here, and refuses both with `ValueError` naming the
+  field. `Config` cannot import `builder.finite`, which imports `Config`; it holds its own
+  `math.isfinite`.
 - **`None` means no timeout**, so it cannot double as "unspecified" —
   `GraphApiTransport(timeout=...)` uses a private sentinel for the latter. The sentinel is kept on the
   transport and resolved at each send, never at construction: a transport built at start-up must

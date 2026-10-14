@@ -58,6 +58,7 @@ pyhermes/
 │                         prose field may carry, and the h1/h2 refusal (#280)
 │   ├── formats.py      — finance formatters (#177): number, pct, bps, delta, money,
 │                         compact; stdlib only, half-up, ASCII. `data-layer.md`
+│   ├── finite.py       — is_finite / require_finite: NaN and infinity refused by name (#450)
 │   ├── exceptions.py   — EmailBuilderError hierarchy
 │   └── templates/      ← packaged with the wheel (moved here in #10)
 │       ├── base.html                — the EMAIL skeleton (four slots: header_bar_html,

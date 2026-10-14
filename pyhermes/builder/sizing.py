@@ -26,6 +26,7 @@ from pyhermes.config import get_config
 
 from .enums import SizeTheme
 from .exceptions import ValidationError
+from .finite import is_finite
 
 
 def _validate_size_fields(instance: object, prefix: str) -> None:
@@ -50,6 +51,8 @@ def _validate_size_fields(instance: object, prefix: str) -> None:
             raise ValidationError(
                 f"'{name}' must be a positive number, got: {type(value).__name__}"
             )
+        if not is_finite(value):
+            raise ValidationError(f"'{name}' must be a finite number, got: {value}")
         if value <= 0:
             raise ValidationError(f"'{name}' must be positive, got: {value}")
         if isinstance(value, float) and value.is_integer():
@@ -264,6 +267,8 @@ class PageMargin:
             name = f"page.margin.{spec.name}"
             if isinstance(value, bool) or not isinstance(value, (int, float)):
                 raise ValidationError(f"'{name}' must be a number, got: {type(value).__name__}")
+            if not is_finite(value):
+                raise ValidationError(f"'{name}' must be a finite number, got: {value}")
             if value < 0:
                 raise ValidationError(f"'{name}' must not be negative, got: {value}")
             if isinstance(value, float) and value.is_integer():

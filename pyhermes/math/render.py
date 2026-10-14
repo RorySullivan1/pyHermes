@@ -16,6 +16,7 @@ from typing import Any
 
 from pyhermes.builder.exceptions import ValidationError
 from pyhermes.builder.filters import validate_hex_color
+from pyhermes.builder.finite import is_finite
 
 from .exceptions import BackendMissingError, MathSyntaxError
 
@@ -160,8 +161,8 @@ def _check_source(latex: str, name: str) -> None:
 
 
 def _check_positive(value: Any, name: str) -> None:
-    if isinstance(value, bool) or not isinstance(value, int | float) or value <= 0:
-        raise ValidationError(f"{name!r} must be a positive number, got {value!r}")
+    if not is_finite(value) or value <= 0:
+        raise ValidationError(f"{name!r} must be a positive, finite number, got {value!r}")
 
 
 def _backend() -> Any:
