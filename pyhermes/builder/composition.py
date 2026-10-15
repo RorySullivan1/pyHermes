@@ -16,6 +16,7 @@ from .apparatus import cited_keys
 from .components import Component, Exhibit, descendants
 from .engine import Renderer, cell_width_of, rebind, respaced, scheme_of
 from .exceptions import ValidationError
+from .finite import is_finite
 from .images import EmailImage
 from .medium import check_media, walking_medium
 from .models import check_valign
@@ -262,8 +263,8 @@ class Columns(Component):
 
 
 def _positive(value: object) -> bool:
-    """A positive int or float, and not a bool."""
-    return isinstance(value, (int, float)) and not isinstance(value, bool) and value > 0
+    """A positive, finite int or float, and not a bool."""
+    return isinstance(value, (int, float)) and is_finite(value) and value > 0
 
 
 def refuse_numbered(owner: str, components: Sequence[Component]) -> None:

@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import warnings
 from collections.abc import Mapping, Sequence
+from dataclasses import replace
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from pyhermes.config import get_config
@@ -690,8 +691,11 @@ class DataTable(CellShare, Exhibit, Component):
         if not rows:
             raise ValidationError("DataTable requires at least one row.")
         columns = [coerce_column(h, f"data_table.headers[{i}]") for i, h in enumerate(headers)]
-        for i, row in enumerate(rows):
+        for row in rows:
             row.validate()
+        # The table pads and formats its own copy, so the caller's rows are not its to change.
+        rows = [replace(row, cells=[replace(cell) for cell in row.cells]) for row in rows]
+        for i, row in enumerate(rows):
             # A subhead labels the rows beneath it, so one cell is the honest
             # way to write one — it is padded to the table's width here rather
             # than making the caller spell out the empties. Anything between
@@ -817,7 +821,7 @@ class DataTable(CellShare, Exhibit, Component):
             if not column.bar:
                 ends.append(0)
             else:
-                ends.append(column.scale.high if column.scale else max(figures, default=0))
+                ends.append(float(column.scale.high if column.scale else max(figures, default=0)))
         return ends
 
     @staticmethod
@@ -839,15 +843,15 @@ class DataTable(CellShare, Exhibit, Component):
             position, toward = column.scale.position(cell.value)
             heat = {"position": position, "toward": str(toward)}
         if row.kind == RowKind.DATA and column.bar:
-            fraction = min(1, max(0, cell.value / end)) if end > 0 else 0
+            fraction = min(1, max(0, float(cell.value) / end)) if end > 0 else 0
             bar = round(fraction * 100)
         arrow = ""
         if column.arrow and row.kind != RowKind.SUBHEAD and cell.value is not None:
             arrow = str(trend_of(cell.value, column.format))
         spark = None
         if isinstance(cell.value, Series):
-            tone = cell.tone or (column.tone if column.tone != "auto" else "")
-            if column.tone == "auto":
+            tone = cell.tone or column.tone
+            if tone == "auto":
                 tone = str(tone_of(cell.value.values[-1] - cell.value.values[0]))
             spark = cell.value.drawn(tone)
         return {

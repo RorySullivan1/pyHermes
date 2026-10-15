@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 
 from pyhermes.builder.exceptions import ValidationError
+from pyhermes.builder.finite import require_finite
 from pyhermes.builder.sizing import PageFormat
 
 
@@ -109,6 +110,7 @@ class FoldFormat:
             )
         if isinstance(self.tuck, bool) or not isinstance(self.tuck, (int, float)):
             raise ValidationError(f"'fold.tuck' must be a number, got: {type(self.tuck).__name__}")
+        require_finite(self.tuck, "fold.tuck")
         if self.tuck < 0:
             raise ValidationError(f"'fold.tuck' must not be negative, got: {self.tuck}")
         if self.tuck and self.kind not in _TUCKED:
@@ -118,7 +120,8 @@ class FoldFormat:
             )
         for name in ("inset", "safe", "bleed", "slug"):
             value = getattr(self, name)
-            if isinstance(value, bool) or not isinstance(value, (int, float)) or value < 0:
+            require_finite(value, f"fold.{name}")
+            if value < 0:
                 raise ValidationError(f"'fold.{name}' must be a number of px, got: {value!r}")
         if self.inset < self.safe:
             raise ValidationError(

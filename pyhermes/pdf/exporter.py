@@ -18,7 +18,7 @@ from pyhermes.builder.document import Document
 from pyhermes.builder.exceptions import PrintQualityWarning, warn_caller
 
 from .exceptions import BackendError, BackendMissingError, PdfError, UnreachableResourceError
-from .fetcher import build_fetcher
+from .fetcher import RELATIVE_BASE_URL, build_fetcher
 from .profile import PRINT, PdfProfile
 from .tagging import retag_layout_tables
 
@@ -161,7 +161,7 @@ def layout(document: Document, profile: PdfProfile = PRINT) -> Layout:
     html = document.render()
     fetcher = build_fetcher(document.assets() + document.fonts())
     with _own_errors():
-        rendered = weasyprint.HTML(string=html, url_fetcher=fetcher).render(**profile.options())
+        rendered = _html(weasyprint, html, fetcher).render(**profile.options())
     laid_out = Layout(document, profile, rendered)
     _warn_tall_kept(laid_out, document.kept_sections())
     return laid_out
@@ -239,7 +239,7 @@ def render_handout(
     html = deck.handout() if page is None else deck.handout(page)
     fetcher = build_fetcher(deck.assets() + deck.fonts())
     with _own_errors():
-        source = weasyprint.HTML(string=html, url_fetcher=fetcher)
+        source = _html(weasyprint, html, fetcher)
         return bytes(source.write_pdf(finisher=_finisher(profile), **profile.options()))
 
 
@@ -254,6 +254,11 @@ def save_handout(
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_bytes(render_handout(deck, page, profile))
     return output_path
+
+
+def _html(weasyprint: Any, html: str, fetcher: Any) -> Any:
+    """``html`` as a WeasyPrint document whose every reference goes through ``fetcher``."""
+    return weasyprint.HTML(string=html, url_fetcher=fetcher, base_url=RELATIVE_BASE_URL)
 
 
 @contextmanager

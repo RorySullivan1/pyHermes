@@ -2,7 +2,8 @@
 A pandas DataFrame, as a :class:`~pyhermes.builder.components.DataTable`.
 
 Column kinds come from dtypes, and each numeric column carries its format and
-tone for the table to apply (#225), so a frame and a hand-built table agree.
+tone for the table to apply (#225), so a frame and a hand-built table agree. A
+text or datetime column given either is written by the adapter (#464).
 pandas is the ``[data]`` extra, imported only when a frame is actually adapted.
 """
 
@@ -53,9 +54,9 @@ def table_from_frame(
 
     Args:
         frame:       The DataFrame. Flat columns and a flat index only.
-        formats:     Column → formatter. A numeric column with none uses
-                     ``formats.number``: whole if integer, two places if float.
-        tones:       Column → ``"auto"`` (the sign decides), a ``Tone`` or a brand tone.
+        formats:     Column → formatter, for text columns too. A numeric column with none
+                     uses ``formats.number``: whole if integer, two places if float.
+        tones:       Column → ``"auto"`` (numeric only), a ``Tone`` or a brand tone.
         index:       Include the index as the first, row-header column. ``None``
                      includes it unless it is a default ``RangeIndex``.
         index_label: The index column's heading, if the index has no name.
@@ -98,7 +99,9 @@ def table_from_frame(
     columns = [
         Column(str(name), kind=ColumnKind.NUMERIC, format=fmt[name], tone=tones.get(name, ""))
         if numeric[name]
-        else Column(str(name), kind=ColumnKind.TEXT)
+        else Column(
+            str(name), kind=ColumnKind.TEXT, format=formats.get(name), tone=tones.get(name, "")
+        )
         for name in frame.columns
     ]
     if with_index:
@@ -118,7 +121,7 @@ def table_from_frame(
         cells: list[Any] = [_text_cell(label, missing, pd)] if with_index else []
         for name, value in zip(frame.columns, values, strict=True):
             if not numeric[name]:
-                cells.append(_text_cell(value, missing, pd))
+                cells.append(_text_cell(value, missing, pd, formats.get(name), tones.get(name, "")))
             elif pd.isna(value):
                 cells.append(Cell(missing))
             else:
@@ -160,8 +163,17 @@ def _is_meaningful(frame_index: Any, pd: Any) -> bool:
     return not default
 
 
-def _text_cell(value: Any, missing: str, pd: Any) -> Cell:
-    return Cell(missing if pd.isna(value) else str(value))
+def _text_cell(
+    value: Any,
+    missing: str,
+    pd: Any,
+    fmt: Callable[[Any], str] | None = None,
+    tone: str = "",
+) -> Cell:
+    """A non-figure cell; a missing value skips the formatter and the tone."""
+    if pd.isna(value):
+        return Cell(missing)
+    return Cell(str(value) if fmt is None else fmt(value), tone=tone)
 
 
 def _backend() -> Any:

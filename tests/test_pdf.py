@@ -19,7 +19,7 @@ import zlib
 
 import pytest
 
-from pyhermes.builder import FullWidth, TextBlock
+from pyhermes.builder import FullWidth, ImageBlock, TextBlock
 from pyhermes.builder.images import EmailImage
 from pyhermes.builder.typography import DEFAULT_FONTS
 from pyhermes.document import (
@@ -41,7 +41,7 @@ from pyhermes.pdf import (
     render_pdf,
     save_pdf,
 )
-from pyhermes.pdf.exporter import _backend, _own_errors
+from pyhermes.pdf.exporter import _backend, _own_errors, layout
 from qa.fixtures import a4_long_table as long_table
 from qa.fixtures import all_paged_fixtures
 
@@ -276,6 +276,36 @@ class TestTheFetcherServesTheManifestAndNothingElse:
             FullWidth(content=ChartBlock(EmailImage.inline(png_bytes, alt="C", width=40)))
         )
         assert render_pdf(doc).startswith(b"%PDF")
+
+    @pytest.mark.parametrize(
+        "src", ["charts/q3.png", "../q3.png", "/charts/q3.png", "//cdn.test/q3.png"]
+    )
+    def test_a_relative_image_is_refused_by_its_own_name(self, src):
+        # WeasyPrint drops a relative src before it reaches the fetcher when
+        # the document has no base URL, which left a finished-looking PDF
+        # with the chart missing (#463).
+        doc = document(FullWidth(content=ImageBlock(EmailImage.hosted(src, alt="Q3", width=40))))
+        with pytest.raises(UnreachableResourceError) as caught:
+            render_pdf(doc)
+        assert repr(src) in str(caught.value)
+
+    def test_a_relative_css_url_is_refused_by_its_own_name(self):
+        doc = document(
+            FullWidth(content=TextBlock('<div style="background-image:url(bg/q3.png)">x</div>'))
+        )
+        with pytest.raises(UnreachableResourceError, match=r"bg/q3\.png"):
+            render_pdf(doc)
+
+    def test_a_relative_link_is_still_a_link(self):
+        doc = document(FullWidth(content=TextBlock('<p><a href="reports/">Reports</a></p>')))
+        assert render_pdf(doc).startswith(b"%PDF")
+
+    def test_a_relative_image_is_refused_by_the_layout_too(self):
+        doc = document(
+            FullWidth(content=ImageBlock(EmailImage.hosted("q3.png", alt="Q", width=40)))
+        )
+        with pytest.raises(UnreachableResourceError, match=r"q3\.png"):
+            layout(doc)
 
     def test_the_fetcher_refuses_an_undeclared_cid(self):
         from pyhermes.pdf.fetcher import build_fetcher

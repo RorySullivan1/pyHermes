@@ -32,6 +32,15 @@ _START_TAG = re.compile(
     re.IGNORECASE,
 )
 _STYLE_ATTR = re.compile(r"\sstyle\s*=", re.IGNORECASE)
+_VOID_TAGS = frozenset({"hr"})
+
+
+def _self_closes(attrs: str) -> bool:
+    """Whether a void tag's trailing ``/`` is its slash, not the end of an unquoted value."""
+    if not attrs.endswith("/"):
+        return False
+    before = attrs[:-1]
+    return not before or before[-1] in " \t\r\n\f\"'"
 
 
 def refuse_top_headings(html: str, field: str) -> None:
@@ -62,7 +71,7 @@ def prose(context: jinja2.runtime.Context, html: str) -> str:
             return match.group(0)
         attrs = attrs.rstrip()
         close = ""
-        if attrs.endswith("/"):
+        if tag.lower() in _VOID_TAGS and _self_closes(attrs):
             attrs, close = attrs[:-1].rstrip(), " /"
         return f'<{tag}{attrs} style="{styles[tag.lower()]}"{close}>'
 

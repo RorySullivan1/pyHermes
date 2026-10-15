@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from pyhermes.builder.exceptions import ValidationError
+from pyhermes.builder.finite import require_finite
 from pyhermes.builder.models import _validate_align, check_valign
 from pyhermes.builder.regions import BoxSurface, Region
 from pyhermes.builder.textgen import html_to_text, join_blocks, underline, wrap
@@ -58,10 +59,12 @@ class TitleSlide(BoxSurface, Region):
         super().validate()
         self.validate_box_surface(self.CONTEXT_NAME)
         self.valign = check_valign(self.valign, f"'{self.CONTEXT_NAME}'")
-        if self.logo_width is not None and self.logo_width <= 0:
-            raise ValidationError(
-                f"'title_slide.logo_width' must be positive, got: {self.logo_width}"
-            )
+        if self.logo_width is not None:
+            require_finite(self.logo_width, "title_slide.logo_width")
+            if self.logo_width <= 0:
+                raise ValidationError(
+                    f"'title_slide.logo_width' must be positive, got: {self.logo_width}"
+                )
 
     def resolved_title(self, campaign_name: str = "") -> str:
         """The slide's own headline, or the deck's subject."""

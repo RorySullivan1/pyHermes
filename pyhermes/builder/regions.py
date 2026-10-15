@@ -22,6 +22,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 from .enums import TextAlign
 from .exceptions import ValidationError
+from .finite import require_finite
 from .models import FooterLink, LinkRow, _validate_color, _validate_url
 from .textgen import html_to_text, join_blocks, link_line, underline, wrap
 
@@ -372,8 +373,12 @@ class Banner(Region):
 
     def validate(self) -> None:
         super().validate()
-        if self.logo_width is not None and self.logo_width <= 0:
-            raise ValidationError(f"'banner.logo_width' must be positive, got: {self.logo_width}")
+        if self.logo_width is not None:
+            require_finite(self.logo_width, "banner.logo_width")
+            if self.logo_width <= 0:
+                raise ValidationError(
+                    f"'banner.logo_width' must be positive, got: {self.logo_width}"
+                )
 
     def context(self, facts: dict[str, Any]) -> dict[str, Any]:
         """
@@ -706,8 +711,12 @@ class Footer(BoxSurface, Region):
         self.validate_box_surface(self.CONTEXT_NAME)
         if self.border_color:
             _validate_color(self.border_color, "footer.border_color")
-        if self.image_width is not None and self.image_width <= 0:
-            raise ValidationError(f"'footer.image_width' must be positive, got: {self.image_width}")
+        if self.image_width is not None:
+            require_finite(self.image_width, "footer.image_width")
+            if self.image_width <= 0:
+                raise ValidationError(
+                    f"'footer.image_width' must be positive, got: {self.image_width}"
+                )
 
     def context(self, facts: dict[str, Any]) -> dict[str, Any]:
         resolved = {

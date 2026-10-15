@@ -7,8 +7,9 @@ hand-rolled formatter drifts, and each is pinned here by a named case.
 """
 
 import ast
+import decimal
 import pathlib
-from decimal import Decimal
+from decimal import ROUND_DOWN, ROUND_HALF_EVEN, Decimal
 
 import pytest
 
@@ -172,6 +173,79 @@ class TestTheOutputIsAscii:
 )
 def test_displays_zero(text, expected):
     assert displays_zero(text) is expected
+
+
+ALL_FORMATTERS = [number, pct, bps, delta, money, compact]
+
+HOSTILE_CONTEXTS = [
+    {"prec": 4, "rounding": ROUND_DOWN},
+    {"prec": 3, "rounding": ROUND_HALF_EVEN},
+    {"prec": 1, "rounding": ROUND_DOWN, "Emax": 5},
+]
+
+
+def _hostile(**settings):
+    context = decimal.Context(traps=[decimal.InvalidOperation, decimal.Inexact], **settings)
+    return decimal.localcontext(context)
+
+
+@pytest.mark.parametrize("settings", HOSTILE_CONTEXTS, ids=repr)
+@pytest.mark.parametrize("formatter", ALL_FORMATTERS, ids=lambda f: f.__name__)
+@pytest.mark.parametrize(
+    "value",
+    [0.123456, 1234.5, -2.675, 0.125, 999_950, 1e12, Decimal("1234567.891"), 0, -0.00001],
+)
+def test_the_hosts_decimal_context_never_changes_a_figure(formatter, value, settings):
+    """#448: precision, rounding and traps are the host's; a figure is the same under any."""
+    expected = [formatter(value), formatter(value, dp=3)]
+    with _hostile(**settings):
+        assert [formatter(value), formatter(value, dp=3)] == expected
+
+
+def test_a_hostile_context_still_rounds_half_up():
+    with _hostile(prec=4, rounding=ROUND_DOWN):
+        assert pct(0.123456) == "12.35%"
+        assert number(1234.5) == "1,235"
+        assert compact(1_240_000_000) == "1.2bn"
+
+
+@pytest.mark.parametrize(
+    ("call", "expected"),
+    [
+        (lambda: number(1e26, 2), "100,000,000,000,000,000,000,000,000.00"),
+        (lambda: number(10**28), "10,000,000,000,000,000,000,000,000,000"),
+        (lambda: pct(1e25), "1,000,000,000,000,000,000,000,000,000.00%"),
+        (lambda: bps(1e25), "+100,000,000,000,000,000,000,000,000,000 bps"),
+        (lambda: compact(1e40), "10,000,000,000,000,000,000,000,000,000tn"),
+        (lambda: money(Decimal("1E+30"), 2), "$1,000,000,000,000,000,000,000,000,000,000.00"),
+        (lambda: number(Decimal("-1E+30")), "-1,000,000,000,000,000,000,000,000,000,000"),
+    ],
+)
+def test_a_large_finite_figure_formats_instead_of_raising_invalid_operation(call, expected):
+    assert call() == expected
+
+
+def test_the_widest_float_formats_and_is_exact():
+    text = number(1.7976931348623157e308)
+    assert text.replace(",", "").startswith("17976931348623157")
+    assert len(text.replace(",", "")) == 309
+
+
+def test_digits_past_the_default_precision_are_not_rounded_away():
+    assert number(Decimal("1234567890123456789012345678901.5"), 1) == (
+        "1,234,567,890,123,456,789,012,345,678,901.5"
+    )
+    assert pct(Decimal("0.12345678901234567890123456789012"), 30) == (
+        "12.345678901234567890123456789012%"
+    )
+
+
+def test_the_ambient_context_is_left_as_the_host_set_it():
+    with _hostile(prec=4, rounding=ROUND_DOWN) as context:
+        pct(0.123456)
+        compact(1e40)
+        assert (context.prec, context.rounding) == (4, ROUND_DOWN)
+        assert not any(context.flags.values())
 
 
 def test_it_is_a_pure_module_with_no_builder_imports():

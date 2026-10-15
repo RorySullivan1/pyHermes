@@ -15,6 +15,7 @@ from . import formats
 from .components import Component, CopyAlignment
 from .enums import Tone
 from .exceptions import ValidationError
+from .finite import is_finite
 from .models import (
     Series,
     _require,
@@ -44,9 +45,9 @@ class BarItem:
 
     def validate(self) -> None:
         _require(self.label, "bar_item.label")
-        if not is_figure(self.value) or self.value != self.value:
+        if not is_figure(self.value) or not is_finite(self.value):
             raise ValidationError(
-                f"bar_item {self.label!r} must carry a number, got: {self.value!r}"
+                f"bar_item {self.label!r} must carry a finite number, got: {self.value!r}"
             )
         _validate_tone(self.tone, "bar_item.tone")
 

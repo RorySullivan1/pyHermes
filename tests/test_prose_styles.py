@@ -139,6 +139,31 @@ class TestTheAuthorStillDecides:
     def test_a_self_closing_rule_stays_self_closing(self):
         assert re.search(r'<hr style="[^"]*" />', _render(TextBlock("<p>a</p><hr/>")))
 
+    @pytest.mark.parametrize(
+        "attrs",
+        [
+            "href=https://example.com/reports/",
+            'href="https://example.com/reports/"',
+            "href='https://example.com/reports/'",
+            "href=/reports/",
+        ],
+    )
+    def test_a_url_ending_in_a_slash_keeps_it(self, attrs):
+        html = _render(TextBlock(f"<p><a {attrs}>r</a></p>"))
+        assert f"<a {attrs} style=" in html
+
+    @pytest.mark.parametrize(
+        ("markup", "kept"),
+        [("<hr />", "<hr style="), ('<hr class="a"/>', '<hr class="a" style=')],
+    )
+    def test_a_self_closing_rule_keeps_its_attributes(self, markup, kept):
+        html = _render(TextBlock(f"<p>a</p>{markup}"))
+        assert kept in html
+        assert re.search(r'<hr[^>]* style="[^"]*" />', html)
+
+    def test_an_unquoted_value_ending_in_a_slash_on_a_rule_is_not_a_closing_slash(self):
+        assert "<hr class=a/ style=" in _render(TextBlock("<p>a</p><hr class=a/>"))
+
     @pytest.mark.parametrize("tag", ["p", "span", "strong", "em", "abbr", "address", "header"])
     def test_a_tag_outside_the_set_is_untouched(self, tag):
         markup = f"<p><{tag}>x</{tag}></p>" if tag != "p" else "<p>x</p>"

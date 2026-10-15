@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 from pyhermes.builder.components import check_listing
 from pyhermes.builder.exceptions import ValidationError
+from pyhermes.builder.finite import require_finite
 from pyhermes.builder.models import _validate_align
 from pyhermes.builder.regions import BoxSurface, Region
 from pyhermes.builder.textgen import html_to_text, join_blocks, underline, wrap
@@ -70,8 +71,12 @@ class Cover(BoxSurface, Region):
     def validate(self) -> None:
         super().validate()
         self.validate_box_surface(self.CONTEXT_NAME)
-        if self.logo_width is not None and self.logo_width <= 0:
-            raise ValidationError(f"'cover.logo_width' must be positive, got: {self.logo_width}")
+        if self.logo_width is not None:
+            require_finite(self.logo_width, "cover.logo_width")
+            if self.logo_width <= 0:
+                raise ValidationError(
+                    f"'cover.logo_width' must be positive, got: {self.logo_width}"
+                )
 
     def resolved_title(self, firm_name: str = "") -> str:
         """The cover's own headline, or the firm it comes from."""

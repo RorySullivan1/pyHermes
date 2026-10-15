@@ -280,6 +280,14 @@ itself, everything else is refused by URL with a message saying what to do inste
 makes a refusal *stop the render*, because WeasyPrint's default is to warn and carry on — which
 would drop a chart out of a compliance document and still return a finished-looking PDF.
 
+**A relative reference is refused too (#463).** Given no `base_url`, WeasyPrint drops a relative
+`src` or `url()` before the fetcher sees it, so `fail_on_errors` never fired and the PDF came back
+with the chart missing. Every `weasyprint.HTML` is built with `base_url="pyhermes-relative:"`
+(`fetcher.RELATIVE_BASE_URL`), a scheme `urljoin` does not resolve against, so the reference
+reaches the fetcher byte for byte (`charts/q3.png`, `../q3.png`, `//host/x.png`) and is refused by
+that name. Measured: the printed fixtures' PDFs, PRINT and SCREEN, and the deck handouts are
+byte-identical with and without it, and a relative `href` is left as written.
+
 Consequences worth knowing:
 
 - **A document with hosted images cannot be printed.** That is the policy working. A printable

@@ -487,6 +487,21 @@ Validation runs at **construction time**, not render time. Models (`KpiItem`, `T
 `__init__`. By the time you call `.render()`, the data shape is already known good.
 **Preserve this pattern** when adding components — validate in `__init__`, not in `context()`.
 
+**A number a template or a computation reads is finite (#450).** A check written "positive"
+or "not below zero" passes NaN, because every comparison with it is false, and passes
+infinity. `pyhermes.builder.finite.require_finite(value, name)` is the one refusal, a
+`ValidationError` naming the field, and the one place its words live. It guards every size
+token and `PageFormat` and `PageMargin` (`_validate_size_fields`, so `derive` and `Spacing`
+too), a split's and a row's weights, a column's weight, a `HeatScale`'s bounds, the data a
+`BarList` and a `Sparkline` draw, the logo and image widths of the four regions that take one,
+a fold's distances, a panel's inset, a `PdfProfile`'s dpi and an equation's size. **A table
+cell's NaN stays legal:** `formats.MISSING` renders it as `--`, and a scaled or barred cell
+reads it as the lowest end, so it is a figure that means "missing", not a number a layout
+reads. An infinite figure was never legal there: the formatters refuse it at construction.
+`CellShare`'s width and `Rgba.alpha` check a closed range, which excludes all three already.
+`tests/test_finite_numbers.py` reads the size layers' and `Config`'s fields off the
+dataclasses, so a new token is covered without a line there.
+
 A **document** validates as it grows: `add_section` rejects a second claimant to an anchor and
 leaves the document as it was (#181, #183). **The one check that waits is a cross-reference**
 (#184): a `#fragment` may name a section not yet added, so `Document.validate()` answers it at
@@ -583,7 +598,9 @@ host already reports a builder mistake.
   `https`, `mailto`, `cid` and relative URLs, and rejects everything else (`javascript:`,
   `data:`, `vbscript:`, `file:`) with `ValidationError` at construction. Applies to the five
   `EmailMetadata` URL fields, `ChartBlock.image_url`, `ImageBlock.link_url`, and every
-  `EmailImage.hosted()` URL. Scheme only — whether a URL resolves, and its host/path, are
+  `EmailImage` URL. The checks sit in `EmailImage.__post_init__` (#447), not the factories, so
+  `EmailImage(EmbedStrategy.REMOTE, url=…)` is held to the scheme, the Content-ID pattern and
+  the sniffed format too. Scheme only — whether a URL resolves, and its host/path, are
   not checked. A builder-generated `data:` URI from `EmailImage.inline()` bypasses this by
   construction — it is validated by magic-byte sniffing instead, never by scheme.
 - **Hex-color enforcement** — colors use `#RRGGBB` everywhere. Validated by

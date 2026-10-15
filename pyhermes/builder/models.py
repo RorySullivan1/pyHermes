@@ -16,6 +16,7 @@ from . import formats
 from .apparatus import check_markers
 from .enums import ColumnAlign, ColumnKind, RowKind, SizeTheme, Tone, Trend
 from .exceptions import ValidationError
+from .finite import is_finite, require_finite
 from .prose import refuse_top_headings
 
 if TYPE_CHECKING:  # pragma: no cover - import cycle: images/regions import from here
@@ -618,8 +619,8 @@ class Series:
                 f"got {len(self.values)}"
             )
         for i, value in enumerate(self.values):
-            if not is_figure(value) or value != value:
-                raise ValidationError(f"{owner} value {i} must be a number, got: {value!r}")
+            if not is_figure(value) or not is_finite(value):
+                raise ValidationError(f"{owner} value {i} must be a finite number, got: {value!r}")
         if not callable(self.fmt):
             raise ValidationError(f"a {owner}'s format must be callable, got: {self.fmt!r}")
 
@@ -925,9 +926,12 @@ class Column:
         if self.width is not None and not (
             isinstance(self.width, (int, float))
             and not isinstance(self.width, bool)
+            and is_finite(self.width)
             and self.width > 0
         ):
-            raise ValidationError(f"'column.width' must be a positive weight, got: {self.width!r}")
+            raise ValidationError(
+                f"'column.width' must be a positive, finite weight, got: {self.width!r}"
+            )
         if self.format is not None and not callable(self.format):
             raise ValidationError(f"'column.format' must be callable, got: {self.format!r}")
         if self.tone != "auto":
@@ -1017,6 +1021,8 @@ class HeatScale:
             value = getattr(self, name)
             if (value is not None or name != "mid") and not is_figure(value):
                 raise ValidationError(f"'heat_scale.{name}' must be a number, got: {value!r}")
+            if value is not None:
+                require_finite(value, f"heat_scale.{name}")
         if not self.low < self.high:
             raise ValidationError(
                 f"'heat_scale.low' ({self.low}) must be below 'heat_scale.high' ({self.high})"
@@ -1028,6 +1034,7 @@ class HeatScale:
 
     def position(self, value: Any) -> tuple[float, Tone]:
         """Where ``value`` sits, in ``[0, 1]``, and the token it runs toward."""
+        value = float(value)  # a Decimal figure meets float bounds here, never in the text (#455)
         if self.mid is not None and value < self.mid:
             return _clamp((self.mid - value) / (self.mid - self.low)), Tone.NEGATIVE
         start = self.low if self.mid is None else self.mid

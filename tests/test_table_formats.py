@@ -14,9 +14,9 @@ import pytest
 
 from pyhermes.builder import DataTable
 from pyhermes.builder.engine import TemplateEngine
-from pyhermes.builder.enums import ColumnKind, Tone
+from pyhermes.builder.enums import ColumnKind, RowKind, Tone
 from pyhermes.builder.exceptions import ValidationError
-from pyhermes.builder.formats import pct
+from pyhermes.builder.formats import bps, pct
 from pyhermes.builder.models import Cell, Column, TableRow
 
 
@@ -89,6 +89,45 @@ class TestWhatTheContractRefuses:
     def test_a_bool_is_not_a_figure(self):
         with pytest.raises(ValidationError, match="cells"):
             TableRow(["A", True])
+
+
+class TestATableNeverChangesItsInputs:
+    """Each table formats its own copy; a column's format is the contract in every table (#452)."""
+
+    def test_two_tables_over_one_row_list_each_show_their_own_format(self):
+        rows = [TableRow(["A", 0.0125]), TableRow(["B", -0.002])]
+        first = DataTable(["Fund", Column("Return", format=pct)], rows)
+        second = DataTable(["Fund", Column("Return", format=bps)], rows)
+        assert [r.cells[1].text for r in first.rows] == ["1.25%", "-0.20%"]
+        assert [r.cells[1].text for r in second.rows] == [bps(0.0125), bps(-0.002)]
+        assert "1.25%" not in second.text()
+
+    def test_the_callers_rows_and_cells_are_left_as_they_were(self):
+        cell = Cell(value=0.0125, tone="negative")
+        rows = [TableRow(["A", cell]), TableRow(["B", 0.5])]
+        before = [
+            (row, list(row.cells), [dataclasses.replace(c) for c in row.cells]) for row in rows
+        ]
+        DataTable(["Fund", Column("Return", format=pct, tone="auto")], rows)
+        for row, cells, snapshot in before:
+            assert row.cells == snapshot
+            assert all(a is b for a, b in zip(row.cells, cells, strict=True))
+        assert (cell.text, cell.tone) == ("", "negative")
+        assert rows[1].cells[1].text == "" and rows[1].cells[1].value == 0.5
+
+    def test_the_table_holds_copies_not_the_callers_objects(self):
+        rows = [TableRow(["A", "x"])]
+        table = DataTable(["Fund", "Note"], rows)
+        assert table.rows[0] is not rows[0]
+        assert table.rows[0].cells[0] is not rows[0].cells[0]
+
+    def test_a_subhead_row_works_in_tables_of_different_widths(self):
+        subhead = TableRow(["Equities"], kind=RowKind.SUBHEAD)
+        wide = DataTable(["Name", "1Y", "3Y"], [subhead, TableRow(["A", "1%", "2%"])])
+        narrow = DataTable(["Name", "1Y"], [subhead, TableRow(["B", "3%"])])
+        assert len(subhead.cells) == 1
+        assert [len(row.cells) for row in wide.rows] == [3, 3]
+        assert [len(row.cells) for row in narrow.rows] == [2, 2]
 
 
 class TestTheRawFigureIsKept:

@@ -9,8 +9,9 @@
   #329 (PR #378); #335 (PR #380); #340 (PR #382); #384 (PRs #406, #411, #412); #385 (PR #413); the paper band seam (PR #408). #219 DOCX and #300
   PPTX were closed as not planned (2026-10-01, `media.md`). #288 is the owner's Outlook-desktop check.
 - The prose budget is live; the baseline is 43 and may only shrink.
-- **Open from the 2026-10-14 review**: epic #442 (#443, #444 merged in PR #470; #445–#446 in one PR) and 22 standalone
-  bugs #447–#468. The 2026-10-10 review is closed out (#418, #419, #429–#435). sessions/2026-10-14-codebase-review-issues.md sessions/2026-10-10-1725-codebase-review-issues.md
+- **Open from the 2026-10-14 review**: epic #442 closed (PRs #470, #471). Of the 22 standalone bugs, the ten in
+  groups 1-2 (#447-#452, #455, #457, #463, #464: URL gaps and figures) are in one PR; #453-#454, #456, #458-#462,
+  #465-#468 remain. sessions/2026-10-14-codebase-review-issues.md
 
 ## Decisions        (append-only; supersede, never delete)
 - Older entries, and epic #157's, are in sessions/ARCHIVE-2026.md.
@@ -38,6 +39,10 @@
 - [2026-10-14] **`layout()` returns a `Layout` carrying its profile and document; `render_layout`/`save_layout` take
   no profile (#445); preview lays out once and hands the one layout to lint, PDF and screenshots (#446)** — `media.md`,
   `qa-harness.md`
+- [2026-10-14] **A directly built `EmailImage` is validated like a factory's, `mime_type` held to the sniffed bytes
+  (#447); the PDF exporter refuses a relative URL by name through a sentinel base URL (#463); every number a layout
+  reads is finite, a table cell's NaN still meaning missing (#450); formatters round in a context of their own (#448)**
+  — `builder-architecture.md`, `media.md`, `data-layer.md`
 
 ## Threads          (open items; remove when closed)
 - **#394's ruling (justify on paper only) was taken under a goal**; the owner may widen it.

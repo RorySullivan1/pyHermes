@@ -38,6 +38,15 @@ The tone's own argument lives in `data-table.md`, beside the colour exception it
   `round()` gives `0.12` (banker's rounding) and rounds `2.675` to `2.67` (the binary float is
   `2.67499…`). Going through `repr` makes `0.0142` the decimal `0.0142` rather than the
   float's exact expansion. Swapping in `ROUND_HALF_EVEN` fails six named cases.
+- **Arithmetic runs in a context of its own (#448).** `quantize` and `abs` read the thread's
+  ambient `decimal` context, so a host at `prec=4, ROUND_DOWN` printed `12.34%` for
+  `pct(0.123456)`, and any figure wider than 28 digits (`number(1e26, 2)`, `compact(1e40)`)
+  raised `InvalidOperation`. `_context(value, dp)` builds a `Context` per figure: half up,
+  `prec` the figure's digits plus `dp` plus a margin, the widest exponent range, every trap and
+  flag named so a mutated `DefaultContext` cannot leak in. Digits are then read off the
+  `Decimal` tuple and grouped by hand, because `format()` and `int()` have a context and a
+  4,300-digit limit of their own. The same refusal as `locale`: output is a function of the
+  arguments only.
 - **ASCII output, minus sign included.** This is #148's charset reason: a non-ASCII character
   in a plain-text field is a mojibake risk. A typographic minus would be a paged-only option,
   and nothing needs it yet.
@@ -99,6 +108,12 @@ it both ways. `math.md` carries its decisions.
 - **A default `RangeIndex` is row numbering, not data**, so it is left out. Any other index
   becomes the row-header column. An unnamed one needs `index_label=`, because a column with
   no heading fails `Column`'s own validation.
+- **`formats=` and `tones=` reach a text or datetime column too (#464).** `_check_keys` accepts
+  any column, so the adapter applies what it accepts. A numeric column hands its raw figure to the
+  builder; a text column's cell is written by the formatter in the adapter, since the builder
+  formats figures only, and takes the tone. A missing value skips both (`MISSING`, untoned), so a
+  formatter is never handed a NaN, a `None` or a `NaT`. Only `"auto"` is refused, by name, since a
+  string has no sign.
 - **An unformatted numeric column** is whole for an integer dtype and two places for a
   float. Two places is a guess, and `formats=` is how a caller corrects it.
 - **The row kinds #119 shipped are reachable.** `total_row=` marks the last row, and

@@ -9,7 +9,6 @@ why a timeline's body is plain text.
 
 from __future__ import annotations
 
-import math
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any
@@ -136,9 +135,11 @@ class FactList(Component):
         self.subtitle = subtitle
 
     def flowed(self) -> list[list[Fact]]:
-        """The facts down each column in turn, the earlier columns the longer."""
-        depth = math.ceil(len(self.facts) / self.columns)
-        return [self.facts[start : start + depth] for start in range(0, len(self.facts), depth)]
+        """The facts down each column in turn, as many columns as asked, the earlier the longer."""
+        depth, extra = divmod(len(self.facts), self.columns)
+        sizes = [depth + (index < extra) for index in range(self.columns)]
+        starts = [sum(sizes[:index]) for index in range(self.columns)]
+        return [self.facts[start : start + size] for start, size in zip(starts, sizes, strict=True)]
 
     def text(self) -> str:
         """``Inception:  12 March 2019``, the values aligned after the longest label."""

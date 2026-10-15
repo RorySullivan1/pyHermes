@@ -17,6 +17,7 @@ Consumers call ``get_config()`` at use time; `.claude/rules/config.md` has the r
 
 from __future__ import annotations
 
+import math
 import os
 from contextvars import ContextVar, Token
 from dataclasses import dataclass, fields, replace
@@ -26,6 +27,9 @@ __all__ = ["Config", "get_config", "set_config", "config_override"]
 #: Prefix for the environment variables :meth:`Config.from_env` reads, so
 #: ``inline_image_limit_kb`` comes from ``PYHERMES_INLINE_IMAGE_LIMIT_KB``.
 ENV_PREFIX = "PYHERMES_"
+
+#: The annotations that make a field a number, as a postponed annotation spells them.
+_NUMERIC_TYPES = frozenset({"int", "float", "float | None"})
 
 
 @dataclass(frozen=True)
@@ -124,6 +128,16 @@ class Config:
     kicker_max_chars: int = 40
 
     def __post_init__(self) -> None:
+        # NaN passes every comparison below and infinity is positive, so both are
+        # refused first. A field is numeric by its annotation: a new one is covered.
+        for spec in fields(self):
+            value = getattr(self, spec.name)
+            if spec.type in _NUMERIC_TYPES and value is not None:
+                if isinstance(value, bool) or not isinstance(value, int | float):
+                    raise ValueError(f"{spec.name} must be a number, got {value!r}")
+                if not math.isfinite(value):
+                    raise ValueError(f"{spec.name} must be finite, got {value!r}")
+
         # Validation at construction, as everywhere else in this codebase --
         # a bad limit should name itself here, not surface later as a
         # confusing size or timing symptom. These are programming errors in
