@@ -358,6 +358,14 @@ Four decisions:
   nearly always a data mistake. `EmailBuilderError` raised while *importing* a target module
   propagates as itself rather than being flattened into "failed to import": the builder names
   the field, and that is the useful message.
+- **A draft that raises anything exits 2 too (#466).** `load_target` guards the draft's
+  callable (and an `EmailBuilder`'s `build()`): a builder error propagates as itself, any other
+  exception becomes a `TargetError` naming the callable, the exception class and its message.
+  `MathError`, `DataError` and `QrError` are *siblings* of `EmailBuilderError`, so catching
+  that one class left a traceback and Python's own exit 1, which a CI job reads as lint
+  errors. The guard lives in the shared loader, so `pyhermes.check` and `qa.preview` cannot
+  disagree. Only the draft is guarded: a raise while rendering is a pyHermes defect, and its
+  traceback is the useful output.
 - **One layout per run (#446).** A paged target is laid out once, before the lint, and the
   one `Layout` goes to `layout_findings`, to `save_layout` for the PDF and to `capture_pages`
   for the sheets. So #426's warn-once promise holds in the tool authors run. Counted by

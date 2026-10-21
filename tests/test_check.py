@@ -115,6 +115,48 @@ class TestTheCommand:
         assert main([f"{tmp_path / 'nope.py'}:build"]) == EXIT_BUILD_FAILED
         assert "No such file" in capsys.readouterr().err
 
+    @pytest.mark.parametrize(
+        ("raises", "message"),
+        [
+            ("KeyError('x')", "KeyError: 'x'"),
+            ("MathSyntaxError('bad \\\\frac')", "MathSyntaxError: bad"),
+            ("DataError('no such column')", "DataError: no such column"),
+            ("QrError('too long')", "QrError: too long"),
+            ("ValidationError('subject is empty')", "ValidationError: subject is empty"),
+        ],
+    )
+    def test_a_draft_that_raises_exits_two_with_its_message(
+        self, tmp_path, capsys, raises, message
+    ):
+        """Any raise is "does not build", never a traceback and the lint code (#466)."""
+        boom = tmp_path / "boom.py"
+        boom.write_text(
+            "from pyhermes.builder.exceptions import ValidationError\n"
+            "from pyhermes.data.exceptions import DataError\n"
+            "from pyhermes.math import MathSyntaxError\n"
+            "from pyhermes.qr.exceptions import QrError\n\n\n"
+            f"def boom():\n    raise {raises}\n",
+            encoding="utf-8",
+        )
+        assert main([f"{boom}:boom", "--out", str(tmp_path / "out")]) == EXIT_BUILD_FAILED
+        err = capsys.readouterr().err
+        assert message in err
+        assert "Traceback" not in err
+        assert not (tmp_path / "out").exists()
+
+    def test_a_builder_that_raises_when_built_exits_two(self, tmp_path, capsys):
+        boom = tmp_path / "boom.py"
+        boom.write_text(
+            "from pyhermes.builder import EmailBuilder\n\n\n"
+            "def late():\n"
+            "    builder = EmailBuilder()\n"
+            "    builder.build = lambda: {}['missing']\n"
+            "    return builder\n",
+            encoding="utf-8",
+        )
+        assert main([f"{boom}:late"]) == EXIT_BUILD_FAILED
+        assert "KeyError" in capsys.readouterr().err
+
     def test_it_runs_as_a_module(self, draft, tmp_path):
         result = subprocess.run(
             [sys.executable, "-m", "pyhermes.check", f"{draft}:build", "--out", str(tmp_path)],

@@ -158,12 +158,28 @@ class TestResolvingAModuleSpec:
         with pytest.raises(ValidationError, match="email_subject"):
             resolve(f"{module}:build")
 
+    def test_a_callable_that_raises_is_a_preview_error(self, tmp_path):
+        module = write_module(tmp_path, "draft", "def build():\n    raise KeyError('x')\n")
+        with pytest.raises(PreviewError, match=r"build raised KeyError: 'x'"):
+            resolve(f"{module}:build")
+
     def test_a_target_with_no_callable_after_the_colon(self, tmp_path):
         with pytest.raises(PreviewError, match="names no callable"):
             resolve(f"{tmp_path / 'draft.py'}:")
 
 
 class TestTheCommand:
+    def test_a_callable_that_raises_exits_two_without_a_traceback(self, tmp_path, capsys):
+        """The same exit code as `pyhermes.check`, from the same loader (#466)."""
+        module = write_module(tmp_path, "draft", "def build():\n    raise KeyError('x')\n")
+
+        code = main([f"{module}:build", "--out", str(tmp_path / "out")])
+
+        assert code == EXIT_BUILD_FAILED
+        err = capsys.readouterr().err
+        assert "KeyError: 'x'" in err
+        assert "Traceback" not in err
+
     def test_it_writes_html_to_the_output_directory(self, tmp_path, capsys):
         code = main(["minimal", "--out", str(tmp_path)])
 
