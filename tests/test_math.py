@@ -64,6 +64,61 @@ class TestTheBytesAreDeterministicAndVersionless:
         assert len({_render(fontset=name).png for name in FONTSETS}) == 5
 
 
+class TestTheCallersRcParamsDoNotReachTheBytes:
+    """The renderer draws in an rc context of its own, and leaves the caller's alone (#467)."""
+
+    #: Each reads the output: the glyphs, the antialiasing, the TeX engine, the dpi and size.
+    RC = [
+        {"mathtext.default": "regular"},
+        {"text.antialiased": False},
+        {"text.usetex": True},
+        {"mathtext.fontset": "stix", "mathtext.rm": "serif"},
+        {"font.size": 31, "font.family": "monospace"},
+        {"figure.dpi": 37, "savefig.dpi": 41, "savefig.transparent": False},
+        {"savefig.bbox": "standard", "savefig.pad_inches": 0.9},
+        {"text.hinting": "none"},
+        {"figure.facecolor": "red", "savefig.facecolor": "red"},
+    ]
+
+    @pytest.mark.parametrize("rc", RC, ids=lambda rc: next(iter(rc)))
+    def test_a_hosts_settings_leave_the_bytes_identical_to_the_default_render(self, rc):
+        import matplotlib
+
+        before = _render(fontset="cm").png
+        with matplotlib.rc_context(rc):
+            assert _render(fontset="cm").png == before
+
+    def test_the_issues_probe_is_the_same_size_under_regular_math(self):
+        import matplotlib
+
+        plain = _render()
+        with matplotlib.rc_context({"mathtext.default": "regular"}):
+            regular = _render()
+        assert (regular.width_px, regular.height_px) == (plain.width_px, plain.height_px)
+
+    def test_the_callers_state_is_restored_afterwards(self):
+        import matplotlib
+
+        with matplotlib.rc_context({"mathtext.default": "regular", "text.usetex": True}):
+            held = dict(matplotlib.rcParams)
+            _render()
+            assert dict(matplotlib.rcParams) == held
+
+    def test_a_backend_failure_surfaces_as_a_math_error_with_the_original_chained(
+        self, monkeypatch
+    ):
+        from matplotlib.figure import Figure
+
+        def broken(*args, **kwargs):
+            raise RuntimeError("Failed to process string with tex")
+
+        monkeypatch.setattr(Figure, "savefig", broken)
+        with pytest.raises(MathError, match=r"could not render 'x\^2'") as caught:
+            _render("x^2")
+        assert not isinstance(caught.value, MathSyntaxError)
+        assert isinstance(caught.value.__cause__, RuntimeError)
+
+
 class TestASourceMathtextRefuses:
     @pytest.mark.parametrize(
         ("latex", "named"),

@@ -18,7 +18,7 @@ from pyhermes.builder.exceptions import ValidationError
 from pyhermes.builder.filters import validate_hex_color
 from pyhermes.builder.finite import is_finite
 
-from .exceptions import BackendMissingError, MathSyntaxError
+from .exceptions import BackendMissingError, MathError, MathSyntaxError
 
 #: The mathtext fontsets. ``custom`` is refused: it falls back through the
 #: caller's rcParams, so the same source would render differently per machine.
@@ -110,31 +110,43 @@ def check_sources(latex: str, lines: Sequence[str] | None) -> list[str]:
 def _render(
     text: str, source: str, font_px: float, color: str, scale: float, fontset: str, align: str
 ) -> RenderedMath:
-    """Draw ``text`` on an empty Figure and crop the PNG to it."""
+    """
+    Draw ``text`` on an empty Figure and crop the PNG to it.
+
+    Drawn inside ``rc_context`` reset to matplotlib's built-in defaults, so the
+    caller's rcParams (a fontset, ``text.usetex``, antialiasing) never reach the
+    bytes and are restored afterwards (#467). The context also covers the figure's
+    construction, because ``figure.*`` settings are read there.
+    """
     mpl = _backend()
-    figure = mpl.figure.Figure(figsize=(0.01, 0.01))
-    figure.text(
-        0,
-        0,
-        text,
-        fontsize=font_px * _PT_PER_PX,
-        color=color,
-        math_fontfamily=fontset,
-        multialignment=align,
-    )
     buffer = io.BytesIO()
     try:
-        figure.savefig(
-            buffer,
-            format="png",
-            dpi=PX_PER_INCH * scale,
-            transparent=True,
-            bbox_inches="tight",
-            pad_inches=0.02,
-            metadata={"Software": None},
-        )
+        with mpl.rc_context():
+            # rcdefaults, not rc_file_defaults: the latter reads the machine's matplotlibrc.
+            mpl.rcdefaults()
+            figure = mpl.figure.Figure(figsize=(0.01, 0.01))
+            figure.text(
+                0,
+                0,
+                text,
+                fontsize=font_px * _PT_PER_PX,
+                color=color,
+                math_fontfamily=fontset,
+                multialignment=align,
+            )
+            figure.savefig(
+                buffer,
+                format="png",
+                dpi=PX_PER_INCH * scale,
+                transparent=True,
+                bbox_inches="tight",
+                pad_inches=0.02,
+                metadata={"Software": None},
+            )
     except ValueError as exc:
         raise _syntax_error(source, exc) from exc
+    except Exception as exc:
+        raise MathError(f"matplotlib could not render {source!r}: {exc}") from exc
     png = buffer.getvalue()
     width, height = struct.unpack(">II", png[16:24])
     return RenderedMath(png=png, width_px=width, height_px=height)
