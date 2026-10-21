@@ -244,6 +244,7 @@ test (#60). `lint_html(html)` returns `Finding(rule_id, severity, location, mess
 | `vml-fill-frame-without-src` | error | A `v:fill` claiming `type="frame"` with no `src` (#150). Outlook paints a broken-image placeholder over the shape rather than falling back to `color`/`opacity` |
 | `size-budget` | warn/error | The 90/102 KB thresholds, **attributing the bytes to each body section and to the section-marker regions** (#259) |
 | `slide-overflow` | error, or warn | A slide whose copy runs past its body, **decks only** (#297). It needs a layout, so `layout_findings(document)` runs it, from `lint_document`, the check and `preview --lint`; without `[pdf]` it is one warning saying the deck was not measured |
+| `handout-notes-clipped` | warn | A slide whose speaker notes the printed handout clips at its page's foot, **decks only** (#459). `layout_findings` lays the handout out when a slide has notes and reads `clipped_notes`; a warning because the slides and the notes projection are whole |
 
 Seven decisions worth not re-litigating:
 

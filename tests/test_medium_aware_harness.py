@@ -66,7 +66,7 @@ class TestEveryRuleSaysWhereItApplies:
         # Narrowing the set is what this guards.
         paged_only = {"page-size-declared", "paged-table-width", "table-structure"}
         print_only = {"print-marks", "rgb-only"}
-        deck_only = {"slide-overflow"}
+        deck_only = {"slide-overflow", "handout-notes-clipped"}
         assert rules_for("email") == set(SOURCES) - paged_only - print_only - deck_only
         assert len(rules_for("email")) == 13
 

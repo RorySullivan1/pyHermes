@@ -194,11 +194,21 @@ class TestAPreviewRunLaysOutOnce:
         assert (tmp_path / "a4_portrait.pdf").read_bytes().startswith(b"%PDF")
         assert (tmp_path / "screenshots" / "a4_portrait-page-1.png").exists()
 
-    def test_a_deck_linted(self, engine_calls, tmp_path):
+    def test_a_deck_linted(self, tmp_path):
+        # The handout is a second document (#459's notes rule lays it out), so each is counted.
+        from pyhermes.pdf import exporter
         from qa.preview import main
 
-        main(["pitch_16_9", "--lint", "--out", str(tmp_path)])
-        assert len(engine_calls) == 1
+        laid: list[str] = []
+        original = exporter._html
+
+        def recording(weasyprint, html, fetcher):
+            laid.append(html)
+            return original(weasyprint, html, fetcher)
+
+        with mock.patch.object(exporter, "_html", recording):
+            main(["pitch_16_9", "--lint", "--out", str(tmp_path)])
+        assert len(laid) == len(set(laid)) == 2
 
     def test_preview_writes_its_pdf_through_the_exporter(self):
         from qa import preview

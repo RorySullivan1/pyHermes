@@ -370,6 +370,7 @@ class TestTheRuleTable:
             "paged-table-width",
             "table-structure",
             "slide-overflow",
+            "handout-notes-clipped",
         }
 
     def test_the_overflow_rule_reaches_no_other_medium(self):

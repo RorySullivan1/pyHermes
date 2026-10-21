@@ -480,6 +480,33 @@ class TestTheHandout:
         for name, build in all_deck_fixtures().items():
             assert clipped_notes(build()) == [], name
 
+    def test_the_lint_warns_for_each_slide_whose_notes_the_handout_clips(self):
+        from pyhermes.check import Severity, layout_findings, lint_document
+
+        deck = self._notes_deck()
+        clipped = [f for f in layout_findings(deck) if f.rule_id == "handout-notes-clipped"]
+        assert [(f.location, f.severity) for f in clipped] == [
+            ("slide 2: Slide A", Severity.WARNING)
+        ]
+        assert clipped[0] in lint_document(deck)
+
+    def test_the_lint_is_quiet_when_the_notes_fit(self):
+        from pyhermes.check import layout_findings
+
+        for deck in (self._notes_deck(words=20), *(b() for b in all_deck_fixtures().values())):
+            assert not [f for f in layout_findings(deck) if f.rule_id == "handout-notes-clipped"]
+
+    def test_a_deck_without_notes_lays_no_handout_out(self, monkeypatch):
+        import pyhermes.pdf as pdf
+        from pyhermes.check import layout_findings
+
+        def refuse(*args, **kwargs):
+            raise AssertionError("a deck with no notes laid its handout out")
+
+        monkeypatch.setattr(pdf, "layout_handout", refuse)
+        deck = _bare().add_slide(_paragraph("a"), "Slide A").add_slide(_paragraph("b"), "Slide B")
+        assert not [f for f in layout_findings(deck) if f.rule_id == "handout-notes-clipped"]
+
     def test_a_held_handout_layout_is_read_not_laid_out_again(self):
         from pyhermes.pdf import layout, layout_handout
 

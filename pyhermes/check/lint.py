@@ -28,6 +28,7 @@ from pyhermes.builder.exceptions import SizeError
 from pyhermes.config import get_config
 
 if TYPE_CHECKING:  # pragma: no cover - the exporter is imported only on use
+    from pyhermes.deck import Deck
     from pyhermes.pdf import Layout
 
 __all__ = [
@@ -206,6 +207,14 @@ SOURCES: dict[str, str] = {
         "back where each slide's closing sentinel landed; without the [pdf] "
         "extra it says it could not measure rather than passing."
     ),
+    "handout-notes-clipped": (
+        "A handout prints one page a sheet (#351), so speaker notes longer than the "
+        "room under the scaled slide are clipped at the page's foot, silently in the "
+        "PDF (#459); a contents slide's page numbers hold only because of that bound. "
+        "This lays the handout out and reads back where each slide's notes ended "
+        "against the foot of their box. A warning, not an error: the slides are whole "
+        "and the notes projection keeps every word, so only the printed handout loses copy."
+    ),
     "size-budget": (
         "Gmail clips a message above ~102 KB behind a 'View entire message' "
         "link. pyhermes/config.Config.size_limit_kb; Email._validate_size enforces "
@@ -308,6 +317,8 @@ RULE_MEDIA: dict[str, frozenset[str]] = {
     # One slide is one sheet, so overflow is clipped copy (#297). A deck is
     # projected or sent, never pressed, so the two print rules stay off it.
     "slide-overflow": frozenset({"deck"}),
+    # Only a deck has speaker notes, and only its handout prints them under a sheet.
+    "handout-notes-clipped": frozenset({"deck"}),
 }
 
 
@@ -1058,7 +1069,8 @@ def lint_document(document: Document) -> list[Finding]:
 
 def layout_findings(document: Document, laid_out: Layout | None = None) -> list[Finding]:
     """
-    The findings only the print engine can answer: today, a slide whose copy overflows (#297).
+    The findings only the print engine can answer: a slide whose copy overflows (#297),
+    and a slide whose speaker notes the printed handout clips (#459, a warning).
 
     ``laid_out``, a :func:`~pyhermes.pdf.layout` of ``document`` the caller
     already holds, is read rather than laying the deck out again (#446).
@@ -1105,6 +1117,38 @@ def layout_findings(document: Document, laid_out: Layout | None = None) -> list[
             message="its copy does not fit its band and is clipped; trim it or split the slide",
         )
         for name in overflowing
+    ] + _handout_findings(document)
+
+
+def _handout_findings(deck: Deck) -> list[Finding]:
+    """
+    A warning for each slide whose speaker notes the printed handout clips (#459).
+
+    Laid out only when a slide has notes, so a deck without them costs no second
+    layout. The deck itself laid out already, so a refusal here would be the same one.
+    """
+    from pyhermes.deck import clipped_notes
+    from pyhermes.pdf import PdfError
+
+    if "handout-notes-clipped" not in rules_for(deck.medium.name):
+        return []
+    if not any(slide.notes.strip() for slide in deck.slides):
+        return []
+    try:
+        clipped = clipped_notes(deck)
+    except PdfError:
+        return []
+    return [
+        Finding(
+            rule_id="handout-notes-clipped",
+            severity=Severity.WARNING,
+            location=name,
+            message=(
+                "its speaker notes run past the handout page and are clipped there; "
+                "shorten them, or the printed handout loses the rest"
+            ),
+        )
+        for name in clipped
     ]
 
 

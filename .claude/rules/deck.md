@@ -288,8 +288,13 @@ the proof the defaults render byte for byte (#353's own allowance).
   length from 100 to 330 words. **Moved:** the two fixtures' handout PDFs. Their rasters at 1.5x
   are pixel-identical page for page and the page count is the same, but the clip changes the
   stream, so the bytes and pdfium's text order differ. The slide PDFs and every golden held.
-  **No lint rule and no `layout_findings` wiring**: nothing lints a handout (the check builds a
-  document; `qa.preview` writes none), so the function is the finding until something does.
+  **`handout-notes-clipped` makes it a lint finding**: `layout_findings` runs it for a deck,
+  after `slide-overflow`, so `lint_document`, `pyhermes.check` and `preview --lint` report each
+  clipped slide. A **warning**, not an error like `slide-overflow`: the slides are whole and the
+  notes projection keeps every word, so only the printed handout loses copy. The handout is laid
+  out only when a slide has notes, so a deck without them costs no second layout; with them it is
+  a second document, laid out once, and `TestAPreviewRunLaysOutOnce` counts each document once. A
+  refusal there is skipped, since the deck's own layout already reported it.
 - **The fixture** opens on an agenda, then a divider, a full-bleed slide, an image-left and
   an image-right slide, a second divider anchored middle, a sourced table whose source cites
   the reference the last slide lists, a statement slide carrying the notes sentinel, and the
