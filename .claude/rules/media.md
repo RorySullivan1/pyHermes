@@ -583,6 +583,13 @@ by the owner's decision (2026-10-01).
   holds to the shipped media's `paged`.
 - **A URL a phone cannot open is refused**: the builder's scheme check, then `http`, `https` or
   `mailto` only. Below 72px it is refused as too small to scan.
+- **The adapter raises the package's errors, not segno's or Python's (#468).** `qr_code` and
+  `render_qr` check `size` before segno runs, through `check_qr_size`, the one function the
+  component's constructor uses, so a `0`, `"96"` or `None` is a `ValidationError` naming the
+  size. A URL that passes `check_qr_url` and still cannot be encoded (about 2,300 characters at
+  error level M) is a `QrError` naming `url` and its length, and a colour segno cannot read is
+  one naming it, each chaining the original. The check is by exception type (`ValueError`, which
+  segno's `DataOverflowError` is), because segno exposes no length to compare against.
 - **The gallery's code is a constant.** Goldens run where segno is absent, so
   `qa/fixtures/_qr.py` holds the module matrix and `_png.matrix_png` draws it; a `[qr]` test
   holds the constant to segno's encoding of its URL. `zxing-cpp`, a self-contained wheel, joins
