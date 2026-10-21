@@ -289,6 +289,16 @@ Seven decisions worth not re-litigating:
   decorative rules, and counting those made the heaviest "region" a row of box-drawing
   characters, a breakdown that names nothing.
 
+**`page-size-declared` reads the base `@page` rule, not the word "size" (#465).** It once
+matched `\bsize` anywhere inside an `@page` block, and `font-size` in a running box's margin
+rule satisfied it, so it stayed silent on exactly the documents that have a running header.
+It now reads the `style` elements, strips comments and counts a `size` declared directly in
+an `@page` rule with no page selector. Nested margin boxes and footnote areas, `@page cover`,
+`@page :first` and a turned page's `@page landscape` do not count: they reach some sheets,
+and the rule exists for the engine's default page on the rest. Probed on every paged fixture
+with only the base `size:` removed (running boxes and named pages as rendered): each fails,
+and each passes as rendered; the same holds across the brochure and deck galleries.
+
 **Markup inside `<!--[if mso]>` is not linted** as standard HTML. `HTMLParser` hands a
 conditional comment over as text rather than tags, which is the behaviour wanted: the block
 carries Outlook-only VML, so judging it by standard-HTML rules would fire on markup that is

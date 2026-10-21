@@ -885,10 +885,48 @@ def _budget_findings(html: str, sections: list[tuple[str, str]] | None = None) -
     ]
 
 
-#: A ``@page`` rule declaring a size. Matched over the whole document rather
-#: than parsed: it lives in a ``style`` element, which HTMLParser hands over
-#: as text.
-_PAGE_SIZE = re.compile(r"@page\b[^{]*\{[^}]*\bsize\s*:", re.IGNORECASE | re.DOTALL)
+_STYLE_ELEMENT = re.compile(r"<style\b[^>]*>(.*?)</style\s*>", re.IGNORECASE | re.DOTALL)
+_CSS_COMMENT = re.compile(r"/\*.*?\*/", re.DOTALL)
+_AT_PAGE = re.compile(r"@page(?![\w-])", re.IGNORECASE)
+_SIZE_DECLARATION = re.compile(r"(?:^|;)\s*size\s*:", re.IGNORECASE)
+
+
+def _declares_page_size(html: str) -> bool:
+    """
+    Whether a base ``@page`` rule declares ``size``, which is the one every sheet takes.
+
+    Read from the ``style`` elements, with comments out. Only a declaration
+    directly in a rule with no page selector counts: ``font-size`` inside a
+    margin box is nested and spelled differently, and ``@page cover`` or
+    ``@page :first`` reaches some sheets only.
+    """
+    css = _CSS_COMMENT.sub("", "".join(_STYLE_ELEMENT.findall(html)))
+    for at_page in _AT_PAGE.finditer(css):
+        opening = css.find("{", at_page.end())
+        if opening == -1 or css[at_page.end() : opening].strip():
+            continue
+        own: list[str] = []
+        depth, quote = 0, ""
+        for char in css[opening + 1 :]:
+            if quote:
+                quote = "" if char == quote else quote
+            elif char in "\"'":
+                quote = char
+            elif char == "{":
+                depth += 1
+            elif char == "}":
+                if depth == 0:
+                    break
+                depth -= 1
+                if depth == 0:
+                    own.append(";")
+                continue
+            if depth == 0:
+                own.append(char)
+        if _SIZE_DECLARATION.search("".join(own)):
+            return True
+    return False
+
 
 #: A table carrying a percentage width as an attribute, and the CSS rule that
 #: maps it back for an engine that ignores attributes.
@@ -906,7 +944,7 @@ def _paged_findings(html: str) -> list[Finding]:
     imagining one.
     """
     findings = []
-    if not _PAGE_SIZE.search(html):
+    if not _declares_page_size(html):
         findings.append(
             Finding(
                 rule_id="page-size-declared",
