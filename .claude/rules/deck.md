@@ -89,6 +89,13 @@ and it reaches a colleague as a PDF through the unchanged exporter, as a report 
   `TITLE_FACTS` and `CLOSING_FACTS`.
 - **A `Contents` on a slide lists every titled slide and divider but the one it sits on**,
   the paged rule of skipping its own section. An agenda slide does not list itself.
+- **A `Slide` object is on one sheet only (#462).** `Deck.number` finds a slide by identity, so one
+  object added twice printed the first sheet's number on both (footer, notes, `slide-N-end`),
+  and the second sheet was never measured. `_append` refuses it with a `ValidationError` naming
+  the slide and its sheet, rather than numbering by position: a titled slide twice was already
+  refused for its anchor, and an untitled one claims none, so identity is the only test left. The
+  same sections in a second `Slide` are fine. `Document.add_section` does not refuse an untitled
+  section twice, but a section has no number of its own to print.
 - **Footnotes are refused**: a note floats to the sheet's foot, which the footer band owns.
   A slide's `source=` line is where its source goes instead (#347).
 - **Positioned, not valign'd.** The first raster put the title slide's and the divider's copy

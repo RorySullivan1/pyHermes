@@ -178,6 +178,23 @@ class TestTheDeck:
         with pytest.raises(ValidationError, match="Twice"):
             deck.add_slide(_sections(), "Twice")
 
+    @pytest.mark.parametrize("title", [None, "Twice"], ids=["untitled", "titled"])
+    def test_a_slide_object_added_twice_is_refused_naming_its_sheet(self, title):
+        deck = Deck(FACTS, closing_slide=EmptyClosingSlide())
+        slide = Slide(_sections(), title, "Say it once.")
+        deck.add_slide(_sections(), "First").add_slide(slide)
+        with pytest.raises(ValidationError, match=r"already sheet 3 of this deck"):
+            deck.add_slide(slide)
+        assert deck.slides.count(slide) == 1
+        assert [deck.number(s) for s in deck.slides] == [2, 3]
+        assert deck.notes().count("Say it once.") == 1
+
+    def test_the_same_sections_on_a_second_slide_are_a_second_sheet(self):
+        sections = _sections()
+        deck = _bare().add_slide(Slide(sections), None).add_slide(Slide(sections), None)
+        assert [deck.number(s) for s in deck.slides] == [1, 2]
+        assert deck.render().count('class="sheet slide"') == 2
+
     def test_the_text_part_underlines_each_slides_title(self):
         text = _bare().add_slide(_sections("Body copy"), "Alpha").text()
         assert "Alpha\n-----\n\n" in text

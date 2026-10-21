@@ -190,8 +190,8 @@ class Deck(Document):
 
         Raises:
             ValidationError: For a slide's own reasons, a footnote, a picture too
-                coarse for the sheet, or an anchor the deck already has; the
-                deck is left as it was.
+                coarse for the sheet, an anchor the deck already has, or a slide
+                already on it; the deck is left as it was.
         """
         if isinstance(sections, Slide):
             if (
@@ -252,7 +252,18 @@ class Deck(Document):
         return self._append(DividerSlide(title, subtitle, notes, valign=valign))
 
     def _append(self, slide: Slide) -> Self:
-        """Add ``slide`` through the document's checks, then refuse a note or a coarse picture."""
+        """
+        Add ``slide`` through the document's checks, then refuse a note or a coarse picture.
+
+        A ``Slide`` already on the deck is refused by identity (#462): a sheet is
+        numbered by its slide, so one object on two sheets would print the first's
+        number on both. An untitled slide claims no anchor, so nothing else stops it.
+        """
+        if any(held is slide for held in self.slides):
+            raise ValidationError(
+                f"{slide._name()} is already sheet {self.number(slide)} of this deck, and a "
+                "slide prints on one sheet; build a second Slide for another"
+            )
         self._check_pictures(slide)
         Document.add_section(self, slide)
         if self._footnotes():
