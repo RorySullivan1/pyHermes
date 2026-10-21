@@ -507,7 +507,8 @@ would ship the bytes.
   blocks, naming the section: a print-only section citing a note in its `source` would have
   numbered paper's notes one ahead of the email's. `title`, `subtitle`, `kicker` and `as_of` are
   never walked for a marker, so they need no refusal, and `Only` holds one block, which has no
-  source line of its own.
+  source line of its own. A hosted figure's source (#454) is reached through `hosted()`, so a
+  citation in one is refused inside either wrapper too.
 - **A medium name nothing ships is refused**: `SHIPPED_MEDIA` in `medium.py`, held by a test to
   the shipped `Medium` objects the kit may not import.
 - In a cell an omitted block leaves the cell empty; `OnlySections` sits at the top of a

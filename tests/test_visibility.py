@@ -199,6 +199,16 @@ class TestWhatItRefuses:
         assert section.marked_copy() == ["Plain"]
         OnlySections([section], media="document")
 
+    def test_a_citation_in_a_hosted_figures_source(self):
+        image = EmailImage.attached(NOTE_PNG, alt="Mark", width=40)
+        hosting = TextBlock(
+            "<p>x</p>", figure=ImageBlock(image, caption="Fig [@fama1993]", wrap="left")
+        )
+        with pytest.raises(ValidationError, match="ImageBlock with a citation"):
+            Only(hosting, "email")
+        with pytest.raises(ValidationError, match="ImageBlock with a citation"):
+            OnlySections([FullWidth(hosting)], "document")
+
     def test_a_source_line_with_no_marker_is_fine(self):
         OnlySections([FullWidth(TextBlock("<p>x</p>"), source="Bloomberg", as_of="Q3")], "document")
 

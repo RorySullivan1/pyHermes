@@ -341,6 +341,18 @@ class Component:
         """The blocks this one holds, in reading order: none for a leaf (#261)."""
         return []
 
+    def hosted(self) -> list[Component]:
+        """
+        Blocks this one renders inside its own markup and projects itself (#454).
+
+        Unlike :meth:`children`, which a composite hands the walk in place of
+        itself, a host stays a leaf and keeps its own notes, markers and raw
+        HTML. The walk reads what it hosts as well, so the figure's anchor is
+        registered, its citations resolve and its key is checked, but the
+        text part reads the host alone, which prints the figure once.
+        """
+        return []
+
     def raw_html(self) -> list[str]:
         """
         The caller markup this component emits raw, for the document's link check.
@@ -435,11 +447,11 @@ class Component:
 
 
 def descendants(components: Sequence[Component]) -> list[Component]:
-    """Every component, each followed by those it holds, depth first in reading order."""
+    """Every component, each followed by those it holds or hosts, depth first in reading order."""
     found: list[Component] = []
     for component in components:
         found.append(component)
-        found.extend(descendants(component.children()))
+        found.extend(descendants([*component.children(), *component.hosted()]))
     return found
 
 
@@ -449,6 +461,8 @@ def leaves(components: Sequence[Component]) -> list[Component]:
 
     An exhibit is one stop even when it holds blocks, a grid its panels or a
     chart its key (#335): the walk numbers the exhibit, never what it holds.
+    What a block hosts follows it as leaves of their own (#454), so a hosted
+    figure's anchor and citations join the walk without it being a child.
     """
     found: list[Component] = []
     for component in components:
@@ -457,6 +471,7 @@ def leaves(components: Sequence[Component]) -> list[Component]:
             found.extend(leaves(held))
         else:
             found.append(component)
+        found.extend(leaves(component.hosted()))
     return found
 
 
@@ -1440,7 +1455,7 @@ class TextBlock(CopyAlignment, Component):
         figure:   An :class:`ImageBlock`, :class:`ChartBlock` or :class:`MathBlock`
                   the prose wraps round on paper, to the side its ``wrap`` names
                   (#189, #359); above the prose in an email. Unnumbered and
-                  unnoted: the document's walk sees this block, not what it hosts.
+                  unnoted, but its anchor, citations and key join the walk (#454).
         measure:  ``"standard"``, ``"narrow"`` or ``"full"`` (none): the longest
                   line, written only where the cell is wider (#358). Unset takes
                   the medium's, which only paper sets.
@@ -1492,8 +1507,8 @@ class TextBlock(CopyAlignment, Component):
             )
         if figure is not None and (figure.label or figure.notes):
             raise ValidationError(
-                "a TextBlock's figure cannot be numbered or carry notes: the document "
-                "numbers what it walks, and it walks this block, not its figure"
+                "a TextBlock's figure cannot be numbered or carry notes: it is hosted by "
+                "the prose, which the document numbers in its place"
             )
         self.align = self.validate_alignment(align)
         self.notes = coerce_notes(notes, [content], "TextBlock")
@@ -1554,6 +1569,9 @@ class TextBlock(CopyAlignment, Component):
     def images(self) -> list[EmailImage]:
         """The figure's image, when there is one (standing rule 7)."""
         return self.figure.images() if self.figure is not None else []
+
+    def hosted(self) -> list[Component]:
+        return [self.figure] if self.figure is not None else []
 
     def marked_copy(self) -> list[str]:
         return [self.content]

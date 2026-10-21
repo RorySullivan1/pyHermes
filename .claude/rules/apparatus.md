@@ -382,6 +382,31 @@ after it, then the shared source and disclosure; a section's line follows its bl
 **Non-goals, as decisions**: no nested grid, no table in a grid (a table is its own exhibit),
 more than four panels, and a per-row source in a table, which is a footnote marker's job.
 
+## A hosted figure joins the walk without being a child (#454)
+
+`TextBlock(figure=)` renders an `ImageBlock`, `ChartBlock` or `MathBlock` inside its own markup
+and refuses it a label and notes. Its `children()` did not list the figure, so the walk never
+saw it: a link to the figure's anchor was named dangling though the `id` rendered, an anchor
+equal to a section's slug rendered twice with no refusal, a citation in its source printed the
+raw key, and a bad `Legend` passed `add_section` and raised `IndexError` at render.
+
+- **`children()` was the wrong hook, by the leaf contract.** `leaves()` replaces a block that
+  has children with those children, so exposing the figure there would drop the `TextBlock`
+  from the walk and lose its own `content`, notes, markers and raw HTML. `Stack.text()` and
+  every other composite also project their children, so the figure would print twice.
+- **`Component.hosted()` is the second hook.** A host stays a leaf and projects the figure
+  itself. `leaves()` appends the hosted blocks after the host, so the walk reads them as
+  leaves of their own, and `descendants()` visits them after the children, so the checks that
+  read every node (the legend and tone checks, spacing, `Only`'s refusal) reach them too. The
+  text part reads neither, so the figure is projected once.
+- **It is registered but not numbered.** The figure is an `Exhibit` leaf with no label, so
+  `_number_exhibits` leaves its number `None`, `Contents(of="exhibits")` skips it, and its only
+  anchor is the explicit `anchor=`, which `check_unique` now holds against every section and
+  exhibit. Its source and caption are marked copy, so a `[@key]` in it resolves against the
+  document's bibliography and `validate()` names an unknown one. A deck reads `leaves()`, so it
+  follows with no change of its own.
+- Goldens: no fixture hosts a figure with an anchor that collides or a citation, so none moved.
+
 ## Two markers side by side (#402)
 
 `[^2][^3]` rendered two superscripts with nothing between them, which a reader takes for

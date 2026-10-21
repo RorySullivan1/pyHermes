@@ -13,7 +13,20 @@ import importlib.util
 import pytest
 
 from pyhermes.brochure import Brochure, Panel
-from pyhermes.builder import ChartBlock, Email, FullWidth, MathBlock, TextBlock, ValidationError
+from pyhermes.builder import (
+    Bibliography,
+    ChartBlock,
+    Contents,
+    Email,
+    FullWidth,
+    ImageBlock,
+    Legend,
+    MathBlock,
+    Reference,
+    TextBlock,
+    ValidationError,
+)
+from pyhermes.builder.exhibits import LegendEntry
 from pyhermes.builder.images import EmailImage
 from pyhermes.document import EmptyBackMatter, EmptyCover, PagedDocument
 from pyhermes.pdf import available
@@ -35,7 +48,7 @@ PROSE = (
 
 def chart(wrap: str = "right", **kwargs) -> ChartBlock:
     image = EmailImage.attached(solid_png(240, 160, (91, 138, 154)), alt="Premium", width=120)
-    return ChartBlock(image, source="Hermes", wrap=wrap, anchor="chart", **kwargs)
+    return ChartBlock(image, **{"source": "Hermes", "wrap": wrap, "anchor": "chart", **kwargs})
 
 
 def equation(wrap: str = "left", **kwargs) -> MathBlock:
@@ -97,6 +110,110 @@ class TestTheField:
         assert block.images() == [block.figure.image]
         [asset] = email(FullWidth(block)).assets()
         assert asset.content_id == block.figure.image.content_id
+
+
+FAMA = Reference("fama1993", ["Fama, Eugene F."], 1993, "Common risk factors")
+
+
+def linking_to(anchor: str) -> str:
+    return PROSE + f'<p><a href="#{anchor}">the figure</a></p>'
+
+
+class TestTheWalkSeesAHostedFigure:
+    """The figure is hosted, not a child: the document reads its anchor, source and key (#454)."""
+
+    @pytest.mark.parametrize("name", list(FIGURES))
+    def test_a_link_to_its_anchor_resolves(self, name):
+        figure = FIGURES[name]()
+        built = email(FullWidth(TextBlock(linking_to(figure.anchor), figure=figure)))
+        built.validate()
+        assert f'id="{figure.anchor}"' in built.render()
+
+    def test_a_link_to_a_hosted_picture_resolves(self):
+        picture = ImageBlock(
+            EmailImage.attached(solid_png(80, 40, (1, 2, 3)), alt="x", width=40), anchor="fig-a"
+        )
+        built = email(FullWidth(TextBlock(linking_to("fig-a"), figure=picture)))
+        built.validate()
+        assert 'id="fig-a"' in built.render()
+
+    def test_a_link_to_an_anchor_nothing_defines_is_still_named(self):
+        built = email(FullWidth(TextBlock(linking_to("fig-b"), figure=chart())))
+        with pytest.raises(ValidationError, match="#fig-b"):
+            built.validate()
+
+    @pytest.mark.parametrize("name", list(FIGURES))
+    def test_an_anchor_equal_to_a_sections_slug_is_refused(self, name):
+        built = email()
+        figure = FIGURES[name]()
+        built.add_section(FullWidth(TextBlock(PROSE, figure=figure)))
+        with pytest.raises(ValidationError, match=figure.anchor):
+            built.add_section(FullWidth(TextBlock("<p>x</p>"), title=figure.anchor.title()))
+        assert len(built._sections) == 1
+
+    def test_the_hosting_section_may_not_slug_to_the_figures_anchor(self):
+        with pytest.raises(ValidationError, match="chart"):
+            email(FullWidth(TextBlock(PROSE, figure=chart()), title="Chart"))
+
+    def test_two_hosted_figures_may_not_share_an_anchor(self):
+        with pytest.raises(ValidationError, match="chart"):
+            email(
+                FullWidth(TextBlock(PROSE, figure=chart())),
+                FullWidth(TextBlock(PROSE, figure=chart())),
+            )
+
+    def test_a_hosted_figure_may_not_share_an_anchor_with_an_unhosted_one(self):
+        with pytest.raises(ValidationError, match="chart"):
+            email(FullWidth(TextBlock(PROSE, figure=chart())), FullWidth(chart("")))
+
+    def test_a_citation_in_its_source_resolves(self):
+        figure = chart(source="Source: Fama [@fama1993]")
+        built = email(
+            FullWidth(TextBlock(PROSE, figure=figure)),
+            FullWidth(Bibliography([FAMA]), title="References"),
+        )
+        built.validate()
+        assert 'class="citation"' in built.render()
+        assert "[@fama1993]" not in built.render()
+        assert "(Fama 1993)" in built.text()
+
+    def test_a_citation_no_bibliography_lists_is_named(self):
+        built = email(
+            FullWidth(TextBlock(PROSE, figure=chart(source="Source: Fama [@nobody]"))),
+        )
+        with pytest.raises(ValidationError, match=r"ChartBlock cites \[@nobody\]"):
+            built.validate()
+
+    @pytest.mark.parametrize("entry", [LegendEntry("x", series=99), LegendEntry("x", tone="gold")])
+    def test_a_bad_legend_is_refused_when_the_section_is_added(self, entry):
+        with pytest.raises(ValidationError, match="entry 0"):
+            email(FullWidth(TextBlock(PROSE, figure=chart(legend=Legend([entry])))))
+
+    def test_a_good_legend_still_renders(self):
+        key = Legend([LegendEntry("x", series=0)])
+        assert (
+            'class="legend"'
+            in email(FullWidth(TextBlock(PROSE, figure=chart(legend=key)))).render()
+        )
+
+    def test_it_is_neither_numbered_nor_listed_nor_projected_twice(self):
+        figure = chart()
+        built = email(
+            FullWidth(Contents(of="exhibits"), title="Exhibits"),
+            FullWidth(TextBlock(PROSE, figure=figure), title="Prose"),
+        )
+        assert figure.number is None
+        assert built.render().count(f'id="{figure.anchor}"') == 1
+        assert built.text().count("[Premium]") == 1
+        assert "Premium" not in "".join(title for title, _ in built._exhibit_entries())
+
+    def test_a_host_keeps_its_own_notes(self):
+        from pyhermes.builder.models import Footnote
+
+        host = TextBlock("<p>Rates rose.[^1]</p>", notes=[Footnote("Source: BoE.")], figure=chart())
+        built = email(FullWidth(host))
+        assert [note.number for note in built._footnotes()] == [1]
+        assert built.text().count("Source: BoE.") == 1
 
 
 class TestInAnEmail:

@@ -901,6 +901,11 @@ every container and every template for the same result.
   one numbered, and it reports the notes and markers of its shared copy, while its panels may
   carry none. `descendants()` still reaches the panels, so the medium checks and the gallery
   tests see them. `apparatus.md` has the anchor scheme.
+- **A block may host a figure it renders itself (#454).** `Component.hosted()` lists blocks a
+  host puts inside its own markup and text, as `TextBlock(figure=)` does. `leaves()` follows
+  the host with them and `descendants()` visits them, so their anchors, citations and keys are
+  checked, but they are not `children()`, which `leaves()` swaps for the host and the text part
+  projects. `apparatus.md` has the reasoning.
 - **A block may render what it holds through `render_context(engine)`**, which is `context()`
   for a leaf; `ChartBlock` adds its legend's markup there, so `context()` keeps taking no
   engine.
