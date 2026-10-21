@@ -265,7 +265,9 @@ class Term:
 
     def anchor(self) -> str:
         """The ``id`` this term's entry carries."""
-        return f"term-{slugify(self.term, 'term').removeprefix('term-')}"
+        # An empty fallback leaves a non-letter start as "-2y" and nothing as "", so a
+        # real leading word "term" survives; only the fallback's own prefix is absent.
+        return f"term-{slugify(self.term, '').lstrip('-') or 'term'}"
 
 
 class Glossary(Component):

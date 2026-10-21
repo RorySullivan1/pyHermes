@@ -307,6 +307,11 @@ exhibit inside counting on from the body, "Exhibit 7" where a reader expects "A.
 - **A layout table, not a data table**: a paged data table needs a `thead` a glossary has no
   use for. Both cells take the skeleton's `stack-column` class, so it stacks on a phone with
   no change to the `@media` block. Two terms with one anchor are refused at construction.
+- **The anchor is `term-` plus the term's own slug (#456).** `slugify`'s fallback prefix is
+  not undone by stripping `term-` from the result, which also stripped a real first word:
+  "Term premium" and "Premium" both gave `term-premium`. The slug is taken with an empty
+  fallback, so only a term with no leading letter has anything to drop, and every existing
+  anchor is byte-identical.
 
 ## The research note (#312)
 
