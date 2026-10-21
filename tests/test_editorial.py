@@ -21,6 +21,7 @@ from pyhermes.builder.components import _with_drop_cap, descendants
 from pyhermes.builder.exceptions import ValidationError
 from pyhermes.builder.images import EmailImage
 from pyhermes.document import PagedDocument
+from pyhermes.email import strip_indentation
 from qa.fixtures import all_brochure_fixtures, all_fixtures, all_paged_fixtures
 from qa.fixtures._png import solid_png
 
@@ -71,7 +72,8 @@ class TestThePullQuote:
                 "</table>", email.index('class="pull-quote"')
             )
         ]
-        assert block in paged
+        # The email strips its indentation (#474) and paper does not; the markup is the same.
+        assert block in strip_indentation(paged)
 
     def test_its_text_is_indented_with_the_attribution_beneath(self):
         assert (

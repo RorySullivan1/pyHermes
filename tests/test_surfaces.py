@@ -244,7 +244,7 @@ class TestAButtonAndADivider:
         url = "https://example.com/go"
         lone = _render(FullWidth(Button("Go", url)))
         card = _render(FullWidth(ContactBlock(heading="H", cta_label="Go", cta_url=url)))
-        start, end = "<!--[if mso]>\n      <v:roundrect", "<!--<![endif]-->"
+        start, end = "<!--[if mso]>\n<v:roundrect", "<!--<![endif]-->"
         assert (
             lone[lone.index(start) : lone.index(end)] == card[card.index(start) : card.index(end)]
         )

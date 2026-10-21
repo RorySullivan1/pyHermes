@@ -1358,3 +1358,11 @@ foot, with neither running box on the first sheet. `TestComponentFieldsAreExerci
 `bleed` and `pin` there. `tests/test_print_pieces.py` reads the sheet count, the edges, the
 foot and the folios back from the PDF and joins the `pdf` job's line. The email's screenshots
 show the row stacking with its "+" signs and the connector pointing down at 375px.
+
+## kitchen_sink's headroom (#474)
+
+The email medium now strips each line's indentation before the size check (`media.md`), so
+`kitchen_sink` renders at 82,484 bytes and `modern_fonts`, the heaviest of its family, at
+83,380: 8,780 bytes under the 90 KB warning, where it had 357. The earlier sections' byte counts
+are as they were measured then. Each email golden's diff for this was whitespace alone, and
+`git diff -w --ignore-blank-lines` shows none.

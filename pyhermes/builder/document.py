@@ -375,7 +375,7 @@ class Document:
             sheet = (frame.sheet_width, frame.sheet_height or frame.sheet_width)
             ctx["stamp_type"] = stamp_type(self._metadata.stamp, *sheet)
         ctx["head_rules"] = self._head_rules()
-        html = engine.render(self._medium.skeleton, ctx)
+        html = self._medium.finish(engine.render(self._medium.skeleton, ctx))
         try:
             self._medium.validate(html)
         except SizeError as exc:
@@ -414,12 +414,16 @@ class Document:
 
         The label is the section's title, else its class, after its position.
         No constraint runs, because no document is composed: this is what a
-        size report uses to say which section spent the bytes (#259).
+        size report uses to say which section spent the bytes (#259). The
+        medium's finishers do run, so each section matches the document's bytes.
         """
         self.validate()
         engine = self._bound_engine()
         return [
-            (f"section {n}: {section.heading() or type(section).__name__}", section.render(engine))
+            (
+                f"section {n}: {section.heading() or type(section).__name__}",
+                self._medium.finish(section.render(engine)),
+            )
             for n, section in enumerate(self._body_sections(), start=1)
         ]
 

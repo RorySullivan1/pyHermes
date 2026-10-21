@@ -8,12 +8,14 @@ and the one check that is email-specific rather than universal.
 
 from __future__ import annotations
 
+import re
+
 from pyhermes.builder.exceptions import SizeError, SizeWarning, warn_caller
 from pyhermes.builder.medium import Medium
 from pyhermes.builder.regions import Banner, Footer, Header
 from pyhermes.config import Config, get_config
 
-__all__ = ["EMAIL_MEDIUM", "validate_gmail_size"]
+__all__ = ["EMAIL_MEDIUM", "strip_indentation", "validate_gmail_size"]
 
 # The shipped defaults, kept as module constants because they read as the
 # thresholds themselves at a call site. The live values come from
@@ -46,6 +48,24 @@ def validate_gmail_size(html: str, hint: str = "") -> None:
         warn_caller(f"Email size {size_kb:.1f} KB (target < {config.size_warn_kb} KB)", SizeWarning)
 
 
+# A whitespace-preserving block passes through whole; otherwise a line's edges or a blank line.
+_KEEP = r"(<pre\b.*?</pre>|<textarea\b.*?</textarea>)"
+_LINE_EDGES = re.compile(_KEEP + r"|^[ \t]+|[ \t]+$", re.I | re.M | re.S)
+_BLANK_LINES = re.compile(_KEEP + r"|\n{2,}", re.I | re.S)
+
+
+def strip_indentation(html: str) -> str:
+    """
+    ``html`` without each line's leading and trailing spaces and tabs, or its blank lines.
+
+    Every line break stays, so wherever whitespace rendered as a space it
+    still does. ``pre`` and ``textarea`` blocks, whose whitespace is their
+    content, pass through untouched.
+    """
+    html = _LINE_EDGES.sub(lambda m: m.group(1) or "", html)
+    return _BLANK_LINES.sub(lambda m: m.group(1) or "\n", html)
+
+
 #: The shipped email medium. Its region order is the skeleton's own, which is
 #: what makes ``Medium.slots`` the contract ``base.html`` is checked against.
 EMAIL_MEDIUM = Medium(
@@ -53,6 +73,7 @@ EMAIL_MEDIUM = Medium(
     skeleton="base.html",
     region_types=(Header, Banner, Footer),
     constraints=(validate_gmail_size,),
+    finishers=(strip_indentation,),
     template_search_path=("email",),
     email=True,
 )

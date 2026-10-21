@@ -1,1417 +1,1330 @@
 <!DOCTYPE html>
 <html lang="en-GB" xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:v="urn:schemas-microsoft-com:vml"
-      xmlns:o="urn:schemas-microsoft-com:office:office">
+xmlns:v="urn:schemas-microsoft-com:vml"
+xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="x-apple-disable-message-reformatting">
-  <meta name="color-scheme" content="light only">
-  <meta name="supported-color-schemes" content="light only">
-  <title>Kitchen Sink — every component, every geometry</title>
-  <!--[if mso]>
-  <noscript>
-    <xml><o:OfficeDocumentSettings>
-      <o:PixelsPerInch>96</o:PixelsPerInch>
-    </o:OfficeDocumentSettings></xml>
-  </noscript>
-  <style type="text/css">
-    body, td, th { font-family: Georgia, 'Times New Roman', serif; }
-    body { background-color: #F2F1EE !important; }
-  </style>
-  <![endif]-->
-  <style type="text/css">
-    body, table, td, a { -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%; }
-    table, td { mso-table-lspace:0pt; mso-table-rspace:0pt; }
-    img { -ms-interpolation-mode:bicubic; border:0; outline:none; text-decoration:none; }
-    @media only screen and (max-width:700px) {
-      .email-container { width:100% !important; }
-      .stack-column { display:table !important; width:100% !important; }
-      .mobile-pad { padding:26px 22px !important; }
-      .section-title td, .mobile-pad-x { padding-left:22px !important; padding-right:22px !important; }
-      .mobile-flush { padding-left:0 !important; padding-right:0 !important; }
-      .mobile-title { font-size:24px !important; }
-      /* box-sizing is what keeps the padding *inside* the 100% width. Without it
-         the content-box default adds it on top and the cell overflows the
-         viewport by its own padding (#76). Word ignores this whole @media
-         block, so the property it lacks costs Outlook nothing. */
-      .kpi-cell { display:block !important; width:100% !important; box-sizing:border-box !important; border-right:none !important; border-bottom:1px solid #D6D2CB !important; padding:20px 22px !important; }
-      .kpi-cell-last { border-bottom:none !important; }
-      /* A data table cannot collapse — stacking its columns would destroy the
-         alignment that is the only reason to render one — so padding is what
-         gives a narrow viewport its room back. See #132. */
-      .data-table th, .data-table td { padding:8px !important; }
-    }
-    /* Force light rendering in all dark mode contexts */
-    :root { color-scheme: light only; }
-    [data-ogsc] .email-container,
-    [data-ogsb] .email-container { background-color:#FFFFFF !important; }
-    [data-ogsc] .surface,
-    [data-ogsb] .surface { background-color:#FFFFFF !important; }
-    [data-ogsc] .body-text,
-    [data-ogsb] .body-text { color:#3B3B3B !important; }
-    @media (prefers-color-scheme:dark) {
-      .email-container { background-color:#FFFFFF !important; }
-      .body-text { color:#3B3B3B !important; }
-      .surface { background-color:#FFFFFF !important; }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="x-apple-disable-message-reformatting">
+<meta name="color-scheme" content="light only">
+<meta name="supported-color-schemes" content="light only">
+<title>Kitchen Sink — every component, every geometry</title>
+<!--[if mso]>
+<noscript>
+<xml><o:OfficeDocumentSettings>
+<o:PixelsPerInch>96</o:PixelsPerInch>
+</o:OfficeDocumentSettings></xml>
+</noscript>
+<style type="text/css">
+body, td, th { font-family: Georgia, 'Times New Roman', serif; }
+body { background-color: #F2F1EE !important; }
+</style>
+<![endif]-->
+<style type="text/css">
+body, table, td, a { -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%; }
+table, td { mso-table-lspace:0pt; mso-table-rspace:0pt; }
+img { -ms-interpolation-mode:bicubic; border:0; outline:none; text-decoration:none; }
+@media only screen and (max-width:700px) {
+.email-container { width:100% !important; }
+.stack-column { display:table !important; width:100% !important; }
+.mobile-pad { padding:26px 22px !important; }
+.section-title td, .mobile-pad-x { padding-left:22px !important; padding-right:22px !important; }
+.mobile-flush { padding-left:0 !important; padding-right:0 !important; }
+.mobile-title { font-size:24px !important; }
+/* box-sizing is what keeps the padding *inside* the 100% width. Without it
+the content-box default adds it on top and the cell overflows the
+viewport by its own padding (#76). Word ignores this whole @media
+block, so the property it lacks costs Outlook nothing. */
+.kpi-cell { display:block !important; width:100% !important; box-sizing:border-box !important; border-right:none !important; border-bottom:1px solid #D6D2CB !important; padding:20px 22px !important; }
+.kpi-cell-last { border-bottom:none !important; }
+/* A data table cannot collapse — stacking its columns would destroy the
+alignment that is the only reason to render one — so padding is what
+gives a narrow viewport its room back. See #132. */
+.data-table th, .data-table td { padding:8px !important; }
+}
+/* Force light rendering in all dark mode contexts */
+:root { color-scheme: light only; }
+[data-ogsc] .email-container,
+[data-ogsb] .email-container { background-color:#FFFFFF !important; }
+[data-ogsc] .surface,
+[data-ogsb] .surface { background-color:#FFFFFF !important; }
+[data-ogsc] .body-text,
+[data-ogsb] .body-text { color:#3B3B3B !important; }
+@media (prefers-color-scheme:dark) {
+.email-container { background-color:#FFFFFF !important; }
+.body-text { color:#3B3B3B !important; }
+.surface { background-color:#FFFFFF !important; }
+}
+</style>
 </head>
 <body style="margin:0; padding:0; background-color:#F2F1EE; font-family: Georgia, 'Times New Roman', serif;" bgcolor="#F2F1EE">
-
-  <!-- Preheader -->
-  <div style="display:none;max-height:0;overflow:hidden;font-size:1px;color:#F2F1EE;">
-    One fixture exercising the whole component library.&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;
-  </div>
-
-  <!-- Outer wrapper -->
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
-         style="background-color:#F2F1EE;" bgcolor="#F2F1EE">
-    <tr>
-      <td align="center" style="padding:36px 0;">
-
-        <!-- MAIN CONTAINER — 680px                       -->
-        <table class="email-container" role="presentation" width="680" cellpadding="0" cellspacing="0"
-               border="0" style="background-color:#FFFFFF; max-width:680px;" bgcolor="#FFFFFF">
-
-          <!-- HEADER: Disclaimer bar                    -->
-          <tr>
-            <td align="left" style="background-color:#1E2B38; padding:10px 40px; text-align:left;" bgcolor="#1E2B38">
-              <div style="margin:0 0 12px 0; font-family: Arial, Helvetica, sans-serif; font-size:11px; font-weight:bold; letter-spacing:2px; color:#B8C6CE; line-height:150%;">DRAFT</div>
-              <div style="margin:0; font-family: Arial, Helvetica, sans-serif; font-size:10.5px;
-                        font-weight:300; color:#B8C6CE; letter-spacing:0.3px; line-height:150%;">
-                For illustrative purposes. Not investment advice.
-              </div>
-            </td>
-          </tr>
-
-          <!-- HEADER: Background image + text overlay   -->
-          <tr>
-            <td style="background-color:#3A2B3F;" bgcolor="#3A2B3F">
-              <!--[if mso]>
-              <v:rect xmlns:v="urn:schemas-microsoft-com:vml" fill="true" stroke="false"
-                      style="width:680px;height:220px;">
-                <v:fill type="frame" src="https://cdn.example.com/header-bg.png" color="#241A28" opacity="55%"/>
-                <v:textbox inset="40px,0,40px,0" style="mso-fit-shape-to-text:false;">
-              <![endif]-->
-              <div style="background-image:url('https://cdn.example.com/header-bg.png');
+<!-- Preheader -->
+<div style="display:none;max-height:0;overflow:hidden;font-size:1px;color:#F2F1EE;">
+One fixture exercising the whole component library.&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;
+</div>
+<!-- Outer wrapper -->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+style="background-color:#F2F1EE;" bgcolor="#F2F1EE">
+<tr>
+<td align="center" style="padding:36px 0;">
+<!-- MAIN CONTAINER — 680px                       -->
+<table class="email-container" role="presentation" width="680" cellpadding="0" cellspacing="0"
+border="0" style="background-color:#FFFFFF; max-width:680px;" bgcolor="#FFFFFF">
+<!-- HEADER: Disclaimer bar                    -->
+<tr>
+<td align="left" style="background-color:#1E2B38; padding:10px 40px; text-align:left;" bgcolor="#1E2B38">
+<div style="margin:0 0 12px 0; font-family: Arial, Helvetica, sans-serif; font-size:11px; font-weight:bold; letter-spacing:2px; color:#B8C6CE; line-height:150%;">DRAFT</div>
+<div style="margin:0; font-family: Arial, Helvetica, sans-serif; font-size:10.5px;
+font-weight:300; color:#B8C6CE; letter-spacing:0.3px; line-height:150%;">
+For illustrative purposes. Not investment advice.
+</div>
+</td>
+</tr>
+<!-- HEADER: Background image + text overlay   -->
+<tr>
+<td style="background-color:#3A2B3F;" bgcolor="#3A2B3F">
+<!--[if mso]>
+<v:rect xmlns:v="urn:schemas-microsoft-com:vml" fill="true" stroke="false"
+style="width:680px;height:220px;">
+<v:fill type="frame" src="https://cdn.example.com/header-bg.png" color="#241A28" opacity="55%"/>
+<v:textbox inset="40px,0,40px,0" style="mso-fit-shape-to-text:false;">
+<![endif]-->
+<div style="background-image:url('https://cdn.example.com/header-bg.png');
 background-color:#3A2B3F; background-size:cover;
-                          background-position:center center; background-repeat:no-repeat;">
-                <!--[if !mso]><!--><div style="background-color:rgba(36,26,40,0.55);"><!--<![endif]-->
-                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-                  <tr>
-                    <td width="100%" valign="bottom" style="padding:24px 0 8px 40px;">
-                      <p style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:32px;
-                                font-weight:bold; color:#FDF6E3; line-height:125%; letter-spacing:0.3px;
-                                text-shadow:0 1px 3px rgba(26,18,29,0.45);"
-                         class="mobile-title">
-                        Q3 Outlook
-                      </p>
-                    </td>
-                    <td valign="bottom" align="right" style="text-align:right; padding:24px 40px 8px 24px;">
-                      <!--[if mso]>
-                      <img src="https://cdn.example.com/hermes-logo.png" width="128" alt="Hermes Research — weekly research letter" style="display:block;">
-                      <![endif]-->
-                      <!--[if !mso]><!-->
-                      <img src="https://cdn.example.com/hermes-logo.png" width="128" alt="Hermes Research — weekly research letter"
-                           style="display:block; max-width:128px; height:auto;">
-                      <!--<![endif]-->
-                    </td>
-                  </tr>
-                  <tr>
-                    <td valign="middle" style="padding:0 0 12px 40px;">
-                      <p style="margin:0; font-family: Arial, Helvetica, sans-serif; font-size:14px;
-                                font-weight:400; color:#D8C7CF; line-height:140%;
-                                text-shadow:0 1px 2px rgba(26,18,29,0.35);">
-                        What the curve is pricing
-                      </p>
-                    </td>
-                    <td valign="middle" align="right" style="text-align:right; padding:0 40px 12px 24px;">
-                      <p style="margin:0; font-family: Arial, Helvetica, sans-serif; font-size:12px;
-                                color:#A8909B; letter-spacing:0.6px; text-transform:uppercase;">
-                        Rates Strategy
-                      </p>
-                    </td>
-                  </tr>
-                </table>
-                <!-- Accent rule -->
-                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-                  <tr>
-                    <td style="padding:0 40px;">
-                      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-                        <tr>
-                          <td style="border-top:2px solid #C48A5A; font-size:0; line-height:0;" height="1">&nbsp;</td>
-                        </tr>
-                      </table>
-                    </td>
-                  </tr>
-                </table>
-                <!-- Date / Issue bar -->
-                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-                  <tr>
-                    <td style="padding:14px 40px 24px;">
-                      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-                        <tr>
-                          <td style="font-family: Arial, Helvetica, sans-serif; font-size:12px;
-                                     color:#A8909B; letter-spacing:0.6px; text-transform:uppercase;">
-                            Week ending 24 August
-                          </td>
-                          <td align="right" style="text-align:right; font-family: Arial, Helvetica, sans-serif; font-size:12px;
-                                                    color:#A8909B; letter-spacing:0.6px; text-transform:uppercase;">
-                            Issue 001
-                          </td>
-                        </tr>
-                      </table>
-                    </td>
-                  </tr>
-                </table>
-                <!--[if !mso]><!--></div><!--<![endif]--><!-- /dark overlay -->
-              </div>
-              <!--[if mso]>
-                </v:textbox>
-              </v:rect>
-              <![endif]-->
-            </td>
-          </tr>
-
-          <!-- SECTIONS: Insert containers here          -->
-          <tr>
-  <td style="padding:0; background-color:#FFFFFF;">
-    <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
-      <tr>
-        <td style="padding:30px 40px 16px 40px;">
-          <h2 id="in-this-issue" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:19px; font-weight:bold; color:#2C3E50; line-height:125%;">
-            In This Issue
-          </h2>
-        </td>
-      </tr>
-    </table>
-    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
-      <tr>
-        <td class="mobile-pad" style="padding:22px 40px 20px 40px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
-          <p class="subtitle" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; font-style: italic; color: #7A7A72; margin: 0 0 16px 0; line-height: 150%;">Every section below, linked to its heading</p>
+background-position:center center; background-repeat:no-repeat;">
+<!--[if !mso]><!--><div style="background-color:rgba(36,26,40,0.55);"><!--<![endif]-->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr>
+<td width="100%" valign="bottom" style="padding:24px 0 8px 40px;">
+<p style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:32px;
+font-weight:bold; color:#FDF6E3; line-height:125%; letter-spacing:0.3px;
+text-shadow:0 1px 3px rgba(26,18,29,0.45);"
+class="mobile-title">
+Q3 Outlook
+</p>
+</td>
+<td valign="bottom" align="right" style="text-align:right; padding:24px 40px 8px 24px;">
+<!--[if mso]>
+<img src="https://cdn.example.com/hermes-logo.png" width="128" alt="Hermes Research — weekly research letter" style="display:block;">
+<![endif]-->
+<!--[if !mso]><!-->
+<img src="https://cdn.example.com/hermes-logo.png" width="128" alt="Hermes Research — weekly research letter"
+style="display:block; max-width:128px; height:auto;">
+<!--<![endif]-->
+</td>
+</tr>
+<tr>
+<td valign="middle" style="padding:0 0 12px 40px;">
+<p style="margin:0; font-family: Arial, Helvetica, sans-serif; font-size:14px;
+font-weight:400; color:#D8C7CF; line-height:140%;
+text-shadow:0 1px 2px rgba(26,18,29,0.35);">
+What the curve is pricing
+</p>
+</td>
+<td valign="middle" align="right" style="text-align:right; padding:0 40px 12px 24px;">
+<p style="margin:0; font-family: Arial, Helvetica, sans-serif; font-size:12px;
+color:#A8909B; letter-spacing:0.6px; text-transform:uppercase;">
+Rates Strategy
+</p>
+</td>
+</tr>
+</table>
+<!-- Accent rule -->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr>
+<td style="padding:0 40px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr>
+<td style="border-top:2px solid #C48A5A; font-size:0; line-height:0;" height="1">&nbsp;</td>
+</tr>
+</table>
+</td>
+</tr>
+</table>
+<!-- Date / Issue bar -->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr>
+<td style="padding:14px 40px 24px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr>
+<td style="font-family: Arial, Helvetica, sans-serif; font-size:12px;
+color:#A8909B; letter-spacing:0.6px; text-transform:uppercase;">
+Week ending 24 August
+</td>
+<td align="right" style="text-align:right; font-family: Arial, Helvetica, sans-serif; font-size:12px;
+color:#A8909B; letter-spacing:0.6px; text-transform:uppercase;">
+Issue 001
+</td>
+</tr>
+</table>
+</td>
+</tr>
+</table>
+<!--[if !mso]><!--></div><!--<![endif]--><!-- /dark overlay -->
+</div>
+<!--[if mso]>
+</v:textbox>
+</v:rect>
+<![endif]-->
+</td>
+</tr>
+<!-- SECTIONS: Insert containers here          -->
+<tr>
+<td style="padding:0; background-color:#FFFFFF;">
+<table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+<tr>
+<td style="padding:30px 40px 16px 40px;">
+<h2 id="in-this-issue" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:19px; font-weight:bold; color:#2C3E50; line-height:125%;">
+In This Issue
+</h2>
+</td>
+</tr>
+</table>
+<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+<tr>
+<td class="mobile-pad" style="padding:22px 40px 20px 40px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
+<p class="subtitle" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; font-style: italic; color: #7A7A72; margin: 0 0 16px 0; line-height: 150%;">Every section below, linked to its heading</p>
 <div class="contents" align="left" style="text-align: left;">
 <ol style="margin: 0; padding: 0; list-style-type: none;">
-  <li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 15px; line-height: 185%; margin: 0 0 12px 0;"><a href="#market-snapshot" style="color: #5B8A9A; text-decoration: none;">Market Snapshot</a></li>
-  <li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 15px; line-height: 185%; margin: 0 0 12px 0;"><a href="#sector-notes" style="color: #5B8A9A; text-decoration: none;">Sector Notes</a></li>
-  <li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 15px; line-height: 185%; margin: 0 0 12px 0;"><a href="#desk-note" style="color: #5B8A9A; text-decoration: none;">Desk Note</a></li>
-  <li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 15px; line-height: 185%; margin: 0 0 12px 0;"><a href="#long-read" style="color: #5B8A9A; text-decoration: none;">Long Read</a></li>
-  <li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 15px; line-height: 185%; margin: 0 0 12px 0;"><a href="#at-a-glance" style="color: #5B8A9A; text-decoration: none;">At a Glance</a></li>
-  <li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 15px; line-height: 185%; margin: 0 0 12px 0;"><a href="#factor-returns" style="color: #5B8A9A; text-decoration: none;">Factor Returns</a></li>
-  <li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 15px; line-height: 185%; margin: 0 0 12px 0;"><a href="#cumulative-performance" style="color: #5B8A9A; text-decoration: none;">Cumulative Performance</a></li>
-  <li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 15px; line-height: 185%; margin: 0 0 12px 0;"><a href="#equal-columns" style="color: #5B8A9A; text-decoration: none;">Equal Columns</a></li>
-  <li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 15px; line-height: 185%; margin: 0 0 12px 0;"><a href="#narrow-then-wide" style="color: #5B8A9A; text-decoration: none;">Narrow then Wide</a></li>
-  <li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 15px; line-height: 185%; margin: 0 0 12px 0;"><a href="#wide-then-narrow" style="color: #5B8A9A; text-decoration: none;">Wide then Narrow</a></li>
-  <li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 15px; line-height: 185%; margin: 0 0 12px 0;"><a href="#thirds" style="color: #5B8A9A; text-decoration: none;">Three Equal</a></li>
-  <li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 15px; line-height: 185%; margin: 0 0 12px 0;"><a href="#what-we-are-watching" style="color: #5B8A9A; text-decoration: none;">What We Are Watching</a></li>
-  <li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 15px; line-height: 185%; margin: 0 0 12px 0;"><a href="#bottom-line" style="color: #5B8A9A; text-decoration: none;">Bottom Line</a></li>
-  <li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 15px; line-height: 185%; margin: 0 0 12px 0;"><a href="#sources-and-terms" style="color: #5B8A9A; text-decoration: none;">Sources and Terms</a></li>
+<li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 15px; line-height: 185%; margin: 0 0 12px 0;"><a href="#market-snapshot" style="color: #5B8A9A; text-decoration: none;">Market Snapshot</a></li>
+<li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 15px; line-height: 185%; margin: 0 0 12px 0;"><a href="#sector-notes" style="color: #5B8A9A; text-decoration: none;">Sector Notes</a></li>
+<li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 15px; line-height: 185%; margin: 0 0 12px 0;"><a href="#desk-note" style="color: #5B8A9A; text-decoration: none;">Desk Note</a></li>
+<li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 15px; line-height: 185%; margin: 0 0 12px 0;"><a href="#long-read" style="color: #5B8A9A; text-decoration: none;">Long Read</a></li>
+<li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 15px; line-height: 185%; margin: 0 0 12px 0;"><a href="#at-a-glance" style="color: #5B8A9A; text-decoration: none;">At a Glance</a></li>
+<li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 15px; line-height: 185%; margin: 0 0 12px 0;"><a href="#factor-returns" style="color: #5B8A9A; text-decoration: none;">Factor Returns</a></li>
+<li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 15px; line-height: 185%; margin: 0 0 12px 0;"><a href="#cumulative-performance" style="color: #5B8A9A; text-decoration: none;">Cumulative Performance</a></li>
+<li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 15px; line-height: 185%; margin: 0 0 12px 0;"><a href="#equal-columns" style="color: #5B8A9A; text-decoration: none;">Equal Columns</a></li>
+<li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 15px; line-height: 185%; margin: 0 0 12px 0;"><a href="#narrow-then-wide" style="color: #5B8A9A; text-decoration: none;">Narrow then Wide</a></li>
+<li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 15px; line-height: 185%; margin: 0 0 12px 0;"><a href="#wide-then-narrow" style="color: #5B8A9A; text-decoration: none;">Wide then Narrow</a></li>
+<li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 15px; line-height: 185%; margin: 0 0 12px 0;"><a href="#thirds" style="color: #5B8A9A; text-decoration: none;">Three Equal</a></li>
+<li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 15px; line-height: 185%; margin: 0 0 12px 0;"><a href="#what-we-are-watching" style="color: #5B8A9A; text-decoration: none;">What We Are Watching</a></li>
+<li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 15px; line-height: 185%; margin: 0 0 12px 0;"><a href="#bottom-line" style="color: #5B8A9A; text-decoration: none;">Bottom Line</a></li>
+<li class="contents-entry" style="font-family: Arial, Helvetica, sans-serif; font-size: 15px; line-height: 185%; margin: 0 0 12px 0;"><a href="#sources-and-terms" style="color: #5B8A9A; text-decoration: none;">Sources and Terms</a></li>
 </ol>
 </div>
-
-        </td>
-      </tr>
-    </table>
-  </td>
+</td>
 </tr>
-
-<tr>
-  <td style="padding:1px 1px 1px 1px; background-color:#FFFFFF; border-top:1px solid #D6D2CB; border-bottom:1px solid #D6D2CB;">
-    <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#F8F7F5;">
-      <tr>
-        <td style="padding:30px 39px 16px 39px;">
-          <h2 id="market-snapshot" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:19px; font-weight:bold; color:#2C3E50; line-height:125%;">
-            Market Snapshot
-          </h2>
-        </td>
-      </tr>
-    </table>
-    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#F8F7F5;">
-      <tr>
-        <td class="mobile-pad" style="padding:22px 39px 20px 39px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
-          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border: 1px solid #D6D2CB;">
-  <tr>
-    <td class="kpi-cell" align="center" style="width: 25.0%; border-right: 1px solid #D6D2CB; padding: 10px 16px; text-align: center; background-color: #FFFFFF;">
-      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #7A7A72; text-transform: uppercase; margin: 0 0 8px 0; line-height: 185%; letter-spacing: 0.5px; font-weight: bold;">S&amp;P 500</p>
-      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 24px; font-weight: bold; color: #4A7C59; margin: 0 0 6px 0; line-height: 125%;">5,234</p>
-      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #A09E97; margin: 0; line-height: 150%;">+1.42%</p>
-    </td>
-    <td class="kpi-cell" align="center" style="width: 25.0%; border-right: 1px solid #D6D2CB; padding: 10px 16px; text-align: center; background-color: #FFFFFF;">
-      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #7A7A72; text-transform: uppercase; margin: 0 0 8px 0; line-height: 185%; letter-spacing: 0.5px; font-weight: bold;">UST 10Y</p>
-      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 24px; font-weight: bold; color: #B85450; margin: 0 0 6px 0; line-height: 125%;">4.28%</p>
-      <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;"><tr><td align="center" style="padding: 0 0 6px 0; text-align: center;"><table role="presentation" class="sparkline" title="min 4.09% · last 4.28% · max 4.28%" border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse; margin: 0 auto;"><tr><td valign="bottom" style="height: 28px; vertical-align: bottom; padding: 0 !important;"><table role="presentation" border="0" cellpadding="0" cellspacing="0" width="5"><tr><td height="4" style="width: 5px; height: 4px; background-color: #D6D2CB; font-size: 0; line-height: 0; padding: 0 !important;"></td></tr></table></td><td valign="bottom" style="height: 28px; vertical-align: bottom; padding: 0 0 0 2px !important;"><table role="presentation" border="0" cellpadding="0" cellspacing="0" width="5"><tr><td height="12" style="width: 5px; height: 12px; background-color: #D6D2CB; font-size: 0; line-height: 0; padding: 0 !important;"></td></tr></table></td><td valign="bottom" style="height: 28px; vertical-align: bottom; padding: 0 0 0 2px !important;"><table role="presentation" border="0" cellpadding="0" cellspacing="0" width="5"><tr><td height="20" style="width: 5px; height: 20px; background-color: #D6D2CB; font-size: 0; line-height: 0; padding: 0 !important;"></td></tr></table></td><td valign="bottom" style="height: 28px; vertical-align: bottom; padding: 0 0 0 2px !important;"><table role="presentation" border="0" cellpadding="0" cellspacing="0" width="5"><tr><td height="28" style="width: 5px; height: 28px; background-color: #B85450; font-size: 0; line-height: 0; padding: 0 !important;"></td></tr></table></td></tr></table></td></tr></table>
-      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #A09E97; margin: 0; line-height: 150%;"><!--[if mso]><v:shape xmlns:v="urn:schemas-microsoft-com:vml" coordsize="2,2" path="m 0,2 l 1,0 2,2 x e" fillcolor="#B85450" stroked="f" style="width:10px;height:8px;"></v:shape><![endif]--><!--[if !mso]><!--><span class="trend trend-up" style="display:inline-block; vertical-align:middle; font-size:0; line-height:0; width:0; height:0; border-left:5px solid transparent; border-right:5px solid transparent; border-bottom:8px solid #B85450;"></span><!--<![endif]-->&nbsp;+6 bps</p>
-    </td>
-    <td class="kpi-cell" align="center" style="width: 25.0%; border-right: 1px solid #D6D2CB; padding: 10px 16px; text-align: center; background-color: #FFFFFF;">
-      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #7A7A72; text-transform: uppercase; margin: 0 0 8px 0; line-height: 185%; letter-spacing: 0.5px; font-weight: bold;">Gold</p>
-      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 24px; font-weight: bold; color: #4A7C59; margin: 0 0 6px 0; line-height: 125%;">2,411</p>
-      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #A09E97; margin: 0; line-height: 150%;">+0.85%</p>
-    </td>
-    <td class="kpi-cell kpi-cell-last" align="center" style="width: 25.0%; padding: 10px 16px; text-align: center; background-color: #FFFFFF;">
-      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #7A7A72; text-transform: uppercase; margin: 0 0 8px 0; line-height: 185%; letter-spacing: 0.5px; font-weight: bold;">VIX</p>
-      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 24px; font-weight: bold; color: #4A7C59; margin: 0 0 6px 0; line-height: 125%;">14.32</p>
-      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #A09E97; margin: 0; line-height: 150%;">-2.18 pts</p>
-    </td>
-  </tr>
 </table>
-
-        </td>
-      </tr>
-    </table>
-  </td>
+</td>
 </tr>
-
 <tr>
-  <td style="padding:0; background-color:#FFFFFF;">
-    <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
-      <tr>
-        <td style="padding:30px 40px 16px 40px;">
-          <h2 id="sector-notes" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:19px; font-weight:bold; color:#2C3E50; line-height:125%;">
-            Sector Notes
-          </h2>
-        </td>
-      </tr>
-    </table>
-    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
-      <tr>
-        <td class="mobile-pad" style="padding:22px 40px 20px 40px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
-          <p class="subtitle" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; font-style: italic; color: #7A7A72; margin: 0 0 16px 0; line-height: 150%;">Relative performance</p>
+<td style="padding:1px 1px 1px 1px; background-color:#FFFFFF; border-top:1px solid #D6D2CB; border-bottom:1px solid #D6D2CB;">
+<table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#F8F7F5;">
+<tr>
+<td style="padding:30px 39px 16px 39px;">
+<h2 id="market-snapshot" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:19px; font-weight:bold; color:#2C3E50; line-height:125%;">
+Market Snapshot
+</h2>
+</td>
+</tr>
+</table>
+<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#F8F7F5;">
+<tr>
+<td class="mobile-pad" style="padding:22px 39px 20px 39px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
 <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border: 1px solid #D6D2CB;">
-  <tr>
-    <td align="left" style="padding: 20px 22px; text-align: left; background-color: #FFFFFF; border-bottom: 1px solid #D6D2CB;">
-      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #7A7A72; text-transform: uppercase; margin: 0 0 8px 0; line-height: 185%; letter-spacing: 0.5px; font-weight: bold;">Technology</p>
-      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 24px; font-weight: bold; color: #4A7C59; margin: 0 0 6px 0; line-height: 125%;">+2.1%</p>
-      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #A09E97; margin: 0; line-height: 150%;">week</p>
-      <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #3B3B3B; line-height: 175%; margin: 12px 0 0 0;"><p>Semiconductor strength led the advance.</p></div>
-    </td>
-  </tr>
-  <tr>
-    <td align="left" style="padding: 20px 22px; text-align: left; background-color: #FFFFFF;">
-      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #7A7A72; text-transform: uppercase; margin: 0 0 8px 0; line-height: 185%; letter-spacing: 0.5px; font-weight: bold;">Energy</p>
-      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 24px; font-weight: bold; color: #B85450; margin: 0 0 6px 0; line-height: 125%;">-0.7%</p>
-      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #A09E97; margin: 0; line-height: 150%;">week</p>
-      <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #3B3B3B; line-height: 175%; margin: 12px 0 0 0;"><p>Crude gave back the prior week's gain.</p></div>
-    </td>
-  </tr>
-</table>
-
-        </td>
-      </tr>
-    </table>
-  </td>
-</tr>
-
 <tr>
-  <td style="padding:0; background-color:#FFFFFF;">
-    <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
-      <tr>
-        <td style="padding:30px 40px 16px 40px;">
-          <h2 id="desk-note" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:19px; font-weight:bold; color:#2C3E50; line-height:125%;">
-            Desk Note
-          </h2>
-        </td>
-      </tr>
-    </table>
-    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
-      <tr>
-        <td class="mobile-pad" style="padding:22px 40px 20px 40px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
-          <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
-  <tr>
-    <td style="padding:0 0 22px 0;">
+<td class="kpi-cell" align="center" style="width: 25.0%; border-right: 1px solid #D6D2CB; padding: 10px 16px; text-align: center; background-color: #FFFFFF;">
+<p style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #7A7A72; text-transform: uppercase; margin: 0 0 8px 0; line-height: 185%; letter-spacing: 0.5px; font-weight: bold;">S&amp;P 500</p>
+<p style="font-family: Georgia, 'Times New Roman', serif; font-size: 24px; font-weight: bold; color: #4A7C59; margin: 0 0 6px 0; line-height: 125%;">5,234</p>
+<p style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #A09E97; margin: 0; line-height: 150%;">+1.42%</p>
+</td>
+<td class="kpi-cell" align="center" style="width: 25.0%; border-right: 1px solid #D6D2CB; padding: 10px 16px; text-align: center; background-color: #FFFFFF;">
+<p style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #7A7A72; text-transform: uppercase; margin: 0 0 8px 0; line-height: 185%; letter-spacing: 0.5px; font-weight: bold;">UST 10Y</p>
+<p style="font-family: Georgia, 'Times New Roman', serif; font-size: 24px; font-weight: bold; color: #B85450; margin: 0 0 6px 0; line-height: 125%;">4.28%</p>
+<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;"><tr><td align="center" style="padding: 0 0 6px 0; text-align: center;"><table role="presentation" class="sparkline" title="min 4.09% · last 4.28% · max 4.28%" border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse; margin: 0 auto;"><tr><td valign="bottom" style="height: 28px; vertical-align: bottom; padding: 0 !important;"><table role="presentation" border="0" cellpadding="0" cellspacing="0" width="5"><tr><td height="4" style="width: 5px; height: 4px; background-color: #D6D2CB; font-size: 0; line-height: 0; padding: 0 !important;"></td></tr></table></td><td valign="bottom" style="height: 28px; vertical-align: bottom; padding: 0 0 0 2px !important;"><table role="presentation" border="0" cellpadding="0" cellspacing="0" width="5"><tr><td height="12" style="width: 5px; height: 12px; background-color: #D6D2CB; font-size: 0; line-height: 0; padding: 0 !important;"></td></tr></table></td><td valign="bottom" style="height: 28px; vertical-align: bottom; padding: 0 0 0 2px !important;"><table role="presentation" border="0" cellpadding="0" cellspacing="0" width="5"><tr><td height="20" style="width: 5px; height: 20px; background-color: #D6D2CB; font-size: 0; line-height: 0; padding: 0 !important;"></td></tr></table></td><td valign="bottom" style="height: 28px; vertical-align: bottom; padding: 0 0 0 2px !important;"><table role="presentation" border="0" cellpadding="0" cellspacing="0" width="5"><tr><td height="28" style="width: 5px; height: 28px; background-color: #B85450; font-size: 0; line-height: 0; padding: 0 !important;"></td></tr></table></td></tr></table></td></tr></table>
+<p style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #A09E97; margin: 0; line-height: 150%;"><!--[if mso]><v:shape xmlns:v="urn:schemas-microsoft-com:vml" coordsize="2,2" path="m 0,2 l 1,0 2,2 x e" fillcolor="#B85450" stroked="f" style="width:10px;height:8px;"></v:shape><![endif]--><!--[if !mso]><!--><span class="trend trend-up" style="display:inline-block; vertical-align:middle; font-size:0; line-height:0; width:0; height:0; border-left:5px solid transparent; border-right:5px solid transparent; border-bottom:8px solid #B85450;"></span><!--<![endif]-->&nbsp;+6 bps</p>
+</td>
+<td class="kpi-cell" align="center" style="width: 25.0%; border-right: 1px solid #D6D2CB; padding: 10px 16px; text-align: center; background-color: #FFFFFF;">
+<p style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #7A7A72; text-transform: uppercase; margin: 0 0 8px 0; line-height: 185%; letter-spacing: 0.5px; font-weight: bold;">Gold</p>
+<p style="font-family: Georgia, 'Times New Roman', serif; font-size: 24px; font-weight: bold; color: #4A7C59; margin: 0 0 6px 0; line-height: 125%;">2,411</p>
+<p style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #A09E97; margin: 0; line-height: 150%;">+0.85%</p>
+</td>
+<td class="kpi-cell kpi-cell-last" align="center" style="width: 25.0%; padding: 10px 16px; text-align: center; background-color: #FFFFFF;">
+<p style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #7A7A72; text-transform: uppercase; margin: 0 0 8px 0; line-height: 185%; letter-spacing: 0.5px; font-weight: bold;">VIX</p>
+<p style="font-family: Georgia, 'Times New Roman', serif; font-size: 24px; font-weight: bold; color: #4A7C59; margin: 0 0 6px 0; line-height: 125%;">14.32</p>
+<p style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #A09E97; margin: 0; line-height: 150%;">-2.18 pts</p>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td style="padding:0; background-color:#FFFFFF;">
+<table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+<tr>
+<td style="padding:30px 40px 16px 40px;">
+<h2 id="sector-notes" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:19px; font-weight:bold; color:#2C3E50; line-height:125%;">
+Sector Notes
+</h2>
+</td>
+</tr>
+</table>
+<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+<tr>
+<td class="mobile-pad" style="padding:22px 40px 20px 40px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
+<p class="subtitle" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; font-style: italic; color: #7A7A72; margin: 0 0 16px 0; line-height: 150%;">Relative performance</p>
+<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border: 1px solid #D6D2CB;">
+<tr>
+<td align="left" style="padding: 20px 22px; text-align: left; background-color: #FFFFFF; border-bottom: 1px solid #D6D2CB;">
+<p style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #7A7A72; text-transform: uppercase; margin: 0 0 8px 0; line-height: 185%; letter-spacing: 0.5px; font-weight: bold;">Technology</p>
+<p style="font-family: Georgia, 'Times New Roman', serif; font-size: 24px; font-weight: bold; color: #4A7C59; margin: 0 0 6px 0; line-height: 125%;">+2.1%</p>
+<p style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #A09E97; margin: 0; line-height: 150%;">week</p>
+<div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #3B3B3B; line-height: 175%; margin: 12px 0 0 0;"><p>Semiconductor strength led the advance.</p></div>
+</td>
+</tr>
+<tr>
+<td align="left" style="padding: 20px 22px; text-align: left; background-color: #FFFFFF;">
+<p style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #7A7A72; text-transform: uppercase; margin: 0 0 8px 0; line-height: 185%; letter-spacing: 0.5px; font-weight: bold;">Energy</p>
+<p style="font-family: Georgia, 'Times New Roman', serif; font-size: 24px; font-weight: bold; color: #B85450; margin: 0 0 6px 0; line-height: 125%;">-0.7%</p>
+<p style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #A09E97; margin: 0; line-height: 150%;">week</p>
+<div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #3B3B3B; line-height: 175%; margin: 12px 0 0 0;"><p>Crude gave back the prior week's gain.</p></div>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td style="padding:0; background-color:#FFFFFF;">
+<table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+<tr>
+<td style="padding:30px 40px 16px 40px;">
+<h2 id="desk-note" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:19px; font-weight:bold; color:#2C3E50; line-height:125%;">
+Desk Note
+</h2>
+</td>
+</tr>
+</table>
+<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+<tr>
+<td class="mobile-pad" style="padding:22px 40px 20px 40px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
+<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
+<tr>
+<td style="padding:0 0 22px 0;">
 <div class="wrapped-figure"><table class="figure" role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
-  <tr>
-    <td align="right" style="padding: 0; text-align: right;">
-      <div align="right" style="font-size: 0; line-height: 0; text-align: right;">
-      <img src="cid:fcb281de5533d908" alt="The desk"
+<tr>
+<td align="right" style="padding: 0; text-align: right;">
+<div align="right" style="font-size: 0; line-height: 0; text-align: right;">
+<img src="cid:fcb281de5533d908" alt="The desk"
 width="120"           style="display: inline-block; vertical-align: top; border: 0; outline: none; text-decoration: none; width: 100%; max-width: 120px; height: auto;">
-      </div>
-    </td>
-  </tr>
+</div>
+</td>
+</tr>
 </table>
 </div>
 <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 185%; margin: 0 0 22px 0;"><p>The desk's view in brief: the steepener stays on into the next meeting, and linkers are the next addition.</p></div>
-
-    </td>
-  </tr>
-  <tr>
-    <td style="padding:0 0 22px 0;">
+</td>
+</tr>
+<tr>
+<td style="padding:0 0 22px 0;">
 <table class="pull-quote" role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
-  <tr>
-    <td align="center" bgcolor="#F8F7F5" style="padding: 22px 26px; border-left: 3px solid #5B8A9A; background-color: #F8F7F5; text-align:center;">
-      <div style="font-family: Georgia, 'Times New Roman', serif; font-size: 19px; font-style: italic; color: #2C3E50; line-height: 140%;">&ldquo;Duration earned its place in the book again this quarter.&rdquo;</div>
-      <div style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #7A7A72; margin: 12px 0 0 0; line-height: 150%;">&mdash; Head of Rates Strategy</div>
-    </td>
-  </tr>
+<tr>
+<td align="center" bgcolor="#F8F7F5" style="padding: 22px 26px; border-left: 3px solid #5B8A9A; background-color: #F8F7F5; text-align:center;">
+<div style="font-family: Georgia, 'Times New Roman', serif; font-size: 19px; font-style: italic; color: #2C3E50; line-height: 140%;">&ldquo;Duration earned its place in the book again this quarter.&rdquo;</div>
+<div style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #7A7A72; margin: 12px 0 0 0; line-height: 150%;">&mdash; Head of Rates Strategy</div>
+</td>
+</tr>
 </table>
-
-    </td>
-  </tr>
-  <tr>
-    <td style="padding:0;">
+</td>
+</tr>
+<tr>
+<td style="padding:0;">
 <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 185%; margin: 0 0 22px 0;"><h3 style="margin: 0 0 10px 0; font-family: Georgia, 'Times New Roman', serif; font-size: 18px; font-weight: bold; line-height: 140%; color: #2C3E50;">What changed this week</h3><p>Three moves, set out in the <a href="https://example.com/rates" style="color: #5B8A9A; text-decoration: underline;">rates note</a>:</p><ul style="margin: 0 0 10px 24px; padding: 0;"><li style="margin: 0 0 4px 0;">The front end repriced two cuts out.</li><li style="margin: 0 0 4px 0;">Breakevens widened on the energy print.</li></ul><h4 style="margin: 0 0 10px 0; font-family: Georgia, 'Times New Roman', serif; font-size: 15px; font-weight: bold; line-height: 140%; color: #2C3E50;">What we would do</h4><ol style="margin: 0 0 10px 24px; padding: 0;"><li style="margin: 0 0 4px 0;">Hold the steepener.</li><li style="margin: 0 0 4px 0;">Add linkers on weakness.</li></ol><blockquote style="margin: 0 0 10px 0; padding: 0 0 0 24px; border-left: 3px solid #5B8A9A; font-style: italic; color: #7A7A72;">The curve is pricing a pause, not a pivot.</blockquote><hr style="margin: 10px 0; border: 0; border-top: 1px solid #D6D2CB; height: 0;"><p>Levels as of the <a href="https://example.com/close" style="color: inherit;">London close</a>.</p></div>
-
-    </td>
-  </tr>
+</td>
+</tr>
 </table>
-
-        </td>
-      </tr>
-    </table>
-  </td>
+</td>
 </tr>
-
-<tr>
-  <td style="padding:0; background-color:#FFFFFF;">
-    <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
-      <tr>
-        <td style="padding:30px 40px 16px 40px;">
-          <h2 id="long-read" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:19px; font-weight:bold; color:#2C3E50; line-height:125%;">
-            Long Read
-          </h2>
-        </td>
-      </tr>
-    </table>
-    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
-      <tr>
-        <td class="mobile-pad" style="padding:22px 40px 20px 40px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
-          <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 185%; margin: 0 0 22px 0;"><p>On paper this passage runs down one column and on into the next, the way a newspaper sets its copy. In an email it is one column, because Outlook's Word engine has no multi-column layout.</p></div>
-
-        </td>
-      </tr>
-    </table>
-  </td>
+</table>
+</td>
 </tr>
-
 <tr>
-  <td style="padding:0; background-color:#FFFFFF;">
-    <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
-      <tr>
-        <td style="padding:30px 40px 16px 40px;">
-          <h2 id="at-a-glance" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:19px; font-weight:bold; color:#2C3E50; line-height:125%;">
-            At a Glance
-          </h2>
-        </td>
-      </tr>
-    </table>
-    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
-      <tr>
-        <td class="mobile-pad" style="padding:22px 40px 20px 40px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
-          <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
-  <tr>
-    <td style="padding:0 0 22px 0;">
+<td style="padding:0; background-color:#FFFFFF;">
+<table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+<tr>
+<td style="padding:30px 40px 16px 40px;">
+<h2 id="long-read" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:19px; font-weight:bold; color:#2C3E50; line-height:125%;">
+Long Read
+</h2>
+</td>
+</tr>
+</table>
+<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+<tr>
+<td class="mobile-pad" style="padding:22px 40px 20px 40px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
+<div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 185%; margin: 0 0 22px 0;"><p>On paper this passage runs down one column and on into the next, the way a newspaper sets its copy. In an email it is one column, because Outlook's Word engine has no multi-column layout.</p></div>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td style="padding:0; background-color:#FFFFFF;">
+<table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+<tr>
+<td style="padding:30px 40px 16px 40px;">
+<h2 id="at-a-glance" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:19px; font-weight:bold; color:#2C3E50; line-height:125%;">
+At a Glance
+</h2>
+</td>
+</tr>
+</table>
+<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+<tr>
+<td class="mobile-pad" style="padding:22px 40px 20px 40px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
+<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
+<tr>
+<td style="padding:0 0 22px 0;">
 <table class="figure hero-stat" role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
-  <tr>
-    <td align="center" style="padding: 0; text-align:center;">
-      <div style="font-family: Georgia, 'Times New Roman', serif; font-size: 52px; font-weight: bold; color: #4A7C59; margin: 0 0 6px 0; line-height: 125%;">+38 bps</div>
-      <div style="font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; color: #7A7A72; letter-spacing: 0.5px; margin: 0 0 8px 0; line-height: 150%;">2s10s</div>
-      <div style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; margin: 0; line-height: 185%;">steepest since 2022</div>
-    </td>
-  </tr>
-</table>
-
-    </td>
-  </tr>
-  <tr>
-    <td style="padding:0 0 22px 0;">
-<table class="figure bar-list" role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
-  <tr>
-    <td style="padding: 0;">
-      <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
-        <tr>
-          <td width="35%" style="width: 35%; font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #3B3B3B; line-height: 185%; vertical-align: middle; padding: 7px 0;">Duration</td>
-          <td width="45%" style="width: 45%; vertical-align: middle; padding: 7px 16px;">
-<table role="presentation" class="cell-bar" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;"><tr><td width="100%" style="width: 100%; background-color: #4A7C59; height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td></tr></table>
-          </td>
-          <td width="20%" align="right" style="width: 20%; font-family: 'Courier New', Courier, monospace; font-size: 14px; font-weight: bold; color: #4A7C59; text-align: right; white-space: nowrap; line-height: 185%; vertical-align: middle; padding: 7px 0;">+0.42%</td>
-        </tr>
-        <tr>
-          <td width="35%" style="width: 35%; font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #3B3B3B; line-height: 185%; vertical-align: middle; padding: 7px 0;">Curve</td>
-          <td width="45%" style="width: 45%; vertical-align: middle; padding: 7px 16px;">
-<table role="presentation" class="cell-bar" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;"><tr><td width="43%" style="width: 43%; background-color: #4A7C59; height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td><td width="57%" style="width: 57%; height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td></tr></table>
-          </td>
-          <td width="20%" align="right" style="width: 20%; font-family: 'Courier New', Courier, monospace; font-size: 14px; font-weight: bold; color: #4A7C59; text-align: right; white-space: nowrap; line-height: 185%; vertical-align: middle; padding: 7px 0;">+0.18%</td>
-        </tr>
-      </table>
-    </td>
-  </tr>
-</table>
-
-    </td>
-  </tr>
-  <tr>
-    <td style="padding:0;">
-<table class="figure" role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
-  <tr>
-    <td style="padding: 0;">
-      <table role="presentation" class="sparkline" title="min 3.9 · last 4.2 · max 4.2" border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse;"><tr><td valign="bottom" style="height: 28px; vertical-align: bottom; padding: 0 !important;"><table role="presentation" border="0" cellpadding="0" cellspacing="0" width="5"><tr><td height="4" style="width: 5px; height: 4px; background-color: #D6D2CB; font-size: 0; line-height: 0; padding: 0 !important;"></td></tr></table></td><td valign="bottom" style="height: 28px; vertical-align: bottom; padding: 0 0 0 2px !important;"><table role="presentation" border="0" cellpadding="0" cellspacing="0" width="5"><tr><td height="12" style="width: 5px; height: 12px; background-color: #D6D2CB; font-size: 0; line-height: 0; padding: 0 !important;"></td></tr></table></td><td valign="bottom" style="height: 28px; vertical-align: bottom; padding: 0 0 0 2px !important;"><table role="presentation" border="0" cellpadding="0" cellspacing="0" width="5"><tr><td height="28" style="width: 5px; height: 28px; background-color: #B85450; font-size: 0; line-height: 0; padding: 0 !important;"></td></tr></table></td></tr></table>
-      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #7A7A72; margin: 12px 0 0 0; line-height: 185%;">min 3.9 · last 4.2 · max 4.2</p>
-    </td>
-  </tr>
-</table>
-
-    </td>
-  </tr>
-</table>
-
-        </td>
-      </tr>
-    </table>
-  </td>
-</tr>
-
 <tr>
-  <td style="padding:0; background-color:#FFFFFF;">
-    <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
-      <tr>
-        <td style="padding:30px 40px 16px 40px;">
-          <h2 id="factor-returns" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:19px; font-weight:bold; color:#2C3E50; line-height:125%;">
-            Factor Returns
-          </h2>
-        </td>
-      </tr>
-    </table>
-    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
-      <tr>
-        <td class="mobile-pad" style="padding:10px 40px 8px 40px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
-          <p class="subtitle" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; font-style: italic; color: #7A7A72; margin: 0 0 16px 0; line-height: 150%;">Long-short, gross of costs</p>
+<td align="center" style="padding: 0; text-align:center;">
+<div style="font-family: Georgia, 'Times New Roman', serif; font-size: 52px; font-weight: bold; color: #4A7C59; margin: 0 0 6px 0; line-height: 125%;">+38 bps</div>
+<div style="font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; color: #7A7A72; letter-spacing: 0.5px; margin: 0 0 8px 0; line-height: 150%;">2s10s</div>
+<div style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; margin: 0; line-height: 185%;">steepest since 2022</div>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td style="padding:0 0 22px 0;">
+<table class="figure bar-list" role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
+<tr>
+<td style="padding: 0;">
+<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
+<tr>
+<td width="35%" style="width: 35%; font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #3B3B3B; line-height: 185%; vertical-align: middle; padding: 7px 0;">Duration</td>
+<td width="45%" style="width: 45%; vertical-align: middle; padding: 7px 16px;">
+<table role="presentation" class="cell-bar" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;"><tr><td width="100%" style="width: 100%; background-color: #4A7C59; height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td></tr></table>
+</td>
+<td width="20%" align="right" style="width: 20%; font-family: 'Courier New', Courier, monospace; font-size: 14px; font-weight: bold; color: #4A7C59; text-align: right; white-space: nowrap; line-height: 185%; vertical-align: middle; padding: 7px 0;">+0.42%</td>
+</tr>
+<tr>
+<td width="35%" style="width: 35%; font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #3B3B3B; line-height: 185%; vertical-align: middle; padding: 7px 0;">Curve</td>
+<td width="45%" style="width: 45%; vertical-align: middle; padding: 7px 16px;">
+<table role="presentation" class="cell-bar" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;"><tr><td width="43%" style="width: 43%; background-color: #4A7C59; height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td><td width="57%" style="width: 57%; height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td></tr></table>
+</td>
+<td width="20%" align="right" style="width: 20%; font-family: 'Courier New', Courier, monospace; font-size: 14px; font-weight: bold; color: #4A7C59; text-align: right; white-space: nowrap; line-height: 185%; vertical-align: middle; padding: 7px 0;">+0.18%</td>
+</tr>
+</table>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td style="padding:0;">
+<table class="figure" role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
+<tr>
+<td style="padding: 0;">
+<table role="presentation" class="sparkline" title="min 3.9 · last 4.2 · max 4.2" border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse;"><tr><td valign="bottom" style="height: 28px; vertical-align: bottom; padding: 0 !important;"><table role="presentation" border="0" cellpadding="0" cellspacing="0" width="5"><tr><td height="4" style="width: 5px; height: 4px; background-color: #D6D2CB; font-size: 0; line-height: 0; padding: 0 !important;"></td></tr></table></td><td valign="bottom" style="height: 28px; vertical-align: bottom; padding: 0 0 0 2px !important;"><table role="presentation" border="0" cellpadding="0" cellspacing="0" width="5"><tr><td height="12" style="width: 5px; height: 12px; background-color: #D6D2CB; font-size: 0; line-height: 0; padding: 0 !important;"></td></tr></table></td><td valign="bottom" style="height: 28px; vertical-align: bottom; padding: 0 0 0 2px !important;"><table role="presentation" border="0" cellpadding="0" cellspacing="0" width="5"><tr><td height="28" style="width: 5px; height: 28px; background-color: #B85450; font-size: 0; line-height: 0; padding: 0 !important;"></td></tr></table></td></tr></table>
+<p style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #7A7A72; margin: 12px 0 0 0; line-height: 185%;">min 3.9 · last 4.2 · max 4.2</p>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td style="padding:0; background-color:#FFFFFF;">
+<table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+<tr>
+<td style="padding:30px 40px 16px 40px;">
+<h2 id="factor-returns" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:19px; font-weight:bold; color:#2C3E50; line-height:125%;">
+Factor Returns
+</h2>
+</td>
+</tr>
+</table>
+<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+<tr>
+<td class="mobile-pad" style="padding:10px 40px 8px 40px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
+<p class="subtitle" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; font-style: italic; color: #7A7A72; margin: 0 0 16px 0; line-height: 150%;">Long-short, gross of costs</p>
 <!--[if mso]><p align="left" style="margin: 0; text-align: left; font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; color: #2C3E50; letter-spacing: 0.5px; padding: 0 0 12px 0;">Exhibit 1 · Style factor returns</p><![endif]-->
 <table class="data-table" id="factor-table" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
-  <caption style="caption-side: top; text-align: left; font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; color: #2C3E50; letter-spacing: 0.5px; padding: 0 0 12px 0; mso-hide:all;">Exhibit 1 · Style factor returns</caption>
-  <thead>
-  <tr style="border-top: 1px solid #D6D2CB; border-bottom: 2px solid #2C3E50;">
-    <th scope="col" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 185%; text-align: left; padding: 7px; letter-spacing: 0.5px;">Factor</th>
-    <th scope="col" align="right" style="font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 185%; text-align: right; padding: 7px; letter-spacing: 0.5px;">1M</th>
-    <th scope="col" align="right" style="font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 185%; text-align: right; padding: 7px; letter-spacing: 0.5px;">YTD</th>
-  </tr>
-  </thead>
-  <tbody>
-  <tr style="border-bottom: 1px solid #EAE8E4;">
-    <th scope="row" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; font-weight: normal; line-height: 185%; color: #3B3B3B; text-align: left; padding: 7px; background-color: #FFFFFF;">Value</th>
-    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 14px; font-weight: bold; line-height: 185%; color: #4A7C59; text-align: right; padding: 7px; background-color: #FFFFFF;">+1.8%</td>
-    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 14px; font-weight: bold; line-height: 185%; color: #4A7C59; text-align: right; padding: 7px; background-color: #FFFFFF;">+7.4%<table role="presentation" class="cell-bar" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;"><tr><td width="66%" style="width: 66%; background-color: #5B8A9A; height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td><td width="34%" style="width: 34%; height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td></tr></table>
+<caption style="caption-side: top; text-align: left; font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; color: #2C3E50; letter-spacing: 0.5px; padding: 0 0 12px 0; mso-hide:all;">Exhibit 1 · Style factor returns</caption>
+<thead>
+<tr style="border-top: 1px solid #D6D2CB; border-bottom: 2px solid #2C3E50;">
+<th scope="col" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 185%; text-align: left; padding: 7px; letter-spacing: 0.5px;">Factor</th>
+<th scope="col" align="right" style="font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 185%; text-align: right; padding: 7px; letter-spacing: 0.5px;">1M</th>
+<th scope="col" align="right" style="font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; color: #5A5A5A; text-transform: uppercase; line-height: 185%; text-align: right; padding: 7px; letter-spacing: 0.5px;">YTD</th>
+</tr>
+</thead>
+<tbody>
+<tr style="border-bottom: 1px solid #EAE8E4;">
+<th scope="row" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; font-weight: normal; line-height: 185%; color: #3B3B3B; text-align: left; padding: 7px; background-color: #FFFFFF;">Value</th>
+<td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 14px; font-weight: bold; line-height: 185%; color: #4A7C59; text-align: right; padding: 7px; background-color: #FFFFFF;">+1.8%</td>
+<td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 14px; font-weight: bold; line-height: 185%; color: #4A7C59; text-align: right; padding: 7px; background-color: #FFFFFF;">+7.4%<table role="presentation" class="cell-bar" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;"><tr><td width="66%" style="width: 66%; background-color: #5B8A9A; height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td><td width="34%" style="width: 34%; height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td></tr></table>
 </td>
-  </tr>
-  <tr style="border-bottom: 1px solid #EAE8E4;">
-    <th scope="row" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; font-weight: normal; line-height: 185%; color: #3B3B3B; text-align: left; padding: 7px; background-color: #F8F7F5;">Momentum</th>
-    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 14px; font-weight: bold; line-height: 185%; color: #B85450; text-align: right; padding: 7px; background-color: #F8F7F5;">-0.4%</td>
-    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 14px; font-weight: bold; line-height: 185%; color: #4A7C59; text-align: right; padding: 7px; background-color: #F8F7F5;">+11.2%<table role="presentation" class="cell-bar" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;"><tr><td width="100%" style="width: 100%; background-color: #5B8A9A; height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td></tr></table>
+</tr>
+<tr style="border-bottom: 1px solid #EAE8E4;">
+<th scope="row" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; font-weight: normal; line-height: 185%; color: #3B3B3B; text-align: left; padding: 7px; background-color: #F8F7F5;">Momentum</th>
+<td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 14px; font-weight: bold; line-height: 185%; color: #B85450; text-align: right; padding: 7px; background-color: #F8F7F5;">-0.4%</td>
+<td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 14px; font-weight: bold; line-height: 185%; color: #4A7C59; text-align: right; padding: 7px; background-color: #F8F7F5;">+11.2%<table role="presentation" class="cell-bar" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;"><tr><td width="100%" style="width: 100%; background-color: #5B8A9A; height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td></tr></table>
 </td>
-  </tr>
-  <tr style="border-bottom: 1px solid #D6D2CB;">
-    <th scope="row" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; font-weight: normal; line-height: 185%; color: #3B3B3B; text-align: left; padding: 7px; background-color: #FFFFFF;">Quality</th>
-    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 14px; font-weight: bold; line-height: 185%; color: #4A7C59; text-align: right; padding: 7px; background-color: #FFFFFF;">+0.9%</td>
-    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 14px; font-weight: bold; line-height: 185%; color: #4A7C59; text-align: right; padding: 7px; background-color: #FFFFFF;">+5.1%<table role="presentation" class="cell-bar" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;"><tr><td width="46%" style="width: 46%; background-color: #5B8A9A; height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td><td width="54%" style="width: 54%; height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td></tr></table>
+</tr>
+<tr style="border-bottom: 1px solid #D6D2CB;">
+<th scope="row" align="left" style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; font-weight: normal; line-height: 185%; color: #3B3B3B; text-align: left; padding: 7px; background-color: #FFFFFF;">Quality</th>
+<td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 14px; font-weight: bold; line-height: 185%; color: #4A7C59; text-align: right; padding: 7px; background-color: #FFFFFF;">+0.9%</td>
+<td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 14px; font-weight: bold; line-height: 185%; color: #4A7C59; text-align: right; padding: 7px; background-color: #FFFFFF;">+5.1%<table role="presentation" class="cell-bar" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;"><tr><td width="46%" style="width: 46%; background-color: #5B8A9A; height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td><td width="54%" style="width: 54%; height: 6px; font-size: 0; line-height: 0; padding: 0 !important;"></td></tr></table>
 </td>
-  </tr>
-  </tbody>
+</tr>
+</tbody>
 </table>
 <p class="fine-print" style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #A09E97; font-style: italic; margin: 12px 0 0 0; line-height: 185%;">Hermes Research<sup class="note-ref" style="line-height: 0;"><a href="#note-1" id="note-ref-1" style="color: #5B8A9A; text-decoration: none;">1</a></sup> as of 24 August 2026</p>
 <p class="fine-print" align="justify" style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #A09E97; font-style: italic; text-align: justify; margin: 12px 0 0 0; line-height: 185%;">Factor returns are shown gross of fees and transaction costs. Past performance is not indicative of future results. Figures are estimates and subject to revision.</p>
-
-        </td>
-      </tr>
-    </table>
-  </td>
+</td>
 </tr>
-
+</table>
+</td>
+</tr>
 <tr>
-  <td style="padding:0; background-color:#FFFFFF;">
-    <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
-      <tr>
-        <td style="padding:30px 40px 16px 40px;">
-          <h2 id="cumulative-performance" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:19px; font-weight:bold; color:#2C3E50; line-height:125%;">
-            Cumulative Performance
-          </h2>
-        </td>
-      </tr>
-    </table>
-    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
-      <tr>
-        <td class="mobile-pad" style="padding:22px 40px 20px 40px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
-          <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
-  <tr>
-    <td style="padding:0 0 22px 0;">
+<td style="padding:0; background-color:#FFFFFF;">
+<table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+<tr>
+<td style="padding:30px 40px 16px 40px;">
+<h2 id="cumulative-performance" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:19px; font-weight:bold; color:#2C3E50; line-height:125%;">
+Cumulative Performance
+</h2>
+</td>
+</tr>
+</table>
+<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+<tr>
+<td class="mobile-pad" style="padding:22px 40px 20px 40px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
+<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
+<tr>
+<td style="padding:0 0 22px 0;">
 <table class="figure" id="exhibit-2" role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
-  <tr>
-    <td style="padding: 0 0 12px 0; font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; color: #2C3E50; letter-spacing: 0.5px; line-height: 185%;">Exhibit 2 · Cumulative factor performance</td>
-  </tr>
-  <tr>
-    <td style="padding: 0;">
-      <table class="figure-grid" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse: separate;">
-        <tr>
-          <td class="stack-column" id="exhibit-2-a" width="48%" valign="top" style="width: 48%; vertical-align: top; padding: 0 0 22px 0;">
-            <p style="font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; color: #7A7A72; margin: 0 0 12px 0; line-height: 185%;">(a) Value</p>
+<tr>
+<td style="padding: 0 0 12px 0; font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; color: #2C3E50; letter-spacing: 0.5px; line-height: 185%;">Exhibit 2 · Cumulative factor performance</td>
+</tr>
+<tr>
+<td style="padding: 0;">
+<table class="figure-grid" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse: separate;">
+<tr>
+<td class="stack-column" id="exhibit-2-a" width="48%" valign="top" style="width: 48%; vertical-align: top; padding: 0 0 22px 0;">
+<p style="font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; color: #7A7A72; margin: 0 0 12px 0; line-height: 185%;">(a) Value</p>
 <img src="cid:f718e1e0628201c0" alt="Value, long-short" width="288" style="display: block; width: 100%; max-width: 288px; height: auto; border: 1px solid #D6D2CB;">            <div class="legend" style="margin: 12px 0 0 0; font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #7A7A72; line-height: 185%;">
 <span style="display: inline-block; white-space: nowrap; margin: 0 24px 0 0;"><span class="legend-swatch" style="display: inline-block; vertical-align: middle; width: 9px; height: 9px; background-color: #2C3E50; font-size: 9px; line-height: 9px; margin: 0 12px 0 0;">&nbsp;</span><!--[if mso]>&nbsp;<![endif]-->Long</span><span style="display: inline-block; white-space: nowrap; margin: 0 24px 0 0;"><span class="legend-swatch" style="display: inline-block; vertical-align: middle; width: 9px; height: 9px; background-color: #B85450; font-size: 9px; line-height: 9px; margin: 0 12px 0 0;">&nbsp;</span><!--[if mso]>&nbsp;<![endif]-->Short</span></div>
-
-          </td>
-          <td class="stack-column" width="24" style="width: 24px; padding: 0;"></td>
-          <td class="stack-column" id="exhibit-2-b" width="48%" valign="top" style="width: 48%; vertical-align: top; padding: 0;">
-            <p style="font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; color: #7A7A72; margin: 0 0 12px 0; line-height: 185%;">(b) Momentum</p>
+</td>
+<td class="stack-column" width="24" style="width: 24px; padding: 0;"></td>
+<td class="stack-column" id="exhibit-2-b" width="48%" valign="top" style="width: 48%; vertical-align: top; padding: 0;">
+<p style="font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; color: #7A7A72; margin: 0 0 12px 0; line-height: 185%;">(b) Momentum</p>
 <img src="cid:f718e1e0628201c0" alt="Momentum, long-short" width="288" style="display: block; width: 100%; max-width: 288px; height: auto; border: 0;">          </td>
-        </tr>
-      </table>
-    </td>
-  </tr>
+</tr>
+</table>
+</td>
+</tr>
 </table>
 <p class="fine-print" style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #A09E97; font-style: italic; margin: 12px 0 0 0; line-height: 185%;">Hermes Research</p>
-
-    </td>
-  </tr>
-  <tr>
-    <td style="padding:0 0 22px 0;">
+</td>
+</tr>
+<tr>
+<td style="padding:0 0 22px 0;">
 <table class="figure math-block" id="variance-identity" role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
-  <tr>
-    <td align="left" style="padding: 0; text-align: left;">
-      <div align="left" style="font-size: 0; line-height: 0; text-align: left;"><img src="cid:726e79e0a048bada" alt="\sigma_p^2 = w^\top \Sigma w" width="110" style="display: inline-block; vertical-align: top; border: 0; outline: none; text-decoration: none; width: 100%; max-width: 110px; height: auto;"></div>
-      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #A09E97; font-style: italic; margin: 5px 0 0 0; line-height: 185%;">Equation 1 · Portfolio variance<sup class="note-ref" style="line-height: 0;"><a href="#note-2" id="note-ref-2" style="color: #5B8A9A; text-decoration: none;">2</a></sup></p>
+<tr>
+<td align="left" style="padding: 0; text-align: left;">
+<div align="left" style="font-size: 0; line-height: 0; text-align: left;"><img src="cid:726e79e0a048bada" alt="\sigma_p^2 = w^\top \Sigma w" width="110" style="display: inline-block; vertical-align: top; border: 0; outline: none; text-decoration: none; width: 100%; max-width: 110px; height: auto;"></div>
+<p style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #A09E97; font-style: italic; margin: 5px 0 0 0; line-height: 185%;">Equation 1 · Portfolio variance<sup class="note-ref" style="line-height: 0;"><a href="#note-2" id="note-ref-2" style="color: #5B8A9A; text-decoration: none;">2</a></sup></p>
 <p class="fine-print" align="justify" style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #A09E97; font-style: italic; text-align: justify; margin: 5px 0 0 0; line-height: 185%;">The estimate assumes stable correlations.</p>
-    </td>
-  </tr>
+</td>
+</tr>
 </table>
-
-    </td>
-  </tr>
-  <tr>
-    <td style="padding:0;">
+</td>
+</tr>
+<tr>
+<td style="padding:0;">
 <table class="figure math-block" role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
-  <tr>
-    <td align="center" style="padding: 0; text-align: center;">
-      <div align="center" style="font-size: 0; line-height: 0; text-align: center;"><img src="cid:8005b847dad3ea73" alt="\text{VaR}_{99\%} = -q_{0.01}(r)
+<tr>
+<td align="center" style="padding: 0; text-align: center;">
+<div align="center" style="font-size: 0; line-height: 0; text-align: center;"><img src="cid:8005b847dad3ea73" alt="\text{VaR}_{99\%} = -q_{0.01}(r)
 \text{ES}_{99\%} = \mathbb{E}[r \mid r \leq q_{0.01}]" width="103" style="display: inline-block; vertical-align: top; border: 0; outline: none; text-decoration: none; width: 100%; max-width: 103px; height: auto;"></div>
-      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #A09E97; font-style: italic; margin: 12px 0 0 0; line-height: 185%;">Value at risk and expected shortfall</p>
-    </td>
-  </tr>
-</table>
-
-    </td>
-  </tr>
-</table>
-
-        </td>
-      </tr>
-    </table>
-  </td>
+<p style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #A09E97; font-style: italic; margin: 12px 0 0 0; line-height: 185%;">Value at risk and expected shortfall</p>
+</td>
 </tr>
-
-<tr>
-  <td style="padding:0; background-color:#FFFFFF;">
-    <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
-      <tr>
-        <td style="padding:30px 40px 16px 40px;">
-          <h2 id="equal-columns" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:19px; font-weight:bold; color:#2C3E50; line-height:125%;">
-            Equal Columns
-          </h2>
-        </td>
-      </tr>
-    </table>
-    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
-      <tr>
-        <td class="mobile-flush" style="padding:0 40px; font-size:0; line-height:0;">
-    <!--[if mso]>
-    <table role="presentation" width="600" border="0" cellpadding="0" cellspacing="0" style="width:600px;">
-      <tr>
-        <td width="288" valign="top" style="width:288px; padding:0;">
-    <![endif]-->
-    <table role="presentation" width="288" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:288px; margin-right:24px; background-color:#FFFFFF;">
-      <tr>
-        <td class="mobile-pad" style="padding:4px 26px 14px 0px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
-          <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 185%; margin: 0 0 22px 0;"><p>The left half of a 50-50 split, below <a class="xref" href="#exhibit-2" style="color: #5B8A9A; text-decoration: underline;">Exhibit 2</a>.</p></div>
-
-        </td>
-      </tr>
-    </table>
-    <!--[if mso]>
-        </td>
-        <td width="288" valign="top" style="width:288px; padding:0;">
-    <![endif]-->
-    <table role="presentation" width="288" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:288px; background-color:#FFFFFF;">
-      <tr>
-        <td class="mobile-pad" style="padding:4px 0px 14px 26px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
-          <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 185%; margin: 0 0 22px 0;"><p>The right half of a 50-50 split.</p></div>
-
-        </td>
-      </tr>
-    </table>
-    <!--[if mso]>
-        </td>
-      </tr>
-    </table>
-    <![endif]-->
-        </td>
-      </tr>
-    </table>
-  </td>
+</table>
+</td>
 </tr>
-
+</table>
+</td>
+</tr>
+</table>
+</td>
+</tr>
 <tr>
-  <td style="padding:1px 1px 1px 1px; background-color:#FFFFFF; border-top:1px solid #D6D2CB; border-bottom:1px solid #D6D2CB;">
-    <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#F8F7F5;">
-      <tr>
-        <td style="padding:30px 39px 16px 39px;">
-          <h2 id="narrow-then-wide" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:19px; font-weight:bold; color:#2C3E50; line-height:125%;">
-            Narrow then Wide
-          </h2>
-        </td>
-      </tr>
-    </table>
-    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#F8F7F5;">
-      <tr>
-        <td class="mobile-flush" style="padding:0 39px; font-size:0; line-height:0;">
-    <!--[if mso]>
-    <table role="presentation" width="600" border="0" cellpadding="0" cellspacing="0" style="width:600px;">
-      <tr>
-        <td width="173" valign="top" style="width:173px; padding:0;">
-    <![endif]-->
-    <table role="presentation" width="173" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:173px; margin-right:24px; background-color:#F8F7F5;">
-      <tr>
-        <td class="mobile-pad" style="padding:4px 20px 34px 0px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
-          <table class="figure" id="figure-1" role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
-  <tr>
-    <td align="left" style="padding: 0; text-align: left;">
-      <div align="left" style="font-size: 0; line-height: 0; text-align: left;">
-      <img src="cid:2900c6494e08b7f0" alt="Thumbnail"
+<td style="padding:0; background-color:#FFFFFF;">
+<table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+<tr>
+<td style="padding:30px 40px 16px 40px;">
+<h2 id="equal-columns" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:19px; font-weight:bold; color:#2C3E50; line-height:125%;">
+Equal Columns
+</h2>
+</td>
+</tr>
+</table>
+<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+<tr>
+<td class="mobile-flush" style="padding:0 40px; font-size:0; line-height:0;">
+<!--[if mso]>
+<table role="presentation" width="600" border="0" cellpadding="0" cellspacing="0" style="width:600px;">
+<tr>
+<td width="288" valign="top" style="width:288px; padding:0;">
+<![endif]-->
+<table role="presentation" width="288" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:288px; margin-right:24px; background-color:#FFFFFF;">
+<tr>
+<td class="mobile-pad" style="padding:4px 26px 14px 0px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
+<div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 185%; margin: 0 0 22px 0;"><p>The left half of a 50-50 split, below <a class="xref" href="#exhibit-2" style="color: #5B8A9A; text-decoration: underline;">Exhibit 2</a>.</p></div>
+</td>
+</tr>
+</table>
+<!--[if mso]>
+</td>
+<td width="288" valign="top" style="width:288px; padding:0;">
+<![endif]-->
+<table role="presentation" width="288" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:288px; background-color:#FFFFFF;">
+<tr>
+<td class="mobile-pad" style="padding:4px 0px 14px 26px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
+<div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 185%; margin: 0 0 22px 0;"><p>The right half of a 50-50 split.</p></div>
+</td>
+</tr>
+</table>
+<!--[if mso]>
+</td>
+</tr>
+</table>
+<![endif]-->
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td style="padding:1px 1px 1px 1px; background-color:#FFFFFF; border-top:1px solid #D6D2CB; border-bottom:1px solid #D6D2CB;">
+<table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#F8F7F5;">
+<tr>
+<td style="padding:30px 39px 16px 39px;">
+<h2 id="narrow-then-wide" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:19px; font-weight:bold; color:#2C3E50; line-height:125%;">
+Narrow then Wide
+</h2>
+</td>
+</tr>
+</table>
+<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#F8F7F5;">
+<tr>
+<td class="mobile-flush" style="padding:0 39px; font-size:0; line-height:0;">
+<!--[if mso]>
+<table role="presentation" width="600" border="0" cellpadding="0" cellspacing="0" style="width:600px;">
+<tr>
+<td width="173" valign="top" style="width:173px; padding:0;">
+<![endif]-->
+<table role="presentation" width="173" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:173px; margin-right:24px; background-color:#F8F7F5;">
+<tr>
+<td class="mobile-pad" style="padding:4px 20px 34px 0px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
+<table class="figure" id="figure-1" role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
+<tr>
+<td align="left" style="padding: 0; text-align: left;">
+<div align="left" style="font-size: 0; line-height: 0; text-align: left;">
+<img src="cid:2900c6494e08b7f0" alt="Thumbnail"
 width="96"           style="display: inline-block; vertical-align: top; border: 0; outline: none; text-decoration: none; width: 100%; max-width: 96px; height: auto;">
-      </div>
-      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #A09E97; font-style: italic; margin: 12px 0 0 0; line-height: 185%;">Figure 1 · A 30% column<sup class="note-ref" style="line-height: 0;"><a href="#note-3" id="note-ref-3" style="color: #5B8A9A; text-decoration: none;">3</a></sup></p>
+</div>
+<p style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #A09E97; font-style: italic; margin: 12px 0 0 0; line-height: 185%;">Figure 1 · A 30% column<sup class="note-ref" style="line-height: 0;"><a href="#note-3" id="note-ref-3" style="color: #5B8A9A; text-decoration: none;">3</a></sup></p>
 <p class="fine-print" align="justify" style="font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #A09E97; font-style: italic; text-align: justify; margin: 12px 0 0 0; line-height: 185%;">Illustrative only; not a recommendation to buy or sell.</p>
-    </td>
-  </tr>
-</table>
-
-        </td>
-      </tr>
-    </table>
-    <!--[if mso]>
-        </td>
-        <td width="403" valign="top" style="width:403px; padding:0;">
-    <![endif]-->
-    <table role="presentation" width="403" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:403px; background-color:#F8F7F5;">
-      <tr>
-        <td class="mobile-pad" style="padding:4px 0px 34px 26px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
-          <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 185%; margin: 0 0 22px 0;"><p>Commentary occupying the wider 70% column.</p></div>
-
-        </td>
-      </tr>
-    </table>
-    <!--[if mso]>
-        </td>
-      </tr>
-    </table>
-    <![endif]-->
-        </td>
-      </tr>
-    </table>
-  </td>
+</td>
 </tr>
-
+</table>
+</td>
+</tr>
+</table>
+<!--[if mso]>
+</td>
+<td width="403" valign="top" style="width:403px; padding:0;">
+<![endif]-->
+<table role="presentation" width="403" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:403px; background-color:#F8F7F5;">
 <tr>
-  <td style="padding:0; background-color:#FFFFFF;">
-    <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
-      <tr>
-        <td style="padding:30px 40px 16px 40px;">
-          <h2 id="wide-then-narrow" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:19px; font-weight:bold; color:#2C3E50; line-height:125%;">
-            Wide then Narrow
-          </h2>
-        </td>
-      </tr>
-    </table>
-    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
-      <tr>
-        <td class="mobile-flush" style="padding:0 40px; font-size:0; line-height:0;">
-    <!--[if mso]>
-    <table role="presentation" width="600" border="0" cellpadding="0" cellspacing="0" style="width:600px;">
-      <tr>
-        <td width="403" valign="top" style="width:403px; padding:0;">
-    <![endif]-->
-    <table role="presentation" width="403" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:403px; margin-right:24px; background-color:#FFFFFF;">
-      <tr>
-        <td class="mobile-pad" style="padding:4px 26px 34px 0px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
-          <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
-  <tr>
-    <td style="padding:0 0 8px 0;">
-<div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 185%; margin: 0 0 8px 0;"><p>Commentary occupying the wider 70% column.</p></div>
-
-    </td>
-  </tr>
-  <tr>
-    <td style="padding:0 0 8px 0;">
-<div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 185%; margin: 0 0 8px 0;"><p>A second block in the same column.</p></div>
-
-    </td>
-  </tr>
-  <tr>
-    <td style="padding:0;">
+<td class="mobile-pad" style="padding:4px 0px 34px 26px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
+<div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 185%; margin: 0 0 22px 0;"><p>Commentary occupying the wider 70% column.</p></div>
+</td>
+</tr>
+</table>
+<!--[if mso]>
+</td>
+</tr>
+</table>
+<![endif]-->
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td style="padding:0; background-color:#FFFFFF;">
+<table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+<tr>
+<td style="padding:30px 40px 16px 40px;">
+<h2 id="wide-then-narrow" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:19px; font-weight:bold; color:#2C3E50; line-height:125%;">
+Wide then Narrow
+</h2>
+</td>
+</tr>
+</table>
+<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+<tr>
+<td class="mobile-flush" style="padding:0 40px; font-size:0; line-height:0;">
+<!--[if mso]>
+<table role="presentation" width="600" border="0" cellpadding="0" cellspacing="0" style="width:600px;">
+<tr>
+<td width="403" valign="top" style="width:403px; padding:0;">
+<![endif]-->
+<table role="presentation" width="403" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:403px; margin-right:24px; background-color:#FFFFFF;">
+<tr>
+<td class="mobile-pad" style="padding:4px 26px 34px 0px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
 <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
-  <tr>
-    <td style="padding:0; font-size:0; line-height:0;">
-    <!--[if mso]>
-    <table role="presentation" width="377" border="0" cellpadding="0" cellspacing="0" style="width:377px;">
-      <tr>
-        <td width="118" valign="top" style="width:118px; padding:0;">
-    <![endif]-->
-    <table role="presentation" width="118" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:118px; margin-right:24px;">
-      <tr>
-        <td style="padding:0 0 8px 0; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
-          <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 185%; margin: 0 0 8px 0;"><p>Nested left.</p></div>
-
-        </td>
-      </tr>
-    </table>
-    <!--[if mso]>
-        </td>
-        <td width="235" valign="top" style="width:235px; padding:0;">
-    <![endif]-->
-    <table role="presentation" width="235" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:235px;">
-      <tr>
-        <td style="padding:0; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
-          <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 185%; margin: 0 0 8px 0;"><p>Nested right.</p></div>
-
-        </td>
-      </tr>
-    </table>
-    <!--[if mso]>
-        </td>
-      </tr>
-    </table>
-    <![endif]-->
-    </td>
-  </tr>
-</table>
-
-    </td>
-  </tr>
-</table>
-
-        </td>
-      </tr>
-    </table>
-    <!--[if mso]>
-        </td>
-        <td width="173" valign="top" style="width:173px; padding:0;">
-    <![endif]-->
-    <table role="presentation" width="173" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:173px; background-color:#FFFFFF;">
-      <tr>
-        <td class="mobile-pad" style="padding:4px 0px 34px 20px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
-          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border-top: 1px solid #EAE8E4; padding-top: 20px; margin-top: 0;">
-  <tr>
-    <td style="padding-top: 20px; padding-bottom: 0;">
-      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; font-weight: bold; color: #2C3E50; margin: 0 0 6px 0; line-height: 140%;">A. Analyst</p>
-      <p style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #7A7A72; margin: 0; line-height: 150%;">Head of Research <span style="margin: 0 6px;">&middot;</span> research@example.com</p>
-    </td>
-  </tr>
-</table>
-
-        </td>
-      </tr>
-    </table>
-    <!--[if mso]>
-        </td>
-      </tr>
-    </table>
-    <![endif]-->
-        </td>
-      </tr>
-    </table>
-  </td>
-</tr>
-
 <tr>
-  <td style="padding:0; background-color:#FFFFFF;">
-    <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
-      <tr>
-        <td style="padding:30px 40px 16px 40px;">
-          <p class="kicker" style="margin:0 0 12px 0; font-family: Arial, Helvetica, sans-serif; font-size:11px; font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; color:#5B8A9A; line-height:150%;">Desk view</p>
-          <h2 id="thirds" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:19px; font-weight:bold; color:#2C3E50; line-height:125%;">
-            Three Equal
-          </h2>
-        </td>
-      </tr>
-    </table>
-    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
-      <tr>
-        <td class="mobile-flush" style="padding:0 40px; font-size:0; line-height:0;">
-    <!--[if mso]>
-    <table role="presentation" width="600" border="0" cellpadding="0" cellspacing="0" style="width:600px;">
-      <tr>
-        <td width="184" valign="top" style="width:184px; padding:0;">
-    <![endif]-->
-    <table role="presentation" width="184" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:184px; margin-right:24px; background-color:#FFFFFF;">
-      <tr>
-        <td class="mobile-pad" style="padding:4px 20px 34px 0px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
-          <table class="timeline-event" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
-  <tr>
-    <td width="108" align="right" valign="top" style="width: 108px; text-align: right; vertical-align: top; font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #7A7A72; line-height: 28px; padding: 0 16px 0 0;">14 Oct</td>
-    <td width="3" style="width: 3px; padding: 0; font-size: 0; line-height: 0; background-color: #5B8A9A; border: 2px solid #5B8A9A; border-right: 0; border-radius: 5px 0 0 5px;"></td>
-    <td width="5" style="width: 5px; padding: 0; font-size: 0; line-height: 0; background-color: #5B8A9A; border: 2px solid #5B8A9A; border-left: 0; border-radius: 0 5px 5px 0;"></td>
-    <td align="left" valign="top" style="text-align: left; vertical-align: top; font-family: Arial, Helvetica, sans-serif; font-size: 15px; font-weight: bold; color: #2C3E50; line-height: 28px; padding: 0 0 0 16px;">Earnings</td>
-  </tr>
-  <tr>
-    <td style="padding: 0;"></td>
-    <td width="5" style="width: 5px; padding: 0; font-size: 0; line-height: 0;"></td>
-    <td width="7" style="width: 7px; padding: 0; font-size: 0; line-height: 0;"></td>
-    <td style="padding: 0 0 0px 0;"></td>
-  </tr>
+<td style="padding:0 0 8px 0;">
+<div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 185%; margin: 0 0 8px 0;"><p>Commentary occupying the wider 70% column.</p></div>
+</td>
+</tr>
+<tr>
+<td style="padding:0 0 8px 0;">
+<div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 185%; margin: 0 0 8px 0;"><p>A second block in the same column.</p></div>
+</td>
+</tr>
+<tr>
+<td style="padding:0;">
+<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
+<tr>
+<td style="padding:0; font-size:0; line-height:0;">
+<!--[if mso]>
+<table role="presentation" width="377" border="0" cellpadding="0" cellspacing="0" style="width:377px;">
+<tr>
+<td width="118" valign="top" style="width:118px; padding:0;">
+<![endif]-->
+<table role="presentation" width="118" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:118px; margin-right:24px;">
+<tr>
+<td style="padding:0 0 8px 0; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
+<div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 185%; margin: 0 0 8px 0;"><p>Nested left.</p></div>
+</td>
+</tr>
 </table>
-
-        </td>
-      </tr>
-    </table>
-    <!--[if mso]>
-        </td>
-        <td width="184" valign="top" style="width:184px; padding:0;">
-    <![endif]-->
-    <table role="presentation" width="184" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:184px; margin-right:24px; background-color:#FFFFFF;">
-      <tr>
-        <td class="mobile-pad" style="padding:4px 20px 34px 20px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
-          <table class="fact-list" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
-  <tr>
-    <td class="stack-column" width="100%" valign="top" style="width: 100%; vertical-align: top; padding: 0;">
-      <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
-        <tr>
-          <td align="left" valign="top" style="text-align: left; vertical-align: top; font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #7A7A72; line-height: 185%; padding: 8px 8px 8px 0; border-bottom: 1px solid #D6D2CB;">AUM</td>
-          <td align="right" valign="top" style="text-align: right; vertical-align: top; font-family: 'Courier New', Courier, monospace; font-size: 15px; font-weight: bold; color: #3B3B3B; line-height: 185%; padding: 8px 0; border-bottom: 1px solid #D6D2CB;">1,200</td>
-        </tr>
-      </table>
-    </td>
-  </tr>
+<!--[if mso]>
+</td>
+<td width="235" valign="top" style="width:235px; padding:0;">
+<![endif]-->
+<table role="presentation" width="235" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:235px;">
+<tr>
+<td style="padding:0; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
+<div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 185%; margin: 0 0 8px 0;"><p>Nested right.</p></div>
+</td>
+</tr>
 </table>
-
-        </td>
-      </tr>
-    </table>
-    <!--[if mso]>
-        </td>
-        <td width="184" valign="top" style="width:184px; padding:0;">
-    <![endif]-->
-    <table role="presentation" width="184" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:184px; background-color:#FFFFFF;">
-      <tr>
-        <td class="mobile-pad" style="padding:4px 0px 34px 20px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
-          <table class="teaser-list" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
-  <tr>
-    <td class="stack-column" width="100%" align="left" valign="top" style="width: 100%; text-align: left; vertical-align: top; padding: 0 0 0px 0;">
-        <p style="margin: 0 0 12px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #7A7A72; letter-spacing: 0.5px; text-transform: uppercase; line-height: 150%;">2 Oct</p>
-        <p style="margin: 0; font-family: Georgia, 'Times New Roman', serif; font-size: 15px; font-weight: bold; line-height: 125%;"><a href="https://example.com/r" style="color: #2C3E50; text-decoration: none;">Rates outlook</a></p>
-
-    </td>
-  </tr>
+<!--[if mso]>
+</td>
+</tr>
 </table>
-
-        </td>
-      </tr>
-    </table>
-    <!--[if mso]>
-        </td>
-      </tr>
-    </table>
-    <![endif]-->
-        </td>
-      </tr>
-    </table>
-  </td>
+<![endif]-->
+</td>
 </tr>
-
-<tr>
-  <td style="padding:0; background-color:#FFFFFF;">
-    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
-      <tr>
-        <td class="mobile-flush" style="padding:0 40px; font-size:0; line-height:0;">
-    <!--[if mso]>
-    <table role="presentation" width="600" border="0" cellpadding="0" cellspacing="0" style="width:600px;">
-      <tr>
-        <td width="276" valign="top" style="width:276px; padding:0;">
-    <![endif]-->
-    <table role="presentation" width="276" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:276px; margin-right:24px; background-color:#FFFFFF;">
-      <tr>
-        <td class="mobile-pad" style="padding:4px 26px 34px 0px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
-          <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 185%; margin: 0 0 22px 0;"><p>The 50% column.</p></div>
-
-        </td>
-      </tr>
-    </table>
-    <!--[if mso]>
-        </td>
-        <td width="138" valign="top" style="width:138px; padding:0;">
-    <![endif]-->
-    <table role="presentation" width="138" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:138px; margin-right:24px; background-color:#FFFFFF;">
-      <tr>
-        <td class="mobile-pad" style="padding:4px 20px 34px 20px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
-          <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 185%; margin: 0 0 22px 0;"><p>Quarter.</p></div>
-
-        </td>
-      </tr>
-    </table>
-    <!--[if mso]>
-        </td>
-        <td width="138" valign="top" style="width:138px; padding:0;">
-    <![endif]-->
-    <table role="presentation" width="138" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:138px; background-color:#FFFFFF;">
-      <tr>
-        <td class="mobile-pad" style="padding:4px 0px 34px 20px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
-          <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 185%; margin: 0 0 22px 0;"><p>Quarter.</p></div>
-
-        </td>
-      </tr>
-    </table>
-    <!--[if mso]>
-        </td>
-      </tr>
-    </table>
-    <![endif]-->
-        </td>
-      </tr>
-    </table>
-  </td>
+</table>
+</td>
 </tr>
-
-<tr>
-  <td style="padding:0; background-color:#FFFFFF;">
-    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
-      <tr>
-        <td class="mobile-flush" style="padding:0 40px; font-size:0; line-height:0;">
-    <!--[if mso]>
-    <table role="presentation" width="600" border="0" cellpadding="0" cellspacing="0" style="width:600px;">
-      <tr>
-        <td width="138" valign="top" style="width:138px; padding:0;">
-    <![endif]-->
-    <table role="presentation" width="138" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:138px; margin-right:24px; background-color:#FFFFFF;">
-      <tr>
-        <td class="mobile-pad" style="padding:4px 20px 34px 0px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
-          <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 185%; margin: 0 0 22px 0;"><p>Quarter.</p></div>
-
-        </td>
-      </tr>
-    </table>
-    <!--[if mso]>
-        </td>
-        <td width="276" valign="top" style="width:276px; padding:0;">
-    <![endif]-->
-    <table role="presentation" width="276" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:276px; margin-right:24px; background-color:#FFFFFF;">
-      <tr>
-        <td class="mobile-pad" style="padding:4px 26px 34px 26px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
-          <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 185%; margin: 0 0 22px 0;"><p>The 50% column.</p></div>
-
-        </td>
-      </tr>
-    </table>
-    <!--[if mso]>
-        </td>
-        <td width="138" valign="top" style="width:138px; padding:0;">
-    <![endif]-->
-    <table role="presentation" width="138" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:138px; background-color:#FFFFFF;">
-      <tr>
-        <td class="mobile-pad" style="padding:4px 0px 34px 20px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
-          <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 185%; margin: 0 0 22px 0;"><p>Quarter.</p></div>
-
-        </td>
-      </tr>
-    </table>
-    <!--[if mso]>
-        </td>
-      </tr>
-    </table>
-    <![endif]-->
-        </td>
-      </tr>
-    </table>
-  </td>
+</table>
+</td>
 </tr>
-
+</table>
+<!--[if mso]>
+</td>
+<td width="173" valign="top" style="width:173px; padding:0;">
+<![endif]-->
+<table role="presentation" width="173" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:173px; background-color:#FFFFFF;">
 <tr>
-  <td style="padding:0; background-color:#FFFFFF;">
-    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
-      <tr>
-        <td class="mobile-flush" style="padding:0 40px; font-size:0; line-height:0;">
-    <!--[if mso]>
-    <table role="presentation" width="600" border="0" cellpadding="0" cellspacing="0" style="width:600px;">
-      <tr>
-        <td width="138" valign="top" style="width:138px; padding:0;">
-    <![endif]-->
-    <table role="presentation" width="138" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:138px; margin-right:24px; background-color:#FFFFFF;">
-      <tr>
-        <td class="mobile-pad" style="padding:4px 20px 34px 0px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
-          <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 185%; margin: 0 0 22px 0;"><p>Quarter.</p></div>
-
-        </td>
-      </tr>
-    </table>
-    <!--[if mso]>
-        </td>
-        <td width="138" valign="top" style="width:138px; padding:0;">
-    <![endif]-->
-    <table role="presentation" width="138" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:138px; margin-right:24px; background-color:#FFFFFF;">
-      <tr>
-        <td class="mobile-pad" style="padding:4px 20px 34px 20px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
-          <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 185%; margin: 0 0 22px 0;"><p>Quarter.</p></div>
-
-        </td>
-      </tr>
-    </table>
-    <!--[if mso]>
-        </td>
-        <td width="276" valign="top" style="width:276px; padding:0;">
-    <![endif]-->
-    <table role="presentation" width="276" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:276px; background-color:#FFFFFF;">
-      <tr>
-        <td class="mobile-pad" style="padding:4px 0px 34px 26px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
-          <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 185%; margin: 0 0 22px 0;"><p>The 50% column.</p></div>
-
-        </td>
-      </tr>
-    </table>
-    <!--[if mso]>
-        </td>
-      </tr>
-    </table>
-    <![endif]-->
-        </td>
-      </tr>
-    </table>
-  </td>
+<td class="mobile-pad" style="padding:4px 0px 34px 20px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
+<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border-top: 1px solid #EAE8E4; padding-top: 20px; margin-top: 0;">
+<tr>
+<td style="padding-top: 20px; padding-bottom: 0;">
+<p style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; font-weight: bold; color: #2C3E50; margin: 0 0 6px 0; line-height: 140%;">A. Analyst</p>
+<p style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #7A7A72; margin: 0; line-height: 150%;">Head of Research <span style="margin: 0 6px;">&middot;</span> research@example.com</p>
+</td>
 </tr>
-
+</table>
+</td>
+</tr>
+</table>
+<!--[if mso]>
+</td>
+</tr>
+</table>
+<![endif]-->
+</td>
+</tr>
+</table>
+</td>
+</tr>
 <tr>
-  <td style="padding:0; background-color:#FFFFFF;">
-    <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
-      <tr>
-        <td style="padding:30px 40px 16px 40px;">
-          <h2 id="what-we-are-watching" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:19px; font-weight:bold; color:#2C3E50; line-height:125%;">
-            What We Are Watching
-          </h2>
-        </td>
-      </tr>
-    </table>
-    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
-      <tr>
-        <td class="mobile-pad" style="padding:22px 40px 20px 40px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
-          <p class="subtitle" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; font-style: italic; color: #7A7A72; margin: 0 0 16px 0; line-height: 150%;">Three themes into next week</p>
+<td style="padding:0; background-color:#FFFFFF;">
+<table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+<tr>
+<td style="padding:30px 40px 16px 40px;">
+<p class="kicker" style="margin:0 0 12px 0; font-family: Arial, Helvetica, sans-serif; font-size:11px; font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; color:#5B8A9A; line-height:150%;">Desk view</p>
+<h2 id="thirds" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:19px; font-weight:bold; color:#2C3E50; line-height:125%;">
+Three Equal
+</h2>
+</td>
+</tr>
+</table>
+<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+<tr>
+<td class="mobile-flush" style="padding:0 40px; font-size:0; line-height:0;">
+<!--[if mso]>
+<table role="presentation" width="600" border="0" cellpadding="0" cellspacing="0" style="width:600px;">
+<tr>
+<td width="184" valign="top" style="width:184px; padding:0;">
+<![endif]-->
+<table role="presentation" width="184" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:184px; margin-right:24px; background-color:#FFFFFF;">
+<tr>
+<td class="mobile-pad" style="padding:4px 20px 34px 0px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
+<table class="timeline-event" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
+<tr>
+<td width="108" align="right" valign="top" style="width: 108px; text-align: right; vertical-align: top; font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #7A7A72; line-height: 28px; padding: 0 16px 0 0;">14 Oct</td>
+<td width="3" style="width: 3px; padding: 0; font-size: 0; line-height: 0; background-color: #5B8A9A; border: 2px solid #5B8A9A; border-right: 0; border-radius: 5px 0 0 5px;"></td>
+<td width="5" style="width: 5px; padding: 0; font-size: 0; line-height: 0; background-color: #5B8A9A; border: 2px solid #5B8A9A; border-left: 0; border-radius: 0 5px 5px 0;"></td>
+<td align="left" valign="top" style="text-align: left; vertical-align: top; font-family: Arial, Helvetica, sans-serif; font-size: 15px; font-weight: bold; color: #2C3E50; line-height: 28px; padding: 0 0 0 16px;">Earnings</td>
+</tr>
+<tr>
+<td style="padding: 0;"></td>
+<td width="5" style="width: 5px; padding: 0; font-size: 0; line-height: 0;"></td>
+<td width="7" style="width: 7px; padding: 0; font-size: 0; line-height: 0;"></td>
+<td style="padding: 0 0 0px 0;"></td>
+</tr>
+</table>
+</td>
+</tr>
+</table>
+<!--[if mso]>
+</td>
+<td width="184" valign="top" style="width:184px; padding:0;">
+<![endif]-->
+<table role="presentation" width="184" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:184px; margin-right:24px; background-color:#FFFFFF;">
+<tr>
+<td class="mobile-pad" style="padding:4px 20px 34px 20px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
+<table class="fact-list" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+<tr>
+<td class="stack-column" width="100%" valign="top" style="width: 100%; vertical-align: top; padding: 0;">
+<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+<tr>
+<td align="left" valign="top" style="text-align: left; vertical-align: top; font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #7A7A72; line-height: 185%; padding: 8px 8px 8px 0; border-bottom: 1px solid #D6D2CB;">AUM</td>
+<td align="right" valign="top" style="text-align: right; vertical-align: top; font-family: 'Courier New', Courier, monospace; font-size: 15px; font-weight: bold; color: #3B3B3B; line-height: 185%; padding: 8px 0; border-bottom: 1px solid #D6D2CB;">1,200</td>
+</tr>
+</table>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+</table>
+<!--[if mso]>
+</td>
+<td width="184" valign="top" style="width:184px; padding:0;">
+<![endif]-->
+<table role="presentation" width="184" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:184px; background-color:#FFFFFF;">
+<tr>
+<td class="mobile-pad" style="padding:4px 0px 34px 20px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
+<table class="teaser-list" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
+<tr>
+<td class="stack-column" width="100%" align="left" valign="top" style="width: 100%; text-align: left; vertical-align: top; padding: 0 0 0px 0;">
+<p style="margin: 0 0 12px 0; font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #7A7A72; letter-spacing: 0.5px; text-transform: uppercase; line-height: 150%;">2 Oct</p>
+<p style="margin: 0; font-family: Georgia, 'Times New Roman', serif; font-size: 15px; font-weight: bold; line-height: 125%;"><a href="https://example.com/r" style="color: #2C3E50; text-decoration: none;">Rates outlook</a></p>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+</table>
+<!--[if mso]>
+</td>
+</tr>
+</table>
+<![endif]-->
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td style="padding:0; background-color:#FFFFFF;">
+<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+<tr>
+<td class="mobile-flush" style="padding:0 40px; font-size:0; line-height:0;">
+<!--[if mso]>
+<table role="presentation" width="600" border="0" cellpadding="0" cellspacing="0" style="width:600px;">
+<tr>
+<td width="276" valign="top" style="width:276px; padding:0;">
+<![endif]-->
+<table role="presentation" width="276" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:276px; margin-right:24px; background-color:#FFFFFF;">
+<tr>
+<td class="mobile-pad" style="padding:4px 26px 34px 0px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
+<div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 185%; margin: 0 0 22px 0;"><p>The 50% column.</p></div>
+</td>
+</tr>
+</table>
+<!--[if mso]>
+</td>
+<td width="138" valign="top" style="width:138px; padding:0;">
+<![endif]-->
+<table role="presentation" width="138" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:138px; margin-right:24px; background-color:#FFFFFF;">
+<tr>
+<td class="mobile-pad" style="padding:4px 20px 34px 20px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
+<div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 185%; margin: 0 0 22px 0;"><p>Quarter.</p></div>
+</td>
+</tr>
+</table>
+<!--[if mso]>
+</td>
+<td width="138" valign="top" style="width:138px; padding:0;">
+<![endif]-->
+<table role="presentation" width="138" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:138px; background-color:#FFFFFF;">
+<tr>
+<td class="mobile-pad" style="padding:4px 0px 34px 20px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
+<div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 185%; margin: 0 0 22px 0;"><p>Quarter.</p></div>
+</td>
+</tr>
+</table>
+<!--[if mso]>
+</td>
+</tr>
+</table>
+<![endif]-->
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td style="padding:0; background-color:#FFFFFF;">
+<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+<tr>
+<td class="mobile-flush" style="padding:0 40px; font-size:0; line-height:0;">
+<!--[if mso]>
+<table role="presentation" width="600" border="0" cellpadding="0" cellspacing="0" style="width:600px;">
+<tr>
+<td width="138" valign="top" style="width:138px; padding:0;">
+<![endif]-->
+<table role="presentation" width="138" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:138px; margin-right:24px; background-color:#FFFFFF;">
+<tr>
+<td class="mobile-pad" style="padding:4px 20px 34px 0px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
+<div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 185%; margin: 0 0 22px 0;"><p>Quarter.</p></div>
+</td>
+</tr>
+</table>
+<!--[if mso]>
+</td>
+<td width="276" valign="top" style="width:276px; padding:0;">
+<![endif]-->
+<table role="presentation" width="276" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:276px; margin-right:24px; background-color:#FFFFFF;">
+<tr>
+<td class="mobile-pad" style="padding:4px 26px 34px 26px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
+<div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 185%; margin: 0 0 22px 0;"><p>The 50% column.</p></div>
+</td>
+</tr>
+</table>
+<!--[if mso]>
+</td>
+<td width="138" valign="top" style="width:138px; padding:0;">
+<![endif]-->
+<table role="presentation" width="138" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:138px; background-color:#FFFFFF;">
+<tr>
+<td class="mobile-pad" style="padding:4px 0px 34px 20px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
+<div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 185%; margin: 0 0 22px 0;"><p>Quarter.</p></div>
+</td>
+</tr>
+</table>
+<!--[if mso]>
+</td>
+</tr>
+</table>
+<![endif]-->
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td style="padding:0; background-color:#FFFFFF;">
+<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+<tr>
+<td class="mobile-flush" style="padding:0 40px; font-size:0; line-height:0;">
+<!--[if mso]>
+<table role="presentation" width="600" border="0" cellpadding="0" cellspacing="0" style="width:600px;">
+<tr>
+<td width="138" valign="top" style="width:138px; padding:0;">
+<![endif]-->
+<table role="presentation" width="138" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:138px; margin-right:24px; background-color:#FFFFFF;">
+<tr>
+<td class="mobile-pad" style="padding:4px 20px 34px 0px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
+<div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 185%; margin: 0 0 22px 0;"><p>Quarter.</p></div>
+</td>
+</tr>
+</table>
+<!--[if mso]>
+</td>
+<td width="138" valign="top" style="width:138px; padding:0;">
+<![endif]-->
+<table role="presentation" width="138" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:138px; margin-right:24px; background-color:#FFFFFF;">
+<tr>
+<td class="mobile-pad" style="padding:4px 20px 34px 20px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
+<div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 185%; margin: 0 0 22px 0;"><p>Quarter.</p></div>
+</td>
+</tr>
+</table>
+<!--[if mso]>
+</td>
+<td width="276" valign="top" style="width:276px; padding:0;">
+<![endif]-->
+<table role="presentation" width="276" border="0" cellpadding="0" cellspacing="0" class="stack-column" style="display:inline-table; vertical-align:top; width:276px; background-color:#FFFFFF;">
+<tr>
+<td class="mobile-pad" style="padding:4px 0px 34px 26px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
+<div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 185%; margin: 0 0 22px 0;"><p>The 50% column.</p></div>
+</td>
+</tr>
+</table>
+<!--[if mso]>
+</td>
+</tr>
+</table>
+<![endif]-->
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td style="padding:0; background-color:#FFFFFF;">
+<table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+<tr>
+<td style="padding:30px 40px 16px 40px;">
+<h2 id="what-we-are-watching" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:19px; font-weight:bold; color:#2C3E50; line-height:125%;">
+What We Are Watching
+</h2>
+</td>
+</tr>
+</table>
+<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+<tr>
+<td class="mobile-pad" style="padding:22px 40px 20px 40px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
+<p class="subtitle" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; font-style: italic; color: #7A7A72; margin: 0 0 16px 0; line-height: 150%;">Three themes into next week</p>
 <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; margin-bottom: 22px;">
-  <tr>
-    <td width="26" style="width: 26px; padding: 0 16px 0 0; vertical-align: top;">
-      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 19px; font-weight: bold; color: #5B8A9A; margin: 0; line-height: 125%;">01</p>
-    </td>
-    <td style="padding: 0; vertical-align: top;">
-      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 16px; font-weight: bold; color: #2C3E50; margin: 0 0 8px 0; line-height: 140%;">Inflation prints</p>
-      <div style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; margin: 0; line-height: 180%;"><p>Core services remain sticky.<sup class="note-ref" style="line-height: 0;"><a href="#note-4" id="note-ref-4" style="color: #5B8A9A; text-decoration: none;">4</a></sup></p></div>
-    </td>
-  </tr>
+<tr>
+<td width="26" style="width: 26px; padding: 0 16px 0 0; vertical-align: top;">
+<p style="font-family: Georgia, 'Times New Roman', serif; font-size: 19px; font-weight: bold; color: #5B8A9A; margin: 0; line-height: 125%;">01</p>
+</td>
+<td style="padding: 0; vertical-align: top;">
+<p style="font-family: Georgia, 'Times New Roman', serif; font-size: 16px; font-weight: bold; color: #2C3E50; margin: 0 0 8px 0; line-height: 140%;">Inflation prints</p>
+<div style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; margin: 0; line-height: 180%;"><p>Core services remain sticky.<sup class="note-ref" style="line-height: 0;"><a href="#note-4" id="note-ref-4" style="color: #5B8A9A; text-decoration: none;">4</a></sup></p></div>
+</td>
+</tr>
 </table>
 <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; margin-bottom: 22px;">
-  <tr>
-    <td width="26" style="width: 26px; padding: 0 16px 0 0; vertical-align: top;">
-      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 19px; font-weight: bold; color: #5B8A9A; margin: 0; line-height: 125%;">02</p>
-    </td>
-    <td style="padding: 0; vertical-align: top;">
-      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 16px; font-weight: bold; color: #2C3E50; margin: 0 0 8px 0; line-height: 140%;">Earnings revisions</p>
-      <div style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; margin: 0; line-height: 180%;"><p>Breadth is narrowing.</p></div>
-    </td>
-  </tr>
+<tr>
+<td width="26" style="width: 26px; padding: 0 16px 0 0; vertical-align: top;">
+<p style="font-family: Georgia, 'Times New Roman', serif; font-size: 19px; font-weight: bold; color: #5B8A9A; margin: 0; line-height: 125%;">02</p>
+</td>
+<td style="padding: 0; vertical-align: top;">
+<p style="font-family: Georgia, 'Times New Roman', serif; font-size: 16px; font-weight: bold; color: #2C3E50; margin: 0 0 8px 0; line-height: 140%;">Earnings revisions</p>
+<div style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; margin: 0; line-height: 180%;"><p>Breadth is narrowing.</p></div>
+</td>
+</tr>
 </table>
 <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse;">
-  <tr>
-    <td width="26" style="width: 26px; padding: 0 16px 0 0; vertical-align: top;">
-      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 19px; font-weight: bold; color: #5B8A9A; margin: 0; line-height: 125%;">03</p>
-    </td>
-    <td style="padding: 0; vertical-align: top;">
-      <p style="font-family: Georgia, 'Times New Roman', serif; font-size: 16px; font-weight: bold; color: #2C3E50; margin: 0 0 8px 0; line-height: 140%;">Positioning</p>
-      <div style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; margin: 0; line-height: 180%;"><p>Futures length is extended.</p></div>
-    </td>
-  </tr>
-</table>
-
-        </td>
-      </tr>
-    </table>
-  </td>
-</tr>
-
 <tr>
-  <td style="padding:0; background-color:#FFFFFF; border:1px solid #D6D2CB;">
-    <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
-      <tr>
-        <td style="padding:30px 39px 16px 39px;">
-          <h2 id="bottom-line" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:19px; font-weight:bold; color:#2C3E50; line-height:125%;">
-            Bottom Line
-          </h2>
-        </td>
-      </tr>
-    </table>
-    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
-      <tr>
-        <td class="mobile-pad" style="padding:22px 39px 20px 39px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
-          <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
-  <tr>
-    <td style="padding:0 0 22px 0;">
+<td width="26" style="width: 26px; padding: 0 16px 0 0; vertical-align: top;">
+<p style="font-family: Georgia, 'Times New Roman', serif; font-size: 19px; font-weight: bold; color: #5B8A9A; margin: 0; line-height: 125%;">03</p>
+</td>
+<td style="padding: 0; vertical-align: top;">
+<p style="font-family: Georgia, 'Times New Roman', serif; font-size: 16px; font-weight: bold; color: #2C3E50; margin: 0 0 8px 0; line-height: 140%;">Positioning</p>
+<div style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; margin: 0; line-height: 180%;"><p>Futures length is extended.</p></div>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td style="padding:0; background-color:#FFFFFF; border:1px solid #D6D2CB;">
+<table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+<tr>
+<td style="padding:30px 39px 16px 39px;">
+<h2 id="bottom-line" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:19px; font-weight:bold; color:#2C3E50; line-height:125%;">
+Bottom Line
+</h2>
+</td>
+</tr>
+</table>
+<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+<tr>
+<td class="mobile-pad" style="padding:22px 39px 20px 39px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
+<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
+<tr>
+<td style="padding:0 0 22px 0;">
 <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 185%; margin: 0 0 22px 0;"><p>Duration has paid for its carry this quarter.</p></div>
-
-    </td>
-  </tr>
-  <tr>
-    <td style="padding:0 0 22px 0;">
-<table class="callout" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
-  <tr>
-    <td bgcolor="#F1F5F2" style="padding:20px 26px; background-color:#F1F5F2; border:1px solid #4A7C59;">
-      <div style="font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; letter-spacing: 0.5px; text-transform: uppercase; color: #4A7C59; margin: 0 0 12px 0; line-height: 150%;">Key takeaway</div>
-      <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 185%; margin: 0 0 22px 0;"><p>Stay long the belly; fade the long end.</p></div>
-
-    </td>
-  </tr>
-</table>
-
-    </td>
-  </tr>
-  <tr>
-    <td style="padding:0 0 22px 0;">
-<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
-  <tr>
-    <td style="padding:22px 0 22px 0;">
-      <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
-        <tr>
-          <td style="border-top:1px solid #D6D2CB; font-size:0; line-height:0;" height="1">&nbsp;</td>
-        </tr>
-      </table>
-    </td>
-  </tr>
-</table>
-
-    </td>
-  </tr>
-  <tr>
-    <td style="padding:0 0 22px 0;">
-<div class="tag-row" style="margin:0; font-family:Arial, Helvetica, sans-serif; font-size:11px; line-height:150%; font-weight:bold; letter-spacing:0.5px; text-transform:uppercase;">
-  <span class="badge" style="display:inline-block; vertical-align:middle; white-space:nowrap; color:#5A5A5A; background-color:#E8E8E8; padding:3px 8px; border-radius:3px; margin:0 12px 12px 0;"><!--[if mso]>&nbsp;<![endif]-->Rates<!--[if mso]>&nbsp;<![endif]--></span>
-  <span class="badge" style="display:inline-block; vertical-align:middle; white-space:nowrap; color:#5A5A5A; background-color:#E8E8E8; padding:3px 8px; border-radius:3px; margin:0 12px 12px 0;"><!--[if mso]>&nbsp;<![endif]-->Credit<!--[if mso]>&nbsp;<![endif]--></span>
-</div>
-
-    </td>
-  </tr>
-  <tr>
-    <td style="padding:0 0 22px 0;">
-<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
-  <tr>
-    <td style="padding:0;">
-      <!--[if mso]>
-      <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="https://example.com/rates-folded"
-        style="height:44px;v-text-anchor:middle;width:170px;" arcsize="8%"
-        strokecolor="#5B8A9A" fillcolor="#5B8A9A">
-        <w:anchorlock/>
-        <center style="color:#FFFFFF;font-family: Arial, Helvetica, sans-serif;
-                       font-size:14px;font-weight:bold;">
-          Read the folded edition
-        </center>
-      </v:roundrect>
-      <![endif]-->
-      <!--[if !mso]><!-->
-      <a href="https://example.com/rates-folded"
-         style="background-color:#5B8A9A; border-radius:3px; color:#FFFFFF;
-                display:inline-block; font-family: Arial, Helvetica, sans-serif;
-                font-size:14px; font-weight:bold; line-height:44px;
-                text-align:center; text-decoration:none; width:170px;
-                -webkit-text-size-adjust:none;">
-        Read the folded edition
-      </a>
-      <!--<![endif]-->
-    </td>
-  </tr>
-</table>
-
-    </td>
-  </tr>
-  <tr>
-    <td style="padding:0;">
-<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
-  <tr>
-    <td align="center" style="padding:0; text-align:center;">
-      <!--[if mso]>
-      <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="https://example.com/note"
-        style="height:44px;v-text-anchor:middle;width:170px;" arcsize="8%"
-        strokecolor="#5B8A9A" fillcolor="#5B8A9A">
-        <w:anchorlock/>
-        <center style="color:#FFFFFF;font-family: Arial, Helvetica, sans-serif;
-                       font-size:14px;font-weight:bold;">
-          Read the full note
-        </center>
-      </v:roundrect>
-      <![endif]-->
-      <!--[if !mso]><!-->
-      <a href="https://example.com/note"
-         style="background-color:#5B8A9A; border-radius:3px; color:#FFFFFF;
-                display:inline-block; font-family: Arial, Helvetica, sans-serif;
-                font-size:14px; font-weight:bold; line-height:44px;
-                text-align:center; text-decoration:none; width:170px;
-                -webkit-text-size-adjust:none;">
-        Read the full note
-      </a>
-      <!--<![endif]-->
-    </td>
-  </tr>
-</table>
-
-    </td>
-  </tr>
-</table>
-
-        </td>
-      </tr>
-    </table>
-  </td>
+</td>
 </tr>
-
 <tr>
-  <td style="padding:0; background-color:#FFFFFF;">
-    <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
-      <tr>
-        <td style="padding:30px 40px 16px 40px;">
-          <h2 id="sources-and-terms" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:19px; font-weight:bold; color:#2C3E50; line-height:125%;">
-            Sources and Terms
-          </h2>
-        </td>
-      </tr>
-    </table>
-    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
-      <tr>
-        <td class="mobile-pad" style="padding:22px 40px 20px 40px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
-          <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
-  <tr>
-    <td style="padding:0 0 22px 0;">
+<td style="padding:0 0 22px 0;">
+<table class="callout" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+<tr>
+<td bgcolor="#F1F5F2" style="padding:20px 26px; background-color:#F1F5F2; border:1px solid #4A7C59;">
+<div style="font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; letter-spacing: 0.5px; text-transform: uppercase; color: #4A7C59; margin: 0 0 12px 0; line-height: 150%;">Key takeaway</div>
+<div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 185%; margin: 0 0 22px 0;"><p>Stay long the belly; fade the long end.</p></div>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td style="padding:0 0 22px 0;">
+<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
+<tr>
+<td style="padding:22px 0 22px 0;">
+<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
+<tr>
+<td style="border-top:1px solid #D6D2CB; font-size:0; line-height:0;" height="1">&nbsp;</td>
+</tr>
+</table>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td style="padding:0 0 22px 0;">
+<div class="tag-row" style="margin:0; font-family:Arial, Helvetica, sans-serif; font-size:11px; line-height:150%; font-weight:bold; letter-spacing:0.5px; text-transform:uppercase;">
+<span class="badge" style="display:inline-block; vertical-align:middle; white-space:nowrap; color:#5A5A5A; background-color:#E8E8E8; padding:3px 8px; border-radius:3px; margin:0 12px 12px 0;"><!--[if mso]>&nbsp;<![endif]-->Rates<!--[if mso]>&nbsp;<![endif]--></span>
+<span class="badge" style="display:inline-block; vertical-align:middle; white-space:nowrap; color:#5A5A5A; background-color:#E8E8E8; padding:3px 8px; border-radius:3px; margin:0 12px 12px 0;"><!--[if mso]>&nbsp;<![endif]-->Credit<!--[if mso]>&nbsp;<![endif]--></span>
+</div>
+</td>
+</tr>
+<tr>
+<td style="padding:0 0 22px 0;">
+<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
+<tr>
+<td style="padding:0;">
+<!--[if mso]>
+<v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="https://example.com/rates-folded"
+style="height:44px;v-text-anchor:middle;width:170px;" arcsize="8%"
+strokecolor="#5B8A9A" fillcolor="#5B8A9A">
+<w:anchorlock/>
+<center style="color:#FFFFFF;font-family: Arial, Helvetica, sans-serif;
+font-size:14px;font-weight:bold;">
+Read the folded edition
+</center>
+</v:roundrect>
+<![endif]-->
+<!--[if !mso]><!-->
+<a href="https://example.com/rates-folded"
+style="background-color:#5B8A9A; border-radius:3px; color:#FFFFFF;
+display:inline-block; font-family: Arial, Helvetica, sans-serif;
+font-size:14px; font-weight:bold; line-height:44px;
+text-align:center; text-decoration:none; width:170px;
+-webkit-text-size-adjust:none;">
+Read the folded edition
+</a>
+<!--<![endif]-->
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td style="padding:0;">
+<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
+<tr>
+<td align="center" style="padding:0; text-align:center;">
+<!--[if mso]>
+<v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="https://example.com/note"
+style="height:44px;v-text-anchor:middle;width:170px;" arcsize="8%"
+strokecolor="#5B8A9A" fillcolor="#5B8A9A">
+<w:anchorlock/>
+<center style="color:#FFFFFF;font-family: Arial, Helvetica, sans-serif;
+font-size:14px;font-weight:bold;">
+Read the full note
+</center>
+</v:roundrect>
+<![endif]-->
+<!--[if !mso]><!-->
+<a href="https://example.com/note"
+style="background-color:#5B8A9A; border-radius:3px; color:#FFFFFF;
+display:inline-block; font-family: Arial, Helvetica, sans-serif;
+font-size:14px; font-weight:bold; line-height:44px;
+text-align:center; text-decoration:none; width:170px;
+-webkit-text-size-adjust:none;">
+Read the full note
+</a>
+<!--<![endif]-->
+</td>
+</tr>
+</table>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td style="padding:0; background-color:#FFFFFF;">
+<table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+<tr>
+<td style="padding:30px 40px 16px 40px;">
+<h2 id="sources-and-terms" style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:19px; font-weight:bold; color:#2C3E50; line-height:125%;">
+Sources and Terms
+</h2>
+</td>
+</tr>
+</table>
+<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+<tr>
+<td class="mobile-pad" style="padding:22px 40px 20px 40px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
+<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
+<tr>
+<td style="padding:0 0 22px 0;">
 <div class="body-text" style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; line-height: 185%; margin: 0 0 22px 0;"><p>Momentum persists [<a href="#ref-jt1993" class="citation" style="color: #5B8A9A; text-decoration: none;">1</a>, <a href="#ref-carhart1997" class="citation" style="color: #5B8A9A; text-decoration: none;">2</a>], though its <a href="#term-crash-risk" style="color: #5B8A9A; text-decoration: underline;">crash risk</a> is well documented [<a href="#ref-jt1993" class="citation" style="color: #5B8A9A; text-decoration: none;">1</a>].</p></div>
-
-    </td>
-  </tr>
-  <tr>
-    <td style="padding:0 0 22px 0;">
+</td>
+</tr>
+<tr>
+<td style="padding:0 0 22px 0;">
 <p class="bibliography-heading" style="font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; color: #2C3E50; letter-spacing: 0.5px; margin: 0 0 12px 0; line-height: 185%;">References</p>
 <div class="bibliography" align="left" style="text-align: left;">
-  <p id="ref-jt1993" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: #3B3B3B; line-height: 150%; margin: 0 0 12px 24px; text-indent: -24px;"><span style="font-family: Arial, Helvetica, sans-serif; color: #7A7A72;">[1]</span> Jegadeesh, Narasimhan, and Sheridan Titman. 1993. Returns to buying winners and selling losers. <a href="https://example.com/jt1993" style="color: #5B8A9A; text-decoration: none; word-break: break-all;">https://example.com/jt1993</a></p>
-  <p id="ref-carhart1997" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: #3B3B3B; line-height: 150%; margin: 0 0 12px 24px; text-indent: -24px;"><span style="font-family: Arial, Helvetica, sans-serif; color: #7A7A72;">[2]</span> Carhart, Mark M. 1997. On persistence in mutual fund performance. <em>The Journal of Finance.</em> <a href="https://doi.org/10.1111/j.1540-6261.1997.tb03808.x" style="color: #5B8A9A; text-decoration: none; word-break: break-all;">https://doi.org/10.1111/j.1540-6261.1997.tb03808.x</a></p>
+<p id="ref-jt1993" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: #3B3B3B; line-height: 150%; margin: 0 0 12px 24px; text-indent: -24px;"><span style="font-family: Arial, Helvetica, sans-serif; color: #7A7A72;">[1]</span> Jegadeesh, Narasimhan, and Sheridan Titman. 1993. Returns to buying winners and selling losers. <a href="https://example.com/jt1993" style="color: #5B8A9A; text-decoration: none; word-break: break-all;">https://example.com/jt1993</a></p>
+<p id="ref-carhart1997" style="font-family: Georgia, 'Times New Roman', serif; font-size: 14px; color: #3B3B3B; line-height: 150%; margin: 0 0 12px 24px; text-indent: -24px;"><span style="font-family: Arial, Helvetica, sans-serif; color: #7A7A72;">[2]</span> Carhart, Mark M. 1997. On persistence in mutual fund performance. <em>The Journal of Finance.</em> <a href="https://doi.org/10.1111/j.1540-6261.1997.tb03808.x" style="color: #5B8A9A; text-decoration: none; word-break: break-all;">https://doi.org/10.1111/j.1540-6261.1997.tb03808.x</a></p>
 </div>
-
-    </td>
-  </tr>
-  <tr>
-    <td style="padding:0;">
+</td>
+</tr>
+<tr>
+<td style="padding:0;">
 <p class="glossary-heading" style="font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; color: #2C3E50; letter-spacing: 0.5px; margin: 0 0 12px 0; line-height: 185%;">Terms</p>
 <table class="glossary" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
-  <tr>
-    <td class="stack-column" width="30%" align="left" valign="top" style="width: 30%; text-align: left; vertical-align: top; padding: 0 24px 12px 0;"><p id="term-momentum" style="font-family: Arial, Helvetica, sans-serif; font-size: 15px; font-weight: bold; color: #2C3E50; margin: 0; line-height: 185%;">Momentum</p></td>
-    <td class="stack-column" align="left" valign="top" style="text-align: left; vertical-align: top; padding: 0 0 12px 0;"><p style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; margin: 0; line-height: 185%;">Past winners continuing to outperform.</p></td>
-  </tr>
-  <tr>
-    <td class="stack-column" width="30%" align="left" valign="top" style="width: 30%; text-align: left; vertical-align: top; padding: 0 24px 12px 0;"><p id="term-crash-risk" style="font-family: Arial, Helvetica, sans-serif; font-size: 15px; font-weight: bold; color: #2C3E50; margin: 0; line-height: 185%;">Crash risk</p></td>
-    <td class="stack-column" align="left" valign="top" style="text-align: left; vertical-align: top; padding: 0 0 12px 0;"><p style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; margin: 0; line-height: 185%;">A sudden, deep reversal of a trend.</p></td>
-  </tr>
-</table>
-
-    </td>
-  </tr>
-</table>
-
-        </td>
-      </tr>
-    </table>
-  </td>
-</tr>
-
 <tr>
-  <td style="padding:0; background-color:#FFFFFF;">
-    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
-      <tr>
-        <td class="mobile-pad" style="padding:22px 40px 20px 40px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
-       style="border:1px solid #D6D2CB; border-radius:4px;">
-  <tr>
-    <td style="padding:30px 32px;">
-      <p style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:18px;
-                font-weight:bold; color:#2C3E50; letter-spacing:0.2px;">
-        Questions about this note?
-      </p>
-      <p style="margin:8px 0 22px; font-family: Arial, Helvetica, sans-serif; font-size:14px;
-                color:#7A7A72; line-height:170%;">
-        Reach the research desk with any questions.
-      </p>
-      <!--[if mso]>
-      <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="https://example.com/contact"
-        style="height:44px;v-text-anchor:middle;width:170px;" arcsize="8%"
-        strokecolor="#5B8A9A" fillcolor="#5B8A9A">
-        <w:anchorlock/>
-        <center style="color:#FFFFFF;font-family: Arial, Helvetica, sans-serif;
-                       font-size:14px;font-weight:bold;">
-          Email the desk
-        </center>
-      </v:roundrect>
-      <![endif]-->
-      <!--[if !mso]><!-->
-      <a href="https://example.com/contact"
-         style="background-color:#5B8A9A; border-radius:3px; color:#FFFFFF;
-                display:inline-block; font-family: Arial, Helvetica, sans-serif;
-                font-size:14px; font-weight:bold; line-height:44px;
-                text-align:center; text-decoration:none; width:170px;
-                -webkit-text-size-adjust:none;">
-        Email the desk
-      </a>
-      <!--<![endif]-->
-    </td>
-  </tr>
-</table>
-
-        </td>
-      </tr>
-    </table>
-  </td>
+<td class="stack-column" width="30%" align="left" valign="top" style="width: 30%; text-align: left; vertical-align: top; padding: 0 24px 12px 0;"><p id="term-momentum" style="font-family: Arial, Helvetica, sans-serif; font-size: 15px; font-weight: bold; color: #2C3E50; margin: 0; line-height: 185%;">Momentum</p></td>
+<td class="stack-column" align="left" valign="top" style="text-align: left; vertical-align: top; padding: 0 0 12px 0;"><p style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; margin: 0; line-height: 185%;">Past winners continuing to outperform.</p></td>
 </tr>
-
 <tr>
-  <td style="padding:0; background-color:#FFFFFF;">
-    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
-      <tr>
-        <td class="mobile-pad" style="padding:22px 40px 20px 40px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
-          <p class="notes-heading" style="font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; color: #2C3E50; letter-spacing: 0.5px; margin: 0 0 12px 0; line-height: 185%;">Notes</p>
+<td class="stack-column" width="30%" align="left" valign="top" style="width: 30%; text-align: left; vertical-align: top; padding: 0 24px 12px 0;"><p id="term-crash-risk" style="font-family: Arial, Helvetica, sans-serif; font-size: 15px; font-weight: bold; color: #2C3E50; margin: 0; line-height: 185%;">Crash risk</p></td>
+<td class="stack-column" align="left" valign="top" style="text-align: left; vertical-align: top; padding: 0 0 12px 0;"><p style="font-family: Georgia, 'Times New Roman', serif; font-size: 15px; color: #3B3B3B; margin: 0; line-height: 185%;">A sudden, deep reversal of a trend.</p></td>
+</tr>
+</table>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td style="padding:0; background-color:#FFFFFF;">
+<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+<tr>
+<td class="mobile-pad" style="padding:22px 40px 20px 40px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+style="border:1px solid #D6D2CB; border-radius:4px;">
+<tr>
+<td style="padding:30px 32px;">
+<p style="margin:0; font-family: Georgia, 'Times New Roman', serif; font-size:18px;
+font-weight:bold; color:#2C3E50; letter-spacing:0.2px;">
+Questions about this note?
+</p>
+<p style="margin:8px 0 22px; font-family: Arial, Helvetica, sans-serif; font-size:14px;
+color:#7A7A72; line-height:170%;">
+Reach the research desk with any questions.
+</p>
+<!--[if mso]>
+<v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="https://example.com/contact"
+style="height:44px;v-text-anchor:middle;width:170px;" arcsize="8%"
+strokecolor="#5B8A9A" fillcolor="#5B8A9A">
+<w:anchorlock/>
+<center style="color:#FFFFFF;font-family: Arial, Helvetica, sans-serif;
+font-size:14px;font-weight:bold;">
+Email the desk
+</center>
+</v:roundrect>
+<![endif]-->
+<!--[if !mso]><!-->
+<a href="https://example.com/contact"
+style="background-color:#5B8A9A; border-radius:3px; color:#FFFFFF;
+display:inline-block; font-family: Arial, Helvetica, sans-serif;
+font-size:14px; font-weight:bold; line-height:44px;
+text-align:center; text-decoration:none; width:170px;
+-webkit-text-size-adjust:none;">
+Email the desk
+</a>
+<!--<![endif]-->
+</td>
+</tr>
+</table>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td style="padding:0; background-color:#FFFFFF;">
+<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;">
+<tr>
+<td class="mobile-pad" style="padding:22px 40px 20px 40px; font-family: Arial, Helvetica, sans-serif; font-size:15px; color:#3B3B3B; line-height:185%;">
+<p class="notes-heading" style="font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; color: #2C3E50; letter-spacing: 0.5px; margin: 0 0 12px 0; line-height: 185%;">Notes</p>
 <ol class="notes" style="margin: 0; padding: 0; list-style-type: none;">
-  <li id="note-1" style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #7A7A72; line-height: 150%; margin: 0 0 12px 0;"><a href="#note-ref-1" style="color: #5B8A9A; text-decoration: none;">1.</a> Each factor is equal-weighted across the top and bottom quintiles.</li>
-  <li id="note-2" style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #7A7A72; line-height: 150%; margin: 0 0 12px 0;"><a href="#note-ref-2" style="color: #5B8A9A; text-decoration: none;">2.</a> The covariance matrix is estimated over 36 months.</li>
-  <li id="note-3" style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #7A7A72; line-height: 150%; margin: 0 0 12px 0;"><a href="#note-ref-3" style="color: #5B8A9A; text-decoration: none;">3.</a> The thumbnail is a placeholder, not a chart.</li>
-  <li id="note-4" style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #7A7A72; line-height: 150%; margin: 0 0 12px 0;"><a href="#note-ref-4" style="color: #5B8A9A; text-decoration: none;">4.</a> Core services excluding housing, three-month annualised.</li>
+<li id="note-1" style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #7A7A72; line-height: 150%; margin: 0 0 12px 0;"><a href="#note-ref-1" style="color: #5B8A9A; text-decoration: none;">1.</a> Each factor is equal-weighted across the top and bottom quintiles.</li>
+<li id="note-2" style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #7A7A72; line-height: 150%; margin: 0 0 12px 0;"><a href="#note-ref-2" style="color: #5B8A9A; text-decoration: none;">2.</a> The covariance matrix is estimated over 36 months.</li>
+<li id="note-3" style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #7A7A72; line-height: 150%; margin: 0 0 12px 0;"><a href="#note-ref-3" style="color: #5B8A9A; text-decoration: none;">3.</a> The thumbnail is a placeholder, not a chart.</li>
+<li id="note-4" style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #7A7A72; line-height: 150%; margin: 0 0 12px 0;"><a href="#note-ref-4" style="color: #5B8A9A; text-decoration: none;">4.</a> Core services excluding housing, three-month annualised.</li>
 </ol>
-
-        </td>
-      </tr>
-    </table>
-  </td>
+</td>
 </tr>
-
-
-        </table>
-        <!-- /Main container -->
-
-        <!-- FOOTER: copyright, links and optional disclaimer -->
-        <table role="presentation" width="680" cellpadding="0" cellspacing="0" border="0"
-               style="max-width:680px; background-color:#F2F1EE;" bgcolor="#F2F1EE" class="email-container">
-          <tr>
-            <td style="padding:28px 40px 32px; border:1px solid #D6D2CB; background-color:#F2F1EE;" bgcolor="#F2F1EE">
-              <p align="left" style="margin:0 0 28px; text-align:left;">
-                <img src="https://cdn.example.com/hermes-mark.png" alt="Hermes Research mark" width="80" style="display:inline-block; border:0; height:auto;">
-              </p>
-              <div align="left" style="font-family: Arial, Helvetica, sans-serif; font-size:10.5px;
-                          color:#5C574E; line-height:175%; text-align:left;">
-                <p>Distributed to registered recipients only.</p>
-              </div>
-              <p align="left" style="margin:10px 0 0; font-family: Arial, Helvetica, sans-serif; font-size:10.5px;
-                        color:#5C574E; text-align:left;">
-                &#169; 2026 Hermes Research &#8212; all rights reserved &nbsp;&middot;&nbsp;
-                <a href="https://example.com/privacy" style="color:#5B8A9A; text-decoration:underline;">Privacy</a>
-                &nbsp;&middot;&nbsp;
-                <a href="https://example.com/unsubscribe" style="color:#5B8A9A; text-decoration:underline;">Stop receiving this</a>
-                &nbsp;&middot;&nbsp;
-                <a href="mailto:research@example.com" style="color:#5B8A9A; text-decoration:underline;">Contact</a>
-              </p>
-            </td>
-          </tr>
-        </table>
-
-      </td>
-    </tr>
-  </table>
-
+</table>
+</td>
+</tr>
+</table>
+<!-- /Main container -->
+<!-- FOOTER: copyright, links and optional disclaimer -->
+<table role="presentation" width="680" cellpadding="0" cellspacing="0" border="0"
+style="max-width:680px; background-color:#F2F1EE;" bgcolor="#F2F1EE" class="email-container">
+<tr>
+<td style="padding:28px 40px 32px; border:1px solid #D6D2CB; background-color:#F2F1EE;" bgcolor="#F2F1EE">
+<p align="left" style="margin:0 0 28px; text-align:left;">
+<img src="https://cdn.example.com/hermes-mark.png" alt="Hermes Research mark" width="80" style="display:inline-block; border:0; height:auto;">
+</p>
+<div align="left" style="font-family: Arial, Helvetica, sans-serif; font-size:10.5px;
+color:#5C574E; line-height:175%; text-align:left;">
+<p>Distributed to registered recipients only.</p>
+</div>
+<p align="left" style="margin:10px 0 0; font-family: Arial, Helvetica, sans-serif; font-size:10.5px;
+color:#5C574E; text-align:left;">
+&#169; 2026 Hermes Research &#8212; all rights reserved &nbsp;&middot;&nbsp;
+<a href="https://example.com/privacy" style="color:#5B8A9A; text-decoration:underline;">Privacy</a>
+&nbsp;&middot;&nbsp;
+<a href="https://example.com/unsubscribe" style="color:#5B8A9A; text-decoration:underline;">Stop receiving this</a>
+&nbsp;&middot;&nbsp;
+<a href="mailto:research@example.com" style="color:#5B8A9A; text-decoration:underline;">Contact</a>
+</p>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+</table>
 </body>
 </html>

@@ -8,6 +8,6 @@ writes ``from pyhermes.email import EMAIL_MEDIUM`` now keeps working through
 every one of them.
 """
 
-from .medium import EMAIL_MEDIUM, validate_gmail_size
+from .medium import EMAIL_MEDIUM, strip_indentation, validate_gmail_size
 
-__all__ = ["EMAIL_MEDIUM", "validate_gmail_size"]
+__all__ = ["EMAIL_MEDIUM", "strip_indentation", "validate_gmail_size"]

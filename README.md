@@ -924,7 +924,8 @@ rather than documented:
 
 - **The 102 KB Gmail clipping limit.** `render()` raises `SizeError` above it and warns above
   90 KB with a `SizeWarning`. Both thresholds are configurable, so a non-Gmail channel can raise them deliberately
-  rather than by commenting out the check.
+  rather than by commenting out the check. The check measures what is sent: an email's HTML
+  carries no line indentation, which no client renders and which was 6 to 23% of every email.
 - **Validation at construction, not at render.** Models and components raise `ValidationError`
   from `__init__`; by the time you call `.render()`, the data shape is already known good. The
   one document-wide check, that every `#reference` lands, runs before any template loads.
