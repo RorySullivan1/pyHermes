@@ -1243,7 +1243,9 @@ class OnlySections(Container):
                 )
         self.media = check_media(media, "OnlySections")
         refuse_numbered(
-            "OnlySections", [component for section in held for component in section.components()]
+            "OnlySections",
+            [component for section in held for component in section.components()],
+            held,
         )
         self._held = held
 

@@ -502,6 +502,12 @@ would ship the bytes.
   either wrapper raises at construction, because omitting one would make "Exhibit 3" or note 7
   mean different things in two media (the risk the epic named; `test_research_note.py` compares
   them).
+  **A section's own source line counts (#453).** It is copy the walk numbers (`apparatus.md`,
+  #338), so `OnlySections` checks each section's `footnotes()` and `marked_copy()` beside its
+  blocks, naming the section: a print-only section citing a note in its `source` would have
+  numbered paper's notes one ahead of the email's. `title`, `subtitle`, `kicker` and `as_of` are
+  never walked for a marker, so they need no refusal, and `Only` holds one block, which has no
+  source line of its own.
 - **A medium name nothing ships is refused**: `SHIPPED_MEDIA` in `medium.py`, held by a test to
   the shipped `Medium` objects the kit may not import.
 - In a cell an omitted block leaves the cell empty; `OnlySections` sits at the top of a

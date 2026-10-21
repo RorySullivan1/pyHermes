@@ -10,7 +10,7 @@ hold. `.claude/rules/builder-architecture.md` records the walk's contract.
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from .apparatus import cited_keys
 from .components import Component, Exhibit, descendants
@@ -29,6 +29,9 @@ from .sizing import (
     column_layout,
     shares,
 )
+
+if TYPE_CHECKING:
+    from .containers import Container
 
 
 def _checked(owner: str, components: Sequence[Component]) -> list[Component]:
@@ -267,31 +270,47 @@ def _positive(value: object) -> bool:
     return isinstance(value, (int, float)) and is_finite(value) and value > 0
 
 
-def refuse_numbered(owner: str, components: Sequence[Component]) -> None:
+def refuse_numbered(
+    owner: str, components: Sequence[Component], sections: Sequence[Container] = ()
+) -> None:
     """
     Refuse a labelled exhibit, a footnote or a citation anywhere in ``components`` (#365).
 
     Each is numbered across the whole document, so one shown in some media
     only would make "Exhibit 3" or note 7 mean different things in two of them.
+    A section's own source line is copy the walk numbers too (#338), so each of
+    ``sections`` is checked beside the blocks it holds (#453).
 
     Raises:
         ValidationError: Naming what was found and why.
     """
+    for section in sections:
+        if kind := _numbered(section):
+            raise _refusal(owner, f"{section._owner()}'s source line with {kind}")
     for component in descendants(components):
         name = type(component).__name__
         if isinstance(component, Exhibit) and component.label:
-            found = f"a {name} labelled {component.label!r}"
-        elif component.footnotes():
-            found = f"a {name} with footnotes"
-        elif any(cited_keys(copy) for copy in component.marked_copy()):
-            found = f"a {name} with a citation"
-        else:
-            continue
-        raise ValidationError(
-            f"{owner} holds {found}. Notes, citations and labelled exhibits are numbered "
-            "across the document, so one shown in some media only would number the rest "
-            "differently in each. Keep it outside, or drop the label."
-        )
+            raise _refusal(owner, f"a {name} labelled {component.label!r}")
+        if kind := _numbered(component):
+            raise _refusal(owner, f"a {name} with {kind}")
+
+
+def _numbered(holder: Any) -> str:
+    """What ``holder`` calls that the document numbers: footnotes or a citation, else ``""``."""
+    if holder.footnotes():
+        return "footnotes"
+    if any(cited_keys(copy) for copy in holder.marked_copy()):
+        return "a citation"
+    return ""
+
+
+def _refusal(owner: str, found: str) -> ValidationError:
+    """The error every wrapper raises for a numbered thing it was asked to hide."""
+    return ValidationError(
+        f"{owner} holds {found}. Notes, citations and labelled exhibits are numbered "
+        "across the document, so one shown in some media only would number the rest "
+        "differently in each. Keep it outside, or drop the label."
+    )
 
 
 class Only(Component):
