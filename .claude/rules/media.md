@@ -655,3 +655,33 @@ and the second sheet reads 2 (read back from the PDF). It matches a deck's title
 default would move every paged golden whose first body sheet carries a folio today, for a
 change no existing caller asked for. With a `Cover` the first sheet is the cover, which
 already blanks both boxes.
+
+## The email medium finishes its markup (#474)
+
+`Medium.finishers` are transforms run over the composed document before its constraints, so a
+check measures what the reader receives. The email medium has one, `strip_indentation`: each
+line loses its leading and trailing spaces and tabs, and blank lines go. Every other shipped
+medium has none, and a test holds the table, so a paged, brochure or deck golden cannot move
+for it.
+
+- **Why it exists:** line indentation was 9.2% of `kitchen_sink` (8,336 bytes) and 23% of
+  `minimal`, all of it spent against Gmail's 102 KB clip and none of it rendered. `modern_fonts`
+  had 357 bytes left under the 90 KB warning, so no component could join `kitchen_sink` (rule
+  1). Stripping gave every email back 6 to 23%; `kitchen_sink` went from 90,907 to 82,484 bytes.
+  Moving its wide ThreeColumn ratios out was the alternative, and would have freed about as much
+  for the fixture alone, losing those ratios' density and font A/Bs.
+- **Every line break stays.** Whitespace that rendered as a space between inline elements still
+  does, because the newline is kept. Only `pre` and `textarea` hold whitespace as content, and
+  both pass through whole; no template uses either, but a caller's raw HTML may.
+- **Measured, not argued:** every email screenshot, 24 fixtures at 1000 and 375px, was
+  pixel-identical before and after; no lint finding moved in any fixture; the 24 email goldens'
+  diff is empty under `git diff -w --ignore-blank-lines`. With the finisher removed, the render
+  equals the old golden byte for byte, so the finisher is the whole change.
+  `tests/test_strip_indentation.py` keeps three of those screenshot pairs, and checks that
+  each email render equals its unfinished render stripped.
+- **`rendered_sections()` finishes each section too**, or the size report could not find a
+  section's bytes in the document's.
+- **A finisher is the medium's, not the engine's**, because the reason is a client's: Gmail
+  clips, paper does not. A minifier that rewrote markup (attribute quoting, CSS) was not
+  considered: the Word engine is too particular about markup to trust a rewrite, and whitespace
+  at line edges is a change no renderer shows, though a parser sees fewer text nodes.

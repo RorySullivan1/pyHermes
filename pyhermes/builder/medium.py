@@ -14,7 +14,7 @@ sits above.
 
 from __future__ import annotations
 
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass, field
@@ -25,6 +25,11 @@ from .sizing import DEFAULT_PAGE, PageFormat
 
 if TYPE_CHECKING:  # pragma: no cover - regions imports nothing from here
     from .regions import Region
+
+
+#: A transform a medium runs over the composed document before its constraints:
+#: markup in, markup the reader receives out (#474).
+Finisher = Callable[[str], str]
 
 
 @runtime_checkable
@@ -84,6 +89,10 @@ class Medium:
     #: Checks run over the composed document, in order, after rendering.
     constraints: tuple[Constraint, ...] = ()
 
+    #: Transforms run over the composed document, in order, before the
+    #: constraints, so a check measures what the reader receives.
+    finishers: tuple[Finisher, ...] = ()
+
     #: Template directories searched ahead of the shared tree, so this medium
     #: can fork one template without forking the tree. Usually empty.
     template_search_path: tuple[str, ...] = ()
@@ -104,6 +113,12 @@ class Medium:
         """Run every constraint over the composed document."""
         for constraint in self.constraints:
             constraint(html, hint)
+
+    def finish(self, html: str) -> str:
+        """Run every finisher over ``html``, in order; unchanged when there are none."""
+        for finisher in self.finishers:
+            html = finisher(html)
+        return html
 
 
 #: The floor the engine guarantees when nothing binds a medium: plain HTML,

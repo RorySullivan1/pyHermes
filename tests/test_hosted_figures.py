@@ -222,7 +222,8 @@ class TestInAnEmail:
         hosted = email(FullWidth(TextBlock(PROSE, figure=FIGURES[name]()))).render()
         # The figure's own markup is what it renders unhosted and unwrapped.
         engine = email(FullWidth(TextBlock("<p>x</p>")))._bound_engine()
-        bare = FIGURES[name]("").render(engine)
+        # The email medium finishes its markup (#474), so the bare figure is finished too.
+        bare = engine.medium.finish(FIGURES[name]("").render(engine))
         assert bare in hosted
         assert hosted.index(bare) < hosted.index('id="prose-start"')
         assert '<div class="wrapped-figure">' in hosted
