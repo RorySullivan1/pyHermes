@@ -13,11 +13,11 @@ import math
 from typing import Any
 
 from pyhermes.builder import QrCode
-from pyhermes.builder.surfaces import QR_SIZE, check_qr_url
+from pyhermes.builder.surfaces import QR_SIZE, check_qr_size, check_qr_url
 from pyhermes.builder.theming import Theme, resolve_theme
 from pyhermes.config import get_config
 
-from .exceptions import BackendMissingError
+from .exceptions import BackendMissingError, QrError
 
 #: The quiet zone round the symbol, in modules: the four the QR standard asks for.
 BORDER = 4
@@ -44,14 +44,29 @@ def render_qr(url: str, *, size: int = QR_SIZE, dark: str, light: str) -> bytes:
     of one URL are the same bytes. segno writes no text chunk or timestamp.
 
     Raises:
+        ValidationError: When ``size`` is not a whole number of px, at least the
+            smallest a code scans at.
+        QrError: When ``url`` is too long for one symbol, or segno refuses a colour.
         BackendMissingError: When the ``[qr]`` extra is not installed.
     """
+    check_qr_size(size)
     segno = _backend()
-    symbol = segno.make(url, error="m", micro=False)
+    try:
+        symbol = segno.make(url, error="m", micro=False)
+    except ValueError as exc:  # segno's DataOverflowError is one
+        raise QrError(
+            f"the url is {len(url)} characters, too long to encode in one QR code "
+            f"({exc}); shorten it, or print a short link that redirects"
+        ) from exc
     modules = symbol.symbol_size(border=BORDER)[0]
     scale = math.ceil(size * get_config().print_dpi / _CSS_DPI / modules)
     out = io.BytesIO()
-    symbol.save(out, kind="png", scale=scale, border=BORDER, dark=dark, light=light)
+    try:
+        symbol.save(out, kind="png", scale=scale, border=BORDER, dark=dark, light=light)
+    except (ValueError, TypeError) as exc:
+        raise QrError(
+            f"segno could not paint the code in dark={dark!r} on light={light!r}: {exc}"
+        ) from exc
     return out.getvalue()
 
 
@@ -66,10 +81,15 @@ def qr_code(
     """
     A :class:`QrCode` for ``url``, in ``theme``'s primary text on its surface.
 
-    The URL is checked by the component before anything renders, so a scheme
-    the builder refuses never reaches segno.
+    The URL and the size are checked before anything renders, so a scheme the
+    builder refuses, or a size no phone scans, never reaches segno.
+
+    Raises:
+        ValidationError: On a URL or a ``size`` the component refuses.
+        QrError: When ``url`` is too long to encode in one symbol.
     """
     check_qr_url(url)
+    check_qr_size(size)
     palette = resolve_theme(theme)
     png = render_qr(url, size=size, dark=palette.text.primary, light=palette.palette.surface)
     return QrCode(png, url, caption, size=size, align=align)

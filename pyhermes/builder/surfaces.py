@@ -319,6 +319,20 @@ def check_qr_url(url: str) -> None:
         )
 
 
+def check_qr_size(size: object) -> None:
+    """
+    Raise unless ``size`` is a whole number of px a phone can scan.
+
+    Raises:
+        ValidationError: On anything but an ``int`` of at least ``QR_MIN_SIZE``.
+    """
+    if isinstance(size, bool) or not isinstance(size, int) or size < QR_MIN_SIZE:
+        raise ValidationError(
+            f"a QrCode's size is a whole number of px, at least {QR_MIN_SIZE} to scan, "
+            f"got: {size!r}"
+        )
+
+
 class QrCode(CopyAlignment, Component):
     """
     A way back from paper to the web (#344): a printed QR code and the URL it encodes.
@@ -355,10 +369,7 @@ class QrCode(CopyAlignment, Component):
     ):
         self.spacing = self._coerce_spacing(spacing)
         check_qr_url(url)
-        if isinstance(size, bool) or not isinstance(size, int) or size < QR_MIN_SIZE:
-            raise ValidationError(
-                f"a QrCode prints at least {QR_MIN_SIZE}px wide to scan, got: {size!r}"
-            )
+        check_qr_size(size)
         alt = f"QR code for {url}"
         if isinstance(image, bytes):
             image = EmailImage.attached(image, alt=alt, width=size)

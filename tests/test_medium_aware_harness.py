@@ -9,14 +9,22 @@ by an instrument that cannot see pages.
 
 from __future__ import annotations
 
+import re
+
 import pytest
 
 from pyhermes.brochure import BROCHURE_MEDIUM
 from pyhermes.builder.medium import DEFAULT_MEDIUM
+from pyhermes.check import render_for_check
 from pyhermes.deck import DECK_MEDIUM
 from pyhermes.document import PAGED_MEDIUM, PagedDocument
 from pyhermes.email import EMAIL_MEDIUM
-from qa.fixtures import all_fixtures, all_paged_fixtures
+from qa.fixtures import (
+    all_brochure_fixtures,
+    all_deck_fixtures,
+    all_fixtures,
+    all_paged_fixtures,
+)
 from qa.goldens import GOLDEN_DIR, artifacts, html_path, medium_dir
 from qa.lint import RULE_MEDIA, SOURCES, Severity, lint_document, lint_email, lint_html, rules_for
 from qa.screenshots import PDF_PX_SCALE, capture_pages, pages_available
@@ -58,7 +66,7 @@ class TestEveryRuleSaysWhereItApplies:
         # Narrowing the set is what this guards.
         paged_only = {"page-size-declared", "paged-table-width", "table-structure"}
         print_only = {"print-marks", "rgb-only"}
-        deck_only = {"slide-overflow"}
+        deck_only = {"slide-overflow", "handout-notes-clipped"}
         assert rules_for("email") == set(SOURCES) - paged_only - print_only - deck_only
         assert len(rules_for("email")) == 13
 
@@ -117,6 +125,60 @@ class TestThePagedRulesAreExercised:
     def test_declaring_one_satisfies_it(self):
         html = "<html><head><style>@page { size: 794px 1123px; }</style></head></html>"
         assert "page-size-declared" not in [f.rule_id for f in lint_html(html, "document")]
+
+    def test_a_size_after_a_nested_box_still_counts(self):
+        html = (
+            "<html><head><style>@page { @top-left { content: none; } "
+            "size: 794px 1123px; }</style></head></html>"
+        )
+        assert "page-size-declared" not in [f.rule_id for f in lint_html(html, "document")]
+
+    def test_a_running_box_does_not_declare_a_page_size(self):
+        """The rule once matched the `size` in `font-size` (#465)."""
+        html = (
+            "<html><head><style>@page { margin: 0; @top-left { content: 'x'; "
+            "font-size: 9px; } }</style></head></html>"
+        )
+        assert "page-size-declared" in [f.rule_id for f in lint_html(html, "document")]
+
+    @pytest.mark.parametrize(
+        "css",
+        [
+            "@page cover { size: 100px; }",
+            "@page :first { size: 100px; }",
+            "@page landscape { size: 297mm 210mm; } @page cover { margin: 0; }",
+            "@page { margin: 0; } /* size: 100px; */",
+            "@page { margin: 0; } body { size: 100px; }",
+            "@page { margin: 0; @footnote { padding-size: 1px; } }",
+        ],
+    )
+    def test_only_a_size_every_sheet_takes_counts(self, css):
+        html = f"<html><head><style>{css}</style></head></html>"
+        assert "page-size-declared" in [f.rule_id for f in lint_html(html, "document")]
+
+    def test_a_named_page_beside_the_base_rule_is_fine(self):
+        html = (
+            "<html><head><style>@page { size: 794px; } "
+            "@page landscape { size: 1123px 794px; }</style></head></html>"
+        )
+        assert "page-size-declared" not in [f.rule_id for f in lint_html(html, "document")]
+
+    @pytest.mark.parametrize("name", sorted(all_paged_fixtures()))
+    def test_removing_the_size_from_a_paged_fixture_is_caught(self, name):
+        """With its running boxes and named pages as rendered, the base size alone is gone."""
+        html = render_for_check(all_paged_fixtures()[name]())
+        stripped, count = re.subn(r"(@page\s*\{\s*)size:[^;]*;", r"\1", html, count=1)
+        assert count == 1
+        assert "page-size-declared" not in [f.rule_id for f in lint_html(html, "document")]
+        assert "page-size-declared" in [f.rule_id for f in lint_html(stripped, "document")]
+
+    def test_every_printed_fixture_declares_its_page(self):
+        registries = (all_paged_fixtures(), all_brochure_fixtures(), all_deck_fixtures())
+        for registry in registries:
+            for name, build in registry.items():
+                document = build()
+                found = lint_html(render_for_check(document), document.medium.name)
+                assert "page-size-declared" not in [f.rule_id for f in found], name
 
     def test_an_unmapped_table_width_is_an_error(self):
         html = (

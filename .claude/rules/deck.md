@@ -23,7 +23,7 @@ like a report. `pyhermes/deck/` is the fourth medium, beside `email`, `document`
 | `slide.py` | `Slide`, the layout unit; `DividerSlide`, a part's title; `StatementSlide`, one figure; `SlideBox`, the bands' geometry |
 | `regions.py` | `TitleSlide` and `ClosingSlide`, each with an `Empty` variant; `DeckFooter` |
 | `document.py` | `Deck` and `DeckMetadata`: slides in, sheets numbered, notes out |
-| `fit.py` | `overflowing_slides()`, which asks the print engine |
+| `fit.py` | `overflowing_slides()` and `clipped_notes()`, which ask the print engine |
 
 ## Why a medium, and the decision it supersedes
 
@@ -89,6 +89,13 @@ and it reaches a colleague as a PDF through the unchanged exporter, as a report 
   `TITLE_FACTS` and `CLOSING_FACTS`.
 - **A `Contents` on a slide lists every titled slide and divider but the one it sits on**,
   the paged rule of skipping its own section. An agenda slide does not list itself.
+- **A `Slide` object is on one sheet only (#462).** `Deck.number` finds a slide by identity, so one
+  object added twice printed the first sheet's number on both (footer, notes, `slide-N-end`),
+  and the second sheet was never measured. `_append` refuses it with a `ValidationError` naming
+  the slide and its sheet, rather than numbering by position: a titled slide twice was already
+  refused for its anchor, and an untitled one claims none, so identity is the only test left. The
+  same sections in a second `Slide` are fine. `Document.add_section` does not refuse an untitled
+  section twice, but a section has no number of its own to print.
 - **Footnotes are refused**: a note floats to the sheet's foot, which the footer band owns.
   A slide's `source=` line is where its source goes instead (#347).
 - **Positioned, not valign'd.** The first raster put the title slide's and the divider's copy
@@ -262,6 +269,32 @@ the proof the defaults render byte for byte (#353's own allowance).
   keeps its text selectable, and costs nothing. A `Contents` on a slide still prints the right
   numbers, because the handout is one page per sheet too. It is a view of the notes
   projection, so #299's decision covers it, and it is not a PowerPoint notes page (#300).
+- **A sheet is one page however long its notes run (#459).** The notes flowed under the scaled
+  sheet unbounded, so a few hundred words made a second page: a five-sheet deck's handout ran to
+  nine, and its agenda listed Slide B on page 8 against a footer of `4 / 5`. Chosen over letting
+  the contents follow the handout's own pages, which a `Contents` cannot do (`target-counter`
+  reads the page, the footer is Python's) and which would put two numbers on one page. The notes
+  are a box `overflow: hidden` and `notes_height` tall, the room the page leaves under the frame,
+  its border and the `block_gap`, floored to a whole px. A page with no notes writes the old
+  markup. Two zero-height sentinels, `handout-N-notes-end` (after the last paragraph, whose
+  bottom margin is dropped) and `handout-N-notes-limit` (after the box), are what
+  `clipped_notes(deck, page=None, laid_out=None)` compares, so it reads what the engine did
+  and not the arithmetic; an end on no page counts as clipped, and 0.5px is tolerated. It names
+  `slide N: Title`, as `overflowing_slides` does. `pyhermes.pdf.layout_handout` lays the handout
+  out and returns a `Layout` with `handout=True`, which `overflowing_slides` refuses, since its
+  sheets are scaled; `render_handout` is that layout written, byte for byte what it was.
+  Measured in WeasyPrint 70 on A4 portrait, a 1280px slide leaves a 589px box (about 20 lines
+  at 20px/145%), and the verdict agrees with the last word's presence in the page text at every
+  length from 100 to 330 words. **Moved:** the two fixtures' handout PDFs. Their rasters at 1.5x
+  are pixel-identical page for page and the page count is the same, but the clip changes the
+  stream, so the bytes and pdfium's text order differ. The slide PDFs and every golden held.
+  **`handout-notes-clipped` makes it a lint finding**: `layout_findings` runs it for a deck,
+  after `slide-overflow`, so `lint_document`, `pyhermes.check` and `preview --lint` report each
+  clipped slide. A **warning**, not an error like `slide-overflow`: the slides are whole and the
+  notes projection keeps every word, so only the printed handout loses copy. The handout is laid
+  out only when a slide has notes, so a deck without them costs no second layout; with them it is
+  a second document, laid out once, and `TestAPreviewRunLaysOutOnce` counts each document once. A
+  refusal there is skipped, since the deck's own layout already reported it.
 - **The fixture** opens on an agenda, then a divider, a full-bleed slide, an image-left and
   an image-right slide, a second divider anchored middle, a sourced table whose source cites
   the reference the last slide lists, a statement slide carrying the notes sentinel, and the

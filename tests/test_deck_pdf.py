@@ -13,6 +13,7 @@ import textwrap
 import pytest
 
 from pyhermes.builder import DataTable, FullWidth, ImageBlock, TextBlock
+from pyhermes.builder.exceptions import ValidationError
 from pyhermes.builder.images import EmailImage
 from pyhermes.builder.models import TableRow
 from pyhermes.deck import (
@@ -21,6 +22,7 @@ from pyhermes.deck import (
     Deck,
     EmptyClosingSlide,
     EmptyTitleSlide,
+    Slide,
     overflowing_slides,
 )
 from pyhermes.pdf import UnreachableResourceError, available, page_count, render_pdf
@@ -113,6 +115,19 @@ class TestOverflowIsNamed:
 
     def test_an_untitled_slide_is_named_by_number(self):
         assert overflowing_slides(_bare().add_slide(_long_table())) == ["slide 1"]
+
+    def test_a_slide_added_twice_is_refused_so_each_sheet_is_measured_on_its_own(self):
+        # One Slide on two sheets printed the first's number on both, so the second sheet's
+        # sentinel never existed and its overflow was never measured (#462).
+        sections = _long_table()
+        twice = Slide(sections)
+        deck = _bare().add_slide(twice).add_slide(_paragraph(), "Fits")
+        with pytest.raises(ValidationError, match="already sheet 1"):
+            deck.add_slide(twice)
+        deck.add_slide(Slide(sections))
+        sheets = _sheets(deck)
+        assert len(sheets) == 3
+        assert overflowing_slides(deck) == ["slide 1", "slide 3"]
 
     def test_long_disclosures_are_named_too(self):
         deck = Deck({**FACTS, "header_disclaimer": "<p>Read this.</p>" * 120})

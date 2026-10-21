@@ -15,7 +15,11 @@ from .document import Deck
 from .slide import DividerSlide, Slide, SlideBox
 
 if TYPE_CHECKING:  # pragma: no cover - the exporter is imported only on use
+    from pyhermes.builder.sizing import PageFormat
     from pyhermes.pdf import Layout
+
+#: How far, in px, a note's last line may sit past its box before it is named: sub-pixel layout.
+HANDOUT_TOLERANCE = 0.5
 
 
 def overflowing_slides(deck: Deck, laid_out: Layout | None = None) -> list[str]:
@@ -76,6 +80,42 @@ def overflowing_slides(deck: Deck, laid_out: Layout | None = None) -> list[str]:
     return overflowing
 
 
+def clipped_notes(
+    deck: Deck, page: PageFormat | None = None, laid_out: Layout | None = None
+) -> list[str]:
+    """
+    Every slide whose speaker notes the handout clips, named ``slide N: Title`` (#459).
+
+    A handout sheet is one page, so its notes fill the room the page leaves under
+    the scaled slide and are clipped past it. The clip is silent in the PDF, as a
+    slide's is: this reads where the end of each slide's notes landed against the
+    foot of their box. ``laid_out``, a :func:`~pyhermes.pdf.layout_handout` of
+    this deck, is read rather than laying the handout out again. Empty when
+    every note fits.
+
+    Raises:
+        ValueError: If ``laid_out`` is not this deck's handout.
+        pyhermes.pdf.BackendMissingError: If WeasyPrint is not installed.
+        pyhermes.pdf.PdfError: If the exporter refuses the deck, as it refuses a hosted image.
+    """
+    from pyhermes.pdf import anchor_tops, layout_handout
+
+    if laid_out is None:
+        laid_out = layout_handout(deck, page)
+    elif laid_out.document is not deck or not laid_out.handout:
+        raise ValueError("laid_out is not a handout layout of this deck")
+    landed = anchor_tops(laid_out)
+    opening = 1 if deck.title_slide.TEMPLATE_PATHS else 0
+    clipped = []
+    for number, slide in enumerate(deck.slides, start=1 + opening):
+        if not slide.notes.strip():
+            continue
+        end, limit = (landed.get(f"handout-{number}-notes-{part}") for part in ("end", "limit"))
+        if end is None or limit is None or end > limit + HANDOUT_TOLERANCE:
+            clipped.append(f"slide {number}: {slide.title}" if slide.title else f"slide {number}")
+    return clipped
+
+
 def _listed(reasons: list[str]) -> str:
     """``a``, ``a, and b``, or ``a, b, and c``: the reasons a slide is named for."""
     if len(reasons) == 1:
@@ -89,4 +129,8 @@ def _own(deck: Deck, laid_out: Layout | None) -> Deck | Layout:
         return deck
     if laid_out.document is not deck:
         raise ValueError("laid_out is a layout of another document, not this deck")
+    if laid_out.handout:
+        raise ValueError(
+            "laid_out is the deck's handout, whose sheets are scaled; lay out the deck"
+        )
     return laid_out

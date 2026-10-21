@@ -8,6 +8,7 @@ whether it overflows, needs the print engine and lives in ``test_deck_pdf.py``.
 from __future__ import annotations
 
 import dataclasses
+import re
 
 import pytest
 
@@ -20,6 +21,7 @@ from pyhermes.builder import (
     TwoColumn,
 )
 from pyhermes.builder.exceptions import ValidationError
+from pyhermes.builder.sizing import A4_LANDSCAPE, A4_PORTRAIT
 from pyhermes.deck import (
     DECK_MEDIUM,
     SLIDE_4_3,
@@ -178,6 +180,23 @@ class TestTheDeck:
         with pytest.raises(ValidationError, match="Twice"):
             deck.add_slide(_sections(), "Twice")
 
+    @pytest.mark.parametrize("title", [None, "Twice"], ids=["untitled", "titled"])
+    def test_a_slide_object_added_twice_is_refused_naming_its_sheet(self, title):
+        deck = Deck(FACTS, closing_slide=EmptyClosingSlide())
+        slide = Slide(_sections(), title, "Say it once.")
+        deck.add_slide(_sections(), "First").add_slide(slide)
+        with pytest.raises(ValidationError, match=r"already sheet 3 of this deck"):
+            deck.add_slide(slide)
+        assert deck.slides.count(slide) == 1
+        assert [deck.number(s) for s in deck.slides] == [2, 3]
+        assert deck.notes().count("Say it once.") == 1
+
+    def test_the_same_sections_on_a_second_slide_are_a_second_sheet(self):
+        sections = _sections()
+        deck = _bare().add_slide(Slide(sections), None).add_slide(Slide(sections), None)
+        assert [deck.number(s) for s in deck.slides] == [1, 2]
+        assert deck.render().count('class="sheet slide"') == 2
+
     def test_the_text_part_underlines_each_slides_title(self):
         text = _bare().add_slide(_sections("Body copy"), "Alpha").text()
         assert "Alpha\n-----\n\n" in text
@@ -318,6 +337,21 @@ class TestSpeakerNotes:
         assert f"Slide {number}: The term premium" in deck.notes()
         assert f'data-slide="{number}"' in deck.render().split("The term premium</h2>")[0]
 
+    def test_the_handouts_notes_box_is_the_room_the_page_leaves(self):
+        # Unbounded, long notes took a second page and moved every later sheet (#459).
+        deck = Deck(FACTS, closing_slide=EmptyClosingSlide())
+        deck.add_slide(_sections(), "Alpha", notes="Open slowly.").add_slide(_sections(), "Beta")
+        for page in (A4_PORTRAIT, A4_LANDSCAPE):
+            html = deck.handout(page)
+            frame = float(re.search(r"width:\d+px; height:([\d.]+)px;\">", html)[1])
+            gap = int(re.search(r'class="handout-notes"[^>]*margin-top:(\d+)px', html)[1])
+            boxes = re.findall(r"color:#3B3B3B; height:(\d+)px; overflow:hidden;", html)
+            assert len(boxes) == 1, "only the sheet that has notes is boxed"
+            room = page.height - page.margin.top - page.margin.bottom
+            assert 0 <= room - (frame + 2 + gap + int(boxes[0])) < 1
+            assert 'id="handout-2-notes-end"' in html and 'id="handout-2-notes-limit"' in html
+            assert "handout-3-notes" not in html and "handout-1-notes" not in html
+
 
 # ----------------------------------------------------------------------
 # #297 and #301 — the rule table, and the gallery
@@ -336,6 +370,7 @@ class TestTheRuleTable:
             "paged-table-width",
             "table-structure",
             "slide-overflow",
+            "handout-notes-clipped",
         }
 
     def test_the_overflow_rule_reaches_no_other_medium(self):

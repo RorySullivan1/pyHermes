@@ -179,6 +179,12 @@ Three things the second set taught:
   engine's named strings (`string-set` on each section title, `string()` in the box) and never
   through the facts layer. `RUNNING_FACTS` are unchanged; `label` is the fallback before the
   first section. `apparatus.md` has the four probes the fallback took.
+- **Two running boxes cannot share a margin box (#461).** Each emits an `@page` rule for its
+  box and the later wins, so a header given the footer's `bottom-center` printed on no sheet
+  and said nothing. `PagedDocument` refuses the pair at construction (`check_distinct_boxes`),
+  naming both regions and the box; an `Empty` variant fills no slot and claims nothing. A deck
+  and a brochure have no running boxes (a deck's bands are positioned markup), so the seam is
+  the paged medium's alone.
 - **The contents sheet (#183) is opt-in.** `ContentsPage` is handed the sections'
   titles as a derived fact, `contents_entries`, and its page numbers are the print engine's.
   It defaults to `EmptyContentsPage`, because a two-sheet factsheet is not improved by a third.
@@ -496,6 +502,13 @@ would ship the bytes.
   either wrapper raises at construction, because omitting one would make "Exhibit 3" or note 7
   mean different things in two media (the risk the epic named; `test_research_note.py` compares
   them).
+  **A section's own source line counts (#453).** It is copy the walk numbers (`apparatus.md`,
+  #338), so `OnlySections` checks each section's `footnotes()` and `marked_copy()` beside its
+  blocks, naming the section: a print-only section citing a note in its `source` would have
+  numbered paper's notes one ahead of the email's. `title`, `subtitle`, `kicker` and `as_of` are
+  never walked for a marker, so they need no refusal, and `Only` holds one block, which has no
+  source line of its own. A hosted figure's source (#454) is reached through `hosted()`, so a
+  citation in one is refused inside either wrapper too.
 - **A medium name nothing ships is refused**: `SHIPPED_MEDIA` in `medium.py`, held by a test to
   the shipped `Medium` objects the kit may not import.
 - In a cell an omitted block leaves the cell empty; `OnlySections` sits at the top of a
@@ -577,6 +590,13 @@ by the owner's decision (2026-10-01).
   holds to the shipped media's `paged`.
 - **A URL a phone cannot open is refused**: the builder's scheme check, then `http`, `https` or
   `mailto` only. Below 72px it is refused as too small to scan.
+- **The adapter raises the package's errors, not segno's or Python's (#468).** `qr_code` and
+  `render_qr` check `size` before segno runs, through `check_qr_size`, the one function the
+  component's constructor uses, so a `0`, `"96"` or `None` is a `ValidationError` naming the
+  size. A URL that passes `check_qr_url` and still cannot be encoded (about 2,300 characters at
+  error level M) is a `QrError` naming `url` and its length, and a colour segno cannot read is
+  one naming it, each chaining the original. The check is by exception type (`ValueError`, which
+  segno's `DataOverflowError` is), because segno exposes no length to compare against.
 - **The gallery's code is a constant.** Goldens run where segno is absent, so
   `qa/fixtures/_qr.py` holds the module matrix and `_png.matrix_png` draws it; a `[qr]` test
   holds the constant to segno's encoding of its URL. `zxing-cpp`, a self-contained wheel, joins

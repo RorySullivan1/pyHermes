@@ -166,6 +166,52 @@ class TestWhatItRefuses:
         with pytest.raises(ValidationError, match="footnotes"):
             Only(Stack([TextBlock("<p>x</p>"), noted]), "email")
 
+    def test_a_note_in_a_hidden_sections_source_line(self):
+        printed = FullWidth(
+            TextBlock("<p>x</p>"),
+            title="Print only",
+            source="Desk calc[^1]",
+            source_notes=["n"],
+        )
+        with pytest.raises(ValidationError, match="FullWidth 'Print only'.*source line.*footnotes"):
+            OnlySections([printed], media="document")
+
+    def test_a_citation_in_a_hidden_sections_source_line(self):
+        printed = TwoColumn(
+            left=TextBlock("<p>x</p>"),
+            right=TextBlock("<p>y</p>"),
+            title="Print only",
+            source="Fama and French [@fama1993]",
+        )
+        with pytest.raises(ValidationError, match="TwoColumn 'Print only'.*source line.*citation"):
+            OnlySections([FullWidth(TextBlock("<p>fine</p>")), printed], media="document")
+
+    def test_the_other_section_fields_are_not_numbered(self):
+        # Only the source line is walked for markers, so nothing else needs refusing.
+        section = FullWidth(
+            TextBlock("<p>x</p>"),
+            title="Title[^1] [@k]",
+            kicker="Kicker[^1]",
+            source="Plain",
+            as_of="2026[^1] [@k]",
+        )
+        assert section.footnotes() == []
+        assert section.marked_copy() == ["Plain"]
+        OnlySections([section], media="document")
+
+    def test_a_citation_in_a_hosted_figures_source(self):
+        image = EmailImage.attached(NOTE_PNG, alt="Mark", width=40)
+        hosting = TextBlock(
+            "<p>x</p>", figure=ImageBlock(image, caption="Fig [@fama1993]", wrap="left")
+        )
+        with pytest.raises(ValidationError, match="ImageBlock with a citation"):
+            Only(hosting, "email")
+        with pytest.raises(ValidationError, match="ImageBlock with a citation"):
+            OnlySections([FullWidth(hosting)], "document")
+
+    def test_a_source_line_with_no_marker_is_fine(self):
+        OnlySections([FullWidth(TextBlock("<p>x</p>"), source="Bloomberg", as_of="Q3")], "document")
+
     def test_an_unlabelled_exhibit_is_fine(self):
         Only(DataTable(["A"], [TableRow(["1"])]), "email")
 

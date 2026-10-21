@@ -244,6 +244,7 @@ test (#60). `lint_html(html)` returns `Finding(rule_id, severity, location, mess
 | `vml-fill-frame-without-src` | error | A `v:fill` claiming `type="frame"` with no `src` (#150). Outlook paints a broken-image placeholder over the shape rather than falling back to `color`/`opacity` |
 | `size-budget` | warn/error | The 90/102 KB thresholds, **attributing the bytes to each body section and to the section-marker regions** (#259) |
 | `slide-overflow` | error, or warn | A slide whose copy runs past its body, **decks only** (#297). It needs a layout, so `layout_findings(document)` runs it, from `lint_document`, the check and `preview --lint`; without `[pdf]` it is one warning saying the deck was not measured |
+| `handout-notes-clipped` | warn | A slide whose speaker notes the printed handout clips at its page's foot, **decks only** (#459). `layout_findings` lays the handout out when a slide has notes and reads `clipped_notes`; a warning because the slides and the notes projection are whole |
 
 Seven decisions worth not re-litigating:
 
@@ -288,6 +289,16 @@ Seven decisions worth not re-litigating:
   marker, and a marker must contain a letter — the templates also use `<!-- ══════ -->` as
   decorative rules, and counting those made the heaviest "region" a row of box-drawing
   characters, a breakdown that names nothing.
+
+**`page-size-declared` reads the base `@page` rule, not the word "size" (#465).** It once
+matched `\bsize` anywhere inside an `@page` block, and `font-size` in a running box's margin
+rule satisfied it, so it stayed silent on exactly the documents that have a running header.
+It now reads the `style` elements, strips comments and counts a `size` declared directly in
+an `@page` rule with no page selector. Nested margin boxes and footnote areas, `@page cover`,
+`@page :first` and a turned page's `@page landscape` do not count: they reach some sheets,
+and the rule exists for the engine's default page on the rest. Probed on every paged fixture
+with only the base `size:` removed (running boxes and named pages as rendered): each fails,
+and each passes as rendered; the same holds across the brochure and deck galleries.
 
 **Markup inside `<!--[if mso]>` is not linted** as standard HTML. `HTMLParser` hands a
 conditional comment over as text rather than tags, which is the behaviour wanted: the block
@@ -358,6 +369,14 @@ Four decisions:
   nearly always a data mistake. `EmailBuilderError` raised while *importing* a target module
   propagates as itself rather than being flattened into "failed to import": the builder names
   the field, and that is the useful message.
+- **A draft that raises anything exits 2 too (#466).** `load_target` guards the draft's
+  callable (and an `EmailBuilder`'s `build()`): a builder error propagates as itself, any other
+  exception becomes a `TargetError` naming the callable, the exception class and its message.
+  `MathError`, `DataError` and `QrError` are *siblings* of `EmailBuilderError`, so catching
+  that one class left a traceback and Python's own exit 1, which a CI job reads as lint
+  errors. The guard lives in the shared loader, so `pyhermes.check` and `qa.preview` cannot
+  disagree. Only the draft is guarded: a raise while rendering is a pyHermes defect, and its
+  traceback is the useful output.
 - **One layout per run (#446).** A paged target is laid out once, before the lint, and the
   one `Layout` goes to `layout_findings`, to `save_layout` for the PDF and to `capture_pages`
   for the sheets. So #426's warn-once promise holds in the tool authors run. Counted by

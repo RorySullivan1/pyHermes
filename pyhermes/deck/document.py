@@ -9,6 +9,7 @@ third reading of the same tree.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, ClassVar, Self
@@ -35,6 +36,9 @@ from pyhermes.config import Config
 from .medium import deck_medium
 from .regions import ClosingSlide, DeckFooter, TitleSlide
 from .slide import AgendaEntry, DividerSlide, SheetFooter, Slide, SlideBox, StatementSlide
+
+#: The border of a handout sheet's frame, in px, counted in the room left for its notes (#459).
+HANDOUT_RULE = 1
 
 #: A slide's own picture is shown, not pressed: one source pixel per CSS px (#348).
 SLIDE_DPI = 96
@@ -190,8 +194,8 @@ class Deck(Document):
 
         Raises:
             ValidationError: For a slide's own reasons, a footnote, a picture too
-                coarse for the sheet, or an anchor the deck already has; the
-                deck is left as it was.
+                coarse for the sheet, an anchor the deck already has, or a slide
+                already on it; the deck is left as it was.
         """
         if isinstance(sections, Slide):
             if (
@@ -252,7 +256,18 @@ class Deck(Document):
         return self._append(DividerSlide(title, subtitle, notes, valign=valign))
 
     def _append(self, slide: Slide) -> Self:
-        """Add ``slide`` through the document's checks, then refuse a note or a coarse picture."""
+        """
+        Add ``slide`` through the document's checks, then refuse a note or a coarse picture.
+
+        A ``Slide`` already on the deck is refused by identity (#462): a sheet is
+        numbered by its slide, so one object on two sheets would print the first's
+        number on both. An untitled slide claims no anchor, so nothing else stops it.
+        """
+        if any(held is slide for held in self.slides):
+            raise ValidationError(
+                f"{slide._name()} is already sheet {self.number(slide)} of this deck, and a "
+                "slide prints on one sheet; build a second Slide for another"
+            )
         self._check_pictures(slide)
         Document.add_section(self, slide)
         if self._footnotes():
@@ -376,6 +391,11 @@ class Deck(Document):
         laid out exactly as the slide shown. The title slide and the
         disclosures get a page too, with no notes. ``pyhermes.pdf.render_handout``
         lays it onto paper.
+
+        **A sheet is one page however long its notes run (#459).** The notes
+        fill the room the page leaves under the sheet and clip past it, so a
+        contents slide's numbers stay the footers'. :func:`~pyhermes.deck.clipped_notes`
+        names each slide whose notes did not fit.
         """
         if page.height is None:
             raise ValidationError("a handout is printed; give its page a height")
@@ -399,13 +419,24 @@ class Deck(Document):
             margin = page.margin
             width = page.width - margin.left - margin.right
             scale = width / box.width
+            frame_height = round(box.height * scale, 3)
+            room = (
+                page.height
+                - margin.top
+                - margin.bottom
+                - frame_height
+                - 2 * HANDOUT_RULE
+                - scheme_of(engine).space.block_gap
+            )
             ctx["handout"] = {
                 "width": page.width,
                 "height": page.height,
                 "margin": margin,
                 "scale": round(scale, 6),
                 "frame_width": width,
-                "frame_height": round(box.height * scale, 3),
+                "frame_height": frame_height,
+                "rule": HANDOUT_RULE,
+                "notes_height": max(0, math.floor(room)),
                 "sheets": [
                     {"html": html, "notes": [p.strip() for p in note.split("\n\n") if p.strip()]}
                     for note, html in pairs

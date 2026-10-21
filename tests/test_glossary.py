@@ -46,6 +46,16 @@ class TestTheLinks:
     def test_every_term_is_anchored_by_its_slug(self):
         assert [t.anchor() for t in TERMS] == ["term-duration", "term-carry", "term-z-spread"]
 
+    def test_a_term_that_starts_with_the_word_term_keeps_it(self):
+        assert Term("Term premium", "x").anchor() == "term-term-premium"
+        assert Term("Premium", "y").anchor() == "term-premium"
+        Glossary([Term("Term premium", "x"), Term("Premium", "y")])
+
+    def test_a_term_with_no_leading_letter_keeps_its_anchor(self):
+        assert Term("2Y rate", "x").anchor() == "term-2y-rate"
+        assert Term("!!!", "x").anchor() == "term-term"
+        assert Term("Term", "x").anchor() == "term-term"
+
     def test_the_text_prints_a_term_link_as_its_label(self):
         assert "Its duration fell." in document().text()
 

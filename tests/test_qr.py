@@ -177,6 +177,47 @@ class TestTheAdapter:
         assert b"tEXt" not in png and b"tIME" not in png
 
 
+@requires_qr
+class TestTheAdapterRefusesInTheBuildersTerms:
+    """A bad size or a URL too long to encode raises the package's error, not segno's (#468)."""
+
+    @pytest.mark.parametrize("size", [0, -10, "96", None, 96.0, True, QR_MIN_SIZE - 1])
+    def test_a_bad_size_is_a_validation_error_naming_it(self, size):
+        from pyhermes.qr import qr_code
+
+        with pytest.raises(ValidationError, match="size"):
+            qr_code(URL, size=size)
+
+    @pytest.mark.parametrize("size", [0, "96", None])
+    def test_render_qr_checks_its_size_before_segno_runs(self, size, monkeypatch):
+        from pyhermes.qr import adapter
+
+        monkeypatch.setattr(adapter, "_backend", lambda: pytest.fail("segno was reached"))
+        with pytest.raises(ValidationError, match="size"):
+            adapter.render_qr(URL, size=size, dark="#000000", light="#FFFFFF")
+
+    def test_a_url_too_long_to_encode_is_a_qr_error_naming_the_url_with_the_cause(self):
+        from pyhermes.qr import QrError, qr_code
+
+        url = "https://example.com/" + "a" * 3000
+        with pytest.raises(QrError, match=rf"url is {len(url)} characters") as caught:
+            qr_code(url)
+        assert isinstance(caught.value.__cause__, ValueError)
+        assert not isinstance(caught.value, ValueError)
+
+    def test_a_long_url_that_still_fits_is_taken(self):
+        from pyhermes.qr import qr_code
+
+        assert qr_code("https://example.com/" + "a" * 1000).size == 96
+
+    def test_a_colour_segno_cannot_read_is_a_qr_error(self):
+        from pyhermes.qr import QrError, render_qr
+
+        with pytest.raises(QrError, match="dark='nocolor'") as caught:
+            render_qr(URL, dark="nocolor", light="#FFFFFF")
+        assert isinstance(caught.value.__cause__, ValueError)
+
+
 def _decoded(pdf: bytes) -> list[str]:
     import pypdfium2
     import zxingcpp

@@ -29,7 +29,8 @@ def load_target(target: str) -> tuple[str, Document]:
     that both define ``build`` do not overwrite each other's output.
 
     Raises:
-        TargetError: For a missing file or callable, or one that fails to import.
+        TargetError: For a missing file or callable, one that fails to import,
+            or one that raises anything but a builder error (#466).
         EmailBuilderError: When the builder rejects the email; its message names the field.
     """
     drive = target[:2] if re.match(r"[A-Za-z]:[\\/]", target) else ""
@@ -61,7 +62,14 @@ def load_target(target: str) -> tuple[str, Document]:
     if not callable(builder):
         raise TargetError(f"{attribute!r} in {path} is not callable.")
     name = f"{path.stem}-{attribute}"
-    return name, as_document(builder(), name)
+    try:
+        return name, as_document(builder(), name)
+    except (TargetError, EmailBuilderError):
+        raise
+    except Exception as exc:
+        # MathError, DataError and QrError are siblings of EmailBuilderError, not
+        # children: a draft is arbitrary code, and any raise is "does not build".
+        raise TargetError(f"{path}:{attribute} raised {type(exc).__name__}: {exc}") from exc
 
 
 def as_document(value: object, name: str) -> Document:

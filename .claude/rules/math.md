@@ -64,6 +64,14 @@ to import the backend.
 - **`DEFAULT_MATH_SCALE = 4`.** That is 384 dpi at 96 px to the inch, over `print_dpi` (300),
   so one render serves paper. `SCREEN` caps it at 150 dpi where it is displayed, and a test
   reads both back from the PDF. The display width is the pixel width over the scale.
+- **The caller's rcParams never reach the bytes (#467).** The figure is built and saved inside
+  `matplotlib.rc_context()` reset by `rcdefaults()`: matplotlib's built-in defaults, not
+  `rc_file_defaults()`, which would read the machine's `matplotlibrc`. `mathtext.default`,
+  `text.antialiased` and `text.usetex` each changed the bytes or raised a bare `RuntimeError`;
+  the default render is byte-identical before and after, so no equation cid moved. The context
+  restores the host's state on exit. rcParams is process-global, so a render is not safe to
+  run beside a thread that is drawing its own figures. Any backend failure that is not a parse
+  error is a `MathError`, the original chained.
 - **The bytes are deterministic and versionless.** Two renders of one source are equal, the
   `Software` chunk is suppressed, and one source twice in a document is attached once.
 - **The email goldens never depend on matplotlib.** Every fixture's equation is `solid_png`

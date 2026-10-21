@@ -107,6 +107,16 @@ construction check. It sees vertical overflow only. The answer was also posted o
   image's pixel count is in it, so the done-when won, and `BROCHURE_MEDIUM.constraints` is
   empty. Resolution follows the 90 KB pattern: below `Config.print_dpi` prints a warning, and
   below half of it raises. A ground image is measured against the ground it fills.
+- **A shared ground is measured at each use (#458).** `Brochure` once keyed grounds by
+  `id(image)`, so one image on two panels of different widths was checked at whichever panel came
+  last, and a gate fold's 800px image was accepted on a 289px flap beside a 569px centre.
+  Now every use is its own entry, `(image, width, where)`, and the message ends with the panel
+  (`It is the ground of the inside centre ('Positions')`). A section's own picture is
+  measured at its own width, not the ground's. The same image as a ground and as a section
+  picture is two uses.
+- **An inset leaves room (#460).** `validate_inset_room` refuses an inset, the panel's or the
+  fold's default, that is half the box's width or height or more, naming the panel and the axis.
+  The frame's own refusal at render stays as the backstop and still names no panel.
 - **CMYK is a non-goal, stated once.** `rgb-only` is an `INFO` finding, a severity that never
   fails a build, on every brochure. `print-marks` is an error when either declaration is
   missing.
