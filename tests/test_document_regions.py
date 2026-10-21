@@ -241,6 +241,59 @@ class TestTheRunningBoxesAreCssNotMarkup:
     def test_every_named_box_is_accepted(self, box):
         assert RunningHeader(box=box).resolved_box() == box
 
+    def test_two_regions_in_one_margin_box_are_refused_naming_both_and_the_box(self):
+        # #461: the later @page rule won, and the header printed on no sheet.
+        with pytest.raises(
+            ValidationError, match=r"running header.*running footer.*'bottom-center'"
+        ):
+            PagedDocument(
+                _paged.facts(),
+                running_header=RunningHeader(label="HEADERLABEL", box="bottom-center"),
+            )
+
+    @pytest.mark.parametrize("box", MARGIN_BOXES)
+    def test_any_shared_box_is_refused(self, box):
+        with pytest.raises(ValidationError, match=box):
+            PagedDocument(
+                _paged.facts(),
+                running_header=RunningHeader(box=box),
+                running_footer=RunningFooter(box=box),
+            )
+
+    def test_an_empty_variant_claims_no_box(self):
+        PagedDocument(_paged.facts(), running_header=EmptyRunningHeader(box="bottom-center"))
+        PagedDocument(_paged.facts(), running_footer=EmptyRunningFooter(box="top-left"))
+
+    def test_distinct_boxes_render_both_rules(self):
+        document = PagedDocument(
+            _paged.facts(),
+            running_header=RunningHeader(label="HEADERLABEL", box="top-right"),
+            running_footer=RunningFooter(label="FOOTERLABEL"),
+        )
+        html = document.render()
+        assert "@top-right" in html and "HEADERLABEL" in html
+        assert "@bottom-center" in html and "FOOTERLABEL" in html
+
+    def test_distinct_boxes_both_print_on_a_sheet(self):
+        """The probe of #461, read back: each label is on the sheet in its own margin."""
+        from pyhermes.pdf import available, render_pdf
+
+        if not available():
+            pytest.skip('no WeasyPrint; the PDF exporter is the optional "[pdf]" extra')
+        pypdfium2 = pytest.importorskip(
+            "pypdfium2", reason='no pypdfium2; reading a sheet needs the "[qa]" extra'
+        )
+        document = PagedDocument(
+            _paged.facts(),
+            running_header=RunningHeader(label="HEADERLABEL", box="top-right"),
+            running_footer=RunningFooter(label="FOOTERLABEL"),
+        )
+        document.add_section(FullWidth(content=TextBlock("<p>Body.</p>"), title="One"))
+        sheets = [
+            p.get_textpage().get_text_range() for p in pypdfium2.PdfDocument(render_pdf(document))
+        ]
+        assert any("HEADERLABEL" in sheet and "FOOTERLABEL" in sheet for sheet in sheets)
+
     def test_each_box_falls_back_to_its_own_fact(self):
         # The header names the series, the footer the firm -- different
         # defaults because they answer different questions on the page.

@@ -34,6 +34,7 @@ from .regions import (
     ExhibitsPage,
     RunningFooter,
     RunningHeader,
+    check_distinct_boxes,
 )
 
 
@@ -94,6 +95,7 @@ class PagedDocument(Document):
         self._cover = cover if cover is not None else Cover()
         self._running_header = running_header if running_header is not None else RunningHeader()
         self._running_footer = running_footer if running_footer is not None else RunningFooter()
+        check_distinct_boxes(self._running_header, self._running_footer)
         self._back_matter = back_matter if back_matter is not None else BackMatter()
         self._contents = contents if contents is not None else EmptyContentsPage()
         self._exhibits = exhibits if exhibits is not None else EmptyExhibitsPage()

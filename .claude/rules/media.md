@@ -179,6 +179,12 @@ Three things the second set taught:
   engine's named strings (`string-set` on each section title, `string()` in the box) and never
   through the facts layer. `RUNNING_FACTS` are unchanged; `label` is the fallback before the
   first section. `apparatus.md` has the four probes the fallback took.
+- **Two running boxes cannot share a margin box (#461).** Each emits an `@page` rule for its
+  box and the later wins, so a header given the footer's `bottom-center` printed on no sheet
+  and said nothing. `PagedDocument` refuses the pair at construction (`check_distinct_boxes`),
+  naming both regions and the box; an `Empty` variant fills no slot and claims nothing. A deck
+  and a brochure have no running boxes (a deck's bands are positioned markup), so the seam is
+  the paged medium's alone.
 - **The contents sheet (#183) is opt-in.** `ContentsPage` is handed the sections'
   titles as a derived fact, `contents_entries`, and its page numbers are the print engine's.
   It defaults to `EmptyContentsPage`, because a two-sheet factsheet is not improved by a third.

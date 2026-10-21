@@ -356,6 +356,28 @@ class EmptyRunningFooter(RunningFooter):
     TEMPLATE_PATHS: ClassVar[dict[str, str]] = {}
 
 
+def check_distinct_boxes(header: RunningBox, footer: RunningBox) -> None:
+    """
+    Refuse two running boxes in one margin box (#461).
+
+    Each emits an ``@page`` rule for its box and the later one wins, so the other
+    would print on no sheet and say nothing. A box that fills no slot (an ``Empty``
+    variant) claims nothing.
+
+    Raises:
+        ValidationError: Naming both regions and the box they share.
+    """
+    if not (header.TEMPLATE_PATHS and footer.TEMPLATE_PATHS):
+        return
+    if header.resolved_box() == footer.resolved_box():
+        raise ValidationError(
+            f"the running header and the running footer both sit in the "
+            f"{header.resolved_box()!r} margin box, and one @page rule would replace the "
+            f"other, leaving a region on no sheet. Give one a different box from "
+            f"{list(MARGIN_BOXES)}, or an Empty variant."
+        )
+
+
 @dataclass
 class BackMatter(Region):
     """
