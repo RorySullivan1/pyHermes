@@ -17,7 +17,7 @@ from pyhermes.builder.images import EmailImage, pixel_size
 from pyhermes.config import get_config
 
 from .fold import FoldFormat
-from .imposition import face_name
+from .imposition import face_name, impose
 from .panel import Panel
 
 #: CSS px per inch: every width in the package is px at 96 dpi.
@@ -45,6 +45,28 @@ def validate_safe_area(fold: FoldFormat, panels: Sequence[Panel]) -> None:
                 f"trim, inside the {fold.safe}px safe distance, where a cut can reach it. "
                 f"Give it an inset of at least {fold.safe}."
             )
+
+
+def validate_inset_room(fold: FoldFormat, panels: Sequence[Panel]) -> None:
+    """
+    Every panel's inset leaves it a content width and a content height (#460).
+
+    The inset is taken from both edges of each axis, so it must stay under half
+    the panel's box. Without this the frame refuses the render, naming neither
+    the panel nor the inset.
+
+    Raises:
+        ValidationError: Naming the first panel with no room, its inset and its box.
+    """
+    for panel_box, (reader, panel) in zip(impose(fold), enumerate(panels, start=1), strict=True):
+        inset = fold.inset if panel.inset is None else panel.inset
+        for axis, length in (("width", panel_box.width), ("height", panel_box.height)):
+            if inset * 2 >= length:
+                raise ValidationError(
+                    f"{panel_label(fold, reader, panel)} has an inset of {inset}px, which leaves "
+                    f"no content {axis} inside its {length}px {axis}: an inset is taken from "
+                    f"both edges. Give it an inset below {length / 2:g}."
+                )
 
 
 def required_pixels(display_width: int | float, dpi: int | None = None) -> int:

@@ -24,6 +24,7 @@ from pyhermes.config import Config
 from .checks import (
     panel_label,
     validate_image_resolution,
+    validate_inset_room,
     validate_safe_area,
 )
 from .fold import TRI_FOLD_LETTER, FoldFormat, _px
@@ -101,6 +102,7 @@ class Brochure(Document):
                 "and a side's foot runs under three panels. Put the note in the panel's copy."
             )
         validate_safe_area(fold, panels)
+        validate_inset_room(fold, panels)
         # One image may ground two panels of different widths, so each use is
         # measured at its own box and named by it (#458).
         uses: list[tuple[EmailImage, int | float | None, str]] = []

@@ -478,6 +478,39 @@ class TestTheSafeArea:
             FoldFormat(sheet=LETTER_SHEET, kind=FoldKind.Z, **{name: -1})
 
 
+class TestAnInsetNeedsRoom:
+    """An inset is taken from both edges, so it must leave a content width and height (#460)."""
+
+    def _inset(self, reader: int, inset: int | float, fold: FoldFormat = TRI_FOLD_LETTER):
+        panels = _panels(fold.faces)
+        panels[reader - 1] = Panel(
+            [FullWidth(TextBlock("<p>x</p>"))], title="Positions", inset=inset
+        )
+        return Brochure(_facts(), panels, fold)
+
+    def test_a_horizontal_inset_that_leaves_no_width_is_refused_naming_the_panel(self):
+        with pytest.raises(
+            ValidationError, match=r"inside right \('Positions'\).*172px.*width.*344px"
+        ):
+            self._inset(4, 172)
+
+    def test_a_vertical_inset_that_leaves_no_height_is_refused_on_a_short_sheet(self):
+        short = FoldFormat(
+            sheet=PageFormat(width=2000, height=300),
+            kind=FoldKind.BI,
+        )
+        with pytest.raises(ValidationError, match=r"inset of 150px.*no content height.*300px"):
+            self._inset(1, 150, short)
+
+    def test_one_pixel_short_of_half_is_allowed(self):
+        self._inset(4, 171)
+
+    def test_the_folds_own_inset_is_checked_for_a_panel_that_takes_it(self):
+        fold = FoldFormat(sheet=LETTER_SHEET, kind=FoldKind.Z, inset=200)
+        with pytest.raises(ValidationError, match=r"front cover.*200px.*width"):
+            Brochure(_facts(), _panels(6), fold)
+
+
 class TestImageResolution:
     """300 dpi on paper: a 300px display width needs 938 source pixels."""
 
