@@ -17,10 +17,15 @@ from pyhermes.builder.containers import Container
 from pyhermes.builder.document import Document
 from pyhermes.builder.engine import Renderer, TemplateOverlay
 from pyhermes.builder.exceptions import ValidationError
+from pyhermes.builder.images import EmailImage
 from pyhermes.builder.models import DocumentMetadata
 from pyhermes.config import Config
 
-from .checks import validate_image_resolution, validate_safe_area
+from .checks import (
+    panel_label,
+    validate_image_resolution,
+    validate_safe_area,
+)
 from .fold import TRI_FOLD_LETTER, FoldFormat, _px
 from .imposition import face_name, impose, sides
 from .medium import brochure_medium
@@ -96,18 +101,21 @@ class Brochure(Document):
                 "and a side's foot runs under three panels. Put the note in the panel's copy."
             )
         validate_safe_area(fold, panels)
-        grounds = {
-            id(panel.background_image): box.ground(fold.bleed, fold.panels)["width"]
-            for box, panel in zip(impose(fold), panels, strict=True)
-            if panel.background_image is not None
-        }
-        with self.configured():
-            validate_image_resolution(
-                [
-                    (image, grounds[id(image)]) if id(image) in grounds else image
-                    for image in self.images()
-                ]
+        # One image may ground two panels of different widths, so each use is
+        # measured at its own box and named by it (#458).
+        uses: list[tuple[EmailImage, int | float | None, str]] = []
+        for box, (reader, panel) in zip(impose(fold), enumerate(panels, start=1), strict=True):
+            label = panel_label(fold, reader, panel)
+            if panel.background_image is not None:
+                width = box.ground(fold.bleed, fold.panels)["width"]
+                uses.append((panel.background_image, width, f"the ground of {label}"))
+            uses.extend(
+                (image, None, f"in {label}")
+                for section in panel.sections
+                for image in section.images()
             )
+        with self.configured():
+            validate_image_resolution(uses)
 
     @property
     def fold(self) -> FoldFormat:

@@ -513,6 +513,51 @@ class TestImageResolution:
             self._with_image(469, 300)
 
 
+class TestASharedGround:
+    """One image grounding two panels is held to each panel's own width (#458)."""
+
+    @staticmethod
+    def _image(pixels: int):
+        from pyhermes.builder.images import EmailImage
+        from qa.fixtures._png import solid_png
+
+        return EmailImage.attached(solid_png(pixels, 10, (7, 7, 7)), alt="Ground")
+
+    def _gate(self, image, readers: tuple[int, ...]) -> Brochure:
+        panels = _panels(6)
+        for reader in readers:
+            panels[reader - 1] = Panel(
+                [FullWidth(TextBlock(f"<p>{reader}</p>"))],
+                title=f"P{reader}",
+                background_image=image,
+            )
+        return Brochure(_facts(), panels, GATE_FOLD_A4)
+
+    def test_the_wide_panel_alone_refuses_an_800px_ground(self):
+        with pytest.raises(ValidationError, match=r"'Ground' is 800px wide.*needs 1779px"):
+            self._gate(self._image(800), (4,))
+
+    @pytest.mark.parametrize("readers", [(4, 5), (5, 4)])
+    def test_the_wide_panel_still_refuses_it_whichever_panel_is_last(self, readers):
+        with pytest.raises(
+            ValidationError, match=r"needs 1779px.*ground of the inside centre \('P4'\)"
+        ):
+            self._gate(self._image(800), readers)
+
+    def test_a_warning_names_the_panel_it_is_for(self):
+        with pytest.warns(PrintQualityWarning) as caught:
+            self._gate(self._image(900), (5, 6))
+        texts = [str(w.message) for w in caught]
+        assert len(texts) == 2
+        assert any("needs 904px" in t and "inside right flap ('P5')" in t for t in texts)
+        assert any("needs 1779px" in t and "back cover ('P6')" in t for t in texts)
+
+    def test_a_ground_enough_for_both_is_silent(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", PrintQualityWarning)
+            self._gate(self._image(1779), (4, 5))
+
+
 class TestThePrintMarkup:
     def test_the_page_declares_bleed_and_slug_and_marks(self):
         html = Brochure(_facts(), _panels(6)).render()
