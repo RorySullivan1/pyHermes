@@ -26,7 +26,12 @@ from pyhermes.builder.exceptions import PrintQualityWarning, ValidationError
 from pyhermes.builder.images import EmailImage
 from pyhermes.builder.models import TableRow
 from pyhermes.builder.research import Reference
-from pyhermes.builder.sizing import A4_PORTRAIT, resolve_size_scheme
+from pyhermes.builder.sizing import (
+    A4_LANDSCAPE,
+    A4_PORTRAIT,
+    LETTER_PORTRAIT,
+    resolve_size_scheme,
+)
 from pyhermes.builder.theming import DEFAULT_THEME
 from pyhermes.deck import (
     SLIDE_16_9,
@@ -38,6 +43,7 @@ from pyhermes.deck import (
     Slide,
     SlideBox,
     StatementSlide,
+    clipped_notes,
     overflowing_slides,
 )
 from pyhermes.pdf import available
@@ -436,6 +442,63 @@ class TestTheHandout:
         assert all(sheet in handout for sheet in deck._sheets(deck._bound_engine()))
         width = A4_PORTRAIT.width - A4_PORTRAIT.margin.left - A4_PORTRAIT.margin.right
         assert f"transform:scale({round(width / 1280, 6)})" in handout
+
+    def _notes_deck(self, words: int = 400) -> Deck:
+        """An agenda, then slide A with ``words`` of notes, then slide B, then slide C."""
+        notes = " ".join(f"word{n}" for n in range(words))
+        deck = _bare().add_slide([FullWidth(content=Contents())], "Agenda")
+        deck.add_slide(_paragraph("a"), "Slide A", notes=notes)
+        deck.add_slide(_paragraph("b"), "Slide B", notes="Short.")
+        return deck.add_slide(_paragraph("c"), "Slide C")
+
+    @pytest.mark.parametrize("page", [A4_PORTRAIT, A4_LANDSCAPE, LETTER_PORTRAIT])
+    def test_long_notes_never_take_a_second_page_a_sheet(self, page):
+        # A sheet's notes flowed under it unbounded, so enough of them made a second page
+        # and the agenda's number for every later slide ran past its footer (#459).
+        deck = self._notes_deck()
+        pages = _sheets(self._handout(deck, page=page))
+        assert len(pages) == deck.sheet_count()
+        agenda = pages[0]
+        for slide in deck.slides[1:]:
+            assert slide.title in pages[deck.number(slide) - 1]
+            line = next(line for line in agenda.splitlines() if slide.title in line)
+            assert line.rstrip().endswith(str(deck.number(slide))), line
+
+    def test_notes_past_the_room_are_clipped_and_the_slide_is_named(self):
+        deck = self._notes_deck()
+        page = _sheets(self._handout(deck))[deck.number(deck.slides[1]) - 1]
+        assert "word0 " in page and "word399" not in page
+        assert clipped_notes(deck) == ["slide 2: Slide A"]
+
+    def test_notes_that_fit_are_not_named(self):
+        deck = self._notes_deck(words=20)
+        page = _sheets(self._handout(deck))[1]
+        assert "word19" in page.split()
+        assert clipped_notes(deck) == []
+
+    def test_every_fixtures_notes_fit_their_handout(self):
+        for name, build in all_deck_fixtures().items():
+            assert clipped_notes(build()) == [], name
+
+    def test_a_held_handout_layout_is_read_not_laid_out_again(self):
+        from pyhermes.pdf import layout, layout_handout
+
+        deck = self._notes_deck()
+        held = layout_handout(deck)
+        assert held.handout and clipped_notes(deck, laid_out=held) == ["slide 2: Slide A"]
+        with pytest.raises(ValueError, match="not a handout layout of this deck"):
+            clipped_notes(deck, laid_out=layout(deck))
+        with pytest.raises(ValueError, match="not a handout layout of this deck"):
+            clipped_notes(self._notes_deck(), laid_out=held)
+        with pytest.raises(ValueError, match="handout, whose sheets are scaled"):
+            overflowing_slides(deck, held)
+
+    def test_a_handout_layout_writes_the_pages_render_handout_does(self):
+        from pyhermes.pdf import layout_handout, render_layout
+
+        deck = self._notes_deck(words=40)
+        held = _sheets(render_layout(layout_handout(deck)))
+        assert held == _sheets(self._handout(deck))
 
     def test_a_handout_page_needs_a_height(self):
         from pyhermes.builder.sizing import DEFAULT_PAGE

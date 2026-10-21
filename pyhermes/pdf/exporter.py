@@ -82,6 +82,10 @@ class Layout:
     #: WeasyPrint's own rendered document. Typed ``Any`` for :func:`_backend`'s reason.
     rendered: Any
 
+    #: Whether this is the deck's handout (#459) rather than the deck itself, so a
+    #: slide check handed one can refuse it: the sheets sit scaled in a page.
+    handout: bool = False
+
     @property
     def pages(self) -> list[Any]:
         """The engine's sheets, each carrying ``anchors``: where every ``id`` landed."""
@@ -230,17 +234,30 @@ def render_handout(
     A view of the notes projection, not a PowerPoint notes page: the markup is
     :meth:`~pyhermes.deck.Deck.handout`, every slide the deck's own sheet
     scaled onto ``page`` (A4 portrait unless set), and the resource policy
-    :func:`render_pdf`'s exactly.
+    :func:`render_pdf`'s exactly. Notes too long for the room under their sheet
+    are clipped (#459); :func:`~pyhermes.deck.clipped_notes` names the slides.
 
     Raises:
         As :func:`render_pdf`.
+    """
+    return render_layout(layout_handout(deck, page, profile))
+
+
+def layout_handout(
+    deck: Deck, page: PageFormat | None = None, profile: PdfProfile = PRINT
+) -> Layout:
+    """
+    ``deck``'s handout laid out by the print engine, as a :class:`Layout` with ``handout`` set.
+
+    What :func:`render_handout` writes, held so a check can ask where the notes
+    landed (:func:`~pyhermes.deck.clipped_notes`) without laying it out twice.
     """
     weasyprint = _backend()
     html = deck.handout() if page is None else deck.handout(page)
     fetcher = build_fetcher(deck.assets() + deck.fonts())
     with _own_errors():
-        source = _html(weasyprint, html, fetcher)
-        return bytes(source.write_pdf(finisher=_finisher(profile), **profile.options()))
+        rendered = _html(weasyprint, html, fetcher).render(**profile.options())
+    return Layout(deck, profile, rendered, handout=True)
 
 
 def save_handout(

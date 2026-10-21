@@ -71,9 +71,12 @@
 {% endif %}
 {% if handout %}
     {# The handout (#351): each sheet laid out at its own size, scaled into a
-       frame across the handout's page, its notes under it. #}
+       frame across the handout's page, its notes under it. The notes are a box
+       of the room the page has left, so a sheet stays one page however long
+       they run. Two sentinels, where the notes end and where their box does, are
+       what clipped_notes() compares (#459). #}
     .handout-page + .handout-page { break-before: page; page-break-before: always; }
-    .handout-frame { position: relative; overflow: hidden; border: 1px solid {{ theme.palette.rule }}; }
+    .handout-frame { position: relative; overflow: hidden; border: {{ handout.rule }}px solid {{ theme.palette.rule }}; }
 {% endif %}
 
     {# A contents list on a slide prints each entry's sheet, as on paper. The
@@ -97,11 +100,17 @@
 {{ sheet.html }}
     </div>
   </div>
-  <div class="handout-notes" style="margin-top:{{ size.space.block_gap }}px; font-family:{{ font.body }}; font-size:{{ size.type.body }}px; line-height:{{ size.type.body_line | percent }}; color:{{ theme.text.primary }};">
+  <div class="handout-notes"{% if sheet.notes %} id="handout-{{ loop.index }}-notes"{% endif %} style="margin-top:{{ size.space.block_gap }}px; font-family:{{ font.body }}; font-size:{{ size.type.body }}px; line-height:{{ size.type.body_line | percent }}; color:{{ theme.text.primary }};{% if sheet.notes %} height:{{ handout.notes_height }}px; overflow:hidden;{% endif %}">
 {% for paragraph in sheet.notes %}
-    <p style="margin:0 0 {{ size.space.caption_gap }}px;">{{ paragraph | escape_html }}</p>
+    <p style="margin:{% if loop.last %}0{% else %}0 0 {{ size.space.caption_gap }}px{% endif %};">{{ paragraph | escape_html }}</p>
 {% endfor %}
+{% if sheet.notes %}
+    <span class="handout-notes-end" id="handout-{{ loop.index }}-notes-end" style="display:block;"></span>
+{% endif %}
   </div>
+{% if sheet.notes %}
+  <span class="handout-notes-limit" id="handout-{{ loop.index }}-notes-limit" style="display:block; height:0;"></span>
+{% endif %}
 </div>
 {% endfor %}
 {% else %}

@@ -249,6 +249,11 @@ save_handout(deck, "handout.pdf")
 width, and its notes under it. A slide without notes still gets a page. Pass
 `page=LETTER_PORTRAIT` (from `pyhermes.builder.sizing`) for US Letter.
 
+A page holds the room that is left under the slide, and notes are cut off where it ends, so
+the handout never has more pages than the deck has slides and a contents slide still prints
+the right numbers. `clipped_notes(deck)` (from `pyhermes.deck`) names each slide whose notes
+did not fit, as `['slide 4: The term premium']`; pass the same `page=` you print with.
+
 ## How to find a slide that is too full
 
 A slide never runs onto a second page. If its content does not fit, the bottom is cut off
