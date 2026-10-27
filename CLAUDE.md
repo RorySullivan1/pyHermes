@@ -222,6 +222,8 @@ these rather than improvising:
 - **Verification** → [.claude/context/verification-surface.md](.claude/context/verification-surface.md)
   says which surfaces a session can confirm and which need a human.
 - **Verbose output** (test runs, large files, doc fetches) → the `token-manager` agent.
+- **Roadmap** → `.meta/roadmap/` is the plan, surfaced each session by a hook; `/roadmap-status`
+  says where it stands, `/roadmap-set` re-slices it, and `advance-roadmap-step` builds the cursor version.
 - **Shipping** → `/version-set` then `/version-ship`. **Acceptance** → the `goal-auditor`
   agent. **Fact-checking a claim** → `claim-grounding`.
 - **Cross-session memory is active.** A SessionStart hook loads
@@ -232,6 +234,9 @@ these rather than improvising:
 
 ## Open work and state
 
+- **The roadmap: [.meta/roadmap/INDEX.md](.meta/roadmap/INDEX.md).** Five stages from a reset, through
+  email mastery and a research content model, to an API a model can author through. Read it before
+  proposing new work: a new medium or layout primitive needs a reference report that asks for it.
 - Tracked in [GitHub issues](https://github.com/RorySullivan1/pyHermes/issues), as epics
   with sub-issues. Complete: **#157** (rescope to media), **#153** (per-exhibit disclosure),
   **#169** (pagination hardening), **#170** (the data layer, #177–#180), **#171** (document

@@ -53,7 +53,7 @@ Curated for pyHermes (a Python + Jinja2 HTML-email builder for financial newslet
 
 - **skills/** — the **Python** family (`python-development` / `-review` / `-maintenance`
   / `-deployment`) + `coding-standards`; the **GitHub** family (`github-pull-requests`,
-  `-issues`, `-comments`, `-releases`); operational skills (`session-memory`,
+  `-issues`, `-comments`, `-releases`); operational skills (`session-memory`, `development-mapping`,
   `agent-finder`, `knowledge-router`, `token-optimizer`, `skill-distiller`,
   `claim-grounding`); and a **financial / content-design** set (`quantitative-finance`,
   `financial-timeseries-analysis`, `quant-code-review`, `backtesting-validation`,
@@ -61,8 +61,8 @@ Curated for pyHermes (a Python + Jinja2 HTML-email builder for financial newslet
 - **agents/** — `python-developer` (adapted to `pyhermes/`), `software-architect`,
   `goal-auditor`, `github-operator`, the context-economy `token-manager`, and the
   (speculative, for a future analytics layer) `finance-quantitative-developer`.
-- **commands/** — `/version-set`, `/version-ship`, `/reindex`.
-- **workflows/** — `ship-version`, `verify-claims`, `change-end-to-end`.
+- **commands/** — `/version-set`, `/version-ship`, `/roadmap-set`, `/roadmap-status`, `/reindex`.
+- **workflows/** — `ship-version`, `advance-roadmap-step`, `verify-claims`, `change-end-to-end`.
 - **hooks/** — memory + context lifecycle hooks, context-economy guards, git guards,
   and the `build-hooks.py` / `catalog.py` generators. **Dormant until `settings.json`
   wires them** (see the note there) — no hook runs without that wiring.
@@ -70,8 +70,11 @@ Curated for pyHermes (a Python + Jinja2 HTML-email builder for financial newslet
   the skill-wins precedence rule); **memory/** is live.
 
 Not brought in: the factory's asset-authoring meta-toolkit (`skill-authoring`,
-`agent-authoring`, …), the `.meta/roadmap` development-mapping system, and all
-VBA/VSTO/PowerApps/SharePoint/Power-Platform assets.
+`agent-authoring`, …) and all VBA/VSTO/PowerApps/SharePoint/Power-Platform assets.
+The `.meta/roadmap` development-mapping system was left out at first and taken in on
+2026-10-27: the `development-mapping` skill, `/roadmap-set`, `/roadmap-status`,
+`advance-roadmap-step`, and the `roadmap_status` (SessionStart) and `roadmap_guard`
+(through `git_guards.py`) hooks, each a copy of the factory's `example-project`.
 
 For the full, current list of any layer, read **`CATALOG.md`** (regenerate with `/reindex`)
 — this README describes the layers; the catalog enumerates them.

@@ -15,6 +15,7 @@
 - claim-grounding — Establish whether a factual claim is actually true, and record the judgment so it isn't … -> skills/claim-grounding/SKILL.md
 - coding-standards — Baseline cross-project coding conventions — descriptive naming, readability, immutability, error … -> skills/coding-standards/SKILL.md
 - deck-builder — Expert at assembling a real slide deck in a concrete tool — the execution tier that turns a design … -> skills/deck-builder/SKILL.md
+- development-mapping — Expert at turning a whole-project objective into a **development map** — an ordered plan of stages … -> skills/development-mapping/SKILL.md
 - factsheet-template — Building a branded, standardized product factsheet as a PDF — the layout, the brand tokens, the … -> skills/factsheet-template/SKILL.md
 - financial-timeseries-analysis — Financial time-series hygiene in pandas/numpy — returns vs prices, resampling/alignment, market … -> skills/financial-timeseries-analysis/SKILL.md
 - github-comments — Expert at commenting on GitHub well — PR reviews, inline code comments, issue comments, and replies … -> skills/github-comments/SKILL.md
@@ -48,7 +49,7 @@
 - outlook-html-designer — HTML email designer-builder specialized for Microsoft Outlook — produces complete, Outlook-safe … -> agents/outlook-html-designer.md
 - presentation-architect — Objective presentation-flow brain — designs how a communication artifact is structured to land its … -> agents/presentation-architect.md
 - prose-auditor — Comment-and-docstring auditor — reviews code prose against the agreed scope discipline … -> agents/prose-auditor.md
-- python-developer — Senior Python engineer for this repo's `pyhermes` package (the HTML-email builder). Use … -> agents/python-developer.md
+- python-developer — Senior Python engineer for this repo's `pyhermes` package (the HTML-email builder). Use proactively … -> agents/python-developer.md
 - software-architect — Objective software-architecture brain — designs how a project is structured to serve its objective, … -> agents/software-architect.md
 - token-manager — Delegate verbose or high-volume operations here so the bulk stays out of the main conversation and … -> agents/token-manager.md
 
@@ -57,10 +58,13 @@
 - issue — File one templated GitHub issue (task, bug, or feature) on the git remote, optionally as a … -> commands/issue.md
 - prose-review — Audit comments and docstrings against the prose scope discipline — dispatches the prose-auditor … -> commands/prose-review.md
 - reindex — Regenerate .claude/CATALOG.md — the on-demand inventory of this project's skills, agents, commands, … -> commands/reindex.md
+- roadmap-set — Author or update the development map in .meta/roadmap/ — decompose the project objective into … -> commands/roadmap-set.md
+- roadmap-status — Show where the project is on its development map — the cursor version, what's shipped, and what's … -> commands/roadmap-status.md
 - version-set — Define or update the current version in .meta/version — a semver label plus the goals/objectives of … -> commands/version-set.md
 - version-ship — Name and ship the PR from .meta/version — branch, commit, push, and open the PR with a title/body … -> commands/version-ship.md
 
 ## Workflows (workflows/*.md)
+- advance-roadmap-step — advance-roadmap-step -> workflows/advance-roadmap-step.md
 - establish-verification — establish-verification -> workflows/establish-verification.md
 - ship-version — ship-version -> workflows/ship-version.md
 - verify-claims — verify-claims -> workflows/verify-claims.md

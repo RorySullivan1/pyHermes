@@ -79,7 +79,8 @@ so a plain `ls` pays one fast Python startup, not three. To add a git guard, giv
 
 | Fragment | Event | Script | Effect |
 |---|---|---|---|
-| `pre-tool-use-git-guards.json` | `PreToolUse` (Bash) | `git_guards.py` → `version_guard` + `asset_integrity` | On `git commit`/`push`: reports `.claude/` asset defects (skill folder ≠ `name:`, missing `name:`/`description:`, a cited `references/` file that's absent, broken symlinks); warns when `.meta/version` lacks a label/goals. (The roadmap-drift guard was omitted — the `.meta/roadmap` system wasn't brought into this project.) |
+| `pre-tool-use-git-guards.json` | `PreToolUse` (Bash) | `git_guards.py` → `version_guard` + `roadmap_guard` + `asset_integrity` | On `git commit`/`push`: reports `.claude/` asset defects (skill folder ≠ `name:`, missing `name:`/`description:`, a cited `references/` file that's absent, broken symlinks); warns when `.meta/version` lacks a label/goals; warns when the version cursor drifts from the roadmap. |
+| `session-start-roadmap.json` | `SessionStart` | `roadmap_status.py` | Prints `.meta/roadmap/INDEX.md` and the `.meta/version` cursor into context, so each session opens knowing the plan. Silent when there is no roadmap. |
 | `pre-tool-use-read-guard.json` | `PreToolUse` (Read) | `pre_read_guard.py` | Stops an accidental whole-file slurp of a very large file. |
 | `post-tool-use-bash-filter.json` | `PostToolUse` (Bash) | `post_bash_filter.py` | Keeps verbose command output out of the main context. |
 | `post-tool-use-prose-budget.json` | `PostToolUse` (Edit/Write/MultiEdit) | `prose_budget.py` | Reports commentary over the per-scope budget in the `coding-standards` skill. |

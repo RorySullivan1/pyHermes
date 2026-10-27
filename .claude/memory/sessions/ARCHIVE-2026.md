@@ -485,3 +485,33 @@ Decisions and Log entries folded out of `INDEX.md` on 2026-08-29 (#143), verbati
   test still failed (a `WindowsPath` prints backslashes), fixed — sessions/2026-10-05-1657-windows-suite-recheck.md
 - [2026-10-05] paper-band-seam — 1px seam at a band edge on paper, fixed in `columns.html`;
   paint order, two forms — sessions/2026-10-05-1903-paper-band-seam.md
+
+## Decisions archived 2026-10-27
+- [2026-09-28] **A test gated on an extra must run in some CI job, and a job list by hand is how three
+  never did.** One all-extras job that fails on a skip its extra should lift — #239, sessions/2026-09-28-2015-package-review-issues.md
+- [2026-10-06] **A house face rides `Document.fonts()`, never `assets()`; justify and fine print are paper's,
+  unset in an email; BackMatter stays at `small`; a qualifier reaches the notes** — `design-axes.md` (#385)
+- [2026-10-06] **Bleed is a negative-margin block, top edge only where the medium says the section opens a sheet;
+  a pin floats to the footnote area (absolute overlapped); a separated row is one real table row** — `media.md`,
+  `design-axes.md` (#386)
+- [2026-10-09] **A size is read from the system, never typed (owner's principle, standing rule 13):
+  `content_width()` for a picture's cell, `SizeTheme` for a density, a named constant for an asset's
+  own size; the gallery is exempt** — `working-in-the-code.md`, `design-axes.md`
+- [2026-10-13] **Every message is measured on the wire, inline images included; a negative or NaN `Retry-After`
+  is ignored, not clamped; a TLS or bad-URL failure is permanent by name (`PERMANENT_ERROR_NAMES`)** — `delivery.md` (#418)
+- [2026-10-14] **`layout()` is the one place a document meets the print engine; a constraint's hint is a
+  `LazyHint`; `to_wire_bytes` keeps one message's bytes until its shape changes** — `media.md`, `delivery.md` (#419)
+- [2026-10-14] **Superseded in part: the wire bytes ride on the message, not a module store (#443); a constraint
+  gets `hint: str` again and `Document.render` adds the hint to a `SizeError`; `LazyHint` is gone (#444)** — `delivery.md`,
+  `builder-architecture.md`
+
+## Log pointers archived 2026-10-27
+- [2026-10-06] memory — the index trimmed to budget: five 2026-10-05 log pointers archived, #387 and the
+  seam thread closed.
+- [2026-10-06] print-typography — epic #385 built in one PR — sessions/2026-10-06-print-typography.md
+- [2026-10-06] single-sheet-print — epic #386 built in one PR — sessions/2026-10-06-single-sheet-print.md
+- [2026-10-06] adjacent-markers — #402: a footnote marker after another opens on a comma, `apparatus.md`.
+- [2026-10-10] codebase-review-issues — **19 review findings filed as 18 issues**: #418, #419 and children,
+  bugs #429–#435; every finding re-probed on `ac0a8a4` — sessions/2026-10-10-1725-codebase-review-issues.md
+- [2026-10-10] standalone-bugs — #429–#435 fixed in one PR: a scheme never follows / ? #, one cid one payload,
+  `kept_sections` scoped, one `metadata()`, `hang()` never splits a word, unique frame columns, the copyright from its parts.

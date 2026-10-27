@@ -1,41 +1,17 @@
 # MEMORY INDEX  ·  keep ≤ ~80 lines, ≤ ~200 chars per line
 
 ## State            (rewrite in place — current truth only, ≤ ~10 lines)
-- pyHermes builds **documents** and renders each onto a **medium**: `pyhermes/builder` is the
-  shared kit, `pyhermes/email`, `document`, `brochure` and `deck` are the media, and exporters sit on
-  one contract — `delivery`+`gmail`+`outlook`, and `pdf`. Rationale: CLAUDE.md and `media.md`.
-- **Shipped through PR #440** (epic #419); #418 in PR #438, #386 in PR #414, #402 after it. Epics #157–#220 and #218 (PRs #167–#314); deck bugs #315–#317
-  (PR #369); #361 (PR #370); #354 and #372 (PR #371); #318 (PR #373); #346 (PR #374); #324 (PR #376);
-  #329 (PR #378); #335 (PR #380); #340 (PR #382); #384 (PRs #406, #411, #412); #385 (PR #413); the paper band seam (PR #408). #219 DOCX and #300
-  PPTX were closed as not planned (2026-10-01, `media.md`). #288 is the owner's Outlook-desktop check.
-- The prose budget is live; the baseline is 43 and may only shrink.
-- **The 2026-10-14 review is closed out**: epic #442 (PRs #470, #471), groups 1-2 (PR #472), and the last twelve
-  (#453-#454, #456, #458-#462, #465-#468) in one PR with a new deck lint rule, `handout-notes-clipped`.
-  sessions/2026-10-14-codebase-review-issues.md
+- pyHermes builds **documents** onto **media** (`email`, `document`, `brochure`, `deck`) from the shared
+  `pyhermes/builder` kit; exporters: `delivery`+`gmail`+`outlook`, and `pdf`. Rationale: CLAUDE.md, `media.md`.
+- **Shipped through PR #475** (#474); epics #157–#442 all closed, no issues open. #219 DOCX and #300 PPTX
+  closed as not planned. #288 is the owner's Outlook-desktop check. The prose baseline is 43, may only shrink.
+- **The roadmap is live** in `.meta/roadmap/` (5 stages, 31 epics), surfaced each session by `roadmap_status`;
+  cursor v0.2.0, the scope charter. Mapped from the owner's 2026-10-27 doc — sessions/2026-10-27-0312-roadmap-mapping.md
 
 ## Decisions        (append-only; supersede, never delete)
 - Older entries, and epic #157's, are in sessions/ARCHIVE-2026.md.
-- [2026-09-28] **A test gated on an extra must run in some CI job, and a job list by hand is how three
-  never did.** One all-extras job that fails on a skip its extra should lift — #239, sessions/2026-09-28-2015-package-review-issues.md
 - [2026-10-01] **pyHermes grows by media, not by portability.** A DOCX/PPTX walk is a second render path
   over 46 classes, and a chart is PNG bytes by the time it is in the tree; #219 and #300 closed — `media.md`
-- [2026-10-06] **A house face rides `Document.fonts()`, never `assets()`; justify and fine print are paper's,
-  unset in an email; BackMatter stays at `small`; a qualifier reaches the notes** — `design-axes.md` (#385)
-- [2026-10-06] **Bleed is a negative-margin block, top edge only where the medium says the section opens a sheet;
-  a pin floats to the footnote area (absolute overlapped); a separated row is one real table row** — `media.md`,
-  `design-axes.md` (#386)
-- [2026-10-09] **A size is read from the system, never typed (owner's principle, standing rule 13):
-  `content_width()` for a picture's cell, `SizeTheme` for a density, a named constant for an asset's
-  own size; the gallery is exempt** — `working-in-the-code.md`, `design-axes.md`
-
-- [2026-10-13] **Every message is measured on the wire, inline images included; a negative or NaN `Retry-After`
-  is ignored, not clamped; a TLS or bad-URL failure is permanent by name (`PERMANENT_ERROR_NAMES`)** — `delivery.md` (#418)
-
-- [2026-10-14] **`layout()` is the one place a document meets the print engine; a constraint's hint is a
-  `LazyHint`; `to_wire_bytes` keeps one message's bytes until its shape changes** — `media.md`, `delivery.md` (#419)
-- [2026-10-14] **Superseded in part: the wire bytes ride on the message, not a module store (#443); a constraint
-  gets `hint: str` again and `Document.render` adds the hint to a `SizeError`; `LazyHint` is gone (#444)** — `delivery.md`,
-  `builder-architecture.md`
 - [2026-10-14] **`layout()` returns a `Layout` carrying its profile and document; `render_layout`/`save_layout` take
   no profile (#445); preview lays out once and hands the one layout to lint, PDF and screenshots (#446)** — `media.md`,
   `qa-harness.md`
@@ -47,8 +23,13 @@
   a Slide added twice (#462); a handout is one page a sheet and clipped notes are a lint warning (#459); a running
   header and footer may not share a margin box (#461); `render_math` draws under `rcdefaults()` (#467)** — `apparatus.md`,
   `deck.md`, `media.md`, `math.md`
+- [2026-10-27] **pyHermes is a research-report generation framework: research publishing (B) is the identity,
+  email (C) the first thing to master, a model as author (E) the access point; an app only on demand. No new
+  medium or layout primitive without a reference report that needs it** — `.meta/roadmap/INDEX.md`
 
 ## Threads          (open items; remove when closed)
+- **Six roadmap decisions are open** (reference-report owners, licence, deck, DOCX/PPTX, where the content
+  model lives, the 2.1 overlap) — listed in `.meta/roadmap/INDEX.md`; settle before Stage 1.
 - **#394's ruling (justify on paper only) was taken under a goal**; the owner may widen it.
 - **#400's ruling: `skip_first` is opt-in, not the default under an `EmptyCover`** (goal-taken; `media.md`).
 - **A share table holds its share in Word's engine** (owner, via COM, PR #371); a real Outlook client
@@ -79,16 +60,9 @@
 
 ## Log              (append-only pointers)
 - Older entries, and epic #157's, are in sessions/ARCHIVE-2026.md.
-- [2026-10-06] memory — the index trimmed to budget: five 2026-10-05 log pointers archived, #387 and the
-  seam thread closed.
-- [2026-10-06] print-typography — epic #385 built in one PR — sessions/2026-10-06-print-typography.md
-- [2026-10-06] single-sheet-print — epic #386 built in one PR — sessions/2026-10-06-single-sheet-print.md
-- [2026-10-06] adjacent-markers — #402: a footnote marker after another opens on a comma, `apparatus.md`.
-- [2026-10-10] codebase-review-issues — **19 review findings filed as 18 issues**: #418, #419 and children,
-  bugs #429–#435; every finding re-probed on `ac0a8a4` — sessions/2026-10-10-1725-codebase-review-issues.md
-- [2026-10-10] standalone-bugs — #429–#435 fixed in one PR: a scheme never follows / ? #, one cid one payload,
-  `kept_sections` scoped, one `metadata()`, `hang()` never splits a word, unique frame columns, the copyright from its parts.
 - [2026-10-13] delivery-contract — epic #418 merged in PR #438, all six children closed — sessions/2026-10-13-delivery-contract.md
 - [2026-10-14] render-once — epic #419 merged in PR #440, all three children closed — sessions/2026-10-14-render-once.md
 - [2026-10-14] codebase-review-issues — 27 issues: epic #442 (4) and bugs #447–#468, every one re-probed — sessions/2026-10-14-codebase-review-issues.md
 - [2026-10-21] email-headroom — the email strips its indentation (owner's pick over moving ratios): `kitchen_sink` 82.5 KB, 8.8 KB under the warning — sessions/2026-10-21-email-headroom.md
+- [2026-10-27] roadmap-mapping — the owner's roadmap doc mapped to `.meta/roadmap/` with the factory's
+  roadmap kit (skill, two commands, workflow, two hooks); index trimmed to budget — sessions/2026-10-27-0312-roadmap-mapping.md
