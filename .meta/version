@@ -1,0 +1,21 @@
+# version: v0.2.0
+status: in-progress
+started: 2026-10-27
+branch: claude/integrate-claude-assets-pyhermes-d4spzb
+pr:
+
+## Goals
+- Roadmap epic 0.1, the scope charter: state pyHermes as a research-report generation
+  framework (research publishing first, email as the wedge, a model as an author).
+- Put the positioning sentence in the README's opening and in CLAUDE.md's "What this
+  project is".
+- Adopt the freeze rule: no new medium and no new layout primitive without a reference
+  report that needs it.
+
+## Objectives / acceptance
+- The README's first paragraph and CLAUDE.md's "What this project is" carry the same
+  positioning sentence.
+- The freeze rule is in CLAUDE.md's hard constraints or standing rules, worded so a reviewer
+  can apply it to a PR.
+- `tests/test_manual.py`, `ruff check .` and `ruff format --check .` pass; the prose baseline
+  does not grow.

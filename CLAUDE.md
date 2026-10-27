@@ -5,10 +5,13 @@ holds what is true for every task, and points at the topic file for everything e
 
 ## What this project is
 
-pyHermes builds **documents for academic / financial research** from one section tree, and
-renders each onto the medium it will be read on. Python composes Jinja2 templates into a
-single inline-CSS document; the hard parts are per-medium — surviving Gmail's clipping limit
-and Outlook's Word engine for an email, laying out sheets and margin boxes for a page.
+pyHermes is a framework for research reports: quantitative research goes in as data, exhibits,
+findings and disclosures, and comes out as an email, a printed report or a folded brochure,
+each checked for the medium it is read on. Today that is one section tree rendered onto each
+medium; [the roadmap](.meta/roadmap/INDEX.md) takes it to a research content model, an API, and
+a model as an author. Python composes Jinja2 templates into a single inline-CSS document; the
+hard parts are per-medium — surviving Gmail's clipping limit and Outlook's Word engine for an
+email, laying out sheets and margin boxes for a page.
 
 **Scope = build, then send *or* print.** `pyhermes/builder/` is the shared kit — the section tree,
 the three design axes, the two projections. A **medium** decides the rest: `pyhermes/email/` the
@@ -65,7 +68,7 @@ applies to and loads **only when a matching file is read** — so a session that
 
 | File | Loads when you touch | Holds |
 |---|---|---|
-| `working-in-the-code.md` | any of `pyhermes/`, `qa/`, `tests/` | The annotated repo map, and the ten standing rules in full |
+| `working-in-the-code.md` | any of `pyhermes/`, `qa/`, `tests/` | The annotated repo map, and the standing rules in full |
 | `builder-architecture.md` | `pyhermes/builder/**` | The four-layer model, the facts-flow-down ownership rule, the public API, images and the asset manifest, parameters, validation, exceptions, the hard constraints in full |
 | `design-axes.md` | theming / sizing / typography / enums / containers / organising / `templates/**` | Colour, density, typeface and alignment — the three themes plus the axis that deliberately is not one — spacing per object, and the organising objects (#329) |
 | `data-table.md` | `models.py`, `components.py`, `templates/analysis/**` | Columns, cells, row kinds, caption and row headers; groups, units, markers, formats, decimal alignment, scales and bars (#217) |
@@ -178,6 +181,12 @@ that enforces each, is in `working-in-the-code.md`.
     page), a density from `SizeTheme`, and an asset's own size from a named constant.
     `test_content_width.py` holds the helper to the render, and fails on a px width typed
     in an example, the manual or the README.
+14. **No new medium and no new layout primitive without a reference report that needs it**
+    (the scope charter, roadmap v0.2.0). A medium is a `Medium`; a layout primitive is a public
+    `Container` or a component in `composition.py`. `test_scope_freeze.py` holds both to a frozen
+    list, so adding one means adding it to `ADMITTED` with the reference report that needs it,
+    and the reviewer checks that report is one of the roadmap's three. Components and properties
+    are not frozen.
 
 ## Prose discipline
 
