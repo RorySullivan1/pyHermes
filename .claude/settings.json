@@ -54,6 +54,19 @@
             "type": "command",
             "command": "python",
             "args": [
+              "${CLAUDE_PROJECT_DIR}/.claude/hooks/roadmap_status.py"
+            ],
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python",
+            "args": [
               "${CLAUDE_PROJECT_DIR}/.claude/skills/session-memory/scripts/memory.py",
               "index"
             ],
