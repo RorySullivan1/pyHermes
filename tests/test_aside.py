@@ -85,7 +85,9 @@ class TestInAnEmail:
 
     def test_it_is_the_callout_byte_for_byte(self):
         boxed = Callout(TextBlock("<p>Weight less benchmark weight.</p>"), label="Active")
-        assert boxed.render(_engine()) in _email(TextBlock(PROSE, aside=_aside()))
+        engine = _engine()
+        boxed_html = engine.medium.finish(boxed.render(engine))
+        assert boxed_html in _email(TextBlock(PROSE, aside=_aside()))
 
     def test_its_copy_is_escaped(self):
         html = _email(TextBlock(PROSE, aside=Aside("A <b>bold</b> & claim.")))

@@ -56,8 +56,6 @@
 - **Outlook desktop's handling of `dir=rtl` on a reversed split is unverified here**, nor #319's VML
   arrow (or #399's connector), nor #325's square badge and dot, nor #331's empty rule cells (`font-size:0`), nor #337's legend
   swatch; all join #288's check.
-- **`kitchen_sink` is at its 90 KB ceiling**: `modern_fonts` has 357 bytes left after the phone-margin fixes
-  (+330), and #340 before it untitled the three wide `ThreeColumn` ratios; the next epic must merge or move.
 - **The suite runs on Windows since #372** (PR #371); no Windows CI job — the owner's run is the check.
 - **`epic-autoclose` works** (closed #273, #354, #361, #346, #324, #329, #335). Still confirm each epic closed after its merge.
 - **In this container, PDF byte-determinism tests flake** (no HarfBuzz-Subset), and screenshot
@@ -93,3 +91,4 @@
 - [2026-10-13] delivery-contract — epic #418 merged in PR #438, all six children closed — sessions/2026-10-13-delivery-contract.md
 - [2026-10-14] render-once — epic #419 merged in PR #440, all three children closed — sessions/2026-10-14-render-once.md
 - [2026-10-14] codebase-review-issues — 27 issues: epic #442 (4) and bugs #447–#468, every one re-probed — sessions/2026-10-14-codebase-review-issues.md
+- [2026-10-21] email-headroom — the email strips its indentation (owner's pick over moving ratios): `kitchen_sink` 82.5 KB, 8.8 KB under the warning — sessions/2026-10-21-email-headroom.md

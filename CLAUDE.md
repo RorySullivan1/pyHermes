@@ -94,7 +94,9 @@ The rules themselves. `builder-architecture.md` carries why each exists.
   `pyhermes.email.validate_gmail_size` raises `SizeError` above it and warns above 90 KB, and the
   email medium lists it in `constraints`. The most important runtime check there is; never
   disable it without confirming a non-Gmail channel. Both thresholds come from `Config` at
-  check time. A paged document runs no size constraint, because nothing clips a PDF.
+  check time. A paged document runs no size constraint, because nothing clips a PDF. It
+  measures the *finished* markup: the email medium's one finisher strips each line's
+  indentation first (#474, `media.md`).
 - **Jinja2 `StrictUndefined`.** A missing template variable raises. A new template var needs
   a matching key in the component's `context()`.
 - **Autoescape is OFF, and escaping is split by field kind.** Plain-text fields are escaped
