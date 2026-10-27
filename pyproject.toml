@@ -1,7 +1,7 @@
 [project]
 name = "pyhermes"
 version = "0.1.0"
-description = "Build a research document once, then send it as an email or print it as a PDF or brochure."
+description = "A framework for research reports: data, exhibits and findings in; a checked email, printed report or brochure out."
 readme = "README.md"
 # An SPDX expression (PEP 639) rather than a licence classifier, which the
 # expression supersedes; the text ships as LICENSE in both artefacts.

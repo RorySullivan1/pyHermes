@@ -184,9 +184,9 @@ that enforces each, is in `working-in-the-code.md`.
 14. **No new medium and no new layout primitive without a reference report that needs it**
     (the scope charter, roadmap v0.2.0). A medium is a `Medium`; a layout primitive is a public
     `Container` or a component in `composition.py`. `test_scope_freeze.py` holds both to a frozen
-    list, so adding one means adding it to `ADMITTED` with the reference report that needs it,
-    and the reviewer checks that report is one of the roadmap's three. Components and properties
-    are not frozen.
+    list, so adding one means adding it to `ADMITTED_MEDIA` or `ADMITTED_LAYOUTS` with the
+    reference report that needs it, by a name the roadmap uses. Components and properties are
+    not frozen, except the deck's: it takes no new feature until roadmap 2.8.
 
 ## Prose discipline
 
