@@ -9,7 +9,7 @@ from data.**
 | Version | Epic | One line | Needs |
 |---------|------|----------|-------|
 | v0.21.0 | 3.1 | Public, versioned JSON Schema of the content model, with a stability policy | 2.2 |
-| v0.22.0 | 3.2 | Stateless render service in a separate package, so the core stays Jinja2-only | 3.1 |
+| v0.22.0 | 3.2 | Stateless render service in a separate, separately licensed package (open core); the core stays Jinja2-only | 3.1 |
 | v0.23.0 | 3.3 | MCP server: list templates, validate, render, return a preview image | 3.1 |
 | v0.24.0 | 3.4 | Number grounding: prose cites figures by reference; a check flags unbound literal numbers | 1.2, 2.2 |
 | v0.25.0 | 3.5 | Authoring loop: stable error codes and paths a model can act on; screenshots back | 3.3 |
