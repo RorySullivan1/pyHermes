@@ -306,6 +306,26 @@ Usage::
    as test data, such as `kitchen_sink`'s 320px chart, wider than its cell at `spacious`
    on purpose (#133).
 
+14. **No new medium and no new layout primitive without a reference report that needs it**
+   (the scope charter, roadmap v0.2.0, 2026-10-27). The project grew by breadth for thirty
+   epics, each a new thing a document could have, with nothing deciding what came next; the
+   charter answers that a real report must ask for each new kind of page or block. A medium is
+   a `Medium` (by `name`, so `paged_medium()`'s variants are one medium), found at module level
+   or in `SHIPPED_MEDIA`, the registry `Only` validates against, and a medium arrives with the
+   document class that is constructed to choose it, so the public `Document` subclasses are
+   frozen as well (`FROZEN_DOCUMENTS`); a layout primitive is a public
+   `Container` subclass or a component in `pyhermes/builder/composition.py`. **The definition
+   is by location**: a component elsewhere that arranges children (`FigureGrid`, `FactList`) is
+   the reviewer's to police, not the test's. The teeth are `tests/test_scope_freeze.py`: it
+   walks the package for both, fails on one outside `FROZEN_MEDIA` / `FROZEN_LAYOUTS` and not
+   in `ADMITTED_MEDIA` / `ADMITTED_LAYOUTS`, and an admission's report must be a name
+   `.meta/roadmap/INDEX.md` uses. The walk skips a module only when a named optional backend is
+   missing; a broken pyhermes import fails it. A removal must leave the frozen list too, so it
+   cannot outlive what it froze. **Not frozen**: components, a component's or container's
+   properties, regions, themes and densities, which serve a report inside the media it already
+   has, **except the deck's**: by the owner's decision it takes no new feature until roadmap 2.8. The same file holds the positioning sentence: the
+   README's first paragraph opens `CLAUDE.md`'s *What this project is*.
+
 ## Epic #134 — what the prose clean-up found
 
 Two findings outlive the epic, and both are about mechanisms rather than taste.

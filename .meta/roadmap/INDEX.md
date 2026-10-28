@@ -23,8 +23,8 @@ One version is one roadmap epic and ships as one PR; the epic number from the do
 
 | Version | Stage | Goal (one line) | Status |
 |---------|-------|-----------------|--------|
-| v0.2.0  | 00 | 0.1 Scope charter: positioning, the freeze rule | planned ← cursor |
-| v0.3.0  | 00 | 0.2 Reference reports and the speed benchmark | planned |
+| v0.2.0  | 00 | 0.1 Scope charter: positioning, the freeze rule | in-progress (PR #477) |
+| v0.3.0  | 00 | 0.2 Reference reports and the speed benchmark | planned ← cursor |
 | v0.4.0  | 00 | 0.3 First public release on PyPI | planned |
 | v0.5.0  | 01 | 1.1 Report definition and the run CLI | planned |
 | v0.6.0  | 01 | 1.2 Data binding and provenance | planned |
@@ -37,10 +37,15 @@ One version is one roadmap epic and ships as one PR; the epic number from the do
 | v0.21.0–v0.27.0 | 03 | 3.1–3.7 Schema, render API, MCP, number grounding (7 epics) | planned (sketch) |
 | separate product | 04 | 4.1–4.5 Hosted API, authoring app, approvals (5 epics) | conditional |
 
-## Open decisions (before Stage 1 starts)
-- Who owns each reference report, and who is the first outside user?
-- Open source, open core or commercial? Decides v0.4.0's licence (MIT today) and whether 3.2 is public.
-- The deck stays as a layout (2.8), frozen until then? Recommended: yes.
-- DOCX and PPTX stay closed (#219, #300)? Recommended: revisit at 2.5 only if a reference report needs Word.
-- The content model in the core package? Recommended: yes, it is Python-only and needs no extra.
-- The 2.1 design spike may overlap the end of Stage 1? Recommended: yes.
+## Decisions (owner, 2026-10-27)
+- **Reference reports: a mix.** The owner's real daily email note and real product piece; the
+  long-form report is `examples/quarterly-review` until a real one replaces it before Gate 1.
+- **Licence: open core.** The library stays MIT; the Stage 03 render service (3.2) and any
+  Stage 04 product are licensed separately.
+- **Deck: kept, frozen.** No deck features until 2.8 re-homes it as a layout.
+- **DOCX/PPTX: closed until 2.5**, reopened only if a reference report's readers need Word.
+- **Content model: the core package**, Python-only, no extra.
+- **2.1 spike: may start before v0.7.0 lands**, alongside the end of Stage 01.
+
+## Still open
+- Name the colleague or team who is the first outside user (Stage 01's gate); before Gate 1.

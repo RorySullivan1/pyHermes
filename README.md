@@ -1,6 +1,8 @@
 # pyHermes
 
-Write a research document once. Send it as an email, or print it as a PDF.
+pyHermes is a framework for research reports: quantitative research goes in as data, exhibits,
+findings and disclosures, and comes out as an email, a printed report or a folded brochure,
+each checked for the medium it is read on.
 
 An HTML email is not a web page. Gmail clips the message body past ~102 KB and shows a
 "View entire message" link; Outlook on Windows renders through Microsoft Word's layout

@@ -16,18 +16,18 @@ lower-level escape hatch.
 | Version | Epic | One line | Needs |
 |---------|------|----------|-------|
 | v0.12.0 | 2.1 | Design spike and decision record: types, tiers (lead, core, detail), how a layout compiles | 1.1 |
-| v0.13.0 | 2.2 | Content model: `Note`, `Finding`, `Exhibit`, `KeyFigure`, `Narrative`, `DisclosureSet`, with a JSON round trip | 2.1 |
+| v0.13.0 | 2.2 | Content model, in the core package: `Note`, `Finding`, `Exhibit`, `KeyFigure`, `Narrative`, `DisclosureSet`, with a JSON round trip | 2.1 |
 | v0.14.0 | 2.3 | Layout system: selection by tier, author-supplied short and long variants, placement | 2.2 |
 | v0.15.0 | 2.4 | Fit and overflow: drop or condense the lowest tier first and say what was dropped | 2.3 |
-| v0.16.0 | 2.5 | Standard format catalogue: research report, factsheet, tri-fold, daily email, weekly wrap | 2.3 |
+| v0.16.0 | 2.5 | Standard format catalogue: research report, factsheet, tri-fold, daily email, weekly wrap; decide DOCX/PPTX here | 2.3 |
 | v0.17.0 | 2.6 | Custom formats and brand packs: theme, typeface, logo, disclosure library in one object | 2.3 |
 | v0.18.0 | 2.7 | Compliance layer: disclosure rules by product, jurisdiction and rating; analyst certification; a draft/approved state | 2.2 |
-| v0.19.0 | 2.8 | The deck re-homed as a layout of the same note | 2.3 |
+| v0.19.0 | 2.8 | The deck, frozen until now, re-homed as a layout of the same note | 2.3 |
 | v0.20.0 | 2.9 | Migration: examples, drafts and the manual ported to notes | 2.5 |
 
 **Milestone (stage exit):** each Stage 00 reference report is one `Note` that renders to email,
 report and brochure with per-medium choices only, no rebuilt tree.
 
 **Risk:** a model too generic (every report is "sections" again) or too opinionated (only
-sell-side notes fit). Test 2.1 against all three reference reports before 2.2 starts; 2.1 may
-begin during the end of Stage 01.
+sell-side notes fit). Test 2.1 against all three reference reports before 2.2 starts; 2.1 begins
+before v0.7.0 lands (owner's decision).
