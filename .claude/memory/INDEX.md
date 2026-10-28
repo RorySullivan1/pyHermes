@@ -6,7 +6,7 @@
 - **Shipped through PR #475** (#474); epics #157–#442 all closed, no issues open. #219 DOCX and #300 PPTX
   closed as not planned. #288 is the owner's Outlook-desktop check. The prose baseline is 43, may only shrink.
 - **The roadmap is live** in `.meta/roadmap/` (5 stages, 31 epics), surfaced each session by `roadmap_status`;
-  cursor v0.2.0, the scope charter; the owner's six decisions are taken. Mapped from the 2026-10-27 doc — sessions/2026-10-27-0312-roadmap-mapping.md
+  v0.2.0 (scope charter, rule 14) in PR #477; cursor v0.3.0. The owner's six decisions are taken. Mapped from the 2026-10-27 doc — sessions/2026-10-27-0312-roadmap-mapping.md
 
 ## Decisions        (append-only; supersede, never delete)
 - Older entries, and epic #157's, are in sessions/ARCHIVE-2026.md.
@@ -67,3 +67,5 @@
 - [2026-10-21] email-headroom — the email strips its indentation (owner's pick over moving ratios): `kitchen_sink` 82.5 KB, 8.8 KB under the warning — sessions/2026-10-21-email-headroom.md
 - [2026-10-27] roadmap-mapping — the owner's roadmap doc mapped to `.meta/roadmap/` with the factory's
   roadmap kit (skill, two commands, workflow, two hooks); index trimmed to budget — sessions/2026-10-27-0312-roadmap-mapping.md
+- [2026-10-28] scope-charter — v0.2.0 through advance-roadmap-step: positioning sentence, standing rule 14 and
+  `test_scope_freeze.py`; review closed two bypasses; goal-auditor PASS; PR #477 — sessions/2026-10-28-0900-scope-charter.md

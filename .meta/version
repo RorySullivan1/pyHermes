@@ -2,7 +2,7 @@
 status: in-progress
 started: 2026-10-27
 branch: claude/integrate-claude-assets-pyhermes-d4spzb
-pr:
+pr: https://github.com/RorySullivan1/pyHermes/pull/477
 
 ## Goals
 - Roadmap epic 0.1, the scope charter: state pyHermes as a research-report generation
