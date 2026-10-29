@@ -246,6 +246,8 @@ these rather than improvising:
 - **The roadmap: [.meta/roadmap/INDEX.md](.meta/roadmap/INDEX.md).** Five stages from a reset, through
   email mastery and a research content model, to an API a model can author through. Read it before
   proposing new work: a new medium or layout primitive needs a reference report that asks for it.
+- **The reference reports: [reference/](reference/README.md)**, the three every gate is tested
+  against, with `python -m qa.benchmark` measuring each. All three are stand-ins until Gate 1.
 - Tracked in [GitHub issues](https://github.com/RorySullivan1/pyHermes/issues), as epics
   with sub-issues. Complete: **#157** (rescope to media), **#153** (per-exhibit disclosure),
   **#169** (pagination hardening), **#170** (the data layer, #177–#180), **#171** (document

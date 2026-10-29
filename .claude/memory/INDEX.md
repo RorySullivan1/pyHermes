@@ -6,7 +6,8 @@
 - **Shipped through PR #475** (#474); epics #157–#442 all closed, no issues open. #219 DOCX and #300 PPTX
   closed as not planned. #288 is the owner's Outlook-desktop check. The prose baseline is 43, may only shrink.
 - **The roadmap is live** in `.meta/roadmap/` (5 stages, 31 epics), surfaced each session by `roadmap_status`;
-  v0.2.0 (scope charter, rule 14) in PR #477; cursor v0.3.0. The owner's six decisions are taken. Mapped from the 2026-10-27 doc — sessions/2026-10-27-0312-roadmap-mapping.md
+  v0.2.0 shipped (PR #477); v0.3.0 (reference reports, benchmark) in PR #478; cursor v0.4.0. The owner's six
+  decisions are taken. Mapped from the 2026-10-27 doc — sessions/2026-10-27-0312-roadmap-mapping.md
 
 ## Decisions        (append-only; supersede, never delete)
 - Older entries, and epic #157's, are in sessions/ARCHIVE-2026.md.
@@ -29,6 +30,9 @@
 - [2026-10-27] **The six roadmap decisions: reference reports a mix (real daily email and product piece,
   `quarterly-review` standing in for long-form); open core (library MIT, service separate); deck kept, frozen;
   DOCX/PPTX closed until 2.5; content model in core; 2.1 spike before v0.7.0** — `.meta/roadmap/INDEX.md`
+- [2026-10-28] **Superseded in part: the reference reports are all three stand-ins until Gate 1** (owner),
+  in `reference/`; Gate N is stage N's milestone — `.meta/roadmap/INDEX.md`, `reference/README.md`
+
 ## Threads          (open items; remove when closed)
 - **The first outside user is not yet named** (a colleague or team); needed before Gate 1 — `.meta/roadmap/INDEX.md`.
 - **#394's ruling (justify on paper only) was taken under a goal**; the owner may widen it.
@@ -69,3 +73,6 @@
   roadmap kit (skill, two commands, workflow, two hooks); index trimmed to budget — sessions/2026-10-27-0312-roadmap-mapping.md
 - [2026-10-28] scope-charter — v0.2.0 through advance-roadmap-step: positioning sentence, standing rule 14 and
   `test_scope_freeze.py`; review closed two bypasses; goal-auditor PASS; PR #477 — sessions/2026-10-28-0900-scope-charter.md
+- [2026-10-28] scope-charter — PR #477 merged; v0.2.0 marked shipped in the roadmap and `.meta/version`.
+- [2026-10-29] reference-reports — v0.3.0: `reference/` (three stand-ins), `qa.benchmark` and its baseline;
+  review had no must-fix; goal-auditor PASS; PR #478 — sessions/2026-10-29-0900-reference-reports.md

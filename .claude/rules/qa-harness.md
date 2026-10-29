@@ -1366,3 +1366,22 @@ The email medium now strips each line's indentation before the size check (`medi
 83,380: 8,780 bytes under the 90 KB warning, where it had 357. The earlier sections' byte counts
 are as they were measured then. Each email golden's diff for this was whitespace alone, and
 `git diff -w --ignore-blank-lines` shows none.
+
+## The reference reports and the speed benchmark (roadmap v0.3.0)
+
+`reference/` holds the three reports every roadmap gate is tested against: `daily-note` (email),
+`research-report` (paged) and `product-brochure` (brochure). Each is a `SPEC.md` and a `build.py`;
+`qa/reference.py` is the registry (`REPORTS`, `build(name)`). All three are **stand-ins** today, built
+by `examples/daily-investment-note`, `examples/quarterly-review` and the `tri_fold_letter` fixture, and
+each spec says it goes before Gate 1. Replacing one means pointing its `build.py` at the real source.
+
+- **`tests/test_reference_reports.py`** builds, renders and lints each with no error findings, and
+  holds each spec to its fields and each name to the roadmap. The daily note skips without `[charts]`,
+  naming it, so `all-extras` runs it.
+- **`python -m qa.benchmark`** measures each report: author lines (code lines of its source, no blanks,
+  comments or docstrings), and median build, render, check and PDF milliseconds. It exits 1 on a lint
+  error. Each gate's run is recorded in `reference/README.md`; the baseline is v0.3.0's.
+- **The author's wall-clock minutes are not measured by any script.** `reference/README.md` has a table
+  for the owner to fill when a real report replaces its stand-in.
+- **The machine is not the bottleneck**: every report reaches a checked artifact in under a second, so
+  the number the roadmap has to move is the author lines, 100 to 300 a report today.
