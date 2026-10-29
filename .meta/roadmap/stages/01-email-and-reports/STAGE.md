@@ -4,9 +4,9 @@
 and make its email the best a Python library produces. Seven epics; 1.4 and 1.5 are the
 largest.
 
-**Versions:** v0.5.0 (1.1 report definition), v0.6.0 (1.2 data binding and provenance),
-v0.7.0 (1.3 house email templates), v0.8.0 (1.4 real-client verification), v0.9.0
-(1.5 distribution), v0.10.0 (1.6 run archive), v0.11.0 (1.7 docs for outsiders).
+**Versions:** v0.6.0 (1.1 report definition), v0.7.0 (1.2 data binding and provenance),
+v0.8.0 (1.3 house email templates), v0.9.0 (1.4 real-client verification), v0.10.0
+(1.5 distribution), v0.11.0 (1.6 run archive), v0.12.0 (1.7 docs for outsiders).
 
 **Order:** 1.1 first, since 1.2, 1.3 and 1.5 stand on it. 1.4 depends on nothing and may run
 alongside. 1.6 needs 1.2 and 1.5; 1.7 closes the stage.
@@ -17,5 +17,5 @@ This milestone is **Gate 1**, and it also requires the three reference-report st
 replaced by real reports, and the owner's minutes from data to sent recorded in
 `reference/README.md`.
 
-**Risk:** v0.5.0 bakes in layout-only assumptions. `build()` must be able to return a Stage 02
-`Note` later, not only a section tree; the owner has approved starting the 2.1 design spike before v0.7.0 lands.
+**Risk:** v0.6.0 bakes in layout-only assumptions. `build()` must be able to return a Stage 02
+`Note` later, not only a section tree; the owner has approved starting the 2.1 design spike before v0.8.0 lands.
