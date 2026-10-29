@@ -13,6 +13,9 @@ alongside. 1.6 needs 1.2 and 1.5; 1.7 closes the stage.
 
 **Milestone (stage exit):** a colleague or team of the owner's (to be named) runs a weekly note from a house
 template, unchanged, for four consecutive weeks, and the v0.3.0 benchmark beats its baseline.
+This milestone is **Gate 1**, and it also requires the three reference-report stand-ins
+replaced by real reports, and the owner's minutes from data to sent recorded in
+`reference/README.md`.
 
 **Risk:** v0.5.0 bakes in layout-only assumptions. `build()` must be able to return a Stage 02
 `Note` later, not only a section tree; the owner has approved starting the 2.1 design spike before v0.7.0 lands.

@@ -7,7 +7,7 @@ new feature work. Three small epics; every later stage depends on them.
 v0.4.0 (0.3 first public release).
 
 **Milestone (stage exit):** the charter is merged, the three reference reports are named with
-their owners (two real, one stand-in), and `pip install pyhermes` works from PyPI.
+their owners (all three stand-ins until Gate 1), and `pip install pyhermes` works from PyPI.
 
 **Risk:** skipping it. Without reference reports every later "done" is a judgment call, which
 is the scoping problem this roadmap exists to end.

@@ -29,6 +29,9 @@
 - [2026-10-27] **The six roadmap decisions: reference reports a mix (real daily email and product piece,
   `quarterly-review` standing in for long-form); open core (library MIT, service separate); deck kept, frozen;
   DOCX/PPTX closed until 2.5; content model in core; 2.1 spike before v0.7.0** — `.meta/roadmap/INDEX.md`
+- [2026-10-28] **Superseded in part: the reference reports are all three stand-ins until Gate 1** (owner),
+  in `reference/`; Gate N is stage N's milestone — `.meta/roadmap/INDEX.md`, `reference/README.md`
+
 ## Threads          (open items; remove when closed)
 - **The first outside user is not yet named** (a colleague or team); needed before Gate 1 — `.meta/roadmap/INDEX.md`.
 - **#394's ruling (justify on paper only) was taken under a goal**; the owner may widen it.

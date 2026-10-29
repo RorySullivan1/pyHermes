@@ -26,7 +26,8 @@ from pathlib import Path
 
 from pyhermes.builder.document import Document
 from pyhermes.check.lint import Severity, lint_document
-from qa.reference import REPORTS, ROOT, build, build_script, load_script
+from pyhermes.data.exceptions import BackendMissingError
+from qa.reference import REPORTS, ROOT, build_script, load_script
 
 _SKIPPED = (
     tokenize.COMMENT,
@@ -93,15 +94,16 @@ def _pdf_ms(document: Document, runs: int) -> float | None:
 
 
 def measure(name: str, runs: int = 5) -> Measurement:
-    """Measure the reference report ``name`` over ``runs`` runs."""
-    source = Path(load_script(build_script(name)).SOURCE)
-    document = build(name)
+    """Measure the reference report ``name`` over ``runs`` runs; importing it is not timed."""
+    script = load_script(build_script(name))
+    source = Path(script.SOURCE)
+    document: Document = script.build()
     findings = lint_document(document)
     return Measurement(
         report=name,
         source=source.as_posix(),
         author_lines=author_lines(ROOT / source),
-        build_ms=_median_ms(lambda: build(name), runs),
+        build_ms=_median_ms(script.build, runs),
         render_ms=_median_ms(document.render, runs),
         check_ms=_median_ms(lambda: lint_document(document), runs),
         pdf_ms=_pdf_ms(document, runs),
@@ -129,11 +131,18 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("reports", nargs="*", metavar="report", help=", ".join(REPORTS))
     parser.add_argument("-n", "--runs", type=int, default=5)
     args = parser.parse_args(argv)
+    if args.runs < 1:
+        parser.error("--runs must be at least 1")
     unknown = sorted(set(args.reports) - set(REPORTS))
     if unknown:
         parser.error(f"no reference report named {', '.join(unknown)}; choose from {REPORTS}")
     args.reports = args.reports or list(REPORTS)
-    measurements = [measure(name, args.runs) for name in args.reports]
+    measurements = []
+    for name in args.reports:
+        try:
+            measurements.append(measure(name, args.runs))
+        except BackendMissingError as exc:
+            print(f"{name}: skipped, {exc}", file=sys.stderr)
     print(table(measurements))
     print(f"\n{args.runs} runs each; Python {platform.python_version()}, {platform.platform()}")
     return 1 if any(m.errors for m in measurements) else 0

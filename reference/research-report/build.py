@@ -8,8 +8,9 @@ from qa.reference import example
 
 #: The source that builds the stand-in today.
 SOURCE = Path("examples/quarterly-review/quarterly-review.py")
+_EXAMPLE = example("quarterly-review")
 
 
 def build():
     """Build the research report, through the worked example it stands in for."""
-    return example("quarterly-review").build()
+    return _EXAMPLE.build()

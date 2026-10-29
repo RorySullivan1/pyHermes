@@ -18,7 +18,7 @@
 
 ## Data inputs
 
-- Daily returns for the portfolio and its benchmark, twenty sessions.
+- Cumulative return paths for the portfolio and its benchmark over twenty sessions.
 - Each holding's weight and return for the day, giving its contribution in basis points.
 - Contribution by sector.
 

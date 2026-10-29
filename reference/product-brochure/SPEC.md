@@ -19,7 +19,7 @@
 
 ## Data inputs
 
-- A handful of headline figures and a chart for the product's case.
+- A headline figure and a chart for the product's case (the stand-in's chart is a placeholder picture).
 - Contact details and a URL for the QR code.
 
 The stand-in's copy and figures are fictional. Its PDF needs the `[pdf]` extra; its HTML renders without it.

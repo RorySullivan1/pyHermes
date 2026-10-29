@@ -27,29 +27,31 @@ For each report it prints:
 
 - **Author lines**: the lines of code in the source that builds it, without blanks, comments or docstrings.
   The proxy for what an author writes. It counts that one file, data included, not shared helpers.
-- **Build, render and check ms**: median machine time to build the document, render it, and lint it under
-  its medium's rules.
+- **Build, render and check ms**: median machine time to call the report's `build()` (importing its source is
+  not timed), to render it, and to lint it under its medium's rules. Check includes a render of its own, so
+  the columns overlap and are not a sum.
 - **PDF ms**: median time to print it, for a paged medium with `[pdf]` installed.
-- **Lint errors**: must be 0.
+- **Lint errors**: must be 0. A report whose extra is missing is skipped, and says so.
 
 **The author's minutes** (wall-clock time from new data to a sent note) cannot be measured by a script. The
 owner records them below when a real report replaces its stand-in.
 
 ## Recorded runs
 
-### Baseline: v0.3.0, 2026-10-28
+### Baseline: v0.3.0, 2026-10-29
 
 All three stand-ins, five runs each; Python 3.11.17 on Linux x86_64, in a cloud session, so treat the
 milliseconds as relative.
 
 | Report | Author lines | Build ms | Render ms | Check ms | PDF ms | Lint errors |
 |---|---|---|---|---|---|---|
-| daily-note | 291 | 213 | 6 | 15 | n/a | 0 |
-| research-report | 101 | 1 | 2 | 6 | 622 | 0 |
-| product-brochure | 159 | 4 | 4 | 11 | 890 | 0 |
+| daily-note | 291 | 166 | 7 | 15 | n/a | 0 |
+| research-report | 101 | 1 | 3 | 6 | 659 | 0 |
+| product-brochure | 159 | 4 | 4 | 10 | 901 | 0 |
 
-The daily note's build time is its two matplotlib charts. Machine time is under a second for every report,
-so the cost to cut is the author's: 100 to 300 lines of hand-built section tree per report.
+The daily note's build time is its two matplotlib charts. Machine time is a second or less for every report,
+PDF included, so the cost to cut is the author's: 100 to 300 lines of hand-built section tree per report.
+Author lines count the whole source file, data and its `__main__` block included.
 
 | Report | Author's minutes, data to sent |
 |---|---|

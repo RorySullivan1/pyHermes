@@ -17,12 +17,12 @@
 5. **Appendix — Methodology**: on a sheet of its own.
 6. **Important Disclosures**: the closing back-matter sheet.
 
-A running footer marks every sheet "Confidential" with its folio.
+A running header and a "Confidential" running footer with the folio mark every sheet after the cover.
 
 ## Data inputs
 
 - Quarter-end headline figures (index levels, yields and their changes).
-- Factor returns for the quarter.
+- Factor returns over one month and the year to date, toned by sign.
 
 The stand-in's figures are fictional and live in its source. Its PDF needs the `[pdf]` extra; its HTML renders without it.
 

@@ -24,8 +24,8 @@ SPEC_SECTIONS = ("## Sections", "## Data inputs")
 def _built(name: str):
     try:
         return build(name)
-    except BackendMissingError:
-        pytest.skip('the reference daily note draws its charts through the "[charts]" extra')
+    except BackendMissingError as exc:
+        pytest.skip(str(exc))  # the package's message names its extra
 
 
 @pytest.mark.parametrize("name", REPORTS)
@@ -54,7 +54,7 @@ class TestEachReport:
 
 
 def test_the_directory_holds_exactly_the_registered_reports():
-    found = {p.name for p in REFERENCE_DIR.iterdir() if p.is_dir() and p.name != "__pycache__"}
+    found = {p.name for p in REFERENCE_DIR.iterdir() if p.is_dir() and p.name[0] not in "._"}
     assert found == set(REPORTS)
 
 
