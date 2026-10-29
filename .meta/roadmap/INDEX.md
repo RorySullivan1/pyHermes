@@ -26,8 +26,8 @@ One version is one roadmap epic and ships as one PR; the epic number from the do
 | Version | Stage | Goal (one line) | Status |
 |---------|-------|-----------------|--------|
 | v0.2.0  | 00 | 0.1 Scope charter: positioning, the freeze rule | shipped (PR #477) |
-| v0.3.0  | 00 | 0.2 Reference reports and the speed benchmark | in-progress ← cursor |
-| v0.4.0  | 00 | 0.3 First public release on PyPI | planned |
+| v0.3.0  | 00 | 0.2 Reference reports and the speed benchmark | in-progress (PR #478) |
+| v0.4.0  | 00 | 0.3 First public release on PyPI | planned ← cursor |
 | v0.5.0  | 01 | 1.1 Report definition and the run CLI | planned |
 | v0.6.0  | 01 | 1.2 Data binding and provenance | planned |
 | v0.7.0  | 01 | 1.3 Three house email templates | planned |

@@ -2,7 +2,7 @@
 status: in-progress
 started: 2026-10-28
 branch: claude/integrate-claude-assets-pyhermes-d4spzb
-pr:
+pr: https://github.com/RorySullivan1/pyHermes/pull/478
 
 ## Goals
 - Roadmap epic 0.2: fix three reference reports as the acceptance fixtures for every stage,
