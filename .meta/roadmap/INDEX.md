@@ -24,7 +24,7 @@ One version is one roadmap epic and ships as one PR; the epic number from the do
 | Version | Stage | Goal (one line) | Status |
 |---------|-------|-----------------|--------|
 | v0.2.0  | 00 | 0.1 Scope charter: positioning, the freeze rule | shipped (PR #477) |
-| v0.3.0  | 00 | 0.2 Reference reports and the speed benchmark | planned ← cursor |
+| v0.3.0  | 00 | 0.2 Reference reports and the speed benchmark | in-progress ← cursor |
 | v0.4.0  | 00 | 0.3 First public release on PyPI | planned |
 | v0.5.0  | 01 | 1.1 Report definition and the run CLI | planned |
 | v0.6.0  | 01 | 1.2 Data binding and provenance | planned |
@@ -38,8 +38,10 @@ One version is one roadmap epic and ships as one PR; the epic number from the do
 | separate product | 04 | 4.1–4.5 Hosted API, authoring app, approvals (5 epics) | conditional |
 
 ## Decisions (owner, 2026-10-27)
-- **Reference reports: a mix.** The owner's real daily email note and real product piece; the
-  long-form report is `examples/quarterly-review` until a real one replaces it before Gate 1.
+- **Reference reports: stand-ins for now** (revised 2026-10-28). `daily-note` is
+  `examples/daily-investment-note`, `research-report` is `examples/quarterly-review`, and
+  `product-brochure` is the `tri_fold_letter` fixture; the owner's real daily note and product
+  piece replace theirs before Gate 1. Specs and builds live in `reference/`.
 - **Licence: open core.** The library stays MIT; the Stage 03 render service (3.2) and any
   Stage 04 product are licensed separately.
 - **Deck: kept, frozen.** No deck features until 2.8 re-homes it as a layout.
