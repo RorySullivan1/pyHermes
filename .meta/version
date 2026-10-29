@@ -1,5 +1,5 @@
 # version: v0.3.0
-status: in-progress
+status: shipped
 started: 2026-10-28
 branch: claude/integrate-claude-assets-pyhermes-d4spzb
 pr: https://github.com/RorySullivan1/pyHermes/pull/478
