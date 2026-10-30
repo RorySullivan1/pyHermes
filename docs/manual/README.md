@@ -51,7 +51,7 @@ and ends with an email open in your browser.
 
 If this manual does not answer your question, check [Troubleshooting](08-troubleshooting.md)
 first. If you are still stuck, open an issue at
-[github.com/RorySullivan1/pyHermes/issues](https://github.com/RorySullivan1/pyHermes/issues)
+[github.com/RorySullivan1/octavo/issues](https://github.com/RorySullivan1/octavo/issues)
 with the error message and the smallest script that shows it.
 
 For the reasoning behind each design choice, see the project [README](../../README.md).

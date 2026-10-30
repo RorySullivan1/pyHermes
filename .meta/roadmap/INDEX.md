@@ -51,6 +51,8 @@ One version is one roadmap epic and ships as one PR; the epic number from the do
 - **DOCX/PPTX: closed until 2.5**, reopened only if a reference report's readers need Word.
 - **Name: octavo** (2026-10-29). `pyhermes` is taken on PyPI and as an import by Allegro's Hermes
   client, so the distribution and import root become `octavo` (v0.4.0) before the first release.
+- **Repository: renamed to octavo** (2026-10-30). The owner renames it on GitHub, which redirects the
+  old URLs; every link in the repository points at `RorySullivan1/octavo` from v0.4.0.
 - **Publishing: trusted publishing** (2026-10-29), from a GitHub Actions workflow on a version tag.
 - **Content model: the core package**, Python-only, no extra.
 - **2.1 spike: may start before v0.8.0 lands**, alongside the end of Stage 01.

@@ -129,8 +129,8 @@ HISTORY = (
     ".meta/version",
 )
 
-#: Names that stay: the GitHub repository and the session branch that built the roadmap.
-KEPT = (f"github.com/RorySullivan1/{OLD_NAME}", f"integrate-claude-assets-{OLD_NAME}")
+#: The one name that stays: the session branch that built the roadmap.
+KEPT = (f"integrate-claude-assets-{OLD_NAME}",)
 
 
 def _current_lines(name: str, text: str) -> list[tuple[int, str]]:

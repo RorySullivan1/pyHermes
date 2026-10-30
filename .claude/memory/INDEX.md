@@ -34,10 +34,12 @@
   in `reference/`; Gate N is stage N's milestone — `.meta/roadmap/INDEX.md`, `reference/README.md`
 - [2026-10-29] **The project becomes octavo: `pyhermes` is Allegro's Hermes client on PyPI and as an import.
   The rename is v0.4.0, the first release v0.5.0 by trusted publishing; later versions moved up one** — `.meta/roadmap/`
+- [2026-10-30] **The GitHub repository is renamed to octavo too** (owner); the repository's links point there
+  from v0.4.0 — `.meta/roadmap/INDEX.md`
 
 ## Threads          (open items; remove when closed)
-- **The owner reserves `octavo` on PyPI** as a pending trusted publisher before v0.5.0's tag, and decides
-  whether the GitHub repository is renamed too (v0.4.0 records it either way).
+- **The owner renames the GitHub repository to `octavo`** (decided 2026-10-30; links already point there),
+  and reserves `octavo` on PyPI as a pending trusted publisher before v0.5.0's tag.
 - **The first outside user is not yet named** (a colleague or team); needed before Gate 1 — `.meta/roadmap/INDEX.md`.
 - **#394's ruling (justify on paper only) was taken under a goal**; the owner may widen it.
 - **#400's ruling: `skip_first` is opt-in, not the default under an `EmptyCover`** (goal-taken; `media.md`).
@@ -69,9 +71,6 @@
 
 ## Log              (append-only pointers)
 - Older entries, and epic #157's, are in sessions/ARCHIVE-2026.md.
-- [2026-10-21] email-headroom — the email strips its indentation (owner's pick over moving ratios): `kitchen_sink` 82.5 KB, 8.8 KB under the warning — sessions/2026-10-21-email-headroom.md
-- [2026-10-27] roadmap-mapping — the owner's roadmap doc mapped to `.meta/roadmap/` with the factory's
-  roadmap kit (skill, two commands, workflow, two hooks); index trimmed to budget — sessions/2026-10-27-0312-roadmap-mapping.md
 - [2026-10-28] scope-charter — v0.2.0 through advance-roadmap-step: positioning sentence, standing rule 14 and
   `test_scope_freeze.py`; review closed two bypasses; goal-auditor PASS; PR #477 — sessions/2026-10-28-0900-scope-charter.md
 - [2026-10-28] scope-charter — PR #477 merged; v0.2.0 marked shipped in the roadmap and `.meta/version`.

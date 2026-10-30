@@ -249,7 +249,7 @@ these rather than improvising:
   proposing new work: a new medium or layout primitive needs a reference report that asks for it.
 - **The reference reports: [reference/](reference/README.md)**, the three every gate is tested
   against, with `python -m qa.benchmark` measuring each. All three are stand-ins until Gate 1.
-- Tracked in [GitHub issues](https://github.com/RorySullivan1/pyHermes/issues), as epics
+- Tracked in [GitHub issues](https://github.com/RorySullivan1/octavo/issues), as epics
   with sub-issues. Complete: **#157** (rescope to media), **#153** (per-exhibit disclosure),
   **#169** (pagination hardening), **#170** (the data layer, #177–#180), **#171** (document
   apparatus, #181–#185), **#172** (the brochure medium, #186–#189), **#193** (the digital PDF, #195–#200),

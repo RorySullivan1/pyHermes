@@ -9,8 +9,8 @@ You need Python 3.11 or newer. octavo is not on PyPI, so install it from a copy 
 repository:
 
 ```bash
-git clone https://github.com/RorySullivan1/pyHermes.git octavo-repo
-cd octavo-repo
+git clone https://github.com/RorySullivan1/octavo.git
+cd octavo
 python -m venv .venv
 source .venv/bin/activate        # on Windows: .venv\Scripts\activate
 pip install -e .

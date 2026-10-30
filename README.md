@@ -1103,7 +1103,7 @@ Viewports and scale factor are pinned; the *browser build* is not — each run r
 Chromium version that produced it in `run.json` beside the images. And the names say
 `chromium` on purpose: this approximates Gmail in a browser and says nothing about Outlook's
 Word engine, which is the client most likely to break a layout. Client compatibility belongs
-to the lint pass ([#60](https://github.com/RorySullivan1/pyHermes/issues/60)).
+to the lint pass ([#60](https://github.com/RorySullivan1/octavo/issues/60)).
 
 Playwright is the optional `[qa]` extra, so `pip install -e ".[dev]"` and `pytest` stay
 browser-free — the screenshot tests skip rather than fail. Where the environment supplies its
@@ -1169,7 +1169,7 @@ scheduling, recipient lists, batching or send-time analytics; open tracking and 
 rewriting. On the paged side: no index, bibliography or list of figures, no multi-level
 numbering, and no DOCX or PPTX exporter — the library grows by media, not by portability,
 and an exporter that walks the tree is a second render path (the decision is on
-[#219](https://github.com/RorySullivan1/pyHermes/issues/219)). On the folded side: no CMYK, ICC profile or PDF/X, no booklet imposition, and no
+[#219](https://github.com/RorySullivan1/octavo/issues/219)). On the folded side: no CMYK, ICC profile or PDF/X, no booklet imposition, and no
 dielines or die-cut, foil or stock metadata.
 
 ## Layout
@@ -1196,4 +1196,4 @@ tests/            pytest suite
 
 Design rationale, the reasoning behind each constraint, and the decisions recorded as
 non-features live in [CLAUDE.md](CLAUDE.md). Open work is tracked in
-[GitHub issues](https://github.com/RorySullivan1/pyHermes/issues), organised as epics.
+[GitHub issues](https://github.com/RorySullivan1/octavo/issues), organised as epics.

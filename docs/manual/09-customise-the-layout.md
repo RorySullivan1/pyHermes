@@ -483,5 +483,5 @@ program, or would let one email drift from the rest of its series.
 | Use a dark theme | The email tells mail programs to show it in light mode only, and no dark palette ships | A dark band on one section: `background_color` ([Look and feel](05-look-and-feel.md#how-to-put-a-section-on-a-dark-band)) |
 
 To ask for one of these to change,
-[open an issue](https://github.com/RorySullivan1/pyHermes/issues) saying which mail
+[open an issue](https://github.com/RorySullivan1/octavo/issues) saying which mail
 programs you send to; that is what any change would have to be checked in.

@@ -300,5 +300,5 @@ from the web.
 1. Build the smallest script that shows the problem.
 2. Copy the full error message, including the last line of the traceback.
 3. Open an issue at
-   [github.com/RorySullivan1/pyHermes/issues](https://github.com/RorySullivan1/pyHermes/issues)
+   [github.com/RorySullivan1/octavo/issues](https://github.com/RorySullivan1/octavo/issues)
    with both.

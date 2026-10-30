@@ -125,9 +125,9 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project.urls]
-Homepage = "https://github.com/RorySullivan1/pyHermes"
-Repository = "https://github.com/RorySullivan1/pyHermes"
-Issues = "https://github.com/RorySullivan1/pyHermes/issues"
+Homepage = "https://github.com/RorySullivan1/octavo"
+Repository = "https://github.com/RorySullivan1/octavo"
+Issues = "https://github.com/RorySullivan1/octavo/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["octavo"]
