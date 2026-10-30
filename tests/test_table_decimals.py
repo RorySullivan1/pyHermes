@@ -11,12 +11,12 @@ import re
 
 import pytest
 
-from pyhermes.builder import ColumnGroup, DataTable, FullWidth
-from pyhermes.builder.email import Email
-from pyhermes.builder.engine import TemplateEngine
-from pyhermes.builder.exceptions import ValidationError
-from pyhermes.builder.models import Column, TableRow
-from pyhermes.builder.typography import FontStack, FontTheme
+from octavo.builder import ColumnGroup, DataTable, FullWidth
+from octavo.builder.email import Email
+from octavo.builder.engine import TemplateEngine
+from octavo.builder.exceptions import ValidationError
+from octavo.builder.models import Column, TableRow
+from octavo.builder.typography import FontStack, FontTheme
 from qa.screenshots import VIEWPORTS, _launch, _load_playwright, available
 
 FIGURES = ["4.5%", "12.25%", "7%"]

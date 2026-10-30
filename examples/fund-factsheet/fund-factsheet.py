@@ -19,9 +19,9 @@ are unusual —
   this file and are referenced below — a factsheet whose figures are scattered
   through its layout code is one nobody dares update.
 
-The two charts are matplotlib Figures through ``pyhermes.data.chart_from_figure``,
+The two charts are matplotlib Figures through ``octavo.data.chart_from_figure``,
 which is the adapter's reason to exist: the builder never learns to plot. The
-Sharpe ratio beneath the risk table is ``pyhermes.math.math_block`` (#233), painted
+Sharpe ratio beneath the risk table is ``octavo.math.math_block`` (#233), painted
 for the factsheet's own theme and density.
 
 **The fill, measured from the PDF** (#233): sheet one runs to its footnotes,
@@ -47,7 +47,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from pyhermes.builder import (
+from octavo.builder import (
     CardGroup,
     Container,
     DataTable,
@@ -57,12 +57,12 @@ from pyhermes.builder import (
     TwoColumn,
     content_width,
 )
-from pyhermes.builder.enums import CardOrientation, SizeTheme, TwoColumnRatio
-from pyhermes.builder.formats import number
-from pyhermes.builder.models import Cell, Column, ColumnGroup, KpiItem, TableRow
-from pyhermes.builder.sizing import LETTER_PORTRAIT
-from pyhermes.data.exceptions import BackendMissingError
-from pyhermes.document import (
+from octavo.builder.enums import CardOrientation, SizeTheme, TwoColumnRatio
+from octavo.builder.formats import number
+from octavo.builder.models import Cell, Column, ColumnGroup, KpiItem, TableRow
+from octavo.builder.sizing import LETTER_PORTRAIT
+from octavo.data.exceptions import BackendMissingError
+from octavo.document import (
     EmptyBackMatter,
     EmptyContentsPage,
     EmptyCover,
@@ -308,7 +308,7 @@ def _matplotlib() -> Any:
     except ImportError as exc:  # pragma: no cover - depends on the install
         raise BackendMissingError(
             "The fund factsheet plots two charts with matplotlib, which is an "
-            'optional extra. Install it with: pip install "pyhermes[charts]"'
+            'optional extra. Install it with: pip install "octavo[charts]"'
         ) from exc
     return matplotlib
 
@@ -384,7 +384,7 @@ def _sector_chart() -> Any:
 
 def _sheet_one() -> list[Container]:
     """The first sheet's sections: the fund at a glance, its growth and its returns."""
-    from pyhermes.data import chart_from_figure
+    from octavo.data import chart_from_figure
 
     return [
         FullWidth(
@@ -459,7 +459,7 @@ def _sharpe_equation() -> Any:
     Painted for the factsheet's own theme and density: the picture's pixels
     are fixed here, so it takes the document's facts rather than a default.
     """
-    from pyhermes.math import math_block
+    from octavo.math import math_block
 
     facts = _facts()
     return math_block(
@@ -474,7 +474,7 @@ def _sharpe_equation() -> Any:
 
 def _sheet_two() -> list[Container]:
     """The second sheet's: what the fund holds, then the disclosures, which must fit here."""
-    from pyhermes.data import chart_from_figure
+    from octavo.data import chart_from_figure
 
     return [
         TwoColumn(
@@ -589,11 +589,11 @@ def main() -> None:
     print(f"{html}  ({html.stat().st_size / 1024:.1f} KB)")
 
     try:
-        from pyhermes.pdf import page_count, save_pdf
+        from octavo.pdf import page_count, save_pdf
     except ImportError:  # pragma: no cover - the extra is optional by design
         print('pdf skipped: install the extra with `pip install -e ".[pdf]"`')
         return
-    from pyhermes.pdf import PdfError
+    from octavo.pdf import PdfError
 
     try:
         pdf = save_pdf(build(), here / "fund-factsheet.pdf")

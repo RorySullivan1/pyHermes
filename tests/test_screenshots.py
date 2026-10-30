@@ -19,8 +19,8 @@ import json
 
 import pytest
 
-from pyhermes.builder.sizing import resolve_size_scheme
-from pyhermes.delivery import collect_cid_references
+from octavo.builder.sizing import resolve_size_scheme
+from octavo.delivery import collect_cid_references
 from qa.fixtures import all_fixtures
 from qa.screenshots import (
     DEVICE_SCALE_FACTOR,
@@ -178,7 +178,7 @@ def section_anchors():
     if not available():
         pytest.skip('no browser; screenshots are the optional "[qa]" extra')
 
-    # The module's own launcher, so PYHERMES_CHROMIUM handling and the
+    # The module's own launcher, so OCTAVO_CHROMIUM handling and the
     # ScreenshotError message are not reimplemented here just to measure a
     # layout. Private, but this is that module's test.
     measured = {}
@@ -310,7 +310,7 @@ _MASTHEAD_PROBE = """() => {
 
 def _masthead_email(variant, size_theme):
     """A one-section email whose only interesting feature is its masthead."""
-    from pyhermes.builder import Banner, EmailBuilder, FullWidth, MinimalBanner, TextBlock
+    from octavo.builder import Banner, EmailBuilder, FullWidth, MinimalBanner, TextBlock
 
     region = Banner if variant == "banner" else MinimalBanner
     return (
@@ -416,7 +416,7 @@ class TestTheMastheadPairsItsLines:
         """
         if not available():
             pytest.skip('no browser; screenshots are the optional "[qa]" extra')
-        from pyhermes.builder import Banner, EmailBuilder, FullWidth, MinimalBanner, TextBlock
+        from octavo.builder import Banner, EmailBuilder, FullWidth, MinimalBanner, TextBlock
 
         region = Banner if variant == "banner" else MinimalBanner
         email = (
@@ -767,7 +767,7 @@ class TestBodyCopyKeepsItsOwnStyling:
         resolving to anything but the ``body`` one means the wrapper is not
         an ancestor of the copy after all.
         """
-        from pyhermes.builder.typography import FontStack, FontTheme
+        from octavo.builder.typography import FontStack, FontTheme
         from qa.fixtures import kitchen_sink
 
         sentinel = FontTheme(
@@ -895,8 +895,8 @@ _STACKED_PROBE = """() => ({
 
 
 def _split_with_a_table():
-    from pyhermes.builder import DataTable, Email, TextBlock, TwoColumn
-    from pyhermes.builder.models import TableRow
+    from octavo.builder import DataTable, Email, TextBlock, TwoColumn
+    from octavo.builder.models import TableRow
 
     email = Email({"email_subject": "S", "firm_name": "F", "campaign_name": "C"})
     email.add_section(
@@ -991,7 +991,7 @@ def widths_measured():
 @requires_browser
 class TestTheSupportedViewportsAreHonoured:
     """
-    #133 asked which viewports pyHermes claims, and this is the answer made
+    #133 asked which viewports octavo claims, and this is the answer made
     checkable: ``SUPPORTED_WIDTHS`` is the claim, and no gallery email may
     exceed any width in it.
 

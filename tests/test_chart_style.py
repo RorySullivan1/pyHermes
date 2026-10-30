@@ -8,7 +8,7 @@ import warnings
 
 import pytest
 
-pytest.importorskip("matplotlib", reason='chart_style needs "pyhermes[charts]"')
+pytest.importorskip("matplotlib", reason='chart_style needs "octavo[charts]"')
 
 import matplotlib  # noqa: E402
 
@@ -17,10 +17,10 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib.colors import to_hex  # noqa: E402
 
-from pyhermes.builder import DEFAULT_THEME, SLATE_THEME, Email  # noqa: E402
-from pyhermes.builder.exceptions import ValidationError  # noqa: E402
-from pyhermes.data import ChartStyle, chart_style  # noqa: E402
-from pyhermes.data.style import RC_TOKENS, SERIES_TOKENS  # noqa: E402
+from octavo.builder import DEFAULT_THEME, SLATE_THEME, Email  # noqa: E402
+from octavo.builder.exceptions import ValidationError  # noqa: E402
+from octavo.data import ChartStyle, chart_style  # noqa: E402
+from octavo.data.style import RC_TOKENS, SERIES_TOKENS  # noqa: E402
 
 
 def _token(theme, layer, name):
@@ -78,7 +78,7 @@ def test_it_reads_an_emails_own_theme():
 
 @pytest.mark.parametrize(("font_theme", "role"), [("classic", "label"), ("modern", "body")])
 def test_the_font_ends_at_the_generic_and_never_warns(font_theme, role):
-    from pyhermes.builder.typography import resolve_font_theme
+    from octavo.builder.typography import resolve_font_theme
 
     stack = getattr(resolve_font_theme(font_theme), role)
     family = chart_style(font_theme=font_theme, role=role)["font.family"]

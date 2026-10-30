@@ -18,8 +18,8 @@ from pathlib import Path
 
 import pytest
 
-from pyhermes.data.exceptions import BackendMissingError as _DataMissing
-from pyhermes.math.exceptions import BackendMissingError as _MathMissing
+from octavo.data.exceptions import BackendMissingError as _DataMissing
+from octavo.math.exceptions import BackendMissingError as _MathMissing
 from qa.goldens import difference_report
 
 #: An example that needs an extra skips without it: [charts] or [math] (#233).
@@ -32,7 +32,7 @@ README = REPO_ROOT / "README.md"
 
 def _pdf_available() -> bool:
     """Whether this environment can print. Used to skip, never to fail."""
-    from pyhermes.pdf import available
+    from octavo.pdf import available
 
     return available()
 
@@ -156,7 +156,7 @@ class TestTheReadmesHeadlinePrograms:
     """
 
     def test_the_email_quickstart_runs(self):
-        _run(_block_after("# pyHermes"), "README: quickstart")
+        _run(_block_after("# octavo"), "README: quickstart")
 
     @pytest.mark.skipif(
         not _pdf_available(),
@@ -232,11 +232,11 @@ class TestTheFactsheetIsTwoSheets:
         assert self.FACTSHEET in EXAMPLES, "the factsheet example has moved or been renamed"
 
     def test_it_lays_out_to_exactly_two_sheets(self):
-        from pyhermes.pdf import available as pdf_available
+        from octavo.pdf import available as pdf_available
 
         if not pdf_available():
             pytest.skip('laying a document onto sheets needs the "[pdf]" extra')
-        from pyhermes.pdf import page_count
+        from octavo.pdf import page_count
 
         module = _load(self.FACTSHEET)
         try:

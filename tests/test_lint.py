@@ -17,8 +17,8 @@ import re
 
 import pytest
 
-from pyhermes.builder import Email, FullWidth, TextBlock
-from pyhermes.config import config_override
+from octavo.builder import Email, FullWidth, TextBlock
+from octavo.config import config_override
 from qa.fixtures import all_fixtures
 from qa.lint import (
     DEFERRED_RULES,

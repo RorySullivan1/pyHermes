@@ -22,19 +22,19 @@ from unittest import mock
 
 import pytest
 
-from pyhermes.builder import Banner, FullWidth, PrintQualityWarning, TextBlock
-from pyhermes.builder.document import Document
-from pyhermes.builder.exceptions import SizeError
-from pyhermes.builder.images import EmailImage
-from pyhermes.builder.medium import Constraint, Medium
-from pyhermes.config import config_override
-from pyhermes.delivery import Attachment, MessageError, build_message, save_eml
-from pyhermes.delivery import message as message_module
-from pyhermes.delivery.message import to_wire_bytes
-from pyhermes.document import EmptyBackMatter, EmptyCover, PagedDocument
-from pyhermes.gmail import send_message as gmail_send
-from pyhermes.outlook import send_message as outlook_send
-from pyhermes.pdf import available
+from octavo.builder import Banner, FullWidth, PrintQualityWarning, TextBlock
+from octavo.builder.document import Document
+from octavo.builder.exceptions import SizeError
+from octavo.builder.images import EmailImage
+from octavo.builder.medium import Constraint, Medium
+from octavo.config import config_override
+from octavo.delivery import Attachment, MessageError, build_message, save_eml
+from octavo.delivery import message as message_module
+from octavo.delivery.message import to_wire_bytes
+from octavo.document import EmptyBackMatter, EmptyCover, PagedDocument
+from octavo.gmail import send_message as gmail_send
+from octavo.outlook import send_message as outlook_send
+from octavo.pdf import available
 from qa.fixtures import all_fixtures, all_paged_fixtures
 
 requires_pdf = pytest.mark.skipif(
@@ -96,7 +96,7 @@ class TestADocumentIsLaidOutOnce:
     """#426: ``layout()`` is the one place a document meets the engine."""
 
     def test_render_pdf_lays_out_once_and_warns_once(self, engine_calls):
-        from pyhermes.pdf import render_pdf
+        from octavo.pdf import render_pdf
 
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter("always")
@@ -105,7 +105,7 @@ class TestADocumentIsLaidOutOnce:
         assert [w.category for w in caught] == [PrintQualityWarning]
 
     def test_a_held_layout_is_queried_without_the_engine_or_a_warning(self, engine_calls):
-        from pyhermes.pdf import anchor_tops, layout, page_count, render_layout
+        from octavo.pdf import anchor_tops, layout, page_count, render_layout
 
         with pytest.warns(PrintQualityWarning):
             laid_out = layout(_tall_kept())
@@ -118,13 +118,13 @@ class TestADocumentIsLaidOutOnce:
         assert sheets > 1 and pdf.startswith(b"%PDF")
 
     def test_a_document_is_still_laid_out_when_passed(self, engine_calls):
-        from pyhermes.pdf import page_count
+        from octavo.pdf import page_count
 
         assert page_count(all_paged_fixtures()["a4_portrait"]()) > 0
         assert len(engine_calls) == 1
 
     def test_render_pdf_has_one_path_and_no_options_of_its_own(self):
-        from pyhermes.pdf import exporter
+        from octavo.pdf import exporter
 
         assert "DEFAULT_OPTIONS" not in inspect.getsource(exporter)
 
@@ -134,7 +134,7 @@ class TestALayoutIsWrittenUnderItsOwnProfile:
     """#445: a layout carries the profile it was laid out under, and nothing else is one."""
 
     def test_a_tagged_layout_is_written_tagged_with_no_profile_repeated(self, pinned_clock):
-        from pyhermes.pdf import PRINT, TAGGED, layout, render_layout, render_pdf
+        from octavo.pdf import PRINT, TAGGED, layout, render_layout, render_pdf
 
         document = all_paged_fixtures()["a4_portrait"]()
         laid_out = layout(document, TAGGED)
@@ -144,7 +144,7 @@ class TestALayoutIsWrittenUnderItsOwnProfile:
         assert written != render_pdf(document, PRINT)
 
     def test_save_pdf_writes_through_the_layout(self, tmp_path, pinned_clock):
-        from pyhermes.pdf import SCREEN, layout, render_layout, save_layout, save_pdf
+        from octavo.pdf import SCREEN, layout, render_layout, save_layout, save_pdf
 
         document = all_paged_fixtures()["a4_portrait"]()
         saved = save_pdf(document, tmp_path / "deep" / "a.pdf", SCREEN)
@@ -154,21 +154,21 @@ class TestALayoutIsWrittenUnderItsOwnProfile:
         )
 
     def test_render_layout_takes_no_profile_to_drift(self):
-        from pyhermes.pdf import render_layout
+        from octavo.pdf import render_layout
 
         assert list(inspect.signature(render_layout).parameters) == ["laid_out"]
 
     @pytest.mark.parametrize("name", ["page_count", "anchor_tops", "render_layout"])
     def test_anything_else_is_refused_by_name(self, name):
-        import pyhermes.pdf
+        import octavo.pdf
 
         with pytest.raises(TypeError, match="got str"):
-            getattr(pyhermes.pdf, name)("not a document")
+            getattr(octavo.pdf, name)("not a document")
 
     def test_a_fit_check_refuses_a_layout_of_another_document(self):
-        from pyhermes.brochure import overflowing_panels
-        from pyhermes.deck import overflowing_slides
-        from pyhermes.pdf import layout
+        from octavo.brochure import overflowing_panels
+        from octavo.deck import overflowing_slides
+        from octavo.pdf import layout
         from qa.fixtures import all_brochure_fixtures, all_deck_fixtures
 
         deck = all_deck_fixtures()["pitch_16_9"]()
@@ -196,7 +196,7 @@ class TestAPreviewRunLaysOutOnce:
 
     def test_a_deck_linted(self, tmp_path):
         # The handout is a second document (#459's notes rule lays it out), so each is counted.
-        from pyhermes.pdf import exporter
+        from octavo.pdf import exporter
         from qa.preview import main
 
         laid: list[str] = []
@@ -243,7 +243,7 @@ class TestTheHintIsBuiltOnlyOnFailure:
         assert walks == []
 
     def test_a_failing_email_still_names_its_inlined_images(self, valid_metadata, png_bytes):
-        from pyhermes.builder import Email
+        from octavo.builder import Email
 
         email = Email(valid_metadata)
         email.set_banner(Banner(logo_url=EmailImage.inline(png_bytes, alt="Logo", width=100)))
@@ -271,7 +271,7 @@ class TestAConstraintReceivesAString:
     """#444: the protocol is ``hint: str`` again, and the hint is the document's to add."""
 
     def test_a_host_constraint_typed_for_a_string_runs(self, valid_metadata, png_bytes):
-        from pyhermes.builder import Email
+        from octavo.builder import Email
 
         medium = Medium(name="host", skeleton="base.html", constraints=(_host_constraint,))
         email = Email(valid_metadata, medium=medium)
@@ -285,7 +285,7 @@ class TestAConstraintReceivesAString:
 
         probe = tmp_path / "probe.py"
         probe.write_text(
-            "from pyhermes.builder import Constraint, Medium\n"
+            "from octavo.builder import Constraint, Medium\n"
             "def check(html: str, hint: str = '') -> None:\n"
             "    if len(html) > 10:\n"
             "        raise ValueError('too big' + hint.strip())\n"

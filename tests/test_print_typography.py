@@ -14,8 +14,8 @@ import re
 
 import pytest
 
-from pyhermes.brochure import Brochure, Panel
-from pyhermes.builder import (
+from octavo.brochure import Brochure, Panel
+from octavo.builder import (
     ChartBlock,
     DataTable,
     EmailBuilder,
@@ -27,19 +27,19 @@ from pyhermes.builder import (
     TextBlock,
     TwoColumn,
 )
-from pyhermes.builder.exceptions import ValidationError
-from pyhermes.builder.images import EmailImage
-from pyhermes.builder.models import TableRow
-from pyhermes.builder.sizing import (
+from octavo.builder.exceptions import ValidationError
+from octavo.builder.images import EmailImage
+from octavo.builder.models import TableRow
+from octavo.builder.sizing import (
     PRESENTATION_SIZES,
     STANDARD_SIZES,
     fine_print,
     measure_px,
     resolve_size_scheme,
 )
-from pyhermes.deck import Deck
-from pyhermes.document import EmptyBackMatter, EmptyCover, ExhibitsPage, PagedDocument
-from pyhermes.pdf import available, render_pdf
+from octavo.deck import Deck
+from octavo.document import EmptyBackMatter, EmptyCover, ExhibitsPage, PagedDocument
+from octavo.pdf import available, render_pdf
 from qa.fixtures import _paged, _png, letter_brief
 
 FACTS = {"firm_name": "Hermes Research", "campaign_name": "Brief"}

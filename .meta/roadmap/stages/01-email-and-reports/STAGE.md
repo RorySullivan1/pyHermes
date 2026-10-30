@@ -1,6 +1,6 @@
 # Stage 01 — Email mastery and repeatable reports
 
-**Goal:** turn pyHermes from a renderer you write a script against into a report you re-run,
+**Goal:** turn octavo from a renderer you write a script against into a report you re-run,
 and make its email the best a Python library produces. Seven epics; 1.4 and 1.5 are the
 largest.
 

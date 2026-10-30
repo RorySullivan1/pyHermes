@@ -10,8 +10,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pyhermes.builder import Email
-from pyhermes.builder.enums import SizeTheme
+from octavo.builder import Email
+from octavo.builder.enums import SizeTheme
 
 from . import kitchen_sink
 

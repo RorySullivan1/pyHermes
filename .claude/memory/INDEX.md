@@ -1,8 +1,8 @@
 # MEMORY INDEX  ·  keep ≤ ~80 lines, ≤ ~200 chars per line
 
 ## State            (rewrite in place — current truth only, ≤ ~10 lines)
-- pyHermes builds **documents** onto **media** (`email`, `document`, `brochure`, `deck`) from the shared
-  `pyhermes/builder` kit; exporters: `delivery`+`gmail`+`outlook`, and `pdf`. Rationale: CLAUDE.md, `media.md`.
+- octavo (renamed from pyHermes in v0.4.0) builds **documents** onto **media** (`email`, `document`,
+  `brochure`, `deck`) from the shared `octavo/builder` kit; exporters: `delivery`+`gmail`+`outlook`, and `pdf`. Rationale: CLAUDE.md, `media.md`.
 - **Shipped through PR #475** (#474); epics #157–#442 all closed, no issues open. #219 DOCX and #300 PPTX
   closed as not planned. #288 is the owner's Outlook-desktop check. The prose baseline is 43, may only shrink.
 - **The roadmap is live** in `.meta/roadmap/` (5 stages, 31 epics), surfaced each session by `roadmap_status`;

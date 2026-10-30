@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from functools import partial
 
-from pyhermes.builder import (
+from octavo.builder import (
     BarItem,
     BarList,
     CardGroup,
@@ -26,8 +26,8 @@ from pyhermes.builder import (
     Stack,
     ThreeColumn,
 )
-from pyhermes.builder.formats import bps, number, pct
-from pyhermes.builder.models import KpiItem, TableRow
+from octavo.builder.formats import bps, number, pct
+from octavo.builder.models import KpiItem, TableRow
 
 _SIGNED = partial(pct, dp=1, sign=True)
 _LEVEL = partial(number, dp=2)

@@ -13,12 +13,12 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from pyhermes.builder import CardGroup, ChartBlock, DataTable, FullWidth, TextBlock, TwoColumn
-from pyhermes.builder.enums import CardOrientation, TwoColumnRatio
-from pyhermes.builder.images import EmailImage
-from pyhermes.builder.medium import Medium
-from pyhermes.builder.models import KpiItem, TableRow
-from pyhermes.document import (
+from octavo.builder import CardGroup, ChartBlock, DataTable, FullWidth, TextBlock, TwoColumn
+from octavo.builder.enums import CardOrientation, TwoColumnRatio
+from octavo.builder.images import EmailImage
+from octavo.builder.medium import Medium
+from octavo.builder.models import KpiItem, TableRow
+from octavo.document import (
     BackMatter,
     ContentsPage,
     Cover,

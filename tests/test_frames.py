@@ -8,13 +8,13 @@ change that renders plausibly but adapts wrongly still fails.
 
 import pytest
 
-pd = pytest.importorskip("pandas", reason='the DataFrame adapter needs "pyhermes[data]"')
+pd = pytest.importorskip("pandas", reason='the DataFrame adapter needs "octavo[data]"')
 
-from pyhermes.builder import TemplateEngine, Tone, ValidationError  # noqa: E402
-from pyhermes.builder.enums import ColumnKind, RowKind  # noqa: E402
-from pyhermes.builder.formats import money, pct  # noqa: E402
-from pyhermes.builder.theming import DEFAULT_THEME  # noqa: E402
-from pyhermes.data import table_from_frame  # noqa: E402
+from octavo.builder import TemplateEngine, Tone, ValidationError  # noqa: E402
+from octavo.builder.enums import ColumnKind, RowKind  # noqa: E402
+from octavo.builder.formats import money, pct  # noqa: E402
+from octavo.builder.theming import DEFAULT_THEME  # noqa: E402
+from octavo.data import table_from_frame  # noqa: E402
 
 _RET = {"1M": lambda v: pct(v, 1, sign=True)}
 

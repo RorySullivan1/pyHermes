@@ -1,7 +1,7 @@
 """
 The scope charter has teeth (standing rule 14, roadmap v0.2.0).
 
-No new medium and no new layout primitive joins pyHermes without a reference report
+No new medium and no new layout primitive joins octavo without a reference report
 that needs it. Both sets are found by walking the package, so one cannot be added
 without this file changing, and the change names its report.
 """
@@ -16,16 +16,16 @@ from pathlib import Path
 
 import pytest
 
-import pyhermes
-from pyhermes.builder.components import Component
-from pyhermes.builder.containers import Container
-from pyhermes.builder.document import Document
-from pyhermes.builder.medium import SHIPPED_MEDIA, Medium
+import octavo
+from octavo.builder.components import Component
+from octavo.builder.containers import Container
+from octavo.builder.document import Document
+from octavo.builder.medium import SHIPPED_MEDIA, Medium
 
 ROOT = Path(__file__).resolve().parent.parent
 
 POSITIONING = (
-    "pyHermes is a framework for research reports: quantitative research goes in as data, "
+    "octavo is a framework for research reports: quantitative research goes in as data, "
     "exhibits, findings and disclosures, and comes out as an email, a printed report or a "
     "folded brochure, each checked for the medium it is read on."
 )
@@ -72,13 +72,13 @@ OPTIONAL_BACKENDS = {
 
 
 def _modules():
-    for info in pkgutil.walk_packages(pyhermes.__path__, "pyhermes."):
+    for info in pkgutil.walk_packages(octavo.__path__, "octavo."):
         if info.name.endswith("__main__"):
             continue
         try:
             yield importlib.import_module(info.name)
         except ModuleNotFoundError as exc:
-            # A missing extra is skipped; a broken pyhermes import is a failure, not a pass.
+            # A missing extra is skipped; a broken octavo import is a failure, not a pass.
             if (exc.name or "").split(".")[0] not in OPTIONAL_BACKENDS:
                 raise
 
@@ -106,7 +106,7 @@ def _layouts() -> set[str]:
                 continue
             if value.__name__.startswith("_") or value is Container:
                 continue
-            composed = module.__name__ == "pyhermes.builder.composition"
+            composed = module.__name__ == "octavo.builder.composition"
             if issubclass(value, Container) or (composed and issubclass(value, Component)):
                 found.add(value.__name__)
     return found
@@ -146,7 +146,7 @@ class TestTheFreeze:
             assert report.strip() and report.lower() in roadmap, f"{name}: {report!r}"
 
     def test_a_new_container_is_caught(self, monkeypatch):
-        import pyhermes.builder.containers as containers
+        import octavo.builder.containers as containers
 
         class Carousel(Container):
             pass
@@ -156,7 +156,7 @@ class TestTheFreeze:
         assert _unadmitted(_layouts(), FROZEN_LAYOUTS, ADMITTED_LAYOUTS) == ["Carousel"]
 
     def test_a_medium_only_the_registry_names_is_caught(self, monkeypatch):
-        import pyhermes.builder.medium as medium
+        import octavo.builder.medium as medium
 
         monkeypatch.setattr(medium, "SHIPPED_MEDIA", (*SHIPPED_MEDIA, "screen"))
         monkeypatch.setitem(globals(), "SHIPPED_MEDIA", medium.SHIPPED_MEDIA)

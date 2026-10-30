@@ -1,6 +1,6 @@
 # Stage 03 — The access point: schema, API and AI  (sketch)
 
-**Goal:** a program or a model hands pyHermes a note and gets back checked documents. The rule
+**Goal:** a program or a model hands octavo a note and gets back checked documents. The rule
 that makes it safe in research: **the model writes structure and prose; every number comes
 from data.**
 

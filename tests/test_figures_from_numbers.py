@@ -8,11 +8,11 @@ from functools import partial
 
 import pytest
 
-from pyhermes.builder import DEFAULT_THEME, CardGroup, Email, FullWidth
-from pyhermes.builder.enums import Tone
-from pyhermes.builder.exceptions import ValidationError
-from pyhermes.builder.formats import bps, pct
-from pyhermes.builder.models import Card, KpiItem
+from octavo.builder import DEFAULT_THEME, CardGroup, Email, FullWidth
+from octavo.builder.enums import Tone
+from octavo.builder.exceptions import ValidationError
+from octavo.builder.formats import bps, pct
+from octavo.builder.models import Card, KpiItem
 
 signed_pct = partial(pct, sign=True)
 

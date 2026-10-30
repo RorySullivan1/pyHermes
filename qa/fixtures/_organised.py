@@ -11,7 +11,7 @@ sections, so each golden pins what its own medium makes of them.
 
 from __future__ import annotations
 
-from pyhermes.builder import (
+from octavo.builder import (
     Container,
     EmailImage,
     Event,
@@ -23,8 +23,8 @@ from pyhermes.builder import (
     Timeline,
     TwoColumn,
 )
-from pyhermes.builder.formats import pct
-from pyhermes.builder.models import Cell
+from octavo.builder.formats import pct
+from octavo.builder.models import Cell
 
 from ._png import solid_png
 

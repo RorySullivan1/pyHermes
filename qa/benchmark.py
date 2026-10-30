@@ -24,9 +24,9 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
-from pyhermes.builder.document import Document
-from pyhermes.check.lint import Severity, lint_document
-from pyhermes.data.exceptions import BackendMissingError
+from octavo.builder.document import Document
+from octavo.check.lint import Severity, lint_document
+from octavo.data.exceptions import BackendMissingError
 from qa.reference import REPORTS, ROOT, build_script, load_script
 
 _SKIPPED = (
@@ -86,7 +86,7 @@ def _median_ms(action: Callable[[], object], runs: int) -> float:
 
 
 def _pdf_ms(document: Document, runs: int) -> float | None:
-    from pyhermes.pdf import available, render_pdf
+    from octavo.pdf import available, render_pdf
 
     if not document.medium.paged or not available():
         return None

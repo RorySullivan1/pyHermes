@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pyhermes.builder import (
+from octavo.builder import (
     CardGroup,
     Email,
     EmailBuilder,
@@ -20,8 +20,8 @@ from pyhermes.builder import (
     MinimalBanner,
     TextBlock,
 )
-from pyhermes.builder.images import EmailImage
-from pyhermes.builder.models import Card
+from octavo.builder.images import EmailImage
+from octavo.builder.models import Card
 
 from ._png import solid_png
 

@@ -10,13 +10,13 @@ from pathlib import Path
 
 import pytest
 
-import pyhermes.outlook.desktop as desktop
-from pyhermes.builder import Email, FullWidth, ImageBlock, TextBlock
-from pyhermes.builder.images import EmailImage
-from pyhermes.delivery import build_message
-from pyhermes.delivery.exceptions import MessageError, TransportError
-from pyhermes.delivery.message import Attachment
-from pyhermes.outlook.desktop import (
+import octavo.outlook.desktop as desktop
+from octavo.builder import Email, FullWidth, ImageBlock, TextBlock
+from octavo.builder.images import EmailImage
+from octavo.delivery import build_message
+from octavo.delivery.exceptions import MessageError, TransportError
+from octavo.delivery.message import Attachment
+from octavo.outlook.desktop import (
     PR_ATTACH_CONTENT_ID,
     PR_ATTACHMENT_HIDDEN,
     BackendMissingError,

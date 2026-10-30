@@ -12,14 +12,14 @@ from dataclasses import replace
 
 import pytest
 
-from pyhermes.builder import Email, FullWidth, TextBlock
-from pyhermes.builder.engine import TemplateEngine
-from pyhermes.builder.exceptions import SizeError
-from pyhermes.builder.images import EmailImage
-from pyhermes.builder.medium import DEFAULT_MEDIUM, Medium
-from pyhermes.builder.regions import Banner, Footer, Header
-from pyhermes.builder.sizing import DEFAULT_PAGE, SPACIOUS_SIZES, STANDARD_SIZES, PageFormat
-from pyhermes.email.medium import _SIZE_LIMIT_KB, EMAIL_MEDIUM, validate_gmail_size
+from octavo.builder import Email, FullWidth, TextBlock
+from octavo.builder.engine import TemplateEngine
+from octavo.builder.exceptions import SizeError
+from octavo.builder.images import EmailImage
+from octavo.builder.medium import DEFAULT_MEDIUM, Medium
+from octavo.builder.regions import Banner, Footer, Header
+from octavo.builder.sizing import DEFAULT_PAGE, SPACIOUS_SIZES, STANDARD_SIZES, PageFormat
+from octavo.email.medium import _SIZE_LIMIT_KB, EMAIL_MEDIUM, validate_gmail_size
 
 #: A medium identical to the shipped one but for its (absent) constraints.
 UNCHECKED = Medium(
@@ -155,7 +155,7 @@ class TestTheFrameBelongsToTheMedium:
     def test_no_shipped_density_declares_a_page_dimension(self):
         # The structural form of "density is not width". Before #159 a preset
         # could have set a width and nothing would have stopped it.
-        from pyhermes.builder.sizing import SIZE_SCHEMES
+        from octavo.builder.sizing import SIZE_SCHEMES
 
         for theme, scheme in SIZE_SCHEMES.items():
             assert scheme.frame.width == DEFAULT_PAGE.width, theme

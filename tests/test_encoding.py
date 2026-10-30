@@ -15,7 +15,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 
 #: The trees whose text I/O must be explicit: the package, the harness and the suite.
-SCANNED = ("pyhermes", "qa", "tests", "conftest.py")
+SCANNED = ("octavo", "qa", "tests", "conftest.py")
 
 METHODS = {"read_text", "write_text"}
 

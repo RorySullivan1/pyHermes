@@ -15,7 +15,7 @@ fields are *not* (escaping those would break every caller passing markup).
 
 import pytest
 
-from pyhermes.builder import (
+from octavo.builder import (
     AuthorBlock,
     CardGroup,
     ChartBlock,
@@ -26,8 +26,8 @@ from pyhermes.builder import (
     TextBlock,
     TwoColumn,
 )
-from pyhermes.builder.filters import escape_html
-from pyhermes.builder.models import KpiItem, NumberedItem, TableRow
+from octavo.builder.filters import escape_html
+from octavo.builder.models import KpiItem, NumberedItem, TableRow
 
 NASTY = 'S&P "500" <script>alert(1)</script>'
 
@@ -203,7 +203,7 @@ class TestHtmlFieldsStayRaw:
         assert "<em>emphasis</em>" in html
 
     def test_metadata_disclaimers_are_not_escaped(self, valid_metadata, text_block):
-        from pyhermes.builder import Footer
+        from octavo.builder import Footer
 
         email = Email(
             metadata=valid_metadata,

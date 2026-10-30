@@ -24,7 +24,7 @@ import pytest
 def test_skipped_for_an_extra():
     pytest.skip('no WeasyPrint; the PDF exporter is the optional "[pdf]" extra')
 
-@pytest.mark.skipif(True, reason='the DataFrame adapter needs "pyhermes[data]"')
+@pytest.mark.skipif(True, reason='the DataFrame adapter needs "octavo[data]"')
 def test_marked_for_an_extra():
     pass
 
@@ -44,7 +44,7 @@ def test_passes():
 MODULE = """
 import pytest
 
-pytest.importorskip("no_such_backend", reason='the DataFrame adapter needs "pyhermes[data]"')
+pytest.importorskip("no_such_backend", reason='the DataFrame adapter needs "octavo[data]"')
 
 def test_never_collected():
     pass
@@ -103,9 +103,9 @@ def test_without_it_every_skip_stays_a_skip(tmp_path):
     [
         'the "[pdf]" extra',
         'no browser; the "[qa]" extra',
-        'pip install "pyhermes[charts]"',
+        'pip install "octavo[charts]"',
         'rendering an equation is the "[math]" extra',
-        'the DataFrame adapter needs "pyhermes[data]"',
+        'the DataFrame adapter needs "octavo[data]"',
     ],
 )
 def test_the_pattern_matches_every_extras_spelling(reason):

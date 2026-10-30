@@ -1,5 +1,5 @@
 """
-A pytest plugin: under ``PYHERMES_REQUIRE_EXTRAS=1``, a skip that names an extra fails (#239).
+A pytest plugin: under ``OCTAVO_REQUIRE_EXTRAS=1``, a skip that names an extra fails (#239).
 
 CI's ``all-extras`` job installs every extra, so a skip there that names one is a
 test running nowhere. `.claude/rules/qa-harness.md` has the rule and the job.
@@ -13,11 +13,11 @@ from collections.abc import Generator
 
 import pytest
 
-#: A skip reason naming one of the package's extras: ``"[pdf]"``, ``pyhermes[data]``.
+#: A skip reason naming one of the package's extras: ``"[pdf]"``, ``octavo[data]``.
 EXTRA_SKIP = re.compile(r"\[(qa|pdf|data|charts|math|qr|outlook-desktop)\]")
 
 #: Set to any non-empty value to turn such a skip into a failure.
-ENV = "PYHERMES_REQUIRE_EXTRAS"
+ENV = "OCTAVO_REQUIRE_EXTRAS"
 
 
 def _fail_if_for_an_extra(report: pytest.TestReport | pytest.CollectReport) -> None:

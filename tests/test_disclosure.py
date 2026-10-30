@@ -10,10 +10,10 @@ than against the HTML alone.
 
 import pytest
 
-from pyhermes.builder import ChartBlock, DataTable, ImageBlock, TemplateEngine
-from pyhermes.builder.images import EmailImage
-from pyhermes.builder.models import TableRow
-from pyhermes.builder.textgen import wrap
+from octavo.builder import ChartBlock, DataTable, ImageBlock, TemplateEngine
+from octavo.builder.images import EmailImage
+from octavo.builder.models import TableRow
+from octavo.builder.textgen import wrap
 
 COPY = "Returns are shown gross of fees. Past performance is not indicative of future results."
 
@@ -108,7 +108,7 @@ def test_every_exhibit_reads_the_one_shared_partial():
     above and quietly reintroduce the drift, so the inclusion is asserted
     directly.
     """
-    from pyhermes.builder.engine import TemplateEngine as Engine
+    from octavo.builder.engine import TemplateEngine as Engine
 
     loader = Engine()._env.loader
     for path in ("analysis/data-table.html", "analysis/chart-block.html", "media/image-block.html"):

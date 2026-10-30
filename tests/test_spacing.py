@@ -15,8 +15,8 @@ from typing import Any
 
 import pytest
 
-from pyhermes.brochure import Brochure, Panel
-from pyhermes.builder import (
+from octavo.brochure import Brochure, Panel
+from octavo.builder import (
     COMPACT_SIZES,
     DENSE_SIZES,
     STANDARD_SIZES,
@@ -63,16 +63,16 @@ from pyhermes.builder import (
     Timeline,
     TwoColumn,
 )
-from pyhermes.builder import engine as engine_module
-from pyhermes.builder.components import Component, descendants
-from pyhermes.builder.containers import Container, section_spacing_tokens
-from pyhermes.builder.document import Document
-from pyhermes.builder.engine import Renderer, TemplateEngine
-from pyhermes.builder.enums import CardOrientation, SizeTheme
-from pyhermes.builder.exceptions import ValidationError
-from pyhermes.builder.images import EmailImage
-from pyhermes.builder.models import Card, KpiItem, NumberedItem, TableRow
-from pyhermes.builder.sizing import (
+from octavo.builder import engine as engine_module
+from octavo.builder.components import Component, descendants
+from octavo.builder.containers import Container, section_spacing_tokens
+from octavo.builder.document import Document
+from octavo.builder.engine import Renderer, TemplateEngine
+from octavo.builder.enums import CardOrientation, SizeTheme
+from octavo.builder.exceptions import ValidationError
+from octavo.builder.images import EmailImage
+from octavo.builder.models import Card, KpiItem, NumberedItem, TableRow
+from octavo.builder.sizing import (
     LETTER_LANDSCAPE,
     LETTER_PORTRAIT,
     TOKEN_LAYERS,
@@ -80,9 +80,9 @@ from pyhermes.builder.sizing import (
     WIDTH_TOKENS,
     SizeScheme,
 )
-from pyhermes.config import Config, config_override
-from pyhermes.document import Page, PagedDocument, paged_medium
-from pyhermes.pdf import available
+from octavo.config import Config, config_override
+from octavo.document import Page, PagedDocument, paged_medium
+from octavo.pdf import available
 from qa.fixtures import all_brochure_fixtures, all_fixtures, all_paged_fixtures, letter_dense
 from qa.fixtures._png import solid_png
 from qa.fixtures._qr import qr_png
@@ -101,7 +101,7 @@ HOUSE = COMPACT_SIZES.derive(space={"content_top": 8}, component={"table_cell_pa
 SENTINEL = 7.25
 MARK = f"{SENTINEL}px"
 
-TEMPLATES = Path(__file__).resolve().parent.parent / "pyhermes" / "builder" / "templates"
+TEMPLATES = Path(__file__).resolve().parent.parent / "octavo" / "builder" / "templates"
 
 
 #: Every tag a prose field is styled on, so each prose token is read (#280).
@@ -123,7 +123,7 @@ def _panels(count: int = 6) -> list[Panel]:
 class TestDenseIsAPrintDensity:
     def test_it_is_a_shipped_density(self) -> None:
         assert SizeTheme.DENSE == "dense"
-        from pyhermes.builder.sizing import SIZE_SCHEMES
+        from octavo.builder.sizing import SIZE_SCHEMES
 
         assert SIZE_SCHEMES[SizeTheme.DENSE] is DENSE_SIZES
 
@@ -146,7 +146,7 @@ class TestDenseIsAPrintDensity:
 
     def test_plain_html_takes_it(self) -> None:
         # The gate is the email medium's: plain HTML is never read in Outlook.
-        from pyhermes.builder.models import EmailMetadata
+        from octavo.builder.models import EmailMetadata
 
         Document(EmailMetadata(**EMAIL_FACTS, size_theme="dense"))
 
@@ -163,7 +163,7 @@ class TestTheDenseFixture:
 
     @requires_pdf
     def test_it_lays_out_to_its_sheets(self) -> None:
-        from pyhermes.pdf import page_count
+        from octavo.pdf import page_count
 
         assert page_count(letter_dense.build()) == letter_dense.SHEETS == 2
 
@@ -220,7 +220,7 @@ class TestACustomScheme:
             COMPACT_SIZES.derive(space={"content_top": 0})
 
     def test_it_is_still_not_in_the_skeleton_context(self) -> None:
-        from pyhermes.builder.models import EmailMetadata
+        from octavo.builder.models import EmailMetadata
 
         assert "size_theme" not in EmailMetadata(size_theme=HOUSE).to_dict()
 
@@ -235,12 +235,12 @@ class TestTheSwitchIsAConfigField:
     def test_the_environment_sets_it(
         self, monkeypatch: pytest.MonkeyPatch, raw: str, expected: bool
     ) -> None:
-        monkeypatch.setenv("PYHERMES_ALLOW_CUSTOM_EMAIL_DENSITY", raw)
+        monkeypatch.setenv("OCTAVO_ALLOW_CUSTOM_EMAIL_DENSITY", raw)
         assert Config.from_env().allow_custom_email_density is expected
 
     def test_a_misspelt_value_names_its_variable(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.setenv("PYHERMES_ALLOW_CUSTOM_EMAIL_DENSITY", "maybe")
-        with pytest.raises(ValueError, match="PYHERMES_ALLOW_CUSTOM_EMAIL_DENSITY"):
+        monkeypatch.setenv("OCTAVO_ALLOW_CUSTOM_EMAIL_DENSITY", "maybe")
+        with pytest.raises(ValueError, match="OCTAVO_ALLOW_CUSTOM_EMAIL_DENSITY"):
             Config.from_env()
 
     def test_it_must_be_a_bool(self) -> None:
@@ -270,7 +270,7 @@ class TestSpacingNamesTokens:
         assert all(len(layers) == 1 for layers in TOKEN_LAYERS.values())
 
     def test_an_ambiguous_name_is_refused(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        from pyhermes.builder import sizing
+        from octavo.builder import sizing
 
         monkeypatch.setitem(sizing.TOKEN_LAYERS, "gutter", ("space", "frame"))
         with pytest.raises(ValidationError, match="ambiguous"):
@@ -651,7 +651,7 @@ def _render(cls: type, spacing: Any, scheme: SizeScheme = STANDARD_SIZES) -> str
 
 
 def test_every_public_component_and_container_is_covered() -> None:
-    import pyhermes.builder as api
+    import octavo.builder as api
 
     public = {
         obj
@@ -730,7 +730,7 @@ def test_every_class_takes_spacing_as_a_keyword(cls: type) -> None:
 def test_a_tightened_table_repeats_its_header_on_every_sheet() -> None:
     import pypdfium2
 
-    from pyhermes.pdf import render_pdf
+    from octavo.pdf import render_pdf
 
     headers = ["Issue", "Sector", "Weight"]
     rows = [TableRow([f"Bond {n:03d}", "Rates", f"{n / 10:.1f}"]) for n in range(1, 121)]

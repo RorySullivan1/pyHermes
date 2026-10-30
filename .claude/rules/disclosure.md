@@ -1,9 +1,9 @@
 ---
 paths:
-  - "pyhermes/builder/components.py"
-  - "pyhermes/builder/templates/analysis/**/*"
-  - "pyhermes/builder/templates/media/**/*"
-  - "pyhermes/builder/templates/common/disclosure.html"
+  - "octavo/builder/components.py"
+  - "octavo/builder/templates/analysis/**/*"
+  - "octavo/builder/templates/media/**/*"
+  - "octavo/builder/templates/common/disclosure.html"
 ---
 
 # An exhibit's fine print — attribution, and the disclosure beneath it

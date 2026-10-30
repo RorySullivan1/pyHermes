@@ -1,6 +1,6 @@
 # 8. Troubleshooting
 
-pyHermes checks your email while it builds, so most problems stop the build with a message
+octavo checks your email while it builds, so most problems stop the build with a message
 naming what to fix. Find the message, or what you are seeing, below.
 
 **Contents:** [Errors while building](#errors-while-building) ·
@@ -64,7 +64,7 @@ your script is in.
 ```python
 from pathlib import Path
 
-from pyhermes.builder.images import EmailImage
+from octavo.builder.images import EmailImage
 
 HERE = Path(__file__).parent        # the folder your script is in
 LOGO_WIDTH = 120                    # the logo's own display width, in px
@@ -141,14 +141,14 @@ a new section with a `title=`.
 **Fix:** use `"compact"` for a tighter email. `dense` is for printed reports. If you have
 tested your own spacing in the mail programs your readers use, you can allow it with
 `Email(facts, config=Config(allow_custom_email_density=True))`, where `Config` comes from
-`pyhermes.config`.
+`octavo.config`.
 
 ## Size
 
 ### I get "SizeError" about the 102 KB Gmail clipping limit
 
 **Likely cause:** Gmail cuts off any email over 102 KB and shows *"View entire message"*.
-pyHermes stops rather than let that happen. The usual causes are `EmailImage.inline(...)`
+octavo stops rather than let that happen. The usual causes are `EmailImage.inline(...)`
 pictures, very long text, or many large tables.
 
 **Fix:**
@@ -160,7 +160,7 @@ pictures, very long text, or many large tables.
    email over the limit, lists the sections heaviest first, and exits with code 1:
 
    ```bash
-   python -m pyhermes.check drafts/weekly.py:build
+   python -m octavo.check drafts/weekly.py:build
    ```
 
    ```text
@@ -176,8 +176,8 @@ pictures, very long text, or many large tables.
    the same report comes from the email itself:
 
    ```python
-   from pyhermes.builder import Email, FullWidth, TextBlock
-   from pyhermes.check import render_for_check, size_report
+   from octavo.builder import Email, FullWidth, TextBlock
+   from octavo.check import render_for_check, size_report
 
    facts = {"email_subject": "Rates Weekly", "firm_name": "Acme", "campaign_name": "Rates"}
    email = Email(facts)
@@ -225,18 +225,18 @@ full-width section. Outlook ignores sizes set any other way.
 ### It looks different in Outlook from in my browser
 
 **Likely cause:** Outlook for Windows lays out email with Microsoft Word, which ignores a
-lot of web styling. pyHermes's own layout is built for it. Styling you add yourself inside
+lot of web styling. octavo's own layout is built for it. Styling you add yourself inside
 a `TextBlock`, such as `style="display:flex"`, may not survive.
 
 **Fix:**
-1. Run `python -m pyhermes.check …`. It lists anything Outlook will ignore or break.
+1. Run `python -m octavo.check …`. It lists anything Outlook will ignore or break.
 2. Keep your `TextBlock` HTML to plain tags: `<p>`, `<b>`, `<i>`, `<a>`, `<h3>`, `<ul>`,
    `<li>`, `<br>`. Change colours and spacing through the theme ([Look and feel](05-look-and-feel.md)).
 3. Send yourself a test and open it in Outlook.
 
 ### I see `&amp;` or `<b>` as text in a title or a table
 
-**Likely cause:** HTML, or text you escaped yourself, in a field that pyHermes escapes for
+**Likely cause:** HTML, or text you escaped yourself, in a field that octavo escapes for
 you: a title, a label, a table cell or a caption.
 
 **Fix:** pass plain text to those fields, with `&` and `<` written as they are. Only
@@ -269,10 +269,10 @@ In other mail programs, send through Microsoft 365 or Gmail instead.
 
 ### I get "No module named qa"
 
-**Likely cause:** the `preview` command was run from outside the `pyHermes` folder.
+**Likely cause:** the `preview` command was run from outside the `octavo` folder.
 
-**Fix:** to check an email, use `python -m pyhermes.check C:\work\weekly.py:build`, which
-works from any folder. Only the screenshots need the `pyHermes` folder and
+**Fix:** to check an email, use `python -m octavo.check C:\work\weekly.py:build`, which
+works from any folder. Only the screenshots need the `octavo` folder and
 `python -m qa.preview`.
 
 ### "create_draft" says it needs Windows and classic Outlook
@@ -285,7 +285,7 @@ classic Outlook. Otherwise save the message with `save_eml` or send it through M
 
 ### I get "Rendering a PDF needs WeasyPrint" or "could not load a system library"
 
-**Fix:** install the extra from the `pyHermes` folder with `pip install -e ".[pdf]"`, then
+**Fix:** install the extra from the `octavo` folder with `pip install -e ".[pdf]"`, then
 the system libraries listed in [Reports and PDFs](07-reports-and-pdfs.md).
 
 ### I get "is not in this document's asset manifest" when printing

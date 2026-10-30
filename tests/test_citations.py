@@ -11,7 +11,7 @@ import re
 
 import pytest
 
-from pyhermes.builder import (
+from octavo.builder import (
     Bibliography,
     ChartBlock,
     DataTable,
@@ -22,11 +22,11 @@ from pyhermes.builder import (
     TextBlock,
     ValidationError,
 )
-from pyhermes.builder.apparatus import CITATION, cited_keys, split_markers
-from pyhermes.builder.email import Email
-from pyhermes.builder.models import NumberedItem, TableRow
-from pyhermes.config import Config
-from pyhermes.document import PagedDocument
+from octavo.builder.apparatus import CITATION, cited_keys, split_markers
+from octavo.builder.email import Email
+from octavo.builder.models import NumberedItem, TableRow
+from octavo.config import Config
+from octavo.document import PagedDocument
 
 FACTS = {"email_subject": "Subject", "firm_name": "Hermes", "campaign_name": "Review"}
 

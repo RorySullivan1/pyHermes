@@ -10,10 +10,10 @@ import warnings
 
 import pytest
 
-from pyhermes.builder import CardGroup, FullWidth, KpiStrip
-from pyhermes.builder.enums import CardOrientation
-from pyhermes.builder.exceptions import EmailBuilderError, ValidationError
-from pyhermes.builder.models import Card, KpiItem
+from octavo.builder import CardGroup, FullWidth, KpiStrip
+from octavo.builder.enums import CardOrientation
+from octavo.builder.exceptions import EmailBuilderError, ValidationError
+from octavo.builder.models import Card, KpiItem
 
 
 def cards(n: int) -> list[Card]:

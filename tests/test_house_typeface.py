@@ -14,11 +14,11 @@ from pathlib import Path
 
 import pytest
 
-from pyhermes.builder import DEFAULT_FONTS, Email, FontStack, FullWidth, TextBlock
-from pyhermes.builder.exceptions import ValidationError
-from pyhermes.document import PagedDocument
-from pyhermes.pdf import available, render_pdf
-from pyhermes.pdf.exporter import render_handout
+from octavo.builder import DEFAULT_FONTS, Email, FontStack, FullWidth, TextBlock
+from octavo.builder.exceptions import ValidationError
+from octavo.document import PagedDocument
+from octavo.pdf import available, render_pdf
+from octavo.pdf.exporter import render_handout
 
 FONTS = Path(__file__).resolve().parent.parent / "qa" / "fixtures" / "fonts"
 REGULAR = FONTS / "SpecimenCondensed-Regular.ttf"
@@ -161,14 +161,14 @@ class TestOnPaper:
 
 
 def test_a_chart_drawn_under_chart_style_is_set_in_the_face():
-    pytest.importorskip("matplotlib", reason='chart_style needs "pyhermes[charts]"')
+    pytest.importorskip("matplotlib", reason='chart_style needs "octavo[charts]"')
     import matplotlib
 
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
     from matplotlib import font_manager
 
-    from pyhermes.data import chart_style
+    from octavo.data import chart_style
 
     style = chart_style("classic", _house_fonts())
     assert style["font.family"][0] == "Specimen Condensed"

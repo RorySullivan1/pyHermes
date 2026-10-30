@@ -14,12 +14,12 @@ import httplib2
 import pytest
 import requests
 
-from pyhermes.builder import EmailBuilder, FullWidth, ImageBlock
-from pyhermes.builder.images import EmailImage
-from pyhermes.config import config_override
-from pyhermes.delivery import build_message, save_eml
-from pyhermes.delivery.exceptions import DeliveryError, TransportError
-from pyhermes.gmail import GoogleApiTransport, is_transient, send_message
+from octavo.builder import EmailBuilder, FullWidth, ImageBlock
+from octavo.builder.images import EmailImage
+from octavo.config import config_override
+from octavo.delivery import build_message, save_eml
+from octavo.delivery.exceptions import DeliveryError, TransportError
+from octavo.gmail import GoogleApiTransport, is_transient, send_message
 
 ENVELOPE = {
     "subject": "Weekly Market Wrap",
@@ -414,7 +414,7 @@ class TestGoogleApiTransport:
         import ast
         import pathlib
 
-        import pyhermes.gmail.sender as sender
+        import octavo.gmail.sender as sender
 
         tree = ast.parse(pathlib.Path(sender.__file__).read_text(encoding="utf-8"))
         imported: list[str] = []

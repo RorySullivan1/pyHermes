@@ -9,7 +9,7 @@ anything the caller has not positively classified as worth retrying.
 
 import pytest
 
-from pyhermes.delivery.retry import retry_with_backoff
+from octavo.delivery.retry import retry_with_backoff
 
 TRANSIENT = TimeoutError
 PERMANENT = PermissionError

@@ -1,16 +1,16 @@
 # 1. Quick start
 
-Install pyHermes, build a one-page market note, and open it in your browser. It takes
+Install octavo, build a one-page market note, and open it in your browser. It takes
 about five minutes.
 
 ## Install
 
-You need Python 3.11 or newer. pyHermes is not on PyPI, so install it from a copy of the
+You need Python 3.11 or newer. octavo is not on PyPI, so install it from a copy of the
 repository:
 
 ```bash
 git clone https://github.com/RorySullivan1/pyHermes.git
-cd pyHermes
+cd octavo
 python -m venv .venv
 source .venv/bin/activate        # on Windows: .venv\Scripts\activate
 pip install -e .
@@ -31,8 +31,8 @@ you install the same way:
 1. Create a file called `weekly.py` anywhere you like, and paste this into it:
 
    ```python
-   from pyhermes.builder import CardGroup, EmailBuilder, FullWidth, TextBlock
-   from pyhermes.builder.models import KpiItem
+   from octavo.builder import CardGroup, EmailBuilder, FullWidth, TextBlock
+   from octavo.builder.models import KpiItem
 
 
    def build():
@@ -88,7 +88,7 @@ copyright line. To add **Unsubscribe** and **View in browser** links, give their
   title and one block inside.
 - **`CardGroup`** is a row of two to four figures. **`TextBlock`** is a passage of text,
   written as HTML (`<p>`, `<b>`, `<a href="...">` and so on).
-- **`.build()`** gives you the finished `Email`. pyHermes checks your content as you add
+- **`.build()`** gives you the finished `Email`. octavo checks your content as you add
   it: a missing subject or a colour written as `green` stops the script straight away,
   with a message that says what to fix.
 
@@ -97,7 +97,7 @@ copyright line. To add **Unsubscribe** and **View in browser** links, give their
 From any folder, run the check against your file:
 
 ```bash
-python -m pyhermes.check path/to/weekly.py:build
+python -m octavo.check path/to/weekly.py:build
 ```
 
 It saves the email into `output/` and checks it against the rules Outlook and Gmail
@@ -106,7 +106,7 @@ the function in your file that returns the email. Open `output/weekly-build.html
 browser to look at it.
 
 > **Tip:** `output/weekly-build.txt` is the plain-text version of your email, which
-> pyHermes writes for you. It is what a reader sees if their mail program shows text only.
+> octavo writes for you. It is what a reader sees if their mail program shows text only.
 
 ## Next steps
 

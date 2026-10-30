@@ -14,11 +14,11 @@ import re
 
 import pytest
 
-from pyhermes.builder import DataTable, FullWidth
-from pyhermes.builder.engine import TemplateEngine
-from pyhermes.builder.exceptions import ValidationError
-from pyhermes.builder.models import Cell, Column, TableRow
-from pyhermes.pdf import available as pdf_available
+from octavo.builder import DataTable, FullWidth
+from octavo.builder.engine import TemplateEngine
+from octavo.builder.exceptions import ValidationError
+from octavo.builder.models import Cell, Column, TableRow
+from octavo.pdf import available as pdf_available
 from qa.screenshots import available as browser_available
 
 #: Weights whose shares do not divide evenly, so the rounding is exercised.
@@ -106,14 +106,14 @@ def test_on_paper_the_columns_take_their_shares():
     import numpy as np
     import pypdfium2
 
-    from pyhermes.document import (
+    from octavo.document import (
         EmptyBackMatter,
         EmptyCover,
         EmptyRunningFooter,
         EmptyRunningHeader,
         PagedDocument,
     )
-    from pyhermes.pdf import render_pdf
+    from octavo.pdf import render_pdf
 
     document = PagedDocument(
         {"firm_name": "F", "campaign_name": "C"},

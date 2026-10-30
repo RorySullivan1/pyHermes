@@ -13,9 +13,9 @@ from pathlib import Path
 
 import pytest
 
-from pyhermes.builder.components import DataTable
-from pyhermes.builder.sizing import LETTER_PORTRAIT
-from pyhermes.pdf import available
+from octavo.builder.components import DataTable
+from octavo.builder.sizing import LETTER_PORTRAIT
+from octavo.pdf import available
 from qa.fixtures import all_paged_fixtures
 from qa.fixtures import letter_quant_table as quant
 
@@ -59,7 +59,7 @@ class TestOnPaper:
         import pypdfium2
         import weasyprint
 
-        from pyhermes.pdf.fetcher import build_fetcher
+        from octavo.pdf.fetcher import build_fetcher
 
         document = quant.build()
         pdf = pypdfium2.PdfDocument(

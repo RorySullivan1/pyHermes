@@ -10,7 +10,7 @@ import importlib.util
 
 import pytest
 
-from pyhermes.builder import (
+from octavo.builder import (
     Badge,
     CardGroup,
     Column,
@@ -21,13 +21,13 @@ from pyhermes.builder import (
     TextBlock,
     TwoColumn,
 )
-from pyhermes.builder.engine import TemplateEngine
-from pyhermes.builder.enums import ColumnKind
-from pyhermes.builder.exceptions import ValidationError
-from pyhermes.builder.models import Cell, KpiItem, TableRow
-from pyhermes.builder.theming import DEFAULT_THEME
-from pyhermes.config import config_override
-from pyhermes.pdf import available as pdf_available
+from octavo.builder.engine import TemplateEngine
+from octavo.builder.enums import ColumnKind
+from octavo.builder.exceptions import ValidationError
+from octavo.builder.models import Cell, KpiItem, TableRow
+from octavo.builder.theming import DEFAULT_THEME
+from octavo.config import config_override
+from octavo.pdf import available as pdf_available
 from qa.fixtures import all_fixtures, all_paged_fixtures
 from qa.lint import errors, lint_document
 
@@ -233,7 +233,7 @@ class TestOnPaper:
     def test_the_labels_and_statuses_print(self):
         import pypdfium2
 
-        from pyhermes.pdf import render_pdf
+        from octavo.pdf import render_pdf
 
         pdf = pypdfium2.PdfDocument(render_pdf(all_paged_fixtures()["a4_labelled_layout"]()))
         text = " ".join(page.get_textpage().get_text_range() for page in pdf)

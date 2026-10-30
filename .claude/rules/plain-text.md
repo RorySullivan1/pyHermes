@@ -1,8 +1,8 @@
 ---
 paths:
-  - "pyhermes/builder/textgen.py"
-  - "pyhermes/builder/email.py"
-  - "pyhermes/builder/document.py"
+  - "octavo/builder/textgen.py"
+  - "octavo/builder/email.py"
+  - "octavo/builder/document.py"
 ---
 
 **The apparatus projects too (#171), from the same numbers the markup prints.** An exhibit's
@@ -42,7 +42,7 @@ is asserted, not trusted.
 - **Generated, never hand-authored.** There is no `text_override`, and a test introspects every
   exported class to keep it that way: derived text cannot drift from the HTML's content.
 - **Raw HTML degrades through one small parser.** The five blessed surfaces
-  ([textgen.py](../../pyhermes/builder/textgen.py)) reach text through `html_to_text()`, whose tag set is
+  ([textgen.py](../../octavo/builder/textgen.py)) reach text through `html_to_text()`, whose tag set is
   **closed** and says so in its docstring — the epic named it as the scope magnet.
 - **Regions project their *resolved* state**, never raw fields: `resolved_title()`,
   `resolved_copyright_html()`, `resolved_links()`. An email that renames its masthead says the
@@ -59,7 +59,7 @@ is asserted, not trusted.
   against latin-1 mojibake and the character the charset-declared MIME part needs come from one
   method that cannot drift.
 
-**The formatting policy is decided once**, in [textgen.py](../../pyhermes/builder/textgen.py)'s docstring
+**The formatting policy is decided once**, in [textgen.py](../../octavo/builder/textgen.py)'s docstring
 — 78 columns for prose, one blank line between blocks and two between sections, `=` under the
 masthead and `-` under a section title, `format_link` inline and `link_line` in a list. The
 alternative is a house format that drifts one projection at a time.
@@ -104,7 +104,7 @@ why this epic and #56 could have run in parallel, touching no surface in common.
 
 ## The blessed element set, and the formatting policy in full
 
-Moved out of `pyhermes/builder/textgen.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
+Moved out of `octavo/builder/textgen.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
 
 ```
 The HTML-subset degrader (#108): the builder's blessed raw HTML, as plain text.
@@ -115,7 +115,7 @@ Five surfaces in this package are raw caller HTML by documented contract —
 template through ``escape_html``. The plain-text part (#53) therefore needs
 exactly one converter, and only for those five::
 
-    from pyhermes.builder.textgen import html_to_text
+    from octavo.builder.textgen import html_to_text
 
     html_to_text("<p>Past performance is <strong>not</strong> a guide.</p>")
     # 'Past performance is not a guide.'
@@ -198,7 +198,7 @@ Chrome images project to nothing; content images project their alt text
 
 ## textgen.table — the three decisions, and how a row kind projects
 
-Moved out of `pyhermes/builder/textgen.py`'s `table` docstring by #138: the function keeps its contract, the reasoning lives here.
+Moved out of `octavo/builder/textgen.py`'s `table` docstring by #138: the function keeps its contract, the reasoning lives here.
 
 ```
 Aligned monospace columns: the epic's named fiddly spot.
@@ -208,7 +208,7 @@ Aligned monospace columns: the epic's named fiddly spot.
     * **Width comes from the widest cell in each column**, header included.
     * **Alignment is handed in, not guessed** (#117). ``aligns`` carries one
       of ``left`` / ``center`` / ``right`` per column, resolved by
-      :meth:`~pyhermes.builder.components.DataTable.resolved_columns` — the *same*
+      :meth:`~octavo.builder.components.DataTable.resolved_columns` — the *same*
       call the markup reads, which is what keeps the two projections from
       disagreeing about which column is the label. Omitted, it falls back to
       the pre-#117 convention (first column left, the rest right), so a
@@ -233,7 +233,7 @@ Aligned monospace columns: the epic's named fiddly spot.
         headers: One label per column.
         rows:    Cells per row, each row the same length as ``headers``.
         aligns:  One alignment per column, or ``None`` for the default.
-        kinds:   One :class:`~pyhermes.builder.enums.RowKind` per row, or ``None``
+        kinds:   One :class:`~octavo.builder.enums.RowKind` per row, or ``None``
                  to treat every row as data.
 
     Returns:

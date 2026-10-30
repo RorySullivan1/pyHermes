@@ -1,5 +1,5 @@
 """
-Shared fixtures for the pyHermes builder test suite.
+Shared fixtures for the octavo builder test suite.
 
 Everything here is deliberately minimal-but-valid: each fixture is the
 smallest object that passes construction, so a test that fails is failing
@@ -10,14 +10,14 @@ from pathlib import Path
 
 import pytest
 
-from pyhermes.builder import TextBlock
-from pyhermes.builder.engine import TemplateEngine
-from pyhermes.builder.models import KpiItem, NumberedItem, TableRow
+from octavo.builder import TextBlock
+from octavo.builder.engine import TemplateEngine
+from octavo.builder.models import KpiItem, NumberedItem, TableRow
 
 
 @pytest.fixture(scope="session")
 def engine() -> TemplateEngine:
-    """A TemplateEngine pointed at the templates/ packaged in pyhermes.builder.
+    """A TemplateEngine pointed at the templates/ packaged in octavo.builder.
 
     Session-scoped: the engine is stateless for our purposes and Jinja2
     caches compiled templates, so sharing it keeps the suite fast.

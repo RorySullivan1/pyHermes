@@ -11,7 +11,7 @@ import warnings
 
 import pytest
 
-from pyhermes.brochure import (
+from octavo.brochure import (
     BI_FOLD_LETTER,
     BROCHURE_MEDIUM,
     FACE_NAMES,
@@ -27,11 +27,11 @@ from pyhermes.brochure import (
     brochure_medium,
     impose,
 )
-from pyhermes.brochure.fold import A4_SHEET, LETTER_SHEET
-from pyhermes.builder import EmailBuilder, FullWidth, TextBlock, TwoColumn
-from pyhermes.builder.exceptions import PrintQualityWarning, ValidationError
-from pyhermes.builder.sizing import A4_PORTRAIT, PageFormat
-from pyhermes.document import Page, PagedDocument
+from octavo.brochure.fold import A4_SHEET, LETTER_SHEET
+from octavo.builder import EmailBuilder, FullWidth, TextBlock, TwoColumn
+from octavo.builder.exceptions import PrintQualityWarning, ValidationError
+from octavo.builder.sizing import A4_PORTRAIT, PageFormat
+from octavo.document import Page, PagedDocument
 from qa.fixtures import all_brochure_fixtures, tri_fold_letter
 from qa.goldens import artifacts, check_fixture
 from qa.lint import errors, lint_document
@@ -152,7 +152,7 @@ class TestThePanel:
     def test_it_refuses_a_slide_inside(self, kind):
         # #317: a slide is a sheet of its own, and inside a panel its anchor
         # pointed nowhere while its titled sections went unregistered.
-        from pyhermes.deck import DividerSlide, Slide
+        from octavo.deck import DividerSlide, Slide
 
         slide = Slide([FullWidth(TextBlock("<p>x</p>"))]) if kind == "slide" else DividerSlide("P")
         with pytest.raises(ValidationError, match="may not contain a (slide|dividerslide)"):
@@ -440,15 +440,15 @@ class TestAProofIsACopy:
 
 
 def test_the_brochure_imports_the_exporter_only_to_check_a_fit():
-    """``pyhermes.brochure`` renders on ``[dev]`` alone; only the overflow check needs ``[pdf]``."""
+    """``octavo.brochure`` renders on ``[dev]`` alone; only the overflow check needs ``[pdf]``."""
     import ast
     import pathlib
 
-    for path in sorted(pathlib.Path("pyhermes/brochure").glob("*.py")):
+    for path in sorted(pathlib.Path("octavo/brochure").glob("*.py")):
         tree = ast.parse(path.read_text(encoding="utf-8"))
         top = [n for n in tree.body if isinstance(n, (ast.Import, ast.ImportFrom))]
         modules = {getattr(n, "module", None) or n.names[0].name for n in top}
-        assert not any(m and m.startswith("pyhermes.pdf") for m in modules), path
+        assert not any(m and m.startswith("octavo.pdf") for m in modules), path
 
 
 # ----------------------------------------------------------------------
@@ -515,8 +515,8 @@ class TestImageResolution:
     """300 dpi on paper: a 300px display width needs 938 source pixels."""
 
     def _with_image(self, pixels: int, display: int) -> Brochure:
-        from pyhermes.builder import ImageBlock
-        from pyhermes.builder.images import EmailImage
+        from octavo.builder import ImageBlock
+        from octavo.builder.images import EmailImage
         from qa.fixtures._png import solid_png
 
         image = EmailImage.attached(solid_png(pixels, 10, (1, 2, 3)), alt="Chart", width=display)
@@ -540,7 +540,7 @@ class TestImageResolution:
             self._with_image(400, 300)
 
     def test_the_target_is_the_configs(self):
-        from pyhermes.config import config_override
+        from octavo.config import config_override
 
         with config_override(print_dpi=150):
             self._with_image(469, 300)
@@ -551,7 +551,7 @@ class TestASharedGround:
 
     @staticmethod
     def _image(pixels: int):
-        from pyhermes.builder.images import EmailImage
+        from octavo.builder.images import EmailImage
         from qa.fixtures._png import solid_png
 
         return EmailImage.attached(solid_png(pixels, 10, (7, 7, 7)), alt="Ground")
@@ -630,7 +630,7 @@ class TestThePrintMarkup:
 class TestTheFullBleedPanel:
     @staticmethod
     def _image(pixels: int = 1150):
-        from pyhermes.builder.images import EmailImage
+        from octavo.builder.images import EmailImage
         from qa.fixtures._png import solid_png
 
         return EmailImage.attached(solid_png(pixels, 20, (9, 9, 9)), alt="Ground")
@@ -665,7 +665,7 @@ class TestTheFullBleedPanel:
             self._brochure(self._image(500))
 
     def test_a_hosted_image_is_refused(self):
-        from pyhermes.builder.images import EmailImage
+        from octavo.builder.images import EmailImage
 
         with pytest.raises(ValidationError, match="attach it"):
             Panel(

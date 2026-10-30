@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import pytest
 
-from pyhermes.builder import (
+from octavo.builder import (
     Callout,
     CardGroup,
     Columns,
@@ -23,10 +23,10 @@ from pyhermes.builder import (
     TextBlock,
     ValidationError,
 )
-from pyhermes.builder.models import KpiItem, TableRow
-from pyhermes.builder.sizing import PHONE_FLOOR
-from pyhermes.document import EmptyBackMatter, EmptyCover, PagedDocument
-from pyhermes.pdf import available as pdf_available
+from octavo.builder.models import KpiItem, TableRow
+from octavo.builder.sizing import PHONE_FLOOR
+from octavo.document import EmptyBackMatter, EmptyCover, PagedDocument
+from octavo.pdf import available as pdf_available
 from qa.screenshots import _launch, _load_playwright, available
 
 requires_browser = pytest.mark.skipif(
@@ -146,7 +146,7 @@ class TestInABrowser:
 def _boxes(document, cls: str):
     from weasyprint.formatting_structure import boxes as wp
 
-    from pyhermes.pdf import layout
+    from octavo.pdf import layout
 
     def walk(box):
         yield box

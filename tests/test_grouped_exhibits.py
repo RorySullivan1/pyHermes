@@ -13,7 +13,7 @@ import re
 
 import pytest
 
-from pyhermes.builder import (
+from octavo.builder import (
     Appendices,
     ChartBlock,
     Contents,
@@ -31,14 +31,14 @@ from pyhermes.builder import (
     TextBlock,
     TwoColumn,
 )
-from pyhermes.builder.engine import TemplateEngine
-from pyhermes.builder.exceptions import ValidationError
-from pyhermes.builder.images import EmailImage
-from pyhermes.builder.models import TableRow
-from pyhermes.builder.theming import DEFAULT_THEME, SLATE_THEME, chart_colors
-from pyhermes.deck import Deck, EmptyClosingSlide, EmptyTitleSlide, overflowing_slides
-from pyhermes.document import PagedDocument
-from pyhermes.pdf import available as pdf_available
+from octavo.builder.engine import TemplateEngine
+from octavo.builder.exceptions import ValidationError
+from octavo.builder.images import EmailImage
+from octavo.builder.models import TableRow
+from octavo.builder.theming import DEFAULT_THEME, SLATE_THEME, chart_colors
+from octavo.deck import Deck, EmptyClosingSlide, EmptyTitleSlide, overflowing_slides
+from octavo.document import PagedDocument
+from octavo.pdf import available as pdf_available
 from qa.fixtures import a4_research_note, research_note
 from qa.fixtures._png import solid_png
 from qa.fixtures._research import EXHIBITS, PANELS
@@ -69,7 +69,7 @@ def paper(*sections) -> PagedDocument:
 def _sheets(document) -> list[str]:
     import pypdfium2
 
-    from pyhermes.pdf import render_pdf
+    from octavo.pdf import render_pdf
 
     pdf = pypdfium2.PdfDocument(render_pdf(document))
     return [page.get_textpage().get_text_range() for page in pdf]
@@ -477,7 +477,7 @@ class TestASectionSource:
         assert email(section).text().count("Body.\n\nSource: BoE as of 1 Oct") == 1
 
     def test_a_note_and_a_citation_in_it_are_numbered_by_the_walk(self):
-        from pyhermes.builder import Bibliography, Reference
+        from octavo.builder import Bibliography, Reference
 
         cited = FullWidth(
             content=TextBlock("<p>First.[^1]</p>", notes=["Block note."]),

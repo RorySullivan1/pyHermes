@@ -11,12 +11,12 @@ from __future__ import annotations
 
 import pytest
 
-from pyhermes.builder.document import Document
-from pyhermes.builder.engine import TemplateEngine
-from pyhermes.builder.medium import DEFAULT_MEDIUM
-from pyhermes.builder.models import EmailMetadata
-from pyhermes.builder.sizing import A4_PORTRAIT, PAGE_FORMATS, SLIDE_16_9, PageFormat, PageMargin
-from pyhermes.document import (
+from octavo.builder.document import Document
+from octavo.builder.engine import TemplateEngine
+from octavo.builder.medium import DEFAULT_MEDIUM
+from octavo.builder.models import EmailMetadata
+from octavo.builder.sizing import A4_PORTRAIT, PAGE_FORMATS, SLIDE_16_9, PageFormat, PageMargin
+from octavo.document import (
     PAGED_MEDIUM,
     EmptyBackMatter,
     EmptyCover,
@@ -25,7 +25,7 @@ from pyhermes.document import (
     PagedDocument,
     paged_medium,
 )
-from pyhermes.email import EMAIL_MEDIUM
+from octavo.email import EMAIL_MEDIUM
 from qa.fixtures import _paged, all_paged_fixtures
 from qa.goldens import artifacts, check_fixture
 
@@ -263,7 +263,7 @@ class TestWhatTheEmailLintMakesOfAPagedDocument:
         assert lint_document(all_paged_fixtures()["a4_portrait"]()) == []
 
     def test_the_gmail_size_rule_no_longer_reaches_a_paged_document(self):
-        from pyhermes.builder import FullWidth, TextBlock
+        from octavo.builder import FullWidth, TextBlock
         from qa.lint import lint_document, lint_html
 
         oversized = PagedDocument(_paged.facts())
@@ -307,7 +307,7 @@ class TestThePageMarginIsTheMediums:
         assert 'width="9001"' in cover
 
     def test_the_density_no_longer_decides_the_print_margin(self, html):
-        from pyhermes.builder.sizing import STANDARD_SIZES
+        from octavo.builder.sizing import STANDARD_SIZES
 
         pad = STANDARD_SIZES.frame.outer_pad_y
         assert f"margin: {pad}px" not in html, "@page still reads outer_pad_y"

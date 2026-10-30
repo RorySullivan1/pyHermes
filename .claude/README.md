@@ -4,7 +4,7 @@ This directory holds the typed building blocks Claude Code uses for a project.
 Each subdirectory is a distinct *layer* with a distinct job. The layers compose.
 
 > These assets were curated from the [`claudeBrain`](https://github.com/RorySullivan1/claudeBrain)
-> factory and adapted for pyHermes (a Python + Jinja2 HTML-email builder). Only the
+> factory and adapted for octavo (a Python + Jinja2 HTML-email builder). Only the
 > layers useful to this project were brought in; the factory's authoring meta-toolkit
 > and unrelated stacks (VBA/VSTO/PowerApps) were deliberately left out.
 
@@ -49,7 +49,7 @@ workflows  ▸  commands  ▸  agents  ▸  skills
 
 ## Status in this project
 
-Curated for pyHermes (a Python + Jinja2 HTML-email builder for financial newsletters):
+Curated for octavo (a Python + Jinja2 HTML-email builder for financial newsletters):
 
 - **skills/** — the **Python** family (`python-development` / `-review` / `-maintenance`
   / `-deployment`) + `coding-standards`; the **GitHub** family (`github-pull-requests`,
@@ -58,7 +58,7 @@ Curated for pyHermes (a Python + Jinja2 HTML-email builder for financial newslet
   `claim-grounding`); and a **financial / content-design** set (`quantitative-finance`,
   `financial-timeseries-analysis`, `quant-code-review`, `backtesting-validation`,
   `branding`, `presentation-design`, `report-builder`).
-- **agents/** — `python-developer` (adapted to `pyhermes/`), `software-architect`,
+- **agents/** — `python-developer` (adapted to `octavo/`), `software-architect`,
   `goal-auditor`, `github-operator`, the context-economy `token-manager`, and the
   (speculative, for a future analytics layer) `finance-quantitative-developer`.
 - **commands/** — `/version-set`, `/version-ship`, `/roadmap-set`, `/roadmap-status`, `/reindex`.

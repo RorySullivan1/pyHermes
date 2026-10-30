@@ -13,7 +13,7 @@ import warnings
 
 import pytest
 
-from pyhermes.builder import (
+from octavo.builder import (
     Bibliography,
     Contents,
     DataTable,
@@ -22,18 +22,18 @@ from pyhermes.builder import (
     HeroStat,
     TextBlock,
 )
-from pyhermes.builder.exceptions import PrintQualityWarning, ValidationError
-from pyhermes.builder.images import EmailImage
-from pyhermes.builder.models import TableRow
-from pyhermes.builder.research import Reference
-from pyhermes.builder.sizing import (
+from octavo.builder.exceptions import PrintQualityWarning, ValidationError
+from octavo.builder.images import EmailImage
+from octavo.builder.models import TableRow
+from octavo.builder.research import Reference
+from octavo.builder.sizing import (
     A4_LANDSCAPE,
     A4_PORTRAIT,
     LETTER_PORTRAIT,
     resolve_size_scheme,
 )
-from pyhermes.builder.theming import DEFAULT_THEME
-from pyhermes.deck import (
+from octavo.builder.theming import DEFAULT_THEME
+from octavo.deck import (
     SLIDE_16_9,
     Deck,
     DeckFooter,
@@ -46,7 +46,7 @@ from pyhermes.deck import (
     clipped_notes,
     overflowing_slides,
 )
-from pyhermes.pdf import available
+from octavo.pdf import available
 from qa.fixtures import all_deck_fixtures, pitch_layouts_16_9
 from qa.fixtures._png import solid_png
 
@@ -98,7 +98,7 @@ def _top(pdf_bytes: bytes, sheet: int, text: str) -> float:
 
 
 def _deck_sheets(deck: Deck) -> list[str]:
-    from pyhermes.pdf import render_pdf
+    from octavo.pdf import render_pdf
 
     return _sheets(render_pdf(deck))
 
@@ -363,7 +363,7 @@ class TestOnPaper:
         assert overflowing_slides(deck) == ["slide 1: Long (its source wraps)"]
 
     def test_the_source_sits_between_the_body_and_the_footer_band(self):
-        from pyhermes.pdf import anchor_tops
+        from octavo.pdf import anchor_tops
 
         deck = _bare().add_slide(_paragraph(), "Sourced", source="Hermes Research")
         box = deck.slide_box(deck.slides[0])
@@ -382,7 +382,7 @@ class TestOnPaper:
             assert pitch_layouts_16_9.MARK in sheet
 
     def test_every_divider_lists_every_part_at_its_first_sheet(self):
-        from pyhermes.pdf import render_pdf
+        from octavo.pdf import render_pdf
 
         deck = pitch_layouts_16_9.build()
         pdf = render_pdf(deck)
@@ -409,7 +409,7 @@ class TestOnPaper:
 @needs_pdf
 class TestTheHandout:
     def _handout(self, deck: Deck, **kwargs) -> bytes:
-        from pyhermes.pdf import render_handout
+        from octavo.pdf import render_handout
 
         return render_handout(deck, **kwargs)
 
@@ -481,7 +481,7 @@ class TestTheHandout:
             assert clipped_notes(build()) == [], name
 
     def test_the_lint_warns_for_each_slide_whose_notes_the_handout_clips(self):
-        from pyhermes.check import Severity, layout_findings, lint_document
+        from octavo.check import Severity, layout_findings, lint_document
 
         deck = self._notes_deck()
         clipped = [f for f in layout_findings(deck) if f.rule_id == "handout-notes-clipped"]
@@ -491,14 +491,14 @@ class TestTheHandout:
         assert clipped[0] in lint_document(deck)
 
     def test_the_lint_is_quiet_when_the_notes_fit(self):
-        from pyhermes.check import layout_findings
+        from octavo.check import layout_findings
 
         for deck in (self._notes_deck(words=20), *(b() for b in all_deck_fixtures().values())):
             assert not [f for f in layout_findings(deck) if f.rule_id == "handout-notes-clipped"]
 
     def test_a_deck_without_notes_lays_no_handout_out(self, monkeypatch):
-        import pyhermes.pdf as pdf
-        from pyhermes.check import layout_findings
+        import octavo.pdf as pdf
+        from octavo.check import layout_findings
 
         def refuse(*args, **kwargs):
             raise AssertionError("a deck with no notes laid its handout out")
@@ -508,7 +508,7 @@ class TestTheHandout:
         assert not [f for f in layout_findings(deck) if f.rule_id == "handout-notes-clipped"]
 
     def test_a_held_handout_layout_is_read_not_laid_out_again(self):
-        from pyhermes.pdf import layout, layout_handout
+        from octavo.pdf import layout, layout_handout
 
         deck = self._notes_deck()
         held = layout_handout(deck)
@@ -521,14 +521,14 @@ class TestTheHandout:
             overflowing_slides(deck, held)
 
     def test_a_handout_layout_writes_the_pages_render_handout_does(self):
-        from pyhermes.pdf import layout_handout, render_layout
+        from octavo.pdf import layout_handout, render_layout
 
         deck = self._notes_deck(words=40)
         held = _sheets(render_layout(layout_handout(deck)))
         assert held == _sheets(self._handout(deck))
 
     def test_a_handout_page_needs_a_height(self):
-        from pyhermes.builder.sizing import DEFAULT_PAGE
+        from octavo.builder.sizing import DEFAULT_PAGE
 
         with pytest.raises(ValidationError, match="give its page a height"):
             pitch_layouts_16_9.build().handout(DEFAULT_PAGE)

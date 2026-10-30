@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import pytest
 
-from pyhermes.builder import (
+from octavo.builder import (
     Button,
     Contents,
     DataTable,
@@ -24,10 +24,10 @@ from pyhermes.builder import (
     TwoColumn,
     ValidationError,
 )
-from pyhermes.builder.images import EmailImage
-from pyhermes.builder.medium import DEFAULT_MEDIUM, PAGED_MEDIA, SHIPPED_MEDIA
-from pyhermes.builder.models import Footnote, TableRow
-from pyhermes.document import Page, PagedDocument
+from octavo.builder.images import EmailImage
+from octavo.builder.medium import DEFAULT_MEDIUM, PAGED_MEDIA, SHIPPED_MEDIA
+from octavo.builder.models import Footnote, TableRow
+from octavo.document import Page, PagedDocument
 from qa.fixtures._png import solid_png
 
 FACTS = {"firm_name": "F", "campaign_name": "C"}
@@ -131,7 +131,7 @@ class TestTheBlocksOwnMedium:
         assert block.text() and block.children()
 
     def test_a_block_rendered_alone_follows_the_engines_medium(self):
-        from pyhermes.builder.engine import TemplateEngine
+        from octavo.builder.engine import TemplateEngine
 
         engine = TemplateEngine().bound(medium=DEFAULT_MEDIUM)
         assert download().render(engine) == ""
@@ -235,10 +235,10 @@ class TestWhatItRefuses:
 
 
 def test_the_shipped_media_are_the_ones_named():
-    from pyhermes.brochure import BROCHURE_MEDIUM
-    from pyhermes.deck import DECK_MEDIUM
-    from pyhermes.document import PAGED_MEDIUM
-    from pyhermes.email import EMAIL_MEDIUM
+    from octavo.brochure import BROCHURE_MEDIUM
+    from octavo.deck import DECK_MEDIUM
+    from octavo.document import PAGED_MEDIUM
+    from octavo.email import EMAIL_MEDIUM
 
     media = (DEFAULT_MEDIUM, EMAIL_MEDIUM, PAGED_MEDIUM, BROCHURE_MEDIUM, DECK_MEDIUM)
     assert {m.name for m in media} == set(SHIPPED_MEDIA)

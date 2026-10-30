@@ -11,8 +11,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pyhermes.builder.document import Document
-from pyhermes.document import EmptyBackMatter, EmptyCover, PagedDocument, RunningFooter
+from octavo.builder.document import Document
+from octavo.document import EmptyBackMatter, EmptyCover, PagedDocument, RunningFooter
 
 from . import _paged, _placed
 

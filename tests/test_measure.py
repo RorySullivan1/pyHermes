@@ -14,8 +14,8 @@ import math
 
 import pytest
 
-from pyhermes.brochure.medium import BROCHURE_MEDIUM
-from pyhermes.builder import (
+from octavo.brochure.medium import BROCHURE_MEDIUM
+from octavo.builder import (
     Email,
     FlowedColumns,
     FullWidth,
@@ -23,18 +23,18 @@ from pyhermes.builder import (
     TwoColumn,
     ValidationError,
 )
-from pyhermes.builder.medium import DEFAULT_MEDIUM
-from pyhermes.builder.sizing import (
+from octavo.builder.medium import DEFAULT_MEDIUM
+from octavo.builder.sizing import (
     CH_EM,
     MEASURES,
     PRESENTATION_SIZES,
     STANDARD_SIZES,
     measure_px,
 )
-from pyhermes.deck.medium import DECK_MEDIUM
-from pyhermes.document import EmptyBackMatter, EmptyCover, PagedDocument
-from pyhermes.document.medium import PAGED_MEDIUM, paged_medium
-from pyhermes.pdf import available
+from octavo.deck.medium import DECK_MEDIUM
+from octavo.document import EmptyBackMatter, EmptyCover, PagedDocument
+from octavo.document.medium import PAGED_MEDIUM, paged_medium
+from octavo.pdf import available
 
 requires_pdf = pytest.mark.skipif(
     not available() or importlib.util.find_spec("pypdfium2") is None,
@@ -62,7 +62,7 @@ def email(*sections) -> Email:
 
 
 def landscape(*sections) -> PagedDocument:
-    from pyhermes.builder.sizing import LETTER_LANDSCAPE
+    from octavo.builder.sizing import LETTER_LANDSCAPE
 
     return paged(*sections, page=LETTER_LANDSCAPE)
 
@@ -78,7 +78,7 @@ class TestTheTokens:
         assert measure_px(PRESENTATION_SIZES, "narrow") > measure_px(STANDARD_SIZES, "narrow")
 
     def test_spacing_cannot_move_them(self):
-        from pyhermes.builder.sizing import Spacing
+        from octavo.builder.sizing import Spacing
 
         with pytest.raises(ValidationError):
             Spacing(measure_standard=40)
@@ -90,7 +90,7 @@ class TestTheMediumOwnsTheDefault:
             assert medium.measure == "standard", medium.name
 
     def test_the_email_and_plain_html_set_none(self):
-        from pyhermes.email import EMAIL_MEDIUM
+        from octavo.email import EMAIL_MEDIUM
 
         assert EMAIL_MEDIUM.measure is None
         assert DEFAULT_MEDIUM.measure is None
@@ -163,7 +163,7 @@ class TestOnTheSheet:
         """The table slide's lead-in, read back line by line from the deck's PDF."""
         import pypdfium2
 
-        from pyhermes.pdf import render_pdf
+        from octavo.pdf import render_pdf
         from qa.fixtures import pitch_16_9
 
         def widest_line(deck) -> float:

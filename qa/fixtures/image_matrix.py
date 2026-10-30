@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pyhermes.builder import (
+from octavo.builder import (
     Email,
     EmailBuilder,
     Footer,
@@ -24,9 +24,9 @@ from pyhermes.builder import (
     TextBlock,
     TwoColumn,
 )
-from pyhermes.builder.enums import ImageAlign, TwoColumnRatio
-from pyhermes.builder.images import EmailImage
-from pyhermes.builder.models import EmailMetadata
+from octavo.builder.enums import ImageAlign, TwoColumnRatio
+from octavo.builder.images import EmailImage
+from octavo.builder.models import EmailMetadata
 
 from ._png import solid_png
 

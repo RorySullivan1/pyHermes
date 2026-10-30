@@ -27,7 +27,7 @@ def _wheel(path: Path, names: list[str]) -> Path:
 def _sdist(path: Path, names: list[str]) -> Path:
     with tarfile.open(path, "w:gz") as sdist:
         for name in names:
-            info = tarfile.TarInfo(f"pyhermes-0.1.0/{name}")
+            info = tarfile.TarInfo(f"octavo-0.1.0/{name}")
             sdist.addfile(info, io.BytesIO(b""))
     return path
 
@@ -39,7 +39,7 @@ LIBRARY = [
     "PKG-INFO",
     f"{PACKAGE}/__init__.py",
 ]
-WHEEL = [f"{PACKAGE}/__init__.py", f"{PACKAGE}/py.typed", "pyhermes-0.1.0.dist-info/METADATA"]
+WHEEL = [f"{PACKAGE}/__init__.py", f"{PACKAGE}/py.typed", "octavo-0.1.0.dist-info/METADATA"]
 
 
 class TestTheWheel:
@@ -113,4 +113,35 @@ def test_nothing_in_the_repository_imports_the_retired_name():
             for line in path.read_text(encoding="utf-8").splitlines()
         )
     ]
+    assert offenders == []
+
+
+#: The project's name before roadmap v0.4.0, spelled so this file does not match itself.
+OLD_NAME = "py" + "hermes"
+
+#: Where the old name is history, not a reference: the memory's logs and the roadmap's record.
+HISTORY = (".claude/memory/", ".meta/")
+
+
+def test_the_old_name_survives_only_in_history():
+    """Allegro's Hermes client owns the old name on PyPI and as an import (v0.4.0)."""
+    import re
+    import subprocess
+
+    tracked = subprocess.run(
+        ["git", "ls-files"], cwd=ROOT, capture_output=True, text=True, check=True
+    ).stdout.split()
+    pattern = re.compile(rf"(?<!RorySullivan1/){OLD_NAME}", re.IGNORECASE)
+    offenders = []
+    for name in tracked:
+        path = ROOT / name
+        if name.startswith(HISTORY) or not path.is_file():
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            continue  # a binary file
+        offenders += [
+            f"{name}:{n}" for n, line in enumerate(text.splitlines(), 1) if pattern.search(line)
+        ]
     assert offenders == []

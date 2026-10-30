@@ -13,7 +13,7 @@ import math
 
 import pytest
 
-from pyhermes.builder import (
+from octavo.builder import (
     DEFAULT_THEME,
     SLATE_THEME,
     CardGroup,
@@ -23,9 +23,9 @@ from pyhermes.builder import (
     ValidationError,
     tone_of,
 )
-from pyhermes.builder.formats import pct
-from pyhermes.builder.models import Card, Cell, KpiItem, TableRow
-from pyhermes.builder.theming import SemanticColors
+from octavo.builder.formats import pct
+from octavo.builder.models import Card, Cell, KpiItem, TableRow
+from octavo.builder.theming import SemanticColors
 
 
 def _table(*cells: Cell) -> DataTable:
@@ -182,6 +182,6 @@ def test_the_semantic_tokens_now_have_a_render_site():
     """
     from pathlib import Path
 
-    templates = Path("pyhermes/builder/templates/analysis")
+    templates = Path("octavo/builder/templates/analysis")
     assert "theme.tone[cell.tone]" in (templates / "data-table.html").read_text(encoding="utf-8")
     assert "theme.tone[card.tone" in (templates / "card-group.html").read_text(encoding="utf-8")

@@ -10,7 +10,7 @@ the same sections, so each golden pins what its own medium makes of them.
 
 from __future__ import annotations
 
-from pyhermes.builder import (
+from octavo.builder import (
     Badge,
     CardGroup,
     Column,
@@ -21,7 +21,7 @@ from pyhermes.builder import (
     TextBlock,
     TwoColumn,
 )
-from pyhermes.builder.models import Cell, KpiItem, TableRow
+from octavo.builder.models import Cell, KpiItem, TableRow
 
 #: Each status a dashboard row may hold, and the tone its dot is drawn in.
 STATUSES = {"On track": "positive", "Watch": "neutral", "Breach": "negative"}

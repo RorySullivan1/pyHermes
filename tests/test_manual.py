@@ -79,7 +79,7 @@ def blocks(page: Path) -> list[Block]:
 
 def _missing(extra: str) -> bool:
     if extra == "pdf":
-        from pyhermes.pdf import available
+        from octavo.pdf import available
 
         return not available()
     module = {"data": "pandas", "charts": "matplotlib", "math": "matplotlib", "qr": "segno"}[extra]

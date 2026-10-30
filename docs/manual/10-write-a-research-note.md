@@ -2,13 +2,13 @@
 
 A research note or a methodology paper needs more than sections: it cites its sources,
 defines its terms, groups related charts, lists its tables and figures, and puts the detail
-in lettered appendices. pyHermes numbers all of it for you, once, so the email, the PDF and the
+in lettered appendices. octavo numbers all of it for you, once, so the email, the PDF and the
 plain-text part always agree.
 
 Every example on this page adds to the one before it.
 
 ```python
-from pyhermes.builder import (
+from octavo.builder import (
     Appendices,
     Bibliography,
     Contents,
@@ -20,7 +20,7 @@ from pyhermes.builder import (
     Term,
     TextBlock,
 )
-from pyhermes.builder.models import TableRow
+from octavo.builder.models import TableRow
 
 facts = {
     "email_subject": "Momentum After Costs",
@@ -137,8 +137,8 @@ the table reads "Exhibit A.1". A table in the body still counts 1, 2, 3.
 region, numbered as one exhibit with lettered panels.
 
 ```python
-from pyhermes.builder import ChartBlock, FigureGrid, Legend, content_width
-from pyhermes.builder.images import EmailImage
+from octavo.builder import ChartBlock, FigureGrid, Legend, content_width
+from octavo.builder.images import EmailImage
 
 
 def panel(alt, title, legend=None):
@@ -235,7 +235,7 @@ On paper, the contents and the list of exhibits each get a page after the cover,
 numbers. Reuse the same sections in a `PagedDocument`.
 
 ```python
-from pyhermes.document import ContentsPage, Cover, ExhibitsPage, PagedDocument
+from octavo.document import ContentsPage, Cover, ExhibitsPage, PagedDocument
 
 report = PagedDocument(
     {"firm_name": "Acme Research", "campaign_name": "Momentum After Costs"},
@@ -250,7 +250,7 @@ report.save("note-print.html")
 
 <!-- manual: needs pdf -->
 ```python
-from pyhermes.pdf import save_pdf
+from octavo.pdf import save_pdf
 
 save_pdf(report, "note.pdf")
 ```

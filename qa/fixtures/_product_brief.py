@@ -14,7 +14,7 @@ is fictional.
 
 from __future__ import annotations
 
-from pyhermes.builder import (
+from octavo.builder import (
     Callout,
     ChartBlock,
     Column,
@@ -28,10 +28,10 @@ from pyhermes.builder import (
     TextBlock,
     TwoColumn,
 )
-from pyhermes.builder.exhibits import LegendEntry
-from pyhermes.builder.images import EmailImage
-from pyhermes.builder.models import TableRow
-from pyhermes.builder.theming import DEFAULT_THEME
+from octavo.builder.exhibits import LegendEntry
+from octavo.builder.images import EmailImage
+from octavo.builder.models import TableRow
+from octavo.builder.theming import DEFAULT_THEME
 
 from . import _brief
 from ._png import solid_png

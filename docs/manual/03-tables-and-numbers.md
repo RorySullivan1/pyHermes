@@ -1,11 +1,11 @@
 # 3. Tables and numbers
 
-Give pyHermes numbers, not formatted strings, and it writes them the same way everywhere:
+Give octavo numbers, not formatted strings, and it writes them the same way everywhere:
 in the table, in the figures row, and in the plain-text version of the email.
 
 ```python
-from pyhermes.builder import DataTable, EmailBuilder, FullWidth
-from pyhermes.builder.models import TableRow
+from octavo.builder import DataTable, EmailBuilder, FullWidth
+from octavo.builder.models import TableRow
 
 facts = {
     "email_subject": "Factor Monitor",
@@ -48,7 +48,7 @@ not, the build stops and names the row.
 **When to use this:** your figures are Python numbers, such as `0.0142` for 1.42%.
 
 ```python
-from pyhermes.builder.formats import bps, compact, money, number, pct
+from octavo.builder.formats import bps, compact, money, number, pct
 
 pct(0.0142)               # '1.42%'
 pct(0.0142, 1, sign=True) # '+1.4%'
@@ -70,9 +70,9 @@ pct(None)                 # '--', for a missing figure
 ```python
 from functools import partial
 
-from pyhermes.builder import CardGroup
-from pyhermes.builder.formats import bps, pct
-from pyhermes.builder.models import KpiItem
+from octavo.builder import CardGroup
+from octavo.builder.formats import bps, pct
+from octavo.builder.models import KpiItem
 
 signed_pct = partial(pct, sign=True)
 
@@ -104,7 +104,7 @@ same way.
 ```python
 from functools import partial
 
-from pyhermes.builder import Column
+from octavo.builder import Column
 
 ret = partial(pct, dp=1, sign=True)
 table = DataTable(
@@ -149,7 +149,7 @@ every `width` unset and each email client decides the widths from the content, a
 ## How to colour one cell
 
 ```python
-from pyhermes.builder.models import Cell
+from octavo.builder.models import Cell
 
 row = TableRow([
     "High yield",
@@ -183,7 +183,7 @@ is ruled off and bold. A `subhead` row takes just its label.
 To group columns under a shared heading, pass `groups=`:
 
 ```python
-from pyhermes.builder import ColumnGroup
+from octavo.builder import ColumnGroup
 
 table = DataTable(
     headers=["Class", "1Y", "3Y", "Weight"],
@@ -226,7 +226,7 @@ at the end of the email.
 or a verdict table that should read as set aside from the copy around it.
 
 ```python
-from pyhermes.builder import Column
+from octavo.builder import Column
 
 table = DataTable(
     headers=[Column("Fund", rule_after=True), "Cost", "Verdict"],
@@ -255,7 +255,7 @@ it, and a darker vertical rule after the *Fund* column, from the heading to the 
 ```python
 import pandas as pd
 
-from pyhermes.data import table_from_frame
+from octavo.data import table_from_frame
 
 frame = pd.DataFrame(
     {"1M": [0.018, -0.004, 0.009], "YTD": [0.074, 0.031, 0.052]},
@@ -285,8 +285,8 @@ needs no image, and the plain-text version of the email still says what it shows
 ```python
 from functools import partial
 
-from pyhermes.builder import BarList, Column, HeroStat, Sparkline, Stack
-from pyhermes.builder.formats import bps, number, pct
+from octavo.builder import BarList, Column, HeroStat, Sparkline, Stack
+from octavo.builder.formats import bps, number, pct
 
 # An arrow on a change, and its last quarters under the figure.
 figures = CardGroup([

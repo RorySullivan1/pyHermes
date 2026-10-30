@@ -11,9 +11,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pyhermes.builder import FlowedColumns, FullWidth, ImageBlock, PullQuote, TextBlock
-from pyhermes.builder.images import EmailImage
-from pyhermes.document import PagedDocument
+from octavo.builder import FlowedColumns, FullWidth, ImageBlock, PullQuote, TextBlock
+from octavo.builder.images import EmailImage
+from octavo.document import PagedDocument
 
 from . import _paged
 from ._png import solid_png

@@ -12,8 +12,8 @@ import importlib.util
 
 import pytest
 
-from pyhermes.brochure import Brochure, Panel
-from pyhermes.builder import (
+from octavo.brochure import Brochure, Panel
+from octavo.builder import (
     Bibliography,
     ChartBlock,
     Contents,
@@ -26,10 +26,10 @@ from pyhermes.builder import (
     TextBlock,
     ValidationError,
 )
-from pyhermes.builder.exhibits import LegendEntry
-from pyhermes.builder.images import EmailImage
-from pyhermes.document import EmptyBackMatter, EmptyCover, PagedDocument
-from pyhermes.pdf import available
+from octavo.builder.exhibits import LegendEntry
+from octavo.builder.images import EmailImage
+from octavo.document import EmptyBackMatter, EmptyCover, PagedDocument
+from octavo.pdf import available
 from qa.fixtures._png import solid_png
 
 requires_pdf = pytest.mark.skipif(
@@ -208,7 +208,7 @@ class TestTheWalkSeesAHostedFigure:
         assert "Premium" not in "".join(title for title, _ in built._exhibit_entries())
 
     def test_a_host_keeps_its_own_notes(self):
-        from pyhermes.builder.models import Footnote
+        from octavo.builder.models import Footnote
 
         host = TextBlock("<p>Rates rose.[^1]</p>", notes=[Footnote("Source: BoE.")], figure=chart())
         built = email(FullWidth(host))
@@ -252,7 +252,7 @@ class TestOnTheSheet:
     @staticmethod
     def _beside(document, anchor: str) -> bool:
         """Whether the prose's first line sits level with the figure rather than under it."""
-        from pyhermes.pdf import anchor_tops
+        from octavo.pdf import anchor_tops
 
         landed = anchor_tops(document)
         return abs(landed["prose-start"] - landed[anchor]) < 20

@@ -9,7 +9,7 @@ import re
 
 import pytest
 
-from pyhermes.builder import (
+from octavo.builder import (
     DEFAULT_THEME,
     SLATE_THEME,
     STANDARD_SIZES,
@@ -25,10 +25,10 @@ from pyhermes.builder import (
     ThreeColumn,
     TwoColumn,
 )
-from pyhermes.builder.exceptions import ValidationError
-from pyhermes.builder.models import KpiItem, TableRow
-from pyhermes.document import EmptyBackMatter, EmptyCover, PagedDocument
-from pyhermes.pdf import available as pdf_available
+from octavo.builder.exceptions import ValidationError
+from octavo.builder.models import KpiItem, TableRow
+from octavo.document import EmptyBackMatter, EmptyCover, PagedDocument
+from octavo.pdf import available as pdf_available
 
 FACTS = {"email_subject": "S", "firm_name": "F", "campaign_name": "C"}
 NAVY = "#1B2A38"
@@ -239,7 +239,7 @@ class TestAButtonAndADivider:
     """#269: the contact block's button on its own, and a rule between blocks."""
 
     def test_a_button_is_the_contact_blocks_markup(self):
-        from pyhermes.builder import ContactBlock
+        from octavo.builder import ContactBlock
 
         url = "https://example.com/go"
         lone = _render(FullWidth(Button("Go", url)))
@@ -296,7 +296,7 @@ def _ragged_rows(document: PagedDocument) -> list[str]:
     """The rows at a navy band's top and foot that are navy across part of its width only."""
     import pypdfium2
 
-    from pyhermes.pdf import render_pdf
+    from octavo.pdf import render_pdf
 
     sheet = pypdfium2.PdfDocument(render_pdf(document))[0]
     image = sheet.render(scale=96 / 72).to_pil().convert("RGB")

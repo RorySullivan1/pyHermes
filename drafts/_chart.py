@@ -1,6 +1,6 @@
 """Minimal PNG bar-chart renderer, for a report that has no plotting library.
 
-pyHermes ships no charting dependency and matplotlib is not installed here, so a
+octavo ships no charting dependency and matplotlib is not installed here, so a
 chart image has to come from somewhere. This draws one as a raw pixel buffer and
 encodes it with the same zlib/CRC chunking ``qa/fixtures/_png.py`` uses, which
 keeps the whole draft dependency-free.

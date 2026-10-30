@@ -17,9 +17,9 @@ On Windows, follow WeasyPrint's own installation guide for the libraries. If the
 missing, printing stops with a message saying so. Building the email still works.
 
 ```python
-from pyhermes.builder import DataTable, FullWidth, TextBlock
-from pyhermes.builder.models import TableRow
-from pyhermes.document import BackMatter, Cover, PagedDocument, RunningFooter
+from octavo.builder import DataTable, FullWidth, TextBlock
+from octavo.builder.models import TableRow
+from octavo.document import BackMatter, Cover, PagedDocument, RunningFooter
 
 facts = {
     "firm_name": "Acme Research",
@@ -49,7 +49,7 @@ report.save("review.html")
 
 <!-- manual: needs pdf -->
 ```python
-from pyhermes.pdf import save_pdf
+from octavo.pdf import save_pdf
 
 save_pdf(report, "review.pdf")
 ```
@@ -60,8 +60,8 @@ at the foot of every page, and a closing disclosures page.
 **Notes:**
 - Unlike an email, a report does not need `email_subject`.
 - For US Letter or a landscape page, pass
-  `medium=paged_medium(LETTER_PORTRAIT)` (from `pyhermes.document` and
-  `pyhermes.builder.sizing`). `LETTER_LANDSCAPE` and `SLIDE_16_9` are there too.
+  `medium=paged_medium(LETTER_PORTRAIT)` (from `octavo.document` and
+  `octavo.builder.sizing`). `LETTER_LANDSCAPE` and `SLIDE_16_9` are there too.
 - `report.add_page([...])` starts the sections you give it on a new page.
 - A report has no 102 KB limit, but it cannot fetch images from the web. Use
   `EmailImage.attached(...)` for every picture in it.
@@ -72,9 +72,9 @@ at the foot of every page, and a closing disclosures page.
 
 <!-- manual: needs pdf -->
 ```python
-from pyhermes.builder import EmailBuilder
-from pyhermes.delivery import build_message, save_eml
-from pyhermes.pdf import pdf_attachment
+from octavo.builder import EmailBuilder
+from octavo.delivery import build_message, save_eml
+from octavo.pdf import pdf_attachment
 
 cover_email = (
     EmailBuilder()
@@ -112,7 +112,7 @@ and the page numbers and running lines carry on. In an email the page simply run
 prose wrapping round it on paper. In an email it is a box above the paragraph.
 
 ```python
-from pyhermes.builder import Aside
+from octavo.builder import Aside
 
 draft = PagedDocument({**facts, "stamp": "DRAFT"})
 draft.add_section(FullWidth(
@@ -132,7 +132,7 @@ already online, it is a button to the same address.
 
 <!-- manual: needs qr -->
 ```python
-from pyhermes.qr import qr_code
+from octavo.qr import qr_code
 
 draft.add_section(FullWidth(qr_code("https://example.com/q3", "Read it online")))
 draft.save("draft.html")
@@ -154,7 +154,7 @@ machine; a chart drawn under `chart_style` uses it too. An email ignores the fil
 uses the rest of the stack, since most mail clients will not load a font.
 
 ```python
-from pyhermes.builder import DEFAULT_FONTS, FontStack
+from octavo.builder import DEFAULT_FONTS, FontStack
 
 house = FontStack(
     "House Sans", "Arial", "sans-serif",
@@ -166,7 +166,7 @@ brief = PagedDocument({**facts, "font_theme": DEFAULT_FONTS.derive(heading=house
 **A display title, fine print and justified prose** are settings on a section:
 
 ```python
-from pyhermes.builder import ChartBlock, EmailImage, content_width
+from octavo.builder import ChartBlock, EmailImage, content_width
 
 brief.add_section(FullWidth(
     TextBlock("<p>Low-cost exposure to the whole market.</p>"),
@@ -215,8 +215,8 @@ Four settings for a brief, a fact sheet or a flyer printed on a few sheets. Each
 or flows in place in an email, so the same sections still make the email.
 
 ```python
-from pyhermes.builder import Callout, Columns, FullWidth, TextBlock
-from pyhermes.document import EmptyCover, PagedDocument, RunningFooter
+from octavo.builder import Callout, Columns, FullWidth, TextBlock
+from octavo.document import EmptyCover, PagedDocument, RunningFooter
 
 sheet = PagedDocument(
     facts,

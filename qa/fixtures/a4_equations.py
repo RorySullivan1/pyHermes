@@ -11,8 +11,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pyhermes.builder import FullWidth, MathBlock, TextBlock
-from pyhermes.document import (
+from octavo.builder import FullWidth, MathBlock, TextBlock
+from octavo.document import (
     PAGED_MEDIUM,
     EmptyBackMatter,
     EmptyContentsPage,

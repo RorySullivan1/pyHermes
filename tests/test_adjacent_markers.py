@@ -13,11 +13,11 @@ import re
 
 import pytest
 
-from pyhermes.builder import Bibliography, DataTable, FullWidth, TextBlock
-from pyhermes.builder.email import Email
-from pyhermes.builder.models import TableRow
-from pyhermes.builder.research import Reference
-from pyhermes.document import PagedDocument
+from octavo.builder import Bibliography, DataTable, FullWidth, TextBlock
+from octavo.builder.email import Email
+from octavo.builder.models import TableRow
+from octavo.builder.research import Reference
+from octavo.document import PagedDocument
 
 PAPER_FACTS = {"firm_name": "Hermes", "campaign_name": "Review"}
 FACTS = {"email_subject": "Subject", **PAPER_FACTS}

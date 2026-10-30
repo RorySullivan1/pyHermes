@@ -12,7 +12,7 @@ section are framed dashed, and the table's label column is ruled off (#390).
 
 from __future__ import annotations
 
-from pyhermes.builder import (
+from octavo.builder import (
     Badge,
     BarList,
     Callout,
@@ -26,10 +26,10 @@ from pyhermes.builder import (
     TextBlock,
     TwoColumn,
 )
-from pyhermes.builder.exhibits import LegendEntry
-from pyhermes.builder.glance import BarItem
-from pyhermes.builder.models import Cell, KpiItem, TableRow
-from pyhermes.builder.theming import DEFAULT_THEME
+from octavo.builder.exhibits import LegendEntry
+from octavo.builder.glance import BarItem
+from octavo.builder.models import Cell, KpiItem, TableRow
+from octavo.builder.theming import DEFAULT_THEME
 
 #: The classic theme with a brand's gold, sky and ink, its semantic tones untouched.
 THEME = DEFAULT_THEME.derive(tones={"brand": "#B8860B", "sky": "#0077A8", "ink": "#111111"})

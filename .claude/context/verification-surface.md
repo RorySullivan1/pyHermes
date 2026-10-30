@@ -5,7 +5,7 @@ must a human — and why?** Every workflow that ends in "done" reads this file i
 re-deriving what it can check, and every human gate in this repo traces back to a row here.
 
 Produced and refreshed by the **`establish-verification`** workflow. This file is a *project*
-record: the table below describes **pyHermes** (the rows replace the factory's example ones). The model above the table travels unchanged.
+record: the table below describes **octavo** (the rows replace the factory's example ones). The model above the table travels unchanged.
 
 ## Why this file exists
 
@@ -49,7 +49,7 @@ the document that has to paginate, the brochure that has to print.
 - **Never promote a tier to close a gap.** Downgrading is free; upgrading needs a command and a
   failure. Reporting `unverified` is always cheaper than a wrong "verified".
 
-## The surface table — pyHermes
+## The surface table — octavo
 
 CLAUDE.md standing rule 3 says the same thing in prose: screenshots approximate Gmail, lint owns
 Outlook, PDF rasterisation owns pagination, and a byte-verified diff is not a verified render.
@@ -60,7 +60,7 @@ Outlook, PDF rasterisation owns pagination, and a byte-verified diff is not a ve
 | Style and types | `ruff check . && ruff format --check .` and `mypy` | `agent-runnable` | Pure source analysis | — |
 | Prose budget | `pytest tests/test_prose_budget.py` | `agent-runnable` | Baseline may only shrink; gated in the suite | — |
 | Rendered HTML bytes | goldens in `pytest` (`--update-goldens` only to accept an intended change) | `agent-runnable` | Byte comparison — proves *sameness*, never *correctness* of a render | — |
-| Outlook compatibility — static | `python -m pyhermes.check <file>.py:<callable>`, or `python -m qa.preview <fixture> --lint` | `agent-runnable` | Lint rules encode the Word-engine contract (`outlook-html-specifications`) | — |
+| Outlook compatibility — static | `python -m octavo.check <file>.py:<callable>`, or `python -m qa.preview <fixture> --lint` | `agent-runnable` | Lint rules encode the Word-engine contract (`outlook-html-specifications`) | — |
 | Outlook compatibility — rendering | open the message in classic Outlook and look | `human-gated` | No Word-engine renderer is reachable from a session; human reports what broke | — |
 | Gmail-like layout | `python -m qa.preview <fixture> --screenshot` (needs `.[qa]`) | `agent-runnable` | Chromium approximates Gmail-in-a-browser; a real Gmail client is `human-gated` | — |
 | Paged document / brochure pagination | `python -m qa.preview a4_portrait --screenshot` (needs `.[pdf]` + `.[qa]`) — look at each sheet image | `agent-runnable` | PDF rasterised one image per sheet; needs Pango/Cairo | — |

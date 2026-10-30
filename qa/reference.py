@@ -12,7 +12,7 @@ import importlib.util
 from pathlib import Path
 from types import ModuleType
 
-from pyhermes.builder.document import Document
+from octavo.builder.document import Document
 
 ROOT = Path(__file__).resolve().parent.parent
 REFERENCE_DIR = ROOT / "reference"

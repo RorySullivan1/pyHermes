@@ -20,7 +20,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from pyhermes.builder.document import Document as Email
+from octavo.builder.document import Document as Email
 
 #: Where the checked-in goldens live — inside the fixture package, next to the
 #: code that generates them.
@@ -118,7 +118,7 @@ def artifacts(name: str, email: Email) -> list[tuple[str, Path, str]]:
     written, or written but never checked. A deck has one: its speaker
     notes, a third projection the other two cannot see (#299).
     """
-    from pyhermes.deck import Deck
+    from octavo.deck import Deck
 
     medium = email.medium.name
     pinned = [

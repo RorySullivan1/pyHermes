@@ -17,4 +17,4 @@ likely lives in its own repository and is versioned on its own.
 for something only a hosted service can give.
 
 **Risk:** starting early. An app pulls the roadmap towards UI and accounts and away from the
-render quality and research apparatus that set pyHermes apart.
+render quality and research apparatus that set octavo apart.

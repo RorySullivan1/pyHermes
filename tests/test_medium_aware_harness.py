@@ -13,12 +13,12 @@ import re
 
 import pytest
 
-from pyhermes.brochure import BROCHURE_MEDIUM
-from pyhermes.builder.medium import DEFAULT_MEDIUM
-from pyhermes.check import render_for_check
-from pyhermes.deck import DECK_MEDIUM
-from pyhermes.document import PAGED_MEDIUM, PagedDocument
-from pyhermes.email import EMAIL_MEDIUM
+from octavo.brochure import BROCHURE_MEDIUM
+from octavo.builder.medium import DEFAULT_MEDIUM
+from octavo.check import render_for_check
+from octavo.deck import DECK_MEDIUM
+from octavo.document import PAGED_MEDIUM, PagedDocument
+from octavo.email import EMAIL_MEDIUM
 from qa.fixtures import (
     all_brochure_fixtures,
     all_deck_fixtures,
@@ -274,7 +274,7 @@ class TestAPagedDocumentIsPhotographedFromItsPdf:
     def test_one_image_per_sheet(self, tmp_path):
         document = all_paged_fixtures()["a4_portrait"]()
         shots, _ = capture_pages({"a4_portrait": document}, tmp_path)
-        from pyhermes.pdf import page_count
+        from octavo.pdf import page_count
 
         assert len(shots) == page_count(document)
 

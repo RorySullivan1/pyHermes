@@ -1,6 +1,6 @@
 ---
 paths:
-  - "pyhermes/**/*"
+  - "octavo/**/*"
   - "qa/**/*"
   - "tests/**/*"
 ---
@@ -10,7 +10,7 @@ paths:
 ## Directory map
 
 ```
-pyhermes/
+octavo/
 ├── py.typed            ← PEP 561 marker, empty: without it a consumer's mypy types every
 │                         symbol as Any. Deleting it, or a packaging change that drops it,
 │                         fails `python -m qa.distribution` in CI's `wheel` job (#243)
@@ -106,7 +106,7 @@ pyhermes/
 │   ├── sender.py       — OutlookTransport protocol, GraphApiTransport shim, send_message()
 │   └── desktop.py      — create_draft(): classic Outlook's drafts through COM (#279)
 ├── check/              ← the portability check, shipped (#278): lint.py, target.py, and
-│                         `python -m pyhermes.check path.py:callable`
+│                         `python -m octavo.check path.py:callable`
 ├── data/               ← the data adapters (#179, #180); "[data]" and "[charts]" extras
 │   ├── frames.py       — table_from_frame: a DataFrame as a DataTable
 │   ├── charts.py       — image_from_figure / chart_from_figure: a Figure as an image
@@ -129,7 +129,7 @@ qa/                     ← QA harness (epic #54); NOT shipped in the wheel
 │                        render_manifest(), and the diagnosable mismatch report
 ├── screenshots.py     — headless-Chromium runner: `python -m qa.screenshots`, cid→data URI
 │                        substitution, run.json recording the browser build
-├── lint.py            — re-exports pyhermes.check.lint, where the rules ship since #278
+├── lint.py            — re-exports octavo.check.lint, where the rules ship since #278
 ├── outlook_desktop_check.py — the human check for #279, run on Windows
 ├── preview.py         — the CLI that composes the rest: `python -m qa.preview <target>`
 │                        [--lint] [--screenshot] [--open] [--list]
@@ -155,7 +155,7 @@ tests/                  — pytest unit suite (validation, error paths, size lim
 These are not conventions to remember — each has teeth, and the teeth are named:
 
 1. **A new component joins `kitchen_sink()`.** Not by good intentions: a completeness test
-   introspects every public `Component` subclass exported from `pyhermes.builder` and fails when
+   introspects every public `Component` subclass exported from `octavo.builder` and fails when
    one never appears in the fixture. The same holds for a new `EmailMetadata` field, which is
    additionally checked to differ from its own default — a field left at its default is one
    the golden cannot pin. Exemptions are named in `DEPRECATED_COMPONENTS`, with a reason.
@@ -245,13 +245,13 @@ These are not conventions to remember — each has teeth, and the teeth are name
 
 ## The service layer's two seams, stated in full
 
-Moved out of `pyhermes/__init__.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
+Moved out of `octavo/__init__.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
 
 ```
-pyHermes Service Layer
+octavo Service Layer
 ======================
 
-pyhermes/
+octavo/
 ├── builder/     — OO email assembly (Jinja2): HTML + an asset manifest.
 ├── delivery/    — transport-neutral MIME assembly: HTML + manifest → message.
 ├── gmail/       — Gmail send adapter: message → the wire.
@@ -263,15 +263,15 @@ describing what to attach as ``X``), and delivery *performs* them.
 
 The seam between delivery and an adapter: delivery assembles bytes, an
 adapter transmits them. Adapters own their provider's wire contract and
-error semantics; they never own authentication, so pyHermes has no
+error semantics; they never own authentication, so octavo has no
 dependency on any provider SDK.
 
 Usage::
 
-    from pyhermes.builder import CardGroup, EmailBuilder, FullWidth
-    from pyhermes.builder.models import Card, KpiItem
-    from pyhermes.delivery import build_message, save_eml
-    from pyhermes.gmail import GoogleApiTransport, send_message
+    from octavo.builder import CardGroup, EmailBuilder, FullWidth
+    from octavo.builder.models import Card, KpiItem
+    from octavo.delivery import build_message, save_eml
+    from octavo.gmail import GoogleApiTransport, send_message
 ```
 
 11. **Prose is bounded, and the bound is checked.** A file states its purpose; a class may
@@ -318,12 +318,12 @@ Usage::
    or in `SHIPPED_MEDIA`, the registry `Only` validates against, and a medium arrives with the
    document class that is constructed to choose it, so the public `Document` subclasses are
    frozen as well (`FROZEN_DOCUMENTS`); a layout primitive is a public `Container` subclass or
-   a component in `pyhermes/builder/composition.py`. **The definition is by location**: a
+   a component in `octavo/builder/composition.py`. **The definition is by location**: a
    component elsewhere that arranges children (`FigureGrid`, `FactList`) is the reviewer's to
    police, not the test's. The teeth are `tests/test_scope_freeze.py`: it walks the package for
    both, fails on one outside `FROZEN_MEDIA` / `FROZEN_LAYOUTS` and not in `ADMITTED_MEDIA` /
    `ADMITTED_LAYOUTS`, and an admission's report must be a name `.meta/roadmap/INDEX.md` uses.
-   The walk skips a module only when a named optional backend is missing; a broken pyhermes
+   The walk skips a module only when a named optional backend is missing; a broken octavo
    import fails it. A removal must leave the frozen list too, so it cannot outlive what it
    froze. **Not frozen**: components, a component's or container's properties, regions, themes
    and densities, which serve a report inside the media it already has, **except the deck's**:
@@ -385,20 +385,25 @@ earlier check passed on a tree that would have shipped wrong.
   matrix that stopped at 3.13. Run here before the change: all four pass `check` (3.14 as
   3.14.0rc2), and `[data,charts,math]` installs and passes on 3.11. A red Python is a finding
   to fix, or to file with `requires-python` capped, never a reason to narrow the list.
-- **The import root is `pyhermes`, decided in #248.** The distribution was `pyhermes` and
-  the import was `svc`, a generic top-level name: two wheels that ship a top-level `svc/`
+- **The import root matches the distribution, decided in #248.** The distribution had its
+  own name and the import was `svc`, a generic top-level name: two wheels that ship a top-level `svc/`
   overwrite each other's files in site-packages, `pip check` sees nothing, and a reader
   had to learn the import from the README. The cost was one PR of mechanical rewrite, 1,349
   references in 187 files, with the wheel and sdist checks above proving it shipped whole.
   Kept on the other side: the session logs, which record what was true when written.
+- **The project is `octavo` since roadmap v0.4.0 (2026-10-29).** Its earlier name was taken on
+  PyPI, and as a top-level import, by Allegro's Hermes message-broker client, so it could not
+  be published and installing both would overwrite one; #248's own reasoning, applied again.
+  `tests/test_distribution.py` fails if the old name reappears outside the memory's history
+  and the roadmap's record of the decision.
 - **`svc` was a shim, and #255 removed it before any release shipped it.** #248 kept
   `svc/__init__.py` for one release: it warned once with a `DeprecationWarning` and put a
-  meta-path finder in front that resolved `svc.X` to the module `pyhermes.X` already is.
+  meta-path finder in front that resolved `svc.X` to the module `octavo.X` already is.
   Its one trap is worth keeping for the next alias: the import system overwrites an aliased
   module's `__spec__` with the alias's, which is no package, and `importlib.resources` then
   refused the templates, so the loader put the real spec back. The package was never
   published, so no installer saw the warning, and the owner removed the shim at once (#255)
   rather than carry the collision risk a release it protected no one in. Now
-  `qa/distribution.py` fails CI on any top-level package in the wheel beside `pyhermes`, the
+  `qa/distribution.py` fails CI on any top-level package in the wheel beside `octavo`, the
   wheel job asserts `import svc` fails from each artefact, and a test in
   `test_distribution.py` fails if anything in the repo imports `svc`.

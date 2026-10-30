@@ -11,15 +11,15 @@ from pathlib import Path
 
 import pytest
 
-from pyhermes.builder import Email, EmailBuilder, FullWidth
-from pyhermes.builder.exceptions import (
+from octavo.builder import Email, EmailBuilder, FullWidth
+from octavo.builder.exceptions import (
     EmailBuilderError,
     SizeError,
     SizeWarning,
     ValidationError,
 )
-from pyhermes.builder.models import EmailMetadata
-from pyhermes.email.medium import _SIZE_LIMIT_KB, _SIZE_WARN_KB, validate_gmail_size
+from octavo.builder.models import EmailMetadata
+from octavo.email.medium import _SIZE_LIMIT_KB, _SIZE_WARN_KB, validate_gmail_size
 
 
 def html_of_kb(kb: float) -> str:
@@ -99,7 +99,7 @@ class TestRendering:
         assert valid_metadata["firm_name"] in email.render()
 
     def test_sections_render_in_order(self, valid_metadata, engine):
-        from pyhermes.builder import TextBlock
+        from octavo.builder import TextBlock
 
         email = Email(metadata=valid_metadata)
         email.add_section(FullWidth(content=TextBlock("<p>FIRST</p>")))

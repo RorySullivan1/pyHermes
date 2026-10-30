@@ -13,11 +13,11 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from pyhermes.builder import DataTable, FullWidth, ImageBlock, PullQuote, TextBlock
-from pyhermes.builder.images import EmailImage
-from pyhermes.builder.models import TableRow
-from pyhermes.builder.sizing import LETTER_LANDSCAPE
-from pyhermes.document import (
+from octavo.builder import DataTable, FullWidth, ImageBlock, PullQuote, TextBlock
+from octavo.builder.images import EmailImage
+from octavo.builder.models import TableRow
+from octavo.builder.sizing import LETTER_LANDSCAPE
+from octavo.document import (
     BackMatter,
     ContentsPage,
     Cover,

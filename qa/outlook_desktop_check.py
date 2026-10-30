@@ -12,10 +12,10 @@ from __future__ import annotations
 
 import sys
 
-from pyhermes.builder import FullWidth, ImageBlock
-from pyhermes.builder.images import EmailImage
-from pyhermes.delivery import build_message
-from pyhermes.outlook.desktop import create_draft
+from octavo.builder import FullWidth, ImageBlock
+from octavo.builder.images import EmailImage
+from octavo.delivery import build_message
+from octavo.outlook.desktop import create_draft
 
 from .fixtures import surfaced_layout
 from .fixtures._png import solid_png

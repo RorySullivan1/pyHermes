@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pyhermes.builder import (
+from octavo.builder import (
     ChartBlock,
     Container,
     DataTable,
@@ -25,9 +25,9 @@ from pyhermes.builder import (
     TextBlock,
     TwoColumn,
 )
-from pyhermes.builder.images import EmailImage
-from pyhermes.builder.models import Column, TableRow
-from pyhermes.builder.typography import DEFAULT_FONTS, FontStack, FontTheme
+from octavo.builder.images import EmailImage
+from octavo.builder.models import Column, TableRow
+from octavo.builder.typography import DEFAULT_FONTS, FontStack, FontTheme
 
 from ._png import solid_png
 

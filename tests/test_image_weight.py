@@ -9,9 +9,9 @@ from pathlib import Path
 
 import pytest
 
-from pyhermes.builder import SizeWarning
-from pyhermes.builder.images import EmailImage
-from pyhermes.config import Config, config_override, get_config, set_config
+from octavo.builder import SizeWarning
+from octavo.builder.images import EmailImage
+from octavo.config import Config, config_override, get_config, set_config
 from qa.fixtures import all_brochure_fixtures, all_fixtures, all_paged_fixtures
 from qa.fixtures._png import solid_png
 
@@ -82,7 +82,7 @@ class TestTheThresholdIsConfig:
             set_config(previous)
 
     def test_the_environment_sets_it(self, monkeypatch):
-        monkeypatch.setenv("PYHERMES_OVERSIZE_IMAGE_RATIO", "2.5")
+        monkeypatch.setenv("OCTAVO_OVERSIZE_IMAGE_RATIO", "2.5")
         assert Config.from_env().oversize_image_ratio == 2.5
 
     def test_a_host_can_promote_it_to_an_error(self):

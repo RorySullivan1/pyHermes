@@ -1,6 +1,6 @@
 ---
 paths:
-  - "pyhermes/config.py"
+  - "octavo/config.py"
 ---
 
 # Configuration — the tunable numbers
@@ -13,13 +13,13 @@ string field verbatim, surrounding spaces included, and a blank one is refused.
 shows the `{letter}`; **`citation_authors` (#310)**, 2, is how many authors a citation names
 before "et al.". Both are house style, read at render, so both projections move together.
 
-## Configuration — `pyhermes/config`
+## Configuration — `octavo/config`
 
 Every judgment-call number in the package is a field on one frozen
-[Config](../../pyhermes/config.py) dataclass, so a caller can retune it without editing the library.
+[Config](../../octavo/config.py) dataclass, so a caller can retune it without editing the library.
 
 ```python
-from pyhermes.config import Config, get_config, set_config, config_override
+from octavo.config import Config, get_config, set_config, config_override
 
 get_config().inline_image_limit_kb              # what is actually in force
 set_config(Config.from_env())                   # the process-wide default
@@ -44,7 +44,7 @@ Rules the module holds to, each for a specific reason:
 
 - **Nothing reads the environment on import.** `from_env()` is explicit, because a library
   whose behaviour changes with ambient state is one you cannot reason about locally — and
-  `pyhermes/delivery`'s purity, which the byte-for-byte dry run depends on, would be the first
+  `octavo/delivery`'s purity, which the byte-for-byte dry run depends on, would be the first
   casualty.
 - **Consumers call `get_config()` at use time, never at import time.** An override installed
   after import must still be seen. Where a module keeps a public constant
@@ -76,10 +76,10 @@ actually *reached*, because a config nobody reads is decoration.
 
 ## Where the judgment-call line was drawn, and why each rule exists
 
-Moved out of `pyhermes/config.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
+Moved out of `octavo/config.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
 
 ```
-Tunable limits and policy for pyHermes, in one place.
+Tunable limits and policy for octavo, in one place.
 
 Every number here was once a literal buried in the module that used it.
 Most were judgment calls — a cap chosen as "about half the budget", a
@@ -105,7 +105,7 @@ act rather than a knob someone turns to make a test pass.
 
 Usage::
 
-    from pyhermes.config import Config, get_config, set_config
+    from octavo.config import Config, get_config, set_config
 
     get_config().inline_image_limit_kb          # read the active value
     set_config(Config(inline_image_limit_kb=64))  # process-wide override
@@ -133,7 +133,7 @@ Recorded so they are not re-litigated as oversights:
 **`print_dpi` (#188) is the resolution a brochure's images must reach, 300 by default.** The
 offset norm, and a judgement call rather than a fact: a proof printer is content with less, a
 fine-art press wants more. Below it, a brochure warns (`PrintQualityWarning`) at construction; below half
-of it, construction raises. `PYHERMES_PRINT_DPI` sets it, like every other field.
+of it, construction raises. `OCTAVO_PRINT_DPI` sets it, like every other field.
 
 **`oversize_image_ratio` (#276) is how many times its display width a picture may be, 4.5 by
 default.** Above it, construction raises a `SizeWarning`. The issue proposed 3, and the
@@ -144,7 +144,7 @@ on purpose, so 3 warned on the gallery. `data-layer.md` has the measurement.
 An email refuses a custom `SizeScheme` and the print density `dense` until the caller has
 rendered theirs in the clients they send to; this is how they say so. It is a judgement call
 about one's own audience, which is what puts it here rather than in a constant.
-`PYHERMES_ALLOW_CUSTOM_EMAIL_DENSITY` takes `1`/`true`/`yes`/`on` or their opposites, and
+`OCTAVO_ALLOW_CUSTOM_EMAIL_DENSITY` takes `1`/`true`/`yes`/`on` or their opposites, and
 `from_env` refuses anything else by name, since a misspelt switch that silently reads as off is
 the failure `from_env` exists to prevent.
 
@@ -176,13 +176,13 @@ every render), the attachment budget and the brochure's print dpi. The other two
 `warnings.warn`, so a host's `-W error` or `logging.captureWarnings` caught half of them, and a
 CLI writing HTML to stdout got a status line in its output.
 
-- **Two categories, both `UserWarning`s, in `pyhermes.builder.exceptions`**: `SizeWarning` for the
+- **Two categories, both `UserWarning`s, in `octavo.builder.exceptions`**: `SizeWarning` for the
   email and message thresholds, `PrintQualityWarning` for the dpi one. A host filters by kind.
 - **The success line is gone.** `qa.preview` already printed each file's size itself.
-- **`warn_caller` finds the caller by walking out of `pyhermes`**, because one check is reached from
+- **`warn_caller` finds the caller by walking out of `octavo`**, because one check is reached from
   `render()`, `Email.render()`, a builder shortcut or a brochure's constructor, and no fixed
   `stacklevel` names all of them. A test asserts the warning's filename is the test's own.
-- **No `print` in `pyhermes/`**, held by an AST test in `tests/test_warnings.py`. Logging is not
+- **No `print` in `octavo/`**, held by an AST test in `tests/test_warnings.py`. Logging is not
   the package's business: a host maps warnings to its logger itself.
 
 ## Three levels, and the config travels with the work (#249)

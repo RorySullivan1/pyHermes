@@ -15,15 +15,15 @@ from collections.abc import Callable
 import pytest
 import requests
 
-from pyhermes.builder import EmailBuilder, FullWidth, TextBlock
-from pyhermes.delivery import build_message
-from pyhermes.delivery.exceptions import DeliveryError, TransportError
-from pyhermes.delivery.retry import PERMANENT_ERROR_NAMES, is_permanent_failure, retry_with_backoff
-from pyhermes.gmail import is_transient as gmail_is_transient
-from pyhermes.gmail import send_message as gmail_send
-from pyhermes.outlook import GraphApiError
-from pyhermes.outlook import is_transient as outlook_is_transient
-from pyhermes.outlook import send_message as outlook_send
+from octavo.builder import EmailBuilder, FullWidth, TextBlock
+from octavo.delivery import build_message
+from octavo.delivery.exceptions import DeliveryError, TransportError
+from octavo.delivery.retry import PERMANENT_ERROR_NAMES, is_permanent_failure, retry_with_backoff
+from octavo.gmail import is_transient as gmail_is_transient
+from octavo.gmail import send_message as gmail_send
+from octavo.outlook import GraphApiError
+from octavo.outlook import is_transient as outlook_is_transient
+from octavo.outlook import send_message as outlook_send
 
 ENVELOPE = {"subject": "Weekly", "sender": "research@example.com", "to": "reader@example.com"}
 

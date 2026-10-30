@@ -1,6 +1,6 @@
-# pyHermes
+# octavo
 
-pyHermes is a framework for research reports: quantitative research goes in as data, exhibits,
+octavo is a framework for research reports: quantitative research goes in as data, exhibits,
 findings and disclosures, and comes out as an email, a printed report or a folded brochure,
 each checked for the medium it is read on.
 
@@ -13,7 +13,7 @@ all fail there.
 **New here?** The [user manual](docs/manual/README.md) walks through building, checking and
 sending an email, task by task, with a troubleshooting page for every error message.
 
-pyHermes composes Jinja2 templates into a single inline-CSS, table-based document
+octavo composes Jinja2 templates into a single inline-CSS, table-based document
 engineered for those constraints, and enforces the ones that break silently. It depends on
 **Jinja2 and nothing else**.
 
@@ -24,8 +24,8 @@ constructing one — the components, the colours, the density and the typefaces 
 either way.
 
 ```python
-from pyhermes.builder import Banner, EmailBuilder, FullWidth, CardGroup, TextBlock
-from pyhermes.builder.models import KpiItem
+from octavo.builder import Banner, EmailBuilder, FullWidth, CardGroup, TextBlock
+from octavo.builder.models import KpiItem
 
 email = (
     EmailBuilder()
@@ -66,9 +66,9 @@ margin of every page, a real break before the appendix, and a closing disclosure
 contents sheet, footnotes and cross-references are [below](#numbers-notes-contents-and-references)):
 
 ```python
-from pyhermes.builder import FullWidth, TextBlock
-from pyhermes.document import BackMatter, Cover, Page, PagedDocument, RunningFooter
-from pyhermes.pdf import save_pdf
+from octavo.builder import FullWidth, TextBlock
+from octavo.document import BackMatter, Cover, Page, PagedDocument, RunningFooter
+from octavo.pdf import save_pdf
 
 document = PagedDocument(
     {
@@ -89,7 +89,7 @@ save_pdf(document, "review.pdf")   # ...and so is the PDF  (needs the [pdf] extr
 ```
 
 `A4_PORTRAIT` is the default; `paged_medium(SLIDE_16_9)` and the Letter presets are in
-`pyhermes.builder.sizing`. Each preset carries a print margin: 20mm on A4, 0.75in on Letter. The
+`octavo.builder.sizing`. Each preset carries a print margin: 20mm on A4, 0.75in on Letter. The
 running header and footer print inside that margin. For a margin of your own, pass
 `PageFormat(width, height, margin=PageMargin(...))` to `paged_medium`. A `Page` **flattens**
 in the email medium — one tree, two outputs — so the same sections can go to both.
@@ -110,11 +110,11 @@ A cover email and the report behind it go out as one message. `pdf_attachment` r
 report for a screen and hands it to `build_message` as a file:
 
 ```python
-from pyhermes.builder import EmailBuilder, FullWidth, TextBlock
-from pyhermes.builder.sizing import LETTER_LANDSCAPE
-from pyhermes.delivery import build_message, save_eml
-from pyhermes.document import ContentsPage, Cover, PagedDocument, paged_medium
-from pyhermes.pdf import pdf_attachment
+from octavo.builder import EmailBuilder, FullWidth, TextBlock
+from octavo.builder.sizing import LETTER_LANDSCAPE
+from octavo.delivery import build_message, save_eml
+from octavo.document import ContentsPage, Cover, PagedDocument, paged_medium
+from octavo.pdf import pdf_attachment
 
 facts = {"firm_name": "Hermes Research", "campaign_name": "Global Rates Review"}
 
@@ -140,7 +140,7 @@ message = build_message(
     to="clients@example.com",
     attachments=[pdf_attachment(report, "global-rates-review.pdf")],  # needs the [pdf] extra
 )
-save_eml(message, "review.eml")   # a dry run; send it through pyhermes.gmail or pyhermes.outlook as before
+save_eml(message, "review.eml")   # a dry run; send it through octavo.gmail or octavo.outlook as before
 ```
 
 The message becomes a `multipart/mixed`: the email first, unchanged, and the PDF after it as
@@ -168,9 +168,9 @@ meets them, front cover first; the fold decides which side of the sheet each one
 and where:
 
 ```python
-from pyhermes.brochure import TRI_FOLD_LETTER, Brochure, Panel
-from pyhermes.builder import FullWidth, PullQuote, TextBlock
-from pyhermes.pdf import save_pdf
+from octavo.brochure import TRI_FOLD_LETTER, Brochure, Panel
+from octavo.builder import FullWidth, PullQuote, TextBlock
+from octavo.pdf import save_pdf
 
 
 def face(title, copy):
@@ -197,7 +197,7 @@ Four folds ship: `BI_FOLD_LETTER`, `TRI_FOLD_LETTER` (a letter fold, whose insid
 1/8in narrower so it closes flat), `Z_FOLD_LETTER` and `GATE_FOLD_A4`. A wrong panel count
 raises at construction and lists every face in reader order. Each panel is a fixed box: copy
 that overflows it is clipped, never carried onto another panel, and
-`pyhermes.brochure.overflowing_panels(brochure)` names any that did.
+`octavo.brochure.overflowing_panels(brochure)` names any that did.
 
 **The PDF is print-ready but RGB.** Each side carries 1/8in of bleed, with each panel's colour
 or picture running into it, and crop and registration marks outside that. A panel whose copy
@@ -225,10 +225,10 @@ footer band carrying the firm, the current part and the slide's number. It opens
 slide and closes on the disclosures, and reaches a colleague as a PDF:
 
 ```python
-from pyhermes.builder import CardGroup, FullWidth, TextBlock
-from pyhermes.builder.models import KpiItem
-from pyhermes.deck import Deck, overflowing_slides
-from pyhermes.pdf import save_pdf
+from octavo.builder import CardGroup, FullWidth, TextBlock
+from octavo.builder.models import KpiItem
+from octavo.deck import Deck, overflowing_slides
+from octavo.pdf import save_pdf
 
 deck = Deck({"firm_name": "Hermes Research", "campaign_name": "Rates, Projected"})
 deck.add_divider("Where rates stand", "Levels, curve and premium")
@@ -243,7 +243,7 @@ print(overflowing_slides(deck))  # [] -- or "slide N: Title" for a slide too ful
 ```
 
 A slide is a fixed box: copy that does not fit is clipped, never carried onto a second sheet,
-and `python -m pyhermes.check` reports it as `slide-overflow`. A deck defaults to the
+and `python -m octavo.check` reports it as `slide-overflow`. A deck defaults to the
 `presentation` density, sized for a slide read across a room, which only a deck may take.
 `SLIDE_16_9` is the default sheet and `SLIDE_4_3` the other; a `Slide` placed in an email or
 a report renders as its sections alone.
@@ -251,7 +251,7 @@ a report renders as its sections alone.
 ## Install
 
 Requires Python 3.11+. Not published to PyPI — install from a clone. The distribution and the
-import are both `pyhermes` (`from pyhermes.builder import EmailBuilder`). Code written against
+import are both `octavo` (`from octavo.builder import EmailBuilder`). Code written against
 the old `svc` import needs its imports changed; nothing else moved:
 
 ```bash
@@ -270,9 +270,9 @@ rather than claiming it: their tests *skip* when the extra is absent, so `pip in
 it is not in the floor.
 
 `python -m build` makes a wheel and an sdist, and both carry the library alone: the sdist
-holds `pyhermes/`, `pyproject.toml`, this README and the [MIT licence](LICENSE), and nothing from
+holds `octavo/`, `pyproject.toml`, this README and the [MIT licence](LICENSE), and nothing from
 the tests, the QA harness or the tooling. The wheel ships a `py.typed` marker, so your type
-checker reads pyHermes's annotations. CI builds, checks and installs both on every change.
+checker reads octavo's annotations. CI builds, checks and installs both on every change.
 
 The `dev` extra also pulls `requests` and `httplib2`. Those are the HTTP transports the send
 adapters *document*, not ones they use: the adapters import neither, and an AST-parsing test
@@ -286,7 +286,7 @@ Building is the bulk of the product, but the chain is complete. Assembly is tran
 and pure; the adapters transmit.
 
 ```python
-from pyhermes.delivery import build_message, save_eml
+from octavo.delivery import build_message, save_eml
 
 message = build_message(
     email,
@@ -297,7 +297,7 @@ message = build_message(
 save_eml(message, "output/preview.eml")   # dry run: no credentials, no network
 ```
 
-Every message is a `multipart/alternative` — pyHermes generates the `text/plain` part from the
+Every message is a `multipart/alternative` — octavo generates the `text/plain` part from the
 same section tree it renders the HTML from, so there is nothing extra to write and no way for
 the two to say different things:
 
@@ -329,16 +329,16 @@ equal the bytes written to disk.
 To actually send, bring an authorized transport:
 
 ```python
-from googleapiclient.discovery import build       # your dependency, not pyHermes'
-from pyhermes.gmail import GoogleApiTransport, send_message
+from googleapiclient.discovery import build       # your dependency, not octavo'
+from octavo.gmail import GoogleApiTransport, send_message
 
 service = build("gmail", "v1", credentials=creds)  # you authenticate
 message_id = send_message(message, transport=GoogleApiTransport(service))
 ```
 
 ```python
-import requests                                    # your dependency, not pyHermes'
-from pyhermes.outlook import GraphApiTransport, send_message
+import requests                                    # your dependency, not octavo'
+from octavo.outlook import GraphApiTransport, send_message
 
 session = requests.Session()
 session.headers["Authorization"] = f"Bearer {token}"
@@ -349,7 +349,7 @@ With classic Outlook on Windows and no Graph token, the `[outlook-desktop]` extr
 message into your drafts instead, with its pictures, and never sends it:
 
 ```python
-from pyhermes.outlook.desktop import create_draft
+from octavo.outlook.desktop import create_draft
 
 create_draft(message)          # saved in Drafts and opened for you to review and send
 ```
@@ -357,7 +357,7 @@ create_draft(message)          # saved in Drafts and opened for you to review an
 **The adapters take an authorized transport, never credentials.** Each defines a one-method
 `Protocol` the caller satisfies. Token acquisition, refresh and revocation stay with the
 caller, where an application's secret handling already lives. Three consequences follow, all
-deliberate: pyHermes gains no provider SDK dependency, no credential ever touches this code,
+deliberate: octavo gains no provider SDK dependency, no credential ever touches this code,
 and the whole send path is testable with no mailbox, no network, and no recorded HTTP
 fixtures to drift.
 
@@ -368,10 +368,10 @@ Every email is **skeleton ← regions ← containers ← components**, and the r
 
 | Layer | What it owns | Where |
 |---|---|---|
-| **Skeleton** | the whole page — head, preheader, wrapper — with four holes: `{{ header_bar_html }}`, `{{ banner_html }}`, `{{ sections_html }}`, `{{ footer_html }}` | `pyhermes/builder/templates/base.html` |
-| **Regions** | the strip (`Header`, `EmptyHeader`), the masthead (`Banner`, `MinimalBanner`) and the close (`Footer`). (The *body* region is the ordered section list — not a class) | `pyhermes/builder/regions.py` |
-| **Containers** | layout geometry only: `FullWidth`, `TwoColumn`, `ThreeColumn`, `FourColumn`, at a named ratio or any weights such as `ratio=(60, 40)`; each takes a `background_color` whose type stays readable, a `text_color`, and a `border` | `pyhermes/builder/containers.py` |
-| **Components** | content: `CardGroup`, `DataTable`, `ChartBlock`, `ImageBlock`, `TextBlock`, `NumberedList`, `AuthorBlock`, `ContactBlock`, `Button`, `Divider`, `TagRow`, `FactList`, `Timeline`, `TeaserList`; and three that hold others, `Stack` (several blocks in one cell), `Columns` (a split inside a cell) and `Callout` (one block in a box) | `pyhermes/builder/components.py`, `composition.py`, `surfaces.py`, `organising.py` |
+| **Skeleton** | the whole page — head, preheader, wrapper — with four holes: `{{ header_bar_html }}`, `{{ banner_html }}`, `{{ sections_html }}`, `{{ footer_html }}` | `octavo/builder/templates/base.html` |
+| **Regions** | the strip (`Header`, `EmptyHeader`), the masthead (`Banner`, `MinimalBanner`) and the close (`Footer`). (The *body* region is the ordered section list — not a class) | `octavo/builder/regions.py` |
+| **Containers** | layout geometry only: `FullWidth`, `TwoColumn`, `ThreeColumn`, `FourColumn`, at a named ratio or any weights such as `ratio=(60, 40)`; each takes a `background_color` whose type stays readable, a `text_color`, and a `border` | `octavo/builder/containers.py` |
+| **Components** | content: `CardGroup`, `DataTable`, `ChartBlock`, `ImageBlock`, `TextBlock`, `NumberedList`, `AuthorBlock`, `ContactBlock`, `Button`, `Divider`, `TagRow`, `FactList`, `Timeline`, `TeaserList`; and three that hold others, `Stack` (several blocks in one cell), `Columns` (a split inside a cell) and `Callout` (one block in a box) | `octavo/builder/components.py`, `composition.py`, `surfaces.py`, `organising.py` |
 
 A container holds components, renders each, and embeds the fragments into its own `<tr>`
 block sized to the 680px outer table. Each region renders into exactly one slot, and `Email`
@@ -384,7 +384,7 @@ time — a region presents them, it cannot contradict them. Swapping the header 
 argument, not a template fork:
 
 ```python
-from pyhermes.builder import EmailBuilder, MinimalBanner
+from octavo.builder import EmailBuilder, MinimalBanner
 
 (EmailBuilder()
     .metadata({...})
@@ -396,7 +396,7 @@ The footer always renders its closing block — see **Footer** below for what go
 contact call-to-action, add a `ContactBlock` body section instead of putting it in the footer:
 
 ```python
-from pyhermes.builder import EmailBuilder, FullWidth, ContactBlock
+from octavo.builder import EmailBuilder, FullWidth, ContactBlock
 
 (EmailBuilder()
     .metadata({...})
@@ -465,7 +465,7 @@ The strip at the very top of the email: one band of free-form copy, above the ma
 text is an email-level fact; the region owns how the box presents it.
 
 ```python
-from pyhermes.builder import EmptyHeader, Header
+from octavo.builder import EmptyHeader, Header
 
 EmailBuilder().metadata({..., "header_disclaimer": "For illustrative purposes."})
     .header(Header(align="left", background_color="#EEF2F5", text_color="#1B1B1B"))
@@ -491,8 +491,8 @@ The masthead is a region you pass, not a template you fork. Omit it and one is b
 metadata; pass a `Banner` and it renders instead:
 
 ```python
-from pyhermes.builder import Banner, BannerPalette, MinimalBanner, Rgba
-from pyhermes.builder.images import EmailImage
+from octavo.builder import Banner, BannerPalette, MinimalBanner, Rgba
+from octavo.builder.images import EmailImage
 
 LOGO_WIDTH = 118                             # the mark's own display width, in px
 
@@ -540,8 +540,8 @@ The closing block, and the header's counterpart: it takes the **same three box f
 the email's two outer boxes cost one API to learn.
 
 ```python
-from pyhermes.builder import Footer
-from pyhermes.builder.models import FooterLink, LinkRow
+from octavo.builder import Footer
+from octavo.builder.models import FooterLink, LinkRow
 
 Footer(
     align="left",                      # the shared surface, as on Header
@@ -565,7 +565,7 @@ the copyright. Leave `link_row` unset and it is built from the email's own facts
 `unsubscribe_label` and `view_in_browser_label`. An unset URL leaves its link out rather than
 rendering an empty `href`.
 
-**pyHermes does not decide what your email must say.** Disclaimer language, unsubscribe links
+**octavo does not decide what your email must say.** Disclaimer language, unsubscribe links
 and every other compliance question are your judgement — the library cannot know whether this
 is a commercial newsletter, an internal note or a receipt. So `LinkRow(links=[])` renders a
 link-free row and an empty `disclaimer` renders no fine print, and both are valid. What it does
@@ -606,12 +606,12 @@ budget, are in `.claude/rules/disclosure.md`.
 
 ## Numbers, notes, contents and references
 
-A research document is navigated by its apparatus, and pyHermes numbers all of it in Python —
+A research document is navigated by its apparatus, and octavo numbers all of it in Python —
 once — so the email, the PDF and the plain-text part agree:
 
 ```python
-from pyhermes.builder import Contents, DataTable, FullWidth, TextBlock
-from pyhermes.document import ContentsPage, PagedDocument, RunningHeader
+from octavo.builder import Contents, DataTable, FullWidth, TextBlock
+from octavo.document import ContentsPage, PagedDocument, RunningHeader
 
 document = PagedDocument(
     facts,
@@ -657,7 +657,7 @@ Python's, which is why the text part can carry it.
 A long-form note adds its sources, its terms and its appendices on the same walk:
 
 ```python
-from pyhermes.builder import Appendices, Bibliography, Glossary, Reference, Term
+from octavo.builder import Appendices, Bibliography, Glossary, Reference, Term
 
 refs = [Reference("fama1993", ["Fama, Eugene F.", "French, Kenneth R."], 1993,
                   "Common risk factors in the returns on stocks and bonds")]
@@ -682,7 +682,7 @@ document.add_section(Appendices([FullWidth(title="Data sources", content=coverag
 Every colour and shadow comes from one validated `Theme`, chosen with one metadata field:
 
 ```python
-from pyhermes.builder import DEFAULT_THEME, EmailBuilder
+from octavo.builder import DEFAULT_THEME, EmailBuilder
 
 EmailBuilder().metadata({..., "theme": "slate"})                 # a curated preset
 EmailBuilder().metadata({..., "theme": DEFAULT_THEME.derive(     # or your own
@@ -733,7 +733,7 @@ a type size or a line-height. `Page(..., spacing=...)` reaches every section on 
 The email takes more care, because its density meets the clipping limit, Outlook's Word
 engine and the mobile collapse at once. An `Email` refuses `dense` and a custom scheme until
 you have rendered yours in the clients you send to and set
-`Config(allow_custom_email_density=True)` or `PYHERMES_ALLOW_CUSTOM_EMAIL_DENSITY=1`. It also
+`Config(allow_custom_email_density=True)` or `OCTAVO_ALLOW_CUSTOM_EMAIL_DENSITY=1`. It also
 refuses an override of a token its mobile `@media` block reads (`pad_x` and the card padding),
 which would render one way wide and another collapsed.
 
@@ -742,7 +742,7 @@ which would render one way wide and another collapsed.
 The third axis, and the same shape as the other two:
 
 ```python
-from pyhermes.builder import DEFAULT_FONTS, EmailBuilder, FontStack
+from octavo.builder import DEFAULT_FONTS, EmailBuilder, FontStack
 
 EmailBuilder().metadata({..., "font_theme": "modern"})              # or "classic"
 EmailBuilder().metadata({..., "font_theme": DEFAULT_FONTS.derive(   # or your own
@@ -801,8 +801,8 @@ unit once, a column formats and tones the raw figures it is given, and the figur
 the point:
 
 ```python
-from pyhermes.builder import ColumnGroup, HeatScale
-from pyhermes.builder.formats import pct
+from octavo.builder import ColumnGroup, HeatScale
+from octavo.builder.formats import pct
 
 ret = lambda v: pct(v, 1, sign=True)
 DataTable(
@@ -830,11 +830,11 @@ DataTable(
 
 ## Figures as numbers
 
-Pass numbers, not strings. `pyhermes.builder.formats` formats a figure once, and both the HTML and
+Pass numbers, not strings. `octavo.builder.formats` formats a figure once, and both the HTML and
 the plain-text part read the same string:
 
 ```python
-from pyhermes.builder.formats import bps, compact, money, pct
+from octavo.builder.formats import bps, compact, money, pct
 
 pct(0.0142, sign=True)   # '+1.42%'
 bps(0.0006)              # '+6 bps'
@@ -852,8 +852,8 @@ otherwise, and a figure shown as zero is never coloured:
 
 ```python
 from functools import partial
-from pyhermes.builder import Tone
-from pyhermes.builder.models import Cell, KpiItem, TableRow
+from octavo.builder import Tone
+from octavo.builder.models import Cell, KpiItem, TableRow
 
 ret = partial(pct, dp=1, sign=True)
 TableRow(["Momentum", Cell.from_number(-0.004, ret)])        # '-0.4%', negative
@@ -863,12 +863,12 @@ KpiItem.from_number("VIX", 14.32, partial(number, dp=2), change=-2.18, good="dow
 
 An explicit `color=` still wins over a tone.
 
-**A DataFrame or a matplotlib Figure can be passed directly**, through `pyhermes.data`
+**A DataFrame or a matplotlib Figure can be passed directly**, through `octavo.data`
 (`[data]` and `[charts]` above):
 
 ```python
-from pyhermes.builder import content_width
-from pyhermes.data import chart_from_figure, table_from_frame
+from octavo.builder import content_width
+from octavo.data import chart_from_figure, table_from_frame
 
 table = table_from_frame(df, formats={"1M": ret}, tones={"1M": "auto"},
                          total_row=True, source="Hermes Research")
@@ -877,16 +877,16 @@ chart = chart_from_figure(fig, alt="Cumulative returns", width=content_width(),
 ```
 
 The frame's dtypes decide each column's kind, and a named index becomes the row-header
-column. The chart is rendered at twice its display width and attached by `cid:`. pyHermes
+column. The chart is rendered at twice its display width and attached by `cid:`. octavo
 never styles the plot; it takes the Figure you drew. To draw it in the email's colours and
 type, draw inside `plt.rc_context(chart_style(email.metadata.theme))`.
 
-**An equation is written in LaTeX**, through `pyhermes.math` (`[math]` above). It renders to an
+**An equation is written in LaTeX**, through `octavo.math` (`[math]` above). It renders to an
 image in every medium, because no mail client shows MathML, and the source stays with it as
 the alt text and the plain-text projection:
 
 ```python
-from pyhermes.math import math_block
+from octavo.math import math_block
 
 variance = math_block(r"\sigma_p^2 = w^\top \Sigma w", label="Equation",
                       caption="Portfolio variance", theme="classic", size_theme="standard")
@@ -905,9 +905,9 @@ as one block.
 web.** Each degrades in an email in a stated way:
 
 ```python
-from pyhermes.builder import Aside, FullWidth, TextBlock
-from pyhermes.document import PagedDocument
-from pyhermes.qr import qr_code   # the [qr] extra
+from octavo.builder import Aside, FullWidth, TextBlock
+from octavo.document import PagedDocument
+from octavo.qr import qr_code   # the [qr] extra
 
 report = PagedDocument({"firm_name": "Hermes Research", "campaign_name": "Q3",
                         "stamp": "DRAFT"})                     # every sheet, and the email's strip
@@ -949,15 +949,15 @@ it is explicit: plain-text fields (titles, KPI labels, table cells, author names
 by the builder — pass them as raw text, since pre-escaping now double-escapes. HTML fields
 (`TextBlock.content`, `NumberedItem.body`, the metadata disclaimers) are emitted raw, so
 escaping untrusted text in those is the caller's job — use
-`from pyhermes.builder.filters import escape_html`. Attributes are always escaped.
+`from octavo.builder.filters import escape_html`. Attributes are always escaped.
 
 ## Images
 
 An image carries two independent facts: where the bytes live, and how they reach the reader.
 
 ```python
-from pyhermes.builder import content_width
-from pyhermes.builder.images import EmailImage
+from octavo.builder import content_width
+from octavo.builder.images import EmailImage
 
 SPARK_WIDTH = 120  # the sparkline's own display width, in px
 
@@ -989,7 +989,7 @@ because Word ignores `max-width`.
 Every judgment-call number is a field on one frozen `Config`:
 
 ```python
-from pyhermes.config import Config, get_config, set_config, config_override
+from octavo.config import Config, get_config, set_config, config_override
 
 get_config().inline_image_limit_kb               # what is actually in force
 set_config(Config.from_env())                    # the process-wide default, at startup
@@ -1031,7 +1031,7 @@ size threshold raises a `SizeWarning`, and an image short of its print resolutio
 ```bash
 pytest                                    # the unit suite: validation, error paths, size limits
 ruff check . && ruff format --check .
-python -m mypy                            # config in pyproject: files = ["pyhermes", "qa"]
+python -m mypy                            # config in pyproject: files = ["octavo", "qa"]
 ```
 
 CI runs these on every pull request and on pushes to `main`, in six jobs:
@@ -1107,7 +1107,7 @@ to the lint pass ([#60](https://github.com/RorySullivan1/pyHermes/issues/60)).
 
 Playwright is the optional `[qa]` extra, so `pip install -e ".[dev]"` and `pytest` stay
 browser-free — the screenshot tests skip rather than fail. Where the environment supplies its
-own Chromium instead of one Playwright manages, point `PYHERMES_CHROMIUM` at the binary.
+own Chromium instead of one Playwright manages, point `OCTAVO_CHROMIUM` at the binary.
 
 ### The lint pass
 
@@ -1116,11 +1116,11 @@ Outlook, enforced rather than merely documented. They ship in the package, so an
 copy can run them on a draft from any folder:
 
 ```bash
-python -m pyhermes.check drafts/weekly.py:build   # writes output/, prints findings, exits 0/1/2
+python -m octavo.check drafts/weekly.py:build   # writes output/, prints findings, exits 0/1/2
 ```
 
 ```python
-from pyhermes.check import check, format_findings
+from octavo.check import check, format_findings
 
 print(format_findings(check(email)))
 ```
@@ -1131,7 +1131,7 @@ images are its default state), `no-external-css`, `outlook-unsupported-css`,
 `outlook-transparent-background`, `empty-url`, and `size-budget` — which reports the 90/102
 KB thresholds **and attributes the bytes to each body section**, by title and position,
 heaviest first, so a too-large email says what to cut rather than only how much. It reports
-on an email over 102 KB too: `python -m pyhermes.check` and `qa.preview --lint` measure the
+on an email over 102 KB too: `python -m octavo.check` and `qa.preview --lint` measure the
 markup the size check refused, print the breakdown and exit 1.
 
 The suite lints every gallery fixture. Each rule carries a citation, and the linter parses
@@ -1175,7 +1175,7 @@ dielines or die-cut, foil or stock metadata.
 ## Layout
 
 ```
-pyhermes/
+octavo/
 ├── config.py     the tunable numbers, in one frozen dataclass
 ├── builder/      the shared kit: Document, Medium, templates, components, the three axes
 ├── email/        the email medium: the four slots and the Gmail size check
@@ -1185,7 +1185,7 @@ pyhermes/
 ├── delivery/     transport-neutral MIME assembly + shared retry policy
 ├── gmail/        Gmail send adapter
 ├── outlook/      Outlook send adapter over Microsoft Graph, and drafts in classic Outlook
-├── check/        the portability check and `python -m pyhermes.check`
+├── check/        the portability check and `python -m octavo.check`
 ├── pdf/          the PDF exporter, on the adapters' contract — no network; profiles, attachments
 ├── data/         DataFrame -> table and Figure -> chart, each an optional extra
 ├── math/         LaTeX -> equation image, the optional [math] extra

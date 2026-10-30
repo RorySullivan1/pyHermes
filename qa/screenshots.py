@@ -30,12 +30,12 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from pyhermes.builder.document import Document
+from octavo.builder.document import Document
 
 from .fixtures import all_fixtures
 
 if TYPE_CHECKING:  # pragma: no cover - the exporter is imported only on use
-    from pyhermes.pdf import Layout
+    from octavo.pdf import Layout
 
 # Playwright handles are typed ``Any``: it is an optional extra, so it is not
 # installed in the environment mypy runs in (the `check` CI job takes `[dev]`
@@ -54,7 +54,7 @@ VIEWPORTS: dict[str, tuple[int, int]] = {
     "mobile": (375, 800),
 }
 
-#: The viewport widths pyHermes claims to render without a horizontal
+#: The viewport widths octavo claims to render without a horizontal
 #: scrollbar. **375 is the floor**, decided in #133 rather than left implied.
 #: 360 and 320 are *not* supported: the global `img { width:auto }` that would
 #: clear them collapses every image to its alt-text box when images are
@@ -71,7 +71,7 @@ DEVICE_SCALE_FACTOR = 1
 #: rather than downloaded — a sandbox that ships Chromium and disables
 #: `playwright install`, for instance, where Playwright's expected revision and
 #: the installed one need not agree. Read at use time, never at import.
-EXECUTABLE_ENV_VAR = "PYHERMES_CHROMIUM"
+EXECUTABLE_ENV_VAR = "OCTAVO_CHROMIUM"
 
 _PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 
@@ -331,7 +331,7 @@ def _launch(playwright: Any) -> Any:
 
 
 #: Points to px at 96 dpi. A PDF is 72 dpi by definition and a
-#: :class:`~pyhermes.builder.sizing.PageFormat` is px at 96, so this is the factor
+#: :class:`~octavo.builder.sizing.PageFormat` is px at 96, so this is the factor
 #: that makes a raster come back at the width the document was designed at.
 PDF_PX_SCALE = 96 / 72
 
@@ -341,7 +341,7 @@ def pages_available() -> bool:
     try:
         import pypdfium2  # noqa: F401
 
-        from pyhermes.pdf import available as backend_available
+        from octavo.pdf import available as backend_available
     except ImportError:
         return False
     return bool(backend_available())
@@ -364,12 +364,12 @@ def capture_pages(
     ``pypdfium2`` is a self-contained wheel deliberately — Poppler would add
     a *system* binary to an extra meant to be ``pip install`` and nothing
     else. The default ``scale`` reconciles units rather than choosing a
-    resolution; see :data:`PDF_PX_SCALE`. A :class:`~pyhermes.pdf.Layout` is
+    resolution; see :data:`PDF_PX_SCALE`. A :class:`~octavo.pdf.Layout` is
     written as it was laid out, so a caller holding one lays out once (#446).
     """
     import pypdfium2
 
-    from pyhermes.pdf import Layout, render_layout, render_pdf
+    from octavo.pdf import Layout, render_layout, render_pdf
 
     out_dir = out_dir or DEFAULT_OUT_DIR
     out_dir.mkdir(parents=True, exist_ok=True)

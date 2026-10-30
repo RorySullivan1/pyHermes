@@ -13,12 +13,12 @@ import re
 
 import pytest
 
-from pyhermes.brochure import TRI_FOLD_LETTER, Brochure, Panel
-from pyhermes.builder import Callout, Columns, EmailBuilder, FullWidth, TextBlock, TwoColumn
-from pyhermes.builder.exceptions import ValidationError
-from pyhermes.builder.sizing import LETTER_PORTRAIT
-from pyhermes.deck import SLIDE_16_9, Deck
-from pyhermes.document import (
+from octavo.brochure import TRI_FOLD_LETTER, Brochure, Panel
+from octavo.builder import Callout, Columns, EmailBuilder, FullWidth, TextBlock, TwoColumn
+from octavo.builder.exceptions import ValidationError
+from octavo.builder.sizing import LETTER_PORTRAIT
+from octavo.deck import SLIDE_16_9, Deck
+from octavo.document import (
     EmptyBackMatter,
     EmptyCover,
     Page,
@@ -27,7 +27,7 @@ from pyhermes.document import (
     RunningHeader,
     paged_medium,
 )
-from pyhermes.pdf import available, render_pdf
+from octavo.pdf import available, render_pdf
 from qa.fixtures import _paged, letter_product_brief, pitch_16_9, product_brief_layout
 
 NAVY = "#1B2A3A"
@@ -272,7 +272,7 @@ class TestTheProductBrief:
     """#401."""
 
     def test_its_email_passes_lint(self):
-        from pyhermes.check.lint import Severity, lint_document
+        from octavo.check.lint import Severity, lint_document
 
         findings = lint_document(product_brief_layout.build())
         assert not [f for f in findings if f.severity is Severity.ERROR]

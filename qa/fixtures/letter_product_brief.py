@@ -12,9 +12,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pyhermes.builder.document import Document
-from pyhermes.builder.sizing import LETTER_PORTRAIT
-from pyhermes.document import (
+from octavo.builder.document import Document
+from octavo.builder.sizing import LETTER_PORTRAIT
+from octavo.document import (
     EmptyBackMatter,
     EmptyCover,
     PagedDocument,

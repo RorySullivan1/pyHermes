@@ -38,7 +38,7 @@ import zlib
 from collections.abc import Callable
 from pathlib import Path
 
-from pyhermes.builder import (
+from octavo.builder import (
     CardGroup,
     ChartBlock,
     ContactBlock,
@@ -51,9 +51,9 @@ from pyhermes.builder import (
     TwoColumn,
     content_width,
 )
-from pyhermes.builder.enums import CardOrientation, SizeTheme, TwoColumnRatio
-from pyhermes.builder.images import EmailImage
-from pyhermes.builder.models import KpiItem, TableRow
+from octavo.builder.enums import CardOrientation, SizeTheme, TwoColumnRatio
+from octavo.builder.images import EmailImage
+from octavo.builder.models import KpiItem, TableRow
 
 # Colour vocabulary is #RRGGBB everywhere — validated at construction time.
 _GAIN = "#4A7C59"

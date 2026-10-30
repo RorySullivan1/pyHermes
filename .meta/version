@@ -1,23 +1,25 @@
-# version: v0.3.0
-status: shipped
-started: 2026-10-28
+# version: v0.4.0
+status: in-progress
+started: 2026-10-30
 branch: claude/integrate-claude-assets-pyhermes-d4spzb
-pr: https://github.com/RorySullivan1/pyHermes/pull/478
+pr:
 
 ## Goals
-- Roadmap epic 0.2: fix three reference reports as the acceptance fixtures for every stage,
-  under `reference/` by the names `daily-note`, `research-report` and `product-brochure`.
-  Per the owner's 2026-10-28 decision, all three start as repo stand-ins:
-  `examples/daily-investment-note`, `examples/quarterly-review` and the `tri_fold_letter`
-  fixture. The real daily note and product piece replace theirs before Gate 1.
-- Measure today's cost from data to a sendable note as the speed baseline: the code an author
-  writes, and the time to a built, rendered and checked artifact.
+- Roadmap epic 0.3: rename the project to **octavo** (owner's decision, 2026-10-29). The PyPI
+  name `pyhermes` and the import root `pyhermes` both belong to Allegro's Hermes message-broker
+  client (0.7.1), so publishing as-is is impossible and installing both would overwrite one.
+- Rename the distribution and the import root (`pyhermes` to `octavo`) everywhere: the package,
+  templates' resource lookups, tests, `qa/`, examples, drafts, `reference/`, the manual, the
+  README, CLAUDE.md, the rules files and the agents scoped to the package.
+- Keep history readable: session logs, archived decisions and closed issues keep the old name,
+  as #248 did for `svc`.
 
 ## Objectives / acceptance
-- Each stand-in is marked as one in its spec, with "replace before Gate 1" as a stated condition.
-- Each reference report has a named owner, a written spec (audience, cadence, sections,
-  data inputs) and a build script that renders today, committed under `reference/`.
-- The benchmark is a documented, repeatable procedure (`python -m qa.benchmark`) with today's
-  numbers recorded beside it, so every later gate can re-run it. The author's wall-clock
-  minutes, which no script can measure, have a named place for the owner to record.
-- The three reports render in CI as part of the suite, each linted clean of errors.
+- The wheel's only top-level package is `octavo`, and `import octavo` renders an email from the
+  wheel and the sdist in clean venvs (CI's `wheel` job).
+- No `pyhermes` reference remains outside the memory's session logs and archive, enforced by a
+  test the way `test_distribution.py` holds `svc` out.
+- Every golden is byte-identical unless the name itself is rendered, and any golden diff is
+  shown to be the name alone.
+- The full suite, ruff, ruff format and mypy pass; the prose baseline does not grow.
+- The GitHub repository's rename is the owner's call, recorded in the roadmap either way.

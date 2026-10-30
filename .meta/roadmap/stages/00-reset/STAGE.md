@@ -1,6 +1,6 @@
 # Stage 00 — Reset  ◀ current stage
 
-**Goal:** fix what pyHermes is for and what every later gate is judged against, before any
+**Goal:** fix what octavo is for and what every later gate is judged against, before any
 new feature work. Four epics; every later stage depends on them.
 
 **Versions:** v0.2.0 (0.1 scope charter, shipped in PR #477), v0.3.0 (0.2 reference reports
