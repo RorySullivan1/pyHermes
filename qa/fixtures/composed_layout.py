@@ -11,7 +11,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from pyhermes.builder import (
+from octavo.builder import (
     CardGroup,
     Columns,
     DataTable,
@@ -23,7 +23,7 @@ from pyhermes.builder import (
     TextBlock,
     TwoColumn,
 )
-from pyhermes.builder.models import KpiItem, TableRow
+from octavo.builder.models import KpiItem, TableRow
 
 _YEAR = "2026"
 

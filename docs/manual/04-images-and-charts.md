@@ -4,8 +4,8 @@ Every picture in an email, whether a logo, a photograph or a chart, is an `Email
 records two things: where the picture comes from, and how it reaches the reader.
 
 ```python
-from pyhermes.builder import ChartBlock, EmailBuilder, FullWidth, ImageBlock
-from pyhermes.builder.images import EmailImage
+from octavo.builder import ChartBlock, EmailBuilder, FullWidth, ImageBlock
+from octavo.builder.images import EmailImage
 
 facts = {
     "email_subject": "Credit Monitor",
@@ -41,7 +41,7 @@ you send. It exists for quick local previews.
 3. Give its display width with `content_width()`, never a number you type.
 
 ```python
-from pyhermes.builder import content_width
+from octavo.builder import content_width
 
 chart = EmailImage.attached(
     "chart.png", alt="Spreads widened 12 bps in September", width=content_width()
@@ -105,8 +105,8 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-from pyhermes.builder import content_width
-from pyhermes.data import chart_from_figure
+from octavo.builder import content_width
+from octavo.data import chart_from_figure
 
 fig, ax = plt.subplots(figsize=(6, 3))
 ax.plot([1, 2, 3, 4], [110, 118, 115, 122])
@@ -119,7 +119,7 @@ plt.close(fig)
 ```
 
 **Result:** the figure as you drew it, saved at twice its display width and attached to the
-email. pyHermes does not restyle your plot.
+email. octavo does not restyle your plot.
 
 ## How to draw a chart in the email's colours and type
 
@@ -133,7 +133,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-from pyhermes.data import chart_from_figure, chart_style
+from octavo.data import chart_from_figure, chart_style
 
 style = chart_style("classic")             # or chart_style(email.metadata.theme)
 with plt.rc_context(style):
@@ -160,7 +160,7 @@ has it.
 ## How to add a logo to the masthead
 
 ```python
-from pyhermes.builder import Banner, content_width
+from octavo.builder import Banner, content_width
 
 LOGO_WIDTH = 120  # the logo's own display width, in px
 
@@ -178,7 +178,7 @@ email = (
 ## How to put a photograph behind the masthead
 
 ```python
-from pyhermes.builder import STANDARD_SIZES, BannerPalette
+from octavo.builder import STANDARD_SIZES, BannerPalette
 
 banner = Banner(
     title="Q3 Outlook",

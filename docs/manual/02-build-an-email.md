@@ -14,7 +14,7 @@ You only have to supply the sections. The other three are built from your metada
 The examples on this page all start from these facts:
 
 ```python
-from pyhermes.builder import EmailBuilder, FullWidth, TextBlock
+from octavo.builder import EmailBuilder, FullWidth, TextBlock
 
 facts = {
     "email_subject": "Rates Weekly: the curve steepens",
@@ -68,12 +68,12 @@ email = (
 **Steps:**
 1. Write the text as HTML: `<p>` for paragraphs, `<b>` and `<i>` for emphasis,
    `<a href="...">` for links, `<ul>`/`<li>` for bullets, `<h3>` for a subheading.
-   pyHermes styles these from the theme
+   octavo styles these from the theme
    ([Customise the layout](09-customise-the-layout.md#what-raw-html-in-a-textblock-can-do)).
 2. Put it in a `TextBlock`, and the block in a section.
 
 ```python
-from pyhermes.builder import EmailBuilder, FullWidth, TextBlock
+from octavo.builder import EmailBuilder, FullWidth, TextBlock
 
 body = TextBlock(
     "<p>Ten-year yields rose <b>six basis points</b> on the week.</p>"
@@ -91,7 +91,7 @@ email = EmailBuilder().metadata(facts).section(FullWidth(body, title="Summary"))
 > `escape_html` first so a stray `<` cannot break the layout:
 >
 > ```python
-> from pyhermes.builder.filters import escape_html
+> from octavo.builder.filters import escape_html
 >
 > comment = "Spreads < 100bp & tightening"
 > block = TextBlock(f"<p>{escape_html(comment)}</p>")
@@ -104,8 +104,8 @@ email = EmailBuilder().metadata(facts).section(FullWidth(body, title="Summary"))
 **When to use this:** a row of two to four key numbers at the top of the email.
 
 ```python
-from pyhermes.builder import CardGroup
-from pyhermes.builder.models import KpiItem
+from octavo.builder import CardGroup
+from octavo.builder.models import KpiItem
 
 figures = CardGroup([
     KpiItem("UST 10Y", "4.28%", sublabel="+6 bps", tone="negative"),
@@ -128,7 +128,7 @@ email = (
 - `highlight=True` gives the whole section a tinted band so it stands out.
 - For a list of more than four, stack them: `CardGroup([...], orientation="vertical")`.
 - For a card with a sentence instead of a figure, use `Card("Label", body="<p>…</p>")`
-  from `pyhermes.builder.models`.
+  from `octavo.builder.models`.
 - When the figures come from data, build each with `KpiItem.from_number(...)`, which writes
   the figure and its change and picks the colour for you. See
   [Tables and numbers](03-tables-and-numbers.md#how-to-build-headline-figures-from-numbers).
@@ -138,7 +138,7 @@ email = (
 **When to use this:** a figure beside its commentary, two tables next to each other.
 
 ```python
-from pyhermes.builder import ThreeColumn, TwoColumn
+from octavo.builder import ThreeColumn, TwoColumn
 
 side_by_side = TwoColumn(
     ratio="30-70",                       # or "50-50", "70-30"
@@ -164,7 +164,7 @@ per column, such as `ratio=(60, 40)` or `ratio=(2, 1, 1)`. `FourColumn` takes a 
 blocks, with `None` for an empty column:
 
 ```python
-from pyhermes.builder import FourColumn
+from octavo.builder import FourColumn
 
 email = (
     EmailBuilder()
@@ -188,8 +188,8 @@ produce.
 section title. Or a column of figures with a comment beneath them.
 
 ```python
-from pyhermes.builder import DataTable, Stack
-from pyhermes.builder.models import TableRow
+from octavo.builder import DataTable, Stack
+from octavo.builder.models import TableRow
 
 returns = DataTable(["Factor", "1M"], [TableRow(["Value", "+1.8%"]), TableRow(["Momentum", "-0.4%"])])
 email = (
@@ -233,7 +233,7 @@ stay in the same order.
 paragraph that introduces it in a `Stack`.
 
 ```python
-from pyhermes.builder import Columns
+from octavo.builder import Columns
 
 email = (
     EmailBuilder()
@@ -265,8 +265,8 @@ puts a sign between each pair of blocks, and `separator="arrow"` a drawn arrow.
 ## How to add a numbered list of ideas
 
 ```python
-from pyhermes.builder import NumberedList
-from pyhermes.builder.models import NumberedItem
+from octavo.builder import NumberedList
+from octavo.builder.models import NumberedItem
 
 ideas = NumberedList([
     NumberedItem("1", "Long 10Y Treasuries", "<p>Target 3.9%, stop 4.5%.</p>"),
@@ -280,7 +280,7 @@ The `number` is text, so `"A"`, `"i"` or `"★"` work too. The body is HTML, lik
 ## How to sign the email and add a contact button
 
 ```python
-from pyhermes.builder import AuthorBlock, ContactBlock
+from octavo.builder import AuthorBlock, ContactBlock
 
 email = (
     EmailBuilder()
@@ -302,7 +302,7 @@ email = (
 ## How to quote someone
 
 ```python
-from pyhermes.builder import PullQuote
+from octavo.builder import PullQuote
 
 quote = PullQuote("Duration is back.", attribution="Head of Rates")
 email = EmailBuilder().metadata(facts).section(FullWidth(quote)).build()
@@ -313,7 +313,7 @@ email = EmailBuilder().metadata(facts).section(FullWidth(quote)).build()
 **When to use this:** a long email with many titled sections.
 
 ```python
-from pyhermes.builder import Contents
+from octavo.builder import Contents
 
 email = (
     EmailBuilder()
@@ -333,8 +333,8 @@ email = (
 "recent publications" list at the foot of a note, or a small label above a section's title.
 
 ```python
-from pyhermes.builder import Event, FactList, Teaser, TeaserList, Timeline
-from pyhermes.builder.models import Cell
+from octavo.builder import Event, FactList, Teaser, TeaserList, Timeline
+from octavo.builder.models import Cell
 
 facts_box = FactList(
     {
@@ -400,7 +400,7 @@ above its title.
 **When to use this:** the number of sections depends on your data.
 
 ```python
-from pyhermes.builder import Email
+from octavo.builder import Email
 
 email = Email(facts)
 for region, view in [("US", "Steeper"), ("UK", "Flatter"), ("Japan", "Unchanged")]:
@@ -415,8 +415,8 @@ adds one section to the end.
 **When to use this:** a different title from your firm name, or a logo.
 
 ```python
-from pyhermes.builder import Banner, MinimalBanner
-from pyhermes.builder.images import EmailImage
+from octavo.builder import Banner, MinimalBanner
+from octavo.builder.images import EmailImage
 
 LOGO_WIDTH = 120  # the logo's own display width, in px
 
@@ -441,7 +441,7 @@ email = (
 ## How to change or remove the strip at the top
 
 ```python
-from pyhermes.builder import EmptyHeader, Header
+from octavo.builder import EmptyHeader, Header
 
 with_strip = (
     EmailBuilder()
@@ -466,8 +466,8 @@ without_strip = (
 **When to use this:** your legal copy, or links other than the default two.
 
 ```python
-from pyhermes.builder import Footer
-from pyhermes.builder.models import FooterLink, LinkRow
+from octavo.builder import Footer
+from octavo.builder.models import FooterLink, LinkRow
 
 footer = Footer(
     disclaimer="<p>For internal use only. Not investment advice.</p>",

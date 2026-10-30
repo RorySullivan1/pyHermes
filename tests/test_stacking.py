@@ -11,7 +11,7 @@ import re
 
 import pytest
 
-from pyhermes.builder import (
+from octavo.builder import (
     CardGroup,
     Columns,
     Email,
@@ -22,9 +22,9 @@ from pyhermes.builder import (
     TwoColumn,
     ValidationError,
 )
-from pyhermes.builder.models import KpiItem
-from pyhermes.builder.sizing import PHONE_FLOOR, shares
-from pyhermes.document import PagedDocument
+from octavo.builder.models import KpiItem
+from octavo.builder.sizing import PHONE_FLOOR, shares
+from octavo.document import PagedDocument
 from qa.screenshots import _launch, _load_playwright, available
 
 requires_browser = pytest.mark.skipif(

@@ -10,16 +10,16 @@ from pathlib import Path
 
 import pytest
 
-import pyhermes.check as check_module
+import octavo.check as check_module
 import qa.lint
-from pyhermes.builder import Email, FullWidth, TextBlock
-from pyhermes.check import Severity, TargetError, check, load_target
-from pyhermes.check.__main__ import EXIT_BUILD_FAILED, EXIT_LINT_ERRORS, EXIT_OK, main
+from octavo.builder import Email, FullWidth, TextBlock
+from octavo.check import Severity, TargetError, check, load_target
+from octavo.check.__main__ import EXIT_BUILD_FAILED, EXIT_LINT_ERRORS, EXIT_OK, main
 from qa import preview
 from qa.fixtures import kitchen_sink
 
 DRAFT = """
-from pyhermes.builder import EmailBuilder, FullWidth, TextBlock
+from octavo.builder import EmailBuilder, FullWidth, TextBlock
 
 
 def build():
@@ -131,10 +131,10 @@ class TestTheCommand:
         """Any raise is "does not build", never a traceback and the lint code (#466)."""
         boom = tmp_path / "boom.py"
         boom.write_text(
-            "from pyhermes.builder.exceptions import ValidationError\n"
-            "from pyhermes.data.exceptions import DataError\n"
-            "from pyhermes.math import MathSyntaxError\n"
-            "from pyhermes.qr.exceptions import QrError\n\n\n"
+            "from octavo.builder.exceptions import ValidationError\n"
+            "from octavo.data.exceptions import DataError\n"
+            "from octavo.math import MathSyntaxError\n"
+            "from octavo.qr.exceptions import QrError\n\n\n"
             f"def boom():\n    raise {raises}\n",
             encoding="utf-8",
         )
@@ -147,7 +147,7 @@ class TestTheCommand:
     def test_a_builder_that_raises_when_built_exits_two(self, tmp_path, capsys):
         boom = tmp_path / "boom.py"
         boom.write_text(
-            "from pyhermes.builder import EmailBuilder\n\n\n"
+            "from octavo.builder import EmailBuilder\n\n\n"
             "def late():\n"
             "    builder = EmailBuilder()\n"
             "    builder.build = lambda: {}['missing']\n"
@@ -159,7 +159,7 @@ class TestTheCommand:
 
     def test_it_runs_as_a_module(self, draft, tmp_path):
         result = subprocess.run(
-            [sys.executable, "-m", "pyhermes.check", f"{draft}:build", "--out", str(tmp_path)],
+            [sys.executable, "-m", "octavo.check", f"{draft}:build", "--out", str(tmp_path)],
             capture_output=True,
             text=True,
             check=False,

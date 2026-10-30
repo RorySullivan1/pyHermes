@@ -13,12 +13,12 @@ import io
 
 import pytest
 
-from pyhermes.builder import Button, Email, FullWidth, QrCode
-from pyhermes.builder.exceptions import ValidationError
-from pyhermes.builder.images import EmailImage
-from pyhermes.builder.surfaces import QR_LABEL, QR_MIN_SIZE
-from pyhermes.document import EmptyCover, PagedDocument
-from pyhermes.pdf import available as pdf_available
+from octavo.builder import Button, Email, FullWidth, QrCode
+from octavo.builder.exceptions import ValidationError
+from octavo.builder.images import EmailImage
+from octavo.builder.surfaces import QR_LABEL, QR_MIN_SIZE
+from octavo.document import EmptyCover, PagedDocument
+from octavo.pdf import available as pdf_available
 from qa.fixtures import _qr, all_brochure_fixtures, all_fixtures
 
 requires_qr = pytest.mark.skipif(
@@ -136,7 +136,7 @@ class TestTheAdapter:
         assert rows == _qr.MODULES
 
     def test_two_renders_are_one_content_id(self):
-        from pyhermes.qr import qr_code
+        from octavo.qr import qr_code
 
         first, second = qr_code(URL), qr_code(URL)
         assert first.image.content_id == second.image.content_id
@@ -144,8 +144,8 @@ class TestTheAdapter:
     def test_it_carries_enough_pixels_to_print(self):
         from PIL import Image
 
-        from pyhermes.config import get_config
-        from pyhermes.qr import qr_code
+        from octavo.config import get_config
+        from octavo.qr import qr_code
 
         code = qr_code(URL)
         pixels = Image.open(io.BytesIO(code.image.asset.data)).size[0]
@@ -154,8 +154,8 @@ class TestTheAdapter:
     def test_it_is_painted_in_the_themes_ink_on_its_surface(self):
         from PIL import Image
 
-        from pyhermes.builder.theming import resolve_theme
-        from pyhermes.qr import qr_code
+        from octavo.builder.theming import resolve_theme
+        from octavo.qr import qr_code
 
         theme = resolve_theme("slate")
         image = Image.open(io.BytesIO(qr_code(URL, theme="slate").image.asset.data))
@@ -165,13 +165,13 @@ class TestTheAdapter:
         assert colours == {theme.text.primary, theme.palette.surface}
 
     def test_a_bad_url_is_refused_before_segno_runs(self):
-        from pyhermes.qr import qr_code
+        from octavo.qr import qr_code
 
         with pytest.raises(ValidationError):
             qr_code("javascript:alert(1)")
 
     def test_it_writes_no_metadata_chunk(self):
-        from pyhermes.qr import render_qr
+        from octavo.qr import render_qr
 
         png = render_qr(URL, dark="#000000", light="#FFFFFF")
         assert b"tEXt" not in png and b"tIME" not in png
@@ -183,21 +183,21 @@ class TestTheAdapterRefusesInTheBuildersTerms:
 
     @pytest.mark.parametrize("size", [0, -10, "96", None, 96.0, True, QR_MIN_SIZE - 1])
     def test_a_bad_size_is_a_validation_error_naming_it(self, size):
-        from pyhermes.qr import qr_code
+        from octavo.qr import qr_code
 
         with pytest.raises(ValidationError, match="size"):
             qr_code(URL, size=size)
 
     @pytest.mark.parametrize("size", [0, "96", None])
     def test_render_qr_checks_its_size_before_segno_runs(self, size, monkeypatch):
-        from pyhermes.qr import adapter
+        from octavo.qr import adapter
 
         monkeypatch.setattr(adapter, "_backend", lambda: pytest.fail("segno was reached"))
         with pytest.raises(ValidationError, match="size"):
             adapter.render_qr(URL, size=size, dark="#000000", light="#FFFFFF")
 
     def test_a_url_too_long_to_encode_is_a_qr_error_naming_the_url_with_the_cause(self):
-        from pyhermes.qr import QrError, qr_code
+        from octavo.qr import QrError, qr_code
 
         url = "https://example.com/" + "a" * 3000
         with pytest.raises(QrError, match=rf"url is {len(url)} characters") as caught:
@@ -206,12 +206,12 @@ class TestTheAdapterRefusesInTheBuildersTerms:
         assert not isinstance(caught.value, ValueError)
 
     def test_a_long_url_that_still_fits_is_taken(self):
-        from pyhermes.qr import qr_code
+        from octavo.qr import qr_code
 
         assert qr_code("https://example.com/" + "a" * 1000).size == 96
 
     def test_a_colour_segno_cannot_read_is_a_qr_error(self):
-        from pyhermes.qr import QrError, render_qr
+        from octavo.qr import QrError, render_qr
 
         with pytest.raises(QrError, match="dark='nocolor'") as caught:
             render_qr(URL, dark="nocolor", light="#FFFFFF")
@@ -232,18 +232,18 @@ def _decoded(pdf: bytes) -> list[str]:
 @requires_reading
 class TestItDecodesFromThePrintedSheet:
     def test_on_a_paged_page(self):
-        from pyhermes.pdf import render_pdf
+        from octavo.pdf import render_pdf
 
         assert _decoded(render_pdf(_paged(_code()))) == [_qr.URL]
 
     def test_on_a_brochure_panel(self):
-        from pyhermes.pdf import render_pdf
+        from octavo.pdf import render_pdf
 
         assert _qr.URL in _decoded(render_pdf(all_brochure_fixtures()["tri_fold_letter"]()))
 
     @requires_qr
     def test_the_adapters_code_decodes_too(self):
-        from pyhermes.pdf import render_pdf
-        from pyhermes.qr import qr_code
+        from octavo.pdf import render_pdf
+        from octavo.qr import qr_code
 
         assert _decoded(render_pdf(_paged(qr_code(URL, "Online")))) == [URL]

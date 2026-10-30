@@ -1,8 +1,8 @@
 ---
 paths:
-  - "pyhermes/brochure/**/*"
-  - "pyhermes/builder/templates/brochure/**/*"
-  - "pyhermes/builder/templates/document/editorial.html"
+  - "octavo/brochure/**/*"
+  - "octavo/builder/templates/brochure/**/*"
+  - "octavo/builder/templates/document/editorial.html"
   - "qa/fixtures/tri_fold_letter.py"
   - "qa/fixtures/a4_editorial.py"
   - "tests/test_brochure.py"
@@ -16,7 +16,7 @@ paths:
 needed break discipline and document apparatus on the paged medium that already existed
 (#169, #171). A brochure changes the skeleton, the unit of layout, the page geometry, the
 constraints and the lint rules, while keeping the PDF exporter. That is the profile #157
-defined for a medium, so it is `pyhermes/brochure/`, beside `pyhermes/email/` and `pyhermes/document/`.
+defined for a medium, so it is `octavo/brochure/`, beside `octavo/email/` and `octavo/document/`.
 
 | Module | Holds |
 |---|---|

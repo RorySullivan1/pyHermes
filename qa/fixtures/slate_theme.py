@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pyhermes.builder import (
+from octavo.builder import (
     AuthorBlock,
     CardGroup,
     DataTable,
@@ -23,7 +23,7 @@ from pyhermes.builder import (
     ThreeColumn,
     TwoColumn,
 )
-from pyhermes.builder.models import Card, Cell, Column, HeatScale, NumberedItem, TableRow
+from octavo.builder.models import Card, Cell, Column, HeatScale, NumberedItem, TableRow
 
 
 def build(template_dir: Path | None = None) -> Email:

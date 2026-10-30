@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from pyhermes.builder import (
+from octavo.builder import (
     DEFAULT_FONTS,
     DEFAULT_THEME,
     STANDARD_SIZES,
@@ -20,11 +20,11 @@ from pyhermes.builder import (
     NumberedList,
     TextBlock,
 )
-from pyhermes.builder.exceptions import TemplateError, ValidationError
-from pyhermes.builder.models import Card, NumberedItem
-from pyhermes.builder.prose import STYLED_TAGS, STYLES_TEMPLATE
-from pyhermes.check import errors, lint_html
-from pyhermes.config import Config
+from octavo.builder.exceptions import TemplateError, ValidationError
+from octavo.builder.models import Card, NumberedItem
+from octavo.builder.prose import STYLED_TAGS, STYLES_TEMPLATE
+from octavo.check import errors, lint_html
+from octavo.config import Config
 
 FACTS = {"email_subject": "S", "firm_name": "F", "campaign_name": "C"}
 
@@ -226,7 +226,7 @@ class TestOnASectionsGround:
 class TestAnOverlayRestylesATag:
     def _overlay(self, tmp_path: Path, drop: str | None = None, **restyle: str) -> Path:
         source = (
-            Path(__file__).resolve().parent.parent / "pyhermes/builder/templates" / STYLES_TEMPLATE
+            Path(__file__).resolve().parent.parent / "octavo/builder/templates" / STYLES_TEMPLATE
         ).read_text(encoding="utf-8")
         lines = []
         for line in source.splitlines():

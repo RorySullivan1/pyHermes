@@ -12,8 +12,8 @@ import re
 
 import pytest
 
-from pyhermes.check.lint import Severity, lint_document
-from pyhermes.data.exceptions import BackendMissingError
+from octavo.check.lint import Severity, lint_document
+from octavo.data.exceptions import BackendMissingError
 from qa.benchmark import author_lines, main, measure, table
 from qa.reference import REFERENCE_DIR, REPORTS, ROOT, build, build_script, load_script
 

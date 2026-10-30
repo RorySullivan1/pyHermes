@@ -2,11 +2,11 @@
 Root conftest: makes the repo root importable for the test suite.
 
 ``tests/`` imports ``qa.fixtures`` (the #54 gallery), and ``qa`` is not an
-installed package — the wheel ships ``packages = ["pyhermes"]`` only, deliberately.
+installed package — the wheel ships ``packages = ["octavo"]`` only, deliberately.
 Today it resolves anyway, because hatchling's editable install drops the whole
 project root onto ``sys.path``; but that is a property of the current build
 backend's editable strategy, not something this repo declares. A backend that
-exposed only ``pyhermes`` would break ``import qa`` in CI while ``import pyhermes`` kept
+exposed only ``octavo`` would break ``import qa`` in CI while ``import octavo`` kept
 working — a failure with no obvious connection to its cause.
 
 pytest inserts a conftest's own directory under the default ``prepend`` import
@@ -15,7 +15,7 @@ mode, so this file existing at the root is the whole mechanism.
 
 import pytest
 
-#: Fails a skip that names an installed extra, under PYHERMES_REQUIRE_EXTRAS (#239).
+#: Fails a skip that names an installed extra, under OCTAVO_REQUIRE_EXTRAS (#239).
 pytest_plugins = ["qa.require_extras"]
 
 

@@ -1,12 +1,12 @@
 ---
 paths:
-  - "pyhermes/builder/glance.py"
-  - "pyhermes/builder/templates/analysis/trend-arrow.html"
-  - "pyhermes/builder/templates/analysis/sparkline-bars.html"
-  - "pyhermes/builder/templates/analysis/sparkline.html"
-  - "pyhermes/builder/templates/analysis/bar-list.html"
-  - "pyhermes/builder/templates/analysis/hero-stat.html"
-  - "pyhermes/builder/templates/analysis/cell-bar.html"
+  - "octavo/builder/glance.py"
+  - "octavo/builder/templates/analysis/trend-arrow.html"
+  - "octavo/builder/templates/analysis/sparkline-bars.html"
+  - "octavo/builder/templates/analysis/sparkline.html"
+  - "octavo/builder/templates/analysis/bar-list.html"
+  - "octavo/builder/templates/analysis/hero-stat.html"
+  - "octavo/builder/templates/analysis/cell-bar.html"
   - "tests/test_glance.py"
   - "qa/fixtures/_glance.py"
 ---

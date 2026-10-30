@@ -12,7 +12,7 @@ import importlib.util
 
 import pytest
 
-from pyhermes.brochure import (
+from octavo.brochure import (
     BI_FOLD_LETTER,
     TRI_FOLD_LETTER,
     Brochure,
@@ -20,8 +20,8 @@ from pyhermes.brochure import (
     impose,
     overflowing_panels,
 )
-from pyhermes.builder import FullWidth, TextBlock
-from pyhermes.pdf import available, render_pdf
+from octavo.builder import FullWidth, TextBlock
+from octavo.pdf import available, render_pdf
 from qa.fixtures import tri_fold_letter
 
 pytestmark = pytest.mark.skipif(

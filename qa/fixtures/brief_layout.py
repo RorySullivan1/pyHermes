@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pyhermes.builder import Email, EmailBuilder
+from octavo.builder import Email, EmailBuilder
 
 from . import _brief
 

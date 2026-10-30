@@ -12,8 +12,8 @@ import re
 
 import pytest
 
-from pyhermes.brochure import Brochure, Panel
-from pyhermes.builder import (
+from octavo.brochure import Brochure, Panel
+from octavo.builder import (
     Badge,
     BarList,
     Callout,
@@ -24,13 +24,13 @@ from pyhermes.builder import (
     TextBlock,
     TwoColumn,
 )
-from pyhermes.builder.exceptions import ValidationError
-from pyhermes.builder.exhibits import Legend, LegendEntry
-from pyhermes.builder.glance import BarItem
-from pyhermes.builder.models import Cell, TableRow
-from pyhermes.builder.theming import DEFAULT_THEME, Theme, chart_colors
-from pyhermes.deck import Deck
-from pyhermes.document import EmptyBackMatter, EmptyCover, PagedDocument
+from octavo.builder.exceptions import ValidationError
+from octavo.builder.exhibits import Legend, LegendEntry
+from octavo.builder.glance import BarItem
+from octavo.builder.models import Cell, TableRow
+from octavo.builder.theming import DEFAULT_THEME, Theme, chart_colors
+from octavo.deck import Deck
+from octavo.document import EmptyBackMatter, EmptyCover, PagedDocument
 from qa.fixtures import _paged
 
 BRAND, SKY = "#B8860B", "#0077A8"

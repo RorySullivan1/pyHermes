@@ -1,12 +1,12 @@
 # MEMORY INDEX  ·  keep ≤ ~80 lines, ≤ ~200 chars per line
 
 ## State            (rewrite in place — current truth only, ≤ ~10 lines)
-- pyHermes builds **documents** onto **media** (`email`, `document`, `brochure`, `deck`) from the shared
-  `pyhermes/builder` kit; exporters: `delivery`+`gmail`+`outlook`, and `pdf`. Rationale: CLAUDE.md, `media.md`.
+- octavo (renamed from pyHermes in v0.4.0) builds **documents** onto **media** (`email`, `document`,
+  `brochure`, `deck`) from the shared `octavo/builder` kit; exporters: `delivery`+`gmail`+`outlook`, and `pdf`. Rationale: CLAUDE.md, `media.md`.
 - **Shipped through PR #475** (#474); epics #157–#442 all closed, no issues open. #219 DOCX and #300 PPTX
   closed as not planned. #288 is the owner's Outlook-desktop check. The prose baseline is 43, may only shrink.
 - **The roadmap is live** in `.meta/roadmap/` (5 stages, 31 epics), surfaced each session by `roadmap_status`;
-  v0.2.0 shipped (PR #477); v0.3.0 (reference reports, benchmark) in PR #478; cursor v0.4.0. The owner's six
+  v0.2.0 shipped (PR #477); v0.3.0 (reference reports, benchmark) shipped (PR #478); v0.4.0 (the rename to octavo) in PR #479; cursor v0.5.0. The owner's six
   decisions are taken. Mapped from the 2026-10-27 doc — sessions/2026-10-27-0312-roadmap-mapping.md
 
 ## Decisions        (append-only; supersede, never delete)
@@ -32,8 +32,14 @@
   DOCX/PPTX closed until 2.5; content model in core; 2.1 spike before v0.7.0** — `.meta/roadmap/INDEX.md`
 - [2026-10-28] **Superseded in part: the reference reports are all three stand-ins until Gate 1** (owner),
   in `reference/`; Gate N is stage N's milestone — `.meta/roadmap/INDEX.md`, `reference/README.md`
+- [2026-10-29] **The project becomes octavo: `pyhermes` is Allegro's Hermes client on PyPI and as an import.
+  The rename is v0.4.0, the first release v0.5.0 by trusted publishing; later versions moved up one** — `.meta/roadmap/`
+- [2026-10-30] **The GitHub repository is renamed to octavo too** (owner); the repository's links point there
+  from v0.4.0 — `.meta/roadmap/INDEX.md`
 
 ## Threads          (open items; remove when closed)
+- **The owner renames the GitHub repository to `octavo`** (decided 2026-10-30; links already point there),
+  and reserves `octavo` on PyPI as a pending trusted publisher before v0.5.0's tag.
 - **The first outside user is not yet named** (a colleague or team); needed before Gate 1 — `.meta/roadmap/INDEX.md`.
 - **#394's ruling (justify on paper only) was taken under a goal**; the owner may widen it.
 - **#400's ruling: `skip_first` is opt-in, not the default under an `EmptyCover`** (goal-taken; `media.md`).
@@ -45,7 +51,7 @@
 - **The suite runs on Windows since #372** (PR #371); no Windows CI job — the owner's run is the check.
 - **`epic-autoclose` works** (closed #273, #354, #361, #346, #324, #329, #335). Still confirm each epic closed after its merge.
 - **In this container, PDF byte-determinism tests flake** (no HarfBuzz-Subset), and screenshot
-  tests skip unless `PYHERMES_CHROMIUM=/opt/pw-browsers/chromium-1194/chrome-linux/chrome`.
+  tests skip unless `OCTAVO_CHROMIUM=/opt/pw-browsers/chromium-1194/chrome-linux/chrome`.
 - **Every issue or PR body is written without angle brackets** — GitHub's sanitizer has
   emptied three.
 - **A closing keyword closes only the issue it names, and this is now proven both ways.**
@@ -65,14 +71,9 @@
 
 ## Log              (append-only pointers)
 - Older entries, and epic #157's, are in sessions/ARCHIVE-2026.md.
-- [2026-10-13] delivery-contract — epic #418 merged in PR #438, all six children closed — sessions/2026-10-13-delivery-contract.md
-- [2026-10-14] render-once — epic #419 merged in PR #440, all three children closed — sessions/2026-10-14-render-once.md
-- [2026-10-14] codebase-review-issues — 27 issues: epic #442 (4) and bugs #447–#468, every one re-probed — sessions/2026-10-14-codebase-review-issues.md
-- [2026-10-21] email-headroom — the email strips its indentation (owner's pick over moving ratios): `kitchen_sink` 82.5 KB, 8.8 KB under the warning — sessions/2026-10-21-email-headroom.md
-- [2026-10-27] roadmap-mapping — the owner's roadmap doc mapped to `.meta/roadmap/` with the factory's
-  roadmap kit (skill, two commands, workflow, two hooks); index trimmed to budget — sessions/2026-10-27-0312-roadmap-mapping.md
-- [2026-10-28] scope-charter — v0.2.0 through advance-roadmap-step: positioning sentence, standing rule 14 and
-  `test_scope_freeze.py`; review closed two bypasses; goal-auditor PASS; PR #477 — sessions/2026-10-28-0900-scope-charter.md
 - [2026-10-28] scope-charter — PR #477 merged; v0.2.0 marked shipped in the roadmap and `.meta/version`.
 - [2026-10-29] reference-reports — v0.3.0: `reference/` (three stand-ins), `qa.benchmark` and its baseline;
   review had no must-fix; goal-auditor PASS; PR #478 — sessions/2026-10-29-0900-reference-reports.md
+- [2026-10-29] reference-reports — PR #478 merged; v0.3.0 marked shipped in the roadmap and `.meta/version`.
+- [2026-10-30] octavo-rename — v0.4.0: package, import root, `OCTAVO_*` and repo links renamed; review fixed the
+  manual's checkout folder; goal-auditor PASS after the repo decision; PR #479 — sessions/2026-10-30-0900-octavo-rename.md

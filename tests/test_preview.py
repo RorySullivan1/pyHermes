@@ -17,8 +17,8 @@ from pathlib import Path
 
 import pytest
 
-from pyhermes.builder import Email
-from pyhermes.builder.exceptions import ValidationError
+from octavo.builder import Email
+from octavo.builder.exceptions import ValidationError
 from qa.fixtures import all_brochure_fixtures, all_deck_fixtures, all_fixtures, all_paged_fixtures
 from qa.preview import (
     EXIT_BUILD_FAILED,
@@ -45,7 +45,7 @@ def write_module(directory: Path, name: str, body: str) -> Path:
 VALID_METADATA = '{"email_subject": "S", "firm_name": "F", "campaign_name": "c"}'
 
 RETURNS_EMAIL = f"""
-    from pyhermes.builder import Email, FullWidth, TextBlock
+    from octavo.builder import Email, FullWidth, TextBlock
 
     def build():
         email = Email(metadata={VALID_METADATA})
@@ -53,7 +53,7 @@ RETURNS_EMAIL = f"""
 """
 
 RETURNS_BUILDER = f"""
-    from pyhermes.builder import EmailBuilder, FullWidth, TextBlock
+    from octavo.builder import EmailBuilder, FullWidth, TextBlock
 
     def build():
         return (
@@ -149,7 +149,7 @@ class TestResolvingAModuleSpec:
             tmp_path,
             "draft",
             """
-            from pyhermes.builder import Email
+            from octavo.builder import Email
 
             Email(metadata={"email_subject": "", "firm_name": "F", "campaign_name": "c"})
             """,
@@ -170,7 +170,7 @@ class TestResolvingAModuleSpec:
 
 class TestTheCommand:
     def test_a_callable_that_raises_exits_two_without_a_traceback(self, tmp_path, capsys):
-        """The same exit code as `pyhermes.check`, from the same loader (#466)."""
+        """The same exit code as `octavo.check`, from the same loader (#466)."""
         module = write_module(tmp_path, "draft", "def build():\n    raise KeyError('x')\n")
 
         code = main([f"{module}:build", "--out", str(tmp_path / "out")])
@@ -260,7 +260,7 @@ class TestTheCommand:
             tmp_path,
             "draft",
             """
-            from pyhermes.builder import Email
+            from octavo.builder import Email
 
             def build():
                 return Email(
@@ -294,7 +294,7 @@ class TestLinting:
             tmp_path,
             "draft",
             f"""
-            from pyhermes.builder import Email, FullWidth, TextBlock
+            from octavo.builder import Email, FullWidth, TextBlock
 
             def build():
                 email = Email(metadata={VALID_METADATA})
@@ -315,7 +315,7 @@ class TestLinting:
             tmp_path,
             "draft",
             f"""
-            from pyhermes.builder import Email, FullWidth, TextBlock
+            from octavo.builder import Email, FullWidth, TextBlock
 
             def build():
                 email = Email(metadata={VALID_METADATA})
@@ -370,7 +370,7 @@ class TestScreenshots:
             tmp_path,
             "draft",
             f"""
-            from pyhermes.builder import Email, FullWidth, TextBlock
+            from octavo.builder import Email, FullWidth, TextBlock
 
             def build():
                 email = Email(metadata={VALID_METADATA})

@@ -15,11 +15,11 @@ import zlib
 
 import pytest
 
-from pyhermes.builder import ChartBlock, Email, FullWidth, ImageBlock, TextBlock, TwoColumn
-from pyhermes.builder.enums import TwoColumnRatio
-from pyhermes.builder.images import EmailImage
-from pyhermes.document import PagedDocument
-from pyhermes.pdf import (
+from octavo.builder import ChartBlock, Email, FullWidth, ImageBlock, TextBlock, TwoColumn
+from octavo.builder.enums import TwoColumnRatio
+from octavo.builder.images import EmailImage
+from octavo.document import PagedDocument
+from octavo.pdf import (
     PRINT,
     SCREEN,
     TAGGED,
@@ -485,10 +485,10 @@ class TestTheLandscapeReport:
     def test_it_goes_out_as_one_message(self, report, pdf):
         from email import message_from_bytes
 
-        from pyhermes.builder import EmailBuilder
-        from pyhermes.delivery import build_message
-        from pyhermes.delivery.message import to_wire_bytes
-        from pyhermes.pdf import pdf_attachment
+        from octavo.builder import EmailBuilder
+        from octavo.delivery import build_message
+        from octavo.delivery.message import to_wire_bytes
+        from octavo.pdf import pdf_attachment
 
         cover = (
             EmailBuilder()

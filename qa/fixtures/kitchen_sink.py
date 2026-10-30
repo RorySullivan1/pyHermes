@@ -21,7 +21,7 @@ from functools import partial
 from pathlib import Path
 from typing import Any
 
-from pyhermes.builder import (
+from octavo.builder import (
     AuthorBlock,
     Banner,
     BannerPalette,
@@ -69,17 +69,17 @@ from pyhermes.builder import (
     Timeline,
     TwoColumn,
 )
-from pyhermes.builder.engine import TemplateOverlay
-from pyhermes.builder.enums import (
+from octavo.builder.engine import TemplateOverlay
+from octavo.builder.enums import (
     CardOrientation,
     ImageAlign,
     ThreeColumnRatio,
     Tone,
     TwoColumnRatio,
 )
-from pyhermes.builder.formats import bps, delta, number, pct
-from pyhermes.builder.images import EmailImage
-from pyhermes.builder.models import (
+from octavo.builder.formats import bps, delta, number, pct
+from octavo.builder.images import EmailImage
+from octavo.builder.models import (
     Card,
     Cell,
     Column,
@@ -284,7 +284,7 @@ def build(
                 highlight=True,
                 content=CardGroup(
                     [
-                        # Figures go through pyhermes.builder.formats (#177), and each
+                        # Figures go through octavo.builder.formats (#177), and each
                         # value is coloured by a tone the theme resolves (#178):
                         # the sign where the sign is the claim, stated where not.
                         KpiItem(

@@ -1,15 +1,15 @@
 ---
 paths:
-  - "pyhermes/builder/models.py"
-  - "pyhermes/builder/components.py"
-  - "pyhermes/builder/templates/analysis/**/*"
+  - "octavo/builder/models.py"
+  - "octavo/builder/components.py"
+  - "octavo/builder/templates/analysis/**/*"
 ---
 
 # The DataTable — columns, cells, row kinds, caption and row headers
 
 ### The data table's columns
 
-`DataTable(headers=…)` takes bare strings **or** [Column](../../pyhermes/builder/models.py) objects, mixed
+`DataTable(headers=…)` takes bare strings **or** [Column](../../octavo/builder/models.py) objects, mixed
 freely (#117). A string coerces to a `Column` whose presentation resolves from its position —
 `coerce_image`'s union-coercion, for `coerce_image`'s reason: a new capability should not cost
 every existing call site a rewrite.
@@ -53,7 +53,7 @@ whatever width the table has, so no px enters the API and the frame stays `sizin
 
 ### The data table's cells
 
-`TableRow(cells=…)` takes bare strings **or** [Cell](../../pyhermes/builder/models.py) objects, mixed
+`TableRow(cells=…)` takes bare strings **or** [Cell](../../octavo/builder/models.py) objects, mixed
 freely (#118) — `text`, `align`, `color`, `background`. The chain completes: **cell → column →
 position**, so a cell's `align` overrides what its column resolved and an unset one inherits.
 
@@ -80,7 +80,7 @@ position**, so a cell's `align` overrides what its column resolved and an unset 
 ### A cell's tone — the same claim, spelled as a word (#178)
 
 `Cell.tone` and `Card.tone` take `positive`, `negative` or `neutral`
-([Tone](../../pyhermes/builder/enums.py)), and the template resolves the word to the **live**
+([Tone](../../octavo/builder/enums.py)), and the template resolves the word to the **live**
 theme's `semantic` token at render. Before this, `theme.semantic.positive` and `negative`
 rendered nowhere by default: they were tokens with no render site, so the only way a figure
 turned green was a caller copying the hex out of the theme and passing it back.
@@ -112,7 +112,7 @@ turned green was a caller copying the hex out of the theme and passing it back.
 ### The data table's row kinds
 
 `TableRow(kind=…)` says what a row *is* (#119): `data`, `total` or `subhead`
-([RowKind](../../pyhermes/builder/enums.py)). A total is ruled off above and bold across; a subhead is a
+([RowKind](../../octavo/builder/enums.py)). A total is ruled off above and bold across; a subhead is a
 tinted label band.
 
 - **A row's kind is chrome; a cell's colour is data.** The two land next to each other and are
@@ -394,13 +394,13 @@ sets "Annualised" over the four periods, a units row of `%`, decimal-aligned raw
 one marker on the since-inception figure. The unit left its section title, and the table
 still lays out to two sheets.
 
-[Card](../../pyhermes/builder/models.py) is the unit: `label` (required), `value`, `color`,
+[Card](../../octavo/builder/models.py) is the unit: `label` (required), `value`, `color`,
 `sublabel`, and an optional `body` for prose. Either `value` or `body` must be present.
 `KpiItem` is a `Card` subclass that adds no fields but keeps the stricter rule — a KPI
 always has a value. **`Card.body` is an HTML field**, so escaping untrusted text in it is
 the caller's job, same as `TextBlock.content`.
 
-[EmailBuilder](../../pyhermes/builder/email.py) is a thin fluent wrapper: `metadata()` initializes the
+[EmailBuilder](../../octavo/builder/email.py) is a thin fluent wrapper: `metadata()` initializes the
 underlying `Email`, `section()` appends a container, `build()`/`render()`/`save()` are
 terminal. `metadata()` must be called before `section()` or you get a `RuntimeError`. The
 non-fluent `Email` class works identically.

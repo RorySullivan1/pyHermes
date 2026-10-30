@@ -39,7 +39,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from pyhermes.builder import (
+from octavo.builder import (
     ChartBlock,
     DataTable,
     Email,
@@ -49,12 +49,12 @@ from pyhermes.builder import (
     TextBlock,
     content_width,
 )
-from pyhermes.builder.enums import RowKind, SizeTheme
-from pyhermes.builder.exhibits import Legend, LegendEntry
-from pyhermes.builder.formats import number
-from pyhermes.builder.models import Column, TableRow
-from pyhermes.builder.theming import resolve_theme
-from pyhermes.data.exceptions import BackendMissingError
+from octavo.builder.enums import RowKind, SizeTheme
+from octavo.builder.exhibits import Legend, LegendEntry
+from octavo.builder.formats import number
+from octavo.builder.models import Column, TableRow
+from octavo.builder.theming import resolve_theme
+from octavo.data.exceptions import BackendMissingError
 
 # --------------------------------------------------------------------------
 # The numbers, in one place: tomorrow's note is this file with new figures.
@@ -232,14 +232,14 @@ def _pyplot() -> Any:
     except ImportError as exc:  # pragma: no cover - depends on the install
         raise BackendMissingError(
             "The daily note plots two charts with matplotlib, which is an optional "
-            'extra. Install it with: pip install "pyhermes[charts]"'
+            'extra. Install it with: pip install "octavo[charts]"'
         ) from exc
     return plt
 
 
 def _performance_chart() -> ChartBlock:
     """Cumulative return over twenty sessions, the key stated in HTML beneath it."""
-    from pyhermes.data import chart_style, image_from_figure
+    from octavo.data import chart_style, image_from_figure
 
     plt = _pyplot()
     style = chart_style(THEME)
@@ -302,7 +302,7 @@ def _performance_chart() -> ChartBlock:
 
 def _sector_chart() -> ChartBlock:
     """Today's contribution by sector, a diverging bar coloured by sign."""
-    from pyhermes.data import chart_from_figure, chart_style
+    from octavo.data import chart_from_figure, chart_style
 
     plt = _pyplot()
     style = chart_style(THEME)

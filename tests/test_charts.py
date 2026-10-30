@@ -9,19 +9,19 @@ import struct
 
 import pytest
 
-pytest.importorskip("matplotlib", reason='the Figure adapter needs "pyhermes[charts]"')
+pytest.importorskip("matplotlib", reason='the Figure adapter needs "octavo[charts]"')
 
 from matplotlib.figure import Figure  # noqa: E402
 
-from pyhermes.builder import (  # noqa: E402
+from octavo.builder import (  # noqa: E402
     ChartBlock,
     EmailBuilder,
     FullWidth,
     SizeError,
     ValidationError,
 )
-from pyhermes.builder.enums import EmbedStrategy  # noqa: E402
-from pyhermes.data import chart_from_figure, image_from_figure  # noqa: E402
+from octavo.builder.enums import EmbedStrategy  # noqa: E402
+from octavo.data import chart_from_figure, image_from_figure  # noqa: E402
 
 
 def _figure(width_inches: float = 6.4, points: int = 3) -> Figure:

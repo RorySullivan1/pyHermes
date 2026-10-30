@@ -10,11 +10,11 @@ from pathlib import Path
 
 import pytest
 
-from pyhermes.builder import PrintQualityWarning, SizeError, SizeWarning
-from pyhermes.config import config_override
+from octavo.builder import PrintQualityWarning, SizeError, SizeWarning
+from octavo.config import config_override
 from qa.fixtures import kitchen_sink
 
-SVC = Path(__file__).resolve().parent.parent / "pyhermes"
+SVC = Path(__file__).resolve().parent.parent / "octavo"
 
 
 def _print_calls(path: Path) -> list[int]:
@@ -59,7 +59,7 @@ class TestTheSizeWarning:
 
     @pytest.mark.parametrize("via", ["email", "builder"])
     def test_it_points_at_the_callers_line_not_the_library(self, via):
-        # A fixed stacklevel would name a frame inside pyhermes/ for one of these.
+        # A fixed stacklevel would name a frame inside octavo/ for one of these.
         email = kitchen_sink.build()
         render = email.render if via == "email" else _builder_of(email).render
         with config_override(size_warn_kb=1), pytest.warns(SizeWarning) as caught:
@@ -81,7 +81,7 @@ class TestTheSizeWarning:
 
 
 def _builder_of(email):
-    from pyhermes.builder import EmailBuilder
+    from octavo.builder import EmailBuilder
 
     builder = EmailBuilder()
     builder._email = email

@@ -12,11 +12,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pyhermes.builder import Bibliography, Contents, DataTable, FullWidth, HeroStat, TextBlock
-from pyhermes.builder.images import EmailImage
-from pyhermes.builder.models import TableRow
-from pyhermes.builder.research import Reference
-from pyhermes.deck import SLIDE_16_9, Deck, DeckFooter
+from octavo.builder import Bibliography, Contents, DataTable, FullWidth, HeroStat, TextBlock
+from octavo.builder.images import EmailImage
+from octavo.builder.models import TableRow
+from octavo.builder.research import Reference
+from octavo.deck import SLIDE_16_9, Deck, DeckFooter
 
 from . import pitch_16_9
 from ._png import solid_png

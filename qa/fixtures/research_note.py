@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pyhermes.builder import Contents, Email, EmailBuilder, TwoColumn
+from octavo.builder import Contents, Email, EmailBuilder, TwoColumn
 
 from . import _research
 

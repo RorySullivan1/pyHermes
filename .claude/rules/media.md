@@ -1,18 +1,18 @@
 ---
 paths:
-  - "pyhermes/email/**/*"
-  - "pyhermes/document/**/*"
-  - "pyhermes/pdf/**/*"
-  - "pyhermes/builder/medium.py"
-  - "pyhermes/builder/document.py"
-  - "pyhermes/builder/templates/document/**/*"
-  - "pyhermes/builder/templates/common/stamp.html"
-  - "pyhermes/qr/**/*"
+  - "octavo/email/**/*"
+  - "octavo/document/**/*"
+  - "octavo/pdf/**/*"
+  - "octavo/builder/medium.py"
+  - "octavo/builder/document.py"
+  - "octavo/builder/templates/document/**/*"
+  - "octavo/builder/templates/common/stamp.html"
+  - "octavo/qr/**/*"
 ---
 
 # Media — one section tree, several destinations
 
-Epic #157 rescoped pyHermes from *an email builder* to **a document builder with an email
+Epic #157 rescoped octavo from *an email builder* to **a document builder with an email
 medium**. The section tree, the three design axes and the two projections are shared; a
 **medium** decides where the result is read.
 
@@ -23,9 +23,9 @@ same skeleton, same slots, same constraints. A medium changes all of those, so i
 **which class you construct**, never by a field you flip:
 
 ```python
-Email(metadata)          # pyhermes/builder/email.py   — EMAIL_MEDIUM
-PagedDocument(metadata)  # pyhermes/document/          — PAGED_MEDIUM, A4 by default
-Document(metadata)       # pyhermes/builder/document.py — DEFAULT_MEDIUM, plain HTML
+Email(metadata)          # octavo/builder/email.py   — EMAIL_MEDIUM
+PagedDocument(metadata)  # octavo/document/          — PAGED_MEDIUM, A4 by default
+Document(metadata)       # octavo/builder/document.py — DEFAULT_MEDIUM, plain HTML
 ```
 
 Once chosen it **rides the binder as the fourth keyword**, so a shared template can ask
@@ -274,10 +274,10 @@ subject and the URL schemes.
 
 ## The exporter contract, extended
 
-`pyhermes/pdf/` is an exporter on `pyhermes/gmail` and `pyhermes/outlook`'s terms exactly: it takes what the
+`octavo/pdf/` is an exporter on `octavo/gmail` and `octavo/outlook`'s terms exactly: it takes what the
 builder produces, owns its wire format, and owns nothing else. WeasyPrint is the optional
-`[pdf]` extra, imported lazily, and an AST test holds that nothing under `pyhermes/builder`,
-`pyhermes/document` or `pyhermes/email` imports it.
+`[pdf]` extra, imported lazily, and an AST test holds that nothing under `octavo/builder`,
+`octavo/document` or `octavo/email` imports it.
 
 What it **adds** to that contract is a resource policy, and it is the security-relevant part:
 **no network requests**. `cid:` is served from the document's own manifest, `data:` resolves
@@ -288,7 +288,7 @@ would drop a chart out of a compliance document and still return a finished-look
 
 **A relative reference is refused too (#463).** Given no `base_url`, WeasyPrint drops a relative
 `src` or `url()` before the fetcher sees it, so `fail_on_errors` never fired and the PDF came back
-with the chart missing. Every `weasyprint.HTML` is built with `base_url="pyhermes-relative:"`
+with the chart missing. Every `weasyprint.HTML` is built with `base_url="octavo-relative:"`
 (`fetcher.RELATIVE_BASE_URL`), a scheme `urljoin` does not resolve against, so the reference
 reaches the fetcher byte for byte (`charts/q3.png`, `../q3.png`, `//host/x.png`) and is refused by
 that name. Measured: the printed fixtures' PDFs, PRINT and SCREEN, and the deck handouts are
@@ -342,7 +342,7 @@ made them reviewable as changes of *owner* rather than of markup, the proof #95 
 
 ## The third medium: a folded sheet (#172)
 
-`pyhermes/brochure/` is the first medium with **no regions**. A brochure's cover is its first panel,
+`octavo/brochure/` is the first medium with **no regions**. A brochure's cover is its first panel,
 and a `Cover` region would be a second way to fill it. Its overlay searches `brochure/`, then
 `document/`, then the shared tree, so it forks only its skeleton, the side and the panel, and
 shares the paged medium's editorial partial. `Document.render` gained one hook for it,
@@ -399,7 +399,7 @@ the fixed-width version in a half column.
 
 ## The fourth medium: a deck (#218)
 
-`pyhermes/deck/` lays one `Slide` to a sheet, between a title slide and the disclosures.
+`octavo/deck/` lays one `Slide` to a sheet, between a title slide and the disclosures.
 **It supersedes a decision this file recorded: that a slide and a sheet of A4 are one
 medium at two pages.** That was true of a slide-shaped *sheet*, which `slide_16_9` still
 is. A deck needs its own skeleton, slots and constraint (overflow is a finding, not a second
@@ -407,14 +407,14 @@ sheet), which is #172's test for a medium. `deck.md` has the rest, including the
 density one medium alone may take.
 
 **The digital PDF (#193) is not a medium.** It is a `PdfProfile` on this exporter plus an
-attachment path in `pyhermes/delivery`, and `digital-pdf.md` has the decision, the profiles, the size
+attachment path in `octavo/delivery`, and `digital-pdf.md` has the decision, the profiles, the size
 budget and the PDF/UA measurement.
 
 ## There is no DOCX or PPTX exporter, by decision (2026-10-01)
 
 Epic #219 proposed a Word export, and #300, under the deck epic #218, a PowerPoint one, each
 walking the section tree with a projection per component. Both were closed as not planned, and
-the rule they settled is **pyHermes grows by media, not by portability**: a new destination is a
+the rule they settled is **octavo grows by media, not by portability**: a new destination is a
 medium on the one HTML render path, as the paged document, the brochure and the deck are. An
 exporter joins the contract above only if it rides that path, as the PDF does.
 
@@ -578,7 +578,7 @@ surface, the brochure's tinted panel, the cover band. Over, in the theme's `rule
 ## A way back from paper to the web (#344)
 
 `QrCode(image, url, caption=None, size=96)` holds a PNG and the URL it encodes, on `MathBlock`'s
-split: **the component takes bytes, the `[qr]` extra renders them.** `pyhermes.qr.qr_code(url)`
+split: **the component takes bytes, the `[qr]` extra renders them.** `octavo.qr.qr_code(url)`
 paints the symbol through segno (pure Python, no system library) in the theme's primary text
 on its surface, with whole-pixel modules enough for `Config.print_dpi` at the printed size,
 and writes no metadata chunk, so two renders share a Content-ID. `[qr]` is the sixth extra,

@@ -12,6 +12,8 @@ import tarfile
 import zipfile
 from pathlib import Path
 
+import pytest
+
 from qa.distribution import PACKAGE, main, sdist_problems, wheel_problems
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -27,7 +29,7 @@ def _wheel(path: Path, names: list[str]) -> Path:
 def _sdist(path: Path, names: list[str]) -> Path:
     with tarfile.open(path, "w:gz") as sdist:
         for name in names:
-            info = tarfile.TarInfo(f"pyhermes-0.1.0/{name}")
+            info = tarfile.TarInfo(f"octavo-0.1.0/{name}")
             sdist.addfile(info, io.BytesIO(b""))
     return path
 
@@ -39,7 +41,7 @@ LIBRARY = [
     "PKG-INFO",
     f"{PACKAGE}/__init__.py",
 ]
-WHEEL = [f"{PACKAGE}/__init__.py", f"{PACKAGE}/py.typed", "pyhermes-0.1.0.dist-info/METADATA"]
+WHEEL = [f"{PACKAGE}/__init__.py", f"{PACKAGE}/py.typed", "octavo-0.1.0.dist-info/METADATA"]
 
 
 class TestTheWheel:
@@ -113,4 +115,67 @@ def test_nothing_in_the_repository_imports_the_retired_name():
             for line in path.read_text(encoding="utf-8").splitlines()
         )
     ]
+    assert offenders == []
+
+
+#: The project's name before roadmap v0.4.0, spelled so this file does not match itself.
+OLD_NAME = "py" + "hermes"
+
+#: Files that are history in full: the memory's session logs and archive, a dated review ledger,
+#: and `.meta/version` while it holds the rename's own card.
+HISTORY = (
+    ".claude/memory/sessions/",
+    ".claude/skills/claim-grounding/reviews/ledger.jsonl",
+    ".meta/version",
+)
+
+#: The one name that stays: the session branch that built the roadmap.
+KEPT = (f"integrate-claude-assets-{OLD_NAME}",)
+
+
+def _current_lines(name: str, text: str) -> list[tuple[int, str]]:
+    """The lines of ``name`` that state current truth, which must not use the old name."""
+    lines = list(enumerate(text.splitlines(), 1))
+    if name == ".claude/memory/INDEX.md":
+        # State and Threads are current truth; Decisions and Log are history.
+        section, current = "", []
+        for n, line in lines:
+            section = line[3:].split()[0] if line.startswith("## ") else section
+            if section in ("State", "Threads"):
+                current.append((n, line))
+        lines = current
+    if name.startswith(".meta/roadmap/stages/") and (
+        "status: shipped" in text or name.endswith("/v0.4.0.md")
+    ):
+        return []  # a shipped card, or the rename's own, is a record
+    if name.startswith((".claude/memory/", ".meta/")):  # a line about the rename may name both
+        lines = [(n, line) for n, line in lines if "octavo" not in line.lower()]
+    return lines
+
+
+def test_the_old_name_survives_only_in_history():
+    """Allegro's Hermes client owns the old name on PyPI and as an import (v0.4.0)."""
+    import re
+    import subprocess
+
+    listing = subprocess.run(["git", "ls-files", "-z"], cwd=ROOT, capture_output=True)
+    if listing.returncode != 0:
+        pytest.skip("needs a git checkout to list the tracked files")
+    pattern = re.compile(OLD_NAME, re.IGNORECASE)
+    offenders = []
+    for name in filter(None, listing.stdout.decode("utf-8").split("\0")):
+        if name.startswith(HISTORY):
+            continue
+        if pattern.search(name):
+            offenders.append(name)
+        path = ROOT / name
+        try:
+            text = path.read_text(encoding="utf-8")
+        except (UnicodeDecodeError, FileNotFoundError):
+            continue  # a binary file, or one deleted but not yet staged
+        for n, line in _current_lines(name, text):
+            for kept in KEPT:
+                line = re.sub(re.escape(kept), "", line, flags=re.IGNORECASE)
+            if pattern.search(line):
+                offenders.append(f"{name}:{n}")
     assert offenders == []

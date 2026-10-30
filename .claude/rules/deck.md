@@ -1,7 +1,7 @@
 ---
 paths:
-  - "pyhermes/deck/**/*"
-  - "pyhermes/builder/templates/deck/**/*"
+  - "octavo/deck/**/*"
+  - "octavo/builder/templates/deck/**/*"
   - "qa/fixtures/pitch_16_9.py"
   - "qa/fixtures/pitch_layouts_16_9.py"
   - "qa/fixtures/slide_16_9.py"
@@ -15,7 +15,7 @@ paths:
 A pitchbook or a strategy review is a deck: one idea per slide, a title band and a footer
 band on every slide, a slide number, divider slides, and speaker notes nobody prints. Before
 #218 a "slide" was only `SLIDE_16_9`, a `PageFormat`, and content flowed from sheet to sheet
-like a report. `pyhermes/deck/` is the fourth medium, beside `email`, `document` and `brochure`.
+like a report. `octavo/deck/` is the fourth medium, beside `email`, `document` and `brochure`.
 
 | Module | Holds |
 |---|---|
@@ -109,12 +109,12 @@ holds one line: the `h2` is clipped to `SlideBox.title_line`, and a sentinel end
 `slide-N-title-end`, lands a line lower when it wraps, so past half a line below the first it
 is named `slide N: Title (its title wraps)`. Before the fix a second line painted over the
 body and the check said nothing. The brochure's measuring moved into
-`pyhermes.pdf.anchor_tops`, which both fit checks share. A sentinel below the body, or on no
+`octavo.pdf.anchor_tops`, which both fit checks share. A sentinel below the body, or on no
 sheet at all, names the slide as `slide N: Title`.
 
 The `slide-overflow` lint rule applies to the deck alone. It needs a layout, so it is not a
 markup rule: `layout_findings(document)` runs it, and `lint_document`, `python -m
-pyhermes.check` and `qa.preview --lint` all call it. Without `[pdf]` it is one warning saying
+octavo.check` and `qa.preview --lint` all call it. Without `[pdf]` it is one warning saying
 the deck was not measured, never a silent pass; an overflowing slide is an error, so the
 check exits 1. **A deck the exporter refuses**, such as one with a hosted image, is one error
 naming the exporter's reason (#315); it used to escape as a traceback from the check and from
@@ -257,7 +257,7 @@ the proof the defaults render byte for byte (#353's own allowance).
   the total being `Deck.sheet_count()`. **The mark follows the label a gutter on**: centred
   across the band, the first raster put it against the label on a sheet a picture halves. The
   title slide has no bands, so never a mark.
-- **The handout (#351)** is `Deck.handout(page)`, markup, and `pyhermes.pdf.render_handout` /
+- **The handout (#351)** is `Deck.handout(page)`, markup, and `octavo.pdf.render_handout` /
   `save_handout`. Each sheet is the deck's own sheet markup, rendered once at the deck's
   density, inside a frame the page's width between its margins, under `transform: scale()`,
   with its notes beneath in `font.body`, escaped, one paragraph per blank-line block. The
@@ -280,7 +280,7 @@ the proof the defaults render byte for byte (#353's own allowance).
   bottom margin is dropped) and `handout-N-notes-limit` (after the box), are what
   `clipped_notes(deck, page=None, laid_out=None)` compares, so it reads what the engine did
   and not the arithmetic; an end on no page counts as clipped, and 0.5px is tolerated. It names
-  `slide N: Title`, as `overflowing_slides` does. `pyhermes.pdf.layout_handout` lays the handout
+  `slide N: Title`, as `overflowing_slides` does. `octavo.pdf.layout_handout` lays the handout
   out and returns a `Layout` with `handout=True`, which `overflowing_slides` refuses, since its
   sheets are scaled; `render_handout` is that layout written, byte for byte what it was.
   Measured in WeasyPrint 70 on A4 portrait, a 1280px slide leaves a 589px box (about 20 lines
@@ -289,7 +289,7 @@ the proof the defaults render byte for byte (#353's own allowance).
   are pixel-identical page for page and the page count is the same, but the clip changes the
   stream, so the bytes and pdfium's text order differ. The slide PDFs and every golden held.
   **`handout-notes-clipped` makes it a lint finding**: `layout_findings` runs it for a deck,
-  after `slide-overflow`, so `lint_document`, `pyhermes.check` and `preview --lint` report each
+  after `slide-overflow`, so `lint_document`, `octavo.check` and `preview --lint` report each
   clipped slide. A **warning**, not an error like `slide-overflow`: the slides are whole and the
   notes projection keeps every word, so only the printed handout loses copy. The handout is laid
   out only when a slide has notes, so a deck without them costs no second layout; with them it is

@@ -12,7 +12,7 @@ import re
 
 import pytest
 
-from pyhermes.builder import (
+from octavo.builder import (
     Appendices,
     Contents,
     DataTable,
@@ -20,10 +20,10 @@ from pyhermes.builder import (
     TextBlock,
     ValidationError,
 )
-from pyhermes.builder.email import Email
-from pyhermes.builder.models import TableRow
-from pyhermes.config import Config
-from pyhermes.document import (
+from octavo.builder.email import Email
+from octavo.builder.models import TableRow
+from octavo.config import Config
+from octavo.document import (
     ContentsPage,
     EmptyBackMatter,
     EmptyCover,
@@ -32,7 +32,7 @@ from pyhermes.document import (
     PagedDocument,
     RunningHeader,
 )
-from pyhermes.pdf import available, render_pdf
+from octavo.pdf import available, render_pdf
 
 requires_pdf = pytest.mark.skipif(
     not available() or importlib.util.find_spec("pypdfium2") is None,

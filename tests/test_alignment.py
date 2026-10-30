@@ -1,7 +1,7 @@
 """
 Alignment: one concept, spelled twice on purpose (#125).
 
-pyHermes expressed "this copy sits left, centre or right" two ways — the
+octavo expressed "this copy sits left, centre or right" two ways — the
 ``align`` attribute on a cell, and ``text-align`` in an inline style — with
 no rule about which. Both are correct; having two of them is what #106
 learned to fix before parameterising anything, because a spelling variant
@@ -22,7 +22,7 @@ from typing import NamedTuple
 
 import pytest
 
-from pyhermes.builder import (
+from octavo.builder import (
     AuthorBlock,
     Button,
     CardGroup,
@@ -41,11 +41,11 @@ from pyhermes.builder import (
     TwoColumn,
     ValidationError,
 )
-from pyhermes.builder.components import CopyAlignment
-from pyhermes.builder.models import Card, NumberedItem, TableRow
+from octavo.builder.components import CopyAlignment
+from octavo.builder.models import Card, NumberedItem, TableRow
 from qa.fixtures import all_fixtures
 
-TEMPLATE_DIR = Path("pyhermes/builder/templates")
+TEMPLATE_DIR = Path("octavo/builder/templates")
 
 #: The two elements where the spellings are **not** equivalent, so the
 #: pairing deliberately does not apply. Each carries the style alone.
@@ -267,9 +267,9 @@ class TestTheTwoSpellingsTravelTogether:
         pull quote or a list still refuses it, and an email renders a
         justified section as an unset one.
         """
-        from pyhermes.builder import Email, FullWidth, PullQuote, TextBlock
-        from pyhermes.builder.enums import TextAlign
-        from pyhermes.builder.exceptions import ValidationError
+        from octavo.builder import Email, FullWidth, PullQuote, TextBlock
+        from octavo.builder.enums import TextAlign
+        from octavo.builder.exceptions import ValidationError
 
         assert "justify" in {member.value for member in TextAlign}
         assert "justify" not in _ALIGNMENTS
@@ -568,7 +568,7 @@ class TestOnlyProseComponentsTakeAnAlignment:
             )
 
     def test_the_structural_components_deliberately_do_not(self):
-        import pyhermes.builder as api
+        import octavo.builder as api
 
         for name, reason in STRUCTURALLY_ALIGNED.items():
             component = getattr(api, name)
@@ -584,7 +584,7 @@ class TestOnlyProseComponentsTakeAnAlignment:
         neither prose nor named as structural is one nobody has decided
         about, which is how a field silently goes missing.
         """
-        import pyhermes.builder as api
+        import octavo.builder as api
 
         public = {
             name
@@ -726,7 +726,7 @@ class TestAlignmentIsGeometryNotADesignAxis:
             "FullWidth": "align",
             "TextBlock": "align",
         }
-        import pyhermes.builder as api
+        import octavo.builder as api
 
         for name, parameter in geometry.items():
             parameters = inspect.signature(getattr(api, name)).parameters
@@ -739,7 +739,7 @@ class TestAlignmentIsGeometryNotADesignAxis:
         email-level voice. A section's alignment varies *per section* —
         that is the whole point — so it can never be one.
         """
-        from pyhermes.builder.models import EmailMetadata
+        from octavo.builder.models import EmailMetadata
 
         fields = {f.name for f in dataclasses.fields(EmailMetadata)}
         assert not {name for name in fields if "align" in name}, (

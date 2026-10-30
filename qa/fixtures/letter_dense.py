@@ -12,7 +12,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from pyhermes.builder import (
+from octavo.builder import (
     CardGroup,
     DataTable,
     FullWidth,
@@ -21,10 +21,10 @@ from pyhermes.builder import (
     TextBlock,
     TwoColumn,
 )
-from pyhermes.builder.enums import CardOrientation, TwoColumnRatio
-from pyhermes.builder.models import Column, KpiItem, NumberedItem, TableRow
-from pyhermes.builder.sizing import LETTER_PORTRAIT
-from pyhermes.document import (
+from octavo.builder.enums import CardOrientation, TwoColumnRatio
+from octavo.builder.models import Column, KpiItem, NumberedItem, TableRow
+from octavo.builder.sizing import LETTER_PORTRAIT
+from octavo.document import (
     EmptyBackMatter,
     EmptyContentsPage,
     EmptyCover,

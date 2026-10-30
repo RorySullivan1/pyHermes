@@ -174,7 +174,7 @@ jobs:
 
           from qa.fixtures import all_brochure_fixtures, all_deck_fixtures, all_paged_fixtures
           from qa.screenshots import capture_pages
-          from pyhermes.pdf import page_count, save_pdf
+          from octavo.pdf import page_count, save_pdf
 
           builders = {**all_paged_fixtures(), **all_brochure_fixtures(), **all_deck_fixtures()}
           gallery = {name: build() for name, build in sorted(builders.items())}
@@ -196,7 +196,7 @@ jobs:
           import pypdfium2
 
           from qa.fixtures import all_deck_fixtures
-          from pyhermes.pdf import save_handout
+          from octavo.pdf import save_handout
 
           pages = Path("output/pdf/handouts")
           for name, build in sorted(all_deck_fixtures().items()):
@@ -257,8 +257,8 @@ jobs:
   all-extras:
     # #239: the whole suite with every extra and every system dependency, so no
     # extra-gated test can skip in `check` and be on no other job's list. Under
-    # PYHERMES_REQUIRE_EXTRAS a skip whose reason names an extra ("[pdf]",
-    # pyhermes[data]) fails (qa/require_extras.py); -rs prints every skip that
+    # OCTAVO_REQUIRE_EXTRAS a skip whose reason names an extra ("[pdf]",
+    # octavo[data]) fails (qa/require_extras.py); -rs prints every skip that
     # remains, with its reason. A new extra-gated test needs no list edit.
     runs-on: ubuntu-latest
     steps:
@@ -287,7 +287,7 @@ jobs:
 
       - name: The whole suite, failing on any skip an installed extra should lift
         env:
-          PYHERMES_REQUIRE_EXTRAS: "1"
+          OCTAVO_REQUIRE_EXTRAS: "1"
         # A module skipped at import fails at collection; carry on so every
         # other test still runs and reports, and the job still fails.
         run: pytest -rs --continue-on-collection-errors
@@ -315,7 +315,7 @@ jobs:
 
       - name: Check the built artefacts
         # #243: the wheel must carry py.typed, or a consumer's type checker
-        # reads every pyHermes symbol as Any. #244: the sdist is the library
+        # reads every octavo symbol as Any. #244: the sdist is the library
         # alone, so .claude/, tests/, qa/, examples/, drafts/ or docs/ in it
         # fails here. qa/distribution.py lists each artefact and names what
         # is wrong; tests/test_distribution.py proves each check can fail.
@@ -328,14 +328,14 @@ jobs:
           python -m venv /tmp/sdistenv
           /tmp/sdistenv/bin/pip install dist/*.tar.gz
           /tmp/wheelenv/bin/pip install --upgrade pip
-          /tmp/wheelenv/bin/pip show --verbose pyhermes
+          /tmp/wheelenv/bin/pip show --verbose octavo
 
       - name: Type-check a consumer against the installed wheel
         # Without the marker this reports missing library stubs and reveals Any.
         run: |
           /tmp/wheelenv/bin/pip install mypy
           mkdir -p /tmp/typecheck && cd /tmp/typecheck
-          printf 'from pyhermes.builder import Email\n\nreveal_type(Email)\n' > consumer.py
+          printf 'from octavo.builder import Email\n\nreveal_type(Email)\n' > consumer.py
           /tmp/wheelenv/bin/mypy --strict consumer.py
 
       - name: Render an email with no source tree in sight, from each
@@ -346,7 +346,7 @@ jobs:
           /tmp/$env/bin/python - <<'PY'
           from pathlib import Path
 
-          from pyhermes.builder import (
+          from octavo.builder import (
               ContactBlock,
               EmailBuilder,
               Footer,
@@ -430,7 +430,7 @@ jobs:
           echo "== $env"
           mkdir -p /tmp/$env-draft && cd /tmp/$env-draft
           cat > draft.py <<'PY'
-          from pyhermes.builder import EmailBuilder, FullWidth, TextBlock
+          from octavo.builder import EmailBuilder, FullWidth, TextBlock
 
 
           def build():
@@ -440,7 +440,7 @@ jobs:
                   .section(FullWidth(TextBlock("<p>Checked from an install.</p>")))
               )
           PY
-          /tmp/$env/bin/python -m pyhermes.check draft.py:build --out out
+          /tmp/$env/bin/python -m octavo.check draft.py:build --out out
           test -s out/draft-build.html && test -s out/draft-build.txt
-          echo "OK: python -m pyhermes.check ran from $env"
+          echo "OK: python -m octavo.check ran from $env"
           done

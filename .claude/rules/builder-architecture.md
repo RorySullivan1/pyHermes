@@ -1,21 +1,21 @@
 ---
 paths:
-  - "pyhermes/builder/**/*"
+  - "octavo/builder/**/*"
 ---
 
 # The builder's composition model, ownership rule and public API
 
 
-`pyhermes/builder/` is the shared kit. Its public surface is re-exported from
-[pyhermes/builder/__init__.py](../../pyhermes/builder/__init__.py).
+`octavo/builder/` is the shared kit. Its public surface is re-exported from
+[octavo/builder/__init__.py](../../octavo/builder/__init__.py).
 
-**Superseded (#158): "`pyhermes/builder/` is the only implementation."** It was, until the
+**Superseded (#158): "`octavo/builder/` is the only implementation."** It was, until the
 medium was named. A `Medium` now owns the skeleton, the slot contract and the constraints
-a composed document must pass, and `pyhermes/email/` owns the shipped email one — including the
+a composed document must pass, and `octavo/email/` owns the shipped email one — including the
 102 KB Gmail check, which is a fact about a client rather than about rendering. Epic #157
 moves the rest of the email-only half there; the kit keeps what every medium shares.
 
-(A legacy flat string-replace assembler, `pyhermes/assembler.py`, was removed in #14. It is
+(A legacy flat string-replace assembler was removed in #14. It is
 recoverable from git history if ever needed for reference.)
 
 ### The four-layer composition model
@@ -35,27 +35,27 @@ promoted it. That the skeleton's slot set never changed across either step is wh
 split a change of *owner* rather than of markup, and it is the strongest evidence the region
 mechanism generalises.
 
-1. **Skeleton** — [pyhermes/builder/templates/base.html](../../pyhermes/builder/templates/base.html). The full HTML page (head,
+1. **Skeleton** — [octavo/builder/templates/base.html](../../octavo/builder/templates/base.html). The full HTML page (head,
    preheader, palette comment) with four variable holes: `{{ header_bar_html }}`,
    `{{ banner_html }}`,
    `{{ sections_html }}`, and `{{ footer_html }}`.
-   Rendered last by [Email.render()](../../pyhermes/builder/email.py).
+   Rendered last by [Email.render()](../../octavo/builder/email.py).
 2. **Regions** — the named areas of the email. Templates in
-   [pyhermes/builder/templates/regions/](../../pyhermes/builder/templates/regions/); Python wrappers in
-   [pyhermes/builder/regions.py](../../pyhermes/builder/regions.py), all sharing a `Region` base that owns
+   [octavo/builder/templates/regions/](../../octavo/builder/templates/regions/); Python wrappers in
+   [octavo/builder/regions.py](../../octavo/builder/regions.py), all sharing a `Region` base that owns
    validation, the image walk, the facts-over-presentation layering and `render_slots()`.
    Three region classes and two variants, per the table above. The **body region is
    the ordered section list** — deliberately not a class, since wrapping it would add a
    layer with no behaviour. The footer has no variant today; that is a gap, not a decision —
    `Footer.REQUIRED_SLOTS` means a variant may not drop the closing block, never that no
    variant may exist.
-3. **Containers** — layout geometry only. In [pyhermes/builder/templates/common/containers/](../../pyhermes/builder/templates/common/containers/).
+3. **Containers** — layout geometry only. In [octavo/builder/templates/common/containers/](../../octavo/builder/templates/common/containers/).
    Each produces a `<tr>` block sized to the 680px outer email table. Python wrappers in
-   [pyhermes/builder/containers.py](../../pyhermes/builder/containers.py).
+   [octavo/builder/containers.py](../../octavo/builder/containers.py).
 4. **Components** — content blocks. Templates in
-   [pyhermes/builder/templates/analysis/](../../pyhermes/builder/templates/analysis/) and
-   [pyhermes/builder/templates/text/](../../pyhermes/builder/templates/text/); Python wrappers in
-   [pyhermes/builder/components.py](../../pyhermes/builder/components.py).
+   [octavo/builder/templates/analysis/](../../octavo/builder/templates/analysis/) and
+   [octavo/builder/templates/text/](../../octavo/builder/templates/text/); Python wrappers in
+   [octavo/builder/components.py](../../octavo/builder/components.py).
 
 A `Container` holds one or more `Component`s, calls `component.render(engine)`, and embeds
 the fragment into its own template. `Email` renders each region into the slots it fills,
@@ -72,7 +72,7 @@ whole-region convenience and delegates to `render_slots()` — one rendering pat
 
 **The region mechanism now serves two media, which is the strongest evidence it
 generalises** (#163). The paged medium has four of its own — `Cover`, `RunningHeader`,
-`RunningFooter`, `BackMatter` — declared in `pyhermes/document/regions.py` on exactly the base
+`RunningFooter`, `BackMatter` — declared in `octavo/document/regions.py` on exactly the base
 class the email's three use, with the same `SLOTS` / `TEMPLATE_PATHS` / facts-over-presentation
 rules and an `Empty` variant each. Three things it taught:
 
@@ -231,7 +231,7 @@ new ground.
 makes an unfilled slot a `ValidationError` at construction, so a variant cannot drop the block
 — `Footer` has no variant at all today (PR #86 removed the `MinimalFooter` that used to omit a
 contact card the footer no longer renders). **That is a rule about variants, never about
-callers**, and the distinction is the one thing here worth not eroding: pyHermes does not
+callers**, and the distinction is the one thing here worth not eroding: octavo does not
 require disclaimer language, an unsubscribe link, or any other content. It cannot know whether
 an email is a commercial newsletter, an internal research note or a transactional receipt, and
 each answers that differently — a library that guessed would be wrong for two of the three. So
@@ -271,10 +271,10 @@ paying for the old behaviour: `kitchen_sink` and `custom_footer` both wrote thei
 line *without a symbol at all*, which is what a caller does when the correct spelling does not
 work.
 
-### Public API (import from `pyhermes.builder`)
+### Public API (import from `octavo.builder`)
 
 ```python
-from pyhermes.builder import EmailBuilder, Email, \
+from octavo.builder import EmailBuilder, Email, \
     Theme, Palette, TextColors, SemanticColors, ShadowStyle, Rgba, BannerPalette, \
     DEFAULT_THEME, SLATE_THEME, THEMES, \
     SizeScheme, TypeScale, SpacingScale, ComponentScale, FrameGeometry, \
@@ -283,18 +283,18 @@ from pyhermes.builder import EmailBuilder, Email, \
     Region, Header, EmptyHeader, Banner, MinimalBanner, Footer, \
     FullWidth, TwoColumn, ThreeColumn, \
     CardGroup, DataTable, ChartBlock, ImageBlock, TextBlock, NumberedList, AuthorBlock, ContactBlock
-from pyhermes.builder.models import Card, KpiItem, TableRow, Cell, Column, NumberedItem, EmailMetadata, \
+from octavo.builder.models import Card, KpiItem, TableRow, Cell, Column, NumberedItem, EmailMetadata, \
     SectionConfig, LinkRow, FooterLink
-from pyhermes.builder.enums import TwoColumnRatio, ThreeColumnRatio, CardOrientation, \
+from octavo.builder.enums import TwoColumnRatio, ThreeColumnRatio, CardOrientation, \
     EmbedStrategy, ImageAlign, SizeTheme, ColumnAlign, ColumnKind, RowKind
-from pyhermes.builder.images import EmailImage, ImageAsset
+from octavo.builder.images import EmailImage, ImageAsset
 ```
 
 **`Header` means the strip; it meant the masthead until #90, and no alias bridges the two.**
 The name was *reused*, not retired — #90 renamed the masthead `Banner` and #95 gave the name
 to the strip — so a deprecated warn-and-forward shim (the courtesy `KpiStrip` extends to
 `CardGroup`) would have collided with the incoming class rather than eased the migration. The
-break is clean and loud on purpose: between #90 and #95 `from pyhermes.builder import Header`
+break is clean and loud on purpose: between #90 and #95 `from octavo.builder import Header`
 raised `ImportError`, and since #95 an old-style `Header(logo_url=…)` raises `TypeError` at
 construction, because the class answering to the name has no such field. Both fail at the call
 site, immediately, which is the whole point — a name that quietly changed meaning would keep
@@ -321,7 +321,7 @@ flat keywords built. `Email.header`, `Email.banner` and `Email.footer` are read-
 for the same reasons as `Email.metadata`; use `Email.set_header()` / `set_banner()` /
 `set_footer()` to swap them.
 
-Column ratios and card orientation are `StrEnum`s in [pyhermes/builder/enums.py](../../pyhermes/builder/enums.py):
+Column ratios and card orientation are `StrEnum`s in [octavo/builder/enums.py](../../octavo/builder/enums.py):
 `TwoColumn`/`ThreeColumn` take a `ratio` and `CardGroup` takes an `orientation` as
 **either the enum member or its bare string** (`ratio=ThreeColumnRatio.WIDE_LEFT` ==
 `ratio="50-25-25"`), so the enums are an additive convenience — existing string calls are
@@ -347,10 +347,10 @@ Two deliberate shapes here, both chosen over adding more types:
 
 An image carries two independent facts: **where the bytes live** (a hosted URL, a file on
 disk, bytes in memory) and **how they reach the reader**. `EmailImage`
-([pyhermes/builder/images.py](../../pyhermes/builder/images.py)) owns both, via three factories:
+([octavo/builder/images.py](../../octavo/builder/images.py)) owns both, via three factories:
 
 ```python
-from pyhermes.builder.images import EmailImage
+from octavo.builder.images import EmailImage
 
 EmailImage.hosted("https://cdn.example.com/chart.png", alt="Factor returns")  # REMOTE
 EmailImage.attached("charts/factor.png", alt="Factor returns", width=616)     # CID
@@ -364,7 +364,7 @@ EmailImage.inline(png_bytes, alt="Sparkline", width=120)                      # 
 | `DATA_URI` | +33% base64, straight into the 102 KB budget | **stripped entirely** | Word engine will not render it |
 
 **The builder declares CID embeds; it never performs one.** Attaching a MIME part is a
-transport act belonging to a delivery service (`pyhermes/gmail`, `pyhermes/outlook`), so the builder
+transport act belonging to a delivery service (`octavo/gmail`, `octavo/outlook`), so the builder
 emits two things instead of one — the HTML, and an **asset manifest**:
 
 ```python
@@ -489,7 +489,7 @@ Validation runs at **construction time**, not render time. Models (`KpiItem`, `T
 
 **A number a template or a computation reads is finite (#450).** A check written "positive"
 or "not below zero" passes NaN, because every comparison with it is false, and passes
-infinity. `pyhermes.builder.finite.require_finite(value, name)` is the one refusal, a
+infinity. `octavo.builder.finite.require_finite(value, name)` is the one refusal, a
 `ValidationError` naming the field, and the one place its words live. It guards every size
 token and `PageFormat` and `PageMargin` (`_validate_size_fields`, so `derive` and `Spacing`
 too), a split's and a row's weights, a column's weight, a `HeatScale`'s bounds, the data a
@@ -510,7 +510,7 @@ the start of each projection, before any template loads — the constraint's pur
 
 ### Exceptions
 
-All errors inherit from [EmailBuilderError](../../pyhermes/builder/exceptions.py): `TemplateError`
+All errors inherit from [EmailBuilderError](../../octavo/builder/exceptions.py): `TemplateError`
 (Jinja load/render), `ValidationError` (data shape), `SizeError` (102 KB limit). Catch the
 base class for "anything the builder rejected" — that now holds without exception, including
 inside a template render: the `validate_hex_color` / `default_color` filters raise
@@ -540,7 +540,7 @@ rather than replaced, so a host's own `SizeError` subclass keeps its class.
 
 A soft limit is a **warning, not an exception** (#246): `SizeWarning` above the email's 90 KB
 threshold and the message's attachment one, `PrintQualityWarning` below a brochure's print
-dpi. Both are `UserWarning`s exported from `pyhermes.builder`, and the package prints nothing.
+dpi. Both are `UserWarning`s exported from `octavo.builder`, and the package prints nothing.
 
 The one deliberate exception is `EmailBuilder`'s `RuntimeError` for calling `section()` or
 `build()` before `metadata()` — a programming error in the call sequence, not rejected
@@ -550,12 +550,12 @@ host already reports a builder mistake.
 
 ### Hard constraints baked into the engine
 
-- **102 KB Gmail clipping limit** — [Email._validate_size()](../../pyhermes/builder/email.py) raises
+- **102 KB Gmail clipping limit** — [Email._validate_size()](../../octavo/builder/email.py) raises
   `SizeError` above 102 KB and warns above 90 KB. The single most important runtime check;
   never disable it without confirming a non-Gmail channel. Both thresholds come from
-  [Config](../../pyhermes/config.py) at check time, so a non-Gmail channel can raise them deliberately
+  [Config](../../octavo/config.py) at check time, so a non-Gmail channel can raise them deliberately
   rather than by commenting the check out.
-- **Jinja2 `StrictUndefined`** — [TemplateEngine](../../pyhermes/builder/engine.py) fails fast on a
+- **Jinja2 `StrictUndefined`** — [TemplateEngine](../../octavo/builder/engine.py) fails fast on a
   missing template variable. New template vars need a matching key in the component's
   `context()` dict, or the render raises.
 - **Autoescape is OFF, and escaping is split by field kind** (#12). HTML emails need raw
@@ -568,7 +568,7 @@ host already reports a builder mistake.
   - **HTML fields are emitted raw**, because callers deliberately pass markup:
     `TextBlock.content`, `NumberedItem.body`, `Footer.disclaimer`, and `header_disclaimer`.
     **Escaping untrusted text in these is the caller's job** — use
-    [escape_html()](../../pyhermes/builder/filters.py) (`from pyhermes.builder.filters import escape_html`).
+    [escape_html()](../../octavo/builder/filters.py) (`from octavo.builder.filters import escape_html`).
     `header_disclaimer` is the one worth naming twice (#95): making the strip a first-class,
     obviously-reusable region makes it likelier someone passes untrusted text to it, and the
     contract was *kept* rather than tightened because escaping it now would break every caller
@@ -604,8 +604,8 @@ host already reports a builder mistake.
   not checked. A builder-generated `data:` URI from `EmailImage.inline()` bypasses this by
   construction — it is validated by magic-byte sniffing instead, never by scheme.
 - **Hex-color enforcement** — colors use `#RRGGBB` everywhere. Validated by
-  [models._validate_color()](../../pyhermes/builder/models.py) at construction time and by the
-  `validate_hex_color` filter ([pyhermes/builder/filters.py](../../pyhermes/builder/filters.py)) in templates.
+  [models._validate_color()](../../octavo/builder/models.py) at construction time and by the
+  `validate_hex_color` filter ([octavo/builder/filters.py](../../octavo/builder/filters.py)) in templates.
   `DataTable` cell colors come from the `TableRow.colors` list — index-aligned with `cells`.
 
 - **The region model is complete (#38 header, #55 footer)**, and between them `base.html`
@@ -630,7 +630,7 @@ host already reports a builder mistake.
 
 ## The region layer — the two rules that give it its shape
 
-Moved out of `pyhermes/builder/regions.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
+Moved out of `octavo/builder/regions.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
 
 ```
 Regions — the layer between the skeleton and the containers.
@@ -638,14 +638,14 @@ Regions — the layer between the skeleton and the containers.
 The composition model is ``skeleton ← regions (header | banner | body | footer) ←
 containers ← components``. A *region* is a named area of the email that
 renders itself from its own template(s) and declares its own images, the way
-a :class:`~pyhermes.builder.components.Component` already does for a content
+a :class:`~octavo.builder.components.Component` already does for a content
 block.
 
 Two rules give the layer its shape:
 
 **Facts flow down.** The firm's name, the campaign, the dates, the
 disclaimers and the outbound URLs are facts about the *email*; they live on
-:class:`~pyhermes.builder.models.EmailMetadata` and are passed into the region at
+:class:`~octavo.builder.models.EmailMetadata` and are passed into the region at
 render time. A region presents them — it cannot own or contradict them,
 which :meth:`Region.context` enforces by layering the facts *over* its own
 keys rather than under them.
@@ -668,13 +668,13 @@ name is being reused: #87 gives the strip at the top of the email a region of
 its own, and *that* becomes ``Header``. A deprecated warn-and-forward shim —
 the courtesy ``KpiStrip`` extends to ``CardGroup`` — would collide with the
 new class rather than ease the migration, so the break is clean and loud on
-purpose. Between #90 and #87, ``from pyhermes.builder import Header`` raises
+purpose. Between #90 and #87, ``from octavo.builder import Header`` raises
 ``ImportError``; afterwards an old-style ``Header(logo_url=…)`` fails at
 construction, because the class that answers to the name has no such field.
 Both failures happen at the call site, immediately, which is the point: a
 name that quietly changed meaning would keep running and be wrong. The flat
 keywords (``logo_url``, ``logo_alt``, ``logo_width``, ``header_bg_image_url``
-on :class:`~pyhermes.builder.models.EmailMetadata`) are unaffected and still build
+on :class:`~octavo.builder.models.EmailMetadata`) are unaffected and still build
 the region — they are the common call path, and they never named the class.
 
 The body region is deliberately not a class: it *is* the email's ordered
@@ -686,7 +686,7 @@ then the banner owns both of its slots.
 
 ## Images — the strategies, the manifest, and why the builder cannot embed
 
-Moved out of `pyhermes/builder/images.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
+Moved out of `octavo/builder/images.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
 
 ```
 Image sources and embed strategies for HTML email.
@@ -698,10 +698,10 @@ per-service delivery layers build on.
 
 The builder can decide the strategy and emit the correct ``src``, but it
 cannot *perform* a CID embed — attaching a MIME part is a transport act
-belonging to a delivery service (``pyhermes/gmail``, ``pyhermes/outlook``).  So the
+belonging to a delivery service (``octavo/gmail``, ``octavo/outlook``).  So the
 builder emits two things instead of one: the HTML, and an **asset
 manifest** of the :class:`ImageAsset` parts the delivery layer must attach.
-Reach the manifest via :meth:`Email.assets <pyhermes.builder.email.Email.assets>`.
+Reach the manifest via :meth:`Email.assets <octavo.builder.email.Email.assets>`.
 
 The three strategies, and why all three exist:
 
@@ -726,7 +726,7 @@ is never a default.
 
 Usage::
 
-    from pyhermes.builder.images import EmailImage
+    from octavo.builder.images import EmailImage
 
     hosted   = EmailImage.hosted("https://cdn.example.com/chart.png", alt="Factor returns")
     attached = EmailImage.attached("charts/factor.png", alt="Factor returns", width=616)
@@ -739,10 +739,10 @@ so the rejection can say why.
 
 ## The builder package's front-door example, in full
 
-Moved out of `pyhermes/builder/__init__.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
+Moved out of `octavo/builder/__init__.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
 
 ```
-pyHermes Email Builder Service
+octavo Email Builder Service
 ==============================
 
 Object-oriented email assembly using Jinja2 templates.
@@ -751,8 +751,8 @@ Quick start::
 
     from pathlib import Path
 
-    from pyhermes.builder import CardGroup, EmailBuilder, FullWidth, TextBlock
-    from pyhermes.builder.models import KpiItem
+    from octavo.builder import CardGroup, EmailBuilder, FullWidth, TextBlock
+    from octavo.builder.models import KpiItem
 
     # email_subject, firm_name and campaign_name are required; the rest of
     # EmailMetadata is optional.  metadata() must be called before section().
@@ -783,7 +783,7 @@ Quick start::
 
 ## The enum vocabulary — why StrEnum, and what stays out of it
 
-Moved out of `pyhermes/builder/enums.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
+Moved out of `octavo/builder/enums.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
 
 ```
 Centralized enum vocabulary for the email builder.
@@ -811,7 +811,7 @@ of the type.
 
 ## The three-way escaping split, stated in full
 
-Moved out of `pyhermes/builder/filters.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
+Moved out of `octavo/builder/filters.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
 
 ```
 Custom Jinja2 filters and tests for the email builder.
@@ -836,7 +836,7 @@ explicit, and split by field kind:
 
 ## Containers — the computed-width rule in full
 
-Moved out of `pyhermes/builder/containers.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
+Moved out of `octavo/builder/containers.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
 
 ```
 Container classes for the email builder.
@@ -847,9 +847,9 @@ wraps one or more rendered component HTML fragments and produces a
 ``<tr>`` block that drops into the main email body table.
 
 Column widths are **computed, never written down**: the ratio's own name
-is its weights, and :func:`~pyhermes.builder.sizing.column_layout` splits the
+is its weights, and :func:`~octavo.builder.sizing.column_layout` splits the
 active scheme's content width by them. That is why one template serves
-every split — see #42 in :mod:`pyhermes.builder.sizing`.
+every split — see #42 in :mod:`octavo.builder.sizing`.
 
 Usage:
     engine  = TemplateEngine()
@@ -860,7 +860,7 @@ Usage:
 
 ## Email and EmailBuilder — the two construction patterns
 
-Moved out of `pyhermes/builder/email.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
+Moved out of `octavo/builder/email.py`'s module docstring by #138: the module states its purpose, and the reasoning that produced it lives here.
 
 ```
 Email builder — the main orchestrator.

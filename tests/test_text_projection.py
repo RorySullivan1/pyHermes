@@ -13,8 +13,8 @@ import inspect
 
 import pytest
 
-import pyhermes.builder as builder
-from pyhermes.builder import (
+import octavo.builder as builder
+from octavo.builder import (
     AuthorBlock,
     Banner,
     CardGroup,
@@ -31,9 +31,9 @@ from pyhermes.builder import (
     ThreeColumn,
     TwoColumn,
 )
-from pyhermes.builder.components import Component, descendants
-from pyhermes.builder.engine import TemplateEngine
-from pyhermes.builder.models import Card, FooterLink, LinkRow, NumberedItem, TableRow
+from octavo.builder.components import Component, descendants
+from octavo.builder.engine import TemplateEngine
+from octavo.builder.models import Card, FooterLink, LinkRow, NumberedItem, TableRow
 from qa.fixtures import DEPRECATED_COMPONENTS, all_fixtures, kitchen_sink
 
 
@@ -201,7 +201,7 @@ class TestPerComponentProjections:
         assert url in block.text().splitlines()
 
     def test_a_wrapped_bullet_keeps_its_hanging_indent(self):
-        from pyhermes.builder.textgen import wrap
+        from octavo.builder.textgen import wrap
 
         first, second = wrap("- " + "word " * 18).splitlines()
         assert first.startswith("- ") and second.startswith("  word")
@@ -390,7 +390,7 @@ class TestRegionsProjectResolvedState:
 
     def test_an_explicit_link_with_no_url_emits_its_label_alone(self):
         """
-        pyHermes does not require an unsubscribe destination (#100), so a
+        octavo does not require an unsubscribe destination (#100), so a
         caller's link with none must not project a dangling colon.
         """
         footer = Footer(link_row=LinkRow(links=[FooterLink("Unsubscribe", "")]))

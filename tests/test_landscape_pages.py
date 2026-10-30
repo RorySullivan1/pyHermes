@@ -13,23 +13,23 @@ import re
 
 import pytest
 
-from pyhermes.builder import Email, FullWidth, TextBlock
-from pyhermes.builder.exceptions import ValidationError
-from pyhermes.builder.sizing import (
+from octavo.builder import Email, FullWidth, TextBlock
+from octavo.builder.exceptions import ValidationError
+from octavo.builder.sizing import (
     A4_LANDSCAPE,
     A4_PORTRAIT,
     LETTER_LANDSCAPE,
     SLIDE_16_9,
     STANDARD_SIZES,
 )
-from pyhermes.document import (
+from octavo.document import (
     PAGED_MEDIUM,
     EmptyCover,
     Page,
     PagedDocument,
     paged_medium,
 )
-from pyhermes.pdf import available as pdf_available
+from octavo.pdf import available as pdf_available
 from qa.fixtures import a4_wide_appendix, all_paged_fixtures
 
 requires_pdf = pytest.mark.skipif(
@@ -131,7 +131,7 @@ class TestTheMarkup:
 def _sheets(document) -> list[tuple[int, int, str]]:
     import pypdfium2
 
-    from pyhermes.pdf import render_pdf
+    from octavo.pdf import render_pdf
 
     return [
         (

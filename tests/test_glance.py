@@ -11,7 +11,7 @@ from functools import partial
 
 import pytest
 
-from pyhermes.builder import (
+from octavo.builder import (
     SIZE_SCHEMES,
     BarItem,
     BarList,
@@ -24,14 +24,14 @@ from pyhermes.builder import (
     Trend,
     trend_of,
 )
-from pyhermes.builder.engine import TemplateEngine
-from pyhermes.builder.exceptions import ValidationError
-from pyhermes.builder.formats import bps, number, pct
-from pyhermes.builder.models import Card, Cell, KpiItem, Series, TableRow
-from pyhermes.builder.sizing import STANDARD_SIZES, Spacing
-from pyhermes.builder.theming import DEFAULT_THEME
-from pyhermes.config import config_override
-from pyhermes.pdf import available as pdf_available
+from octavo.builder.engine import TemplateEngine
+from octavo.builder.exceptions import ValidationError
+from octavo.builder.formats import bps, number, pct
+from octavo.builder.models import Card, Cell, KpiItem, Series, TableRow
+from octavo.builder.sizing import STANDARD_SIZES, Spacing
+from octavo.builder.theming import DEFAULT_THEME
+from octavo.config import config_override
+from octavo.pdf import available as pdf_available
 
 ENGINE = TemplateEngine()
 
@@ -366,7 +366,7 @@ class TestAHeroStat:
         assert HeroStat.from_number("VIX", 3, tone="auto", good="down").tone == "negative"
 
     def test_on_a_dark_section_its_type_turns_light(self):
-        from pyhermes.builder import Email
+        from octavo.builder import Email
 
         email = Email({"email_subject": "S", "firm_name": "F", "campaign_name": "C"})
         email.add_section(FullWidth(HeroStat("61 bps", "Term premium"), background_color="#22313F"))
@@ -414,7 +414,7 @@ class TestTheGalleryCarriesThem:
 def _sheets(document) -> list[str]:
     import pypdfium2
 
-    from pyhermes.pdf import render_pdf
+    from octavo.pdf import render_pdf
 
     pdf = pypdfium2.PdfDocument(render_pdf(document))
     return [page.get_textpage().get_text_range() for page in pdf]
@@ -440,14 +440,14 @@ class TestOnPaper:
         import numpy as np
         import pypdfium2
 
-        from pyhermes.document import (
+        from octavo.document import (
             EmptyBackMatter,
             EmptyCover,
             EmptyRunningFooter,
             EmptyRunningHeader,
             PagedDocument,
         )
-        from pyhermes.pdf import render_pdf
+        from octavo.pdf import render_pdf
 
         document = PagedDocument(
             {"firm_name": "F", "campaign_name": "C"},

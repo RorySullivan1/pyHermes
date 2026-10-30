@@ -19,10 +19,10 @@ import zlib
 
 import pytest
 
-from pyhermes.builder import FullWidth, ImageBlock, TextBlock
-from pyhermes.builder.images import EmailImage
-from pyhermes.builder.typography import DEFAULT_FONTS
-from pyhermes.document import (
+from octavo.builder import FullWidth, ImageBlock, TextBlock
+from octavo.builder.images import EmailImage
+from octavo.builder.typography import DEFAULT_FONTS
+from octavo.document import (
     Cover,
     EmptyBackMatter,
     EmptyCover,
@@ -31,7 +31,7 @@ from pyhermes.document import (
     Page,
     PagedDocument,
 )
-from pyhermes.pdf import (
+from octavo.pdf import (
     BackendError,
     BackendMissingError,
     PdfError,
@@ -41,7 +41,7 @@ from pyhermes.pdf import (
     render_pdf,
     save_pdf,
 )
-from pyhermes.pdf.exporter import _backend, _own_errors, layout
+from octavo.pdf.exporter import _backend, _own_errors, layout
 from qa.fixtures import a4_long_table as long_table
 from qa.fixtures import all_paged_fixtures
 
@@ -126,11 +126,11 @@ class TestTheCoreNeverImportsTheBackend:
     @pytest.mark.parametrize(
         "package",
         [
-            "pyhermes/builder",
-            "pyhermes/document",
-            "pyhermes/email",
-            "pyhermes/brochure",
-            "pyhermes/deck",
+            "octavo/builder",
+            "octavo/document",
+            "octavo/email",
+            "octavo/brochure",
+            "octavo/deck",
         ],
     )
     def test_no_module_imports_weasyprint(self, package):
@@ -148,9 +148,9 @@ class TestTheCoreNeverImportsTheBackend:
                 )
 
     def test_the_exporter_itself_imports_it_lazily(self):
-        # pyhermes.pdf must import cleanly without the extra, so a caller catches
+        # octavo.pdf must import cleanly without the extra, so a caller catches
         # BackendMissingError rather than an ImportError from their own graph.
-        tree = ast.parse(pathlib.Path("pyhermes/pdf/exporter.py").read_text(encoding="utf-8"))
+        tree = ast.parse(pathlib.Path("octavo/pdf/exporter.py").read_text(encoding="utf-8"))
         module_level = [n for n in tree.body if isinstance(n, (ast.Import, ast.ImportFrom))]
         assert not any(
             "weasyprint" in (getattr(n, "module", "") or "")
@@ -169,7 +169,7 @@ class TestTheCoreNeverImportsTheBackend:
             return real_import(name, *args, **kwargs)
 
         monkeypatch.setattr(builtins, "__import__", refuse)
-        with pytest.raises(BackendMissingError, match=r"pyhermes\[pdf\]"):
+        with pytest.raises(BackendMissingError, match=r"octavo\[pdf\]"):
             _backend()
 
     def test_a_backend_that_cannot_load_its_libraries_is_unavailable(self, monkeypatch):
@@ -211,8 +211,8 @@ class TestTheCoreNeverImportsTheBackend:
     def test_it_is_not_a_delivery_failure(self):
         # A document that will not print is neither a build failure nor a
         # transport failure, and a caller must be able to tell the three apart.
-        from pyhermes.builder.exceptions import EmailBuilderError
-        from pyhermes.delivery.exceptions import DeliveryError
+        from octavo.builder.exceptions import EmailBuilderError
+        from octavo.delivery.exceptions import DeliveryError
 
         assert not issubclass(PdfError, (EmailBuilderError, DeliveryError))
 
@@ -260,7 +260,7 @@ class TestTheFetcherServesTheManifestAndNothingElse:
             render_pdf(doc)
 
     def test_a_declared_attachment_is_served(self, png_bytes):
-        from pyhermes.builder import ChartBlock
+        from octavo.builder import ChartBlock
 
         doc = document(
             FullWidth(content=ChartBlock(EmailImage.attached(png_bytes, alt="C", width=40)))
@@ -270,7 +270,7 @@ class TestTheFetcherServesTheManifestAndNothingElse:
     def test_an_inlined_image_never_reaches_the_fetcher(self, png_bytes):
         # A data URI carries its own bytes, so it resolves without the
         # manifest -- and must not be refused for not being in one.
-        from pyhermes.builder import ChartBlock
+        from octavo.builder import ChartBlock
 
         doc = document(
             FullWidth(content=ChartBlock(EmailImage.inline(png_bytes, alt="C", width=40)))
@@ -308,7 +308,7 @@ class TestTheFetcherServesTheManifestAndNothingElse:
             layout(doc)
 
     def test_the_fetcher_refuses_an_undeclared_cid(self):
-        from pyhermes.pdf.fetcher import build_fetcher
+        from octavo.pdf.fetcher import build_fetcher
 
         with pytest.raises(UnreachableResourceError, match="asset manifest"):
             build_fetcher([]).fetch("cid:nothing-here")
@@ -359,7 +359,7 @@ class TestThePagesBreakWhereTheTreeSaysTheyDo:
     def test_every_sheet_is_the_mediums_page(self):
         import weasyprint
 
-        from pyhermes.pdf.fetcher import build_fetcher
+        from octavo.pdf.fetcher import build_fetcher
 
         fixture = all_paged_fixtures()["a4_portrait"]()
         rendered = weasyprint.HTML(
@@ -417,7 +417,7 @@ class TestWhatOnlyAPrintEngineCouldShow:
     def _laid_out(document):
         import weasyprint
 
-        from pyhermes.pdf.fetcher import build_fetcher
+        from octavo.pdf.fetcher import build_fetcher
 
         return weasyprint.HTML(
             string=document.render(), url_fetcher=build_fetcher(document.assets())
@@ -512,7 +512,7 @@ def _sheets(
     import pypdfium2.raw as pdfium_raw
     import weasyprint
 
-    from pyhermes.pdf.fetcher import build_fetcher
+    from octavo.pdf.fetcher import build_fetcher
 
     html = document.render()
     if strip_break_rules:
@@ -641,7 +641,7 @@ def _without_thead(tmp_path: pathlib.Path) -> pathlib.Path:
     """A copy of the packaged templates whose data table has no thead."""
     import shutil
 
-    from pyhermes.builder.engine import TemplateEngine
+    from octavo.builder.engine import TemplateEngine
 
     destination = tmp_path / "templates"
     shutil.copytree(TemplateEngine().template_dir, destination)

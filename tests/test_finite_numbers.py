@@ -16,10 +16,10 @@ from decimal import Decimal
 
 import pytest
 
-from pyhermes.brochure import FoldFormat
-from pyhermes.brochure.fold import LETTER_SHEET
-from pyhermes.brochure.panel import Panel
-from pyhermes.builder import (
+from octavo.brochure import FoldFormat
+from octavo.brochure.fold import LETTER_SHEET
+from octavo.brochure.panel import Panel
+from octavo.builder import (
     Banner,
     BarList,
     Columns,
@@ -34,10 +34,10 @@ from pyhermes.builder import (
     ThreeColumn,
     TwoColumn,
 )
-from pyhermes.builder.exceptions import ValidationError
-from pyhermes.builder.finite import is_finite, require_finite
-from pyhermes.builder.models import Cell, Column, TableRow
-from pyhermes.builder.sizing import (
+from octavo.builder.exceptions import ValidationError
+from octavo.builder.finite import is_finite, require_finite
+from octavo.builder.models import Cell, Column, TableRow
+from octavo.builder.sizing import (
     COMPACT_SIZES,
     STANDARD_SIZES,
     ComponentScale,
@@ -47,11 +47,11 @@ from pyhermes.builder.sizing import (
     SpacingScale,
     TypeScale,
 )
-from pyhermes.config import Config
-from pyhermes.deck.regions import TitleSlide
-from pyhermes.document.regions import Cover
-from pyhermes.pdf.exceptions import ProfileError
-from pyhermes.pdf.profile import PdfProfile
+from octavo.config import Config
+from octavo.deck.regions import TitleSlide
+from octavo.document.regions import Cover
+from octavo.pdf.exceptions import ProfileError
+from octavo.pdf.profile import PdfProfile
 
 NON_FINITE = [math.nan, math.inf, -math.inf]
 IDS = ["nan", "inf", "-inf"]
@@ -158,14 +158,14 @@ class TestTheGeometryOfTheTable:
             DataTable(["F", Column("A", scale=HeatScale(**bounds))], [TableRow(["x", 0.5])])
 
     def test_nan_in_a_formatted_column_still_means_missing(self):
-        from pyhermes.builder import formats
+        from octavo.builder import formats
 
         table = DataTable(["F", Column("V", format=formats.pct)], [TableRow(["a", math.nan])])
         assert "--" in table.text()
 
     def test_nan_in_a_scaled_and_barred_column_still_renders_as_missing(self):
-        from pyhermes.builder import formats
-        from pyhermes.builder.email import Email
+        from octavo.builder import formats
+        from octavo.builder.email import Email
 
         table = DataTable(
             ["F", Column("V", format=formats.pct, scale=HeatScale(0, 0.1), bar=True)],
@@ -240,7 +240,7 @@ class TestTheExporterAndTheRenderer:
     @pytest.mark.parametrize("bad", NON_FINITE, ids=IDS)
     @pytest.mark.parametrize("name", ["font_px", "scale"])
     def test_an_equation_size_refuses_it(self, name, bad):
-        from pyhermes.math.render import render_math
+        from octavo.math.render import render_math
 
         arguments = {"font_px": 14, "scale": 4, "color": "#000000", "fontset": "stix"}
         arguments[name] = bad
@@ -271,6 +271,6 @@ class TestConfig:
 
     @pytest.mark.parametrize("text", ["nan", "inf", "-inf"])
     def test_an_environment_override_cannot_smuggle_one_in(self, text, monkeypatch):
-        monkeypatch.setenv("PYHERMES_RETRY_BACKOFF_FACTOR", text)
+        monkeypatch.setenv("OCTAVO_RETRY_BACKOFF_FACTOR", text)
         with pytest.raises(ValueError, match="retry_backoff_factor"):
             Config.from_env()

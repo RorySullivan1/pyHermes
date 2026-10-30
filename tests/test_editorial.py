@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import pytest
 
-from pyhermes.builder import (
+from octavo.builder import (
     EmailBuilder,
     FlowedColumns,
     FullWidth,
@@ -17,11 +17,11 @@ from pyhermes.builder import (
     PullQuote,
     TextBlock,
 )
-from pyhermes.builder.components import _with_drop_cap, descendants
-from pyhermes.builder.exceptions import ValidationError
-from pyhermes.builder.images import EmailImage
-from pyhermes.document import PagedDocument
-from pyhermes.email import strip_indentation
+from octavo.builder.components import _with_drop_cap, descendants
+from octavo.builder.exceptions import ValidationError
+from octavo.builder.images import EmailImage
+from octavo.document import PagedDocument
+from octavo.email import strip_indentation
 from qa.fixtures import all_brochure_fixtures, all_fixtures, all_paged_fixtures
 from qa.fixtures._png import solid_png
 

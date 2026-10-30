@@ -12,13 +12,13 @@ import re
 
 import pytest
 
-from pyhermes.brochure import Brochure, Panel
-from pyhermes.builder import Callout, DataTable, EmailBuilder, FullWidth, TextBlock
-from pyhermes.builder.exceptions import ValidationError
-from pyhermes.builder.models import TableRow
-from pyhermes.builder.theming import DEFAULT_THEME, Theme
-from pyhermes.deck import Deck
-from pyhermes.document import EmptyBackMatter, EmptyCover, PagedDocument
+from octavo.brochure import Brochure, Panel
+from octavo.builder import Callout, DataTable, EmailBuilder, FullWidth, TextBlock
+from octavo.builder.exceptions import ValidationError
+from octavo.builder.models import TableRow
+from octavo.builder.theming import DEFAULT_THEME, Theme
+from octavo.deck import Deck
+from octavo.document import EmptyBackMatter, EmptyCover, PagedDocument
 from qa.fixtures import _paged
 
 INK, LEMON, NAVY = "#111111", "#F2D94E", "#1B3A5C"

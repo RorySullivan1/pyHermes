@@ -12,12 +12,12 @@ import re
 
 import pytest
 
-from pyhermes.builder import DataTable, FullWidth, TextBlock
-from pyhermes.builder.email import Email
-from pyhermes.builder.engine import TemplateEngine
-from pyhermes.builder.exceptions import ValidationError
-from pyhermes.builder.models import TableRow
-from pyhermes.document import PagedDocument
+from octavo.builder import DataTable, FullWidth, TextBlock
+from octavo.builder.email import Email
+from octavo.builder.engine import TemplateEngine
+from octavo.builder.exceptions import ValidationError
+from octavo.builder.models import TableRow
+from octavo.document import PagedDocument
 
 PAPER_FACTS = {"firm_name": "Hermes", "campaign_name": "Review"}
 FACTS = {"email_subject": "Subject", **PAPER_FACTS}

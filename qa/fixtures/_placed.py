@@ -13,7 +13,7 @@ contents list each at a share of the column, and a narrow measure.
 
 from __future__ import annotations
 
-from pyhermes.builder import (
+from octavo.builder import (
     Button,
     Callout,
     CardGroup,
@@ -31,8 +31,8 @@ from pyhermes.builder import (
     TextBlock,
     TwoColumn,
 )
-from pyhermes.builder.images import EmailImage
-from pyhermes.builder.models import KpiItem, TableRow
+from octavo.builder.images import EmailImage
+from octavo.builder.models import KpiItem, TableRow
 
 from ._png import solid_png
 

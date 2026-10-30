@@ -13,10 +13,10 @@ from email.message import EmailMessage
 
 import pytest
 
-from pyhermes.builder import Email, EmailBuilder, FullWidth, ImageBlock
-from pyhermes.builder.exceptions import EmailBuilderError
-from pyhermes.builder.images import EmailImage, ImageAsset
-from pyhermes.delivery import (
+from octavo.builder import Email, EmailBuilder, FullWidth, ImageBlock
+from octavo.builder.exceptions import EmailBuilderError
+from octavo.builder.images import EmailImage, ImageAsset
+from octavo.delivery import (
     DeliveryError,
     MessageError,
     build_message,
@@ -40,7 +40,7 @@ def _normalize_boundaries(raw: bytes) -> bytes:
     from ``random.randrange()`` — one draw per multipart per
     ``build_message()`` call, since each call builds a fresh
     ``EmailMessage``. See the module docstring on
-    ``pyhermes/delivery/message.py``.
+    ``octavo/delivery/message.py``.
 
     **Every**, not the first: since #111 a message is always a
     ``multipart/alternative``, and one with CID images carries a second

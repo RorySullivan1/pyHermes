@@ -17,7 +17,7 @@ from functools import partial
 from pathlib import Path
 from typing import Any
 
-from pyhermes.builder import (
+from octavo.builder import (
     BarList,
     CardGroup,
     ChartBlock,
@@ -30,10 +30,10 @@ from pyhermes.builder import (
     TextBlock,
     TwoColumn,
 )
-from pyhermes.builder.formats import pct
-from pyhermes.builder.images import EmailImage
-from pyhermes.builder.models import KpiItem, TableRow
-from pyhermes.deck import SLIDE_16_9, ClosingSlide, Deck, Slide, TitleSlide
+from octavo.builder.formats import pct
+from octavo.builder.images import EmailImage
+from octavo.builder.models import KpiItem, TableRow
+from octavo.deck import SLIDE_16_9, ClosingSlide, Deck, Slide, TitleSlide
 
 from . import _paged
 from ._png import solid_png

@@ -2,7 +2,7 @@
 paths:
   - "qa/**/*"
   - "tests/**/*"
-  - "pyhermes/check/**/*"
+  - "octavo/check/**/*"
 ---
 
 # The QA harness — gallery, goldens, screenshots, lint, preview
@@ -78,18 +78,18 @@ HTML and fails every downstream golden for a reason unrelated to the change unde
 Hence fixed strings, no clock, no `random`, and PNG bytes generated from constants by
 [qa/fixtures/_png.py](../../qa/fixtures/_png.py) rather than checked in as binaries.
 
-**`qa/` is a top-level package, not `pyhermes/qa` and not `tests/fixtures`** — the decision #57 left
-to its PR. It is out of `pyhermes/` because the wheel ships `packages = ["pyhermes"]` and the gallery is
+**`qa/` is a top-level package, not `octavo/qa` and not `tests/fixtures`** — the decision #57 left
+to its PR. It is out of `octavo/` because the wheel ships `packages = ["octavo"]` and the gallery is
 test data that would be dead weight for every installing user; it is out of `tests/` because
 `tests/` is not importable from an installed position and the epic's later tools (#59
 screenshots, #60 lint, #61 the `preview` CLI) are not tests. A root
 [conftest.py](../../conftest.py) puts the repo root on `sys.path` so `import qa` does not depend on
 hatchling's editable-install strategy happening to expose it. `qa/` **is** type-checked —
-`mypy` runs over `["pyhermes", "qa"]`.
+`mypy` runs over `["octavo", "qa"]`.
 
 **Adding a component means adding it to `kitchen_sink()`; so does adding an `EmailMetadata`,
 `Banner` or `Footer` field.** Four completeness tests introspect rather than hand-list: one
-over every public `Component` subclass exported from `pyhermes.builder`, one over
+over every public `Component` subclass exported from `octavo.builder`, one over
 `dataclasses.fields(EmailMetadata)`, a third asserting each metadata value *differs from its
 own default*, and a fourth doing both at once over each **region** — parametrized across
 header and footer, and read off the *built* region, so it holds however the fixture chooses
@@ -207,15 +207,15 @@ inherited by accident.
 - **Playwright is the optional `[qa]` extra.** `pip install -e ".[dev]"` + `pytest` must
   stay browser-free — that is what proves the extra is genuinely optional, so the capture
   tests *skip* rather than fail, and CI's `screenshots` job is the only place they run.
-  `PYHERMES_CHROMIUM` points the runner at a browser the environment supplies instead of one
+  `OCTAVO_CHROMIUM` points the runner at a browser the environment supplies instead of one
   Playwright manages (read at use time, never at import).
 
-## Lint pass — `pyhermes/check/lint.py`, re-exported as `qa.lint`
+## Lint pass — `octavo/check/lint.py`, re-exported as `qa.lint`
 
 **It ships in the package since #278.** #57 kept `qa/` out of the wheel as test data, and
 that holds for the gallery, the goldens and the screenshots. The rules are product behaviour
-an installed copy needs, so they moved to `pyhermes/check/`, stdlib only.
-`python -m pyhermes.check path.py:callable` builds a draft, writes its two parts and prints
+an installed copy needs, so they moved to `octavo/check/`, stdlib only.
+`python -m octavo.check path.py:callable` builds a draft, writes its two parts and prints
 the findings with `qa.preview`'s exit codes; `qa.preview` loads drafts through the same
 `load_target`, so there is one path. `qa.lint` re-exports the module by its `__all__`, and a
 test holds that each name is the same object. The wheel job runs the command from each
@@ -374,8 +374,8 @@ Four decisions:
   exception becomes a `TargetError` naming the callable, the exception class and its message.
   `MathError`, `DataError` and `QrError` are *siblings* of `EmailBuilderError`, so catching
   that one class left a traceback and Python's own exit 1, which a CI job reads as lint
-  errors. The guard lives in the shared loader, so `pyhermes.check` and `qa.preview` cannot
-  disagree. Only the draft is guarded: a raise while rendering is a pyHermes defect, and its
+  errors. The guard lives in the shared loader, so `octavo.check` and `qa.preview` cannot
+  disagree. Only the draft is guarded: a raise while rendering is an octavo defect, and its
   traceback is the useful output.
 - **One layout per run (#446).** A paged target is laid out once, before the lint, and the
   one `Layout` goes to `layout_findings`, to `save_layout` for the PDF and to `capture_pages`
@@ -547,7 +547,7 @@ Email-client lint pass (#60): portability checks over rendered HTML.
 
 The constraints that actually break emails are documented prose, not checks.
 Outlook's Word engine ignores ``max-width``, so every ``<img>`` needs a
-``width=`` attribute — a rule :mod:`pyhermes.builder.images` follows and nothing
+``width=`` attribute — a rule :mod:`octavo.builder.images` follows and nothing
 verified end to end. ``alt`` is required at construction, but nothing asserted
 it survived into the markup. This module turns those into findings.
 
@@ -622,7 +622,7 @@ install and the unit suite stay browser-free.
 Moved out of `qa/screenshots.py`'s `SUPPORTED_WIDTHS` note by #139: the constant states the rule, the measurement that established it lives here.
 
 ```
-#: The viewport widths pyHermes claims to render without a horizontal
+#: The viewport widths octavo claims to render without a horizontal
 #: scrollbar. **375 is the floor**, and #133 is where that was decided rather
 #: than left implied — the harness had asserted 375 for as long as it had
 #: existed, and nothing said whether anything narrower was supported.
@@ -1153,9 +1153,9 @@ hid the skip reasons, so nothing in a log showed it.
 - **`all-extras` installs every extra and every system library** (Pango, Cairo,
   HarfBuzz-Subset, fonts, Chromium) and runs the whole suite with `-rs`, which prints every
   skip that remains and its reason.
-- **`PYHERMES_REQUIRE_EXTRAS=1` turns a skip naming an extra into a failure.** The plugin is
+- **`OCTAVO_REQUIRE_EXTRAS=1` turns a skip naming an extra into a failure.** The plugin is
   `qa/require_extras.py`, registered in the root conftest; its test is the reason string, so
-  every skip names its extra in the house form (`the "[pdf]" extra`, `pyhermes[data]`).
+  every skip names its extra in the house form (`the "[pdf]" extra`, `octavo[data]`).
   `tests/test_require_extras.py` runs a throwaway suite with and without the variable, and
   checks the pattern covers every extra `pyproject.toml` declares.
 - **It catches a skip at every stage.** A `skipif` mark skips at setup and `pytest.skip` in
@@ -1199,7 +1199,7 @@ printed even that above 102 KB, because `render()` raised first.
 - **A brochure is not attributed.** Its panels are imposed onto two sides, so no section's
   standalone markup appears in the page. The report falls back to the markers, and a test holds
   that this degrades without error.
-- **`SizeError.html` carries the refused markup**, and `pyhermes.check.render_for_check()`
+- **`SizeError.html` carries the refused markup**, and `octavo.check.render_for_check()`
   returns it instead of raising. `render()` still refuses, the check always measures, and
   `preview` measures only with `--lint`. Without it, an over-limit draft still exits 2 and the
   message says to run with `--lint`.
@@ -1253,7 +1253,7 @@ this repo's Linux CI could see.
 
 - **Text I/O names its encoding.** A bare `read_text()` reads the locale's encoding, cp1252 on
   Windows, and a template holding an em dash failed there. `tests/test_encoding.py` walks the
-  syntax tree of `pyhermes/`, `qa/` and `tests/` and fails on any `read_text` or `write_text`
+  syntax tree of `octavo/`, `qa/` and `tests/` and fails on any `read_text` or `write_text`
   without `encoding=`, naming file and line. The tree is checked rather than grepped, so a
   call split over lines is seen.
 - **A drive letter is never the target's separator.** `load_target` split on the last colon,

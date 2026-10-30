@@ -11,8 +11,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pyhermes.brochure import TRI_FOLD_LETTER, Brochure, Panel
-from pyhermes.builder import (
+from octavo.brochure import TRI_FOLD_LETTER, Brochure, Panel
+from octavo.builder import (
     Aside,
     AuthorBlock,
     CardGroup,
@@ -27,9 +27,9 @@ from pyhermes.builder import (
     QrCode,
     TextBlock,
 )
-from pyhermes.builder.enums import CardOrientation
-from pyhermes.builder.images import EmailImage
-from pyhermes.builder.models import Card, NumberedItem
+from octavo.builder.enums import CardOrientation
+from octavo.builder.images import EmailImage
+from octavo.builder.models import Card, NumberedItem
 
 from . import _paged
 from ._png import solid_png

@@ -23,7 +23,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pyhermes.builder import (
+from octavo.builder import (
     CardGroup,
     ContactBlock,
     Email,
@@ -32,8 +32,8 @@ from pyhermes.builder import (
     FullWidth,
     TextBlock,
 )
-from pyhermes.builder.enums import CardOrientation
-from pyhermes.builder.models import KpiItem
+from octavo.builder.enums import CardOrientation
+from octavo.builder.models import KpiItem
 
 # Colour vocabulary is #RRGGBB everywhere — validated at construction time.
 _GAIN = "#4A7C59"

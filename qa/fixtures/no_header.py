@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pyhermes.builder import Email, EmailBuilder, EmptyHeader, FullWidth, TextBlock
+from octavo.builder import Email, EmailBuilder, EmptyHeader, FullWidth, TextBlock
 
 
 def build(template_dir: Path | None = None) -> Email:

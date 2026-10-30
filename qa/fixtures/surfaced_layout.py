@@ -13,7 +13,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from pyhermes.builder import (
+from octavo.builder import (
     Button,
     Callout,
     CardGroup,
@@ -27,7 +27,7 @@ from pyhermes.builder import (
     ThreeColumn,
     TwoColumn,
 )
-from pyhermes.builder.models import KpiItem, TableRow
+from octavo.builder.models import KpiItem, TableRow
 
 _YEAR = "2026"
 _NAVY = "#1B2A38"

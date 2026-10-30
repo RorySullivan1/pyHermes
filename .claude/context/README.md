@@ -39,7 +39,7 @@ copy is also the stale one.
 
 | File | What it's for |
 |---|---|
-| `verification-surface.md` | Who can confirm each pyHermes surface worked — the per-surface `agent-runnable` / `human-gated` / `unverified` table, written by the `establish-verification` workflow. |
+| `verification-surface.md` | Who can confirm each octavo surface worked — the per-surface `agent-runnable` / `human-gated` / `unverified` table, written by the `establish-verification` workflow. |
 
 Reference notes are catalogued automatically in `INDEX.md` (created on demand by
 `knowledge-router`) — not listed here.

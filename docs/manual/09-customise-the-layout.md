@@ -4,11 +4,11 @@
 and typefaces. This page covers the finer controls: moving the spacing of one section or
 block, placing blocks on a phone, on paper and in one medium only, positioning a block in the
 room it has, setting a house density,
-adding a block of your own, and replacing one of pyHermes's own templates. It ends with what
+adding a block of your own, and replacing one of octavo's own templates. It ends with what
 is fixed on purpose, and what to do instead.
 
 ```python
-from pyhermes.builder import EmailBuilder, FullWidth, TextBlock
+from octavo.builder import EmailBuilder, FullWidth, TextBlock
 
 facts = {
     "email_subject": "Morning Note",
@@ -25,8 +25,8 @@ the rest of the email should stay as it is.
 **Steps:** pass `spacing=` to the section or the block, naming the spacing it should move.
 
 ```python
-from pyhermes.builder import DataTable, Spacing
-from pyhermes.builder.models import TableRow
+from octavo.builder import DataTable, Spacing
+from octavo.builder.models import TableRow
 
 tight = FullWidth(
     TextBlock("<p>Markets opened higher.</p>"),
@@ -67,7 +67,7 @@ inside a section, give the `spacing=` to the table.
 Each section and block lists the spacing it reads in `SPACING_TOKENS`:
 
 ```python
-from pyhermes.builder import CardGroup
+from octavo.builder import CardGroup
 
 print(FullWidth.SPACING_TOKENS)
 print(DataTable.SPACING_TOKENS)
@@ -97,8 +97,8 @@ preset, in the same way.
    your own until you do, because nobody has yet checked it in a mail program.
 
 ```python
-from pyhermes.builder import COMPACT_SIZES, Email
-from pyhermes.config import Config
+from octavo.builder import COMPACT_SIZES, Email
+from octavo.config import Config
 
 house = COMPACT_SIZES.derive(space={"block_gap": 10, "content_top": 12})
 email = Email(
@@ -113,15 +113,15 @@ html = email.render()
 content.
 
 > **Tip:** if your program loads its settings from the environment with
-> `set_config(Config.from_env())`, setting `PYHERMES_ALLOW_CUSTOM_EMAIL_DENSITY=1` allows it
+> `set_config(Config.from_env())`, setting `OCTAVO_ALLOW_CUSTOM_EMAIL_DENSITY=1` allows it
 > for every email the program builds.
 
 A printed report takes any density without the switch, because nothing about a page depends
 on a mail program. See [Reports and PDFs](07-reports-and-pdfs.md).
 
-## How to add a block pyHermes does not have
+## How to add a block octavo does not have
 
-**When to use this:** you need a kind of block that pyHermes does not ship, such as an
+**When to use this:** you need a kind of block that octavo does not ship, such as an
 analyst's rating, and you want it to follow the theme like the built-in blocks.
 
 **Steps:**
@@ -135,7 +135,7 @@ analyst's rating, and you want it to follow the theme like the built-in blocks.
 ```python
 from pathlib import Path
 
-from pyhermes.builder import Component
+from octavo.builder import Component
 
 templates = Path("house_templates")
 (templates / "house").mkdir(parents=True, exist_ok=True)
@@ -181,10 +181,10 @@ email = (
 **Result:** "Overweight · ACME" in the theme's label face and accent colour, and
 `Overweight: ACME` in the plain-text part.
 
-Run the check on any block you write, because it is your markup and not pyHermes's:
+Run the check on any block you write, because it is your markup and not octavo's:
 
 ```python
-from pyhermes.check import check, errors
+from octavo.check import check, errors
 
 assert errors(check(email)) == []
 ```
@@ -194,19 +194,19 @@ assert errors(check(email)) == []
 > it. Inline `style=` on a table cell is what Outlook honours. `display:flex`, `position`
 > and `float` are not, and the check reports them.
 
-## How to change one of pyHermes's own templates
+## How to change one of octavo's own templates
 
 **When to use this:** one built-in part needs different markup, such as a footer laid out to
 your firm's legal template, and no setting covers it.
 
 **Steps:** copy the packaged template to the same path inside your own folder, edit the
-copy, and pass the folder as `template_overlay=`. pyHermes looks in your folder first, so
+copy, and pass the folder as `template_overlay=`. octavo looks in your folder first, so
 your copy replaces its own and every other template is unchanged.
 
 ```python
 from importlib.resources import files
 
-packaged = files("pyhermes.builder") / "templates" / "regions" / "footer.html"
+packaged = files("octavo.builder") / "templates" / "regions" / "footer.html"
 (templates / "regions").mkdir(exist_ok=True)
 (templates / "regions" / "footer.html").write_text(
     "<!-- house footer -->\n" + packaged.read_text(encoding="utf-8"),
@@ -223,7 +223,7 @@ email = (
 **Result:** the email renders your footer. `template_overlay=` also takes a list of folders,
 searched in order.
 
-> **Warning:** a replaced template does not change when you upgrade pyHermes. After an
+> **Warning:** a replaced template does not change when you upgrade octavo. After an
 > upgrade, compare your copy with the new packaged one, and render a test email before you
 > send.
 
@@ -242,7 +242,7 @@ Inside them, these tags take the theme's styles too:
 | `<a href>` | A link: the accent colour, underlined. On a dark section band, the band's text colour |
 | `<hr>` | A thin line in the theme's rule colour |
 
-A tag you give your own `style=` keeps it, and pyHermes adds nothing to it. Changing the
+A tag you give your own `style=` keeps it, and octavo adds nothing to it. Changing the
 theme, the density or the typefaces moves all of these with the rest of the email, and
 `spacing=` on the block moves the list indent (`prose_indent`), the gap after a heading,
 list or quotation (`prose_gap`), and the gap between list items (`prose_item_gap`).
@@ -274,7 +274,7 @@ email = EmailBuilder().metadata(facts).section(FullWidth(note, title="Markets"))
 
 To restyle one of these tags for every email you build, copy the packaged
 `text/prose-styles.html` into your own folder, edit its line for that tag, and pass the folder
-as `template_overlay=` ([above](#how-to-change-one-of-pyhermess-own-templates)). Each tag
+as `template_overlay=` ([above](#how-to-change-one-of-octavos-own-templates)). Each tag
 must keep its line.
 
 ## How to choose the order columns stack in on a phone
@@ -285,7 +285,7 @@ the reader should meet the chart first.
 **Steps:** pass `stack="reverse"` to the split.
 
 ```python
-from pyhermes.builder import ChartBlock, TwoColumn
+from octavo.builder import ChartBlock, TwoColumn
 
 chart_first = TwoColumn(
     "30-70",
@@ -309,8 +309,8 @@ phone although both fit side by side.
 **Steps:** pass `stack=False`.
 
 ```python
-from pyhermes.builder import CardGroup, Columns, Stack
-from pyhermes.builder.models import KpiItem
+from octavo.builder import CardGroup, Columns, Stack
+from octavo.builder.models import KpiItem
 
 figures = TwoColumn(
     "50-50",
@@ -341,7 +341,7 @@ section should open a fresh sheet.
 **Steps:** pass `keep_together=True` or `break_before=True` to the section.
 
 ```python
-from pyhermes.document import PagedDocument
+from octavo.document import PagedDocument
 
 report = PagedDocument({"firm_name": "Acme Research", "campaign_name": "Morning Note"})
 report.add_section(FullWidth(TextBlock("<p>Rates rose.</p>"), title="Summary"))
@@ -370,7 +370,7 @@ edition for the report.
 it shows in: `"email"`, `"document"`, `"brochure"`, `"deck"` or `"html"`.
 
 ```python
-from pyhermes.builder import Button, Only, OnlySections
+from octavo.builder import Button, Only, OnlySections
 
 def sections():
     return [
@@ -427,8 +427,8 @@ commentary beside it, or a paragraph runs too wide on a landscape sheet.
   `"right"` and a width, and pass it as the text's `figure`, as for an image.
 
 ```python
-from pyhermes.builder import Callout, ChartBlock, TwoColumn
-from pyhermes.builder.images import EmailImage
+from octavo.builder import Callout, ChartBlock, TwoColumn
+from octavo.builder.images import EmailImage
 
 FLOAT_WIDTH = 160  # the floated chart's own width beside the prose, in px
 
@@ -483,5 +483,5 @@ program, or would let one email drift from the rest of its series.
 | Use a dark theme | The email tells mail programs to show it in light mode only, and no dark palette ships | A dark band on one section: `background_color` ([Look and feel](05-look-and-feel.md#how-to-put-a-section-on-a-dark-band)) |
 
 To ask for one of these to change,
-[open an issue](https://github.com/RorySullivan1/pyHermes/issues) saying which mail
+[open an issue](https://github.com/RorySullivan1/octavo/issues) saying which mail
 programs you send to; that is what any change would have to be checked in.

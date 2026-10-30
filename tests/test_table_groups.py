@@ -12,10 +12,10 @@ import re
 
 import pytest
 
-from pyhermes.builder import ColumnGroup, DataTable
-from pyhermes.builder.engine import TemplateEngine
-from pyhermes.builder.exceptions import ValidationError
-from pyhermes.builder.models import TableRow
+from octavo.builder import ColumnGroup, DataTable
+from octavo.builder.engine import TemplateEngine
+from octavo.builder.exceptions import ValidationError
+from octavo.builder.models import TableRow
 from qa.lint import lint_html
 
 GROUPS = [ColumnGroup("Share class"), ColumnGroup("Annualised", 3)]

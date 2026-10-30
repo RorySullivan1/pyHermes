@@ -11,8 +11,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pyhermes.builder.document import Document
-from pyhermes.document import (
+from octavo.builder.document import Document
+from octavo.document import (
     BackMatter,
     ContentsPage,
     Cover,

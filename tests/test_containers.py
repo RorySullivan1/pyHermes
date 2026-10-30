@@ -9,11 +9,11 @@ an undefined name raises even when it is only tested for truthiness.
 
 import pytest
 
-from pyhermes.builder import Email, FullWidth, TextBlock, ThreeColumn, TwoColumn
-from pyhermes.builder.containers import Container
-from pyhermes.builder.enums import ThreeColumnRatio, TwoColumnRatio
-from pyhermes.builder.exceptions import EmailBuilderError, ValidationError
-from pyhermes.builder.models import EmailMetadata
+from octavo.builder import Email, FullWidth, TextBlock, ThreeColumn, TwoColumn
+from octavo.builder.containers import Container
+from octavo.builder.enums import ThreeColumnRatio, TwoColumnRatio
+from octavo.builder.exceptions import EmailBuilderError, ValidationError
+from octavo.builder.models import EmailMetadata
 
 RATIOS = ["50-50", "30-70", "70-30"]
 THREE_RATIOS = ["33-33-33", "50-25-25", "25-50-25", "25-25-50"]
@@ -149,7 +149,7 @@ class TestThreeColumn:
         assert html.count("Narrative prose.") == 2
 
     def test_columns_render_left_to_right_in_order(self, engine):
-        from pyhermes.builder import TextBlock
+        from octavo.builder import TextBlock
 
         html = ThreeColumn(
             left=TextBlock("<p>AAA</p>"),

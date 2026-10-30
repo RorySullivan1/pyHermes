@@ -12,11 +12,11 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from pyhermes.builder import ColumnGroup, DataTable, FullWidth, HeatScale, TextBlock
-from pyhermes.builder.formats import pct
-from pyhermes.builder.models import Cell, Column, TableRow
-from pyhermes.builder.sizing import LETTER_PORTRAIT
-from pyhermes.document import (
+from octavo.builder import ColumnGroup, DataTable, FullWidth, HeatScale, TextBlock
+from octavo.builder.formats import pct
+from octavo.builder.models import Cell, Column, TableRow
+from octavo.builder.sizing import LETTER_PORTRAIT
+from octavo.document import (
     EmptyBackMatter,
     EmptyContentsPage,
     EmptyCover,

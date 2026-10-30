@@ -1,19 +1,19 @@
 ---
 paths:
-  - "pyhermes/builder/apparatus.py"
-  - "pyhermes/builder/document.py"
-  - "pyhermes/builder/exhibits.py"
-  - "pyhermes/builder/templates/analysis/figure-grid.html"
-  - "pyhermes/builder/templates/common/source-line.html"
-  - "pyhermes/builder/research.py"
-  - "pyhermes/builder/templates/text/bibliography.html"
-  - "pyhermes/builder/templates/text/glossary.html"
-  - "pyhermes/builder/templates/common/notes.html"
-  - "pyhermes/builder/templates/common/endnotes.html"
-  - "pyhermes/builder/templates/common/contents-list.html"
-  - "pyhermes/builder/templates/text/contents.html"
-  - "pyhermes/builder/templates/document/regions/contents.html"
-  - "pyhermes/builder/templates/document/regions/running-box.html"
+  - "octavo/builder/apparatus.py"
+  - "octavo/builder/document.py"
+  - "octavo/builder/exhibits.py"
+  - "octavo/builder/templates/analysis/figure-grid.html"
+  - "octavo/builder/templates/common/source-line.html"
+  - "octavo/builder/research.py"
+  - "octavo/builder/templates/text/bibliography.html"
+  - "octavo/builder/templates/text/glossary.html"
+  - "octavo/builder/templates/common/notes.html"
+  - "octavo/builder/templates/common/endnotes.html"
+  - "octavo/builder/templates/common/contents-list.html"
+  - "octavo/builder/templates/text/contents.html"
+  - "octavo/builder/templates/document/regions/contents.html"
+  - "octavo/builder/templates/document/regions/running-box.html"
 ---
 
 # The document apparatus — numbers, notes, contents, references, sources

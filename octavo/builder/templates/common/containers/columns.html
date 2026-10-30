@@ -1,0 +1,179 @@
+{#
+  MULTI-COLUMN CONTAINER
+
+  One template for every split, two columns or three. The eight per-ratio
+  files this replaced were byte-identical apart from a Jinja comment and
+  the numbers — which is what made the frame an assumption spread across
+  eight files rather than a value the builder owns.
+
+  Widths arrive computed: octavo.builder.sizing.column_layout() splits the
+  frame's content width by the ratio's own weights, floors each column and
+  distributes the remainder outside-in, then gives each column the padding
+  its width earns. The MSO ghost table and the inline-block table read the
+  *same* number, because there is now only one number to read.
+
+  The band is wrapped in a cell that insets it by frame.pad_x, so its text
+  starts where a full-width section's text starts and where this section's
+  own heading starts. That cell also zeroes font-size and line-height: the
+  columns are inline-blocks, so the newline between two of them would
+  otherwise render as a space, and 616px of columns plus that space no
+  longer fits in 616px of content width. The column cells set both
+  properties themselves, so nothing inherits the zero.
+
+  Context variables:
+    columns          — One dict per column: width, pad_left, pad_right, content
+    section_align    — Optional alignment for this section's copy; empty means
+                       the template's own behaviour, which is what keeps an
+                       email that states none byte-identical (#126)
+    section_title    — Optional heading spanning every column
+    section_anchor   — The heading's `id`, empty when untitled (#183)
+    section_badge    — The title's badge, {label, tone}, or none (#325)
+    section_kicker   — The label above the title, {text, grounded}, or none (#333)
+    background_color — Optional hex override; defaults to the theme's surface,
+                       or its highlight tint when highlighted
+    highlight        — When true, tints the band and adds hairline rules top and bottom
+    section_border   — The frame's colour when the section is bordered (#267), else empty
+    section_frame    — "solid" or "dashed", how that frame is drawn (#390)
+    section_break    — The row's break declarations on paper (#364), empty elsewhere
+    section_kept     — The row's `id` when kept together on paper, for the tall-section check
+    section_source   — The section's source line, cut at its markers (#338); empty for none.
+                       It is a table of its own under the columns, at the band's inset,
+                       and carries the `fine-print` hook so paper keeps it with them
+    section_as_of    — Its date, or empty
+    section_bleed    — On paper, how far the ground runs past the frame, {left, right, top} (#396)
+    section_pin      — On paper, how the section reaches its sheet's foot (#397); see placed.html
+    stack            — natural; reverse, where dir=rtl lays the phone order out right to
+                       left on a desktop (#362); or fixed, one fluid row that never stacks (#363)
+    gutter_share     — The gutter as a percentage of the band, for a fixed row
+#}
+{# `inline-table`, NOT `inline-block`, and the difference is #129. With
+   `inline-block` the element stops being a table box: the tr and td get an
+   anonymous table around them which shrink-wraps to its content, so the
+   width specified here applied to the outer box and the cell inside stayed
+   as narrow as its copy — 76 of the gallery's 88 column cells did. Anything
+   that then depended on the cell's width had no room to show: #126's
+   alignment reached every cell correctly and was invisible.
+
+   Measured, not reasoned about, in #76's tradition — the obvious fix does
+   NOT work. `width="100%"` on the cell (attribute, style, or both) changes
+   nothing at all, because it resolves against an anonymous table that is
+   itself shrink-wrapping; a fixed px width does fill on desktop but then
+   constrains the copy at the mobile breakpoint, where `.stack-column`
+   overrides the table's width and the cell's px value goes stale.
+
+   Outlook never sees this: its Word engine ignores both display values and
+   lays the columns out from the MSO ghost table above. The residual risk is
+   a client that implements `inline-block` but not `inline-table`, which
+   would stack the columns — the same graceful degradation a client
+   supporting neither already gets. #}
+{# A highlighted band spends 1px a side on its hairline frame, so every
+   horizontal inset inside it gives that pixel back. Content then starts at
+   frame.pad_x from the frame edge whether the band is highlighted or not —
+   which is the whole of #85: a heading and the text under it must not
+   disagree about where the left margin is. A border (#267) spends one more. #}
+{# `section_align` lands on TWO cells, and that is not redundancy: the
+   title and the content are sibling tables, not parent and child, so a
+   declaration on the content cell alone leaves the heading where it was.
+   Both spellings travel together per #125 — the attribute for Outlook's
+   Word engine, the style because an attribute is not inherited by the
+   prose inside the cell and inheritance is #126's whole mechanism. #}
+{# On paper a column paints no fill of its own. An inline table is painted
+   after every block background, so its fill would cover the half-pixel row
+   the next section owns at the band's edge, under the tallest column only.
+   The band's cell already paints that ground. #}
+{% from "common/badge.html" import badge with context %}
+{% from "common/kicker.html" import kicker with context %}
+{% from "common/source-line.html" import source_line with context %}
+{% from "common/placed.html" import open_placed, close_placed %}
+{% set edge_pad = size.frame.pad_x - (1 if highlight else 0) - (1 if section_border else 0) %}
+{# The band also has to *fit*: 2x pad_x plus the computed content width is
+   the whole frame, so without the pixel back the last column wraps. #}
+<tr{% if section_kept %} id="{{ section_kept }}"{% endif %}{% if section_break %} style="{{ section_break }}"{% endif %}>
+  <td style="{% if highlight %}padding:1px 1px 1px 1px; background-color:{{ theme.palette.surface }}; border-top:1px {{ section_frame }} {{ section_border or theme.palette.rule }}; border-bottom:1px {{ section_frame }} {{ section_border or theme.palette.rule }};{% if section_border %} border-left:1px {{ section_frame }} {{ section_border }}; border-right:1px {{ section_frame }} {{ section_border }};{% endif %}{% else %}padding:0;{% if not section_pin %} background-color:{{ background_color | default(theme.palette.surface) }};{% endif %}{% if section_border %} border:1px {{ section_frame }} {{ section_border }};{% endif %}{% endif %}">
+{% if section_bleed or section_pin %}
+    {{ open_placed(section_bleed, section_pin, background_color | default(theme.palette.highlight_tint if highlight else theme.palette.surface)) }}
+{% endif %}
+{% if section_title %}
+    <table class="section-title" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:{{ background_color | default(theme.palette.highlight_tint if highlight else theme.palette.surface) }};">
+      <tr>
+        <td{% if section_align %} align="{{ section_align | escape_html }}"{% endif %} style="padding:{{ size.space.section_title_top }}px {{ edge_pad }}px {{ size.space.section_title_bottom }}px {{ edge_pad }}px;{% if section_align %} text-align:{{ section_align }};{% if section_align == "justify" %} hyphens:auto;{% endif %}{% endif %}">
+{% if section_kicker %}
+          {{ kicker(section_kicker) }}
+{% endif %}
+          <h2{% if section_anchor %} id="{{ section_anchor | escape_html }}"{% endif %}{% if section_display %} class="mobile-title"{% endif %} style="margin:0; font-family: {{ font.heading }}; font-size:{{ size.type.title if section_display else size.type.section }}px; font-weight:bold; color:{{ theme.text.heading }}; line-height:{{ size.type.title_line | percent }};{% if section_upper %} text-transform:uppercase;{% endif %}">
+            {{ section_title | escape_html }}
+{% if section_badge %}
+            {{ badge(section_badge) }}
+{% endif %}
+          </h2>
+        </td>
+      </tr>
+    </table>
+{% endif %}
+    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:{{ background_color | default(theme.palette.highlight_tint if highlight else theme.palette.surface) }};">
+      <tr>
+{% set rtl = stack == "reverse" %}
+        <td{% if not medium.paged %} class="{{ 'mobile-pad-x' if stack == 'fixed' else 'mobile-flush' }}"{% endif %}{% if rtl %} dir="rtl"{% endif %} style="padding:0 {{ edge_pad }}px; font-size:0; line-height:0;">
+{% if stack == "fixed" %}
+    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="width:100%; table-layout:fixed;">
+      <tr>
+{% for col in columns %}
+        <td width="{{ col.share }}%" valign="{{ valign }}" style="width:{{ col.share }}%; padding:0;">
+          <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
+            <tr>
+              <td{% if section_align %} align="{{ section_align | escape_html }}"{% endif %} style="padding:{{ size.space.column_top }}px {{ col.pad_right }}px {{ size.space.column_bottom }}px {{ col.pad_left }}px; font-family: {{ font.label }}; font-size:{{ size.type.body }}px; color:{{ theme.text.primary }}; line-height:{{ size.type.body_line | percent }};{% if section_align %} text-align:{{ section_align }};{% if section_align == "justify" %} hyphens:auto;{% endif %}{% endif %}">
+                {{ col.content }}
+              </td>
+            </tr>
+          </table>
+        </td>
+{% if not loop.last %}
+        <td width="{{ gutter_share }}%" style="width:{{ gutter_share }}%; padding:0;"></td>
+{% endif %}
+{% endfor %}
+      </tr>
+    </table>
+{% else %}
+    <!--[if mso]>
+    <table{% if rtl %} dir="rtl"{% endif %} role="presentation" width="{{ size.frame.inner }}" border="0" cellpadding="0" cellspacing="0" style="width:{{ size.frame.inner }}px;">
+      <tr>
+        <td width="{{ columns[0].width }}" valign="{{ valign }}" style="width:{{ columns[0].width }}px; padding:0;">
+    <![endif]-->
+{% for col in columns %}
+    <table role="presentation" width="{{ col.width }}" border="0" cellpadding="0" cellspacing="0" class="stack-column"{% if rtl %} dir="ltr"{% endif %} style="display:inline-table; vertical-align:{{ valign }}; width:{{ col.width }}px;{% if not loop.last %} margin-{{ "left" if rtl else "right" }}:{{ size.space.gutter }}px;{% endif %}{% if not medium.paged %} background-color:{{ background_color | default(theme.palette.highlight_tint if highlight else theme.palette.surface) }};{% endif %}">
+      <tr>
+        <td class="mobile-pad"{% if section_align %} align="{{ section_align | escape_html }}"{% endif %} style="padding:{{ size.space.column_top }}px {{ col.pad_right }}px {{ size.space.column_bottom }}px {{ col.pad_left }}px; font-family: {{ font.label }}; font-size:{{ size.type.body }}px; color:{{ theme.text.primary }}; line-height:{{ size.type.body_line | percent }};{% if section_align %} text-align:{{ section_align }};{% if section_align == "justify" %} hyphens:auto;{% endif %}{% endif %}">
+          {{ col.content }}
+        </td>
+      </tr>
+    </table>
+{% if not loop.last %}
+    <!--[if mso]>
+        </td>
+        <td width="{{ columns[loop.index].width }}" valign="{{ valign }}" style="width:{{ columns[loop.index].width }}px; padding:0;">
+    <![endif]-->
+{% endif %}
+{% endfor %}
+    <!--[if mso]>
+        </td>
+      </tr>
+    </table>
+    <![endif]-->
+{% endif %}
+        </td>
+      </tr>
+    </table>
+{% if section_source %}
+    <table class="fine-print" role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:{{ background_color | default(theme.palette.highlight_tint if highlight else theme.palette.surface) }};">
+      <tr>
+        <td{% if not medium.paged %} class="mobile-pad-x"{% endif %}{% if section_align %} align="{{ section_align | escape_html }}"{% endif %} style="padding:0 {{ edge_pad }}px {{ size.space.column_bottom }}px {{ edge_pad }}px;{% if section_align %} text-align:{{ section_align }};{% if section_align == "justify" %} hyphens:auto;{% endif %}{% endif %}">
+          {{ source_line(section_source, section_as_of) }}
+        </td>
+      </tr>
+    </table>
+{% endif %}
+{% if section_bleed or section_pin %}
+    {{ close_placed(section_bleed, section_pin) }}
+{% endif %}
+  </td>
+</tr>

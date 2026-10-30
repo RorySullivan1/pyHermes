@@ -12,7 +12,7 @@ import re
 
 import pytest
 
-from pyhermes.pdf import available, render_pdf
+from octavo.pdf import available, render_pdf
 from qa.fixtures import _research, all_fixtures, all_paged_fixtures
 
 requires_pdf = pytest.mark.skipif(

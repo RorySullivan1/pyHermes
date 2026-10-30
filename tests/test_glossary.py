@@ -8,10 +8,10 @@ import re
 
 import pytest
 
-from pyhermes.builder import FullWidth, Glossary, Term, TextBlock, ValidationError
-from pyhermes.builder.email import Email
-from pyhermes.check.lint import Severity, lint_document
-from pyhermes.document import PagedDocument
+from octavo.builder import FullWidth, Glossary, Term, TextBlock, ValidationError
+from octavo.builder.email import Email
+from octavo.check.lint import Severity, lint_document
+from octavo.document import PagedDocument
 
 FACTS = {"email_subject": "Subject", "firm_name": "Hermes", "campaign_name": "Review"}
 
@@ -114,6 +114,6 @@ class TestRefusals:
 
 
 def _engine():
-    from pyhermes.builder import TemplateEngine
+    from octavo.builder import TemplateEngine
 
     return TemplateEngine()

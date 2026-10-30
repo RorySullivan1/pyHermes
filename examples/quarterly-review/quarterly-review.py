@@ -26,10 +26,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pyhermes.builder import CardGroup, DataTable, FullWidth, TextBlock
-from pyhermes.builder.enums import CardOrientation
-from pyhermes.builder.models import KpiItem, TableRow
-from pyhermes.document import BackMatter, Cover, Page, PagedDocument, RunningFooter, RunningHeader
+from octavo.builder import CardGroup, DataTable, FullWidth, TextBlock
+from octavo.builder.enums import CardOrientation
+from octavo.builder.models import KpiItem, TableRow
+from octavo.document import BackMatter, Cover, Page, PagedDocument, RunningFooter, RunningHeader
 
 _GAIN = "#4A7C59"
 _LOSS = "#B85450"
@@ -123,11 +123,11 @@ def main() -> None:
     print(f"{html}  ({html.stat().st_size / 1024:.1f} KB)")
 
     try:
-        from pyhermes.pdf import page_count, save_pdf
+        from octavo.pdf import page_count, save_pdf
     except ImportError:  # pragma: no cover - the extra is optional by design
         print('pdf skipped: install the extra with `pip install -e ".[pdf]"`')
         return
-    from pyhermes.pdf import PdfError
+    from octavo.pdf import PdfError
 
     try:
         pdf = save_pdf(build(), here / "quarterly-review.pdf")

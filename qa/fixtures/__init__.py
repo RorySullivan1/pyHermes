@@ -17,8 +17,8 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from pyhermes.builder import Email
-from pyhermes.builder.document import Document
+from octavo.builder import Email
+from octavo.builder.document import Document
 
 from . import (
     a4_editorial,

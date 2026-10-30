@@ -11,7 +11,7 @@ numbering agrees across them.
 
 from __future__ import annotations
 
-from pyhermes.builder import (
+from octavo.builder import (
     Appendices,
     Aside,
     Bibliography,
@@ -29,8 +29,8 @@ from pyhermes.builder import (
     Term,
     TextBlock,
 )
-from pyhermes.builder.images import EmailImage
-from pyhermes.builder.models import TableRow
+from octavo.builder.images import EmailImage
+from octavo.builder.models import TableRow
 
 from ._png import solid_png
 

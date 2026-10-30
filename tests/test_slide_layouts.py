@@ -12,13 +12,13 @@ import importlib.util
 
 import pytest
 
-from pyhermes.builder import DataTable, Email, FullWidth, TextBlock, ValidationError
-from pyhermes.builder.models import TableRow
-from pyhermes.builder.sizing import resolve_size_scheme
-from pyhermes.deck import SLIDE_16_9, Deck, Slide
-from pyhermes.deck.regions import EmptyClosingSlide, EmptyTitleSlide
-from pyhermes.deck.slide import SlideBox
-from pyhermes.pdf import available
+from octavo.builder import DataTable, Email, FullWidth, TextBlock, ValidationError
+from octavo.builder.models import TableRow
+from octavo.builder.sizing import resolve_size_scheme
+from octavo.deck import SLIDE_16_9, Deck, Slide
+from octavo.deck.regions import EmptyClosingSlide, EmptyTitleSlide
+from octavo.deck.slide import SlideBox
+from octavo.pdf import available
 
 requires_pdf = pytest.mark.skipif(
     not available() or importlib.util.find_spec("pypdfium2") is None,
@@ -135,13 +135,13 @@ def long_table() -> FullWidth:
 @requires_pdf
 class TestOnTheSheet:
     def test_an_overflowing_sidebar_names_its_slide(self):
-        from pyhermes.deck import overflowing_slides
+        from octavo.deck import overflowing_slides
 
         assert overflowing_slides(deck(sidebar())) == []
         assert overflowing_slides(deck(sidebar([long_table()]))) == ["slide 1: Laid out"]
 
     def test_an_overflowing_main_region_names_it_too(self):
-        from pyhermes.deck import overflowing_slides
+        from octavo.deck import overflowing_slides
 
         main = Slide([long_table()], "Main spills", layout="split", side=[copy("SIDE")])
         assert overflowing_slides(deck(main)) == ["slide 1: Main spills"]
@@ -149,7 +149,7 @@ class TestOnTheSheet:
     def test_the_two_regions_print_side_by_side_on_one_sheet(self):
         import pypdfium2
 
-        from pyhermes.pdf import render_pdf
+        from octavo.pdf import render_pdf
 
         pdf = pypdfium2.PdfDocument(render_pdf(deck(sidebar())))
         assert len(pdf) == 1

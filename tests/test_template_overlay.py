@@ -9,11 +9,11 @@ from typing import Any
 
 import pytest
 
-from pyhermes.builder import Component, Email, EmailBuilder, FullWidth, TemplateEngine
-from pyhermes.builder.engine import _packaged_template_dir
-from pyhermes.builder.exceptions import TemplateError
-from pyhermes.builder.medium import Medium
-from pyhermes.document import PagedDocument
+from octavo.builder import Component, Email, EmailBuilder, FullWidth, TemplateEngine
+from octavo.builder.engine import _packaged_template_dir
+from octavo.builder.exceptions import TemplateError
+from octavo.builder.medium import Medium
+from octavo.document import PagedDocument
 from qa.fixtures import kitchen_sink
 
 MARKER = "<!-- house footer -->\n"

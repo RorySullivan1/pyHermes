@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import pytest
 
-from pyhermes.builder import (
+from octavo.builder import (
     CardGroup,
     Columns,
     Contents,
@@ -20,9 +20,9 @@ from pyhermes.builder import (
     ThreeColumn,
     TwoColumn,
 )
-from pyhermes.builder.exceptions import ValidationError
-from pyhermes.builder.images import EmailImage
-from pyhermes.builder.models import KpiItem, TableRow
+from octavo.builder.exceptions import ValidationError
+from octavo.builder.images import EmailImage
+from octavo.builder.models import KpiItem, TableRow
 from qa.fixtures._png import solid_png
 
 FACTS = {"email_subject": "S", "firm_name": "F", "campaign_name": "C"}
@@ -122,8 +122,8 @@ class TestWeights:
 
     @pytest.mark.parametrize("size_theme", ["standard", "compact", "spacious"])
     def test_sixty_forty_fills_the_content_width_at_every_density(self, size_theme):
-        from pyhermes.builder import SIZE_SCHEMES
-        from pyhermes.builder.sizing import column_layout
+        from octavo.builder import SIZE_SCHEMES
+        from octavo.builder.sizing import column_layout
 
         scheme = SIZE_SCHEMES[size_theme]
         widths = [column.width for column in column_layout((60, 40), scheme)]
@@ -163,7 +163,7 @@ class TestWeights:
             TwoColumn(ratio, TextBlock("<p>L</p>"), TextBlock("<p>R</p>"))
 
     def test_the_floor_is_a_config_value(self):
-        from pyhermes.config import config_override
+        from octavo.config import config_override
 
         with config_override(min_column_px=20):
             TwoColumn((95, 5), TextBlock("<p>L</p>"), TextBlock("<p>R</p>"))
@@ -179,8 +179,8 @@ class TestFourColumn:
         assert html.index("c0") < html.index("c1") < html.index("c2") < html.index("c3")
 
     def test_it_takes_weights(self):
-        from pyhermes.builder import STANDARD_SIZES
-        from pyhermes.builder.sizing import column_layout
+        from octavo.builder import STANDARD_SIZES
+        from octavo.builder.sizing import column_layout
 
         section = FourColumn(self._columns(), ratio=(2, 1, 1, 1))
         wide = column_layout((2, 1, 1, 1), STANDARD_SIZES)[0].width
@@ -221,8 +221,8 @@ class TestNestedColumns:
         ],
     )
     def test_its_columns_fill_the_cell_they_sit_in(self, section, cell):
-        from pyhermes.builder import STANDARD_SIZES
-        from pyhermes.builder.sizing import column_layout
+        from octavo.builder import STANDARD_SIZES
+        from octavo.builder.sizing import column_layout
 
         expected = [c.width for c in column_layout((1, 2), STANDARD_SIZES, within=cell)]
         assert sum(expected) + STANDARD_SIZES.space.gutter == cell

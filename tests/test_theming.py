@@ -13,10 +13,10 @@ from dataclasses import fields
 
 import pytest
 
-from pyhermes.builder.engine import BoundEngine, Renderer, TemplateEngine
-from pyhermes.builder.exceptions import ValidationError
-from pyhermes.builder.models import EmailMetadata
-from pyhermes.builder.theming import (
+from octavo.builder.engine import BoundEngine, Renderer, TemplateEngine
+from octavo.builder.exceptions import ValidationError
+from octavo.builder.models import EmailMetadata
+from octavo.builder.theming import (
     DEFAULT_THEME,
     SLATE_THEME,
     THEMES,
@@ -306,9 +306,9 @@ class TestThePresetRegistry:
         ``Card.color`` is unset by default and resolved in the template.
         Byte identity is the proof the substitution is exact.
         """
-        from pyhermes.builder import CardGroup, Email, FullWidth
-        from pyhermes.builder.filters import default_color
-        from pyhermes.builder.models import Card
+        from octavo.builder import CardGroup, Email, FullWidth
+        from octavo.builder.filters import default_color
+        from octavo.builder.models import Card
 
         assert Card("L", "V").color == ""
         assert default_color("", DEFAULT_THEME.semantic.neutral) == "#5A5A5A"
@@ -325,8 +325,8 @@ class TestThePresetRegistry:
         Unset skips the check; explicit does not. The component is where a
         card is validated, and that did not move.
         """
-        from pyhermes.builder import CardGroup
-        from pyhermes.builder.models import Card
+        from octavo.builder import CardGroup
+        from octavo.builder.models import Card
 
         CardGroup([Card("L", "V"), Card("M", "W")], "horizontal")  # unset: fine
         with pytest.raises(ValidationError, match=r"card\.color"):
@@ -375,9 +375,9 @@ def _theme_resolving_regions() -> list[type]:
     added later is picked up by adding its module here, which is one line
     and visible, rather than by widening an assertion.
     """
-    from pyhermes.builder import regions as region_api
-    from pyhermes.deck import regions as deck_regions
-    from pyhermes.document import regions as document_regions
+    from octavo.builder import regions as region_api
+    from octavo.deck import regions as deck_regions
+    from octavo.document import regions as document_regions
 
     return [
         obj
@@ -552,8 +552,8 @@ class TestTheThemeReachesEveryTemplate:
         return binder, seen, real
 
     def test_every_rendered_template_gets_the_theme(self):
-        from pyhermes.builder import CardGroup, DataTable, Email, FullWidth, TextBlock, TwoColumn
-        from pyhermes.builder.models import Card, TableRow
+        from octavo.builder import CardGroup, DataTable, Email, FullWidth, TextBlock, TwoColumn
+        from octavo.builder.models import Card, TableRow
 
         seen: dict[str, dict] = {}
         real = TemplateEngine()
@@ -619,9 +619,9 @@ class TestTheThemeReachesEveryTemplate:
         """
         import inspect
 
-        from pyhermes.builder import FullWidth, TextBlock
-        from pyhermes.builder.containers import Container
-        from pyhermes.builder.regions import Region
+        from octavo.builder import FullWidth, TextBlock
+        from octavo.builder.containers import Container
+        from octavo.builder.regions import Region
 
         for func in (Container.render, FullWidth.render, TextBlock.render):
             assert list(inspect.signature(func).parameters) == ["self", "engine"]
@@ -672,7 +672,7 @@ class TestTheDefaultThemeChangesNothing:
         the same thing at the level of one email, so a failure here points
         straight at the plumbing rather than at a template.
         """
-        from pyhermes.builder import Email
+        from octavo.builder import Email
 
         facts = {"email_subject": "S", "firm_name": "F", "campaign_name": "c"}
         assert Email(facts).render() == Email({**facts, "theme": "classic"}).render()
@@ -701,8 +701,8 @@ class TestThePerturbedTheme:
     }
 
     def _themed_html(self) -> str:
-        from pyhermes.builder import CardGroup, DataTable, Email, FullWidth, TextBlock, TwoColumn
-        from pyhermes.builder.models import Card, TableRow
+        from octavo.builder import CardGroup, DataTable, Email, FullWidth, TextBlock, TwoColumn
+        from octavo.builder.models import Card, TableRow
 
         theme = Theme(
             palette=Palette(**self.SENTINELS),
@@ -710,7 +710,7 @@ class TestThePerturbedTheme:
             semantic=SemanticColors(neutral="#BCDEF0"),
             shadow=ShadowStyle(scrim=Rgba("#CDEF01", 0.25)),
         )
-        from pyhermes.builder import Footer
+        from octavo.builder import Footer
 
         email = Email(
             {
@@ -770,8 +770,8 @@ class TestThePerturbedTheme:
         ``KpiItem.color`` and ``TableRow.colors`` are statements about the
         numbers, not about the design. The theme supplies the fallback only.
         """
-        from pyhermes.builder import CardGroup, Email, FullWidth
-        from pyhermes.builder.models import Card
+        from octavo.builder import CardGroup, Email, FullWidth
+        from octavo.builder.models import Card
 
         email = Email(
             {
@@ -795,7 +795,7 @@ class TestTheCustomThemeApi:
     """#50: the epic's reason to exist — a caller re-skins from one field."""
 
     def test_the_layers_are_public(self):
-        import pyhermes.builder as api
+        import octavo.builder as api
 
         for name in (
             "Theme",
@@ -892,7 +892,7 @@ class TestTheSlatePreset:
         return all_fixtures()["slate_theme"]().render()
 
     def test_it_is_in_the_registry_and_selectable_by_name(self):
-        from pyhermes.builder import Email
+        from octavo.builder import Email
 
         assert THEMES["slate"] is SLATE_THEME
         facts = {"email_subject": "S", "firm_name": "F", "campaign_name": "c"}
@@ -954,7 +954,7 @@ def _heat_colours(candidates: set[str]) -> set[str]:
     brand tone (#387) or the accent, so it is theme-derived without being a token; one the filter
     cannot produce from some theme's pair is still a colour that bypassed the theme.
     """
-    from pyhermes.builder.filters import heat_color
+    from octavo.builder.filters import heat_color
 
     derived = {
         heat_color(step / 1000, theme.palette.surface, toward)

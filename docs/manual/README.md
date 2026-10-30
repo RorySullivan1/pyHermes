@@ -1,29 +1,29 @@
-# pyHermes — User Manual
+# octavo — User Manual
 
 Build a research email in Python that looks right in Outlook and Gmail, then send it.
 
 ## What this is for
 
-pyHermes turns a short Python script into a finished HTML email: a masthead, sections of
+octavo turns a short Python script into a finished HTML email: a masthead, sections of
 figures, tables, charts and commentary, and a footer. It handles the parts that usually go
 wrong. Outlook on Windows lays emails out with Microsoft Word, which ignores most modern web
-styling, and Gmail cuts off any email over about 102 KB. pyHermes builds around both.
+styling, and Gmail cuts off any email over about 102 KB. octavo builds around both.
 
 It is for anyone who sends a regular note to readers, such as a weekly market wrap, a
 research brief or a client update, and wants to write it in code instead of rebuilding it
-by hand every time. You describe *what* the email says. pyHermes decides how it is laid out.
+by hand every time. You describe *what* the email says. octavo decides how it is laid out.
 
 The same content can also be printed as a PDF report, or laid out as a slide deck. See
 [Reports and PDFs](07-reports-and-pdfs.md) and [Make a slide deck](11-make-a-slide-deck.md).
 
 ## Where to start
 
-New to pyHermes? Read [Quick start](01-quick-start.md) first. It takes about five minutes
+New to octavo? Read [Quick start](01-quick-start.md) first. It takes about five minutes
 and ends with an email open in your browser.
 
 | Page | Read it when you want to… |
 |---|---|
-| [1. Quick start](01-quick-start.md) | Install pyHermes and build your first email |
+| [1. Quick start](01-quick-start.md) | Install octavo and build your first email |
 | [2. Build an email](02-build-an-email.md) | Add sections, text, figures, the masthead and the footer |
 | [3. Tables and numbers](03-tables-and-numbers.md) | Show a table, format figures, colour gains and losses, draw a trend or a ranking |
 | [4. Images and charts](04-images-and-charts.md) | Add a logo, a picture or a matplotlib chart |
@@ -51,7 +51,7 @@ and ends with an email open in your browser.
 
 If this manual does not answer your question, check [Troubleshooting](08-troubleshooting.md)
 first. If you are still stuck, open an issue at
-[github.com/RorySullivan1/pyHermes/issues](https://github.com/RorySullivan1/pyHermes/issues)
+[github.com/RorySullivan1/octavo/issues](https://github.com/RorySullivan1/octavo/issues)
 with the error message and the smallest script that shows it.
 
 For the reasoning behind each design choice, see the project [README](../../README.md).

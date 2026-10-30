@@ -1,4 +1,4 @@
-# Development Map — pyHermes
+# Development Map — octavo
 
 > Auto-surfaced at session start. Keep to ~one screen; detail lives in `stages/`.
 > The cursor (`←`) is the next version to build. Statuses: planned · in-progress · shipped.
@@ -14,7 +14,7 @@ switching medium in one change, through a library, an API, or a model as the aut
 ## Stages
 Gate N is stage N's milestone; each is passed by the reference reports in `reference/`.
 
-0. **Reset** — fix what the project is for and what it is judged against. *Milestone: charter merged, three reference reports named, installable from PyPI.*
+0. **Reset** — fix what the project is for and what it is judged against. *Milestone: charter merged, three reference reports named, installable from PyPI as `octavo`.*
 1. **Email mastery and repeatable reports** — a report you re-run; the best email a Python library produces. *Milestone: an outside user runs a weekly note unchanged for four weeks.*
 2. **The research content model** — say what the research is; a layout per medium decides where it goes. *Milestone: each reference report is one `Note`, rendered to email, report and brochure with no rebuilt tree.*
 3. **The access point: schema, API and AI** — a note and its data in, checked documents out; every number from data. *Milestone: a model-authored note passes with every number traced; one outside client.*
@@ -26,20 +26,21 @@ One version is one roadmap epic and ships as one PR; the epic number from the do
 | Version | Stage | Goal (one line) | Status |
 |---------|-------|-----------------|--------|
 | v0.2.0  | 00 | 0.1 Scope charter: positioning, the freeze rule | shipped (PR #477) |
-| v0.3.0  | 00 | 0.2 Reference reports and the speed benchmark | in-progress (PR #478) |
-| v0.4.0  | 00 | 0.3 First public release on PyPI | planned ← cursor |
-| v0.5.0  | 01 | 1.1 Report definition and the run CLI | planned |
-| v0.6.0  | 01 | 1.2 Data binding and provenance | planned |
-| v0.7.0  | 01 | 1.3 Three house email templates | planned |
-| v0.8.0  | 01 | 1.4 Real-client verification | planned |
-| v0.9.0  | 01 | 1.5 Distribution | planned |
-| v0.10.0 | 01 | 1.6 Run archive | planned |
-| v0.11.0 | 01 | 1.7 Docs for outsiders | planned |
-| v0.12.0–v0.20.0 | 02 | 2.1–2.9 Research content model (9 epics, see STAGE.md) | planned (sketch) |
-| v0.21.0–v0.27.0 | 03 | 3.1–3.7 Schema, render API, MCP, number grounding (7 epics) | planned (sketch) |
+| v0.3.0  | 00 | 0.2 Reference reports and the speed benchmark | shipped (PR #478) |
+| v0.4.0  | 00 | 0.3 Rename to octavo: distribution and import root | in-progress (PR #479) |
+| v0.5.0  | 00 | 0.4 First public release on PyPI, by trusted publishing | planned ← cursor |
+| v0.6.0  | 01 | 1.1 Report definition and the run CLI | planned |
+| v0.7.0  | 01 | 1.2 Data binding and provenance | planned |
+| v0.8.0  | 01 | 1.3 Three house email templates | planned |
+| v0.9.0  | 01 | 1.4 Real-client verification | planned |
+| v0.10.0 | 01 | 1.5 Distribution | planned |
+| v0.11.0 | 01 | 1.6 Run archive | planned |
+| v0.12.0 | 01 | 1.7 Docs for outsiders | planned |
+| v0.13.0–v0.21.0 | 02 | 2.1–2.9 Research content model (9 epics, see STAGE.md) | planned (sketch) |
+| v0.22.0–v0.28.0 | 03 | 3.1–3.7 Schema, render API, MCP, number grounding (7 epics) | planned (sketch) |
 | separate product | 04 | 4.1–4.5 Hosted API, authoring app, approvals (5 epics) | conditional |
 
-## Decisions (owner, 2026-10-27; revised 2026-10-28)
+## Decisions (owner, 2026-10-27; revised 2026-10-28 and 2026-10-29)
 - **Reference reports: stand-ins for now** (revised 2026-10-28). `daily-note` is
   `examples/daily-investment-note`, `research-report` is `examples/quarterly-review`, and
   `product-brochure` is the `tri_fold_letter` fixture; all three are replaced by real reports
@@ -48,8 +49,13 @@ One version is one roadmap epic and ships as one PR; the epic number from the do
   Stage 04 product are licensed separately.
 - **Deck: kept, frozen.** No deck features until 2.8 re-homes it as a layout.
 - **DOCX/PPTX: closed until 2.5**, reopened only if a reference report's readers need Word.
+- **Name: octavo** (2026-10-29). `pyhermes` is taken on PyPI and as an import by Allegro's Hermes
+  client, so the distribution and import root become `octavo` (v0.4.0) before the first release.
+- **Repository: renamed to octavo** (2026-10-30). The owner renames it on GitHub, which redirects the
+  old URLs; every link in the repository points at `RorySullivan1/octavo` from v0.4.0.
+- **Publishing: trusted publishing** (2026-10-29), from a GitHub Actions workflow on a version tag.
 - **Content model: the core package**, Python-only, no extra.
-- **2.1 spike: may start before v0.7.0 lands**, alongside the end of Stage 01.
+- **2.1 spike: may start before v0.8.0 lands**, alongside the end of Stage 01.
 
 ## Still open
 - Name the colleague or team who is the first outside user (Stage 01's gate); before Gate 1.

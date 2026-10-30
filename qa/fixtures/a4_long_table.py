@@ -13,11 +13,11 @@ from __future__ import annotations
 import dataclasses
 from pathlib import Path
 
-from pyhermes.builder import ChartBlock, DataTable, FullWidth, TextBlock
-from pyhermes.builder.document import Document
-from pyhermes.builder.images import EmailImage
-from pyhermes.builder.models import Column, ColumnGroup, TableRow
-from pyhermes.document import PAGED_MEDIUM, PagedDocument
+from octavo.builder import ChartBlock, DataTable, FullWidth, TextBlock
+from octavo.builder.document import Document
+from octavo.builder.images import EmailImage
+from octavo.builder.models import Column, ColumnGroup, TableRow
+from octavo.document import PAGED_MEDIUM, PagedDocument
 
 from . import _paged
 from ._png import solid_png

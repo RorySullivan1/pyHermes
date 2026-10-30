@@ -19,10 +19,10 @@ import inspect
 
 import pytest
 
-import pyhermes.builder as builder_api
-from pyhermes.builder.components import Component, DataTable, descendants
-from pyhermes.builder.models import Cell, Column, EmailMetadata, TableRow
-from pyhermes.delivery import collect_cid_references
+import octavo.builder as builder_api
+from octavo.builder.components import Component, DataTable, descendants
+from octavo.builder.models import Cell, Column, EmailMetadata, TableRow
+from octavo.delivery import collect_cid_references
 from qa.fixtures import DEPRECATED_COMPONENTS, all_fixtures
 from qa.fixtures import kitchen_sink as kitchen_sink_module
 from qa.fixtures._png import solid_png
@@ -120,7 +120,7 @@ def _gallery_sections():
 
 def _tables_in_gallery():
     """Every DataTable the gallery builds, with its rows, columns and cells."""
-    from pyhermes.builder.components import DataTable
+    from octavo.builder.components import DataTable
 
     for build in all_fixtures().values():
         email = build()
@@ -205,7 +205,7 @@ class TestComponentFieldsAreExercised:
 
     def test_every_math_block_argument_is_exercised(self):
         """#229's fields, read off ``__init__`` as DataTable's are."""
-        from pyhermes.builder import MathBlock
+        from octavo.builder import MathBlock
 
         # A block hosted as a TextBlock's figure (#359) counts: it is where wrap means anything.
         blocks = [
@@ -235,7 +235,7 @@ class TestComponentFieldsAreExercised:
     @pytest.mark.parametrize("kind", ["ChartBlock", "DataTable", "ImageBlock", "FigureGrid"])
     def test_every_exhibit_sets_a_qualifier_somewhere(self, kind):
         """#395's field, on each exhibit that takes it, read off the whole tree."""
-        from pyhermes.builder.components import descendants
+        from octavo.builder.components import descendants
 
         blocks = [
             block
@@ -251,7 +251,7 @@ class TestComponentFieldsAreExercised:
         field is one the golden cannot pin — the render would not move if
         the default changed underneath it.
         """
-        from pyhermes.builder.components import CopyAlignment
+        from octavo.builder.components import CopyAlignment
 
         aligned = [
             component
@@ -375,7 +375,7 @@ class TestComponentFieldsAreExercised:
 class TestKitchenSinkCompleteness:
     @staticmethod
     def _public_components() -> set[str]:
-        """Every public Component subclass exported from pyhermes.builder."""
+        """Every public Component subclass exported from octavo.builder."""
         return {
             name
             for name, obj in vars(builder_api).items()
@@ -387,7 +387,7 @@ class TestKitchenSinkCompleteness:
 
     def test_every_public_component_appears(self):
         """
-        Introspected, not hand-listed: a component added to pyhermes.builder and
+        Introspected, not hand-listed: a component added to octavo.builder and
         forgotten here fails the suite instead of going unrendered forever.
         """
         source = inspect.getsource(kitchen_sink_module)
@@ -522,8 +522,8 @@ class TestCustomBannerCarriesEveryAxis:
         attached one reaches the manifest and puts a ``cid:`` in both the CSS
         and the VML.
         """
-        from pyhermes.builder.enums import EmbedStrategy
-        from pyhermes.builder.images import EmailImage
+        from octavo.builder.enums import EmbedStrategy
+        from octavo.builder.images import EmailImage
 
         backdrop = email.banner.background_image_url
         assert isinstance(backdrop, EmailImage)
@@ -576,8 +576,8 @@ class TestThePlacementControlsAreInTheGallery:
         assert {"reverse", False} <= stacks
 
     def test_a_nested_columns_takes_each_value(self):
-        from pyhermes.builder import Columns
-        from pyhermes.builder.components import descendants
+        from octavo.builder import Columns
+        from octavo.builder.components import descendants
 
         stacks = {
             component.stack
@@ -588,7 +588,7 @@ class TestThePlacementControlsAreInTheGallery:
         assert {"reverse", False} <= stacks
 
     def test_both_visibility_wrappers_are_used(self):
-        from pyhermes.builder import OnlySections
+        from octavo.builder import OnlySections
 
         assert any(isinstance(section, OnlySections) for section in _gallery_sections())
 

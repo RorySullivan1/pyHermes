@@ -10,10 +10,10 @@ from pathlib import Path
 
 import pytest
 
-from pyhermes.builder import Email, FullWidth, TextBlock
-from pyhermes.builder.exceptions import SizeError
-from pyhermes.check import lint_document, render_for_check, size_report
-from pyhermes.check.__main__ import main as check_main
+from octavo.builder import Email, FullWidth, TextBlock
+from octavo.builder.exceptions import SizeError
+from octavo.check import lint_document, render_for_check, size_report
+from octavo.check.__main__ import main as check_main
 from qa.fixtures import all_brochure_fixtures, all_fixtures, all_paged_fixtures
 from qa.preview import EXIT_BUILD_FAILED, EXIT_LINT_ERRORS
 from qa.preview import main as preview_main
@@ -24,7 +24,7 @@ FACTS = {"email_subject": "Rates Weekly", "firm_name": "Acme", "campaign_name": 
 WORDS = {"Outlook": 2_000, "Market wrap": 6_000, "Positioning": 12_000, "Appendix": 8_000}
 
 DRAFT = f"""
-    from pyhermes.builder import Email, FullWidth, TextBlock
+    from octavo.builder import Email, FullWidth, TextBlock
 
     def build():
         email = Email({FACTS!r})

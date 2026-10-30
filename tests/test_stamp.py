@@ -12,14 +12,14 @@ import importlib.util
 
 import pytest
 
-from pyhermes.builder import Email, FullWidth, TextBlock
-from pyhermes.builder.document import stamp_type
-from pyhermes.builder.exceptions import ValidationError
-from pyhermes.builder.models import STAMP_MAX, DocumentMetadata
-from pyhermes.builder.regions import EmptyHeader
-from pyhermes.builder.sizing import A4_PORTRAIT, SLIDE_16_9
-from pyhermes.document import PagedDocument
-from pyhermes.pdf import available as pdf_available
+from octavo.builder import Email, FullWidth, TextBlock
+from octavo.builder.document import stamp_type
+from octavo.builder.exceptions import ValidationError
+from octavo.builder.models import STAMP_MAX, DocumentMetadata
+from octavo.builder.regions import EmptyHeader
+from octavo.builder.sizing import A4_PORTRAIT, SLIDE_16_9
+from octavo.document import PagedDocument
+from octavo.pdf import available as pdf_available
 from qa.fixtures import all_brochure_fixtures, all_deck_fixtures, all_paged_fixtures
 
 requires_pdf = pytest.mark.skipif(
@@ -119,7 +119,7 @@ class TestOnPaperMarkup:
 
     def test_a_stamped_decks_handout_carries_it_sized_for_its_paper(self):
         # The handout builds its own context, which first shipped without the stamp's size.
-        from pyhermes.builder.sizing import A4_LANDSCAPE
+        from octavo.builder.sizing import A4_LANDSCAPE
 
         html = all_deck_fixtures()["pitch_16_9"]().handout(A4_LANDSCAPE)
         assert html.count('class="sheet-stamp"') == 1
@@ -134,7 +134,7 @@ class TestOnPaperMarkup:
 def _sheets(document):
     import pypdfium2
 
-    from pyhermes.pdf import render_pdf
+    from octavo.pdf import render_pdf
 
     return [s.get_textpage().get_text_range() for s in pypdfium2.PdfDocument(render_pdf(document))]
 
@@ -167,7 +167,7 @@ class TestOnEverySheet:
         # Read off the glyphs' boxes, so a cover, a turned sheet and a slide each count.
         import pypdfium2
 
-        from pyhermes.pdf import render_pdf
+        from octavo.pdf import render_pdf
 
         for sheet in pypdfium2.PdfDocument(render_pdf(document())):
             text = sheet.get_textpage()
@@ -184,7 +184,7 @@ class TestOnEverySheet:
     def test_every_handout_page_carries_it_at_its_centre(self):
         import pypdfium2
 
-        from pyhermes.pdf import render_handout
+        from octavo.pdf import render_handout
 
         deck = all_deck_fixtures()["pitch_16_9"]()
         for sheet in pypdfium2.PdfDocument(render_handout(deck)):

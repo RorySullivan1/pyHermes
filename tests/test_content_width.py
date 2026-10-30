@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pytest
 
-from pyhermes.builder import (
+from octavo.builder import (
     SIZE_SCHEMES,
     Component,
     EmailBuilder,
@@ -27,8 +27,8 @@ from pyhermes.builder import (
     ValidationError,
     content_width,
 )
-from pyhermes.builder.engine import cell_width_of
-from pyhermes.builder.sizing import A4_PORTRAIT, LETTER_PORTRAIT, resolve_size_scheme
+from octavo.builder.engine import cell_width_of
+from octavo.builder.sizing import A4_PORTRAIT, LETTER_PORTRAIT, resolve_size_scheme
 
 EMAIL_DENSITIES = [SizeTheme.COMPACT, SizeTheme.STANDARD, SizeTheme.SPACIOUS]
 

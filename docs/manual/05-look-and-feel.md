@@ -9,7 +9,7 @@ To move the spacing of one section or block, add a block of your own, or see whi
 are deliberate, read [Customise the layout](09-customise-the-layout.md).
 
 ```python
-from pyhermes.builder import EmailBuilder, FullWidth, TextBlock
+from octavo.builder import EmailBuilder, FullWidth, TextBlock
 
 facts = {
     "email_subject": "Morning Note",
@@ -37,7 +37,7 @@ email = EmailBuilder().metadata({**facts, "theme": "slate"}).section(body).build
 **When to use this:** your firm has brand colours the presets do not match.
 
 ```python
-from pyhermes.builder import DEFAULT_THEME
+from octavo.builder import DEFAULT_THEME
 
 house = DEFAULT_THEME.derive(palette={"header_bg": "#003366", "accent": "#C8102E"})
 email = EmailBuilder().metadata({**facts, "theme": house}).section(body).build()
@@ -71,7 +71,7 @@ like `#036` are refused.
 red or grey, which say gain, loss and neither.
 
 ```python
-from pyhermes.builder import Callout
+from octavo.builder import Callout
 
 branded = DEFAULT_THEME.derive(tones={"brand": "#B8860B", "sky": "#0077A8"})
 facts_box = FullWidth(Callout(TextBlock("<p>0.03% a year.</p>"), tone="brand", label="Cost"))
@@ -122,7 +122,7 @@ To use your own faces, derive from a preset. Name only faces your readers will h
 installed, and end each list with `serif`, `sans-serif` or `monospace` as the last resort:
 
 ```python
-from pyhermes.builder import DEFAULT_FONTS, FontStack
+from octavo.builder import DEFAULT_FONTS, FontStack
 
 house_fonts = DEFAULT_FONTS.derive(
     heading=FontStack("Calibri", "Arial", "sans-serif"),
@@ -211,7 +211,7 @@ section, a box and a table frame alike. A dashed frame without a border is refus
 ## How to box one passage
 
 ```python
-from pyhermes.builder import Callout, Stack
+from octavo.builder import Callout, Stack
 
 box = Stack(
     [
@@ -247,7 +247,7 @@ so you never choose it. A solid box needs a `tone`. Outlook draws the fill as we
 ## How to add a button or a dividing line
 
 ```python
-from pyhermes.builder import Button, Divider
+from octavo.builder import Button, Divider
 
 closing = Stack(
     [
@@ -270,8 +270,8 @@ anywhere a block goes, including a column. In the plain-text part, a button prin
 *Preliminary*; to show a column of statuses as coloured dots; or to list a few topics lightly.
 
 ```python
-from pyhermes.builder import Badge, CardGroup, Column, DataTable, TagRow
-from pyhermes.builder.models import Cell, KpiItem, TableRow
+from octavo.builder import Badge, CardGroup, Column, DataTable, TagRow
+from octavo.builder.models import Cell, KpiItem, TableRow
 
 calls = CardGroup(
     [

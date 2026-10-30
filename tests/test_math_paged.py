@@ -15,7 +15,7 @@ from pathlib import Path
 
 import pytest
 
-from pyhermes.pdf import available
+from octavo.pdf import available
 from qa.fixtures import a4_equations as equations
 
 pytestmark = pytest.mark.skipif(
@@ -29,7 +29,7 @@ def _sheets(strip_figure_rule: bool = False) -> list[tuple[str, list[tuple[int, 
     import pypdfium2.raw as pdfium_raw
     import weasyprint
 
-    from pyhermes.pdf.fetcher import build_fetcher
+    from octavo.pdf.fetcher import build_fetcher
 
     document = equations.build()
     html = document.render()
@@ -77,7 +77,7 @@ def test_the_engineered_equation_splits_without_the_rule():
 
 
 def test_it_is_photographed_one_image_per_sheet(tmp_path: Path):
-    from pyhermes.document import PAGED_MEDIUM
+    from octavo.document import PAGED_MEDIUM
     from qa.screenshots import capture_pages
 
     shots, _ = capture_pages({"a4_equations": equations.build()}, tmp_path)
@@ -92,7 +92,7 @@ def test_a_centred_equation_is_centred_on_paper():
     import pypdfium2
     import pypdfium2.raw as pdfium_raw
 
-    from pyhermes.pdf import render_pdf
+    from octavo.pdf import render_pdf
 
     pdf = pypdfium2.PdfDocument(render_pdf(equations.build()))
     for sheet in pdf:

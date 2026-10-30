@@ -19,7 +19,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 
-#: Locations exempt today. It may only shrink: #138 empties pyhermes/, #139 empties qa/.
+#: Locations exempt today. It may only shrink: #138 empties octavo/, #139 empties qa/.
 BASELINE_PATH = ROOT / "qa" / "prose_baseline.json"
 
 
@@ -107,8 +107,8 @@ class TestTheGateBites:
     @pytest.mark.parametrize(
         "location",
         [
-            "pyhermes/builder/email.py::function:Email.render",
-            "pyhermes/gmail/__init__.py::module:__init__.py",
+            "octavo/builder/email.py::function:Email.render",
+            "octavo/gmail/__init__.py::module:__init__.py",
         ],
     )
     def test_the_read_examples_pass_on_their_merits(self, location: str) -> None:
