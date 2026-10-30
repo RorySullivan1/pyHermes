@@ -2,7 +2,7 @@
 status: in-progress
 started: 2026-10-30
 branch: claude/integrate-claude-assets-pyhermes-d4spzb
-pr:
+pr: https://github.com/RorySullivan1/octavo/pull/479
 
 ## Goals
 - Roadmap epic 0.3: rename the project to **octavo** (owner's decision, 2026-10-29). The PyPI

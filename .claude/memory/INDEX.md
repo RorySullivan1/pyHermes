@@ -6,7 +6,7 @@
 - **Shipped through PR #475** (#474); epics #157–#442 all closed, no issues open. #219 DOCX and #300 PPTX
   closed as not planned. #288 is the owner's Outlook-desktop check. The prose baseline is 43, may only shrink.
 - **The roadmap is live** in `.meta/roadmap/` (5 stages, 31 epics), surfaced each session by `roadmap_status`;
-  v0.2.0 shipped (PR #477); v0.3.0 (reference reports, benchmark) shipped (PR #478); cursor v0.4.0, the rename to octavo. The owner's six
+  v0.2.0 shipped (PR #477); v0.3.0 (reference reports, benchmark) shipped (PR #478); v0.4.0 (the rename to octavo) in PR #479; cursor v0.5.0. The owner's six
   decisions are taken. Mapped from the 2026-10-27 doc — sessions/2026-10-27-0312-roadmap-mapping.md
 
 ## Decisions        (append-only; supersede, never delete)
@@ -77,3 +77,5 @@
 - [2026-10-29] reference-reports — v0.3.0: `reference/` (three stand-ins), `qa.benchmark` and its baseline;
   review had no must-fix; goal-auditor PASS; PR #478 — sessions/2026-10-29-0900-reference-reports.md
 - [2026-10-29] reference-reports — PR #478 merged; v0.3.0 marked shipped in the roadmap and `.meta/version`.
+- [2026-10-30] octavo-rename — v0.4.0: package, import root, `OCTAVO_*` and repo links renamed; review fixed the
+  manual's checkout folder; goal-auditor PASS after the repo decision; PR #479 — sessions/2026-10-30-0900-octavo-rename.md
