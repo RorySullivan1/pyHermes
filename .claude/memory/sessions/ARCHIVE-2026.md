@@ -525,3 +525,5 @@ Decisions and Log entries folded out of `INDEX.md` on 2026-08-29 (#143), verbati
 - [2026-10-21] email-headroom — the email strips its indentation (owner's pick over moving ratios): `kitchen_sink` 82.5 KB, 8.8 KB under the warning — sessions/2026-10-21-email-headroom.md
 - [2026-10-27] roadmap-mapping — the owner's roadmap doc mapped to `.meta/roadmap/` with the factory's
   roadmap kit (skill, two commands, workflow, two hooks); index trimmed to budget — sessions/2026-10-27-0312-roadmap-mapping.md
+- [2026-10-28] scope-charter — v0.2.0 through advance-roadmap-step: positioning sentence, standing rule 14 and
+  `test_scope_freeze.py`; review closed two bypasses; goal-auditor PASS; PR #477 — sessions/2026-10-28-0900-scope-charter.md

@@ -71,8 +71,6 @@
 
 ## Log              (append-only pointers)
 - Older entries, and epic #157's, are in sessions/ARCHIVE-2026.md.
-- [2026-10-28] scope-charter — v0.2.0 through advance-roadmap-step: positioning sentence, standing rule 14 and
-  `test_scope_freeze.py`; review closed two bypasses; goal-auditor PASS; PR #477 — sessions/2026-10-28-0900-scope-charter.md
 - [2026-10-28] scope-charter — PR #477 merged; v0.2.0 marked shipped in the roadmap and `.meta/version`.
 - [2026-10-29] reference-reports — v0.3.0: `reference/` (three stand-ins), `qa.benchmark` and its baseline;
   review had no must-fix; goal-auditor PASS; PR #478 — sessions/2026-10-29-0900-reference-reports.md
