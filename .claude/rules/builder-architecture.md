@@ -15,7 +15,7 @@ a composed document must pass, and `octavo/email/` owns the shipped email one â€
 102 KB Gmail check, which is a fact about a client rather than about rendering. Epic #157
 moves the rest of the email-only half there; the kit keeps what every medium shares.
 
-(A legacy flat string-replace assembler, `octavo/assembler.py`, was removed in #14. It is
+(A legacy flat string-replace assembler was removed in #14. It is
 recoverable from git history if ever needed for reference.)
 
 ### The four-layer composition model

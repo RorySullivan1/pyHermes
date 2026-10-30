@@ -256,7 +256,7 @@ these rather than improvising:
   **#209** (spacing at two levels, #211–#216), **#217** (table semantics for quantitative
   material, #223–#228), **#221** (equations from LaTeX, #229–#233) and **#238** (seams for a
   host application, #246, #247, #249). **#237** (the package as a consumer sees it: `py.typed`,
-  metadata, a library-only sdist, the 3.11–3.14 matrix, the `octavo` import root) is complete,
+  metadata, a library-only sdist, the 3.11–3.14 matrix, an import root matching the distribution) is complete,
   and **#255** removed the `svc` shim it left. **#261** (composition: `Stack`, nested `Columns`,
   ratios as weights and `FourColumn`, #262–#264) is complete. **#265** (section surfaces: a dark
   band whose type stays readable, a section border, `Callout`, `Button` and `Divider`, #266–#269)

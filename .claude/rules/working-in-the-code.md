@@ -398,7 +398,7 @@ earlier check passed on a tree that would have shipped wrong.
   and the roadmap's record of the decision.
 - **`svc` was a shim, and #255 removed it before any release shipped it.** #248 kept
   `svc/__init__.py` for one release: it warned once with a `DeprecationWarning` and put a
-  meta-path finder in front that resolved `svc.X` to the module `octavo.X` already is.
+  meta-path finder in front that resolved `svc.X` to the module the real root's `X` already is.
   Its one trap is worth keeping for the next alias: the import system overwrites an aliased
   module's `__spec__` with the alias's, which is no package, and `importlib.resources` then
   refused the templates, so the loader put the real spec back. The package was never

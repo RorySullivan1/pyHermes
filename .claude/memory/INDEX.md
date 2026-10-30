@@ -49,7 +49,7 @@
 - **The suite runs on Windows since #372** (PR #371); no Windows CI job — the owner's run is the check.
 - **`epic-autoclose` works** (closed #273, #354, #361, #346, #324, #329, #335). Still confirm each epic closed after its merge.
 - **In this container, PDF byte-determinism tests flake** (no HarfBuzz-Subset), and screenshot
-  tests skip unless `PYHERMES_CHROMIUM=/opt/pw-browsers/chromium-1194/chrome-linux/chrome`.
+  tests skip unless `OCTAVO_CHROMIUM=/opt/pw-browsers/chromium-1194/chrome-linux/chrome`.
 - **Every issue or PR body is written without angle brackets** — GitHub's sanitizer has
   emptied three.
 - **A closing keyword closes only the issue it names, and this is now proven both ways.**

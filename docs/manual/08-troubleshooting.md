@@ -269,10 +269,10 @@ In other mail programs, send through Microsoft 365 or Gmail instead.
 
 ### I get "No module named qa"
 
-**Likely cause:** the `preview` command was run from outside the `octavo` folder.
+**Likely cause:** the `preview` command was run from outside the repository folder (the one holding `pyproject.toml`).
 
 **Fix:** to check an email, use `python -m octavo.check C:\work\weekly.py:build`, which
-works from any folder. Only the screenshots need the `octavo` folder and
+works from any folder. Only the screenshots need the repository folder and
 `python -m qa.preview`.
 
 ### "create_draft" says it needs Windows and classic Outlook
@@ -285,7 +285,7 @@ classic Outlook. Otherwise save the message with `save_eml` or send it through M
 
 ### I get "Rendering a PDF needs WeasyPrint" or "could not load a system library"
 
-**Fix:** install the extra from the `octavo` folder with `pip install -e ".[pdf]"`, then
+**Fix:** install the extra from the repository folder with `pip install -e ".[pdf]"`, then
 the system libraries listed in [Reports and PDFs](07-reports-and-pdfs.md).
 
 ### I get "is not in this document's asset manifest" when printing

@@ -44,7 +44,7 @@ email = (
    the rules Outlook and Gmail enforce. It exits with 0 when there is nothing to fix, 1 when
    there is, and 2 when the email does not build, so a script can stop on a problem. In
    Python, `from octavo.check import check` and `check(email)` returns the same findings.
-4. **As pictures.** From the `octavo` folder, with the `[qa]` extra,
+4. **As pictures.** From the repository folder (the one holding `pyproject.toml`), with the `[qa]` extra,
    `python -m qa.preview path/to/rates.py:build --screenshot` saves desktop and phone
    pictures of it, with attached images in place, into `output/screenshots/`.
 
@@ -64,7 +64,7 @@ plain = email.text()
 drafts, with its pictures, without saving a file or asking IT for anything.
 
 **Steps:**
-1. Install the extra once, from the `octavo` folder: `pip install -e ".[outlook-desktop]"`.
+1. Install the extra once, from the repository folder: `pip install -e ".[outlook-desktop]"`.
 2. With Outlook open, create the draft:
 
 <!-- manual: skip -->
